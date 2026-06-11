@@ -199,4 +199,3 @@ relationships across collections — see [queries.md](queries.md).
 - [invariants.md](invariants.md) — declaring the non-negotiables
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — proving the policy
 - [data-plane.md](data-plane.md) — writing against the deployed policy
-</content>

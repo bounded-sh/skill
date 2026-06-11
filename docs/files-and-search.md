@@ -96,4 +96,3 @@ filters to scope (e.g. search within `status == "published"`).
 - [policy-reference.md](policy-reference.md) — the `type` and `search` config keys
 - [queries.md](queries.md) — filters, paging, and the search query in detail
 - [policy-generation-guide.md](policy-generation-guide.md) — when a description calls for files/search
-</content>

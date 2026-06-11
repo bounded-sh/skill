@@ -226,4 +226,3 @@ your migrations.
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — what each invariant compiles to in the proof report
 - [data-plane.md](data-plane.md) — how violations surface at runtime (409 + name)
 - [proof-coverage.md](proof-coverage.md) — which runtime enforces what
-</content>

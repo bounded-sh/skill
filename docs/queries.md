@@ -174,4 +174,3 @@ exceeded" — and it is proven at deploy.
 - [policy-reference.md](policy-reference.md) — `queries`, `relationships`, `links`, `get()`
 - [data-plane.md](data-plane.md) — reads, writes, and in-batch composition
 - [files-and-search.md](files-and-search.md) — full-text search queries
-</content>

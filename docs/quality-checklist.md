@@ -103,4 +103,3 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [policy-generation-guide.md](policy-generation-guide.md) — the method that produces this by construction
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — the obligations behind these checks
 - [invariants.md](invariants.md) — RULES vs INVARIANTS, so the right things are covered
-</content>

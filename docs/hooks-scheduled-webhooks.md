@@ -187,4 +187,3 @@ separate concerns — keep them in their own keys.
 - [realtime-and-games.md](realtime-and-games.md) — `hooks.tick` + `session`
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — the trust-boundary deep dive
 - [invariants.md](invariants.md) — the postconditions hooks can't break
-</content>

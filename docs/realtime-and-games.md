@@ -169,4 +169,3 @@ statistical part — it does not "solve cheating." Full treatment:
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — `hooks.tick`, `enforceRules`
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — the trust boundary in depth
 - [invariants.md](invariants.md) — `rollingSum` + `scopeVariable` for per-player caps
-</content>
