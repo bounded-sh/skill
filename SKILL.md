@@ -10,7 +10,10 @@ description: >-
   "bounded CLI", "bounded verify", "bounded deploy", "policy.json",
   "invariant", "spending cap", "rollingSum", "conserve", "tenantTag",
   "tenantEdge", "proof report", "counterexample", "provable backend",
-  "agent spend cap", "formally verified database".
+  "agent spend cap", "formally verified database", "hooks", "enforceRules",
+  "anti-cheat", "fog-of-war", "server-authoritative", "tick", "cheating",
+  "multiplayer game backend", "onchain authority permit", "mainnet policy
+  update", "collaborator", "bounded share".
 ---
 
 # Bounded CLI
@@ -60,6 +63,20 @@ Agents go from zero to deployed without a human auth step. `bounded link`
 later opens a browser to bind the keypair to a human account (magic email or
 passkey); that is only needed for billing, the dashboard, or teams — never to
 build, verify, or deploy.
+
+### Teams: sharing an app
+
+The app owner can grant collaborators who may update the app's policy (and
+**only** the policy — not rename, delete, or reconfigure the app):
+
+```bash
+bounded share <walletAddress> --app-id <appId>      # add a collaborator
+bounded collaborators --app-id <appId>              # list collaborators
+bounded unshare <walletAddress> --app-id <appId>    # remove one
+```
+
+Only the owner can add/remove collaborators; this is enforced server-side
+against the wallet derived from the CLI's keypair.
 
 > Generate per-agent identity by running the CLI under a distinct HOME or
 > `BOUNDED_KEY_PATH`. Never reuse a human's keypair for an autonomous agent.
@@ -142,6 +159,7 @@ the request, not the timing. Full table and worked transcripts in
 | [**Verify & counterexamples**](docs/verify-and-counterexamples.md) | Running `bounded verify`, the full obligations list, reading DISPROVED counterexamples, the fix loop, staging-verified examples. |
 | [**Data plane**](docs/data-plane.md) | `bounded data set`/`set-many`/`get`, atomic batches, in-batch composition with `getAfter()`, failure semantics, append-only caps, worked transcripts. |
 | [**Proof coverage**](docs/proof-coverage.md) | The two-layer coverage model: rule properties enforced on both runtimes via shared bytecode; the invariant subset enforced onchain (incl. epoch-bucketed rollingSum) and what fails closed. |
+| [**Hooks & anti-cheat**](docs/hooks-and-anti-cheat.md) | The hook policy model (invariants hold against everything incl. hooks/cron/ticks; rules gate external actors; hooks bypass rules unless `enforceRules:true`), games anti-cheat (server-authoritative ticks, fog-of-war views, per-player caps, tamper-proof input log — and the honest limit on human-speed scripting), and the mainnet onchain authority-permit signing note. |
 
 ## Best Practices
 
