@@ -134,3 +134,10 @@ fixed?". As the agent: propose invariants from schema shape (money-like
 fields → conserve/cap candidates; tenant-ish path variables → tenantTag),
 let the human arbitrate intent, then regenerate the proof report. Agent
 drafts → engine proves or refutes with counterexamples → human decides.
+
+## Related
+
+- [policy-generation-guide.md](policy-generation-guide.md) — generating the policy you verify
+- [quality-checklist.md](quality-checklist.md) — the pre-deploy self-check
+- [invariants.md](invariants.md) — the invariants behind the postcondition obligations
+- [data-plane.md](data-plane.md) — the same examples at runtime

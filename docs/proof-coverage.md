@@ -78,3 +78,4 @@ Keep these scope edges in mind when describing guarantees to a user:
 
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — the obligations that back this table
 - [invariants.md](invariants.md) — declaring `onchain` coverage per invariant
+- [policy-generation-guide.md](policy-generation-guide.md) — when to go onchain at all

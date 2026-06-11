@@ -137,8 +137,25 @@ computed from cannot be rewritten, not by a compromised agent and not by your
 own retry loop. Write each spend as a new document with a fresh id;
 idempotency comes from your ids, not from overwrites.
 
+## SDK write path
+
+The same atomic semantics apply through the SDKs. `@bounded/client` writes from a
+browser (wallet-signed, with live subscriptions); `@bounded/server` writes from a
+server (vault-signed) and verifies webhooks. A batch is `setMany([...])`; a guarded
+batch uses `getAfter()` in the rule exactly as above.
+
+```ts
+import { setMany, buildAccounts } from "@bounded/client";
+await setMany([
+  buildAccounts("alice", { balance: 50 }),
+  buildAccounts("bob",   { balance: 150 }),
+]);   // one atomic transaction; conserve(balance) checked over the batch
+```
+
 ## Related
 
+- [policy-generation-guide.md](policy-generation-guide.md) — designing the policy these writes hit
+- [queries.md](queries.md) — reads: filters, sort, paging, aggregations, joins
 - [invariants.md](invariants.md) — what produces the 409s
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — the same examples at proof time
 - [proof-coverage.md](proof-coverage.md) — which runtime enforces which check

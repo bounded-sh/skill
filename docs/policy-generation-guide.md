@@ -200,7 +200,7 @@ Every DISPROVED is a concrete breaking assignment. The two you will hit most:
 
 Never weaken the property to make a proof pass — the counterexample is a write
 production would have accepted. Strengthen the expression, re-verify until clean,
-run the [quality checklist](docs/quality-checklist.md), then `bounded deploy`.
+run the [quality checklist](quality-checklist.md), then `bounded deploy`.
 
 ---
 

@@ -3,7 +3,10 @@
 This doc is the honest map of what Bounded's server-authoritative model
 guarantees and what it cannot. Three parts: the hook policy model (who can
 break what), games anti-cheat (provably secure vs. not), and the one place a
-mainnet deploy needs a signature.
+mainnet deploy needs a signature. For the *generation* side — exact `hooks`,
+`session`, and `rollingSum` syntax — see
+[hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) and
+[realtime-and-games.md](realtime-and-games.md).
 
 ## The hook policy model
 
@@ -25,35 +28,47 @@ straight or you will mis-describe a guarantee to a user.
   point of server logic: the tick advances state that no user is allowed to
   advance directly.
 
-The escape hatch is `enforceRules`. Set it on a collection or an individual
-hook and that hook is held to the same per-actor `rules` an external writer
-would face. Use it when a hook fans out writes you want bound by the same
+The escape hatch is `enforceRules`. Set it at the collection level
+(`enforceRules: true`) or on the hook group (`hooks.enforceRules: true`) and
+those hooks are held to the same per-actor `rules` an external writer would
+face. Use it when a hook fans out writes you want bound by the same
 authorization logic an external caller has.
 
 ```json
 {
-  "collections": {
-    "matches/$matchId": {
-      "schema": { "tick": "number", "winner": "string?" },
-
-      "rules": {
-        "read":   "true",
-        "create": "@user.address == @newData.host",
-        "update": "false"
-      },
-
-      "hooks": {
-        "onTick":       { "trigger": "cron",  "enforceRules": false },
-        "onPlayerMove": { "trigger": "write", "enforceRules": true  }
-      }
-    }
+  "matches/$matchId": {
+    "tier": "ephemeral",
+    "fields": { "tick": "UInt", "winner": "Address?", "host": "Address!" },
+    "rules": {
+      "read":   "@user.address != null",
+      "create": "@user.address != null && @newData.host == @user.address",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "tick": { "advance": "@DocumentPlugin.updateField(\"matches/sys\", \"tick\", \"1\")" }
+    },
+    "session": { "tick": { "everyMs": 100, "run": "advance", "maxLifetimeSec": 3600 } }
   },
-
-  "invariants": [
-    { "type": "conserve", "scope": "matches/$matchId/pot/$id.amount" }
-  ]
+  "matches/$matchId/pot/$entryId": {
+    "tier": "durable",
+    "fields": { "amount": "Int", "owner": "Address!" },
+    "rules": {
+      "read":   "@user.address != null",
+      "create": "@user.address != null && @newData.owner == @user.address",
+      "update": "@user.address != null && @data.owner == @user.address",
+      "delete": "false"
+    },
+    "invariants": [
+      { "type": "conserve", "name": "pot_conserved", "field": "amount", "materialization": "direct" }
+    ]
+  }
 }
 ```
+
+(`invariants` are declared per collection on the field they protect; `tier`
+must be `durable` for a `conserve`. The `tick` hook is a named entry under
+`hooks.tick`, wired by the `session.tick.run`.)
 
 **`enforceRules` relaxes rules, never invariants.** Even with
 `enforceRules: false`, a hook's writes are still checked against every proven
@@ -80,41 +95,48 @@ the one class no backend fully cures.
 
 ```json
 {
-  "collections": {
-    "matches/$matchId/state": {
-      "rules": { "read": "false", "create": "false", "update": "false" },
-      "hooks": { "tick": { "trigger": "cron", "enforceRules": false } }
-    },
-
-    "matches/$matchId/view/$playerId": {
-      "rules": {
-        "read":   "@user.address == $playerId",
-        "create": "false",
-        "update": "false"
-      }
-    },
-
-    "matches/$matchId/inputs/$id": {
-      "schema": { "player": "string", "action": "string", "at": "number!" },
-      "rules": {
-        "read":   "false",
-        "create": "@user.address == @newData.player",
-        "update": "false",
-        "delete": "false"
-      }
+  "matches/$matchId": {
+    "tier": "ephemeral",
+    "fields": { "tick": "UInt" },
+    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "hooks": { "tick": { "advance": "@DocumentPlugin.updateField(\"matches/sys\", \"tick\", \"1\")" } },
+    "session": { "tick": { "everyMs": 100, "run": "advance", "maxLifetimeSec": 3600 } }
+  },
+  "matches/$matchId/state/$stateId": {
+    "tier": "ephemeral",
+    "fields": { "blob": "String" },
+    "rules": { "read": "false", "create": "false", "update": "false", "delete": "false" }
+  },
+  "matches/$matchId/view/$playerId": {
+    "tier": "ephemeral",
+    "fields": { "visibleJson": "String" },
+    "rules": {
+      "read":   "@user.address != null && $playerId == @user.address",
+      "create": "false",
+      "update": "false",
+      "delete": "false"
     }
   },
-
-  "invariants": [
-    {
-      "type": "rollingSum",
-      "scope": "matches/$matchId/inputs/$id.weight",
-      "scopeVariable": "player",
-      "limit": 20
-    }
-  ]
+  "matches/$matchId/inputs/$inputId": {
+    "tier": "durable",
+    "fields": { "player": "String", "action": "String", "weight": "UInt", "at": "UInt!" },
+    "rules": {
+      "read":   "false",
+      "create": "@user.address != null && @newData.player == @user.address",
+      "update": "false",
+      "delete": "false"
+    },
+    "invariants": [
+      { "type": "rollingSum", "name": "input_rate_cap",
+        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$matchId" }
+    ]
+  }
 }
 ```
+
+(A `rollingSum` field is `UInt`, lives on the collection it caps, and forces
+`tier: "durable"`. `scopeVariable` is a `$path` variable; per-player scoping
+uses a player path segment. The view/state collections stay `ephemeral`.)
 
 ### NOT FULLY SOLVABLE — by anyone
 
@@ -158,6 +180,8 @@ program.
 
 ## Related
 
+- [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — exact `hooks` / `enforceRules` syntax
+- [realtime-and-games.md](realtime-and-games.md) — sessions, ticks, fog-of-war, settlement
 - [policy-reference.md](policy-reference.md) — `hooks` and the rule expression language
 - [invariants.md](invariants.md) — `rollingSum` + `scopeVariable` for per-player caps
 - [proof-coverage.md](proof-coverage.md) — what invariants are proven on which runtime
