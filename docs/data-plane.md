@@ -27,7 +27,7 @@ bounded data set-many --from-json bundle.json
 
 | What failed | Status | What you get back | What committed |
 |---|---|---|---|
-| Invariant violated | `409 invariant_violation` | the invariant's **declared name** (e.g. `spend_cap`), its type, and the arithmetic that failed | nothing |
+| Invariant violated | `409` `postcondition failed: invariant "<name>" ...` | the invariant's **declared name** (e.g. `spend_cap`), its type, and the arithmetic that failed | nothing |
 | Rule denied | `403` | the failed action plus a **trace** of the predicate that evaluated false | nothing |
 | Update/delete on a capped collection | `409 append_only` | rolling-cap collections reject history rewrites by design | nothing |
 | Policy fails verification at deploy | deploy fails | the proof report with counterexamples | previous-good policy stays active |
@@ -55,14 +55,14 @@ $ bounded data set --path "agents/a1/spend/s1" --data '{"amount": 60}'
 ✓ committed                                  # window sum: 60 / 100
 
 $ bounded data set --path "agents/a1/spend/s2" --data '{"amount": 60}'
-✗ 409 invariant_violation: spend_cap         # 60 + 60 = 120 > 100
+✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 60+60=120
   nothing committed
 
 $ bounded data set --path "agents/a1/spend/s3" --data '{"amount": 40}'
 ✓ committed                                  # window sum: 100 / 100
 
 $ bounded data set --path "agents/a1/spend/s4" --data '{"amount": 1}'
-✗ 409 invariant_violation: spend_cap         # 100 + 1 = 101 > 100
+✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 100+1=101
 ```
 
 ## Atomic `set-many`
