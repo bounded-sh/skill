@@ -34,10 +34,15 @@ data.
 - Mark `owner` (and any set-once metadata) `!` so it can't be reassigned.
 - Storage collections are offchain.
 
-Upload and download go through the SDK / CLI like any write and read; the blob
-travels as the document body. `bounded data set --path users/u1/files/f1 --file
-./avatar.png` uploads; `bounded data get --path users/u1/files/f1 --out ./out.png`
-downloads.
+Upload and download go through the SDK. `setFile(path, file)` uploads a `File`
+(or `null` to delete); `getFiles(path)` lists the files under a path. The same
+path-scoped `read`/`create`/`delete` rules apply.
+
+```ts
+import { setFile, getFiles } from "@bounded/client";
+await setFile("users/u1/files/avatar", file);   // File | null
+const files = await getFiles("users/u1/files");
+```
 
 ## Search — `search: { fields: [...] }`
 
@@ -70,17 +75,19 @@ Search is a query mode on the collection, combinable with filters and paging (se
 [queries.md](queries.md)):
 
 ```ts
-// SDK
-const hits = await searchManyOrgsDocs(orgId, { search: "quarterly revenue", limit: 20 });
+// SDK — search() over the collection path
+import { search } from "@bounded/client";
+const hits = await search("orgs/o1/docs", { query: "quarterly revenue", fields: ["title", "body"] });
 ```
 
 ```bash
 # CLI
-bounded data query --path "orgs/o1/docs/\$id" --search "quarterly revenue" --limit 20
+bounded data search --app-id <id> --path orgs/o1/docs --query "quarterly revenue"
 ```
 
-The match runs over the declared `search.fields` only. Combine with `where`
-filters to scope (e.g. search within `status == "published"`).
+The match runs over the declared `search.fields` (or pass `fields` to restrict
+further). Combine with `filter` to scope (e.g. search within
+`status == "published"`).
 
 ## Choosing between them and ordinary data
 
@@ -93,6 +100,7 @@ filters to scope (e.g. search within `status == "published"`).
 
 ## Related
 
+- [sdk-reference.md](sdk-reference.md) — `setFile`/`getFiles`/`search` signatures
 - [policy-reference.md](policy-reference.md) — the `type` and `search` config keys
 - [queries.md](queries.md) — filters, paging, and the search query in detail
 - [policy-generation-guide.md](policy-generation-guide.md) — when a description calls for files/search

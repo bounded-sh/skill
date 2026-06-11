@@ -157,21 +157,12 @@ email, analytics, anomaly detection, or any downstream system.
 
 ### Verifying a webhook on your server
 
-Bounded signs each delivery. In your receiver, verify the signature with
-`@bounded/server` before trusting the payload:
-
-```ts
-import { verifyWebhook } from "@bounded/server";
-
-app.post("/hooks/orders", async (req, res) => {
-  const event = verifyWebhook(req.headers, await req.text(), process.env.BOUNDED_WEBHOOK_SECRET!);
-  if (!event) return res.status(401).end();          // bad signature → reject
-  // event.op, event.path, event.document are now trustworthy
-  res.status(200).end();
-});
-```
-
-Never act on an unverified webhook body — anyone can POST to a public URL.
+Anyone can POST to a public URL, so authenticate every delivery with a shared
+secret you control before acting on the body. The full receiver pattern (a
+constant-time `Authorization` compare, then mutate state via `@bounded/server`
+if needed) is in
+[../guides/building-a-backend.md](../guides/building-a-backend.md#receiving-webhooks).
+Webhooks are read-only fan-out — never act on an unauthenticated body.
 
 ## The model in one line
 

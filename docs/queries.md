@@ -22,53 +22,57 @@ collection's `read` rule — a filter never returns a document the caller can't 
 | `$and` `$or` | combine sub-filters |
 
 ```ts
-// SDK — structured filter
-const open = await getManyOrders({
-  where: {
+// SDK — get() on a collection path takes the filter shape
+import { getPage } from "@bounded/client";
+const open = await getPage("orders", {
+  filter: {
     $and: [
       { status: { $in: ["open", "pending"] } },
       { total: { $gte: 100 } },
       { buyer: { $eq: walletAddress } }
     ]
   },
-  sort: { createdAt: "desc" },
+  sort: { createdAt: -1 },     // 1 = asc, -1 = desc
   limit: 20,
-  cursor: lastCursor          // omit for the first page
+  cursor: lastCursor           // omit for the first page
 });
-// open.items, open.nextCursor
+// open.data, open.nextCursor
 ```
 
 ### Sort, limit, cursor pagination
 
-- `sort: { field: "asc" | "desc" }` — order results.
+- `sort: { field: 1 | -1 }` — order results (`1` asc, `-1` desc).
 - `limit: N` — page size.
 - `cursor` — opaque token from the previous page's `nextCursor`; pass it to fetch
-  the next page. Cursor paging is stable under concurrent writes; prefer it over
-  offset for large sets.
+  the next page. Use `getPage` to receive `{ data, nextCursor }`. Cursor paging is
+  stable under concurrent writes; prefer it over offset for large sets.
 
 ### CLI form
 
 ```bash
-bounded data query --path "orders/\$id" \
-  --where '{"status":{"$in":["open","pending"]},"total":{"$gte":100}}' \
-  --sort 'createdAt:desc' --limit 20
+bounded data get --app-id <id> --path orders \
+  --filter '{"status":{"$in":["open","pending"]},"total":{"$gte":100}}' \
+  --sort createdAt:desc --limit 20
 ```
 
 ### Aggregations
 
-`aggregate` computes `count` / `sum` / `avg` / `min` / `max`, optionally grouped:
+`queryAggregate` computes `count` / `sum` / `avg` / `min` / `max`, optionally
+grouped, and returns the full set of grouped rows:
 
 ```ts
-const byStatus = await aggregateOrders({
-  where: { buyer: { $eq: walletAddress } },
-  groupBy: "status",
-  metrics: { n: { count: true }, revenue: { sum: "total" }, avg: { avg: "total" } }
+import { queryAggregate } from "@bounded/client";
+const byStatus = await queryAggregate("orders", {
+  groupBy: ["status"],
+  count: true,
+  sum: ["total"],
+  avg: ["total"]
 });
-// [{ status: "open", n: 4, revenue: 920, avg: 230 }, ...]
+// [{ group: { status: "open" }, count: 4, sum: { total: 920 }, avg: { total: 230 } }, ...]
 ```
 
 ```bash
-bounded data aggregate --path "orders/\$id" --group-by status --sum total --count
+bounded data aggregate --app-id <id> --path orders --group status --sum total --count
 ```
 
 > The filter / sort / aggregate API is a **runtime** feature of the data plane.
@@ -171,6 +175,8 @@ exceeded" — and it is proven at deploy.
 
 ## Related
 
+- [sdk-reference.md](sdk-reference.md) — `get`/`getPage`/`queryAggregate`/`search` signatures
+- [cli-reference.md](cli-reference.md) — `bounded data get/aggregate/search` flags
 - [policy-reference.md](policy-reference.md) — `queries`, `relationships`, `links`, `get()`
 - [data-plane.md](data-plane.md) — reads, writes, and in-batch composition
 - [files-and-search.md](files-and-search.md) — full-text search queries

@@ -140,20 +140,22 @@ idempotency comes from your ids, not from overwrites.
 ## SDK write path
 
 The same atomic semantics apply through the SDKs. `@bounded/client` writes from a
-browser (wallet-signed, with live subscriptions); `@bounded/server` writes from a
-server (vault-signed) and verifies webhooks. A batch is `setMany([...])`; a guarded
-batch uses `getAfter()` in the rule exactly as above.
+browser (user-signed, with live subscriptions); `@bounded/server` writes from a
+server (keypair-signed). A batch is `setMany([{ path, document }, ...])`; a
+guarded batch uses `getAfter()` in the rule exactly as above.
 
 ```ts
-import { setMany, buildAccounts } from "@bounded/client";
+import { setMany } from "@bounded/client";   // or `vault.setMany` from @bounded/server
 await setMany([
-  buildAccounts("alice", { balance: 50 }),
-  buildAccounts("bob",   { balance: 150 }),
+  { path: "accounts/alice", document: { balance: 50 } },
+  { path: "accounts/bob",   document: { balance: 150 } },
 ]);   // one atomic transaction; conserve(balance) checked over the batch
 ```
 
 ## Related
 
+- [cli-reference.md](cli-reference.md) — `bounded data set/set-many/get` flags
+- [sdk-reference.md](sdk-reference.md) — `set`/`setMany` from TypeScript
 - [policy-generation-guide.md](policy-generation-guide.md) — designing the policy these writes hit
 - [queries.md](queries.md) — reads: filters, sort, paging, aggregations, joins
 - [invariants.md](invariants.md) — what produces the 409s

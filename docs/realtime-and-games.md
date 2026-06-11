@@ -9,22 +9,23 @@ honest limit on what anti-cheat can prove is in
 
 ## Subscriptions & live queries
 
-Every collection is live. `subscribe` streams a single document; `subscribeMany`
-streams a filtered set; both deliver sub-millisecond deltas, not polls.
+Every collection is live. `subscribe(path, { onData })` streams a single document
+or a filtered collection, delivering sub-millisecond deltas, not polls, and
+returns an unsubscribe function.
 
 ```ts
-import { subscribeRoomsView } from "@bounded/client";
+import { subscribe } from "@bounded/client";
 
-const stop = await subscribeRoomsView(
-  (view) => render(view),          // called on every change
-  roomId, myAddress
-);
+const stop = await subscribe(`rooms/${roomId}/view/${myAddress}`, {
+  onData: (view) => render(view),   // called on every change
+  onError: (e) => console.error(e),
+});
 // later: await stop();
 ```
 
-Filters, sort, and paging on `subscribeMany` are the same as `getMany`
-([queries.md](queries.md)). Read access is enforced per result — a player's
-subscription to `view/$playerId` only ever delivers their own view.
+Filters, sort, and paging in `SubscribeOptions` match `get`
+([queries.md](queries.md)). Read access is enforced per delivered document — a
+player's subscription to `view/$playerId` only ever delivers their own view.
 
 ## Tiers for realtime
 
@@ -139,8 +140,8 @@ This is the structural cure for maphacks and wallhacks.
 
 A blob-eating arena: players send movement intents, the tick resolves collisions
 and growth, each player sees only their neighborhood, inputs are rate-capped, and
-final masses settle to a leaderboard. This is the validated worked example C in the
-[policy-generation-guide](policy-generation-guide.md#worked-example-c--realtime-game-rooms-tick-fog-of-war-settlement)
+final masses settle to a leaderboard. This is the validated **worked example C**
+in [policy-examples.md](policy-examples.md#c--realtime-game-rooms-tick-fog-of-war-settlement)
 — `rooms/$roomId` (ephemeral, tick + session), `intents` (durable, rate cap),
 `view/$playerId` (fog-of-war), `scores/$playerId` (settleFrom source), and a
 durable `results/$resultId`. Read it there in full; it verifies clean.
@@ -165,7 +166,8 @@ statistical part — it does not "solve cheating." Full treatment:
 
 ## Related
 
-- [policy-generation-guide.md](policy-generation-guide.md) — worked example C, end to end
+- [policy-examples.md](policy-examples.md) — worked example C, end to end
+- [sdk-reference.md](sdk-reference.md) — `subscribe` and `SubscribeOptions`
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — `hooks.tick`, `enforceRules`
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — the trust boundary in depth
 - [invariants.md](invariants.md) — `rollingSum` + `scopeVariable` for per-player caps
