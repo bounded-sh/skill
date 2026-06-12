@@ -1,5 +1,9 @@
 # SDK Reference — `@bounded/client` & `@bounded/server`
 
+**What's in here / when to read this:** every SDK method —
+`get`/`getPage`/`setMany`/`subscribe`/`search`/`queryAggregate`, auth,
+collaborators, `createWalletClient`, `verifyWebhook`, and invoking a function.
+
 Two packages, **one operation surface**. `@bounded/client` runs in the browser
 and React Native (end-user auth via Privy/wallet, live subscriptions);
 `@bounded/server` runs on a server, signs with a keypair (no browser auth), and

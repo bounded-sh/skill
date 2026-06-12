@@ -1,5 +1,9 @@
 # Policy Reference — `policy.json`
 
+**What's in here / when to read this:** the `policy.json` syntax reference —
+path templates, field types, the rule expression language, tiers, and every
+config key. (Invariants: [invariants.md](invariants.md).)
+
 One JSON file defines the backend: collections, types, auth rules, side-effect
 hooks, schedules, webhooks, search, and invariants. Everything is validated at
 deploy; the constraints are proven. Invariants get their own doc:

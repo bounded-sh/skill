@@ -1,5 +1,8 @@
 # Invariants — Declaring the Non-Negotiables
 
+**What's in here / when to read this:** the four invariant types — `conserve`,
+`rollingSum`, `tenantTag`, `tenantEdge` — and the rule-vs-invariant decision.
+
 Invariants are **transaction postconditions**: declared once on a collection,
 proven at deploy ([verify-and-counterexamples.md](verify-and-counterexamples.md)),
 and enforced atomically on every write path at runtime — including hooks, ticks,

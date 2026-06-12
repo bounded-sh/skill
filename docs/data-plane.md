@@ -1,5 +1,9 @@
 # Data Plane — `bounded data set / set-many / get`
 
+**What's in here / when to read this:** write semantics — single writes, atomic
+`set-many` batches, `getAfter` composition, append-only rules, and the
+`409`/`403` failure codes.
+
 Once the policy is deployed, all writes go through the data plane. Every
 write is checked against rules and invariants atomically; rejections are
 fail-closed and nothing partial is ever applied.

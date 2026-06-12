@@ -1,5 +1,8 @@
 # When to use a Function (and when NOT)
 
+**What's in here / when to read this:** the decision guide — the proven-tier
+hierarchy and concrete use/don't-use calls. Read it *before* adding a function.
+
 A function is the **only un-proven tier** in Bounded. Its *writes* are still
 bounded by your invariants and its *invocation* is policy-gated — but its
 **logic is not proven**. So the agent-facing rule is blunt:

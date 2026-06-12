@@ -16,8 +16,11 @@ description: >-
   "counterexample", "agent spend cap", "multiplayer game backend", "fog-of-war",
   "server-authoritative", "tick", "anti-cheat", "hooks", "scheduled", "webhooks",
   "@bounded/client", "@bounded/server", "collaborator", "bounded share",
-  "functions", "bounded functions", "function", "invoke", "escape hatch",
-  "call Stripe", "call an API", "third-party API", "ctx.bounded", "syncStripe".
+  "bounded link", "share by email", "admin", "admins collection", "no god-mode",
+  "verifyAuthorityClosure", "functions", "bounded functions", "function",
+  "invoke", "escape hatch", "when to use a function", "scheduled function",
+  "call Stripe", "call an API", "third-party API", "ctx.bounded", "ctx.env",
+  "syncStripe", "getPage", "aggregate", "search", "pagination".
 ---
 
 # Bounded
@@ -42,54 +45,174 @@ fix → bounded verify (clean) → bounded deploy (same gate) → use via SDK / 
 inputs and, on failure, hands you the exact assignment that breaks your policy.
 That is the heart of Bounded.
 
-## Where to go — intent → file
+## Lookup — find THE one file in one hop
 
-**This SKILL.md routes; the linked doc explains.** Find your intent, open the one
-file. Each doc has a "Related" footer for the next hop.
+**This SKILL.md is an index, not a textbook.** Look your need up in *one* of the
+three tables below — by **task**, by **symbol**, or by **error** — open the single
+file it points to (jump to the `#section` when given), and stop. Each doc opens
+with a one-line "what's in here" so you can confirm relevance instantly. Don't
+load multiple files to answer one question; follow a doc's "Related" footer only
+for the *next* question.
 
-### Build something
+### (a) By task → exact file (and section)
 
 | I want to… | Go to |
 |---|---|
-| Understand the method for writing a correct policy | [docs/policy-generation-guide.md](docs/policy-generation-guide.md) **(start here for any backend)** |
+| Write a correct policy from a description (the method) | [docs/policy-generation-guide.md](docs/policy-generation-guide.md) **(start here for any backend)** |
 | See full, validated example policies | [docs/policy-examples.md](docs/policy-examples.md) |
-| Build a backend an **agent** owns (no human in the loop) | [guides/building-for-agents.md](guides/building-for-agents.md) |
-| Build a **web app** (React + auth + live data) | [guides/building-a-webapp.md](guides/building-a-webapp.md) |
-| Ship to **iOS / Android** | [guides/building-for-react-native.md](guides/building-for-react-native.md) |
-| Build a **server / backend** (server-signed writes, webhooks) | [guides/building-a-backend.md](guides/building-a-backend.md) |
-| Build a **multiplayer game** (tick, fog-of-war, anti-cheat) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| Add an **imperative function** (fetch a third-party API / LLM, then write) | [docs/functions.md](docs/functions.md) |
-| Know what Bounded is — and is **NOT** — good for | [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md) |
-
-### Write the policy
-
-| I want to… | Go to |
-|---|---|
-| Look up `policy.json` syntax (paths, field types, rule language, tiers) | [docs/policy-reference.md](docs/policy-reference.md) |
-| Write an **invariant** (cap, conservation, tenant isolation) | [docs/invariants.md](docs/invariants.md) |
-| Decide rule vs invariant; null-guard correctly | [docs/invariants.md](docs/invariants.md) · [docs/policy-generation-guide.md](docs/policy-generation-guide.md) |
-| Add **hooks / scheduled jobs / webhooks** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
-| Call a **third-party API then write** (the imperative escape hatch — **Functions**) | [docs/functions.md](docs/functions.md) |
-| Add **files** or **full-text search** | [docs/files-and-search.md](docs/files-and-search.md) |
-| Self-check the policy before deploy | [docs/quality-checklist.md](docs/quality-checklist.md) |
-
-### Prove & deploy
-
-| I want to… | Go to |
-|---|---|
-| Run `bounded verify`, read proof reports & counterexamples | [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
-| Know what is proven on which runtime (offchain vs onchain) | [docs/proof-coverage.md](docs/proof-coverage.md) |
-
-### Use the deployed backend
-
-| I want to… | Go to |
-|---|---|
+| **Add a spending / rate cap** | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) · example below |
+| **Conserve a total / build a transfer** (no minting) | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) · example below |
+| **Isolate tenants** (data/refs can't cross orgs) | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
+| **Make an admin / moderator** (no creator god-mode) | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) · example below |
+| **Decide: rule vs invariant vs hook vs function** | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
+| **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
+| **Run a function / hook on a schedule** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) · [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence) |
+| Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| **Let users log in** (Privy / wallet) | [docs/auth.md](docs/auth.md#end-user-auth--privy--wallets--useraddress) · example below |
+| **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
+| **Paginate / filter / sort** a collection | [docs/queries.md](docs/queries.md#sort-limit-cursor-pagination) · example below |
+| **Aggregate** (count/sum/avg/min/max/group) | [docs/queries.md](docs/queries.md#aggregations) · example below |
+| **Full-text search** | [docs/files-and-search.md](docs/files-and-search.md) · example below |
+| **Subscribe to live data** | [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe) · example below |
+| Upload / read files | [docs/files-and-search.md](docs/files-and-search.md) |
+| Build for an **agent** / **web** / **mobile** / **server** / **game** | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) · [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| Run `bounded verify` / read counterexamples | [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
+| Know what's proven on which runtime | [docs/proof-coverage.md](docs/proof-coverage.md) |
 | Every CLI command + flag | [docs/cli-reference.md](docs/cli-reference.md) |
-| Every SDK method (`@bounded/client` / `@bounded/server`) | [docs/sdk-reference.md](docs/sdk-reference.md) |
-| Read/write data, atomic batches, failure codes (`409`/`403`) | [docs/data-plane.md](docs/data-plane.md) |
-| Filter / sort / paginate / aggregate / search | [docs/queries.md](docs/queries.md) |
-| Auth: dev keypair identity vs end-user Privy/wallet | [docs/auth.md](docs/auth.md) |
-| The anti-cheat trust boundary (games, deep) | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
+| Every SDK method | [docs/sdk-reference.md](docs/sdk-reference.md) |
+| Read/write semantics, atomic batches | [docs/data-plane.md](docs/data-plane.md) |
+| Self-check before deploy | [docs/quality-checklist.md](docs/quality-checklist.md) |
+| What Bounded is **NOT** good for | [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md) |
+
+### (b) By symbol / keyword → file
+
+| Symbol | File |
+|---|---|
+| `rollingSum`, `windowSeconds`, `scopeVariable`, `limit` | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) |
+| `conserve`, `materialization: "sharded"` | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) |
+| `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
+| `rules` (`read`/`create`/`update`/`delete`), `@user`, `@data`, `@newData`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
+| `admins/$address`, `verifyAuthorityClosure` | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
+| `functions`, `auth`, `entry`, `secrets`, `ctx.env`, `ctx.bounded`, `ctx.user` | [docs/functions.md](docs/functions.md) |
+| `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| `session`, `hooks.tick`, `tick`, `settleTo`, fog-of-war | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| `tier` (`durable`/`checkpointed`/`ephemeral`) | [docs/policy-reference.md](docs/policy-reference.md) · [docs/invariants.md](docs/invariants.md) |
+| `links`, `relationships`, `queries`, `$regex`/`$gte`/`$in` | [docs/queries.md](docs/queries.md) |
+| `getPage`, `queryAggregate`, `count`, `setMany`, `subscribe`, `getIdToken` | [docs/sdk-reference.md](docs/sdk-reference.md) |
+| `search`, `setFile`, `getFiles`, storage collection | [docs/files-and-search.md](docs/files-and-search.md) |
+| `bounded link`, `bounded share`, `collaborators` | [docs/auth.md](docs/auth.md#linking--teams) |
+| `bounded functions deploy/list/invoke/logs` | [docs/cli-reference.md](docs/cli-reference.md#functions-the-imperative-escape-hatch) |
+| `bounded data get/aggregate/search` `--filter`/`--sort`/`--cursor` | [docs/cli-reference.md](docs/cli-reference.md#data-plane) |
+| `verifyWebhook`, `createWalletClient`, `@bounded/server` | [docs/sdk-reference.md](docs/sdk-reference.md) |
+
+### (c) By error / status → file
+
+| You hit… | Meaning · file |
+|---|---|
+| `409` + an invariant name (e.g. `spend_cap`, `no_minting`) | state forbids the write; back off — [docs/data-plane.md](docs/data-plane.md) · [docs/invariants.md](docs/invariants.md) |
+| `403` | rule denied the caller/payload — fix the request — [docs/data-plane.md](docs/data-plane.md) · [docs/auth.md](docs/auth.md) |
+| `409 append_only` | capped collections are append-only logs — [docs/data-plane.md](docs/data-plane.md) |
+| `deploy fails` / `DISPROVED` + counterexample | unprovable policy; read the breaking assignment — [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
+| Validator rejects (`@constants`, `/` division, `@data` in create…) | static errors + fixes — [docs/policy-generation-guide.md](docs/policy-generation-guide.md#common-mistakes-caught-by-the-validator-or-the-prover) |
+| `503` from a function invoke | Functions not configured on the platform — [docs/functions.md](docs/functions.md) |
+| `403`/`404` from a function invoke | `auth` rule denied / unknown function — [docs/functions.md](docs/functions.md) |
+
+## Minimal validated examples
+
+Each snippet is the smallest thing that works for one capability and validates
+against the real PolicyValidator (policies) or is a real SDK/CLI call (code).
+Open the linked doc for the full treatment.
+
+### Spend cap — [docs/invariants.md](docs/invariants.md)
+
+```json
+{ "spend/$spendId": {
+  "rules": { "read": "@user.address != null",
+             "create": "@user.address != null && @newData.agent == @user.address",
+             "update": "false", "delete": "false" },
+  "fields": { "agent": "Address!", "amountUsd": "UInt" },
+  "tier": "durable",
+  "invariants": [ { "type": "rollingSum", "name": "daily_spend_cap",
+    "field": "amountUsd", "windowSeconds": 86400, "limit": 5000, "scopeVariable": "$spendId" } ] } }
+```
+
+### Conserve + transfer — [docs/invariants.md](docs/invariants.md) · [docs/data-plane.md](docs/data-plane.md)
+
+```json
+{ "accounts/$accountId": {
+  "rules": { "read": "@user.address != null",
+             "create": "@user.address != null && @newData.owner == @user.address",
+             "update": "@user.address != null && @data.owner == @user.address", "delete": "false" },
+  "fields": { "owner": "Address!", "balance": "UInt" },
+  "tier": "durable",
+  "invariants": [ { "type": "conserve", "name": "no_minting", "field": "balance" } ] } }
+```
+
+A transfer is one atomic `setMany` of both accounts (see data-plane.md).
+
+### Admin model — [docs/admin-and-ownership.md](docs/admin-and-ownership.md)
+
+```json
+{ "admins/$address": {
+    "fields": { "active": "Bool" }, "tier": "durable",
+    "rules": { "read": "@user.address != null",
+      "create": "@user.address != null && get(/admins/@user.address) != null",
+      "update": "@user.address != null && get(/admins/@user.address) != null",
+      "delete": "@user.address != null && get(/admins/@user.address) != null" } },
+  "posts/$postId": {
+    "fields": { "author": "Address!", "body": "String", "hidden": "Bool?" }, "tier": "durable",
+    "rules": { "read": "true",
+      "create": "@user.address != null && @newData.author == @user.address",
+      "update": "@user.address != null && get(/admins/@user.address) != null",
+      "delete": "@user.address != null && get(/admins/@user.address) != null" } } }
+```
+
+### Function (fetch third-party → write) — [docs/functions.md](docs/functions.md)
+
+```json
+{ "functions": { "syncStripe": {
+  "auth": "get(/admins/@user.address) != null",
+  "entry": "functions/syncStripe.ts", "timeout": 30, "secrets": ["STRIPE_KEY"] } } }
+```
+```ts
+export default async function (args, ctx) {
+  const r = await fetch("https://api.stripe.com/v1/...", {
+    headers: { Authorization: `Bearer ${ctx.env.STRIPE_KEY}` } });
+  await ctx.bounded.set(`subs/${ctx.user.address}`, { active: (await r.json()).active });
+  return { ok: true };
+}
+```
+
+### Scheduled function — [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence)
+
+```json
+{ "rollups/$day": {
+    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
+    "fields": { "total": "UInt" }, "schedule": { "every": "1d", "run": "rollupDaily" } },
+  "functions": { "rollupDaily": {
+    "auth": "get(/admins/@user.address) != null", "entry": "functions/rollupDaily.ts", "timeout": 120 } } }
+```
+
+### Live subscription — [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe)
+
+```ts
+import { subscribe } from "@bounded/client";
+const stop = await subscribe("rooms/r1/view/" + myAddress, { onData: render });
+```
+
+### Email share — [docs/auth.md](docs/auth.md#linking--teams)
+
+```sh
+bounded share teammate@example.com --app-id <id>   # Privy pre-generates their wallet; added as admin
+```
+
+### Pagination / aggregation / search — [docs/queries.md](docs/queries.md) · [docs/files-and-search.md](docs/files-and-search.md)
+
+```sh
+bounded data get       --app-id <id> --path orders --filter '{"total":{"$gte":100}}' --sort createdAt:desc --limit 20
+bounded data aggregate --app-id <id> --path spend  --group category --count --sum amount
+bounded data search    --app-id <id> --path notes  --query "shipping"
+```
 
 ## Setup (60 seconds)
 
@@ -124,14 +247,8 @@ bounded data get --app-id <appId> --path spend
 - **Everything fails closed.** Unprovable policies don't deploy; runtime checks
   reject rather than skip.
 
-## Failure semantics (summary — full table in [docs/data-plane.md](docs/data-plane.md))
-
-| What failed | Status | Meaning |
-|---|---|---|
-| Invariant violated | `409` | the **state** forbids it — back off; retrying fails until the window moves |
-| Rule denied | `403` | the **caller/payload** is wrong — fix the request, not the timing |
-| Update/delete on a capped collection | `409 append_only` | rolling-cap collections are append-only logs |
-| Policy fails verification | deploy fails | proof report with counterexamples; previous-good policy stays active |
+Failure semantics are in the **(c) By error / status** table above and in full in
+[docs/data-plane.md](docs/data-plane.md).
 
 ## Best practices
 

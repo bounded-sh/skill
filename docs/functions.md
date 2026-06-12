@@ -1,5 +1,10 @@
 # Functions — the imperative escape hatch
 
+**What's in here / when to read this:** the full Functions reference — declare in
+policy, write the `ctx` API, invoke (CLI + TS), deploy, secrets, scheduling, the
+proof boundary. **First decide you even need one:**
+[functions-when-to-use.md](functions-when-to-use.md).
+
 Declarative policy can't express *"fetch third-party data, then update
 accordingly"*: call Stripe / an LLM / any external API, transform the result,
 then write. **Functions** close that gap — without breaking the proof thesis.
@@ -238,20 +243,14 @@ run on the cadence — fired by the Bounded heartbeat as the **system principal*
 *(Validates clean: the validator resolves `schedule.run` to either a scheduled
 hook **or** a top-level function.)*
 
-Two principals, one function:
-
-- **User invocation** (`bounded functions invoke`) is gated by the function's
-  `auth` rule — exactly as for on-demand functions.
-- **System runs** (the schedule) are authorized by the **owner-deployed
-  `schedule`** itself: the schedule lives in your signed policy, so registering
-  it *is* the authorization. The heartbeat invokes the function as the system
-  principal (it does not impersonate a user), skipping the user-facing `auth`
-  rule — but every write the run makes still goes **through** your rules +
-  invariants via `ctx.bounded`.
-
-`every` accepts `<n>s|m|h|d` (1s–366d); `dueRows` runs fire as rows come due.
-Schedules are offchain-only. See
-[hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) for the hook form.
+**Two principals, one function.** A **user invocation**
+(`bounded functions invoke`) is gated by the function's `auth` rule. A **system
+run** (the schedule) is authorized by the owner-deployed `schedule` itself — it
+lives in your signed policy, so the heartbeat fires the function as the **system
+principal** (skipping the user-facing `auth` rule). Either way every write still
+goes **through** your rules + invariants via `ctx.bounded`. `every` accepts
+`<n>s|m|h|d` (1s–366d); schedules are offchain-only. Hook form + the full `run`
+unification: [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 
 ## Secrets
 
@@ -269,22 +268,16 @@ runtime secret — not a value passed through the request.
 ## Architecture (poof-infra lineage)
 
 Bounded Functions reuse poof's proven Cloudflare pipeline on Bounded-OWNED,
-isolated resources (never `poof_apps`):
-
-- **Deploy** forks poof's dev-server-manager deploy + `secretsHelper`: the
-  function uploads to the `bounded_apps_staging` **Workers-for-Platforms dispatch
-  namespace**; each declared secret is set as a real per-script Worker secret
-  binding via the CF secret API.
-- **Invoke** routes through the **Bounded Functions dispatcher**
-  (`bounded-functions-dispatcher-staging`): it verifies the caller (Cognito
-  RS256/JWKS, same as the data plane), evaluates the `auth` rule via the shared
-  rule engine, then dispatches into the namespace with `ctx` injected.
-- **Schedules** ride the **Bounded heartbeat dispatcher** (forked from poof's
-  heartbeat worker) — an isolated cron registry firing functions as the system
-  principal.
-
-If Workers-for-Platforms credentials aren't configured, deploy and invoke return
-a clean `503` — never a crash.
+isolated resources (never `poof_apps`): **deploy** forks poof's
+dev-server-manager + `secretsHelper` to upload the function to the
+`bounded_apps_staging` **Workers-for-Platforms dispatch namespace** (each secret a
+real per-script Worker binding); **invoke** routes through the Bounded Functions
+dispatcher (`bounded-functions-dispatcher-staging`), which verifies the caller
+(Cognito RS256/JWKS, same as the data plane), evaluates the `auth` rule via the
+shared engine, then dispatches with `ctx` injected; **schedules** ride the Bounded
+heartbeat dispatcher firing functions as the system principal. If
+Workers-for-Platforms credentials aren't configured, deploy and invoke return a
+clean `503` — never a crash.
 
 ## Limits
 
@@ -295,15 +288,14 @@ a clean `503` — never a crash.
   `@bounded/server` client for those.
 - **Memory / subrequests:** standard Workers limits apply.
 
-## What's proven vs not — say it plainly
+## What's proven vs not, and the roadmap
 
-- **Proven:** your `rules` and `invariants` — including on every write a function
-  makes through `ctx.bounded`. A function **cannot** break an invariant.
-- **Policy-gated:** invocation — the `auth` rule is evaluated by the proven rule
-  engine before the function runs.
-- **NOT proven:** the function's own logic (the fetch, the transform). That's the
-  escape hatch's deliberate trade. Keep anything that *must* be guaranteed in an
-  invariant, not in function code.
+The proof boundary (recap of "Why functions are still safe", above): **proven** —
+your `rules` + `invariants`, including every write a function makes through
+`ctx.bounded` (it **cannot** break an invariant); **policy-gated** — invocation,
+via the `auth` rule evaluated by the proven engine before the function runs; **NOT
+proven** — the function's own logic (the fetch, the transform). Keep anything that
+*must* be guaranteed in an invariant, not in function code.
 
 **Roadmap (honest):** functions today are *un-proven logic, contained by proven
 walls* (invariants bound their writes; the `auth` rule gates invocation). A future

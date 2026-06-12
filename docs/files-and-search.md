@@ -1,5 +1,8 @@
 # Files & Search
 
+**What's in here / when to read this:** `type: "storage"` file collections
+(`setFile`/`getFiles`) and `search: { fields }` full-text indexing.
+
 Two collection features for content-heavy apps: **storage** collections back files
 in R2 with the same path-scoped auth as data, and **search** declares full-text
 indexing on chosen fields.

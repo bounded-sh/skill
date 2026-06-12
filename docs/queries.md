@@ -1,5 +1,9 @@
 # Queries
 
+**What's in here / when to read this:** reading many docs — runtime
+filter/sort/cursor-pagination, aggregations, full-text search, policy `queries`,
+and `links`/`relationships` joins.
+
 Three ways to read more than one document by id: **runtime filters** on the data
 plane (the workhorse), **policy `queries`** (computed scalar fields proven at
 deploy), and **`links` / `relationships`** (point-lookup joins). Single-document
