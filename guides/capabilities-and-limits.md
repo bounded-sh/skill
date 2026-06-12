@@ -14,13 +14,14 @@ it's the right tool.
 | **Agent backends** | Zero-ceremony keypair identity; an agent goes from description to deployed without a human auth step ([building-for-agents.md](building-for-agents.md)). |
 | **Realtime games** | Server-authoritative tick loop, fog-of-war views, proven per-player rate caps, automatic settlement ([../docs/realtime-and-games.md](../docs/realtime-and-games.md)). |
 | **Onchain power-ups** | A verified subset of invariants enforces on Solana too ([../docs/proof-coverage.md](../docs/proof-coverage.md)). |
+| **Imperative escape hatch (Functions)** | When declarative policy can't express it — *fetch a third-party API, transform, then write* — a **Bounded Function** runs your code. We don't prove its logic, but its writes still go through invariants and only policy-authorized callers can invoke it ([functions.md](functions.md)). |
 
 ## What Bounded does NOT support
 
 | Limit | Use instead |
 |---|---|
 | **No native iOS/Android SDK** | Ship to phones with **React Native** + `@bounded/client` ([building-for-react-native.md](building-for-react-native.md)). |
-| **No arbitrary server-function runtime** | No Lambda/PartyServer/Edge-function tier. In-boundary logic → policy **hooks** (`hooks.offchain`, `hooks.tick`, `hooks.scheduled`, `dueRows`); outbound integration → **webhooks** + your own server as a `@bounded/server` client ([../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md), [building-a-backend.md](building-a-backend.md)). |
+| **No heavy/long-running or native-binding compute** | Functions run on Cloudflare Workers (V8 isolates): great for API calls + transforms + SDK writes, not for multi-minute jobs or native-binding npm. For in-boundary logic prefer policy **hooks**; for outbound integration use **Functions** ([functions.md](functions.md)) or **webhooks** + your own `@bounded/server` ([../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md), [building-a-backend.md](building-a-backend.md)). |
 | **No `@constants` or built-in roles in rules** | Express "admin" via a `get()`-read role or an address literal; pass deploy-time values with the CLI `--constants` flag. |
 | **No array/object fields; no ternary; `/` reserved** | Model lists as sub-collections; branch with `(c && A) \|\| (!c && B)`; use `//` for integer division ([../docs/policy-reference.md](../docs/policy-reference.md)). |
 

@@ -193,6 +193,24 @@ Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
 overrides `keysUrl` / `maxSkewSeconds` / cache TTL. Declaring webhooks:
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 
+### Invoking a function — `functions.invoke`
+
+Both packages export `functions.invoke(name, args, opts?)` for calling a deployed
+Bounded Function (the imperative escape hatch). It attaches your session token
+automatically — the same token the data operations use — so the dispatcher
+verifies your identity and evaluates the function's `auth` policy rule before it
+runs. Client + server, identical call.
+
+```ts
+import { functions } from "@bounded/client"; // or "@bounded/server"
+
+const res = await functions.invoke("syncStripe", { customerId });
+// → the function's JSON, or throws FunctionInvokeError on 401/403/404/503/error.
+```
+
+Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the
+proof boundary): [functions.md](functions.md).
+
 ## Related
 
 - [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — client setup + auth + live reads

@@ -114,6 +114,23 @@ bounded data get --app-id <id> --path spend \
 On `set` / `set-many`, an **onchain-only** flag: skip RPC preflight simulation
 so failing txs still land on-chain. No effect on the realtime data plane.
 
+## Functions (the imperative escape hatch)
+
+```sh
+bounded functions deploy <name> --entry <file> --app-id <id> \
+  [--auth '<rule>'] [--secret K=V] [--timeout <sec>]
+bounded functions list   --app-id <id>
+bounded functions invoke <name> --app-id <id> [--data '<json>']
+bounded functions logs   <name> --app-id <id>
+```
+
+`deploy` uploads the function's code and merges its entry (the invocation `auth`
+rule, `entry`, `timeout`, `secrets`) into the policy — owner/admin only. `invoke`
+attaches your session token automatically (same token as `data`) so the
+dispatcher gates the call on the `auth` rule, then prints the function's JSON (or
+the dispatcher error — `403` if the rule denies you). Full guide:
+[functions.md](functions.md).
+
 ## Related
 
 - [data-plane.md](data-plane.md) — write semantics, atomic batches, failure codes

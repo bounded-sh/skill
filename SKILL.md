@@ -15,7 +15,9 @@ description: >-
   "rollingSum", "conserve", "tenantTag", "tenantEdge", "proof report",
   "counterexample", "agent spend cap", "multiplayer game backend", "fog-of-war",
   "server-authoritative", "tick", "anti-cheat", "hooks", "scheduled", "webhooks",
-  "@bounded/client", "@bounded/server", "collaborator", "bounded share".
+  "@bounded/client", "@bounded/server", "collaborator", "bounded share",
+  "functions", "bounded functions", "function", "invoke", "escape hatch",
+  "call Stripe", "call an API", "third-party API", "ctx.bounded", "syncStripe".
 ---
 
 # Bounded
@@ -56,6 +58,7 @@ file. Each doc has a "Related" footer for the next hop.
 | Ship to **iOS / Android** | [guides/building-for-react-native.md](guides/building-for-react-native.md) |
 | Build a **server / backend** (server-signed writes, webhooks) | [guides/building-a-backend.md](guides/building-a-backend.md) |
 | Build a **multiplayer game** (tick, fog-of-war, anti-cheat) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| Add an **imperative function** (fetch a third-party API / LLM, then write) | [docs/functions.md](docs/functions.md) |
 | Know what Bounded is — and is **NOT** — good for | [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md) |
 
 ### Write the policy
@@ -66,6 +69,7 @@ file. Each doc has a "Related" footer for the next hop.
 | Write an **invariant** (cap, conservation, tenant isolation) | [docs/invariants.md](docs/invariants.md) |
 | Decide rule vs invariant; null-guard correctly | [docs/invariants.md](docs/invariants.md) · [docs/policy-generation-guide.md](docs/policy-generation-guide.md) |
 | Add **hooks / scheduled jobs / webhooks** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| Call a **third-party API then write** (the imperative escape hatch — **Functions**) | [docs/functions.md](docs/functions.md) |
 | Add **files** or **full-text search** | [docs/files-and-search.md](docs/files-and-search.md) |
 | Self-check the policy before deploy | [docs/quality-checklist.md](docs/quality-checklist.md) |
 
