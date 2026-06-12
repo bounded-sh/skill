@@ -193,6 +193,48 @@ token → resolve `@user` → evaluate `get(/admins/@user.address) != null` → 
 → the function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your
 rules + invariants) → returns JSON.
 
+## Scheduled functions (run a function on a cadence)
+
+A function can be invoked **on a schedule**, not just on demand. A collection's
+`schedule { every, run }` (or `dueRows { run }`) whose `run` names a **function**
+(instead of a `hooks.scheduled.<run>` bytecode hook) registers that function to
+run on the cadence — fired by the Bounded heartbeat as the **system principal**.
+
+```json
+{
+  "rollups/$day": {
+    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
+    "fields": { "total": "UInt" },
+    "schedule": { "every": "1d", "run": "rollupDaily" }
+  },
+  "functions": {
+    "rollupDaily": {
+      "auth": "get(/admins/@user.address) != null",
+      "entry": "functions/rollupDaily.ts",
+      "timeout": 120
+    }
+  }
+}
+```
+
+*(Validates clean: the validator resolves `schedule.run` to either a scheduled
+hook **or** a top-level function.)*
+
+Two principals, one function:
+
+- **User invocation** (`functions.invoke` / `bounded functions invoke`) is gated
+  by the function's `auth` rule — exactly as for on-demand functions.
+- **System runs** (the schedule) are authorized by the **owner-deployed
+  `schedule`** itself: the schedule lives in your signed policy, so registering
+  it *is* the authorization. The heartbeat invokes the function as the system
+  principal (it does not impersonate a user), skipping the user-facing `auth`
+  rule — but every write the run makes still goes **through** your rules +
+  invariants via `ctx.bounded`.
+
+`every` accepts `<n>s|m|h|d` (1s–366d); `dueRows` runs fire as rows come due.
+Schedules are offchain-only. See
+[hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) for the hook form.
+
 ## Secrets
 
 Declare secret **names** in the policy `functions.<name>.secrets`; supply their
@@ -200,6 +242,30 @@ Declare secret **names** in the policy `functions.<name>.secrets`; supply their
 Only declared names are exposed — an undeclared key never reaches the function,
 even if a value exists in the store. Secret values are never written into the
 policy and never returned by `functions list`.
+
+Under the hood, each declared secret is set as a **real Cloudflare Worker secret
+binding** on your function's dispatch-namespace script (the same mechanism poof
+uses for its per-app worker secrets), so `ctx.env.STRIPE_KEY` is a first-class
+runtime secret — not a value passed through the request.
+
+## Architecture (poof-infra lineage)
+
+Bounded Functions reuse poof's proven Cloudflare backend pipeline, on
+Bounded-owned isolated resources:
+
+- **Deploy** forks poof's dev-server-manager deploy + `secretsHelper`: your
+  function is uploaded to the `bounded_apps_staging` **Workers-for-Platforms
+  dispatch namespace** and its secrets are set via the CF secret API.
+- **Invoke** routes through the **Bounded Functions dispatcher** (forked from
+  poof's proxy/dispatch): it verifies the caller (Cognito + wallet, same as the
+  data plane), evaluates the function's `auth` rule via the shared rule engine,
+  then dispatches into the namespace with `ctx` injected.
+- **Schedules** ride the **Bounded heartbeat dispatcher** (forked from poof's
+  heartbeat worker): an isolated KV cron registry + per-minute trigger + queue
+  fan-out that fires scheduled functions as the system principal.
+
+If the platform's Workers-for-Platforms credentials aren't configured, deploy and
+invoke return a clean `503` — never a crash.
 
 ## Limits
 
