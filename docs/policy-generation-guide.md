@@ -1,12 +1,12 @@
 # Policy Generation Guide
 
-This is the methodology: how to turn a plain-English app description into a
-correct `policy.json` that verifies clean. Read it before writing any policy.
+**What's in here / when to read this:** the method for turning a plain-English
+app description into a correct `policy.json` that verifies clean. Read it before
+writing any policy.
 
 The product is the policy. A backend that "works" but lets an agent overspend, or
-lets one tenant read another's data, is a broken backend that happens to compile.
-A good policy makes those failures *provably impossible*. This guide gets you
-there.
+lets one tenant read another's data, is broken-but-compiling. A good policy makes
+those failures *provably impossible*.
 
 ## The method (eight steps)
 
@@ -110,6 +110,23 @@ Cross-collection authorization uses `get()`:
 "update": "@user.address != null && get(/orgs/$orgId/members/@user.address).role == \"admin\""
 ```
 
+#### Who is the admin? (do this while writing rules)
+
+There is **no implicit creator god-mode** — Bounded has no service-role bypass,
+and invariants bind the owner too. So ask explicitly: **who is the owner/admin,
+and what admin actions does this app genuinely need?** (moderation, config,
+refunds). Declare an `admins/$address` collection and gate each privileged action
+on membership — never a bypass:
+
+```json
+"update": "@user.address != null && get(/admins/@user.address) != null"
+```
+
+Only an admin can mint an admin (no self-promotion); seed the creator's address
+at bootstrap; default end-users to least privilege; admins stay bound by every
+invariant. Full model + the validated `admins` collection:
+[admin-and-ownership.md](admin-and-ownership.md).
+
 ### Step 4 — Identify the non-negotiables
 
 Stop and ask: **what must be true no matter what any caller, agent, hook, or bug
@@ -167,7 +184,15 @@ realtime game's per-player rate-cap collection must be `durable`.
 
 ### Step 7 — Add the extras the description needs
 
-Only what the description asks for:
+Only what the description asks for. **Use the least-powerful tool that works** —
+prefer a proven tier over an un-proven one:
+
+- access control + provable constraints → **rules + invariants** (steps 3–5);
+- a simple in-boundary side-effect that reacts to a write → a **hook**;
+- logic that must **leave the boundary** (call an external API, use a secret) →
+  a **function** — the only un-proven tier; reach for it last.
+
+Decide with [functions-when-to-use.md](functions-when-to-use.md). Then add:
 
 - **Side effects on write** → `hooks.offchain.{create,update,delete}` (call
   `@DocumentPlugin.putDocument` / `updateField`). See
@@ -176,6 +201,9 @@ Only what the description asks for:
   `schedule: { every, run }`.
 - **One-shot timers** (fire a reminder when due) → `hooks.scheduled.<name>` +
   `dueRows: { run, onComplete }`.
+- **Call an external API then write** → a top-level `functions` entry; invoke on
+  demand, or name it in a `schedule`/`dueRows` `run` to run on a cadence as the
+  system principal. See [functions.md](functions.md).
 - **Notify an external system** → `webhooks: [{ url, on }]`.
 - **Full-text search** → `search: { fields: [...] }`. See
   [files-and-search.md](files-and-search.md).
@@ -206,11 +234,9 @@ run the [quality checklist](quality-checklist.md), then `bounded deploy`.
 
 ## Worked examples
 
-Three complete, validator-clean policies — a team SaaS, a marketplace with a
-spend cap, and a realtime game with fog-of-war and settlement — live in their
-own file so this guide stays focused on method:
-**[policy-examples.md](policy-examples.md)**. Read them once you have the eight
-steps; each shows the whole shape end to end.
+Three complete, validator-clean policies (team SaaS, spend-cap marketplace,
+realtime game) live in **[policy-examples.md](policy-examples.md)** so this guide
+stays focused on method. Read them once you have the eight steps.
 
 ## Common mistakes (caught by the validator or the prover)
 
@@ -233,5 +259,7 @@ steps; each shows the whole shape end to end.
 - [policy-examples.md](policy-examples.md) — the three full worked policies
 - [policy-reference.md](policy-reference.md) — full syntax for every config key
 - [invariants.md](invariants.md) — invariant types and the RULES-vs-INVARIANTS guide
+- [admin-and-ownership.md](admin-and-ownership.md) — the "who is the admin?" model (no god-mode)
+- [functions-when-to-use.md](functions-when-to-use.md) — when to reach for a function (and when not)
 - [quality-checklist.md](quality-checklist.md) — the pre-deploy self-check
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — reading proof failures
