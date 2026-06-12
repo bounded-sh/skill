@@ -1,5 +1,9 @@
 # Auth — dev identity vs end-user auth
 
+**What's in here / when to read this:** the two identity systems — your dev
+keypair vs your app's end-users — plus account **linking** and **sharing** an app
+with teammates by email.
+
 Bounded has **two distinct identity systems**. Don't conflate them:
 
 | | Who | What it is | Where it shows up |
@@ -20,11 +24,31 @@ bounded whoami        # prints address, environment, key source (creates the key
 - Override the key location with `BOUNDED_PRIVATE_KEY` (a base58 or JSON-array
   secret) or by pointing `HOME` elsewhere — this is how you run a **distinct
   identity per agent**. Never reuse a human's keypair for an autonomous agent.
-- `bounded link` later binds the keypair to a human account (magic email or
-  passkey) for billing, the dashboard, or teams — never needed to build, verify,
-  deploy, or read/write.
-- Teams: the owner grants policy-update rights with
-  `bounded share <wallet> --app-id <id>` (see [cli-reference.md](cli-reference.md)).
+
+### Linking & teams
+
+The keypair never needs a human account to build, verify, deploy, or read/write.
+But you can **link** it to a human (email) account, and **share** apps with
+teammates — without anyone juggling raw wallet keys:
+
+- **`bounded link`** runs an OAuth-style **device flow**: the CLI prints a verify
+  URL + code, you approve in a browser with your email account, and the CLI
+  records the linkage. After linking, your keypair address **and** your email's
+  wallet become admin-collaborators on each other's apps. **Your keypair keeps
+  signing for everything** — linking adds an account association, it never
+  replaces or rolls your key.
+- **`bounded share <wallet|email> --app-id <id>`** adds a collaborator. Pass a
+  **wallet** to add it directly (default role `policy` — may update the policy
+  only). Pass an **email** and Bounded resolves it to that person's canonical
+  wallet — a **Privy pre-generated embedded wallet**, so the invitee needs no
+  wallet of their own — added as an **`admin`** collaborator (may also act/sign on
+  the app's data the way the owner can). `--role policy|admin` overrides the
+  default. Only the owner can add collaborators; the server enforces it against
+  the wallet derived from your keypair. List with `bounded collaborators`.
+
+Collaboration is **control-plane** authority (manage the app). It is **not** a
+data-plane bypass — see [admin-and-ownership.md](admin-and-ownership.md). Command
+detail: [cli-reference.md](cli-reference.md).
 
 On the server, the same kind of keypair drives `@bounded/server`:
 
@@ -100,4 +124,6 @@ the rules judge — give the vault key the access its rules require, no more.
 - [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — wiring Privy auth into a web app
 - [../guides/building-for-agents.md](../guides/building-for-agents.md) — the zero-ceremony keypair flow
 - [sdk-reference.md](sdk-reference.md) — `login` / `useAuth` / `createWalletClient`
+- [admin-and-ownership.md](admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)
+- [cli-reference.md](cli-reference.md) — `link`, `share`/`unshare`/`collaborators` flags
 - [policy-reference.md](policy-reference.md) — `@user.address` in the rule language

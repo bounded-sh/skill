@@ -1,8 +1,8 @@
 # Capabilities & Limits
 
-An honest map of what Bounded is great at and what it does **not** do. Read this
-before promising a user something Bounded can't deliver — and to recognize when
-it's the right tool.
+**What's in here / when to read this:** an honest map of what Bounded is great at,
+what it does **not** do, scale ceilings, and the proof boundary. Read it before
+promising a user something Bounded can't deliver.
 
 ## What Bounded is great for
 
@@ -69,6 +69,19 @@ The proof boundary is precise — don't overclaim it:
 - A subset of invariants **fails closed** onchain (rejected at verify time rather
   than under-enforced). Full layer-by-layer map:
   [../docs/proof-coverage.md](../docs/proof-coverage.md).
+- **Functions are the only un-proven tier.** A function's *logic* is not proven —
+  only that its writes go through your invariants and its invocation is gated by
+  the `auth` rule. They are *un-proven logic, contained by proven walls.*
+
+## Roadmap — formally-bounded functions (not shipped)
+
+Functions today are contained by proven walls but their **reach** (which paths
+they write, which hosts they call) is not proven — it's code review. The planned
+next step is a **capability contract**: a function declares its `writeScopes` +
+`allowedHosts`, and the prover discharges containment (its blast radius is exactly
+what it declared). Be honest: that is **not shipped**; don't claim containment
+proofs for function reach today. Detail:
+[../docs/functions-when-to-use.md](../docs/functions-when-to-use.md#roadmap--toward-formally-bounded-functions).
 
 ## Related
 

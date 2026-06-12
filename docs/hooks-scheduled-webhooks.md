@@ -1,5 +1,9 @@
 # Hooks, Scheduled Jobs & Webhooks
 
+**What's in here / when to read this:** in-boundary side-effects (`hooks`),
+recurring/one-shot jobs (`schedule`/`dueRows` — which can run a hook OR a
+function), and outbound notifications (`webhooks`).
+
 Side effects, recurring work, and outbound notifications. The unifying idea:
 **invariants bind everything.** A hook, a tick, a scheduled job, and a webhook
 fan-out are all *server logic inside the trust boundary* — none of them can break
@@ -104,6 +108,16 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
   which an onchain collection lacks. Declaring `schedule` on `"onchain": true` is
   rejected.
 
+> **`run` is unified: it may name a hook OR a Function.** The validator resolves
+> `schedule.run` (and `dueRows.run`) to **either** a declared
+> `hooks.scheduled.<run>` bytecode hook **or** a top-level `functions.<run>`
+> [Bounded Function](functions.md). Naming a function runs it on the cadence,
+> fired by the heartbeat as the **system principal** (the owner-deployed schedule
+> *is* the authorization; the user-facing `auth` rule is skipped). Use a **hook**
+> for an in-boundary cadence (reset a quota); use a **function** when the
+> scheduled work must leave the boundary (pull FX rates, call an LLM). Either
+> way, every write still goes through your rules + invariants.
+
 ## dueRows — one-shot timers
 
 Where `schedule` is "every N", `dueRows` is "once, when this row is due." A
@@ -129,7 +143,7 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 
 | Key | Required | Meaning |
 |---|---|---|
-| `run` | yes | a declared `hooks.scheduled.<run>` |
+| `run` | yes | a declared `hooks.scheduled.<run>` **or** a top-level `functions.<run>` (same unification as `schedule.run`) |
 | `onComplete` | no | `"delete"` (default-ish) or `"markDone"` |
 | `doneField` | no | the `Bool` field flipped when `onComplete: "markDone"` |
 
@@ -175,6 +189,7 @@ separate concerns — keep them in their own keys.
 ## Related
 
 - [policy-reference.md](policy-reference.md) — the `hooks` key and expression language
+- [functions.md](functions.md) — naming a function in `schedule.run` / `dueRows.run`
 - [realtime-and-games.md](realtime-and-games.md) — `hooks.tick` + `session`
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — the trust-boundary deep dive
 - [invariants.md](invariants.md) — the postconditions hooks can't break

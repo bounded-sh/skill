@@ -1,7 +1,8 @@
 # CLI Reference — every `bounded` command
 
-The complete `bounded` command surface, grouped by purpose. Every flag below
-exists in the CLI; `bounded <cmd> --help` prints the same with an Example block.
+**What's in here / when to read this:** every `bounded` command + flag, grouped
+by purpose. Every flag below exists in the CLI; `bounded <cmd> --help` prints the
+same with an Example block.
 
 **Global flags** (any command): `--json` (structured output for agents —
 errors are emitted as JSON too), `--quiet` (minimal output), `--env`
@@ -15,10 +16,15 @@ No login step — your ed25519 keypair at `~/.bounded/key` (or
 | Command | Does | Example |
 |---|---|---|
 | `whoami` | Show address, environment, key source (creates the key on first run) | `bounded whoami` |
-| `link` | Bind the keypair to a human account for billing/teams (placeholder today) | `bounded link` |
-| `share <wallet> --app-id <id>` | Add a collaborator who may update the policy (owner only) | `bounded share <wallet> --app-id <id>` |
+| `link` | Bind the keypair to a human (email) account via an **OAuth device flow**; keypair + email-wallet become admin-collaborators on each other's apps. Keypair keeps signing. | `bounded link` |
+| `share <wallet\|email> --app-id <id>` | Add a collaborator. **Wallet** → direct (default role `policy`). **Email** → resolved to its Privy pre-generated wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. | `bounded share teammate@example.com --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
+
+`link` flags: `--no-browser` (just print the URL), `--timeout <dur>` (default
+`10m`). Collaboration grants **control-plane** authority (manage the app), not a
+data-plane bypass — give data powers explicitly via policy rules
+([admin-and-ownership.md](admin-and-ownership.md)).
 
 ## Policy lifecycle
 
