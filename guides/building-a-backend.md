@@ -70,25 +70,31 @@ detection, etc. (declare them in the policy:
 [../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md)).
 
 Webhooks are read-only notifications: they never gate or mutate Bounded state.
-Because anyone can POST to a public URL, **authenticate the delivery with a
-shared secret you control** before acting on the body — verify the configured
-secret in the `Authorization` header with a constant-time compare:
+Each delivery is **signed with Bounded's Ed25519 key**, so verify it before
+acting on the body — `@bounded/server` exports `verifyWebhook`, which fetches
+and caches Bounded's public key (from the hosted `/.well-known` keys endpoint),
+checks the Ed25519 signature over the raw body, and enforces timestamp skew. It
+returns the typed payload or throws `WebhookVerificationError`:
 
 ```ts
-import { timingSafeEqual } from "node:crypto";
+import { verifyWebhook, WebhookVerificationError } from "@bounded/server";
 
-app.post("/hooks/orders", async (req, res) => {
-  const provided = req.headers["authorization"] ?? "";
-  const expected = process.env.BOUNDED_WEBHOOK_SECRET!;
-  const a = Buffer.from(String(provided));
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) {
-    return res.status(401).end();          // reject unauthenticated deliveries
+app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
+  let event;
+  try {
+    // Pass the RAW body string + the request headers.
+    event = await verifyWebhook(req.body, req.headers);
+  } catch (err) {
+    if (err instanceof WebhookVerificationError) return res.status(401).end();
+    throw err;
   }
-  // body is now trusted — record/notify, then ack
+  // event is trusted: { id, appId, path, operation, document, previousDocument, timestamp }
   res.status(200).end();
 });
 ```
+
+(`verifyWebhook(rawBody, headers, opts?)` — `opts` can override `keysUrl`,
+`maxSkewSeconds`, and the key-cache TTL.)
 
 Treat the webhook as a *signal*: if you need to mutate Bounded state in
 response, do it with the `vault` client above, which re-checks every rule and

@@ -173,6 +173,26 @@ const doc = await vault.get("markets/123");
 methods. `keypair` is a base58 string or JSON array secret key. Server tasks:
 [../guides/building-a-backend.md](../guides/building-a-backend.md).
 
+### Verifying webhooks — `verifyWebhook`
+
+`@bounded/server` also exports `verifyWebhook` for inbound mutation webhooks.
+It fetches + caches Bounded's Ed25519 public key (from the hosted `/.well-known`
+keys endpoint), checks the signature over the raw body, and enforces timestamp
+skew — returning the typed payload or throwing `WebhookVerificationError`.
+
+```ts
+import { verifyWebhook, WebhookVerificationError } from "@bounded/server";
+
+// rawBody is the unparsed request body string; headers is the request headers.
+const event = await verifyWebhook(rawBody, headers);
+// event: { id, appId, path, operation, document, previousDocument, timestamp }
+```
+
+Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
+`DEFAULT_WEBHOOK_KEYS_URL`. `verifyWebhook(rawBody, headers, opts?)` — `opts`
+overrides `keysUrl` / `maxSkewSeconds` / cache TTL. Declaring webhooks:
+[hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
+
 ## Related
 
 - [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — client setup + auth + live reads
