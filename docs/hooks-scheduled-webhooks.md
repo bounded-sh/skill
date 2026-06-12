@@ -90,7 +90,7 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
   "quotas/$quotaId": {
     "fields": { "used": "UInt", "owner": "Address!" },
     "tier": "durable",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "@user.address != null", "delete": "false" },
+    "rules": { "read": "@user.address != null", "create": "@user.address != null && @newData.owner == @user.address", "update": "@user.address != null && @newData.owner == @data.owner", "delete": "false" },
     "hooks": { "scheduled": { "resetQuota": "@DocumentPlugin.updateField(\"quotas/global\", \"used\", \"0\")" } },
     "schedule": { "every": "1d", "run": "resetQuota" }
   }

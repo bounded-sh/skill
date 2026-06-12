@@ -56,7 +56,7 @@ authorization logic an external caller has.
     "rules": {
       "read":   "@user.address != null",
       "create": "@user.address != null && @newData.owner == @user.address",
-      "update": "@user.address != null && @data.owner == @user.address",
+      "update": "@user.address != null && @data.owner == @user.address && @newData.owner == @data.owner",
       "delete": "false"
     },
     "invariants": [

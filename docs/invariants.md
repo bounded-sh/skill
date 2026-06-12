@@ -53,7 +53,7 @@ that debits one document must credit another **in the same batch**.
     "rules": {
       "read": "@user.address != null",
       "create": "@user.address != null && @newData.owner == @user.address && @newData.balance == 0",
-      "update": "@user.address != null && @data.owner == @user.address && @newData.balance >= 0",
+      "update": "@user.address != null && @data.owner == @user.address && @newData.owner == @data.owner && @newData.balance >= 0",
       "delete": "false"
     },
     "invariants": [

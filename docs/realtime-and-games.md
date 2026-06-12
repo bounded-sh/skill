@@ -140,11 +140,13 @@ This is the structural cure for maphacks and wallhacks.
 
 A blob-eating arena: players send movement intents, the tick resolves collisions
 and growth, each player sees only their neighborhood, inputs are rate-capped, and
-final masses settle to a leaderboard. This is the validated **worked example C**
-in [policy-examples.md](policy-examples.md#c--realtime-game-rooms-tick-fog-of-war-settlement)
+final masses settle to a leaderboard. This is **worked example C** in
+[policy-examples.md](policy-examples.md)
 — `rooms/$roomId` (ephemeral, tick + session), `intents` (durable, rate cap),
 `view/$playerId` (fog-of-war), `scores/$playerId` (settleFrom source), and a
-durable `results/$resultId`. Read it there in full; it verifies clean.
+durable `results/$resultId`. Read it there in full; it validates with zero
+issues, every proof obligation discharges, and the only findings are the
+intentional `"false"` server-authoritative rules.
 
 ## The honest anti-cheat boundary
 
