@@ -7,6 +7,14 @@ proven per-player rate caps, and automatic settlement into durable storage. The
 honest limit on what anti-cheat can prove is in
 [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
 
+> **Two tick runtimes.** This doc covers the **bytecode** `session.tick` model — a
+> `hooks.tick.<name>` reducer expressed in policy plus `settleFrom`/`settleTo`
+> settlement. There is a second, native runtime — `session.game`, where you upload
+> a TypeScript module of three pure functions (`init`/`tick`/`views`) that Bounded
+> runs in an isolated facet (no deploy). The two are **mutually exclusive** on one
+> session. For real game logic (collisions, scoring, fog-of-war in code), use the
+> native runtime: **[games-runtime.md](games-runtime.md)**.
+
 ## Subscriptions & live queries
 
 Every collection is live. `subscribe(path, { onData })` streams a single document
@@ -168,6 +176,7 @@ statistical part — it does not "solve cheating." Full treatment:
 
 ## Related
 
+- [games-runtime.md](games-runtime.md) — the **native** `session.game` runtime (3 pure fns, no deploy)
 - [policy-examples.md](policy-examples.md) — worked example C, end to end
 - [sdk-reference.md](sdk-reference.md) — `subscribe` and `SubscribeOptions`
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — `hooks.tick`, `enforceRules`
