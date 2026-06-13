@@ -14,8 +14,10 @@ description: >-
   "Supabase alternative", "realtime backend", "invariant", "spending cap",
   "rollingSum", "conserve", "tenantTag", "tenantEdge", "proof report",
   "counterexample", "agent spend cap", "multiplayer game backend", "fog-of-war",
-  "server-authoritative", "tick", "anti-cheat", "native game", "session.game",
-  "bounded games", "game module", "per-player view", "provable replay",
+  "server-authoritative", "tick", "anti-cheat", "live runtime", "session.live",
+  "bounded live", "live module", "realtime room", "Figma clone", "collaborative editor",
+  "whiteboard", "live dashboard", "per-client view", "fog-of-war", "provable replay",
+  "native game", "multiplayer game backend",
   "hooks", "scheduled", "webhooks",
   "@bounded/client", "@bounded/server", "collaborator", "bounded share",
   "bounded link", "share by email", "admin", "admins collection", "no god-mode",
@@ -77,8 +79,8 @@ for the *next* question.
 | **Full-text search** | [docs/files-and-search.md](docs/files-and-search.md) · example below |
 | **Subscribe to live data** | [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe) · example below |
 | Upload / read files | [docs/files-and-search.md](docs/files-and-search.md) |
-| Build for an **agent** / **web** / **mobile** / **server** / **game** | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) · [docs/games-runtime.md](docs/games-runtime.md) |
-| **Build a server-authoritative game** (3 pure fns, no deploy) | [docs/games-runtime.md](docs/games-runtime.md) |
+| Build for an **agent** / **web** / **mobile** / **server** / **realtime room** | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) · [docs/live-runtime.md](docs/live-runtime.md) |
+| **Build a server-authoritative realtime app** (game, Figma-style editor, whiteboard, dashboard — 3 pure fns, no deploy) | [docs/live-runtime.md](docs/live-runtime.md) |
 | Run `bounded verify` / read counterexamples | [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
 | Know what's proven on which runtime | [docs/proof-coverage.md](docs/proof-coverage.md) |
 | Every CLI command + flag | [docs/cli-reference.md](docs/cli-reference.md) |
@@ -99,9 +101,9 @@ for the *next* question.
 | `functions`, `auth`, `entry`, `secrets`, `ctx.env`, `ctx.bounded`, `ctx.user` | [docs/functions.md](docs/functions.md) |
 | `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `session`, `hooks.tick`, `tick`, `settleTo`, fog-of-war (bytecode model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| `session.game`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (game), facet, Worker Loader | [docs/games-runtime.md](docs/games-runtime.md) |
-| `init`/`tick`/`views` (native game functions) | [docs/games-runtime.md](docs/games-runtime.md) |
-| `bounded games deploy/upload`, `GET /game/status`, `POST /game/intent` | [docs/games-runtime.md](docs/games-runtime.md) |
+| `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
+| `init`/`tick`/`views` (native live functions) | [docs/live-runtime.md](docs/live-runtime.md) |
+| `bounded live deploy/upload`, `GET /live/status`, `POST /live/intent`, `live.intent`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
 | `tier` (`durable`/`checkpointed`/`ephemeral`) | [docs/policy-reference.md](docs/policy-reference.md) · [docs/invariants.md](docs/invariants.md) |
 | `links`, `relationships`, `queries`, `$regex`/`$gte`/`$in` | [docs/queries.md](docs/queries.md) |
 | `getPage`, `queryAggregate`, `count`, `setMany`, `subscribe`, `getIdToken` | [docs/sdk-reference.md](docs/sdk-reference.md) |
@@ -206,17 +208,20 @@ import { subscribe } from "@bounded/client";
 const stop = await subscribe("rooms/r1/view/" + myAddress, { onData: render });
 ```
 
-### Native game (3 pure fns, no deploy) — [docs/games-runtime.md](docs/games-runtime.md)
+### Native live runtime (3 pure fns, no deploy) — [docs/live-runtime.md](docs/live-runtime.md)
+
+Server-authoritative loop for any realtime room (multiplayer game, Figma-style
+editor, whiteboard, live dashboard). Pong below is one example.
 
 ```json
 { "rooms/$roomId": { "tier": "checkpointed",
     "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
-    "session": { "game": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800 } } },
+    "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800 } } },
   "rooms/$roomId/view/$addr": { "tier": "ephemeral",
     "rules": { "read": "$addr == @user.address", "create": "false", "update": "false", "delete": "false" } } }
 ```
-Upload + drive: `bounded games deploy pong.game.ts --app-id <id>`, then
-`subscribe("rooms/r1/view/"+addr,{onData:render})` and `POST /game/intent {path,intent}`.
+Upload + drive: `bounded live deploy pong.live.ts --app-id <id>`, then
+`subscribe("rooms/r1/view/"+addr,{onData:render})` and `POST /live/intent {path,intent}`.
 
 ### Email share — [docs/auth.md](docs/auth.md#linking--teams)
 
