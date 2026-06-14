@@ -22,6 +22,10 @@ description: >-
   "hooks", "scheduled", "webhooks",
   "bounded-sh", "bounded-sh SDK", "collaborator", "bounded share",
   "bounded link", "share by email", "admin", "admins collection", "no god-mode",
+  "roles", "roles block", "provably-scoped admin", "read everything",
+  "admin dashboard", "constants block", "@const", "defs", "@def",
+  "reusable rule fragment", "environments", "staging and production",
+  "multi-environment", "per-environment", "--environment",
   "verifyAuthorityClosure", "functions", "bounded functions", "function",
   "invoke", "escape hatch", "when to use a function", "scheduled function",
   "call Stripe", "call an API", "third-party API", "ctx.bounded", "ctx.env",
@@ -68,7 +72,11 @@ for the *next* question.
 | **Add a spending / rate cap** | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) · example below |
 | **Conserve a total / build a transfer** (no minting) | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) · example below |
 | **Isolate tenants** (data/refs can't cross orgs) | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
-| **Make an admin / moderator** (no creator god-mode) | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) · example below |
+| **Cap a field / anti-cheat a game score** (hard ceiling/floor) | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
+| **Make an admin who reads/writes everything** (dashboard, support) | [docs/roles.md](docs/roles.md) · example below |
+| **Make a per-doc admin / moderator** (no creator god-mode) | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) · example below |
+| **DRY up a policy** (named values `@const`, reusable rule fragments `@def`) | [docs/constants-and-defs.md](docs/constants-and-defs.md) · example below |
+| **Deploy one policy to staging + production** (per-env appId + constants) | [docs/environments.md](docs/environments.md) · example below |
 | **Decide: rule vs invariant vs hook vs function** | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
 | **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
 | **Run a function / hook on a schedule** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) · [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence) |
@@ -95,10 +103,14 @@ for the *next* question.
 | Symbol | File |
 |---|---|
 | `rollingSum`, `windowSeconds`, `scopeVariable`, `limit` | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) |
+| `bound`, `op` (`<=`/`>=`/`==`), `field.values`, anti-cheat ceiling | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
 | `conserve`, `materialization: "sharded"` | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) |
 | `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
 | `rules` (`read`/`create`/`update`/`delete`), `@user`, `@data`, `@newData`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
+| `roles`, `members`, `read:"*"`, `write:["posts"]`, provably-scoped admin | [docs/roles.md](docs/roles.md) |
 | `admins/$address`, `verifyAuthorityClosure` | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
+| `constants`, `@const.NAME`, `defs`, `@def.name` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
+| `environments`, `--environment`, per-env appId/constants | [docs/environments.md](docs/environments.md) |
 | `functions`, `auth`, `entry`, `secrets`, `ctx.env`, `ctx.bounded`, `ctx.user` | [docs/functions.md](docs/functions.md) |
 | `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `session`, `hooks.tick`, `tick`, `settleTo`, fog-of-war (bytecode model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
@@ -175,6 +187,34 @@ A transfer is one atomic `setMany` of both accounts (see data-plane.md).
       "update": "@user.address != null && get(/admins/@user.address) != null",
       "delete": "@user.address != null && get(/admins/@user.address) != null" } } }
 ```
+
+### Roles — admin reads everything — [docs/roles.md](docs/roles.md)
+
+```json
+{ "constants": { "ADMIN": "<your-wallet>" },
+  "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
+  "orders/$id": { "fields": { "buyer": "Address", "total": "UInt" },
+    "rules": { "read": "@user.address == @data.buyer", "create": "@user.address == @newData.buyer", "update": "false", "delete": "false" } } }
+```
+Normal users read only their own orders; the `admin` member reads every row. `bounded verify` lists the grant and flags `read:*` as over-broad.
+
+### Constants + defs (DRY) — [docs/constants-and-defs.md](docs/constants-and-defs.md)
+
+```json
+{ "constants": { "CAP": 5000 },
+  "defs": { "isOwner": "@user.address == @data.owner" },
+  "posts/$id": { "fields": { "owner": "Address", "body": "String" },
+    "rules": { "read": "true", "create": "@user.address == @newData.owner", "update": "@def.isOwner", "delete": "@def.isOwner" } } }
+```
+`@const`/`@def` resolve at compile time (deploy + verify); the worker sees only literals.
+
+### Environments — one file, two apps — [docs/environments.md](docs/environments.md)
+
+```sh
+bounded deploy ./policy.json --environment staging      # → staging appId + staging constants
+bounded deploy ./policy.json --environment production   # → production appId + production constants
+```
+The `environments` block (per-env `appId` + `constants`) is resolved client-side; a normal policy ships.
 
 ### Function (fetch third-party → write) — [docs/functions.md](docs/functions.md)
 

@@ -31,8 +31,8 @@ data-plane bypass — give data powers explicitly via policy rules
 | Command | Does | Key flags |
 |---|---|---|
 | `init` | Write a starter `policy.json` (spend ledger + `spend_cap`) | `--force` overwrite |
-| `verify <policy.json>` | Run the proof engine, print the report + counterexamples | `--app-id` (required), `--operation`, `--constants` |
-| `deploy <policy.json>` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` or `--create --name`, `--protocol`, `--constants` |
+| `verify <policy.json>` | Run the proof engine, print the report + counterexamples | `--app-id` (or `--environment`), `--operation`, `--constants`, `--environment` |
+| `deploy <policy.json>` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` or `--create --name` or `--environment`, `--protocol`, `--constants`, `--environment` |
 
 ```bash
 bounded init                                            # scaffold policy.json
@@ -63,13 +63,31 @@ bounded verify ./policy.json --app-id <id> \
 
 ### `--constants`
 
-Policies may reference `@constants.NAME`; supply values at deploy/verify with
-`--constants NAME=value` (repeatable or comma-separated). Digit-only values
-≤15 chars inline as numbers; everything else is wrapped as a string literal.
+CLI-side substitution for the **legacy** `@constants.NAME` token: supply values
+at deploy/verify with `--constants NAME=value` (repeatable or comma-separated).
+Digit-only values ≤15 chars inline as numbers; everything else is wrapped as a
+string literal.
 
 ```bash
 bounded deploy ./policy.json --app-id <id> --constants CAP=5000,ADMIN=8xY...
 ```
+
+> Prefer an in-policy `constants` block + `@const.NAME` (resolved server-side) for
+> values that live with the policy — see [constants-and-defs.md](constants-and-defs.md).
+> Use `--constants` for one-off CI overrides.
+
+### `--environment`
+
+Select an entry from the policy's `environments` block: the CLI overlays that
+env's constants, targets its `appId`, and strips the block before shipping a
+normal policy. One file → many apps.
+
+```bash
+bounded deploy ./policy.json --environment staging      # staging appId + staging constants
+bounded deploy ./policy.json --environment production   # production appId + production constants
+```
+
+Full treatment: [environments.md](environments.md).
 
 ## Data plane
 

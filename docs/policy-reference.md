@@ -194,8 +194,22 @@ rejected):
 | `isPassthrough` / `isRevealPath` | booleans (onchain) | [proof-coverage.md](proof-coverage.md) |
 | `description` / `operationDetails` / `functionDescription` | docstrings | — |
 
-Top-level `links` (an array, alongside the collection keys) declares
-relationships across collections — see [queries.md](queries.md).
+### Top-level blocks (alongside the collection keys)
+
+These reserved keys live at the policy root, **not** under a collection, and are
+never treated as path templates:
+
+| Block | Shape | Doc |
+|---|---|---|
+| `links` | array of link definitions | [queries.md](queries.md) |
+| `functions` | `{ name: { auth, entry, timeout, secrets } }` | [functions.md](functions.md) |
+| `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
+| `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
+| `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
+| `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](environments.md) |
+
+`constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
+only literals; `environments` is stripped by the CLI before the policy is sent.
 
 ## Related
 

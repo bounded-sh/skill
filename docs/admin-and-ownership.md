@@ -4,6 +4,12 @@
 there is **no implicit creator bypass**. Read this whenever an app needs an
 admin/moderator/owner with data powers (moderation, config, refunds).
 
+> **Want "admins read/write everything"?** The cleanest path is the top-level
+> `roles` block — a provably-scoped grant the verifier surfaces. See
+> [roles.md](roles.md). This doc covers the complementary, *per-document*
+> rule-based model (e.g. "an admin may hide any post") and the
+> `verifyAuthorityClosure` proof obligation. The two compose.
+
 ## The differentiator: invariants bind EVERYONE
 
 Firebase/Supabase ship a **service-role / admin SDK that bypasses your rules**.

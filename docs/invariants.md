@@ -141,6 +141,42 @@ collection and only with `windowSeconds <= 31536000`; the onchain runtime enforc
 it epoch-bucketed (conservatively — it can over-enforce near the boundary, never
 under-enforce). See [proof-coverage.md](proof-coverage.md).
 
+## `bound` — hard ceilings / floors on a field (anti-cheat)
+
+A numeric field (or every value of a map field) must always satisfy a fixed
+comparison against a constant `limit`. Enforced on **every** write path — including
+the live-runtime checkpoint — so a server-authoritative game's score, a counter, or
+a level can never be stored out of range, no matter what a client (or a buggy tick)
+proposes. This is what makes "score ≤ 11" a *real* guarantee rather than a hope.
+
+```json
+{
+  "rooms/$roomId": {
+    "tier": "checkpointed",
+    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "fields": { "score": "Json" },
+    "session": { "live": { "module": "pong", "everyMs": 33 } },
+    "invariants": [
+      { "type": "bound", "name": "score_ceiling", "field": "score.values", "op": "<=", "limit": 11 }
+    ]
+  }
+}
+```
+
+| Key | Required | Meaning |
+|---|---|---|
+| `field` | yes | The field to bound. `foo.values` bounds **every value** of a map field `foo` (e.g. a per-player score map). |
+| `op` | yes | One of `<=`, `>=`, `<`, `>`, `==` |
+| `limit` | yes | The constant compared against (use `@const.NAME` to name it) |
+| `name` | no | Stable name surfaced on the `409` |
+
+**What gets proven / enforced:** any write whose post-state has the bounded field
+(or any value of the bounded map) violating `op limit` is rejected (`409` +
+`name`). At a live checkpoint, the room's snapshot is gated by this before it
+reaches the provable store — so cheated state never persists, even though the
+30 Hz tick itself runs untrusted user code. See
+[live-runtime.md](live-runtime.md) and [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
+
 ## `tenantTag` — documents carry their tenant
 
 Binds a `String` field to a path variable: every accepted write to
