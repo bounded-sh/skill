@@ -78,7 +78,7 @@ read-check-write race for the agent to lose.
 - **CLI** (`bounded data ...`) is the simplest path for a shell-driven agent —
   every operation is one command, `--json` makes output machine-parseable, and
   errors come back as JSON too. See [../docs/cli-reference.md](../docs/cli-reference.md).
-- **SDK** (`@bounded/server`) suits an agent already running in Node: one
+- **SDK** (`@bounded-sh/server`) suits an agent already running in Node: one
   `createWalletClient({ keypair })` gives typed `get` / `set` / `setMany` /
   `subscribe`-free reads, all signed by the agent's key. See
   [building-a-backend.md](building-a-backend.md).
@@ -102,6 +102,6 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
 
 - [../docs/policy-generation-guide.md](../docs/policy-generation-guide.md) — turning the task into a provable policy
 - [../docs/cli-reference.md](../docs/cli-reference.md) — every `bounded data` command
-- [building-a-backend.md](building-a-backend.md) — the `@bounded/server` path
+- [building-a-backend.md](building-a-backend.md) — the `@bounded-sh/server` path
 - [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do
 - [../docs/auth.md](../docs/auth.md) — the keypair identity model

@@ -1,11 +1,11 @@
 # Building for React Native (iOS / Android)
 
 **React Native is how you ship Bounded to phones.** There is no native iOS or
-Android SDK — the same `@bounded/client` package runs in RN via a dedicated
+Android SDK — the same `@bounded-sh/client` package runs in RN via a dedicated
 entry point, so your reads, writes, subscriptions, and policy enforcement are
 identical to web. Only the auth wiring differs.
 
-> Beta: `@bounded/client` is not yet on npm. The API shape below is stable.
+> Beta: `@bounded-sh/client` is not yet on npm. The API shape below is stable.
 
 ## What's the same as web
 
@@ -41,7 +41,7 @@ export default function Root() {
 
 ```tsx
 // 2) Build the bridge provider from Privy's hooks and init Bounded with it.
-import { init, PrivyExpoProvider } from "@bounded/client";
+import { init, PrivyExpoProvider } from "@bounded-sh/client";
 import { usePrivy, useEmbeddedSolanaWallet } from "@privy-io/expo";
 
 function useBoundedInit() {
@@ -69,7 +69,7 @@ Identical to web — see [building-a-webapp.md](building-a-webapp.md). A quick
 live example:
 
 ```tsx
-import { subscribe } from "@bounded/client";
+import { subscribe } from "@bounded-sh/client";
 
 useEffect(() => {
   let stop: (() => Promise<void>) | undefined;

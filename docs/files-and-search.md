@@ -42,7 +42,7 @@ Upload and download go through the SDK. `setFile(path, file)` uploads a `File`
 path-scoped `read`/`create`/`delete` rules apply.
 
 ```ts
-import { setFile, getFiles } from "@bounded/client";
+import { setFile, getFiles } from "@bounded-sh/client";
 await setFile("users/u1/files/avatar", file);   // File | null
 const files = await getFiles("users/u1/files");
 ```
@@ -79,7 +79,7 @@ Search is a query mode on the collection, combinable with filters and paging (se
 
 ```ts
 // SDK — search() over the collection path
-import { search } from "@bounded/client";
+import { search } from "@bounded-sh/client";
 const hits = await search("orgs/o1/docs", { query: "quarterly revenue", fields: ["title", "body"] });
 ```
 

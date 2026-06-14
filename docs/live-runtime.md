@@ -251,7 +251,7 @@ an intent** to influence the room. There is no first-class live SDK helper yet
 id token + raw `fetch`.
 
 ```ts
-import { subscribe, getIdToken } from "@bounded/client";
+import { subscribe, getIdToken } from "@bounded-sh/client";
 
 const roomId = "r1";
 const myAddress = "0xabc…";                 // == @user.address

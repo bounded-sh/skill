@@ -8,7 +8,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
-| **Dev identity** | you / your agent | an ed25519 keypair the CLI and `@bounded/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
+| **Dev identity** | you / your agent | an ed25519 keypair the CLI and `@bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
 | **End-user auth** | your app's users | Privy (email / social / wallet) or a connected wallet | `@user.address` in policy rules |
 
 ## Dev identity — the keypair IS your account
@@ -50,21 +50,21 @@ Collaboration is **control-plane** authority (manage the app). It is **not** a
 data-plane bypass — see [admin-and-ownership.md](admin-and-ownership.md). Command
 detail: [cli-reference.md](cli-reference.md).
 
-On the server, the same kind of keypair drives `@bounded/server`:
+On the server, the same kind of keypair drives `@bounded-sh/server`:
 
 ```ts
-import { createWalletClient } from "@bounded/server";
+import { createWalletClient } from "@bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });  // base58 or JSON array
 vault.address;   // the signer this app acts as
 ```
 
 ## End-user auth — Privy & wallets → `@user.address`
 
-Your app's users authenticate through `@bounded/client`. The auth method is set
+Your app's users authenticate through `@bounded-sh/client`. The auth method is set
 once in `init`:
 
 ```ts
-import { init, login, getCurrentUser } from "@bounded/client";
+import { init, login, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>", authMethod: "privy" });
 await login();                       // opens the Privy modal (email / Google / Apple / wallet)
@@ -85,7 +85,7 @@ const user = getCurrentUser();       // { address, ... } | null
 ### React
 
 ```tsx
-import { useAuth } from "@bounded/client";
+import { useAuth } from "@bounded-sh/client";
 
 function AuthButton() {
   const { user, login, logout, loading } = useAuth();
@@ -115,7 +115,7 @@ caller writing `owner: null` satisfies `null == null`. The proof engine hands
 you that exact counterexample if you forget it
 ([verify-and-counterexamples.md](verify-and-counterexamples.md)).
 
-Server-signed writes from `@bounded/server` arrive with the **keypair's**
+Server-signed writes from `@bounded-sh/server` arrive with the **keypair's**
 address as `@user.address`, so server logic is just another authenticated actor
 the rules judge — give the vault key the access its rules require, no more.
 

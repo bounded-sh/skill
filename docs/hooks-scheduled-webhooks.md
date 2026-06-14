@@ -173,7 +173,7 @@ email, analytics, anomaly detection, or any downstream system.
 
 Anyone can POST to a public URL, so authenticate every delivery with a shared
 secret you control before acting on the body. The full receiver pattern (a
-constant-time `Authorization` compare, then mutate state via `@bounded/server`
+constant-time `Authorization` compare, then mutate state via `@bounded-sh/server`
 if needed) is in
 [../guides/building-a-backend.md](../guides/building-a-backend.md#receiving-webhooks).
 Webhooks are read-only fan-out — never act on an unauthenticated body.

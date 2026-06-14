@@ -44,7 +44,7 @@ function-vs-not examples — is its own doc:
 One-line rule of thumb: if the logic must *pull from / push to* the outside
 world and *then* write, it's a function. If it only *reacts* to a write, it's a
 hook (in-boundary) or a webhook (notify-out). Heavy/long compute or
-native-binding npm is **not** Bounded — use your own server as a `@bounded/server`
+native-binding npm is **not** Bounded — use your own server as a `@bounded-sh/server`
 client.
 
 ## Declare a function (policy)
@@ -96,7 +96,7 @@ A function is a default-exported async function. It receives the caller-supplied
 ```ts
 export default async function (args, ctx) {
   // ctx.user   — the VERIFIED caller; auth was already enforced
-  // ctx.bounded — pre-authed @bounded client; writes go THROUGH invariants
+  // ctx.bounded — pre-authed @bounded-sh client; writes go THROUGH invariants
   // ctx.env    — only the secrets you declared in policy
   // fetch      — standard outbound HTTP
   return { ok: true };
@@ -131,11 +131,11 @@ It prints the function's JSON result, or fails with the dispatcher's error
 ### From TypeScript (today)
 
 > A dedicated `functions.invoke` SDK helper is **not yet exported** from
-> `@bounded/client` / `@bounded/server` — don't import it. Invoke the dispatcher
+> `@bounded-sh/client` / `@bounded-sh/server` — don't import it. Invoke the dispatcher
 > directly with the SDK's id token (the same token the data plane sends):
 
 ```ts
-import { getIdToken } from "@bounded/client"; // exported today
+import { getIdToken } from "@bounded-sh/client"; // exported today
 
 const token = await getIdToken();
 const res = await fetch(`${FUNCTIONS_URL}/invoke`, {
@@ -285,7 +285,7 @@ clean `503` — never a crash.
   and SDK writes; ~5 ms cold start; global.
 - **Timeout:** `1`–`300` s wall-clock per invocation (`timeout`, default `30`).
 - **Not for:** multi-minute jobs or native-binding npm — use your own server as a
-  `@bounded/server` client for those.
+  `@bounded-sh/server` client for those.
 - **Memory / subrequests:** standard Workers limits apply.
 
 ## What's proven vs not, and the roadmap

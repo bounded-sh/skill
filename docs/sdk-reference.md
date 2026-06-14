@@ -1,12 +1,12 @@
-# SDK Reference — `@bounded/client` & `@bounded/server`
+# SDK Reference — `@bounded-sh/client` & `@bounded-sh/server`
 
 **What's in here / when to read this:** every SDK method —
 `get`/`getPage`/`setMany`/`subscribe`/`search`/`queryAggregate`, auth,
 collaborators, `createWalletClient`, `verifyWebhook`, and invoking a function.
 
-Two packages, **one operation surface**. `@bounded/client` runs in the browser
+Two packages, **one operation surface**. `@bounded-sh/client` runs in the browser
 and React Native (end-user auth via Privy/wallet, live subscriptions);
-`@bounded/server` runs on a server, signs with a keypair (no browser auth), and
+`@bounded-sh/server` runs on a server, signs with a keypair (no browser auth), and
 adds `createWalletClient`. Both speak to the realtime worker that enforces the
 deployed policy — the SDK can never bypass a rule or invariant.
 
@@ -17,11 +17,11 @@ deployed policy — the SDK can never bypass a rule or invariant.
 
 ```ts
 // client (browser / RN)
-import { init, login, get, set, subscribe } from "@bounded/client";
+import { init, login, get, set, subscribe } from "@bounded-sh/client";
 await init({ appId: "<appId>", authMethod: "privy" });   // see auth.md
 
 // server
-import { createWalletClient } from "@bounded/server";
+import { createWalletClient } from "@bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
@@ -91,7 +91,7 @@ composition, and failure codes: [data-plane.md](data-plane.md).
 
 ## Subscribe (live) — `subscribe`
 
-`@bounded/client` only. Every collection is live; `subscribe` streams a single
+`@bounded-sh/client` only. Every collection is live; `subscribe` streams a single
 document or a filtered collection and calls `onData` on every change. It returns
 an unsubscribe function.
 
@@ -143,7 +143,7 @@ the list, enforced server-side.
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 
 ```ts
-import { login, logout, getCurrentUser, useAuth } from "@bounded/client";
+import { login, logout, getCurrentUser, useAuth } from "@bounded-sh/client";
 
 await login();                       // opens the configured auth modal (Privy / wallet)
 const user = getCurrentUser();       // { address, ... } | null
@@ -156,13 +156,13 @@ const { user, login, logout, loading } = useAuth();
 equivalents. End-user identity surfaces in rules as `@user.address`. Full flow,
 providers, and embedded wallets: [auth.md](auth.md).
 
-## `@bounded/server` — `createWalletClient`
+## `@bounded-sh/server` — `createWalletClient`
 
 The server client wraps the **same operations**, signed by a keypair, with no
 browser auth. Each client has its own session — no global state.
 
 ```ts
-import { createWalletClient } from "@bounded/server";
+import { createWalletClient } from "@bounded-sh/server";
 
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 vault.address;                                   // the signer's address
@@ -179,13 +179,13 @@ methods. `keypair` is a base58 string or JSON array secret key. Server tasks:
 
 ### Verifying webhooks — `verifyWebhook`
 
-`@bounded/server` also exports `verifyWebhook` for inbound mutation webhooks.
+`@bounded-sh/server` also exports `verifyWebhook` for inbound mutation webhooks.
 It fetches + caches Bounded's Ed25519 public key (from the hosted `/.well-known`
 keys endpoint), checks the signature over the raw body, and enforces timestamp
 skew — returning the typed payload or throwing `WebhookVerificationError`.
 
 ```ts
-import { verifyWebhook, WebhookVerificationError } from "@bounded/server";
+import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
 
 // rawBody is the unparsed request body string; headers is the request headers.
 const event = await verifyWebhook(rawBody, headers);
@@ -206,7 +206,7 @@ verifies your identity and evaluates the function's `auth` policy rule before it
 runs. Client + server, identical call.
 
 ```ts
-import { functions } from "@bounded/client"; // or "@bounded/server"
+import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 
 const res = await functions.invoke("syncStripe", { customerId });
 // → the function's JSON, or throws FunctionInvokeError on 401/403/404/503/error.

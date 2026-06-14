@@ -60,7 +60,7 @@ membership in it. Seed it with the creator's wallet at bootstrap.
 
 - Only an existing admin can mint another admin (`create` is gated on
   `get(/admins/@user.address) != null`) — **no self-promotion**. Seed the first
-  admin out-of-band at bootstrap: a server-signed `set` from `@bounded/server`
+  admin out-of-band at bootstrap: a server-signed `set` from `@bounded-sh/server`
   (the vault keypair, see [../guides/building-a-backend.md](../guides/building-a-backend.md)),
   or write the creator's address once with `bounded data set`
   ([data-plane.md](data-plane.md)).
