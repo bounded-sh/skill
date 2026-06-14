@@ -27,7 +27,7 @@ collection's `read` rule — a filter never returns a document the caller can't 
 
 ```ts
 // SDK — get() on a collection path takes the filter shape
-import { getPage } from "@bounded-sh/client";
+import { getPage } from "bounded-sh";
 const open = await getPage("orders", {
   filter: {
     $and: [
@@ -65,7 +65,7 @@ bounded data get --app-id <id> --path orders \
 grouped, and returns the full set of grouped rows:
 
 ```ts
-import { queryAggregate } from "@bounded-sh/client";
+import { queryAggregate } from "bounded-sh";
 const byStatus = await queryAggregate("orders", {
   groupBy: ["status"],
   count: true,

@@ -1,27 +1,37 @@
-# SDK Reference — `@bounded-sh/client` & `@bounded-sh/server`
+# SDK Reference — `bounded-sh` (one package, two subpath exports)
 
 **What's in here / when to read this:** every SDK method —
 `get`/`getPage`/`setMany`/`subscribe`/`search`/`queryAggregate`, auth,
 collaborators, `createWalletClient`, `verifyWebhook`, and invoking a function.
 
-Two packages, **one operation surface**. `@bounded-sh/client` runs in the browser
-and React Native (end-user auth via Privy/wallet, live subscriptions);
-`@bounded-sh/server` runs on a server, signs with a keypair (no browser auth), and
-adds `createWalletClient`. Both speak to the realtime worker that enforces the
-deployed policy — the SDK can never bypass a rule or invariant.
+**One package, two entrypoints.** `bounded-sh` is a single npm install with two
+subpath exports — like `convex` or `@supabase/supabase-js`:
 
-> Beta: the packages are not yet published to npm. APIs below are exported from
+- `bounded-sh` (the default/browser export) runs in the browser and React Native:
+  end-user auth via Privy/wallet, live subscriptions, `subscribe`, `live`, and
+  function invocation.
+- `bounded-sh/server` runs on a server, signs with a keypair (no browser auth),
+  and adds `createWalletClient` + `verifyWebhook`.
+
+Both speak to the realtime worker that enforces the deployed policy — the SDK can
+never bypass a rule or invariant.
+
+> Beta: the package is not yet published to npm. APIs below are exported from
 > source today and stable in shape.
 
 ## Setup
 
+```sh
+npm i bounded-sh        # one install — both entrypoints come from this package
+```
+
 ```ts
 // client (browser / RN)
-import { init, login, get, set, subscribe } from "@bounded-sh/client";
+import { init, login, get, set, subscribe } from "bounded-sh";
 await init({ appId: "<appId>", authMethod: "privy" });   // see auth.md
 
 // server
-import { createWalletClient } from "@bounded-sh/server";
+import { createWalletClient } from "bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
@@ -91,7 +101,7 @@ composition, and failure codes: [data-plane.md](data-plane.md).
 
 ## Subscribe (live) — `subscribe`
 
-`@bounded-sh/client` only. Every collection is live; `subscribe` streams a single
+`bounded-sh` only. Every collection is live; `subscribe` streams a single
 document or a filtered collection and calls `onData` on every change. It returns
 an unsubscribe function.
 
@@ -143,7 +153,7 @@ the list, enforced server-side.
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 
 ```ts
-import { login, logout, getCurrentUser, useAuth } from "@bounded-sh/client";
+import { login, logout, getCurrentUser, useAuth } from "bounded-sh";
 
 await login();                       // opens the configured auth modal (Privy / wallet)
 const user = getCurrentUser();       // { address, ... } | null
@@ -156,13 +166,13 @@ const { user, login, logout, loading } = useAuth();
 equivalents. End-user identity surfaces in rules as `@user.address`. Full flow,
 providers, and embedded wallets: [auth.md](auth.md).
 
-## `@bounded-sh/server` — `createWalletClient`
+## `bounded-sh/server` — `createWalletClient`
 
 The server client wraps the **same operations**, signed by a keypair, with no
 browser auth. Each client has its own session — no global state.
 
 ```ts
-import { createWalletClient } from "@bounded-sh/server";
+import { createWalletClient } from "bounded-sh/server";
 
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 vault.address;                                   // the signer's address
@@ -179,13 +189,13 @@ methods. `keypair` is a base58 string or JSON array secret key. Server tasks:
 
 ### Verifying webhooks — `verifyWebhook`
 
-`@bounded-sh/server` also exports `verifyWebhook` for inbound mutation webhooks.
+`bounded-sh/server` also exports `verifyWebhook` for inbound mutation webhooks.
 It fetches + caches Bounded's Ed25519 public key (from the hosted `/.well-known`
 keys endpoint), checks the signature over the raw body, and enforces timestamp
 skew — returning the typed payload or throwing `WebhookVerificationError`.
 
 ```ts
-import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
+import { verifyWebhook, WebhookVerificationError } from "bounded-sh/server";
 
 // rawBody is the unparsed request body string; headers is the request headers.
 const event = await verifyWebhook(rawBody, headers);
@@ -197,19 +207,28 @@ Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
 overrides `keysUrl` / `maxSkewSeconds` / cache TTL. Declaring webhooks:
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 
-### Invoking a function — `functions.invoke`
+### Invoking a function — today (and the planned helper)
 
-Both packages export `functions.invoke(name, args, opts?)` for calling a deployed
-Bounded Function (the imperative escape hatch). It attaches your session token
-automatically — the same token the data operations use — so the dispatcher
-verifies your identity and evaluates the function's `auth` policy rule before it
-runs. Client + server, identical call.
+A first-class `functions.invoke(name, args)` SDK helper is **planned but not yet
+exported** from `bounded-sh` / `bounded-sh/server` — don't import it. Today, invoke
+the dispatcher directly with the SDK's id token (the same token the data plane
+sends), so the dispatcher verifies your identity and evaluates the function's
+`auth` policy rule before it runs:
 
 ```ts
-import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
+import { getIdToken } from "bounded-sh"; // exported today
 
-const res = await functions.invoke("syncStripe", { customerId });
-// → the function's JSON, or throws FunctionInvokeError on 401/403/404/503/error.
+const token = await getIdToken();
+const res = await fetch(`${FUNCTIONS_URL}/invoke`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-App-Id": appId,
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({ appId, functionName: "syncStripe", args: { customerId } }),
+});
+// → the function's JSON, or the dispatcher's 401/403/404/503 error.
 ```
 
 Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the

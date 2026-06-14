@@ -1,23 +1,23 @@
 # Building a Backend (server-side)
 
 When you need server-signed writes, server reads, or a receiver for Bounded's
-outbound webhooks, use `@bounded-sh/server`. It wraps the **same operation surface**
+outbound webhooks, use `bounded-sh/server`. It wraps the **same operation surface**
 as the client, signed by a keypair instead of a browser user — and it never
 bypasses the deployed policy.
 
 > Bounded has no arbitrary server-function runtime (no Lambda/PartyServer). Logic
 > that must live *inside* the trust boundary belongs in policy **hooks** (ticks,
-> scheduled jobs); `@bounded-sh/server` is for code in **your** infra acting as an
+> scheduled jobs); `bounded-sh/server` is for code in **your** infra acting as an
 > authenticated client. See [capabilities-and-limits.md](capabilities-and-limits.md).
 
 ## Install & connect
 
 ```bash
-npm install @bounded-sh/server
+npm install bounded-sh        # one package; the server client is the /server subpath export
 ```
 
 ```ts
-import { createWalletClient } from "@bounded-sh/server";
+import { createWalletClient } from "bounded-sh/server";
 
 const vault = await createWalletClient({
   keypair: process.env.VAULT_KEY!,   // base58 string or JSON-array secret key
@@ -71,13 +71,13 @@ detection, etc. (declare them in the policy:
 
 Webhooks are read-only notifications: they never gate or mutate Bounded state.
 Each delivery is **signed with Bounded's Ed25519 key**, so verify it before
-acting on the body — `@bounded-sh/server` exports `verifyWebhook`, which fetches
+acting on the body — `bounded-sh/server` exports `verifyWebhook`, which fetches
 and caches Bounded's public key (from the hosted `/.well-known` keys endpoint),
 checks the Ed25519 signature over the raw body, and enforces timestamp skew. It
 returns the typed payload or throws `WebhookVerificationError`:
 
 ```ts
-import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
+import { verifyWebhook, WebhookVerificationError } from "bounded-sh/server";
 
 app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
   let event;

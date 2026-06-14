@@ -44,7 +44,7 @@ function-vs-not examples — is its own doc:
 One-line rule of thumb: if the logic must *pull from / push to* the outside
 world and *then* write, it's a function. If it only *reacts* to a write, it's a
 hook (in-boundary) or a webhook (notify-out). Heavy/long compute or
-native-binding npm is **not** Bounded — use your own server as a `@bounded-sh/server`
+native-binding npm is **not** Bounded — use your own server as a `bounded-sh/server`
 client.
 
 ## Declare a function (policy)
@@ -96,7 +96,7 @@ A function is a default-exported async function. It receives the caller-supplied
 ```ts
 export default async function (args, ctx) {
   // ctx.user   — the VERIFIED caller; auth was already enforced
-  // ctx.bounded — pre-authed @bounded-sh client; writes go THROUGH invariants
+  // ctx.bounded — pre-authed bounded-sh client; writes go THROUGH invariants
   // ctx.env    — only the secrets you declared in policy
   // fetch      — standard outbound HTTP
   return { ok: true };
@@ -131,11 +131,11 @@ It prints the function's JSON result, or fails with the dispatcher's error
 ### From TypeScript (today)
 
 > A dedicated `functions.invoke` SDK helper is **not yet exported** from
-> `@bounded-sh/client` / `@bounded-sh/server` — don't import it. Invoke the dispatcher
+> `bounded-sh` / `bounded-sh/server` — don't import it. Invoke the dispatcher
 > directly with the SDK's id token (the same token the data plane sends):
 
 ```ts
-import { getIdToken } from "@bounded-sh/client"; // exported today
+import { getIdToken } from "bounded-sh"; // exported today
 
 const token = await getIdToken();
 const res = await fetch(`${FUNCTIONS_URL}/invoke`, {
@@ -169,12 +169,16 @@ bounded functions list   --app-id <id>
 bounded functions logs   syncStripe --app-id <id>
 ```
 
-Remove a function (script + policy entry) via the developer API:
+Remove a function (source + policy entry) via the developer API:
 `DELETE /bounded/functions/<appId>/<name>` (owner/admin).
 
-Deploy uploads the code to the dispatch namespace and merges the `functions`
-entry into your policy (validated by the same validator as `bounded deploy`).
-Only the **app owner or an admin collaborator** may deploy.
+Deploy uploads the function's **source** to the R2 code registry and merges the
+`functions` entry into your policy (validated by the same validator as
+`bounded deploy`). **No per-function worker is deployed** — the dispatcher loads
+your source into an isolate on the Worker Loader at invoke time, exactly like the
+native live runtime loads room modules ([live-runtime.md](live-runtime.md)). A new
+upload just replaces the registered source; nothing is redeployed. Only the **app
+owner or an admin collaborator** may deploy.
 
 ## Worked example — sync a Stripe subscription, then write
 
@@ -260,24 +264,26 @@ Only declared names are exposed — an undeclared key never reaches the function
 even if a value exists in the store. Secret values are never written into the
 policy and never returned by `functions list`.
 
-Under the hood, each declared secret is set as a **real Cloudflare Worker secret
-binding** on your function's dispatch-namespace script (the same mechanism poof
-uses for its per-app worker secrets), so `ctx.env.STRIPE_KEY` is a first-class
-runtime secret — not a value passed through the request.
+Under the hood, declared secret **values** are stored encrypted in Bounded's own
+secret store (never written into the policy) and injected into the function's
+isolate `env` at invoke time, narrowed to the declared names — so
+`ctx.env.STRIPE_KEY` is a first-class runtime secret, not a value passed through
+the request.
 
-## Architecture (poof-infra lineage)
+## Architecture (the Worker Loader)
 
-Bounded Functions reuse poof's proven Cloudflare pipeline on Bounded-OWNED,
-isolated resources (never `poof_apps`): **deploy** forks poof's
-dev-server-manager + `secretsHelper` to upload the function to the
-`bounded_apps_staging` **Workers-for-Platforms dispatch namespace** (each secret a
-real per-script Worker binding); **invoke** routes through the Bounded Functions
-dispatcher (`bounded-functions-dispatcher-staging`), which verifies the caller
-(Cognito RS256/JWKS, same as the data plane), evaluates the `auth` rule via the
-shared engine, then dispatches with `ctx` injected; **schedules** ride the Bounded
-heartbeat dispatcher firing functions as the system principal. If
-Workers-for-Platforms credentials aren't configured, deploy and invoke return a
-clean `503` — never a crash.
+Bounded Functions run on the Cloudflare **Worker Loader**, on Bounded-OWNED,
+isolated resources (never `poof_apps`): **deploy** uploads the function's
+(transpiled) source to the R2 code registry — **no per-function worker is
+deployed**, same as the native live runtime; **invoke** routes through the Bounded
+Functions dispatcher, which verifies the caller (RS256/JWKS, same as the data
+plane), evaluates the `auth` rule via the shared engine, then **loads your source
+into a fresh isolate on the Worker Loader** with `ctx` (and declared secrets)
+injected; **schedules** ride the Bounded heartbeat dispatcher firing functions as
+the system principal. Because the loader pulls source from the registry per
+invoke, a new upload takes effect immediately with nothing redeployed. If the
+dispatcher isn't configured on the platform, deploy and invoke return a clean
+`503` — never a crash.
 
 ## Limits
 
@@ -285,7 +291,7 @@ clean `503` — never a crash.
   and SDK writes; ~5 ms cold start; global.
 - **Timeout:** `1`–`300` s wall-clock per invocation (`timeout`, default `30`).
 - **Not for:** multi-minute jobs or native-binding npm — use your own server as a
-  `@bounded-sh/server` client for those.
+  `bounded-sh/server` client for those.
 - **Memory / subrequests:** standard Workers limits apply.
 
 ## What's proven vs not, and the roadmap
