@@ -129,10 +129,17 @@ and prints each update as one JSON line (`{"type":"snapshot"|"delta", ...}`).
 Built for agents/scripts that react to data changes:
 
 ```bash
-bounded subscribe "rooms/r1/scores/$p" --app-id <id> | while read -r line; do
-  echo "$line" | jq '.docs // .doc'   # react to each change
+# a COLLECTION (all docs) or a CONCRETE doc — NOT a "$var" template path
+bounded subscribe "rooms/r1/scores" --app-id <id> | while read -r line; do
+  echo "$line" | jq '.data'   # react to each change
 done
+bounded subscribe "rooms/r1/scores/alice" --app-id <id> --once   # one doc
 ```
+
+**Path semantics (important):** subscribe to a **collection** (`rooms`,
+`rooms/r1/scores`) to watch all its docs, or a **concrete document**
+(`rooms/r1`). Do NOT pass a `$variable` template path like `rooms/$roomId` —
+the `$roomId` is matched literally, finds no document, and returns empty.
 
 Flags: `--once` (exit after the first snapshot — good for a one-shot read),
 `--timeout 30s` (exit if idle), `--include-subpaths`, `--filter '<json>'`,
