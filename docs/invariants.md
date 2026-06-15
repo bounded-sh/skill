@@ -1,7 +1,7 @@
 # Invariants — Declaring the Non-Negotiables
 
-**What's in here / when to read this:** the four invariant types — `conserve`,
-`rollingSum`, `tenantTag`, `tenantEdge` — and the rule-vs-invariant decision.
+**What's in here / when to read this:** the five invariant types — `conserve`,
+`rollingSum`, `bound`, `tenantTag`, `tenantEdge` — and the rule-vs-invariant decision.
 
 Invariants are **transaction postconditions**: declared once on a collection,
 proven at deploy ([verify-and-counterexamples.md](verify-and-counterexamples.md)),
@@ -13,7 +13,7 @@ Every invariant accepts an optional `name`, surfaced in the `409` when a write
 violates it. **Name them like error codes:** `spend_cap`, `no_minting`,
 `task_tenancy`.
 
-There are four types: `conserve`, `rollingSum`, `tenantTag`, `tenantEdge`.
+There are five types: `conserve`, `rollingSum`, `bound`, `tenantTag`, `tenantEdge`.
 
 ## RULES vs INVARIANTS — the decision
 

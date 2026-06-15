@@ -93,6 +93,14 @@ failing any blocks deploy):
 | `tenant isolation relationship depth <= k` / `declared graph induction` | (Opt-in) bounded-depth isolation (acyclic within k ≤ 10 hops) or inductive isolation over any finite declared path, cycles included |
 | `combined declared DSL formal claim` | One policy-level conjunctive check (`__policy__/formalClaims`) composing every generated obligation into a single verdict |
 
+**Function-auth obligations** (generated per declared Bounded Function from `functions[<name>].auth` — the imperative escape hatch):
+
+| Obligation | Proves |
+|---|---|
+| `function <name>: only admin can call` | The function's `auth` rule **implies** the admin predicate — i.e. every caller who can invoke it is an admin (`get(/admins/@user.address) != null` where the policy declares an `admins/$address` role scope, else `hasRole("admin")`). An over-permissive hatch (`auth: "true"` or `"@user.address != null"`) is **disproved with a non-admin counterexample** and fails the gate; an `auth: "false"` proves vacuously (unreachable). This catches a function that quietly grants more than admin-only access at **deploy**, not runtime. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
+
+> **Roadmap — negative/global authority.** Today the function-auth obligation proves a *lower bound* ("only admin can call"). A complementary *upper-bound* capability — "this role can do X and **nothing else**" (closure over the full action set) — is planned; it extends the authority-closure sweep so a policy can prove a role's total reach, not just gate individual rules.
+
 ## Staging-verified worked examples
 
 These transcripts are from the staging environment; use them as the expected
