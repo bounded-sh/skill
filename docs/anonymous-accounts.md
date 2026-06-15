@@ -103,14 +103,23 @@ bounded link --env staging   # links this key to an email account
 
 (Programmatic SDK linking follows the same control plane the CLI uses.)
 
-## 5. Make the transfer *provable* (the Bounded difference)
+## 5. The transfer is *proven*, automatically (the Bounded difference)
 
-The rules above *enforce* single-owner transfer. To *prove* it — "ownership can
-**only** ever change via a write authorized by the current owner, across every
-account, forever" — add the authority-closure obligation and run `bounded verify`.
-That turns "we wrote the rule carefully" into a machine-checked guarantee with a
-counterexample if it's ever violable. (See `docs/verify-and-counterexamples.md`
-and the negative-authority obligation.)
+The rules above *enforce* single-owner transfer. Bounded also **proves** it.
+`bounded verify` / deploy auto-detects a self-gated `owner` field and discharges
+a **transfer-authority** obligation:
+
+> *"any change to `owner` requires `@user.address == @data.owner` (the current
+> holder) — ownership is transferable but unseizable"*
+
+- ✅ correct policy (update gated on `@data.owner`) → **PROVED**.
+- ❌ a policy that gates transfer on `@newData.owner` (so anyone could set
+  themselves as owner) → **DISPROVED**, with a concrete counterexample
+  (`@data.owner = someone-else`, `@newData.owner = me`).
+
+So "we wrote the rule carefully" becomes a machine-checked guarantee across every
+account, for all inputs, forever — no extra annotation needed. (See
+`docs/verify-and-counterexamples.md`.)
 
 ---
 
