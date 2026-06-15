@@ -184,7 +184,10 @@ const doc = await vault.get("markets/123");
 `vault` exposes `get`, `getPage`, `getMany`, `set`, `setMany`, `setFile`,
 `getFiles`, `search`, `queryAggregate`, `count`, `aggregate`, `runQuery`,
 `runQueryMany`, `runExpression`, `runExpressionMany`, and the collaborator
-methods. `keypair` is a base58 string or JSON array secret key. Server tasks:
+methods. `keypair` is a base58 string or JSON array secret key — the **base58**
+form is the same value the CLI stores as the `privateKey` field in
+`~/.bounded/credentials` (and accepts via `BOUNDED_PRIVATE_KEY`), so a server can
+sign as the CLI identity by reading that key. Server tasks:
 [../guides/building-a-backend.md](../guides/building-a-backend.md).
 
 ### Verifying webhooks — `verifyWebhook`

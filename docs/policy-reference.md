@@ -41,23 +41,61 @@ an even number of segments:
 alphanumerics and underscores; `id`, `pathId`, `_id`, and `tarobase_*` names are
 reserved.
 
+The accepted scalar type names are **exactly** `String`, `Int`, `UInt`, `Bool`,
+`Float`, `Address` (plus the `?` / `!` suffixes below). Anything else is rejected
+at deploy.
+
 | Type | Meaning |
 |---|---|
 | `String` | UTF-8 string. Required for `tenantTag`/`tenantEdge` fields. |
 | `Int` | Signed safe integer. |
 | `UInt` | Unsigned safe integer. **Required for `rollingSum` fields.** |
-| `Bool` | true / false |
+| `Bool` | true / false. **`Boolean` is NOT a valid type name — use `Bool`.** |
 | `Float` | Decimal. **Not allowed on onchain collections** — use Int/UInt. |
 | `Address` | Wallet / account address. |
+
+> **`Bool`, not `Boolean`.** `deploy` rejects `"Boolean"` with
+> `unrecognized data type "Boolean"` (and `verify` is being aligned to reject it
+> too — don't rely on `verify` passing it). There is no `Number`, `Timestamp`, or
+> `Date` scalar — model timestamps as `UInt` (Unix seconds) and lists as
+> sub-collections.
 
 Suffixes compose with every base type:
 
 - `?` — optional (`String?`)
-- `!` — **readonly after create** (`String!`) — immutability becomes a proof
-  obligation, not a convention.
+- `!` — **readonly after create** (`String!`) — adds an immutability **proof
+  obligation** the deploy gate checks. It is **opt-in per field** and does **not**
+  auto-generate the enforcement: you must still write the preservation clause in
+  the `update` rule yourself, or deploy fails (see below).
 - `!?` — both (`String!?`)
 
 There are **no array or object field types**. Model a list as a sub-collection.
+
+### `!` requires a preservation clause in the update rule
+
+Marking a field `!` adds the obligation *"no payload satisfying the update rule
+can change this field"* — but the engine does **not** synthesize the check for
+you. If your `update` rule admits any write that changes the field, deploy fails
+with e.g. `field immutability` / `<field> is immutable on update`. You must add
+`@newData.X == @data.X` for **each** `!` field to the update rule:
+
+```json
+"posts/$id": {
+  "fields": { "author": "Address!", "createdAt": "UInt!", "body": "String" },
+  "rules": {
+    "create": "@user.address != null && @newData.author == @user.address",
+    "update": "@user.address == @data.author && @newData.author == @data.author && @newData.createdAt == @data.createdAt",
+    "delete": "@user.address == @data.author"
+  }
+}
+```
+
+Fields that typically need this: identity/ownership (`owner`, `author`,
+`creator`), creation timestamps (`createdAt`), and any set-once key. (An
+`update: "false"` rule satisfies the obligation vacuously — nothing can change
+the field because nothing can update at all — which is why server-authoritative
+collections never hit this.) Note: a tenant-tag field bound by a `tenantTag`
+invariant does **not** need `!` — the invariant rebinds it on every write.
 
 ## Rules & the expression language
 
@@ -206,11 +244,24 @@ never treated as path templates:
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
-| `attestations` | `[{ claim, kind, ... }]` — GLOBAL, policy-wide proven claims | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
+| `attestations` | `[{ claim, kind, ... }]` — GLOBAL, policy-wide proven claims (see notes below) | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
 | `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](environments.md) |
 
 `constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
 only literals; `environments` is stripped by the CLI before the policy is sent.
+
+**Attestation scope notes (nested vs flat):**
+
+- `roleGatedRead` with a flat `role` (`<collection>/$docId`, e.g.
+  `members/$memberId`) derives the membership predicate automatically. With a
+  **nested** `role` (e.g. `tenants/$tenantId/members/$memberId`) you **must** add
+  an explicit **`gatedBy`** membership predicate — the default derivation only
+  handles the flat shape. Worked example:
+  [invariants.md](invariants.md#nested-role-scopes--rolegatedread-needs-gatedby).
+- `authorityClosure` supports **only a flat `roleScope`** (`admins/$address`);
+  nested role scopes are not yet supported. For multi-tenant admin sets use a flat
+  `admins/$address` registry — see
+  [invariants.md](invariants.md#nested-authority--authorityclosure-is-flat-only-known-limitation).
 
 ## Related
 

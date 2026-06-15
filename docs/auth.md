@@ -14,16 +14,19 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 ## Dev identity — the keypair IS your account
 
 There is **no login step** for building. The first `bounded` command generates
-an ed25519 keypair at `~/.bounded/key` (mode `0600`) and that keypair is the
-identity — it owns every app you create and signs every write.
+an ed25519 keypair and stores it in `~/.bounded/credentials` — a JSON file
+(mode `0600`) with a base58 `privateKey` field. That keypair is the identity — it
+owns every app you create and signs every write.
 
 ```bash
-bounded whoami        # prints address, environment, key source (creates the key if absent)
+bounded whoami        # prints address, environment, key source (creates the credentials if absent)
 ```
 
-- Override the key location with `BOUNDED_PRIVATE_KEY` (a base58 or JSON-array
-  secret) or by pointing `HOME` elsewhere — this is how you run a **distinct
-  identity per agent**. Never reuse a human's keypair for an autonomous agent.
+- Override the on-disk credentials with **`BOUNDED_PRIVATE_KEY`** (a **base58**
+  secret string), or point `HOME` elsewhere so the CLI reads/creates a separate
+  `~/.bounded/credentials` — this is how you run a **distinct identity per
+  agent**. A temp `HOME` (`HOME=$(mktemp -d) bounded whoami`) auto-creates a fresh
+  key cleanly. Never reuse a human's keypair for an autonomous agent.
 
 ### Linking & teams
 

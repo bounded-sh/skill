@@ -32,9 +32,19 @@ bounded data set-many --from-json bundle.json
 | What failed | Status | What you get back | What committed |
 |---|---|---|---|
 | Invariant violated | `409` `postcondition failed: invariant "<name>" ...` | the invariant's **declared name** (e.g. `spend_cap`), its type, and the arithmetic that failed | nothing |
-| Rule denied | `403` | the failed action plus a **trace** of the predicate that evaluated false | nothing |
+| **Write** rule denied (create/update/delete) | `403` | the failed action plus a **trace** of the predicate that evaluated false | nothing |
+| Function `invoke` auth rule denied | `403` `Forbidden: auth rule denied` | denied at the dispatcher before the body runs | nothing |
+| **Read** rule denied | **`200`** with `{"data": null}` (single) or `{"data": []}` (list) | **no `403`** — denied reads are *hidden*, not errored (see below) | n/a |
 | Update/delete on a capped collection | `409 append_only` | rolling-cap collections reject history rewrites by design | nothing |
 | Policy fails verification at deploy | deploy fails | the proof report with counterexamples | previous-good policy stays active |
+
+> **Read denials never return `403`.** A read your `read` rule denies comes back
+> with HTTP `200` and an **empty payload** — `{"data": null}` for a single
+> document, `{"data": []}` for a collection list (silent read-hiding / filtering).
+> This is deliberate (you can't distinguish "doc doesn't exist" from "you may not
+> see it"), but it means an agent **must not wait for a `403` on a read** — it
+> will never come. `403` is the write/`invoke` contract only. To tell "denied"
+> from "genuinely empty", check from an identity you know *is* permitted.
 
 Agent rule of thumb:
 

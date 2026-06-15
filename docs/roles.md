@@ -18,6 +18,13 @@ Roles are the cleanest way to express "this set of principals is privileged
 across collections." They are **additive**: a policy with no `roles` block
 behaves exactly as before.
 
+> **No bootstrap problem here.** A `roles` block lists its `members` statically
+> in the policy (e.g. `@const.ADMIN`), so the admin set exists the moment you
+> deploy — nothing to seed. The chicken-and-egg only affects the **data-driven**
+> `admins/$address` collection (where membership is a row you must write); its
+> genesis idiom (`@const.FOUNDER` clause + `bounded data set` from the founder)
+> is in [admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
+
 ## Shape
 
 ```json

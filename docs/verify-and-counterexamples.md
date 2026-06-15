@@ -13,8 +13,12 @@ never replaces the previous good one.
 - **DISPROVED** — a concrete counterexample exists, and the report gives it
   to you: the exact variable assignments that break the property.
 - **FAILS CLOSED / UNSUPPORTED** — the policy claims something the runtime
-  cannot enforce (e.g. an unsupported onchain invariant). Deploy is rejected
-  rather than silently weakened.
+  cannot enforce (e.g. an unsupported onchain invariant, or a `bound` invariant —
+  the proof engine does not support `bound`). Deploy is rejected rather than
+  silently weakened. **Exception:** a **bare-string attestation** is `UNSUPPORTED`
+  but **non-blocking** — surfaced as a "NOT proven (advisory) — bind to prove"
+  TODO, never counted as proven, and it does not fail the gate (see the
+  attestation row below).
 
 A clean run:
 
@@ -92,7 +96,7 @@ failing any blocks deploy):
 | `tenant isolation relationship edge coverage` | (Opt-in) every declared relationship edge is covered by source tag + target tag + matching `tenantEdge` invariants, or deploy fails |
 | `tenant isolation relationship depth <= k` / `declared graph induction` | (Opt-in) bounded-depth isolation (acyclic within k ≤ 10 hops) or inductive isolation over any finite declared path, cycles included |
 | `combined declared DSL formal claim` | One policy-level conjunctive check (`__policy__/formalClaims`) composing every generated obligation into a single verdict |
-| `attestation: <claim> — <sub-check>` | A GLOBAL top-level [`attestations`](invariants.md#attestations--global-policy-wide-claims) entry, under the `__policy__/attestations` scope. The human `claim` is echoed verbatim, followed by the discharged obligation (a `roleGatedRead` exposure sweep, `authorityClosure` step, or rolling-limit algebra). A **bare-string** claim with no bound `kind` shows as `UNSUPPORTED` — a sentence alone is never attested |
+| `attestation: <claim> — <sub-check>` | A GLOBAL top-level [`attestations`](invariants.md#attestations--global-policy-wide-claims) entry, under the `__policy__/attestations` scope. The human `claim` is echoed verbatim, followed by the discharged obligation (a `roleGatedRead` exposure sweep, `authorityClosure` step, or rolling-limit algebra). A **bare-string** claim with no bound `kind` shows as `UNSUPPORTED` (non-blocking advisory, "NOT proven — bind to prove") — never counted as proven, never blocks deploy |
 
 **Function-auth obligations** (generated per declared Bounded Function from `functions[<name>].auth` — the imperative escape hatch):
 
@@ -143,6 +147,22 @@ fixed?". As the agent: propose invariants from schema shape (money-like
 fields → conserve/cap candidates; tenant-ish path variables → tenantTag),
 let the human arbitrate intent, then regenerate the proof report. Agent
 drafts → engine proves or refutes with counterexamples → human decides.
+
+> **Literal `"false"` rules and bare-string attestations are NON-BLOCKING
+> advisories.** An append-only / immutable / server-authoritative collection uses
+> `"update": "false"` / `"delete": "false"` / `"create": "false"` on purpose —
+> this is the supported deny idiom (see
+> [invariants.md](invariants.md#rollingsum--caps-over-time-windows) and
+> [policy-examples.md](policy-examples.md)). `verify` surfaces these as advisories
+> (an intentional-deny note); it does **not** report them as `unsatisfiable (dead
+> code)`, does **not** fail the run, and does **not** exit non-zero. A
+> bare-string / claim-only attestation is likewise advisory: shown `UNSUPPORTED`
+> with a "NOT proven (advisory) — bind to prove" note, never counted as proven
+> (soundness), and **non-blocking**. So a policy whose only non-passing items are
+> literal-`false` rules or bare-string attestation TODOs **verifies (exit 0) and
+> deploys**. Reserve concern for `DISPROVED` lines that carry a **counterexample**
+> (concrete variable assignments) — those are the ones that block deploy. Don't
+> loop trying to "fix" an intentional `false` rule.
 
 ## Related
 

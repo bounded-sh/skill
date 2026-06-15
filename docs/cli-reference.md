@@ -10,8 +10,16 @@ errors are emitted as JSON too), `--quiet` (minimal output), `--env`
 
 ## Identity & teams
 
-No login step — your ed25519 keypair at `~/.bounded/key` (or
-`BOUNDED_PRIVATE_KEY`) IS your account. See [auth.md](auth.md).
+No login step — your ed25519 keypair IS your account. It lives in
+`~/.bounded/credentials` (a JSON file with a base58 `privateKey` field, created on
+first run), or is supplied via the `BOUNDED_PRIVATE_KEY` env var (a **base58**
+secret string, which overrides the file). See [auth.md](auth.md).
+
+> **Running a second identity:** point `HOME` at a temp dir
+> (`HOME=$(mktemp -d) bounded whoami`) — the CLI auto-creates a fresh
+> `~/.bounded/credentials` there, giving you a clean separate account. (Or set
+> `BOUNDED_PRIVATE_KEY` to another base58 key.) This is how you run a distinct
+> agent identity without touching your main credentials.
 
 | Command | Does | Example |
 |---|---|---|
@@ -40,6 +48,12 @@ bounded deploy ./policy.json --create --name my-app     # create app + deploy (p
 bounded verify ./policy.json --app-id <appId>           # re-prove after edits
 bounded deploy ./policy.json --app-id <appId>           # redeploy
 ```
+
+> **`verify` / `verify-formal` is rate-limited** — about **5 requests per minute
+> per app owner** on staging (`429: Too many formal verification requests`). The
+> "declare → verify → fix" fast loop is real, but pace it: batch edits before
+> re-running, and don't spin `verify` in a tight retry. A `429` is throttling, not
+> a policy error — back off ~60s and retry.
 
 ### `verify --operation`
 

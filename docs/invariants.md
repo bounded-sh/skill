@@ -3,11 +3,14 @@
 **What's in here / when to read this:** the five invariant types — `conserve`,
 `rollingSum`, `bound`, `tenantTag`, `tenantEdge` — and the rule-vs-invariant decision.
 
-Invariants are **transaction postconditions**: declared once on a collection,
-proven at deploy ([verify-and-counterexamples.md](verify-and-counterexamples.md)),
+Invariants are **transaction postconditions**: declared once on a collection
 and enforced atomically on every write path at runtime — including hooks, ticks,
 schedules, and `set-many` batches, where the whole batch commits or nothing does.
-Nothing has an exemption from a proven invariant.
+Nothing has an exemption from an invariant. Four of the five types
+(`conserve`, `rollingSum`, `tenantTag`, `tenantEdge`) are additionally **proven
+at deploy** ([verify-and-counterexamples.md](verify-and-counterexamples.md)).
+`bound` is **runtime-enforced only** — the proof engine does not support it
+(see its section) — so a policy with a `bound` does not pass `verify`/`deploy`.
 
 Every invariant accepts an optional `name`, surfaced in the `409` when a write
 violates it. **Name them like error codes:** `spend_cap`, `no_minting`,
@@ -88,6 +91,16 @@ exceeds `limit`. Capped collections are **append-only event logs**: updates and
 deletes are rejected (`409 append_only`), so the history a cap is computed from
 cannot be rewritten. Platform creation time is the clock.
 
+> **`"update": "false"` / `"delete": "false"` is the correct idiom** for an
+> append-only collection (and for any server-authoritative or immutable
+> collection). A literal `false` rule is an **intentional deny**, not a mistake —
+> it says "no caller may ever take this action." `bounded verify` surfaces it as a
+> **non-blocking advisory** (an intentional-deny note); it is *not* reported as
+> "unsatisfiable (dead code)" and does *not* fail verification or deploy. The
+> canonical example below is correct and deployable. The alternative — omitting
+> the rule entirely — also denies (omitted ⇒ deny), but writing `false` explicitly
+> documents the intent.
+
 ```json
 {
   "agents/$agentId/spend/$spendId": {
@@ -147,7 +160,19 @@ A numeric field (or every value of a map field) must always satisfy a fixed
 comparison against a constant `limit`. Enforced on **every** write path — including
 the live-runtime checkpoint — so a server-authoritative game's score, a counter, or
 a level can never be stored out of range, no matter what a client (or a buggy tick)
-proposes. This is what makes "score ≤ 11" a *real* guarantee rather than a hope.
+proposes.
+
+> **`bound` is RUNTIME-enforced but NOT proof-backed today.** Unlike the other
+> four types, `bound` is **not** discharged by the proof engine: `bounded verify`
+> rejects it with `Invariant type "bound" is not supported by proof mode`, and a
+> policy that declares one cannot pass `verify` / `deploy` while the bound is
+> present. The only invariant types the prover discharges today are `conserve`,
+> `rollingSum`, `tenantTag`, and `tenantEdge` (see
+> [proof-coverage.md](proof-coverage.md)). Use `bound` only where you accept a
+> runtime-only ceiling and don't need a deploy-time proof — or, for a *proven*
+> cap, express it as a `rollingSum` (a per-window total) or a single-write rule
+> predicate (`@newData.score <= 11`), both of which the prover backs. The example
+> below shows the shape `bound` *would* take; it does **not** prove.
 
 ```json
 {
@@ -170,12 +195,14 @@ proposes. This is what makes "score ≤ 11" a *real* guarantee rather than a hop
 | `limit` | yes | The constant compared against (use `@const.NAME` to name it) |
 | `name` | no | Stable name surfaced on the `409` |
 
-**What gets proven / enforced:** any write whose post-state has the bounded field
-(or any value of the bounded map) violating `op limit` is rejected (`409` +
-`name`). At a live checkpoint, the room's snapshot is gated by this before it
-reaches the provable store — so cheated state never persists, even though the
-30 Hz tick itself runs untrusted user code. See
-[live-runtime.md](live-runtime.md) and [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
+**What gets enforced (NOT proven):** at runtime, any write whose post-state has
+the bounded field (or any value of the bounded map) violating `op limit` is
+rejected (`409` + `name`). At a live checkpoint, the room's snapshot is gated by
+this before it reaches the provable store. But this is a **runtime-only** check —
+the proof engine does not discharge a `bound` obligation (see the callout above),
+so it carries no deploy-time guarantee and a policy with a live `bound` will not
+pass `verify`/`deploy`. See [live-runtime.md](live-runtime.md) and
+[hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
 
 ## `tenantTag` — documents carry their tenant
 
@@ -260,7 +287,7 @@ nested inside one):
 
 ```json
 {
-  "members/$memberId": { "fields": { "active": "Boolean" },
+  "members/$memberId": { "fields": { "active": "Bool" },
     "rules": { "read": "get(/members/@user.address) != null", "create": "get(/members/@user.address) != null" } },
   "projects/$projectId": { "fields": { "owner": "Address", "name": "String" },
     "rules": { "read": "get(/members/@user.address) != null", "create": "@user.address != null" } },
@@ -289,9 +316,72 @@ its `PROVED` / `DISPROVED` (+ counterexample) sit side by side.
 
 | `kind` | Use it for | Key params |
 |---|---|---|
-| `roleGatedRead` | "only `<role>` members can read `<scope>`/`<field>`" — closes EVERY read path (rules, relationships, queries, field exposures), not just one rule | `role`, and `scope` or `field` |
-| `authorityClosure` | "membership of `<roleScope>` only grows through gated additions — no side doors" | `roleScope`, optional `initialMember` |
+| `roleGatedRead` | "only `<role>` members can read `<scope>`/`<field>`" — closes EVERY read path (rules, relationships, queries, field exposures), not just one rule | `role`, and `scope` or `field`; **`gatedBy`** when `role` is nested (below) |
+| `authorityClosure` | "membership of `<roleScope>` only grows through gated additions — no side doors" | `roleScope` (**flat `<collection>/$docId` only**), optional `initialMember` |
 | `rollingSum` | a windowed cap proven **globally** (same algebra as the per-collection invariant) | `scope`, `field`, `windowSeconds`, `limit`, optional `scopeVariable` |
+
+### Nested role scopes — `roleGatedRead` needs `gatedBy`
+
+`roleGatedRead` derives the membership predicate automatically **only** when
+`role` is a flat `<collection>/$docId` path (e.g. `members/$memberId`). For a
+**multi-tenant** app, membership lives nested under the tenant
+(`tenants/$tenantId/members/$memberId`), and the default derivation can't infer
+the keying — verify rejects it:
+
+```
+✗ input (UNSUPPORTED)
+  Role scope "tenants/$tenantId/members/$memberId" is not a simple
+  "<collection>/$docId" path and no gatedBy membership predicate was provided
+```
+
+Supply an explicit **`gatedBy`** membership predicate alongside `role`. `role` is
+still required (a `gatedBy` with no `role` errors `Role scope 'undefined' not
+found`):
+
+```json
+{ "claim": "only members of an org can read that org's tasks",
+  "kind": "roleGatedRead",
+  "scope": "tenants/$tenantId/tasks/$taskId",
+  "role":  "tenants/$tenantId/members/$memberId",
+  "gatedBy": "get(/tenants/$tenantId/members/@user.address) != null" }
+```
+
+With both `role` (the nested member scope) and `gatedBy` (the predicate the read
+rule must imply), the nested case **proves**: `✓ READ EXPOSURE: read rule
+provably implies membership`.
+
+### Nested authority — `authorityClosure` is flat-only (known limitation)
+
+`authorityClosure` currently supports **only a flat `<collection>/$docId` role
+scope**; a nested `tenants/$tenantId/members/$memberId` is rejected (`not a simple
+<collection>/$docId path`) and there is **no** keying param that makes a nested
+scope work today (this is a known limitation). For a multi-tenant admin set, the
+recommended pattern is a **flat `admins/$address` registry** alongside the nested
+tenant data:
+
+```json
+{
+  "admins/$address": {
+    "fields": { "tenant": "String", "active": "Bool" },
+    "tier": "durable",
+    "rules": {
+      "read": "@user.address != null",
+      "create": "@user.address != null && (get(/admins/@user.address) != null || @user.address == @const.FOUNDER)",
+      "update": "@user.address != null && get(/admins/@user.address) != null",
+      "delete": "@user.address != null && get(/admins/@user.address) != null"
+    }
+  },
+  "attestations": [
+    { "claim": "the admin set only grows through existing admins",
+      "kind": "authorityClosure", "roleScope": "admins/$address",
+      "initialMember": "@const.FOUNDER" }
+  ]
+}
+```
+
+Keep tenant scoping for that admin as an ordinary field (`tenant`) gated in
+rules; the *closure* proof rides the flat `admins/$address` scope. Use a nested
+`roleGatedRead` + `gatedBy` (above) for the per-tenant read isolation.
 
 ### Plain-string shorthand — and the rule you MUST follow
 
@@ -301,12 +391,15 @@ You may write a bare sentence:
 "attestations": ["no agent can exceed its daily spend cap"]
 ```
 
-But a sentence on its own proves **nothing** — the verifier reports it
-`UNSUPPORTED` (fail-closed). **A natural-language claim is never trusted until you
-compile it into a bound `{ claim, kind, ... }` obligation.** That compilation is
-YOUR job when generating a policy: read the user's English guarantee, pick the
-`kind` that captures it, and fill in the params. Leave it a bare string only as a
-TODO marker — it will not pass verification.
+But a sentence on its own proves **nothing**. The verifier surfaces it as a
+**non-blocking advisory**: status `UNSUPPORTED` with a "NOT proven (advisory) —
+bind to prove" note. It is **never counted as proven** (that preserves soundness —
+a bare claim is never treated as attested), but it also **does not fail the run or
+block deploy**. **A natural-language claim is never trusted until you compile it
+into a bound `{ claim, kind, ... }` obligation.** That compilation is YOUR job
+when generating a policy: read the user's English guarantee, pick the `kind` that
+captures it, and fill in the params. A bare string is fine as a visible TODO
+marker you can ship with — it just buys no guarantee until you bind it.
 
 Mapping intent → kind:
 - "X can only be read by members/owners/admins" → `roleGatedRead`.

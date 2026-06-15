@@ -75,6 +75,12 @@ reassign ownership — a free, strong guarantee.
 defaults to deny.** Give every collection an explicit, deliberate rule for each of
 `read`, `create`, `update`, `delete` — even if the answer is `"false"`.
 
+> A literal `"false"` rule is the **intentional always-deny idiom** for
+> append-only / immutable / server-authoritative collections, and `bounded
+> deploy` **accepts** it. `bounded verify` surfaces it as a **non-blocking
+> advisory** (intentional deny) — it does **not** block deploy (see
+> [verify-and-counterexamples.md](verify-and-counterexamples.md#human-in-the-loop-findings)).
+
 The expression language (full reference in
 [policy-reference.md](policy-reference.md)):
 

@@ -286,9 +286,10 @@ bounded data search    --app-id <id> --path notes  --query "shipping"
 curl -fsSL bounded.sh/install | sh      # or: npm install -g bounded-sh
 ```
 
-**No login step.** The first `bounded` command generates an ed25519 keypair at
-`~/.bounded/key` — the keypair *is* the identity, so agents go from zero to
-deployed without a human auth step. Details: [docs/auth.md](docs/auth.md).
+**No login step.** The first `bounded` command generates an ed25519 keypair in
+`~/.bounded/credentials` (base58 `privateKey`; or supply `BOUNDED_PRIVATE_KEY`) —
+the keypair *is* the identity, so agents go from zero to deployed without a human
+auth step. Details: [docs/auth.md](docs/auth.md).
 
 ```bash
 bounded init                            # scaffold policy.json (a capped spend ledger)
