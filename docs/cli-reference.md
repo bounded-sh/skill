@@ -179,6 +179,36 @@ bounded data get --app-id <id> --path spend \
 On `set` / `set-many`, an **onchain-only** flag: skip RPC preflight simulation
 so failing txs still land on-chain. No effect on the realtime data plane.
 
+## Debugging denied writes — `bounded decisions`
+
+When a write returns `403`, `bounded decisions` shows the realtime backend's
+recent **WRITE policy decisions** for the app (most-recent-first) so you can see
+*why* — each deny carries the failing rule/clause reason.
+
+```sh
+bounded decisions --app-id <id>                  # recent allows + denies (human table)
+bounded decisions --app-id <id> --denied-only    # only the denials
+bounded decisions --app-id <id> --limit 20       # cap the rows
+bounded decisions --app-id <id> --json           # one JSON object per line (agent-friendly)
+```
+
+| Flag | Meaning |
+|------|---------|
+| `--app-id <id>` | Target app (required) |
+| `--denied-only` | Only show denied writes |
+| `--limit N` | Max rows, most-recent-first (0 = server default) |
+| `--json` | Emit one compact JSON object per decision line |
+
+Each entry: `ts`, `collection`, `path`, `action` (create/update/delete),
+`actor` (wallet address or `(anon)`), `decision` (allow/deny), `reason`, and
+`roomId` (for session/partition writes). Owner/collaborator gated (same auth as
+`bounded share`/collaborators). The buffer is **in-memory and bounded** (~200
+entries per app, denies retained over allows) — make a write, then re-run.
+
+Typical loop: a `data set` returns `403 Policy failed: ...` → run
+`bounded decisions --app-id <id> --denied-only` → read the failing-rule reason →
+fix the policy or the calling identity.
+
 ## Functions (the imperative escape hatch)
 
 ```sh

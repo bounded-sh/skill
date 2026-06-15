@@ -59,6 +59,26 @@ A non-zero exit code from `bounded data set`/`set-many` plus the structured
 error is the whole contract — there is nothing to roll back, because nothing
 was applied.
 
+### Debugging a denied write
+
+A denied write returns `403` with a trace of the predicate that evaluated false
+— but that's only the *current* attempt. To see recent history (which writes were
+allowed vs denied, by whom, and why), use **`bounded decisions`**:
+
+```
+$ bounded data set --app-id <id> --path "rooms/r1" --data '{"name":"x"}'
+✗ 403 Policy failed: Expression evaluated to false (comparison != failed)
+
+$ bounded decisions --app-id <id> --denied-only
+TIME       DECISION  ACTION  PATH      ACTOR         REASON
+23:40:08Z  DENY      create  rooms/r1  89MnyG..1ZTe  Policy failed: Expression evaluated to false (comparison != failed)
+```
+
+The backend keeps a bounded (~200-entry, denies-prioritized) in-memory ring
+buffer of recent WRITE decisions per app. `bounded decisions` reads it
+(owner/collaborator gated); `--json` emits one object per line for agents. See
+[cli-reference.md](cli-reference.md#debugging-denied-writes--bounded-decisions).
+
 ## Worked example: the spend cap (staging-verified)
 
 With `rollingSum(amount) ≤ 100` over 3600s (name `spend_cap`) declared on
