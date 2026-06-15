@@ -79,6 +79,7 @@ for the *next* question.
 | **Deploy one policy to staging + production** (per-env appId + constants) | [docs/environments.md](docs/environments.md) · example below |
 | **Decide: rule vs invariant vs hook vs function** | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
 | **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
+| **Have a function act as its own backend identity** (payout bot, market-maker, settler — mint a key, policy authorizes its address) | [docs/service-keys.md](docs/service-keys.md) |
 | **Run a function / hook on a schedule** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) · [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence) |
 | Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | **Let users log in** (Privy / wallet) | [docs/auth.md](docs/auth.md#end-user-auth--privy--wallets--useraddress) · example below |
@@ -112,6 +113,7 @@ for the *next* question.
 | `constants`, `@const.NAME`, `defs`, `@def.name` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
 | `environments`, `--environment`, per-env appId/constants | [docs/environments.md](docs/environments.md) |
 | `functions`, `auth`, `entry`, `secrets`, `ctx.env`, `ctx.bounded`, `ctx.user` | [docs/functions.md](docs/functions.md) |
+| service key / server wallet, `ctx.actAs`, backend identity, payout bot, `@constants.PAYOUT_BOT` | [docs/service-keys.md](docs/service-keys.md) |
 | `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `session`, `hooks.tick`, `tick`, `settleTo`, fog-of-war (bytecode model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
