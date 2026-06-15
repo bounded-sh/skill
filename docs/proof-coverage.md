@@ -30,6 +30,16 @@ onchain program. Nothing is ported between runtimes, so nothing can drift.
 2. An onchain runtime receiving invariant metadata it does not support
    rejects the write rather than skipping the check.
 
+## Reach — which writes each layer actually governs
+
+This is the distinction that decides whether a proof is a *local* statement or a *system-wide* guarantee:
+
+- **Rules (Layer A) govern DIRECT writes + authorization.** Authorization has deliberate escape hatches: a **hook** (`updateField`/`put`) bypasses a collection's create/update/delete rules unless the collection sets `enforceRules: true`, and onchain **`ghost_mode`** (`set_documents_no_user`) is a permissionless write. So a rule proof ("only the owner can write X") guarantees the property for *direct client writes* — **not** necessarily for hook/system/permissionless writes. `bounded verify` flags this with a non-blocking **"rule authorization is direct-write-only"** advisory on any scope that declares hooks without `enforceRules`. Set `enforceRules: true` to make the rule apply to hook writes too.
+
+- **Invariants (Layer B) govern EVERY write surface, on BOTH planes — unskippable.** Every mutation path — direct client (HTTP/WS), Bounded Function `ctx.bounded`, hooks, ticks, schedules, file finalize — runs the declared transaction invariants before committing, and they hold *regardless of `enforceRules`* and *regardless of `ghost_mode`* (the onchain enforcement is intentionally ghost-mode-independent). An invariant holds "across all instances," whatever code path produced the write.
+
+**Rule of thumb:** if a property must hold *no matter what* — including hook/system/permissionless writes — express it as an **invariant**, not a rule. Rules answer *who may directly do what*; invariants answer *what must never break*.
+
 ## Onchain rolling caps: epoch-bucketed, conservative by proof
 
 The onchain runtime tracks each rolling window with 64 epoch buckets in a
