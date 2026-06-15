@@ -179,10 +179,10 @@ proposes.
   "rooms/$roomId": {
     "tier": "checkpointed",
     "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
-    "fields": { "score": "Json" },
+    "fields": { "score": "Int" },
     "session": { "live": { "module": "pong", "everyMs": 33 } },
     "invariants": [
-      { "type": "bound", "name": "score_ceiling", "field": "score.values", "op": "<=", "limit": 11 }
+      { "type": "bound", "name": "score_ceiling", "field": "score", "op": "<=", "limit": 11 }
     ]
   }
 }

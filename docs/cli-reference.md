@@ -119,6 +119,26 @@ realtime worker, which enforces the deployed policy atomically. Full semantics:
 | `data query` | Run a named policy query | `bounded data query --app-id <id> --name myQuery --args '{"k":"v"}'` |
 | `data aggregate` | Grouped count/sum/avg/min/max | `bounded data aggregate --app-id <id> --path spend --group category --sum amount` |
 | `data search` | Full-text search a collection | `bounded data search --app-id <id> --path notes --query "shipping"` |
+| `subscribe` | **Stream realtime changes** for a path (one JSON line per server message) | `bounded subscribe "tasks/$taskId" --app-id <id>` |
+
+### `subscribe` — realtime watch from the CLI
+
+`bounded subscribe <path> --app-id <id>` opens a realtime subscription (same
+`ws/v2` protocol and auth as the SDK — your `~/.bounded/credentials` identity)
+and prints each update as one JSON line (`{"type":"snapshot"|"delta", ...}`).
+Built for agents/scripts that react to data changes:
+
+```bash
+bounded subscribe "rooms/r1/scores/$p" --app-id <id> | while read -r line; do
+  echo "$line" | jq '.docs // .doc'   # react to each change
+done
+```
+
+Flags: `--once` (exit after the first snapshot — good for a one-shot read),
+`--timeout 30s` (exit if idle), `--include-subpaths`, `--filter '<json>'`,
+`--limit N`. Streams until Ctrl-C, auto-reconnecting on drops. Reads obey the
+same policy as everything else — a subscriber only sees what its identity is
+allowed to read.
 
 ### `data get` flags (collection reads)
 

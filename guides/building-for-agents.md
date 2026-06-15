@@ -21,8 +21,10 @@ without a person clicking through a console.
 ## The end-to-end flow
 
 ```bash
-# 1. Identity — created automatically; isolate it per agent
-export BOUNDED_KEY_PATH="$AGENT_HOME/.bounded/key"     # or set HOME / BOUNDED_PRIVATE_KEY
+# 1. Identity — created automatically at ~/.bounded/credentials; isolate it per agent
+export HOME="$AGENT_HOME"                               # per-agent dir → its own ~/.bounded/credentials
+# …or supply the key directly (base58 ed25519), no file needed:
+# export BOUNDED_PRIVATE_KEY="<base58-secret>"
 bounded whoami                                          # prints the agent's address
 
 # 2. Generate a policy from the task description (see the generation guide)
