@@ -92,6 +92,7 @@ failing any blocks deploy):
 | `tenant isolation relationship edge coverage` | (Opt-in) every declared relationship edge is covered by source tag + target tag + matching `tenantEdge` invariants, or deploy fails |
 | `tenant isolation relationship depth <= k` / `declared graph induction` | (Opt-in) bounded-depth isolation (acyclic within k ≤ 10 hops) or inductive isolation over any finite declared path, cycles included |
 | `combined declared DSL formal claim` | One policy-level conjunctive check (`__policy__/formalClaims`) composing every generated obligation into a single verdict |
+| `attestation: <claim> — <sub-check>` | A GLOBAL top-level [`attestations`](invariants.md#attestations--global-policy-wide-claims) entry, under the `__policy__/attestations` scope. The human `claim` is echoed verbatim, followed by the discharged obligation (a `roleGatedRead` exposure sweep, `authorityClosure` step, or rolling-limit algebra). A **bare-string** claim with no bound `kind` shows as `UNSUPPORTED` — a sentence alone is never attested |
 
 **Function-auth obligations** (generated per declared Bounded Function from `functions[<name>].auth` — the imperative escape hatch):
 

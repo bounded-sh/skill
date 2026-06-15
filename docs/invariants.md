@@ -251,6 +251,72 @@ beyond the subset is **rejected at verify time**; an onchain runtime receiving
 unknown metadata rejects the write rather than skipping the check. Details:
 [proof-coverage.md](proof-coverage.md).
 
+## `attestations` — GLOBAL, policy-wide claims
+
+Invariants (above) attach to **one** collection. Some guarantees are **global** —
+they span every collection and every read/write surface in the policy. Declare
+those in a top-level **`attestations`** array (a sibling of your collections, not
+nested inside one):
+
+```json
+{
+  "members/$memberId": { "fields": { "active": "Boolean" },
+    "rules": { "read": "get(/members/@user.address) != null", "create": "get(/members/@user.address) != null" } },
+  "projects/$projectId": { "fields": { "owner": "Address", "name": "String" },
+    "rules": { "read": "get(/members/@user.address) != null", "create": "@user.address != null" } },
+  "agents/$agentId/spend/$spendId": { "fields": { "amount": "UInt" }, "tier": "durable",
+    "rules": { "read": "true", "create": "@user.address != null", "update": "false", "delete": "false" } },
+
+  "attestations": [
+    { "claim": "admins cannot read projects they are not a member of",
+      "kind": "roleGatedRead", "scope": "projects/$projectId", "role": "members/$memberId" },
+    { "claim": "no agent can exceed its daily spend cap",
+      "kind": "rollingSum", "scope": "agents/$agentId/spend/$spendId",
+      "field": "amount", "windowSeconds": 86400, "limit": 1000, "scopeVariable": "$agentId" }
+  ]
+}
+```
+
+### Human text vs. machine obligation
+
+Every attestation has two halves, kept together:
+
+- **`claim`** — the human sentence (what you'd tell a user/auditor).
+- **`kind` + params** — the machine obligation Bounded actually proves with Z3.
+
+The proof report echoes the `claim` onto each result, so the English statement and
+its `PROVED` / `DISPROVED` (+ counterexample) sit side by side.
+
+| `kind` | Use it for | Key params |
+|---|---|---|
+| `roleGatedRead` | "only `<role>` members can read `<scope>`/`<field>`" — closes EVERY read path (rules, relationships, queries, field exposures), not just one rule | `role`, and `scope` or `field` |
+| `authorityClosure` | "membership of `<roleScope>` only grows through gated additions — no side doors" | `roleScope`, optional `initialMember` |
+| `rollingSum` | a windowed cap proven **globally** (same algebra as the per-collection invariant) | `scope`, `field`, `windowSeconds`, `limit`, optional `scopeVariable` |
+
+### Plain-string shorthand — and the rule you MUST follow
+
+You may write a bare sentence:
+
+```json
+"attestations": ["no agent can exceed its daily spend cap"]
+```
+
+But a sentence on its own proves **nothing** — the verifier reports it
+`UNSUPPORTED` (fail-closed). **A natural-language claim is never trusted until you
+compile it into a bound `{ claim, kind, ... }` obligation.** That compilation is
+YOUR job when generating a policy: read the user's English guarantee, pick the
+`kind` that captures it, and fill in the params. Leave it a bare string only as a
+TODO marker — it will not pass verification.
+
+Mapping intent → kind:
+- "X can only be read by members/owners/admins" → `roleGatedRead`.
+- "only existing admins can add admins" / "the admin set can't be hijacked" → `authorityClosure`.
+- "no more than N per window" / "spend/rate cap" → `rollingSum` (add `scopeVariable` for per-entity caps).
+- A cross-collection sum that must stay constant → usually a per-collection `conserve` invariant, not an attestation (attestations don't yet have a `conserve` kind).
+
+Attestations run in the same `verify` pass as invariants and show up under the
+`__policy__/attestations` scope of the report.
+
 ## When NOT to use an invariant
 
 See the RULES-vs-INVARIANTS table at the top. In short: if the property is about

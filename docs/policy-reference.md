@@ -206,6 +206,7 @@ never treated as path templates:
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
+| `attestations` | `[{ claim, kind, ... }]` — GLOBAL, policy-wide proven claims | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
 | `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](environments.md) |
 
 `constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
