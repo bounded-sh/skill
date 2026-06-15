@@ -39,6 +39,13 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 authApiUrl? }`. `authMethod` is one of `'privy' | 'wallet' | 'phantom' |
 'privy-expo' | 'none'` (full list and auth flow in [auth.md](auth.md)).
 
+`appId` is your project's **public** app id — it is **not a secret API key**.
+Authentication is done with the user's wallet/session id-token bearer (see
+[auth.md](auth.md)), so the `appId` is safe to ship in client code. The legacy
+`apiKey` field is a **deprecated alias** for `appId`: `init()` accepts either
+one and normalizes them to the same value, so `init({ apiKey: "<appId>" })`
+still works but new code should use `appId`.
+
 ## Read — `get` / `getPage` / `getMany`
 
 `get(path, opts?)` reads a single document (even-segment path) or **lists a
