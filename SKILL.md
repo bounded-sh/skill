@@ -83,6 +83,7 @@ for the *next* question.
 | **Run a function / hook on a schedule** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) · [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence) |
 | Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | **Let users log in** (Privy / wallet) | [docs/auth.md](docs/auth.md#end-user-auth--privy--wallets--useraddress) · example below |
+| **Anonymous / guest users, invite links, try-before-signup; transfer or upgrade an account** | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
 | **Paginate / filter / sort** a collection | [docs/queries.md](docs/queries.md#sort-limit-cursor-pagination) · example below |
 | **Aggregate** (count/sum/avg/min/max/group) | [docs/queries.md](docs/queries.md#aggregations) · example below |
@@ -124,6 +125,7 @@ for the *next* question.
 | `getPage`, `queryAggregate`, `count`, `setMany`, `subscribe`, `getIdToken` | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | `search`, `setFile`, `getFiles`, storage collection | [docs/files-and-search.md](docs/files-and-search.md) |
 | `bounded link`, `bounded share`, `collaborators` | [docs/auth.md](docs/auth.md#linking--teams) |
+| anonymous / guest / `signInAnonymously`, invite link, transfer ownership, upgrade account, ownership-as-data | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | `bounded functions deploy/list/invoke/logs` | [docs/cli-reference.md](docs/cli-reference.md#functions-the-imperative-escape-hatch) |
 | `bounded data get/aggregate/search` `--filter`/`--sort`/`--cursor` | [docs/cli-reference.md](docs/cli-reference.md#data-plane) |
 | `verifyWebhook`, `createWalletClient`, `bounded-sh/server` | [docs/sdk-reference.md](docs/sdk-reference.md) |

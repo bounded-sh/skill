@@ -1,0 +1,20 @@
+{
+  "accounts/$accountId": {
+    "rules": {
+      "read": "true",
+      "create": "@user.address == @newData.owner",
+      "update": "@user.address == @data.owner",
+      "delete": "false"
+    },
+    "fields": { "owner": "String", "label": "String" }
+  },
+  "accounts/$accountId/items/$itemId": {
+    "rules": {
+      "read": "true",
+      "create": "@user.address == get(`accounts/${accountId}`).owner",
+      "update": "@user.address == get(`accounts/${accountId}`).owner",
+      "delete": "@user.address == get(`accounts/${accountId}`).owner"
+    },
+    "fields": { "text": "String" }
+  }
+}
