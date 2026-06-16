@@ -345,9 +345,9 @@ nested inside one):
 ```json
 {
   "members/$memberId": { "fields": { "active": "Bool" },
-    "rules": { "read": "get(/members/@user.id) != null", "create": "get(/members/@user.id) != null" } },
+    "rules": { "read": "@user.id != null && get(/members/@user.id) != null", "create": "@user.id != null && get(/members/@user.id) != null" } },
   "projects/$projectId": { "fields": { "owner": "String", "name": "String" },
-    "rules": { "read": "get(/members/@user.id) != null", "create": "@user.id != null" } },
+    "rules": { "read": "@user.id != null && get(/members/@user.id) != null", "create": "@user.id != null" } },
   "agents/$agentId/spend/$spendId": { "fields": { "amount": "UInt" }, "tier": "durable",
     "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" } },
 
@@ -418,6 +418,7 @@ tenant data:
 
 ```json
 {
+  "constants": { "FOUNDER": "<the-creators-user-id>" },
   "admins/$userId": {
     "fields": { "tenant": "String", "active": "Bool" },
     "tier": "durable",
