@@ -23,6 +23,19 @@ authority and the client names no destination.
 > Do **not** hand-roll per-action HTTP for inputs. Sending an HTTP request per input
 > floods the browser's connection pool and head-of-line-blocks your view stream.
 
+**Reliable by default; fire-and-forget for input.** `live.intent` awaits the server
+ack, so a policy/auth **denial throws** — important for `join`/`ready`/`leave`,
+whose failure the player must know about. For high-frequency, idempotent input
+(movement/aim), opt into the fast path so it doesn't await:
+
+```ts
+live.intent(roomPath, { type: "ready" });                      // reliable — a deny throws
+live.intent(roomPath, { type: "input", mv, aim }, { fireAndForget: true }); // fast, no ack
+```
+
+(Both ride the same WebSocket; `fireAndForget` just skips waiting for the ack. Don't
+use it for intents whose rejection matters — the denial is silently dropped.)
+
 ## 2. Send input only when it CHANGES (event-driven, not every frame)
 
 Your live module persists each player's input (e.g. `p.mvx = mv[0]`) and keeps
@@ -39,7 +52,7 @@ function sendInput(roomId, mv, aim) {
   const now = performance.now();
   if (now - lastSent < 50) return;              // throttle rapid aim to ~20Hz
   lastSent = now; lastMv = mv.slice(); lastAim = aim.slice();
-  live.intent(roomId, { type: "input", mv, aim });
+  live.intent(roomId, { type: "input", mv, aim }, { fireAndForget: true });
 }
 ```
 
