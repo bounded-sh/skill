@@ -18,10 +18,10 @@ data.
 {
   "users/$userId/files/$fileId": {
     "type": "storage",
-    "fields": { "name": "String", "owner": "Address!", "size": "UInt" },
+    "fields": { "name": "String", "owner": "Address!" },
     "rules": {
       "read":   "@user.address != null && $userId == @user.address",
-      "create": "@user.address != null && $userId == @user.address && @newData.owner == @user.address",
+      "create": "@user.address != null && $userId == @user.address",
       "update": "false",
       "delete": "@user.address != null && $userId == @user.address"
     }
@@ -32,19 +32,49 @@ data.
 - The path scopes the file. `users/$userId/files/$fileId` with
   `$userId == @user.address` means a user can only touch files under their own id —
   the path is the access boundary, proven by the rule.
-- Declared `fields` are the file's metadata (name, size, content-type, whatever you
-  need); the bytes are stored separately in R2 and streamed.
-- Mark `owner` (and any set-once metadata) `!` so it can't be reassigned.
 - Storage collections are offchain.
 
-Upload and download go through the SDK. `setFile(path, file)` uploads a `File`
-(or `null` to delete); `getFiles(path)` lists the files under a path. The same
-path-scoped `read`/`create`/`delete` rules apply.
+### System metadata vs your declared fields
+
+A storage document carries **two** kinds of metadata:
+
+- **System metadata** — populated automatically by `setFile`: `contentType`,
+  `size` (bytes), `status` (`"ready"` once uploaded), `uploadedBy`, `createdAt`.
+  You never set these (passing them is a 400).
+- **Your declared `fields`** (`name`, `owner`, …) — set them **atomically with the
+  upload** by passing `metadata` to `setFile`. They land in `@newData` for the
+  CREATE rule and persist with the file — no second write, so `update: "false"` is
+  fine. The server validates `metadata` against your declared `fields` (an unknown
+  or reserved key is a 400, never a silent drop).
 
 ```ts
-import { setFile, getFiles } from "bounded-sh";
-await setFile("users/u1/files/avatar", file);   // File | null
-const files = await getFiles("users/u1/files");
+import { setFile, getFiles, get } from "bounded-sh";
+
+// Upload the bytes AND set declared fields in one call (atomic create).
+await setFile("users/u1/files/avatar", file, {
+  metadata: { name: "avatar.png", owner: myAddress },
+});
+```
+
+So a create rule can gate on the metadata you upload, e.g.
+`"create": "@newData.owner == @user.address"` — the file is created only if the
+`owner` you pass matches the caller.
+
+`setFile`'s `metadata` applies on **create** only. To change an existing file's
+declared fields, `set(path, {...})` it like any doc (an update — your `update` rule
+must allow it). To replace just the bytes, `setFile(path, file)` again.
+
+### Reading files back
+
+`getFiles(path)` lists readable files with their metadata and a signed download URL:
+`{ data: [{ path, url, metadata }] }`, where `metadata` carries both system fields
+and your declared fields, and `url` is a short-lived signed R2 link. For a single
+file you can also `get(path)` / subscribe the storage document like any other doc.
+
+```ts
+const { data } = await getFiles("users/u1/files");
+// data[0] = { path, url, metadata: { name, owner, contentType, size, status, … } }
+const bytes = await (await fetch(data[0].url)).text();    // download via the signed url
 ```
 
 ## Search — `search: { fields: [...] }`

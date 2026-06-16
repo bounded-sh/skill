@@ -130,11 +130,17 @@ per delivered document. More: [realtime-and-games.md](realtime-and-games.md).
 For `type: "storage"` collections (R2-backed, same path-scoped auth as data).
 
 ```ts
-await setFile("users/u1/files/avatar", file);     // File | null (null deletes)
-const files = await getFiles("users/u1/files");
+// blob + declared fields in one atomic create; system meta auto-filled
+await setFile("users/u1/files/avatar", file, { metadata: { name: "avatar.png", owner: myAddress } });
+const { data } = await getFiles("users/u1/files"); // [{ path, url, metadata }] — signed R2 links + metadata
 ```
 
-Details and the storage collection shape: [files-and-search.md](files-and-search.md).
+`setFile(path, file, { metadata })` writes the blob, auto-fills system metadata
+(`contentType`/`size`/`status`/`uploadedBy`/`createdAt`), and sets your declared
+fields from `metadata` (validated against the collection's `fields`; lands in
+`@newData` for the CREATE rule). `metadata` is create-only — change an existing
+file's fields with `set()`. `file = null` deletes. Details:
+[files-and-search.md](files-and-search.md).
 
 ## Policy queries & expressions — `runQuery` / `runExpression`
 
