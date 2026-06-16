@@ -9,14 +9,27 @@ schedules, and `set-many` batches, where the whole batch commits or nothing does
 Nothing has an exemption from an invariant. Four of the five types
 (`conserve`, `rollingSum`, `tenantTag`, `tenantEdge`) are additionally **proven
 at deploy** ([verify-and-counterexamples.md](verify-and-counterexamples.md)).
-`bound` is **runtime-enforced only** — the proof engine does not support it
-(see its section) — so a policy with a `bound` does not pass `verify`/`deploy`.
+`bound` is **runtime-enforced** (an over-limit write is rejected `409`) but **not
+proof-backed** — it deploys fine, it just shows as *unproven* in `verify`
+(advisory, non-blocking; see its section).
 
 Every invariant accepts an optional `name`, surfaced in the `409` when a write
 violates it. **Name them like error codes:** `spend_cap`, `no_minting`,
 `task_tenancy`.
 
 There are five types: `conserve`, `rollingSum`, `bound`, `tenantTag`, `tenantEdge`.
+
+> **Identity in the rule examples below.** The SDK `user` object is
+> `{ id: string, address: string | null, email: string | null }`. `@user.id` is
+> the **universal stable identity** — always present for an authenticated user
+> (for a wallet login it equals the wallet address; for an email/social login it
+> is the account identity) — so the auth-guard, ownership, and membership rules in
+> the examples below use `@user.id` (e.g. `owner == @user.id`,
+> `get(/admins/@user.id)`, `@user.id != null`). `@user.address` is a **real
+> onchain wallet address** (null for email-only logins) and is reserved for
+> wallet/onchain semantics; `@user.email` is the verified, lowercased email (null
+> for wallet logins). Inside an `"onchain": true` collection, `@user.id` and
+> `@user.email` are **forbidden** — only `@user.address` is allowed.
 
 ## RULES vs INVARIANTS — the decision
 
@@ -54,12 +67,12 @@ that debits one document must credit another **in the same batch**.
 ```json
 {
   "accounts/$accountId": {
-    "fields": { "balance": "Int", "owner": "Address!" },
+    "fields": { "balance": "Int", "owner": "String!" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null && @newData.owner == @user.address && @newData.balance == 0",
-      "update": "@user.address != null && @data.owner == @user.address && @newData.owner == @data.owner && @newData.balance >= 0",
+      "read": "@user.id != null",
+      "create": "@user.id != null && @newData.owner == @user.id && @newData.balance == 0",
+      "update": "@user.id != null && @data.owner == @user.id && @newData.owner == @data.owner && @newData.balance >= 0",
       "delete": "false"
     },
     "invariants": [
@@ -106,7 +119,7 @@ cannot be rewritten. Platform creation time is the clock.
   "agents/$agentId/spend/$spendId": {
     "fields": { "amount": "UInt" },
     "tier": "durable",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
     "invariants": [
       { "type": "rollingSum", "name": "per_agent_hourly_cap",
         "field": "amount", "windowSeconds": 3600, "limit": 100, "scopeVariable": "$agentId" },
@@ -162,25 +175,26 @@ the live-runtime checkpoint — so a server-authoritative game's score, a counte
 a level can never be stored out of range, no matter what a client (or a buggy tick)
 proposes.
 
-> **`bound` is RUNTIME-enforced but NOT proof-backed today.** Unlike the other
-> four types, `bound` is **not** discharged by the proof engine: `bounded verify`
-> rejects it with `Invariant type "bound" is not supported by proof mode`, and a
-> policy that declares one cannot pass `verify` / `deploy` while the bound is
-> present. The only invariant types the prover discharges today are `conserve`,
-> `rollingSum`, `tenantTag`, and `tenantEdge` (see
-> [proof-coverage.md](proof-coverage.md)). Use `bound` only where you accept a
-> runtime-only ceiling and don't need a deploy-time proof — or, for a *proven*
-> cap, express it as a `rollingSum` (a per-window total) or a single-write rule
-> predicate (`@newData.score <= 11`), both of which the prover backs. The example
-> below shows the shape `bound` *would* take; it does **not** prove.
+> **`bound` is RUNTIME-enforced but NOT proof-backed today.** It **does deploy**
+> and it **does enforce** (an over-limit write is rejected `409` on every path,
+> including the live checkpoint) — but the proof engine cannot discharge it, so it
+> is **advisory in proof, not blocking at deploy**. `bounded verify` surfaces it as
+> *unproven* (today it prints `Invariant type "bound" is not supported by proof
+> mode` under a `[FAIL]` line — read that as "not checked", not "counterexample
+> found"; it does **not** stop `deploy`). The four types the prover actually
+> discharges are `conserve`, `rollingSum`, `tenantTag`, and `tenantEdge` (see
+> [proof-coverage.md](proof-coverage.md)). So: use `bound` for a real runtime
+> ceiling you don't need a *proof* of; for a *proven* cap, express it as a
+> `rollingSum` (per-window total) or a single-write rule predicate
+> (`@newData.score <= 11`) — both prover-backed.
 
 ```json
 {
   "rooms/$roomId": {
     "tier": "checkpointed",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
     "fields": { "score": "Int" },
-    "session": { "live": { "module": "pong", "everyMs": 33 } },
+    "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800 } },
     "invariants": [
       { "type": "bound", "name": "score_ceiling", "field": "score", "op": "<=", "limit": 11 }
     ]
@@ -235,7 +249,7 @@ paths, or bare ids resolved via `targetPathVariable`.
 {
   "tenants/$tenantId/tasks/$taskId": {
     "fields": { "tenant": "String", "assigneeRef": "String", "title": "String" },
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "@user.address != null", "delete": "@user.address != null" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "@user.id != null", "delete": "@user.id != null" },
     "invariants": [
       { "type": "tenantTag", "field": "tenant", "pathVariable": "$tenantId" },
       { "type": "tenantEdge", "name": "assignee_same_tenant",
@@ -246,7 +260,7 @@ paths, or bare ids resolved via `targetPathVariable`.
   },
   "tenants/$tenantId/members/$memberId": {
     "fields": { "tenant": "String" },
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "@user.address != null", "delete": "@user.address != null" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "@user.id != null", "delete": "@user.id != null" },
     "invariants": [
       { "type": "tenantTag", "field": "tenant", "pathVariable": "$tenantId" }
     ]
@@ -297,11 +311,11 @@ nested inside one):
 ```json
 {
   "members/$memberId": { "fields": { "active": "Bool" },
-    "rules": { "read": "get(/members/@user.address) != null", "create": "get(/members/@user.address) != null" } },
-  "projects/$projectId": { "fields": { "owner": "Address", "name": "String" },
-    "rules": { "read": "get(/members/@user.address) != null", "create": "@user.address != null" } },
+    "rules": { "read": "get(/members/@user.id) != null", "create": "get(/members/@user.id) != null" } },
+  "projects/$projectId": { "fields": { "owner": "String", "name": "String" },
+    "rules": { "read": "get(/members/@user.id) != null", "create": "@user.id != null" } },
   "agents/$agentId/spend/$spendId": { "fields": { "amount": "UInt" }, "tier": "durable",
-    "rules": { "read": "true", "create": "@user.address != null", "update": "false", "delete": "false" } },
+    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" } },
 
   "attestations": [
     { "claim": "admins cannot read projects they are not a member of",
@@ -352,7 +366,7 @@ found`):
   "kind": "roleGatedRead",
   "scope": "tenants/$tenantId/tasks/$taskId",
   "role":  "tenants/$tenantId/members/$memberId",
-  "gatedBy": "get(/tenants/$tenantId/members/@user.address) != null" }
+  "gatedBy": "get(/tenants/$tenantId/members/@user.id) != null" }
 ```
 
 With both `role` (the nested member scope) and `gatedBy` (the predicate the read
@@ -365,31 +379,31 @@ provably implies membership`.
 scope**; a nested `tenants/$tenantId/members/$memberId` is rejected (`not a simple
 <collection>/$docId path`) and there is **no** keying param that makes a nested
 scope work today (this is a known limitation). For a multi-tenant admin set, the
-recommended pattern is a **flat `admins/$address` registry** alongside the nested
+recommended pattern is a **flat `admins/$userId` registry** alongside the nested
 tenant data:
 
 ```json
 {
-  "admins/$address": {
+  "admins/$userId": {
     "fields": { "tenant": "String", "active": "Bool" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null && (get(/admins/@user.address) != null || @user.address == @const.FOUNDER)",
-      "update": "@user.address != null && get(/admins/@user.address) != null",
-      "delete": "@user.address != null && get(/admins/@user.address) != null"
+      "read": "@user.id != null",
+      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id) != null",
+      "delete": "@user.id != null && get(/admins/@user.id) != null"
     }
   },
   "attestations": [
     { "claim": "the admin set only grows through existing admins",
-      "kind": "authorityClosure", "roleScope": "admins/$address",
+      "kind": "authorityClosure", "roleScope": "admins/$userId",
       "initialMember": "@const.FOUNDER" }
   ]
 }
 ```
 
 Keep tenant scoping for that admin as an ordinary field (`tenant`) gated in
-rules; the *closure* proof rides the flat `admins/$address` scope. Use a nested
+rules; the *closure* proof rides the flat `admins/$userId` scope. Use a nested
 `roleGatedRead` + `gatedBy` (above) for the per-tenant read isolation.
 
 ### Plain-string shorthand — and the rule you MUST follow

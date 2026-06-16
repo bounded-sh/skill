@@ -113,7 +113,7 @@ for a public-read room (anyone logged in could inject intents). Declare
   "tier": "ephemeral",
   "fields": { "createdBy": "Address!", "players": "Json" },
   "session": {
-    "live": { "module": "game", "everyMs": 33 },
+    "live": { "module": "game", "everyMs": 33, "maxLifetimeSec": 1800 },
     "intentRule": "@user.id != null && @user.id in @data.players"
   },
   "rules": { "read": "@user.id != null", "create": "...", "update": "false", "delete": "false" }
