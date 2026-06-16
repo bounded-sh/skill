@@ -134,7 +134,7 @@ one atomic unit, with no TOCTOU window between check and act.
 Allowlist example. `gated/$docId` has the create rule:
 
 ```
-getAfter(/allowlist/@user.address).approved == true
+getAfter(/allowlist/@user.id).approved == true
 ```
 
 One batch creates the allowlist entry AND the gated write:
@@ -156,9 +156,21 @@ Reverse the order and the gate sees no staged entry — the whole batch `403`s.
 Composition rules:
 
 - **Order matters** — stage the guard before the write that reads it.
-- `get()` reads pre-batch state; `getAfter()` reads staged state. Use
-  `getAfter` for any post-condition ("balance still ≥ floor after the
-  transfer").
+- **`get()` and `getAfter()` both read the STAGED in-batch view** — committed state
+  with any *earlier* in-batch entries (0..N-1) overlaid. For a doc another entry already
+  wrote in this batch, **both return its staged (post-write) value** — there is **no
+  pre-batch read** inside a rule. (Verified by dogfooding: a rule comparing
+  `getAfter(/accounts/x).balance == get(/accounts/x).balance` passed *true* mid-batch —
+  `get` saw the staged credit, not the pre-batch balance.) Use them for **post-conditions
+  against a constant or another doc** ("balance ≥ floor", "the guard doc says approved").
+- **You cannot compare a doc's *before* vs *after* within a batch.** A rule has no
+  pre-batch value to subtract, so a *delta* check like "the seller was credited *exactly*
+  the price" (`getAfter(seller).balance == get(seller).balance + price`) does **not** work
+  — `get` and `getAfter` return the same staged number, so it reduces to `price == 0`. For
+  a value-exact atomic swap (marketplace purchase, exact transfer amount), put the amount
+  in an explicit field/doc the rule reads, or do the swap in a **Function** (server reads
+  balances and writes through the proven boundary). A bare `getAfter(seller).balance >=
+  price` is NOT a substitute — a seller who already held ≥ price passes it with no payment.
 - **Distinct paths per entry** — in-batch path collisions reject.
 - Invariants are evaluated against the **whole batch** (that is how the
   balanced transfer above passes `conserve`).

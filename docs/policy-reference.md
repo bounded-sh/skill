@@ -29,7 +29,7 @@ an even number of segments:
 
 - Collection names: letters and digits, starting with a letter.
 - Id segments: `$camelCase` (alphanumeric after `$`) — they become **path
-  variables** usable in rules and invariants (`$tenantId == @user.address`).
+  variables** usable in rules and invariants (`$tenantId == @user.id`).
 - Nesting encodes ownership: a write to `tenants/t1/invoices/i9` binds
   `$tenantId = "t1"` for every rule on that template.
 - Two templates may not collide modulo variable names — `users/$a` and `users/$b`
@@ -81,11 +81,11 @@ with e.g. `field immutability` / `<field> is immutable on update`. You must add
 
 ```json
 "posts/$id": {
-  "fields": { "author": "Address!", "createdAt": "UInt!", "body": "String" },
+  "fields": { "author": "String!", "createdAt": "UInt!", "body": "String" },
   "rules": {
-    "create": "@user.address != null && @newData.author == @user.address",
-    "update": "@user.address == @data.author && @newData.author == @data.author && @newData.createdAt == @data.createdAt",
-    "delete": "@user.address == @data.author"
+    "create": "@user.id != null && @newData.author == @user.id",
+    "update": "@user.id == @data.author && @newData.author == @data.author && @newData.createdAt == @data.createdAt",
+    "delete": "@user.id == @data.author"
   }
 }
 ```
@@ -105,10 +105,10 @@ expressions at deploy. **An omitted rule defaults to deny.**
 
 ```json
 "rules": {
-  "read":   "@user.address != null && @data.ownerId == @user.address",
-  "create": "@user.address != null && @newData.ownerId == @user.address",
-  "update": "@data.ownerId == @user.address && @newData.ownerId == @data.ownerId",
-  "delete": "@data.ownerId == @user.address"
+  "read":   "@user.id != null && @data.ownerId == @user.id",
+  "create": "@user.id != null && @newData.ownerId == @user.id",
+  "update": "@data.ownerId == @user.id && @newData.ownerId == @data.ownerId",
+  "delete": "@data.ownerId == @user.id"
 }
 ```
 
@@ -116,21 +116,45 @@ expressions at deploy. **An omitted rule defaults to deny.**
 
 | Variable | Meaning | Restrictions |
 |---|---|---|
-| `@user.address` | Authenticated caller (keypair identity); `null` when unauthenticated | — |
+| `@user.id` | Universal stable identity of the authenticated caller; **always present** for an authenticated user (`null` when unauthenticated). For wallet logins it equals the wallet address; for email/social logins it is the account identity. **Use this for ownership / membership / identity / auth guards.** | — |
+| `@user.address` | A **real onchain wallet address**. Present for wallet logins, **`null` for email-only logins**. Use **only** for onchain operations / wallet semantics. | The **only** identity variable allowed in `onchain: true` collections |
+| `@user.email` | The verified, lowercased email (email logins only; `null` for wallet logins). Use for email-gating. | **Forbidden** in `onchain: true` collections |
 | `@data.field` | Existing document | **not** in `create` rules |
 | `@newData.field` | Incoming document | **not** in `delete` rules |
 | `@time.now` | Server time (seconds) | — |
 | `@contract.address` | The app's contract/escrow address (onchain) | — |
 | `$pathVariable` | Any variable from the path template | — |
-| `get(/path)` | Read another doc, **pre-transaction** state | unquoted path, leading `/` |
-| `getAfter(/path)` | Read another doc, **post-batch (staged)** state | not in `read` rules |
+| `get(/path)` | Read another doc, **staged in-batch** state (committed + earlier in-batch writes overlaid — **not** pre-batch for a doc written earlier in the same batch) | unquoted path, leading `/` |
+| `getAfter(/path)` | Read another doc, **staged** state (same view as `get` for already-staged docs) | not in `read` rules |
+
+> **The `user` object & the three identity variables.** The SDK `user` object is
+> `{ id: string, address: string | null, email: string | null }`, mirrored in
+> rules as `@user.id`, `@user.address`, `@user.email`:
+> - **`@user.id`** — the universal stable identity, **always present** for an
+>   authenticated user. Equals the wallet address for wallet logins; the account
+>   identity for email/social (Bounded Better Auth) logins. **This is what you
+>   compare for ownership, membership, and identity** (`owner == @user.id`,
+>   `$userId == @user.id`, `get(/orgs/$orgId/members/@user.id)`, allowlist gates,
+>   and the bare auth guard `@user.id != null`).
+> - **`@user.address`** — a real onchain wallet address; `null` for email-only
+>   logins. Use it **only** for onchain / wallet semantics.
+> - **`@user.email`** — the verified, lowercased email; `null` for wallet logins.
+>   Use it for email-gating.
+>
+> **HARD RULE for `onchain: true` collections:** `@user.id` and `@user.email` are
+> **forbidden** there; only `@user.address` is allowed. Everywhere else (offchain
+> ownership/membership/auth), prefer `@user.id` — it is the one variable
+> guaranteed to be non-null for every authenticated caller regardless of login
+> method.
 
 `get(/users/$userId).role` — property access chains off the call. `@data` /
 `@newData` must reference a specific field (`@data.foo`, never bare `@data`).
 
-> **There is no `@constants`.** The only special variables are `@user.address`,
-> `@data`, `@newData`, `@time.now`, `@contract.address`. Express "admin" by
-> comparing a `get()`-read role field or a literal address — not a constant.
+> **There is no `@constants`.** The only special variables are `@user.id`,
+> `@user.address`, `@user.email`, `@data`, `@newData`, `@time.now`,
+> `@contract.address`. Express "admin" by comparing a `get()`-read role field
+> against `@user.id` (e.g. `get(/admins/@user.id) != null`) or a literal address —
+> not a constant.
 
 ### Operators & literals
 
@@ -141,7 +165,7 @@ expressions at deploy. **An omitted rule defaults to deny.**
   (`"..."`, `'...'`, or `` `...` ``), `true`, `false`, `null`.
 - **No ternary, no switch, no string concatenation.** Branch with
   `(cond && A) || (!cond && B)` chained. Build paths by embedding variables
-  directly: `get(/teams/@newData.teamId/members/@user.address)`.
+  directly: `get(/teams/@newData.teamId/members/@user.id)`.
 
 ### Plugin functions in rules
 
