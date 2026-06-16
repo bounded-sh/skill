@@ -52,14 +52,17 @@ Chain effects with `&&`; a falsy result short-circuits later calls.
 > and the worker's doc serializer threw on them; it now converts BigInt to a
 > stored Number, matching client-supplied numbers.)
 >
-> Two real limitations remain:
+> Two real limitations remain (both have a client-side answer):
 > - **`updateField` is a SET, not an increment** — `updateField("c","n",1)` stores
 >   `1` every time, not `n+1`; there is no read-modify-write counter primitive in a
->   hook. For an advancing game clock use the native live-runtime `tick` module
+>   hook. For an atomic counter, increment from the **client write** with the
+>   `increment(n)` field-value helper ([sdk-reference.md](sdk-reference.md)); for an
+>   advancing game clock use the native live-runtime `tick` module
 >   ([realtime-and-games.md](realtime-and-games.md)).
 > - **`@time.now` does not resolve as a hook mutation value** (it is a *rule*
 >   builtin) and the literal `"now"` just stores the string `"now"` — so you can't
->   stamp a server timestamp from a hook. Pass it from the client and propagate via
+>   stamp a server timestamp from a hook. Stamp it from the **client write** with
+>   `serverTimestamp()` ([sdk-reference.md](sdk-reference.md)), propagate via
 >   `@newData.<field>`, or read the `tarobase_created_at` / `tarobase_updated_at`
 >   system fields on read.
 >

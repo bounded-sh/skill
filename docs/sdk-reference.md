@@ -121,6 +121,35 @@ A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
 composition, and failure codes: [data-plane.md](data-plane.md).
 
+### Server-resolved field values — `increment` / `serverTimestamp`
+
+A field in a `set`/`setMany` payload can be a plain value **or** a field-value
+operation the server resolves atomically when the write commits. Two are
+exported (staging-verified):
+
+```ts
+import { set, increment, serverTimestamp } from "bounded-sh";
+
+await set("counters/likes", { n: increment(1) });           // atomic server-side +1
+await set("scores/p1",      { points: increment(-5) });     // negative = decrement
+await set("posts/p1",       { createdAt: serverTimestamp() }); // server unix-seconds clock
+```
+
+- **`increment(n)`** adds `n` to a numeric field **server-side and atomically** —
+  the room Durable Object serializes writes, so concurrent increments never lose
+  updates (verified: 20 concurrent `increment(1)` → exactly 20). The field starts
+  from `0` if the doc/field doesn't exist yet. Use this for counters/scores
+  instead of read-modify-write (which races and can drop updates).
+- **`serverTimestamp()`** stamps the field with the server's clock (Unix
+  seconds) — the trustworthy "when did this happen" a client clock can't give you
+  (a hook can't stamp time, so do it here on the client write).
+
+Both compose inside a `set` alongside plain fields and inside an atomic
+`setMany`. They are plain objects (`{ operation: "increment", value: n }` /
+`{ operation: "time", value: "now" }`) — the helpers are just the discoverable
+way to write them. Increments still answer to invariants: an `increment` that
+would breach a `rollingSum`/`bound` cap is rejected (409) like any other write.
+
 ## Subscribe (live) — `subscribe`
 
 `bounded-sh` only. Every collection is live; `subscribe` streams a single
