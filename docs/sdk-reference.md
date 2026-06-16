@@ -128,7 +128,7 @@ document or a filtered collection and calls `onData` on every change. It returns
 an unsubscribe function.
 
 ```ts
-const stop = await subscribe("rooms/r1/view/" + myAddress, {
+const stop = await subscribe("rooms/r1/view/" + myId, {
   onData: (view) => render(view),
   onError: (e) => console.error(e),
 });
@@ -147,7 +147,7 @@ For `type: "storage"` collections (R2-backed, same path-scoped auth as data).
 
 ```ts
 // blob + declared fields in one atomic create; system meta auto-filled
-await setFile("users/u1/files/avatar", file, { metadata: { name: "avatar.png", owner: myAddress } });
+await setFile("users/u1/files/avatar", file, { metadata: { name: "avatar.png", owner: myId } });
 const { data } = await getFiles("users/u1/files"); // [{ path, url, metadata }] — signed R2 links + metadata
 ```
 
@@ -185,15 +185,30 @@ the list, enforced server-side.
 import { login, logout, getCurrentUser, useAuth } from "bounded-sh";
 
 await login();                       // opens the configured auth modal (Privy / wallet)
-const user = getCurrentUser();       // { address, ... } | null
+const user = getCurrentUser();       // { id, address: string | null, email: string | null } | null
 
 // React:
 const { user, login, logout, loading } = useAuth();
 ```
 
+The `user` object has three fields:
+
+- `user.id` — the **universal stable identity**, always present for an
+  authenticated user. For wallet logins it equals the wallet address; for
+  email/social (Bounded Better Auth) logins it is the account identity. Use this
+  for ownership / membership / identity (e.g. doc keys, owner fields, `view/<myId>`).
+- `user.address` — a **real onchain wallet address**. Present for wallet logins,
+  `null` for email-only logins. Use this only for onchain operations / wallet
+  semantics.
+- `user.email` — the verified, lowercased email (email logins only; `null` for
+  wallet). Use for email-gating.
+
 `onAuthStateChanged(cb)` / `onAuthLoadingChanged(cb)` are the imperative
-equivalents. End-user identity surfaces in rules as `@user.address`. Full flow,
-providers, and embedded wallets: [auth.md](auth.md).
+equivalents. End-user identity surfaces in rules as `@user.id` (the universal
+identity); `@user.address` is the wallet address (null for email-only logins, and
+the **only** `@user.*` variable allowed inside `onchain:true` collections); and
+`@user.email` is the verified email. Use `@user.id` for ownership/membership.
+Full flow, providers, and embedded wallets: [auth.md](auth.md).
 
 ## `bounded-sh/server` — `createWalletClient`
 
@@ -253,7 +268,10 @@ const event = await verifyWebhook(rawBody, headers);
 
 Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
 `DEFAULT_WEBHOOK_KEYS_URL`. `verifyWebhook(rawBody, headers, opts?)` — `opts`
-overrides `keysUrl` / `maxSkewSeconds` / cache TTL. Declaring webhooks:
+overrides `keysUrl` / `maxSkewSeconds` / cache TTL. The default keys URL follows
+your `init({ network })` (a `bounded-staging` receiver verifies against the
+staging signing keys), falling back to production when no network is set — so you
+only pass `keysUrl` for a custom worker. Declaring webhooks:
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 
 ### Invoking a function — today (and the planned helper)

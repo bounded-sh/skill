@@ -27,8 +27,8 @@ plugins; in practice that is `@DocumentPlugin`:
     "fields": { "room": "String", "author": "Address", "body": "String" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null && @newData.author == @user.address",
+      "read": "@user.id != null",
+      "create": "@user.id != null && @newData.author == @user.id",
       "update": "false",
       "delete": "false"
     },
@@ -94,7 +94,7 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
   "quotas/$quotaId": {
     "fields": { "used": "UInt", "owner": "Address!" },
     "tier": "durable",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null && @newData.owner == @user.address", "update": "@user.address != null && @newData.owner == @data.owner", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null && @newData.owner == @user.id", "update": "@user.id != null && @newData.owner == @data.owner", "delete": "false" },
     "hooks": { "scheduled": { "resetQuota": "@DocumentPlugin.updateField(\"quotas/global\", \"used\", \"0\")" } },
     "schedule": { "every": "1d", "run": "resetQuota" }
   }
@@ -151,10 +151,10 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
     "fields": { "owner": "Address!", "message": "String", "scheduledAt": "UInt", "done": "Bool?" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null && @newData.owner == @user.address",
+      "read": "@user.id != null",
+      "create": "@user.id != null && @newData.owner == @user.id",
       "update": "false",
-      "delete": "@user.address != null && @data.owner == @user.address"
+      "delete": "@user.id != null && @data.owner == @user.id"
     },
     "hooks": { "scheduled": { "fire": "@DocumentPlugin.updateField(\"reminders/log\", \"last\", \"fired\")" } },
     "dueRows": { "run": "fire", "onComplete": "markDone", "doneField": "done" }
@@ -170,6 +170,18 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 
 Also offchain-only.
 
+> ✅ **Staging status (verified 2026-06-16):** `dueRows` fires reliably and **on
+> time**. Dogfood: a reminder created with `scheduledAt = now + 15s` ran its
+> `hooks.scheduled` hook at the due second (0s late) and `onComplete: "markDone"`
+> flipped `done = true` — even though the collection's `update` rule is `"false"`,
+> because the hook write is privileged. Note the hook's *sink* must be a real,
+> declared collection+field it can write to (the example writes to a separate
+> `firelog/global` doc, not back into the timer's own required-field schema).
+
+> Unlike scheduled **functions** (see the schedule note above, broken on staging),
+> `dueRows` running a **hook** is fully operational — it rides the row DO's
+> `alarm()`, the same mechanism scheduled hooks use.
+
 ## webhooks — outbound notifications
 
 `webhooks` posts to an external `https://` URL on the chosen ops. Use it to drive
@@ -180,7 +192,7 @@ email, analytics, anomaly detection, or any downstream system.
   "orders/$orderId": {
     "fields": { "buyer": "Address", "total": "UInt" },
     "tier": "durable",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
     "webhooks": [ { "url": "https://example.com/hooks/orders", "on": ["create"] } ]
   }
 }
@@ -190,14 +202,73 @@ email, analytics, anomaly detection, or any downstream system.
 - Each `url` must be a valid `https://` URL.
 - `on` is a non-empty subset of `["create","update","delete"]` (no duplicates).
 
+### The delivery (verified 2026-06-16)
+
+Bounded `POST`s a JSON body (`Content-Type: application/json`) within a few
+seconds of the commit. The body is the typed event:
+
+```json
+{
+  "id": "orders/o123",
+  "appId": "<appId>",
+  "path": "orders/o123",
+  "relativePath": "orders/$id",
+  "operation": "create",
+  "document": { "buyer": "<addr>", "total": 4200 },
+  "previousDocument": null,
+  "timestamp": 1781612200
+}
+```
+
+Each delivery is **signed with Bounded's Ed25519 key** (asymmetric — there is no
+shared secret to leak). Three headers carry the proof:
+
+- `X-Bounded-Signature` — base64 Ed25519 signature over the **raw body bytes**.
+- `X-Bounded-Key-Id` — which published key signed it (supports rotation).
+- `X-Bounded-Timestamp` — unix seconds (also inside the body, so it is signed);
+  reject deliveries outside your skew window to bound replay.
+
+The public keys are served at
+`GET <your realtime host>/.well-known/bounded-webhook-keys.json` →
+`{ "keys": [ { "id", "alg": "ed25519", "publicKey": "<base64 raw 32-byte key>" } ] }`.
+
 ### Verifying a webhook on your server
 
-Anyone can POST to a public URL, so authenticate every delivery with a shared
-secret you control before acting on the body. The full receiver pattern (a
-constant-time `Authorization` compare, then mutate state via `bounded-sh/server`
-if needed) is in
+Anyone can POST to a public URL, so verify the signature before acting on the
+body. Use the shipped helper — `bounded-sh/server` exports **`verifyWebhook`**,
+which fetches + caches Bounded's public key (from the well-known endpoint above),
+checks the Ed25519 signature over the raw body, and enforces timestamp skew —
+returning the typed payload or throwing `WebhookVerificationError`:
+
+```ts
+import { verifyWebhook, WebhookVerificationError } from "bounded-sh/server";
+
+app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
+  let event;
+  try {
+    event = await verifyWebhook(req.body, req.headers); // RAW body string + headers
+  } catch (err) {
+    if (err instanceof WebhookVerificationError) return res.status(401).end();
+    throw err;
+  }
+  // event is trusted: { id, appId, path, operation, document, previousDocument, timestamp }
+  res.status(200).end();
+});
+```
+
+> **The keys URL follows your `init({ network })`.** A receiver that did
+> `init({ network: 'bounded-staging' })` verifies against the **staging** signing
+> keys automatically; with no `init` (a pure receiver) it falls back to the
+> production endpoint (fail-closed). Pass `verifyWebhook(body, headers, { keysUrl })`
+> only for a custom worker. (This network-awareness was a dogfood fix — the helper
+> previously always hit the production keys URL, so staging deliveries failed
+> verification unless you passed `keysUrl` by hand.)
+
+Webhooks are **read-only fan-out** — never act on an unauthenticated body, and
+treat the event as a *signal*: if you need to mutate Bounded state in response, do
+it through a `bounded-sh/server` client so every rule + invariant is re-checked.
+Full receiver walkthrough:
 [../guides/building-a-backend.md](../guides/building-a-backend.md#receiving-webhooks).
-Webhooks are read-only fan-out — never act on an unauthenticated body.
 
 ## The model in one line
 
