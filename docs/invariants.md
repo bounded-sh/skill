@@ -131,6 +131,26 @@ The takeaway: there is no "admin mint" escape hatch — that is the entire point
 `conserve`. Decide genesis by *deploy order* (seed before the invariant) or by
 *model* (credit/debt nets to 0), not by trying to write past the proof.
 
+**Authorizing a transfer — the simple owner rule blocks cross-owner credits.** A peer
+transfer debits one account and credits *another owner's* account in the same batch. But
+`"update": "@data.owner == @user.id"` only lets you change accounts **you own** — so the
+credit leg is rejected `403`, and a real transfer between two different owners is
+*impossible*, even though `conserve` is satisfied. (Validated by dogfooding: a Treasury→Alice
+transfer under that rule failed `403`; nothing partial applied.) To allow transfers without
+allowing theft, let the owner change their own account **OR** let anyone *increase* (credit)
+any account — and never let a non-owner *decrease* one:
+
+```json
+"update": "@user.id != null && @newData.owner == @data.owner && @newData.balance >= 0 && (@data.owner == @user.id || @newData.balance > @data.balance)"
+```
+
+`@data.owner == @user.id` = you may move your own balance (the debit leg); `@newData.balance
+> @data.balance` = anyone may *credit* (the credit leg); a non-owner *decrease* matches
+neither clause, so theft is rejected `403`. `conserve` then forces every credit to be
+matched by a debit in the same `set-many`. Validated end-to-end: cross-owner transfer ✅,
+stealing from another account → `403`, a lone mint → `409`, total supply unchanged. (For a
+ledger/IOU you'd drop `>= 0`; for hold-then-release flows, gate the credit clause further.)
+
 ## `rollingSum` — caps over time windows
 
 The sum of a `UInt` field over a sliding window of the last `windowSeconds` never
