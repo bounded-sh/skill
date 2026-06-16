@@ -175,17 +175,34 @@ providers, and embedded wallets: [auth.md](auth.md).
 
 ## `bounded-sh/server` — `createWalletClient`
 
+> **Requires Node ≥ 18** (declared in the package's `engines`). The server SDK
+> pulls in ESM-only transitive deps (e.g. via `@solana/web3.js` →
+> `rpc-websockets`/`uuid`); on Node 16 a `require()` of the package throws
+> `ERR_REQUIRE_ESM`. Node 18+ loads both the CJS (`require`) and ESM (`import`)
+> entrypoints cleanly. Use an LTS Node (18/20/22).
+
 The server client wraps the **same operations**, signed by a keypair, with no
 browser auth. Each client has its own session — no global state.
 
-```ts
-import { createWalletClient } from "bounded-sh/server";
+There are two server setup shapes; both work:
 
+```ts
+import { init, createWalletClient } from "bounded-sh/server";
+
+// 1) init({appId}) once, then create keypair-signed clients against that app.
+//    init pins the appId/endpoints; createWalletClient adds the signer.
+await init({ appId: "<appId>" });
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
+
 vault.address;                                   // the signer's address
 await vault.set("markets/123", { open: true });
 await vault.setMany([ /* atomic batch */ ]);
 const doc = await vault.get("markets/123");
+```
+
+```ts
+// 2) ESM import works identically (engines >=18 guarantees both forms load):
+const { init, createWalletClient } = await import("bounded-sh/server");
 ```
 
 `vault` exposes `get`, `getPage`, `getMany`, `set`, `setMany`, `setFile`,

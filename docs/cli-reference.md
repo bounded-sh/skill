@@ -113,7 +113,8 @@ realtime worker, which enforces the deployed policy atomically. Full semantics:
 | Command | Does | Example |
 |---|---|---|
 | `data set` | Write one document | `bounded data set --app-id <id> --path spend/a --data '{"amount":60}'` |
-| `data set-many` | Atomic all-or-nothing batch | `bounded data set-many --app-id <id> --from-json bundle.json` |
+| `data set-many` | Atomic all-or-nothing batch (**max 100 docs/bundle**) | `bounded data set-many --app-id <id> --from-json bundle.json` |
+| `data delete` | Delete one document (runs the path's `delete` rule) | `bounded data delete --app-id <id> --path spend/a` |
 | `data get` | Read a doc, or list/filter a collection | `bounded data get --app-id <id> --path spend --limit 20` |
 | `data get-many` | Batch-read paths from a JSON array | `echo '["spend/a","spend/b"]' \| bounded data get-many --app-id <id> --from-json /dev/stdin` |
 | `data query` | Run a named policy query | `bounded data query --app-id <id> --name myQuery --args '{"k":"v"}'` |
@@ -173,6 +174,29 @@ bounded data get --app-id <id> --path spend \
 
 `--query` (required) and optional `--fields a,b` (default: all fields),
 `--limit`, `--cursor`.
+
+### `data set-many` — per-bundle limit
+
+A single `set-many` bundle may carry **at most 100 documents** (the realtime
+data plane's per-write limit; counts upserts + deletes combined). The CLI
+preflights this client-side and errors before the round trip:
+
+```text
+too many documents: 150 exceeds the per-write limit of 100 (split the bundle into batches of 100 or fewer)
+```
+
+Split larger writes into sequential batches of 100 or fewer. Each batch is
+still atomic on its own, but the batches are independent (a later batch failing
+does not roll back an earlier one).
+
+### `data delete`
+
+`bounded data delete --app-id <id> --path <collection>/<id>` removes a single
+document through the same policy-enforced data plane as writes. The path's
+`delete` rule and any invariants are evaluated server-side first; if the rule
+denies the operation nothing is removed. On the wire a delete is just a write
+whose document body is `null`, so it is atomic and identity-scoped exactly like
+`data set`.
 
 ### `--skip-preflight`
 
