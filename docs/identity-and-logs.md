@@ -7,9 +7,16 @@ so access expressed against them never goes stale.
 
 | Read in a rule | True when the caller is… |
 | --- | --- |
-| `get(/__managers__/@user.address) != null` | the owner, a collaborator, OR any wallet linked to those humans' accounts |
-| `get(/__owners__/@user.address) != null` | the owner, or a wallet linked to the owner's account |
-| `get(/__collaborators__/@user.address) != null` | a collaborator, or a wallet linked to a collaborator's account |
+| `get(/__managers__/@user.id) != null` | the owner, a collaborator, OR any identity linked to those humans' accounts |
+| `get(/__owners__/@user.id) != null` | the owner, or an identity linked to the owner's account |
+| `get(/__collaborators__/@user.id) != null` | a collaborator, or an identity linked to a collaborator's account |
+
+These sets are keyed by `@user.id` — the **universal, stable identity** that is
+always present for an authenticated caller (it equals the wallet address for
+wallet logins and the account identity for email/social logins). Use `@user.id`
+for membership/ownership gates so they work for every login type, not just wallet
+logins. (Reserve `@user.address` for genuinely onchain/wallet operations, where
+it is the only allowed identity variable; it is `null` for email-only logins.)
 
 "Linked to the same account" means the human's other wallets/devices (Privy
 wallet + linked CLI keypairs) — so a teammate signing in from a different device
@@ -25,17 +32,21 @@ in the prover, so rules gating on them stay provable — e.g. a `conserve` or
 {
   "ops/$id": {
     "rules": {
-      "read":   "get(/__managers__/@user.address) != null",
-      "create": "get(/__managers__/@user.address) != null",
+      "read":   "@user.id != null && get(/__managers__/@user.id) != null",
+      "create": "@user.id != null && get(/__managers__/@user.id) != null",
       "update": "false", "delete": "false"
     }
   }
 }
 ```
 
-Only app managers (owner + collaborators + their linked wallets) can read/create
-`ops`. Non-managers get a `403` — verified. Want an alias? Define your own def:
-`"defs": { "isManager": "get(/__managers__/@user.address) != null" }` and use
+Only app managers (owner + collaborators + their linked identities) can read/create
+`ops`. Non-managers get a `403` — verified. The leading `@user.id != null &&` is
+what makes `bounded verify` *prove* the rule requires a signed-in user (a membership
+`get(...)` alone already returns null for an anonymous caller, but stating the auth
+check explicitly keeps the proof clean — same idiom as
+[admin-and-ownership.md](admin-and-ownership.md)). Want an alias? Define your own def:
+`"defs": { "isManager": "@user.id != null && get(/__managers__/@user.id) != null" }` and use
 `@def.isManager`.
 
 ## Who can view a function's server logs — `logsAuth`
@@ -48,9 +59,9 @@ function's `auth` rule:
 ```json
 { "functions": {
   "runPayouts": {
-    "auth": "true",                                          // who may INVOKE
+    "auth": "true",                                     // who may INVOKE
     "entry": "functions/runPayouts.ts",
-    "logsAuth": "get(/__managers__/@user.address) != null"  // who may VIEW logs
+    "logsAuth": "@user.id != null && get(/__managers__/@user.id) != null"   // who may VIEW logs
   }
 } }
 ```
@@ -67,7 +78,7 @@ function's `auth` rule:
 
 | You want… | Use |
 | --- | --- |
-| Gate data on the app's dev team (owner + collaborators + their devices) | `get(/__managers__/@user.address) != null` |
-| Gate on the owner specifically | `get(/__owners__/@user.address) != null` |
+| Gate data on the app's dev team (owner + collaborators + their devices) | `get(/__managers__/@user.id) != null` |
+| Gate on the owner specifically | `get(/__owners__/@user.id) != null` |
 | Control who sees a function's logs | `logsAuth` (defaults to managers) |
 | A backend identity the function acts AS (not a viewer) | a service key — [docs/service-keys.md](service-keys.md) |
