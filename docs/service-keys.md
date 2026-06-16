@@ -7,11 +7,22 @@ job that settles balances. Bounded supports this directly:
 
 > **A function declares `actAs: "<address>"`. It then transacts as that fixed
 > service identity, and the policy authorizes that address like any other
-> (`@user.address == @constants.PAYOUT_BOT`).**
+> (`@user.address == @const.PAYOUT_BOT`).**
 
 Authorization stays in the policy, so the service identity can only do exactly
 what the policy grants its address. **A service identity is the app developer's
 own backend actor — Bounded never custodies *user* funds.**
+
+> **Identity vs. wallet, in one line.** When a function acts as a service
+> identity, `@user.address` is the *real wallet* the function transacts as, so
+> service-key rules compare it against a wallet pubkey constant
+> (`@user.address == @const.PAYOUT_BOT`). That is a genuine onchain/wallet
+> use of `@user.address` and stays as-is. For the *caller's* own identity —
+> ownership, membership, admin/auth guards on the people who invoke the function
+> — use the universal `@user.id` (always present; equals the wallet address for
+> wallet logins, the account identity for email/social logins). Never use
+> `@user.id` or `@user.email` inside an `onchain:true` collection — only
+> `@user.address` is allowed there.
 
 ## You can have as many as you want
 
@@ -30,20 +41,20 @@ There is no single global service key; mint one identity per role.
   "payouts/$id": {
     "fields": { "to": "Address", "amount": "UInt" },
     "rules": {
-      "read":   "@user.address != null",
-      "create": "@user.address == @constants.PAYOUT_BOT",
+      "read":   "@user.id != null",
+      "create": "@user.address == @const.PAYOUT_BOT",
       "update": "false", "delete": "false"
     }
   },
 
   "quotes/$id": {
     "rules": { "read": "true",
-               "create": "@user.address == @constants.MARKET_MAKER",
-               "update": "@user.address == @constants.MARKET_MAKER", "delete": "false" }
+               "create": "@user.address == @const.MARKET_MAKER",
+               "update": "@user.address == @const.MARKET_MAKER", "delete": "false" }
   },
 
   "functions": {
-    "runPayouts": { "auth": "get(/admins/@user.address) != null",
+    "runPayouts": { "auth": "get(/admins/@user.id) != null",
                     "entry": "functions/runPayouts.ts", "actAs": "9aZ…address" },
     "postQuotes": { "auth": "true",
                     "entry": "functions/postQuotes.ts", "actAs": "4kT…address" }
@@ -63,7 +74,7 @@ export default async function runPayouts(args, ctx) {
 The caller still has to pass the function's own `auth` rule to invoke it; the
 owner-declared `actAs` is the authorization to act as that address. The function
 code doesn't change — `ctx.bounded` simply writes as the service identity, and
-the `@constants.PAYOUT_BOT` rule authorizes it.
+the `@const.PAYOUT_BOT` rule authorizes it.
 
 ## Key storage — the important part
 
