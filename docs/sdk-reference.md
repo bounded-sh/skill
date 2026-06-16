@@ -74,7 +74,8 @@ const open  = await get("orders", {                       // filtered + sorted
 ## Search & aggregate — `search` / `queryAggregate` / `count`
 
 ```ts
-const hits = await search("notes", { query: "shipping", fields: ["title", "body"] });
+const hits = await search("notes", "shipping");                  // search(path, query, opts?)
+const titleHits = await search("notes", "shipping", { fields: ["title"], limit: 20 });
 
 const rows = await queryAggregate("spend", {
   groupBy: ["category"], count: true, sum: ["amount"],

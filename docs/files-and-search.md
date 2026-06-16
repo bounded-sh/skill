@@ -108,9 +108,11 @@ Search is a query mode on the collection, combinable with filters and paging (se
 [queries.md](queries.md)):
 
 ```ts
-// SDK — search() over the collection path
-import { search } from "bounded-sh";
-const hits = await search("orgs/o1/docs", { query: "quarterly revenue", fields: ["title", "body"] });
+// SDK — search(path, query, opts?). Returns the matching documents.
+import { search } from "bounded-sh";          // or "bounded-sh/server"
+const hits = await search("orgs/o1/docs", "quarterly revenue");
+// restrict to a subset of the indexed fields, and/or page:
+const titleHits = await search("orgs/o1/docs", "revenue", { fields: ["title"], limit: 20 });
 ```
 
 ```bash
@@ -118,9 +120,12 @@ const hits = await search("orgs/o1/docs", { query: "quarterly revenue", fields: 
 bounded data search --app-id <id> --path orgs/o1/docs --query "quarterly revenue"
 ```
 
-The match runs over the declared `search.fields` (or pass `fields` to restrict
-further). Combine with `filter` to scope (e.g. search within
-`status == "published"`).
+- `query` is a required non-empty string (positional); `opts` takes `fields`
+  (restrict to a subset of the indexed fields), `limit`, and `cursor` (paging).
+- Match is case-insensitive over the declared `search.fields`.
+- **Read rules are enforced per document** — a caller only gets matches they are
+  allowed to read (e.g. with `read: "@data.owner == @user.address"`, each user
+  searches only their own rows).
 
 ## Choosing between them and ordinary data
 
