@@ -36,7 +36,7 @@ const open = await get("orders", {
     $and: [
       { status: { $in: ["open", "pending"] } },
       { total: { $gte: 100 } },
-      { buyer: walletAddress }                 // bare value = equality
+      { buyer: user.id }                       // bare value = equality (owner/identity key)
     ]
   },
   sort: { createdAt: -1 },     // 1 = asc, -1 = desc
@@ -81,14 +81,19 @@ bounded data get --app-id <id> --path orders \
 Two SDK shapes:
 
 **Scalar** — `count` / `aggregate(path, operation, opts)` return a single
-`{ value }` (`count` / `uniqueCount` / `sum` / `avg` / `min` / `max`), filtered by
-a natural-language `prompt`:
+`{ value }` (`count` / `uniqueCount` / `sum` / `avg` / `min` / `max`), optionally
+narrowed by a structured `filter` (same shape as `get`/`queryAggregate`):
 
 ```ts
 import { count, aggregate } from "bounded-sh";
-const open  = await count("orders", { prompt: "status is open" });       // { value: 4 }
-const spend = await aggregate("orders", "sum", { field: "total" });      // { value: 920 }
+const open  = await count("orders", { filter: { status: "open" } });           // { value: 4 }
+const spend = await aggregate("orders", "sum", { field: "total" });            // { value: 920 }
+const big   = await aggregate("orders", "sum", { field: "total", filter: { total: { $gt: 100 } } });
 ```
+
+On Bounded these run as the deterministic server aggregation (the same engine as
+`queryAggregate`) — pass a structured `filter`, not a natural-language `prompt`
+(`prompt` is a legacy-backend-only AI filter and does not aggregate on Bounded).
 
 **Grouped** — `queryAggregate(path, spec, opts?)` runs a deterministic, structured
 aggregation server-side and returns one row per group:
@@ -129,7 +134,7 @@ exposed as a read.
   "polls/$pollId": {
     "fields": { "question": "String", "yes": "UInt", "no": "UInt" },
     "tier": "durable",
-    "rules": { "read": "true", "create": "@user.address != null", "update": "@user.address != null", "delete": "false" },
+    "rules": { "read": "true", "create": "@user.id != null", "update": "@user.id != null", "delete": "false" },
     "queries": {
       "total": { "returnType": "UInt", "query": "@data.yes + @data.no" }
     }
@@ -155,12 +160,12 @@ A `links` array declares foreign-key edges. The source field must end in `Id`.
   "projects/$projectId": {
     "fields": { "name": "String", "ownerId": "String" },
     "tier": "durable",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "@user.address != null", "delete": "@user.address != null" }
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "@user.id != null", "delete": "@user.id != null" }
   },
   "users/$userId": {
     "fields": { "name": "String" },
     "tier": "durable",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "@user.address != null", "delete": "false" }
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "@user.id != null", "delete": "false" }
   },
   "links": [
     { "from": "projects.ownerId", "to": "users", "reverse": "ownedProjects" }
@@ -214,7 +219,7 @@ referenced field exists. These are expandable via `shape` just like `links`:
       "localField": "id", "foreignField": "id",
       "through": "enrollments", "throughLocalField": "studentId", "throughForeignField": "courseId" }
   },
-  "rules": { "read": "true", "create": "@user.address != null", "update": "false", "delete": "false" }
+  "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" }
 }
 ```
 
@@ -233,7 +238,7 @@ When a *single* write's authorization depends on another document, don't query �
 read it inline with `get()`:
 
 ```json
-"update": "@user.address != null && get(/orgs/$orgId/members/@user.address).role == \"admin\""
+"update": "@user.id != null && get(/orgs/$orgId/members/@user.id).role == \"admin\""
 ```
 
 `get()` reads pre-transaction state; `getAfter()` reads staged in-batch state (for

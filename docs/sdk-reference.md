@@ -82,8 +82,10 @@ alternative to `filter`), `bypassCache`. Read access always obeys the collection
 const hits = await search("notes", "shipping");                  // search(path, query, opts?)
 const titleHits = await search("notes", "shipping", { fields: ["title"], limit: 20 });
 
-const n     = await count("orders", { prompt: "created in the last 7 days" });   // { value }
+const n     = await count("orders", { filter: { status: "open" } });             // { value }
 const total = await aggregate("orders", "sum", { field: "total" });              // { value }
+// count / aggregate run the deterministic server aggregation on Bounded; narrow
+// with a structured `filter` (a natural-language `prompt` is legacy-backend only).
 
 // grouped/structured aggregation -> one row per group
 const rows  = await queryAggregate("orders", { groupBy: ["status"], count: true, sum: ["total"] });
