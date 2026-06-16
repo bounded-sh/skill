@@ -80,12 +80,23 @@ that is a `rules` predicate (`403`) or an `invariants` postcondition (`409`).
 
 ## enforceRules — privileged vs. caller-bound hooks
 
-By default a hook is **privileged**: it bypasses the per-actor `rules`. That is the
-point of server logic — a tick advances state no user may write directly. Two
-escape hatches hold a hook to the same rules an external caller faces:
+**Only `updateField` is privileged (verified 2026-06-16).** A hook
+`@DocumentPlugin.updateField` write bypasses the destination collection's `rules`
+by design — that is the point of server logic (a tick advances state no user may
+write directly). A hook `@DocumentPlugin.putDocument` write is **always checked
+against the destination collection's `create`/`update` rule** (it re-enters the
+normal rule path at its destination), so it is *not* a privileged escape hatch —
+if the destination denies the write, it is silently skipped. Use `updateField`
+when you need the privileged bypass; use `putDocument` for derived docs whose
+destination rules the hook should still satisfy.
 
-- `hooks.enforceRules: true` — applies to the hook group on that collection.
-- `enforceRules: true` — collection-level.
+To hold an `updateField` hook to the same rules an external caller faces, declare
+`enforceRules: true`. It may live in **either** place (both work):
+
+- on the **source** hook group (`hooks.enforceRules: true`) — "hold THIS hook's
+  writes to a caller's rules" (this is the example below), or
+- on the **destination** collection (`enforceRules: true` at the collection level)
+  — "this collection enforces its rules against every writer, including hooks."
 
 ```json
 "hooks": {
@@ -94,11 +105,15 @@ escape hatches hold a hook to the same rules an external caller faces:
 }
 ```
 
+With `enforceRules`, the `updateField` write evaluates the destination's
+`create`/`update` rule and a denied write is skipped — exactly like `putDocument`
+already behaves.
+
 **`enforceRules` relaxes rules, never invariants.** Even with `enforceRules: false`,
-every hook write is still checked against every proven invariant. A privileged hook
-can do things no user can — but it still cannot mint money, break conservation, or
-exceed a rolling cap. Proofs are the floor; rules are an extra gate on external
-actors only.
+every hook write (`updateField` *and* `putDocument`) is still checked against every
+proven invariant. A privileged hook can do things no user can — but it still cannot
+mint money, break conservation, or exceed a rolling cap. Proofs are the floor; rules
+are an extra gate on external actors only.
 
 ## hooks.tick — the realtime game loop
 
