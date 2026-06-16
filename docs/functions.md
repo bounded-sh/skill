@@ -55,7 +55,7 @@ paths and `links`, declared once at the root of the policy:
 ```json
 {
   "subs/$userId": {
-    "rules": { "read": "@user.address == $userId", "create": "false", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id == $userId", "create": "false", "update": "false", "delete": "false" },
     "fields": { "active": "Bool", "renewsAt": "UInt" }
   },
   "admins/$adminId": {
@@ -64,7 +64,7 @@ paths and `links`, declared once at the root of the policy:
   },
   "functions": {
     "syncStripe": {
-      "auth": "get(/admins/@user.address) != null",
+      "auth": "get(/admins/@user.id) != null",
       "entry": "functions/syncStripe.ts",
       "timeout": 30,
       "secrets": ["STRIPE_KEY"],
@@ -78,7 +78,7 @@ paths and `links`, declared once at the root of the policy:
 
 | Key | Meaning |
 |---|---|
-| `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller. `"true"` = any logged-in caller; `get(/admins/@user.address) != null` = only admins. Evaluated before the function runs; deny → `403`. |
+| `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller — `{ id, address, email }` where `@user.id` is the universal stable identity (always present), `@user.address` is a real onchain wallet (null for email-only logins), and `@user.email` is the verified email (null for wallet logins). `"true"` = any logged-in caller; `get(/admins/@user.id) != null` = only admins. Gate identity/membership on `@user.id`. Evaluated before the function runs; deny → `403`. |
 | `entry` | **Required.** Relative path to the function's source file (e.g. `functions/syncStripe.ts`). No absolute paths, no `..`. |
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
 | `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. |
@@ -95,7 +95,8 @@ A function is a default-exported async function. It receives the caller-supplied
 
 ```ts
 export default async function (args, ctx) {
-  // ctx.user   — the VERIFIED caller; auth was already enforced
+  // ctx.user   — the VERIFIED caller { id, address, email }; auth was already enforced
+  //              ctx.user.id = universal identity (use for ownership); address = wallet-or-null
   // ctx.bounded — pre-authed bounded-sh client; writes go THROUGH invariants
   // ctx.env    — only the secrets you declared in policy
   // fetch      — standard outbound HTTP
@@ -105,7 +106,7 @@ export default async function (args, ctx) {
 
 | `ctx` member | What it is |
 |---|---|
-| `ctx.user` | `{ address, email, claims, system? }` — the verified caller. `ctx.user.address` equals `@user.address` in policy. The dispatcher already verified the token **and** evaluated the `auth` rule, so this is trustworthy and the call is authorized. |
+| `ctx.user` | `{ id, address, email, claims, system? }` — the verified caller. `ctx.user.id` is the **universal stable identity** (always present; equals `@user.id` in policy) — use it for ownership/membership. `ctx.user.address` is a **real onchain wallet** (equals `@user.address`; null for email-only logins) — use it only for onchain/wallet semantics. `ctx.user.email` is the verified, lowercased email (null for wallet logins). The dispatcher already verified the token **and** evaluated the `auth` rule, so this is trustworthy and the call is authorized. |
 | `ctx.auth` | `{ enforced, rule, system }` — **authorization the platform ALREADY did for you.** `rule` is the exact policy `auth` expression that passed before your code ran (null for system/scheduled runs). Read this instead of re-implementing authz: if you declared an `auth` gate, it has already passed. |
 | `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by rules + invariants** — a `409` throws. `runQuery` runs one of your policy-declared `queries` (the proven query engine, caller's read authority) so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). |
 | `ctx.env` | The dev-configured secrets, narrowed to the names in `functions.<name>.secrets`. Nothing undeclared leaks in. |
@@ -115,7 +116,7 @@ export default async function (args, ctx) {
 ```ts
 export default async function (args, ctx) {
   // gate awareness — the platform already enforced your `auth` rule; don't redo it
-  // ctx.auth -> { enforced: true, rule: "@user.address != null", system: false }
+  // ctx.auth -> { enforced: true, rule: "@user.id != null", system: false }
 
   // reuse a policy-declared named query instead of re-implementing the logic
   const total = await ctx.bounded.runQuery(`polls/${args.pollId}`, "total", {});
@@ -173,13 +174,17 @@ would see. A first-class `functions.invoke(name, args)` SDK helper is planned (s
 bounded functions deploy syncStripe \
   --entry functions/syncStripe.ts \
   --app-id <id> \
-  --auth 'get(/admins/@user.address) != null' \
+  --auth 'get(/admins/@user.id) != null' \
   --secret STRIPE_KEY=sk_live_... \
   --timeout 30
 
 bounded functions list   --app-id <id>
 bounded functions logs   syncStripe --app-id <id>
 ```
+
+The `--entry` may be **TypeScript or JavaScript** — the deploy pipeline strips
+types before uploading, so annotations (`(args, ctx): Promise<...>`, `as`, `:
+Type`) are fine. Keep it a single self-contained module (the wrapper inlines it).
 
 A function's `console.*` output is **captured** and viewable; **who** may view it
 is the per-function `logsAuth` policy rule (defaults to app managers; declared
@@ -223,7 +228,9 @@ export default async function (args, ctx) {
 
   // 3. Write THROUGH the boundary. If your policy has, say, an invariant on
   //    `subs`, this write is still checked — the function can't bypass it.
-  await ctx.bounded.set(`subs/${ctx.user.address}`, { active, renewsAt });
+  //    Key the doc by the caller's universal identity (ctx.user.id), matching
+  //    the `subs/$userId` ownership rule (`@user.id == $userId`).
+  await ctx.bounded.set(`subs/${ctx.user.id}`, { active, renewsAt });
 
   return { ok: true, active, renewsAt };
 }
@@ -234,7 +241,7 @@ Invoke it from your admin dashboard with
 (or the TypeScript fetch shown above).
 
 Flow: logged-in admin → invoke (attaches token) → **dispatcher** (verify token →
-resolve `@user` → evaluate `get(/admins/@user.address) != null` → allow) → the
+resolve `@user` → evaluate `get(/admins/@user.id) != null` → allow) → the
 function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your rules +
 invariants) → returns JSON.
 
@@ -254,7 +261,7 @@ run on the cadence — fired by the Bounded heartbeat as the **system principal*
   },
   "functions": {
     "rollupDaily": {
-      "auth": "get(/admins/@user.address) != null",
+      "auth": "get(/admins/@user.id) != null",
       "entry": "functions/rollupDaily.ts",
       "timeout": 120
     }

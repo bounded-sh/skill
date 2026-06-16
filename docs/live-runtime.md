@@ -48,10 +48,10 @@ deploy). Quoting the contract from the top of `pong.live.ts`:
 ```ts
 //   1. init(seed)               -> initial state           (optional)
 //   2. tick(state, intents, dt) -> next state              (required; server-authoritative)
-//   3. views(state)             -> { [address]: view }     (optional; per-client visibility)
+//   3. views(state)             -> { [userId]: view }      (optional; per-client visibility)
 //
 // `intents` is the list of client inputs received since the last tick:
-//   [{ address, intent }, ...]  — Bounded orders them; you decide what they mean.
+//   [{ userId, intent }, ...]   — Bounded orders them; you decide what they mean.
 ```
 
 - `init(seed): State` — **optional.** The initial state when the room starts.
@@ -63,17 +63,19 @@ deploy). Quoting the contract from the top of `pong.live.ts`:
   it never affects tick determinism. The facet itself has no data-plane access —
   the supervisor injects this seed, keeping `tick`/`views` pure.
 - `tick(state, intents, dtMs): State` — **required, server-authoritative.**
-  `intents` is `[{ address, intent }, ...]` ordered by Bounded; return the next
-  state. This is the only thing that advances the room.
-- `views(state): Record<address, View>` — **optional.** Maps each client's
-  address to *what that client may see*. Bounded fans each entry out to that
-  address's view collection.
+  `intents` is `[{ userId, intent }, ...]` ordered by Bounded; return the next
+  state. This is the only thing that advances the room. (`userId` is the sender's
+  universal `@user.id` — present for every authenticated client, wallet or
+  email/social login alike.)
+- `views(state): Record<userId, View>` — **optional.** Maps each client's
+  universal `@user.id` to *what that client may see*. Bounded fans each entry out
+  to that user's view collection.
 
-> **Write the module in PLAIN JS — no TypeScript syntax.** `bounded live deploy`
-> uploads the source as-is; the facet loader parses it as JavaScript. A stray type
-> annotation (`intents: any[]`, `x as Foo`, `: State`) makes the room fail to load
-> with `500 {"error":"Unexpected token ':'"}` and `started:false`. Author the three
-> functions in plain JS (or transpile to JS yourself before `bounded live deploy`).
+> **TypeScript is fine — types are stripped at upload.** `bounded live deploy`
+> transpiles the `.ts` source (strips annotations like `intents: any[]`, `x as Foo`,
+> `: State`) before storing it, so the facet loads clean JS. Write the three
+> functions in TS or JS; both work. (Keep it to type-stripping syntax — no path
+> imports of other files; the module is a single self-contained file.)
 >
 > **Returning a rich/nested view?** Declare the view doc as a single
 > `"stateJson": "String"` field and return `out[addr] = { stateJson: JSON.stringify(view) }`,
@@ -138,13 +140,13 @@ The validated declaration (room + per-client view + invariants):
   "rooms/$roomId": {
     "tier": "checkpointed",
     "fields": { "status": "String", "tick": "UInt" },
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
     "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800, "snapshotEveryTicks": 30 } }
   },
-  "rooms/$roomId/view/$addr": {
+  "rooms/$roomId/view/$userId": {
     "tier": "ephemeral",
     "fields": { "stateJson": "String" },
-    "rules": { "read": "$addr == @user.address", "create": "false", "update": "false", "delete": "false" }
+    "rules": { "read": "$userId == @user.id", "create": "false", "update": "false", "delete": "false" }
   },
   "invariants": ["score.values <= 11", "paddleY.values >= 0 && paddleY.values <= 90"]
 }
@@ -161,7 +163,7 @@ The room template's `tier` decides what survives:
 |---|---|---|---|
 | Room state | `ephemeral` | in-memory; gone on eviction except for facet-SQLite snapshots | native `tick` only |
 | Room state | `checkpointed` | folded **through invariants** into the provable store on the checkpoint cadence — survives + is provable/replayable | native `tick`, then the checkpoint |
-| `view/$addr` | **always `ephemeral`** | a live projection, never source of truth | `views(state)` fan-out |
+| `view/$userId` | **always `ephemeral`** | a live projection, never source of truth | `views(state)` fan-out |
 
 Two **distinct** persistence mechanisms, do not conflate them:
 
@@ -174,29 +176,30 @@ Two **distinct** persistence mechanisms, do not conflate them:
 
 `ephemeral` = live fan-out only (snapshots bound replay loss, nothing is
 provable). `checkpointed` = the authoritative state becomes provable on every
-checkpoint. The per-client `view/$addr` is **always ephemeral** because it is a
+checkpoint. The per-client `view/$userId` is **always ephemeral** because it is a
 projection — the source of truth is the room, not the view.
 
 ## Per-client view read-rules (structural fog-of-war)
 
-`rooms/$roomId/view/$addr` is `ephemeral` with read rule `$addr ==
-@user.address`. The keys of the map returned by `views(state)` are **addresses**;
-Bounded fans each key out to that address's view collection. The read rule then
-guarantees a client can only ever subscribe to **its own** view — there is no
-delivery path for anyone else's.
+`rooms/$roomId/view/$userId` is `ephemeral` with read rule `$userId ==
+@user.id`. The keys of the map returned by `views(state)` are **universal user
+ids** (`@user.id`, always present for an authenticated client — wallet or
+email/social); Bounded fans each key out to that user's view collection. The read
+rule then guarantees a client can only ever subscribe to **its own** view — there
+is no delivery path for anyone else's.
 
 ```json
-"rooms/$roomId/view/$addr": {
+"rooms/$roomId/view/$userId": {
   "tier": "ephemeral",
-  "rules": { "read": "$addr == @user.address", "create": "false", "update": "false", "delete": "false" }
+  "rules": { "read": "$userId == @user.id", "create": "false", "update": "false", "delete": "false" }
 }
 ```
 
 This is the structural cure for maphacks/wallhacks (games) and for leaking
 private layers/selections in a collaborative editor: **hidden information is never
 written to a view it doesn't belong to**, so patching the client reveals nothing
-— there is nothing to reveal. In `views(state)`, only put in `out[addr]` what
-`addr` is allowed to see.
+— there is nothing to reveal. In `views(state)`, only put in `out[userId]` what
+`userId` is allowed to see.
 
 **The `*` spectator key.** Pong writes a wildcard `out["*"]` entry with the full
 board. That is appropriate **only** for symmetric / no-hidden-information rooms
@@ -275,9 +278,9 @@ import { live } from "bounded-sh";
 const roomPath = `rooms/r1`;                 // the session collection + room id
 
 // 1. Live state — subscribe to YOUR view. `live.subscribeView` builds the
-//    `<roomPath>/view/<myAddress>` path AND routes the connection to the room's
+//    `<roomPath>/view/<myUserId>` path AND routes the connection to the room's
 //    Durable Object (where the live view fan-out runs), so you never pass any
-//    routing yourself. The read rule `$addr == @user.address` means this only
+//    routing yourself. The read rule `$userId == @user.id` means this only
 //    ever resolves to your projection (no hidden state).
 const stop = await live.subscribeView(roomPath, {
   onData: (view) => render(view),            // your per-player view object
@@ -285,8 +288,8 @@ const stop = await live.subscribeView(roomPath, {
 });
 
 // 2. Send an intent. Address the room BY PATH; the worker derives the room id
-//    and takes your address from the session token (auth required, handled by
-//    the SDK). Returns { ok: true }.
+//    and takes your universal user id (`@user.id`) from the session token (auth
+//    required, handled by the SDK). Returns { ok: true }.
 await live.intent(roomPath, { type: "join" });
 await live.intent(roomPath, { type: "move", dir: -1 });
 
@@ -294,7 +297,7 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 ```
 
 > **Routing is the SDK's job, not yours.** `live.subscribeView` opens a
-> connection routed to the per-room DO; a plain `subscribe('rooms/r1/view/<addr>')`
+> connection routed to the per-room DO; a plain `subscribe('rooms/r1/view/<userId>')`
 > over the default app-level connection lands on the *project* DO and never sees
 > the room's ephemeral view writes (it stays `null`). Always subscribe to live
 > views through `live.subscribeView` (or `subscribeLiveView`). You never specify
