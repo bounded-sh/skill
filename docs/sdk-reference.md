@@ -137,8 +137,9 @@ await stop();
 ```
 
 `SubscribeOptions`: `filter`, `prompt`, `shape`, `limit`, `cursor`, `onData`,
-`onError`, `appId`. Filters/sort/paging match `get`. Read rules are enforced
-per delivered document. More: [realtime-and-games.md](realtime-and-games.md).
+`onError`, `appId`. `filter`/`shape`/paging match `get` and apply to the initial
+snapshot AND deltas (no `sort` — a live feed is event-ordered). Read rules are
+enforced per delivered document. More: [realtime-and-games.md](realtime-and-games.md).
 
 ## Files — `setFile` / `getFiles`
 

@@ -33,9 +33,23 @@ const stop = await subscribe(`rooms/${roomId}/view/${myAddress}`, {
 // later: await stop();
 ```
 
-Filters, sort, and paging in `SubscribeOptions` match `get`
-([queries.md](queries.md)). Read access is enforced per delivered document — a
-player's subscription to `view/$playerId` only ever delivers their own view.
+`subscribe` takes the same structured `filter` and `shape` as `get` — the live
+feed only delivers matching documents (initial snapshot AND deltas), with `shape`
+relationships expanded:
+
+```ts
+const stop = await subscribe("orders", {
+  filter: { status: "open", total: { $gt: 100 } },   // deterministic; same operators as get()
+  shape: { buyer: {} },                               // expand links on each delivered doc
+  onData: (rows) => render(rows),
+});
+```
+
+`SubscribeOptions`: `filter`, `shape`, `limit`, `cursor`, `prompt`, `onData`,
+`onError`. (No `sort` — a live feed is event-ordered, not sorted; sort with `get`.)
+Read access is enforced per delivered document — a player's subscription to
+`view/$playerId` only ever delivers their own view, and a `shape` expansion the
+caller can't read is omitted.
 
 ## Tiers for realtime
 
