@@ -43,40 +43,30 @@ plugins; in practice that is `@DocumentPlugin`:
 
 Chain effects with `&&`; a falsy result short-circuits later calls.
 
-> 🛑 **KNOWN BUG (verified 2026-06-16): a hook mutation silently drops NUMERIC
-> values — only String and Bool values are written.** Both `updateField` and
-> `putDocument` are affected. The triggering write still succeeds, so the loss is
-> silent. Verified on staging:
+> **Values that work as `value` (verified 2026-06-16):** String/Number/Bool
+> literals, and field refs from the triggering write (`@newData.<field>`,
+> `@data.<field>`). Numbers, strings, and bools all persist — `updateField("c",
+> "v", 5)` stores `5`, `putDocument("receipts/x", { total: 99 })` writes the doc,
+> and `@newData.author` → `rooms/lobby.lastAuthor` propagates. (Numeric values
+> were silently dropped before a 2026-06-16 fix — they are `BigInt` in the hook VM
+> and the worker's doc serializer threw on them; it now converts BigInt to a
+> stored Number, matching client-supplied numbers.)
 >
-> | Value | `updateField` / `putDocument` |
-> |---|---|
-> | String (`"open"`, `@newData.<String field>`) | ✅ written |
-> | Bool (`true`) | ✅ written |
-> | **Number** (`5`, `0`, `@newData.<UInt/Int field>`, a numeric field inside a `putDocument` object) | ❌ **dropped — no write** |
+> Two real limitations remain:
+> - **`updateField` is a SET, not an increment** — `updateField("c","n",1)` stores
+>   `1` every time, not `n+1`; there is no read-modify-write counter primitive in a
+>   hook. For an advancing game clock use the native live-runtime `tick` module
+>   ([realtime-and-games.md](realtime-and-games.md)).
+> - **`@time.now` does not resolve as a hook mutation value** (it is a *rule*
+>   builtin) and the literal `"now"` just stores the string `"now"` — so you can't
+>   stamp a server timestamp from a hook. Pass it from the client and propagate via
+>   `@newData.<field>`, or read the `tarobase_created_at` / `tarobase_updated_at`
+>   system fields on read.
 >
-> So `updateField("c", "v", 5)` writes nothing, and
-> `putDocument("receipts/x", { total: 99 })` writes **nothing** (a numeric
-> required field → the whole doc is missing). Root cause: numeric values are
-> `BigInt` in the hook VM and aren't converted before the mutation is staged.
-> **Until fixed: do not maintain numeric state from a hook** (counters, totals,
-> scores). A *constant* numeric reset can be written as a quoted string
-> (`updateField("q", "used", "0")` stores `"0"`) but that stores a STRING — do
-> NOT do this for a field under a `conserve`/`rollingSum` invariant, whose sums
-> need real numbers. Propagate String/Bool fields freely; keep numeric
-> aggregation on the client or the native live-runtime.
->
-> **`updateField` is also a SET, not an increment** — `updateField("c","n","1")`
-> stores `"1"` every time, not `n+1`; there is no read-modify-write counter
-> primitive in a hook (use the native live-runtime `tick` module for an advancing
-> clock). And `@time.now` does **not** resolve as a hook mutation value (it is a
-> *rule* builtin) and the literal `"now"` just stores the string `"now"` — **so
-> you cannot stamp a server timestamp from a hook today** either. For a write
-> time, pass it from the client and propagate via `@newData.<field>`, or read the
-> `tarobase_created_at` / `tarobase_updated_at` system fields on read.
->
-> What DOES work as `value`: String/Bool literals (`"open"`, `true`) and
-> String/Bool field refs from the triggering write (`@newData.author`,
-> `@data.status`) — `@newData.author` → `rooms/lobby.lastAuthor` is verified.
+> For `putDocument`, pass the data as an **object literal**
+> (`putDocument("p", { total: 99 })`) — a JSON-**string** data arg
+> (`putDocument("p", "{ total: 99 }")`) is unreliable in the realtime worker and
+> may not write.
 
 > **An onchain plugin (`@TokenPlugin.transfer`, …) in an offchain hook is
 > rejected by the validator.** Onchain plugins belong in `hooks.onchain` on a
