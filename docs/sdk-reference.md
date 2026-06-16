@@ -76,7 +76,7 @@ alternative to `filter`), `bypassCache`. Read access always obeys the collection
 `$ne $gt $gte $lt $lte $in $nin $exists $regex $options $and $or $nor` (bare value
 = equality). See [queries.md](queries.md).
 
-## Search & aggregate — `search` / `count` / `aggregate`
+## Search & aggregate — `search` / `count` / `aggregate` / `queryAggregate`
 
 ```ts
 const hits = await search("notes", "shipping");                  // search(path, query, opts?)
@@ -84,14 +84,22 @@ const titleHits = await search("notes", "shipping", { fields: ["title"], limit: 
 
 const n     = await count("orders", { prompt: "created in the last 7 days" });   // { value }
 const total = await aggregate("orders", "sum", { field: "total" });              // { value }
+
+// grouped/structured aggregation -> one row per group
+const rows  = await queryAggregate("orders", { groupBy: ["status"], count: true, sum: ["total"] });
+// [{ group: { status: "open" }, count: 4, sum: { total: 920 } }, ...]
 ```
 
-`count(path, { prompt? })` and `aggregate(path, operation, { field?, prompt? })`
-each return a single `{ value }`. `operation` ∈ `count | uniqueCount | sum | avg |
-min | max` (all but `count`/`uniqueCount` need `field`); `prompt` is a
-natural-language filter. **Grouped** aggregation (multiple rows) is CLI-only today
-(`bounded data aggregate --group …`) — the SDK does not group. Details:
-[queries.md](queries.md).
+- `count(path, { prompt? })` and `aggregate(path, operation, { field?, prompt? })`
+  each return a single `{ value }`. `operation` ∈ `count | uniqueCount | sum | avg |
+  min | max` (all but `count`/`uniqueCount` need `field`); `prompt` is a
+  natural-language filter.
+- `queryAggregate(path, spec, { filter? })` → `AggregateRow[]`. `spec` =
+  `{ groupBy?, count?, sum?, avg?, min?, max? }` (the last four are field-name
+  arrays); each row carries only the requested keys. Deterministic and
+  read-rule-enforced (aggregates only rows the caller can read).
+
+Details and CLI equivalents: [queries.md](queries.md).
 
 ## Write — `set` / `setMany`
 
@@ -219,7 +227,7 @@ const { init, createWalletClient } = await import("bounded-sh/server");
 ```
 
 The wallet client (`vault` above) exposes `get`, `getMany`, `set`, `setMany`, `setFile`,
-`getFiles`, `search`, `count`, `aggregate`, `runQuery`,
+`getFiles`, `search`, `count`, `aggregate`, `queryAggregate`, `runQuery`,
 `runQueryMany`, `runExpression`, `runExpressionMany`, and the collaborator
 methods. `keypair` is a base58 string or JSON array secret key — the **base58**
 form is the same value the CLI stores as the `privateKey` field in

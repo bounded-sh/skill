@@ -78,18 +78,36 @@ bounded data get --app-id <id> --path orders \
 
 ### Aggregations
 
-The SDK `count` and `aggregate(path, operation, opts)` compute a **single scalar**
-(`{ value }`) — `count` / `uniqueCount` / `sum` / `avg` / `min` / `max` — filtered
-by a natural-language `prompt`:
+Two SDK shapes:
+
+**Scalar** — `count` / `aggregate(path, operation, opts)` return a single
+`{ value }` (`count` / `uniqueCount` / `sum` / `avg` / `min` / `max`), filtered by
+a natural-language `prompt`:
 
 ```ts
 import { count, aggregate } from "bounded-sh";
-const open = await count("orders", { prompt: "status is open" });        // { value: 4 }
+const open  = await count("orders", { prompt: "status is open" });       // { value: 4 }
 const spend = await aggregate("orders", "sum", { field: "total" });      // { value: 920 }
 ```
 
-Grouped aggregation (`group by status, sum total`) returning multiple rows is
-currently **CLI-only** — the SDK `aggregate` does not group:
+**Grouped** — `queryAggregate(path, spec, opts?)` runs a deterministic, structured
+aggregation server-side and returns one row per group:
+
+```ts
+import { queryAggregate } from "bounded-sh";
+const byStatus = await queryAggregate("orders", {
+  groupBy: ["status"], count: true, sum: ["total"], avg: ["total"],
+}, { filter: { total: { $gte: 100 } } });        // optional pre-aggregation filter
+// [{ group: { status: "open" }, count: 4, sum: { total: 920 }, avg: { total: 230 } }, ...]
+```
+
+- `spec`: `groupBy?` (omit → one overall row), `count?`, `sum?`, `avg?`, `min?`,
+  `max?` (the latter four are field-name arrays). Result row carries only the
+  requested keys: `group?`, `count?`, `sum?`, `avg?`, `min?`, `max?` (each
+  numeric-field map keyed by field name).
+- Read rules are enforced: aggregation only sees documents the caller can read
+  (an owner-scoped collection sums only the caller's own rows — no cross-tenant
+  leak).
 
 ```bash
 bounded data aggregate --app-id <id> --path orders --group status --sum total --count
@@ -186,7 +204,8 @@ exceeded" — and it is proven at deploy.
 | Need | Use |
 |---|---|
 | List/filter/paginate many documents | `get(path, { filter, sort, limit, cursor })` |
-| Count / sum a single scalar | `count` / `aggregate` (grouped: CLI only) |
+| Count / sum a single scalar | `count` / `aggregate` → `{ value }` |
+| Group + count/sum/avg/min/max | `queryAggregate(path, spec)` → rows |
 | A derived value proven at deploy | policy `queries` |
 | Expand a foreign key both ways | `links` |
 | Many-to-many through a join table | `relationships` |
