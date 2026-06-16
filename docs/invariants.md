@@ -204,23 +204,32 @@ under-enforce). See [proof-coverage.md](proof-coverage.md).
 ## `bound` — hard ceilings / floors on a field (anti-cheat)
 
 A numeric field (or every value of a map field) must always satisfy a fixed
-comparison against a constant `limit`. Enforced on **every** write path — including
-the live-runtime checkpoint — so a server-authoritative game's score, a counter, or
-a level can never be stored out of range, no matter what a client (or a buggy tick)
-proposes.
+comparison against a constant `limit`. Enforced on the **standard** write paths
+(direct client write, function `ctx.bounded`, hooks, and the live-runtime
+checkpoint) — so a server-authoritative game's score, a counter, or a level can't be
+stored out of range, no matter what a client (or a buggy tick) proposes.
 
-> **`bound` is RUNTIME-enforced but NOT proof-backed today.** It **does deploy**
-> and it **does enforce** (an over-limit write is rejected `409` on every path,
-> including the live checkpoint) — but the proof engine cannot discharge it, so it
-> is **advisory in proof, not blocking at deploy**. `bounded verify` surfaces it as
-> *unproven* (today it prints `Invariant type "bound" is not supported by proof
-> mode` under a `[FAIL]` line — read that as "not checked", not "counterexample
-> found"; it does **not** stop `deploy`). The four types the prover actually
-> discharges are `conserve`, `rollingSum`, `tenantTag`, and `tenantEdge` (see
-> [proof-coverage.md](proof-coverage.md)). So: use `bound` for a real runtime
-> ceiling you don't need a *proof* of; for a *proven* cap, express it as a
-> `rollingSum` (per-window total) or a single-write rule predicate
-> (`@newData.score <= 11`) — both prover-backed.
+> **`bound` is RUNTIME-enforced but NOT yet formally SMT-proven — a non-blocking
+> ADVISORY.** Like every invariant, a `bound` is a postcondition on the
+> **authoritative** state: it is enforced on every durable write **and at the live
+> checkpoint** (a room snapshot whose value violates it is rejected — the last valid
+> checkpoint stays; an over-limit direct write is rejected `409`). `bounded verify`
+> surfaces it as **`[UNPROVEN]` … (runtime-enforced advisory)** — read that as "not
+> discharged by the prover", *not* "counterexample found"; it does **not** block
+> `deploy`, and the overall verdict still reads `✓ … Safe to deploy`. It is not a
+> `[PASS]` only because the prover doesn't yet discharge a `bound` obligation: a
+> **scalar** `bound` is provable at parity with `tenantTag`; the open modeling gap is
+> the `.values` **map** case, where the runtime checks *all* values but the
+> single-value proof obligation doesn't yet quantify over them. (This has nothing to
+> do with the ephemeral **view** layer — invariants are postconditions on the
+> authoritative/checkpointed state; the per-player view is a read-rule-governed
+> *projection*, so declare a `bound` on the **authoritative collection**, never a
+> `.../view/$x` subcollection.) The four types the prover fully discharges today are
+> `conserve`, `rollingSum`, `tenantTag`, and `tenantEdge` (see
+> [proof-coverage.md](proof-coverage.md)). So: use `bound` for a real runtime ceiling
+> you don't need a *proof* of; for a *proven* cap, express it as a `rollingSum`
+> (per-window total) or a single-write rule predicate (`@newData.score <= 11`) — both
+> prover-backed.
 
 ```json
 {
@@ -248,8 +257,13 @@ the bounded field (or any value of the bounded map) violating `op limit` is
 rejected (`409` + `name`). At a live checkpoint, the room's snapshot is gated by
 this before it reaches the provable store. But this is a **runtime-only** check —
 the proof engine does not discharge a `bound` obligation (see the callout above),
-so it carries no deploy-time guarantee and a policy with a live `bound` will not
-pass `verify`/`deploy`. See [live-runtime.md](live-runtime.md) and
+so it carries no deploy-time *proof*. A policy with a `bound` **does pass
+`verify`/`deploy`** (the `bound` shows as a non-blocking `[UNPROVEN]` advisory, not a
+blocking `[FAIL]`). Declare a `bound` (like any invariant) on the **authoritative
+collection** — the room/durable state, which is what the checkpoint folds through your
+invariants. Not on a `.../view/$x` subcollection: the per-player view is a
+read-rule-governed *projection* of the already-gated state, not a source of truth, so
+invariants don't apply there by design. See [live-runtime.md](live-runtime.md) and
 [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
 
 ## `tenantTag` — documents carry their tenant
@@ -273,6 +287,26 @@ path variable — there is no payload that tags a document with the wrong tenant
 
 `tenantTag` does not accept `materialization` or `scopeVariable`.
 
+> ⚠️ **Isolation needs the READ RULE too — `tenantTag`/`tenantEdge` are write-time
+> *integrity*, not read access.** They prove a doc can't be mis-tagged and a reference
+> can't cross tenants. They do **not** govern who can *read*. If your read rule is just
+> `"@user.id != null"`, **every signed-in user can read every tenant** — a cross-tenant
+> read leak — and `bounded verify` still says `✓ Proven` (it proved the integrity
+> invariants, not read isolation). Validated by dogfooding: with a permissive read rule,
+> tenant B's user read tenant A's task verbatim. For true "data can't leak between
+> tenants," **gate reads (and member-only writes) on tenant membership**:
+>
+> ```json
+> "read":   "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
+> "create": "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null"
+> ```
+>
+> (Keep the `@user.id != null &&` guard — a bare `get(/.../@user.id) != null` can't yet
+> be *proven* auth-requiring by the verifier, so the guard makes the auth obligation
+> pass.) Members self-join with `"create": "@user.id != null && $memberId == @user.id"`
+> to bootstrap. So: `tenantTag` + `tenantEdge` = nothing is mis-tagged or cross-linked;
+> the membership read rule = nobody reads another tenant. You need **both**.
+
 ## `tenantEdge` — references stay inside the tenant
 
 Protects a reference field: the document it points at must live in `targetScope`
@@ -283,7 +317,11 @@ paths, or bare ids resolved via `targetPathVariable`.
 {
   "tenants/$tenantId/tasks/$taskId": {
     "fields": { "tenant": "String", "assigneeRef": "String", "title": "String" },
-    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "@user.id != null", "delete": "@user.id != null" },
+    "rules": {
+      "read":   "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
+      "create": "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
+      "update": "false", "delete": "false"
+    },
     "invariants": [
       { "type": "tenantTag", "field": "tenant", "pathVariable": "$tenantId" },
       { "type": "tenantEdge", "name": "assignee_same_tenant",
@@ -294,13 +332,23 @@ paths, or bare ids resolved via `targetPathVariable`.
   },
   "tenants/$tenantId/members/$memberId": {
     "fields": { "tenant": "String" },
-    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "@user.id != null", "delete": "@user.id != null" },
+    "rules": {
+      "read":   "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
+      "create": "@user.id != null && $memberId == @user.id",
+      "update": "false", "delete": "false"
+    },
     "invariants": [
       { "type": "tenantTag", "field": "tenant", "pathVariable": "$tenantId" }
     ]
   }
 }
 ```
+
+Reads + member-only writes are gated on tenant membership (so no cross-tenant leak);
+the `members` collection self-joins (`$memberId == @user.id`) to bootstrap. Validated
+end-to-end: tenant B's user is rejected reading tenant A's task, the wrong-tenant tag is
+rejected `409`, and a cross-tenant reference is rejected `409` — while a member reads
+their own tenant fine.
 
 | Key | Required | Meaning |
 |---|---|---|

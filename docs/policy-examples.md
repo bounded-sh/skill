@@ -15,6 +15,17 @@ immutable/server-authoritative collections), which the engine surfaces as
 
 Read these after the method — they show the whole shape, not fragments.
 
+> **Identity model.** The SDK `user` object is `{ id, address, email }`.
+> `@user.id` is the **universal stable identity** and is **always present** for an
+> authenticated user (for wallet logins it equals the wallet address; for
+> email/social logins it is the account identity). `@user.address` is a **real
+> onchain wallet address** — present for wallet logins, **null** for email-only
+> logins — and is reserved for onchain/wallet semantics. `@user.email` is the
+> verified, lowercased email (email logins only; null for wallet). Use
+> **`@user.id` for all ownership, membership, and auth-guard checks** (as every
+> example below does). Inside `onchain: true` collections, `@user.id` and
+> `@user.email` are **forbidden** — only `@user.address` is allowed there.
+
 ---
 
 ## A — Team SaaS (orgs, members, docs)
@@ -32,23 +43,23 @@ Non-negotiables identified in step 4:
 ```json
 {
   "orgs/$orgId": {
-    "fields": { "name": "String", "owner": "Address!" },
+    "fields": { "name": "String", "owner": "String" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null && @newData.owner == @user.address",
-      "update": "@user.address != null && @data.owner == @user.address && @newData.owner == @data.owner",
-      "delete": "@user.address != null && @data.owner == @user.address"
+      "read": "@user.id != null && (get(/orgs/$orgId).owner == @user.id || get(/orgs/$orgId/members/@user.id).role != null)",
+      "create": "@user.id != null && @newData.owner == @user.id",
+      "update": "@user.id != null && @data.owner == @user.id && @newData.owner == @data.owner",
+      "delete": "@user.id != null && @data.owner == @user.id"
     }
   },
   "orgs/$orgId/members/$memberId": {
-    "fields": { "org": "String", "role": "String", "wallet": "Address!" },
+    "fields": { "org": "String", "role": "String", "identity": "String" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null && (get(/orgs/$orgId).owner == @user.address || get(/orgs/$orgId/members/@user.address).role == \"admin\")",
-      "update": "@user.address != null && get(/orgs/$orgId/members/@user.address).role == \"admin\"",
-      "delete": "@user.address != null && get(/orgs/$orgId).owner == @user.address"
+      "read": "@user.id != null && (get(/orgs/$orgId).owner == @user.id || get(/orgs/$orgId/members/@user.id).role != null)",
+      "create": "@user.id != null && (get(/orgs/$orgId).owner == @user.id || get(/orgs/$orgId/members/@user.id).role == \"admin\")",
+      "update": "@user.id != null && get(/orgs/$orgId/members/@user.id).role == \"admin\"",
+      "delete": "@user.id != null && get(/orgs/$orgId).owner == @user.id"
     },
     "invariants": [
       { "type": "tenantTag", "name": "member_org", "field": "org", "pathVariable": "$orgId" }
@@ -59,10 +70,10 @@ Non-negotiables identified in step 4:
     "tier": "durable",
     "search": { "fields": ["title", "body"] },
     "rules": {
-      "read": "@user.address != null && get(/orgs/$orgId/members/@user.address).role != null",
-      "create": "@user.address != null && get(/orgs/$orgId/members/@user.address).role != null",
-      "update": "@user.address != null && get(/orgs/$orgId/members/@user.address).role != null",
-      "delete": "@user.address != null && get(/orgs/$orgId/members/@user.address).role == \"admin\""
+      "read": "@user.id != null && get(/orgs/$orgId/members/@user.id).role != null",
+      "create": "@user.id != null && get(/orgs/$orgId/members/@user.id).role != null",
+      "update": "@user.id != null && get(/orgs/$orgId/members/@user.id).role != null",
+      "delete": "@user.id != null && get(/orgs/$orgId/members/@user.id).role == \"admin\""
     },
     "invariants": [
       { "type": "tenantTag", "name": "doc_org", "field": "org", "pathVariable": "$orgId" },
@@ -79,7 +90,13 @@ What the proofs buy you: membership is the *closure* of the owner plus
 admin-gated additions (`get()`-based role checks); a document can never be
 written under one org while tagged with another (`tenantTag`); an author
 reference can never cross orgs (`tenantEdge` ties source and target tags).
-"Nothing leaks across orgs" is discharged at deploy, not hoped for.
+Two layers, and you need both: the **invariants** (`tenantTag`/`tenantEdge`) are
+discharged at deploy and make mis-tagging / cross-org references *impossible*; the
+**membership read rules** — every collection gates `read` on `get(/orgs/$orgId/members/@user.id)`
+— are what stop a non-member reading another org's docs, roster, or metadata. Invariants
+alone prove write *integrity*, not read isolation: with a permissive `read: "@user.id
+!= null"`, every signed-in user reads every org (verified by dogfooding — a non-member
+read another org's data verbatim). So gate reads on membership on **every** collection.
 
 ---
 
@@ -105,9 +122,9 @@ Non-negotiables:
     "search": { "fields": ["title"] },
     "rules": {
       "read": "true",
-      "create": "@user.address != null && $sellerId == @user.address && @newData.seller == @user.address",
-      "update": "@user.address != null && $sellerId == @user.address",
-      "delete": "@user.address != null && $sellerId == @user.address"
+      "create": "@user.id != null && $sellerId == @user.id && @newData.seller == @user.id",
+      "update": "@user.id != null && $sellerId == @user.id",
+      "delete": "@user.id != null && $sellerId == @user.id"
     },
     "invariants": [
       { "type": "tenantTag", "name": "listing_seller", "field": "seller", "pathVariable": "$sellerId" }
@@ -117,8 +134,8 @@ Non-negotiables:
     "fields": { "buyer": "String", "listingRef": "String", "seller": "String", "amountUsd": "UInt" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null && $buyerId == @user.address",
-      "create": "@user.address != null && $buyerId == @user.address && @newData.buyer == @user.address",
+      "read": "@user.id != null && $buyerId == @user.id",
+      "create": "@user.id != null && $buyerId == @user.id && @newData.buyer == @user.id",
       "update": "false",
       "delete": "false"
     },
@@ -135,7 +152,7 @@ Non-negotiables:
 The order collection is an **append-only event log** because of the rolling
 cap: `update`/`delete` are rejected so the spend history a cap is computed from
 can't be rewritten. Each order is a new document with a fresh id. The `$buyerId
-== @user.address` guard means the path itself enforces "you may only place
+== @user.id` guard means the path itself enforces "you may only place
 orders under your own buyer id."
 
 ---
@@ -154,7 +171,7 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
 - State is **server-authoritative**: `update`/`delete` are `"false"`; only the
   `hooks.tick` advances state. Clients write to `intents` only.
 - Fog-of-war: each player reads only `view/$playerId` where `$playerId ==
-  @user.address`.
+  @user.id`.
 - The per-player rate cap is a `rollingSum`, which **requires `durable` tier**,
   so the `intents` collection is durable while the rest of the room is ephemeral.
 - `session.settleTo` + `settleFrom` fold per-player scores into a durable
@@ -166,8 +183,8 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
     "tier": "ephemeral",
     "fields": { "status": "String", "tick": "UInt" },
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null",
+      "read": "@user.id != null",
+      "create": "@user.id != null",
       "update": "false",
       "delete": "false"
     },
@@ -186,7 +203,7 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
     "fields": { "player": "String", "kind": "String", "weight": "UInt" },
     "rules": {
       "read": "false",
-      "create": "@user.address != null && @newData.player == @user.address",
+      "create": "@user.id != null && @newData.player == @user.id",
       "update": "false",
       "delete": "false"
     },
@@ -199,7 +216,7 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
     "tier": "ephemeral",
     "fields": { "visibleJson": "String" },
     "rules": {
-      "read": "@user.address != null && $playerId == @user.address",
+      "read": "@user.id != null && $playerId == @user.id",
       "create": "false",
       "update": "false",
       "delete": "false"
@@ -209,7 +226,7 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
     "tier": "ephemeral",
     "fields": { "points": "UInt" },
     "rules": {
-      "read": "@user.address != null",
+      "read": "@user.id != null",
       "create": "false",
       "update": "false",
       "delete": "false"
@@ -219,7 +236,7 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
     "tier": "durable",
     "fields": { "total": "UInt" },
     "rules": {
-      "read": "@user.address != null",
+      "read": "@user.id != null",
       "create": "false",
       "update": "false",
       "delete": "false"
