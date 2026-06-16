@@ -45,7 +45,7 @@ For *per-environment* values see [environments.md](environments.md).
     "rules": {
       "read": "true",
       "create": "@user.id == @newData.owner",
-      "update": "@def.canEdit",
+      "update": "@def.canEdit && @newData.owner == @data.owner",
       "delete": "@def.isAdmin"
     },
     "fields": { "owner": "String", "body": "String" }
