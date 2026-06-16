@@ -11,45 +11,62 @@ authorization joins use `get()` inside a rule.
 
 ## Runtime filters — the data-plane query API
 
-`getMany` / `subscribeMany` take a filter. Read access still obeys each
-collection's `read` rule — a filter never returns a document the caller can't read.
+`get(path, opts)` on a **collection** path takes a structured filter/sort. Read
+access still obeys each collection's `read` rule — a filter never returns a
+document the caller can't read (the read rule is compiled into the query).
 
 ### Operators
 
 | Operator | Meaning |
 |---|---|
-| `$eq` `$ne` | equals / not equals |
+| (bare value) | equality, e.g. `{ status: "open" }` |
+| `$ne` | not equals |
 | `$gt` `$gte` `$lt` `$lte` | numeric / time comparisons |
 | `$in` `$nin` | value in / not in a list |
-| `$regex` | string pattern match |
+| `$regex` (+ `$options`) | string pattern match |
 | `$exists` | field present / absent |
-| `$and` `$or` | combine sub-filters |
+| `$and` `$or` `$nor` | combine sub-filters |
 
 ```ts
-// SDK — get() on a collection path takes the filter shape
-import { getPage } from "bounded-sh";
-const open = await getPage("orders", {
+// SDK — get(path, { filter, sort, limit, cursor }) on a collection path.
+// Deterministic (no AI). Returns { data, nextCursor } when limited/paged.
+import { get } from "bounded-sh";              // or "bounded-sh/server"
+const open = await get("orders", {
   filter: {
     $and: [
       { status: { $in: ["open", "pending"] } },
       { total: { $gte: 100 } },
-      { buyer: { $eq: walletAddress } }
+      { buyer: walletAddress }                 // bare value = equality
     ]
   },
   sort: { createdAt: -1 },     // 1 = asc, -1 = desc
   limit: 20,
   cursor: lastCursor           // omit for the first page
 });
-// open.data, open.nextCursor
+// open.data (rows), open.nextCursor (token for the next page, null when exhausted)
 ```
+
+> `filter` is the deterministic structured query. `prompt` (a separate `GetOptions`
+> field) is the AI/natural-language alternative — the runtime translates it to a
+> filter. Use `filter` when you know the shape; `prompt` for free-form.
 
 ### Sort, limit, cursor pagination
 
 - `sort: { field: 1 | -1 }` — order results (`1` asc, `-1` desc).
-- `limit: N` — page size.
-- `cursor` — opaque token from the previous page's `nextCursor`; pass it to fetch
-  the next page. Use `getPage` to receive `{ data, nextCursor }`. Cursor paging is
-  stable under concurrent writes; prefer it over offset for large sets.
+- `limit: N` — page size. When set, `get()` returns `{ data, nextCursor, status }`
+  (not a bare array).
+- `cursor` — opaque token from the previous page's `nextCursor`; pass it back to
+  fetch the next page. Loop until `nextCursor` is null. Cursor paging is stable
+  under concurrent writes; prefer it over offset for large sets.
+
+```ts
+let cursor, all = [];
+do {
+  const page = await get("orders", { sort: { createdAt: -1 }, limit: 50, cursor });
+  all.push(...page.data);
+  cursor = page.nextCursor || undefined;
+} while (cursor);
+```
 
 ### CLI form
 
@@ -61,19 +78,18 @@ bounded data get --app-id <id> --path orders \
 
 ### Aggregations
 
-`queryAggregate` computes `count` / `sum` / `avg` / `min` / `max`, optionally
-grouped, and returns the full set of grouped rows:
+The SDK `count` and `aggregate(path, operation, opts)` compute a **single scalar**
+(`{ value }`) — `count` / `uniqueCount` / `sum` / `avg` / `min` / `max` — filtered
+by a natural-language `prompt`:
 
 ```ts
-import { queryAggregate } from "bounded-sh";
-const byStatus = await queryAggregate("orders", {
-  groupBy: ["status"],
-  count: true,
-  sum: ["total"],
-  avg: ["total"]
-});
-// [{ group: { status: "open" }, count: 4, sum: { total: 920 }, avg: { total: 230 } }, ...]
+import { count, aggregate } from "bounded-sh";
+const open = await count("orders", { prompt: "status is open" });        // { value: 4 }
+const spend = await aggregate("orders", "sum", { field: "total" });      // { value: 920 }
 ```
+
+Grouped aggregation (`group by status, sum total`) returning multiple rows is
+currently **CLI-only** — the SDK `aggregate` does not group:
 
 ```bash
 bounded data aggregate --app-id <id> --path orders --group status --sum total --count
@@ -169,8 +185,8 @@ exceeded" — and it is proven at deploy.
 
 | Need | Use |
 |---|---|
-| List/filter/paginate many documents | runtime filters (`getMany`) |
-| Count / sum / group | `aggregate` |
+| List/filter/paginate many documents | `get(path, { filter, sort, limit, cursor })` |
+| Count / sum a single scalar | `count` / `aggregate` (grouped: CLI only) |
 | A derived value proven at deploy | policy `queries` |
 | Expand a foreign key both ways | `links` |
 | Many-to-many through a join table | `relationships` |
@@ -179,7 +195,7 @@ exceeded" — and it is proven at deploy.
 
 ## Related
 
-- [sdk-reference.md](sdk-reference.md) — `get`/`getPage`/`queryAggregate`/`search` signatures
+- [sdk-reference.md](sdk-reference.md) — `get`/`count`/`aggregate`/`search` signatures
 - [cli-reference.md](cli-reference.md) — `bounded data get/aggregate/search` flags
 - [policy-reference.md](policy-reference.md) — `queries`, `relationships`, `links`, `get()`
 - [data-plane.md](data-plane.md) — reads, writes, and in-batch composition

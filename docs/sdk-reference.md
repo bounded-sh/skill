@@ -1,7 +1,7 @@
 # SDK Reference — `bounded-sh` (one package, two subpath exports)
 
 **What's in here / when to read this:** every SDK method —
-`get`/`getPage`/`setMany`/`subscribe`/`search`/`queryAggregate`, auth,
+`get`/`setMany`/`subscribe`/`search`/`count`/`aggregate`, auth,
 collaborators, `createWalletClient`, `verifyWebhook`, and invoking a function.
 
 **One package, two entrypoints.** `bounded-sh` is a single npm install with two
@@ -46,46 +46,52 @@ Authentication is done with the user's wallet/session id-token bearer (see
 one and normalizes them to the same value, so `init({ apiKey: "<appId>" })`
 still works but new code should use `appId`.
 
-## Read — `get` / `getPage` / `getMany`
+## Read — `get` / `getMany`
 
 `get(path, opts?)` reads a single document (even-segment path) or **lists a
 collection** (odd-segment path). For collection reads, `opts` carries the query
-shape (filters/sort/search/aggregate — see below).
+shape (filter / sort / paging).
 
 ```ts
-const doc   = await get("spend/a");                       // one document
-const page  = await get("spend", { limit: 20 });          // array of documents
-const open  = await get("orders", {                       // filtered + sorted
+const doc   = await get("spend/a");                       // one document (or { data, status })
+const all   = await get("spend");                         // { data: [...], status }
+const open  = await get("orders", {                       // filtered + sorted + paged
   filter: { status: { $in: ["open", "pending"] }, total: { $gte: 100 } },
   sort: { createdAt: -1 },
   limit: 20,
 });
+// open.data = rows; open.nextCursor = token for the next page (null when exhausted)
+const next = await get("orders", { /* same filter/sort */ limit: 20, cursor: open.nextCursor });
 ```
 
-- `getPage(path, opts)` → `{ data, nextCursor }` for explicit cursor paging.
-  Pass the returned `nextCursor` back as `opts.cursor` for the next page.
-- `getMany(paths)` → batch-read several paths at once.
+- Cursor paging: a `limit`ed query returns `{ data, nextCursor }`; pass `nextCursor`
+  back as `opts.cursor` for the next page, loop until it is null. (There is no
+  separate `getPage` — paging is built into `get`.)
+- `getMany(paths)` → batch-read several **paths** at once (not a filter).
 
-`GetOptions`: `filter`, `sort` (`{ field: 1 | -1 }`), `limit`, `cursor`,
-`search` (`{ query, fields? }`), `aggregate` (`AggregateSpec`), `includeSubPaths`,
-`shape`, `prompt`, `bypassCache`. Read access always obeys the collection's
-`read` rule — a filter never returns a doc the caller can't read.
+`GetOptions`: `filter` (structured MongoDB-style), `sort` (`{ field: 1 | -1 }`),
+`limit`, `cursor`, `includeSubPaths`, `shape`, `prompt` (natural-language
+alternative to `filter`), `bypassCache`. Read access always obeys the collection's
+`read` rule — a filter never returns a doc the caller can't read. Filter operators:
+`$ne $gt $gte $lt $lte $in $nin $exists $regex $options $and $or $nor` (bare value
+= equality). See [queries.md](queries.md).
 
-## Search & aggregate — `search` / `queryAggregate` / `count`
+## Search & aggregate — `search` / `count` / `aggregate`
 
 ```ts
 const hits = await search("notes", "shipping");                  // search(path, query, opts?)
 const titleHits = await search("notes", "shipping", { fields: ["title"], limit: 20 });
 
-const rows = await queryAggregate("spend", {
-  groupBy: ["category"], count: true, sum: ["amount"],
-});                                                       // AggregateRow[]
-
-const n = await count("orders", { prompt: "created in the last 7 days" });  // { value }
+const n     = await count("orders", { prompt: "created in the last 7 days" });   // { value }
+const total = await aggregate("orders", "sum", { field: "total" });              // { value }
 ```
 
-`AggregateSpec`: `groupBy?`, `count?`, `sum?`, `avg?`, `min?`, `max?` (each a
-field list). Details and CLI equivalents: [queries.md](queries.md).
+`count(path, { prompt? })` and `aggregate(path, operation, { field?, prompt? })`
+each return a single `{ value }`. `operation` ∈ `count | uniqueCount | sum | avg |
+min | max` (all but `count`/`uniqueCount` need `field`); `prompt` is a
+natural-language filter. **Grouped** aggregation (multiple rows) is CLI-only today
+(`bounded data aggregate --group …`) — the SDK does not group. Details:
+[queries.md](queries.md).
 
 ## Write — `set` / `setMany`
 
@@ -212,8 +218,8 @@ const doc = await vault.get("markets/123");
 const { init, createWalletClient } = await import("bounded-sh/server");
 ```
 
-`vault` exposes `get`, `getPage`, `getMany`, `set`, `setMany`, `setFile`,
-`getFiles`, `search`, `queryAggregate`, `count`, `aggregate`, `runQuery`,
+The wallet client (`vault` above) exposes `get`, `getMany`, `set`, `setMany`, `setFile`,
+`getFiles`, `search`, `count`, `aggregate`, `runQuery`,
 `runQueryMany`, `runExpression`, `runExpressionMany`, and the collaborator
 methods. `keypair` is a base58 string or JSON array secret key — the **base58**
 form is the same value the CLI stores as the `privateKey` field in
