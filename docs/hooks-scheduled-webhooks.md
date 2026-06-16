@@ -19,7 +19,7 @@ plugins; in practice that is `@DocumentPlugin`:
 | Call | Effect | "put vs updateField" |
 |---|---|---|
 | `@DocumentPlugin.putDocument(path, data)` | create or fully replace a document | use to **write a whole derived document** |
-| `@DocumentPlugin.updateField(path, field, value)` | set a single field | use to **bump/patch one field** (a counter, a status) |
+| `@DocumentPlugin.updateField(path, field, value)` | **overwrite** a single field with `value` | use to **patch one field** (a status, a propagated value) |
 
 ```json
 {
@@ -34,7 +34,7 @@ plugins; in practice that is `@DocumentPlugin`:
     },
     "hooks": {
       "offchain": {
-        "create": "@DocumentPlugin.updateField(\"rooms/lobby\", \"lastMessageAt\", \"now\")"
+        "create": "@DocumentPlugin.updateField(\"rooms/lobby\", \"lastAuthor\", @newData.author)"
       }
     }
   }
@@ -42,6 +42,23 @@ plugins; in practice that is `@DocumentPlugin`:
 ```
 
 Chain effects with `&&`; a falsy result short-circuits later calls.
+
+> **`updateField` is a SET, not an increment, and the `value` is an evaluated
+> expression — but only some expressions resolve (verified 2026-06-16).** It
+> writes whatever `value` evaluates to straight into the field, overwriting it.
+> What works as `value`: **literals** (`"open"`, `0`, `true`) and **field refs**
+> from the triggering write (`@newData.author`, `@data.x`) — `@newData.author`
+> propagating to `rooms/lobby.lastAuthor` is verified. What does **not** work:
+> - It does **not** increment. `updateField("c", "n", "1")` stores `1` every
+>   time, not `n+1`. There is no read-modify-write counter primitive in a hook;
+>   for an advancing game clock use the native live-runtime `tick` module
+>   ([realtime-and-games.md](realtime-and-games.md)), not a hook field bump.
+> - `@time.now` does **not** resolve in a hook mutation value (it is a *rule*
+>   builtin) — it produces no write. And the literal `"now"` just stores the
+>   string `"now"`. **So you cannot stamp a server timestamp from a hook today.**
+>   If you need a write time, pass it from the client in the triggering write and
+>   propagate it with `@newData.<field>`, or read the doc's
+>   `tarobase_created_at` / `tarobase_updated_at` system fields on read.
 
 > **An onchain plugin (`@TokenPlugin.transfer`, …) in an offchain hook is
 > rejected by the validator.** Onchain plugins belong in `hooks.onchain` on a
@@ -80,9 +97,14 @@ block's `tick`. The hook body is a string; the named hook must exist under
 [realtime-and-games.md](realtime-and-games.md).
 
 ```json
-"hooks": { "tick": { "advance": "@DocumentPlugin.updateField(\"rooms/sys\", \"tick\", \"1\")" } },
+"hooks": { "tick": { "advance": "@DocumentPlugin.updateField(\"rooms/sys\", \"phase\", \"running\")" } },
 "session": { "tick": { "everyMs": 100, "run": "advance", "maxLifetimeSec": 3600 } }
 ```
+
+(`updateField` SETS a literal — it can't increment a `tick` counter; a bytecode
+tick hook is for flipping flags/status. For a real advancing game loop with
+per-frame integration use the native live-runtime `init`/`tick` module in
+[realtime-and-games.md](realtime-and-games.md).)
 
 ## hooks.scheduled + schedule — recurring jobs
 
