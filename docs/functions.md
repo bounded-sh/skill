@@ -273,7 +273,7 @@ the request.
 ## Architecture (the Worker Loader)
 
 Bounded Functions run on the Cloudflare **Worker Loader**, on Bounded-OWNED,
-isolated resources (never `poof_apps`): **deploy** uploads the function's
+isolated resources: **deploy** uploads the function's
 (transpiled) source to the R2 code registry — **no per-function worker is
 deployed**, same as the native live runtime; **invoke** routes through the Bounded
 Functions dispatcher, which verifies the caller (RS256/JWKS, same as the data

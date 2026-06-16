@@ -15,9 +15,9 @@ wallet would. `@user.address` is its public key.
 ## 1. Anonymous sign-in (the guest)
 
 ```ts
-import { initBounded, signInAnonymously } from 'bounded-sh'
+import { init, signInAnonymously } from 'bounded-sh'
 
-await initBounded({ appId: '<APP_ID>' })
+await init({ appId: '<APP_ID>', network: 'bounded-staging' })
 const me = await signInAnonymously()   // generates + persists a keypair, mints a session
 // me.address === the guest's public key. Durable across reloads.
 ```
