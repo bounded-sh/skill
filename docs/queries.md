@@ -195,16 +195,37 @@ await get("projects/p1", { shape: { owner: { ownedProjects: {} } } });
   name is the link's `reverse`.
 - Related docs are **read-rule enforced**: an expansion the caller can't read is
   omitted (forward) or filtered out (reverse) — never a leak.
-- Runtime `shape` expansion is driven by the top-level **`links`** array (below).
+- `shape` resolves both the top-level **`links`** array and per-collection
+  **`relationships`** (below).
 
 ### `relationships` (per-collection) — explicit local/foreign fields
 
 For finer control (including many-to-many through a join table) declare
 `relationships` on a collection: `{ type, collection, localField, foreignField,
 through?, throughLocalField?, throughForeignField? }`. The validator checks every
-referenced field exists. **Note:** runtime `shape` expansion currently resolves
-the top-level `links` array — use `links` for relationships you intend to expand
-via `shape`.
+referenced field exists. These are expandable via `shape` just like `links`:
+
+```json
+"students/$id": {
+  "fields": { "name": "String" },
+  "tier": "durable",
+  "relationships": {
+    "courses": { "type": "many-to-many", "collection": "courses",
+      "localField": "id", "foreignField": "id",
+      "through": "enrollments", "throughLocalField": "studentId", "throughForeignField": "courseId" }
+  },
+  "rules": { "read": "true", "create": "@user.address != null", "update": "false", "delete": "false" }
+}
+```
+
+```ts
+const s = await get("students/s1", { shape: { courses: {} } });
+// s.courses = [ ...course docs the student is enrolled in ] (read-rule enforced)
+```
+
+`localField`/`foreignField` default to the document id (`"id"`); set them to join
+on an ordinary field instead. `type` is `one-to-one` (single doc) or
+`one-to-many` / `many-to-many` (a list).
 
 ## Authorization joins — `get()` in a rule
 
