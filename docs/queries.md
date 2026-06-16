@@ -175,15 +175,36 @@ A `links` array declares foreign-key edges. The source field must end in `Id`.
 | `unique` | reverse side is one-to-one (e.g. a profile per user) |
 | `reverse` | name of the reverse relationship (required if two links point at the same target) |
 
-The SDK can then expand a project's `owner`, and a user's `ownedProjects`, in one
-read.
+Expand the edge with the `shape` option on `get` — forward (the FK owner) and
+reverse (the target) both, on single-doc or collection reads, nestable:
+
+```ts
+// forward: a project with its owner expanded
+const p = await get("projects/p1", { shape: { owner: {} } });
+// p.owner = the user doc (read-rule enforced — omitted if you can't read it)
+
+// reverse: a user with all their projects (one-to-many -> array; `unique` -> single)
+const u = await get("users/u1", { shape: { ownedProjects: {} } });
+// u.ownedProjects = [ ...project docs ]
+
+// nested: a project -> its owner -> that owner's projects
+await get("projects/p1", { shape: { owner: { ownedProjects: {} } } });
+```
+
+- The forward name is the FK field minus `Id` (`ownerId` → `owner`); the reverse
+  name is the link's `reverse`.
+- Related docs are **read-rule enforced**: an expansion the caller can't read is
+  omitted (forward) or filtered out (reverse) — never a leak.
+- Runtime `shape` expansion is driven by the top-level **`links`** array (below).
 
 ### `relationships` (per-collection) — explicit local/foreign fields
 
 For finer control (including many-to-many through a join table) declare
 `relationships` on a collection: `{ type, collection, localField, foreignField,
 through?, throughLocalField?, throughForeignField? }`. The validator checks every
-referenced field exists. Prefer `links` unless you need the extra control.
+referenced field exists. **Note:** runtime `shape` expansion currently resolves
+the top-level `links` array — use `links` for relationships you intend to expand
+via `shape`.
 
 ## Authorization joins — `get()` in a rule
 
