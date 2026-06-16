@@ -120,6 +120,7 @@ for the *next* question.
 | `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `session`, `hooks.tick`, `tick`, `settleTo`, fog-of-war (bytecode model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
+| live game *feel*: input cadence, interpolation, prediction, `session.intentRule` | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
 | `init`/`tick`/`views` (native live functions) | [docs/live-runtime.md](docs/live-runtime.md) |
 | `bounded live deploy/upload`, `GET /live/status`, `POST /live/intent`, `live.intent`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
 | `tier` (`durable`/`checkpointed`/`ephemeral`) | [docs/policy-reference.md](docs/policy-reference.md) · [docs/invariants.md](docs/invariants.md) |
