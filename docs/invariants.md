@@ -97,6 +97,40 @@ total.
 **When:** balances, token supply, pooled funds, anything where value must move but
 not appear or vanish.
 
+**Genesis — how value enters (read this before you ship).** `conserve` locks the
+total at *whatever the sum already is the moment the invariant goes live*. The
+proof has no concept of a privileged mint: a `create` or `set` that raises the
+sum is rejected as minting, even for the app owner, even server-side. So the
+example above — `create: balance == 0` **and** `update: balance >= 0` — is a
+**frozen-at-0** system: every account is born at 0, can never go negative, and
+the sum can never move off 0, so nothing can ever hold value. That schema is a
+*transfer* schema, not a complete one. Pick a genesis model:
+
+- **Seed, then conserve (positive balances — validated).** Deploy the policy
+  *without* the `conserve` invariant, write your opening supply
+  (`set accounts/treasury {balance: 1_000_000}`), then redeploy *with*
+  `conserve` added. The total is now frozen at 1,000,000 and every later
+  transfer is checked against it. (Verified e2e: seed `alice=100` pre-conserve,
+  add conserve, `setMany [alice=70, bob=30]` → ✅ conserved at 100, a later
+  `set alice=200` → `409`.) This is the normal way to launch a fixed-supply
+  system. The seeding window is owner-only by virtue of the create/update rules,
+  not the invariant.
+- **Credit/debt (sum stays 0 — validated).** Drop `>= 0` from the update rule so
+  balances may go negative. Every account starts at 0; a transfer is a balanced
+  `set-many` that debits one and credits another (`[alice: -30, bob: +30]`), and
+  the total stays exactly 0 forever. (Verified: balanced `set-many` → ok; a lone
+  `set bob=80` that would mint → `409`.) Use this for ledgers/IOUs where the net
+  is meant to be zero. Note the `>= 0` rule and the credit/debt model are
+  mutually exclusive — if you keep `>= 0`, a system that starts at 0 can never
+  move.
+- **Onchain-backed.** If the value mirrors an on-chain balance, set
+  `"onchain": true` on the invariant (see the onchain section) so genesis lives
+  on the chain, not in a privileged offchain write.
+
+The takeaway: there is no "admin mint" escape hatch — that is the entire point of
+`conserve`. Decide genesis by *deploy order* (seed before the invariant) or by
+*model* (credit/debt nets to 0), not by trying to write past the proof.
+
 ## `rollingSum` — caps over time windows
 
 The sum of a `UInt` field over a sliding window of the last `windowSeconds` never
