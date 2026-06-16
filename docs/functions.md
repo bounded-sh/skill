@@ -105,11 +105,23 @@ export default async function (args, ctx) {
 
 | `ctx` member | What it is |
 |---|---|
-| `ctx.user` | `{ address, claims }` — the verified caller. `ctx.user.address` equals `@user.address` in policy. The dispatcher already verified the token **and** evaluated the `auth` rule, so this is trustworthy and the call is authorized. |
-| `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.delete(path)`. **Writes are re-checked by rules + invariants** — a `409` (invariant violation) throws. This is what keeps the proof intact. |
+| `ctx.user` | `{ address, email, claims, system? }` — the verified caller. `ctx.user.address` equals `@user.address` in policy. The dispatcher already verified the token **and** evaluated the `auth` rule, so this is trustworthy and the call is authorized. |
+| `ctx.auth` | `{ enforced, rule, system }` — **authorization the platform ALREADY did for you.** `rule` is the exact policy `auth` expression that passed before your code ran (null for system/scheduled runs). Read this instead of re-implementing authz: if you declared an `auth` gate, it has already passed. |
+| `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by rules + invariants** — a `409` throws. `runQuery` runs one of your policy-declared `queries` (the proven query engine, caller's read authority) so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). |
 | `ctx.env` | The dev-configured secrets, narrowed to the names in `functions.<name>.secrets`. Nothing undeclared leaks in. |
 | `fetch` | The standard global — call any third-party API / LLM. |
 | `ctx.appId` | The app this function belongs to. |
+
+```ts
+export default async function (args, ctx) {
+  // gate awareness — the platform already enforced your `auth` rule; don't redo it
+  // ctx.auth -> { enforced: true, rule: "@user.address != null", system: false }
+
+  // reuse a policy-declared named query instead of re-implementing the logic
+  const total = await ctx.bounded.runQuery(`polls/${args.pollId}`, "total", {});
+  return { total };
+}
+```
 
 You never write the Worker wrapper — the deploy pipeline generates it (it imports
 the ctx shim and calls your default export). You only write the function body.
@@ -168,6 +180,12 @@ bounded functions deploy syncStripe \
 bounded functions list   --app-id <id>
 bounded functions logs   syncStripe --app-id <id>
 ```
+
+A function's `console.*` output is **captured** and viewable; **who** may view it
+is the per-function `logsAuth` policy rule (defaults to app managers; declared
+secret values are redacted). Set a fixed backend identity for the function with
+the `actAs` policy field. Both are `functions`-block fields, not CLI flags —
+see [identity-and-logs.md](identity-and-logs.md) and [service-keys.md](service-keys.md).
 
 Remove a function (source + policy entry) via the developer API:
 `DELETE /bounded/functions/<appId>/<name>` (owner/admin).
@@ -317,4 +335,6 @@ formally-bounded functions. Not shipped; don't claim it. Detail in
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — in-boundary hooks vs notify-out webhooks
 - [invariants.md](invariants.md) — the postconditions a function's writes still answer to
 - [policy-reference.md](policy-reference.md) — the rule expression language used by `auth`
+- [identity-and-logs.md](identity-and-logs.md) — `logsAuth` (who views logs) + the `__managers__` identity sets
+- [service-keys.md](service-keys.md) — `actAs`: a function transacting as its own backend identity
 - [sdk-reference.md](sdk-reference.md) — invoking a function from TypeScript today

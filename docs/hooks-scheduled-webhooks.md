@@ -118,6 +118,27 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
 > scheduled work must leave the boundary (pull FX rates, call an LLM). Either
 > way, every write still goes through your rules + invariants.
 
+> ⚠️ **Staging status (verified 2026-06-16):** scheduled **hooks** fire reliably
+> (they ride the room DO's `alarm()`), but scheduled **functions DO NOT fire yet**
+> — confirmed by dogfooding: a `schedule:{every:"1m",run:"<function>"}` on a fresh
+> app never invoked the function, while the same shape with a hook did. Root cause:
+> a function-schedule is fired by the separate **heartbeat-dispatcher**, which reads
+> a KV registry (`bounded-heartbeat-staging`: `cron:<expr> → [{appId, tasks:[{name,
+> kind:"function", functionName}]}]` + `app:<appId>` reverse index). The dispatcher
+> + KV exist, but the feature is non-operational at TWO layers (dogfood-verified):
+> (1) **deploy doesn't register** schedules — nothing scans the policy for
+> function-schedules, converts `every`→cron, and writes the `cron:`/`app:` KV
+> entries; AND (2) **the dispatch chain doesn't fire even when the registry IS
+> populated** — a manually-planted, correctly-formatted entry never invoked the
+> function (and a pre-existing app's entry hadn't either), so the cron→queue→
+> invoke-as-system path is broken/unprovisioned on staging (the queue
+> `bounded-heartbeat-dispatch`, the `HEARTBEAT_SYSTEM_KEY` secret, and a
+> `--env staging` deploy of the dispatcher all need verifying). **Workaround until fixed:** use a scheduled
+> **hook** (`hooks.scheduled`) for the cadence; if you need to leave the boundary,
+> have the hook flip a row that a `hooks.offchain`/function path reacts to, or invoke
+> the function from your own cron. **To fix:** add the registry write (policy scan +
+> duration→cron + KV `put`) to dev-api's policy-deploy path.
+
 ## dueRows — one-shot timers
 
 Where `schedule` is "every N", `dueRows` is "once, when this row is due." A

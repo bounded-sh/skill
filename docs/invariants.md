@@ -267,6 +267,15 @@ tenant tags match — a task can never reference another tenant's member. **Tag 
 ends:** `tenantEdge` compares tags, so source and target scopes each need their own
 `tenantTag`. (`tenantEdge` with `targetPathVariable` stays offchain-only.)
 
+**Writing the reference (`targetPathVariable` set):** the `referenceField` value is
+a **BARE id**, not a full path. With the example above, write `assigneeRef: "A1"`
+(NOT `"tenants/A/members/A1"`) — a full path errors with *"requires a single target
+path segment"*. The id is resolved INSIDE the source tenant
+(`tenants/<sourceTenantId>/members/A1`), so you structurally cannot point at another
+tenant, and **the target must already exist** or the write is rejected (*"requires
+tenants/A/members/A1 to exist before … can reference it"*). So order writes
+target-first: create the member, then the task that references it.
+
 ## `onchain` — coverage claims are verified, not trusted
 
 Each invariant may declare `"onchain"`: `"offchainOnly"`, `"onchainUnsupported"`,

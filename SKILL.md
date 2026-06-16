@@ -17,8 +17,11 @@ description: >-
   "counterexample", "agent spend cap", "multiplayer game backend", "fog-of-war",
   "server-authoritative", "tick", "anti-cheat", "live runtime", "session.live",
   "bounded live", "live module", "realtime room", "Figma clone", "collaborative editor",
-  "whiteboard", "live dashboard", "per-client view", "fog-of-war", "provable replay",
-  "native game", "multiplayer game backend",
+  "whiteboard", "live dashboard", "per-client view", "provable replay",
+  "native game",
+  "service key", "server wallet", "backend identity", "payout bot", "actAs",
+  "__managers__", "__owners__", "__collaborators__", "logsAuth",
+  "who can view logs", "function log access", "linked accounts",
   "hooks", "scheduled", "webhooks",
   "bounded-sh", "bounded-sh SDK", "collaborator", "bounded share",
   "bounded link", "share by email", "admin", "admins collection", "no god-mode",
@@ -83,6 +86,9 @@ for the *next* question.
 | **Have a function act as its own backend identity** (payout bot, market-maker, settler — mint a key, policy authorizes its address) | [docs/service-keys.md](docs/service-keys.md) |
 | **Run a function / hook on a schedule** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) · [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence) |
 | Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| **What anti-cheat can / can't provably guarantee** (hooks bypass rules but never invariants; on-chain signing) | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
+| **Build a game with a server tick + settlement** (bytecode `session.tick` model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| Full rule / field-type / `get()`/`getAfter()` **syntax reference** | [docs/policy-reference.md](docs/policy-reference.md) |
 | **Let users log in** (Privy / wallet) | [docs/auth.md](docs/auth.md#end-user-auth--privy--wallets--useraddress) · example below |
 | **Anonymous / guest users, invite links, try-before-signup; transfer or upgrade an account** | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
@@ -116,9 +122,10 @@ for the *next* question.
 | `environments`, `--environment`, per-env appId/constants | [docs/environments.md](docs/environments.md) |
 | `functions`, `auth`, `entry`, `secrets`, `ctx.env`, `ctx.bounded`, `ctx.user` | [docs/functions.md](docs/functions.md) |
 | `__managers__` / `__owners__` / `__collaborators__`, reserved identity sets, `logsAuth`, who can view logs, linked accounts, manager-gated | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
-| service key / server wallet, `ctx.actAs`, backend identity, payout bot, `@constants.PAYOUT_BOT` | [docs/service-keys.md](docs/service-keys.md) |
+| service key / server wallet, `actAs` (policy `functions` field), backend identity, payout bot, `@constants.PAYOUT_BOT` | [docs/service-keys.md](docs/service-keys.md) |
+| hook bypasses rules but never invariants, anti-cheat boundary (provable vs not), on-chain signature | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
-| `session`, `hooks.tick`, `tick`, `settleTo`, fog-of-war (bytecode model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| `session.tick`, `hooks.tick`, `settleTo`, fog-of-war (bytecode session model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
 | live game *feel*: input cadence, interpolation, prediction, `session.intentRule` | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
 | `init`/`tick`/`views` (native live functions) | [docs/live-runtime.md](docs/live-runtime.md) |

@@ -55,12 +55,31 @@ deploy). Quoting the contract from the top of `pong.live.ts`:
 ```
 
 - `init(seed): State` — **optional.** The initial state when the room starts.
+  `seed.room` is the room's OWN creation document — whatever the host set when
+  they created `rooms/<roomId>` (e.g. `set("rooms/r1", { createdBy, name, mode:
+  "ranked", mapSeed: 42 })`). So `init` can read the host's match config
+  deterministically at boot: `init(seed) { return { mode: seed?.room?.mode, ... } }`.
+  This runs ONCE at cold start (replays use the snapshot, never re-run `init`), so
+  it never affects tick determinism. The facet itself has no data-plane access —
+  the supervisor injects this seed, keeping `tick`/`views` pure.
 - `tick(state, intents, dtMs): State` — **required, server-authoritative.**
   `intents` is `[{ address, intent }, ...]` ordered by Bounded; return the next
   state. This is the only thing that advances the room.
 - `views(state): Record<address, View>` — **optional.** Maps each client's
   address to *what that client may see*. Bounded fans each entry out to that
   address's view collection.
+
+> **Write the module in PLAIN JS — no TypeScript syntax.** `bounded live deploy`
+> uploads the source as-is; the facet loader parses it as JavaScript. A stray type
+> annotation (`intents: any[]`, `x as Foo`, `: State`) makes the room fail to load
+> with `500 {"error":"Unexpected token ':'"}` and `started:false`. Author the three
+> functions in plain JS (or transpile to JS yourself before `bounded live deploy`).
+>
+> **Returning a rich/nested view?** Declare the view doc as a single
+> `"stateJson": "String"` field and return `out[addr] = { stateJson: JSON.stringify(view) }`,
+> then `JSON.parse` it on the client. Per-player views are typically nested
+> (arrays of entities, etc.) and don't map onto flat typed fields; the `stateJson`
+> envelope ships them unchanged.
 
 For a game these are the game loop; for a Figma-style editor they are the
 canonical document + each editor's cursor/selection projection; for a dashboard
@@ -245,49 +264,51 @@ sets `X-Room-Id` itself. **Clients never set `X-Room-Id`.**
 
 ## SDK client — worked example
 
-Two pieces: **subscribe** to your own per-client view for live state, and **POST
-an intent** to influence the room. There is no first-class live SDK helper yet
-(same situation as [functions.md](functions.md) invoke), so send intents with the
-id token + raw `fetch`.
+Two pieces: **subscribe** to your own per-client view for live state, and **send
+an intent** to influence the room. Both are first-class helpers under the
+`live` namespace now — use them; they handle auth, room routing, and the view
+path for you.
 
 ```ts
-import { subscribe, getIdToken } from "bounded-sh";
+import { live } from "bounded-sh";
 
-const roomId = "r1";
-const myAddress = "0xabc…";                 // == @user.address
-const path = `rooms/${roomId}`;             // the session collection + room id
+const roomPath = `rooms/r1`;                 // the session collection + room id
 
-// 1. Live state — subscribe to YOUR view only. The read rule `$addr ==
-//    @user.address` means this is the only view collection you can ever receive,
-//    so the subscription delivers exactly your projection (no hidden state).
-const stop = await subscribe(`rooms/${roomId}/view/${myAddress}`, {
-  onData: (view) => render(view),           // { ball, you, side, paddles, score, status, ... }
+// 1. Live state — subscribe to YOUR view. `live.subscribeView` builds the
+//    `<roomPath>/view/<myAddress>` path AND routes the connection to the room's
+//    Durable Object (where the live view fan-out runs), so you never pass any
+//    routing yourself. The read rule `$addr == @user.address` means this only
+//    ever resolves to your projection (no hidden state).
+const stop = await live.subscribeView(roomPath, {
+  onData: (view) => render(view),            // your per-player view object
   onError: (e) => console.error(e),
 });
 
-// 2. Send an intent. Address the room BY PATH (body.path); never set X-Room-Id —
-//    the worker derives the room id. Attach the id token (auth required).
-const token = await getIdToken();
-async function sendIntent(intent: unknown) {
-  await fetch(`${LIVE_URL}/live/intent`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-App-Id": appId,
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ path, intent }),   // -> { ok: true }
-  });
-}
-await sendIntent({ type: "join" });
-await sendIntent({ type: "move", dir: -1 });
-
-// 3. Lobby / liveness — GET /live/status?path=<collection>/<roomId>.
-const status = await fetch(`${LIVE_URL}/live/status?path=${encodeURIComponent(path)}`)
-  .then((r) => r.json());                    // { available, started, running, tick, module }
+// 2. Send an intent. Address the room BY PATH; the worker derives the room id
+//    and takes your address from the session token (auth required, handled by
+//    the SDK). Returns { ok: true }.
+await live.intent(roomPath, { type: "join" });
+await live.intent(roomPath, { type: "move", dir: -1 });
 
 // later: await stop();
 ```
+
+> **Routing is the SDK's job, not yours.** `live.subscribeView` opens a
+> connection routed to the per-room DO; a plain `subscribe('rooms/r1/view/<addr>')`
+> over the default app-level connection lands on the *project* DO and never sees
+> the room's ephemeral view writes (it stays `null`). Always subscribe to live
+> views through `live.subscribeView` (or `subscribeLiveView`). You never specify
+> the destination DO — the worker is the authority on routing.
+>
+> **`init` with a network preset** — no endpoint URLs in app code:
+> `await init({ appId, network: 'bounded-staging' })` (or `'bounded-production'`).
+> For a zero-friction guest identity (great for invite links), pass
+> `authMethod: 'guest'` and call `login()` — a device-local keypair signs in with
+> no wallet and no signup.
+
+Status/liveness is still a raw GET (no helper yet):
+`GET {realtime}/live/status?path=<collection>/<roomId>` →
+`{ available, started, running, tick, module }`.
 
 The per-client view read rule is what makes the subscribe line safe by
 construction: it can only ever resolve to *your* view, so you cannot subscribe

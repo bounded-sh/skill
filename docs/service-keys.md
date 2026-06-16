@@ -78,12 +78,13 @@ You only need a **real keypair + private key** when the service identity must
 just a data-plane write). In that case:
 
 - The **private key is a function secret**, set at deploy and exposed only to
-  that one function as `ctx.env.NAME` — it is stored server-side alongside the
-  function (never in your repo, never returned, only the *name* is ever shown in
-  the dashboard):
+  that one function as `ctx.env.NAME` — stored server-side alongside the function
+  (never in your repo, never returned, only the *name* is ever shown). `actAs`
+  itself is a policy `functions`-block field (set via `bounded deploy
+  ./policy.json`), NOT a CLI flag — the CLI only carries the code + secrets:
   ```bash
-  bounded functions deploy runPayouts ./functions/runPayouts.ts \
-    --app-id <id> --secret PAYOUT_BOT_KEY=<base58-private-key> --actAs <address>
+  bounded functions deploy runPayouts --entry functions/runPayouts.ts \
+    --app-id <id> --secret PAYOUT_BOT_KEY=<base58-private-key>
   ```
 - If you mint the keypair locally, keep the private key in
   `~/.bounded/keys/<name>.json` with `0600` perms (machine-local, never
