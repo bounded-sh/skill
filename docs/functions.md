@@ -55,7 +55,7 @@ paths and `links`, declared once at the root of the policy:
 ```json
 {
   "subs/$userId": {
-    "rules": { "read": "@user.id == $userId", "create": "false", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null && @user.id == $userId", "create": "false", "update": "false", "delete": "false" },
     "fields": { "active": "Bool", "renewsAt": "UInt" }
   },
   "admins/$adminId": {
@@ -64,7 +64,7 @@ paths and `links`, declared once at the root of the policy:
   },
   "functions": {
     "syncStripe": {
-      "auth": "get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id) != null",
       "entry": "functions/syncStripe.ts",
       "timeout": 30,
       "secrets": ["STRIPE_KEY"],
@@ -259,9 +259,13 @@ run on the cadence — fired by the Bounded heartbeat as the **system principal*
     "fields": { "total": "UInt" },
     "schedule": { "every": "1d", "run": "rollupDaily" }
   },
+  "admins/$adminId": {
+    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
+    "fields": { "active": "Bool" }
+  },
   "functions": {
     "rollupDaily": {
-      "auth": "get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id) != null",
       "entry": "functions/rollupDaily.ts",
       "timeout": 120
     }
