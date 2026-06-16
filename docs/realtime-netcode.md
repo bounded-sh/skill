@@ -114,9 +114,9 @@ for a public-read room (anyone logged in could inject intents). Declare
   "fields": { "createdBy": "Address!", "players": "Json" },
   "session": {
     "live": { "module": "game", "everyMs": 33 },
-    "intentRule": "@user.address != null && @user.address in @data.players"
+    "intentRule": "@user.id != null && @user.id in @data.players"
   },
-  "rules": { "read": "@user.address != null", "create": "...", "update": "false", "delete": "false" }
+  "rules": { "read": "@user.id != null", "create": "...", "update": "false", "delete": "false" }
 }
 ```
 
@@ -124,6 +124,15 @@ for a public-read room (anyone logged in could inject intents). Declare
 - Absent → falls back to the read rule (back-compat). Both fail closed.
 - The live `tick()` is still your fine-grained gate (it decides what each intent *does*);
   `intentRule` is the coarse "may this principal act here at all."
+- **Gate on identity, not wallet.** The caller is `@user = { id, address, email }`:
+  `@user.id` is the universal stable identity (always present for an authed user —
+  the wallet address for wallet logins, the account identity for email/social logins),
+  `@user.address` is a real onchain wallet (null for email-only logins), and
+  `@user.email` is the verified email (null for wallet logins). A live room is an
+  offchain (`ephemeral`) collection, so membership/auth gates use `@user.id` —
+  store `@user.id` in `players` and gate with `@user.id in @data.players`. Reserve
+  `@user.address` for genuinely onchain/wallet semantics (it is forbidden in
+  `onchain:true` collections' rules to use `@user.id`/`@user.email`).
 
 ## Checklist for a smooth live game
 
@@ -133,6 +142,35 @@ for a public-read room (anyone logged in could inject intents). Declare
 - [ ] Local player predicted from input, reconciled to the server.
 - [ ] Continuous fields interpolated; discrete fields stepped.
 - [ ] `intentRule` set if "can see" ≠ "can act" for your room.
+
+## Scaling to many players (the climb past 1v1)
+
+A room is one Durable Object (single thread, single location) with its sim in one
+facet. That's plenty for a few players; the ceiling you hit *first* as you add
+players is **fan-out**, not input. At N players × tickrate the server must compute
+and send N views per tick — output, from one object. The climb, in order:
+
+1. **Area-of-interest views (you already have this).** `views(state)` projects a
+   *per-player* view — send each client only the entities near them, not the whole
+   world. This is the single biggest scaling lever and it's the same mechanism as
+   fog-of-war. Keep each view as small as the player can actually perceive.
+2. **Delta encoding.** Past a handful of players, stop sending full per-tick
+   snapshots — send only the fields that changed since that client's last view.
+   Bandwidth, not CPU, is usually what caps player count.
+3. **Relay-tier fan-out.** When one DO can't push to everyone, keep the
+   authoritative sim on the room DO but have it push state to a few *relay* DOs
+   that each fan out to a subset of players. Shards the *outbound* load across
+   objects (the "authoritative server + edge relays" shape) without splitting the
+   sim.
+4. **Transport (only at twitch scale).** At 1v1/30Hz, TCP head-of-line blocking is
+   noise. At 64-player *twitch*, more entities = more packets = a dropped packet
+   stalls more — this is the scale where a UDP-style transport (WebTransport
+   datagrams / a WebRTC relay) finally earns its keep. Until you *measure* that,
+   WebSocket is correct.
+5. **Single-DO budget.** One match = one DO = one thread. Light sims (hitscan) at
+   64 are feasible; heavy physics or 128+ means sharding the world by region. Prove
+   8–16 players on the single-DO path first — that measures your real per-DO budget
+   empirically, and 16→64 becomes a fan-out-sharding problem, not a redesign.
 
 ## Related
 - [realtime-and-games.md](realtime-and-games.md) — sessions, tick, fog-of-war, tiers
