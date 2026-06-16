@@ -8,7 +8,23 @@ transfer rules are enforced by the proven boundary, not by app code.
 
 This works because in Bounded **a keypair *is* an account**. A guest is just an
 ed25519 keypair generated in the browser that signs the same auth challenge a
-wallet would. `@user.address` is its public key.
+wallet would.
+
+> **The `user` object.** Every authenticated session exposes
+> `{ id: string, address: string | null, email: string | null }`:
+> - `@user.id` — the **universal, stable identity**, always present. For a guest
+>   (or any wallet login) it equals the signing key's public address; for an
+>   email/social login it's the account identity. **Use this for ownership.**
+> - `@user.address` — a **real onchain wallet address**, present for wallet/guest
+>   keypairs and `null` for email-only logins. Use it only for onchain/wallet
+>   semantics.
+> - `@user.email` — the verified, lowercased email (email logins only; `null`
+>   for wallet/guest).
+>
+> Ownership in this doc is keyed by `@user.id`, not the raw wallet address. For a
+> guest those two are the same value today — but keying on `@user.id` is what lets
+> a guest **upgrade to email** (section 4) and keep owning the same data even if
+> the underlying key isn't the identity anymore.
 
 ---
 
@@ -19,7 +35,8 @@ import { init, signInAnonymously } from 'bounded-sh'
 
 await init({ appId: '<APP_ID>', network: 'bounded-staging' })
 const me = await signInAnonymously()   // generates + persists a keypair, mints a session
-// me.address === the guest's public key. Durable across reloads.
+// me.id === the guest's stable identity (use this for ownership). Durable across reloads.
+// me.address === the same public key (the onchain/wallet view of the guest key).
 ```
 
 `signInAnonymously()` generates a non-extractable ed25519 key (stored so an XSS
@@ -33,7 +50,7 @@ local key.
 
 ## 2. Model ownership as DATA (so it can move)
 
-**Don't** scope a user's data by their raw `@user.address`. Scope it by an
+**Don't** scope a user's data by their raw `@user.id`. Scope it by an
 **account id**, and record the owner in the account document. Then ownership can
 be transferred without touching the data.
 
@@ -44,8 +61,8 @@ be transferred without touching the data.
   "accounts/$accountId": {
     "rules": {
       "read": "true",
-      "create": "@user.address == @newData.owner",
-      "update": "@user.address == @data.owner",
+      "create": "@user.id == @newData.owner",
+      "update": "@user.id == @data.owner",
       "delete": "false"
     },
     "fields": { "owner": "String", "label": "String" }
@@ -53,9 +70,9 @@ be transferred without touching the data.
   "accounts/$accountId/items/$itemId": {
     "rules": {
       "read": "true",
-      "create": "@user.address == get(`accounts/${accountId}`).owner",
-      "update": "@user.address == get(`accounts/${accountId}`).owner",
-      "delete": "@user.address == get(`accounts/${accountId}`).owner"
+      "create": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
+      "update": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
+      "delete": "@user.id != null && @user.id == get(/accounts/$accountId).owner"
     },
     "fields": { "text": "String" }
   }
@@ -63,9 +80,9 @@ be transferred without touching the data.
 ```
 
 The load-bearing rules:
-- **create** `@user.address == @newData.owner` — you can only create an account
+- **create** `@user.id == @newData.owner` — you can only create an account
   you list yourself as owner of.
-- **update** `@user.address == @data.owner` — only the **current** owner (the
+- **update** `@user.id == @data.owner` — only the **current** owner (the
   value already stored) may change the row. Changing `owner` *is* the transfer.
 
 ## 3. Transfer ownership (no key handoff)
@@ -74,8 +91,8 @@ The current owner writes the account with a new `owner`. That's it — the `upda
 rule checks the *old* owner, so only they can hand it off:
 
 ```ts
-// current owner transfers to `recipientAddress`
-await set(`accounts/${accountId}`, { owner: recipientAddress, label })
+// current owner transfers to `recipientId` (the recipient's @user.id)
+await set(`accounts/${accountId}`, { owner: recipientId, label })
 ```
 
 After this, the original owner is locked out and the recipient can write. This is
@@ -109,7 +126,7 @@ The rules above *enforce* single-owner transfer. Bounded also **proves** it.
 `bounded verify` / deploy auto-detects a self-gated `owner` field and discharges
 a **transfer-authority** obligation:
 
-> *"any change to `owner` requires `@user.address == @data.owner` (the current
+> *"any change to `owner` requires `@user.id == @data.owner` (the current
 > holder) — ownership is transferable but unseizable"*
 
 - ✅ correct policy (update gated on `@data.owner`) → **PROVED**.
@@ -132,7 +149,7 @@ account, for all inputs, forever — no extra annotation needed. (See
 
 ## Gotchas
 
-- Scope data by **accountId**, never raw `@user.address`, or it can't be transferred.
+- Scope data by **accountId**, never raw `@user.id`, or it can't be transferred.
 - `create` must check `@newData.owner` (incoming), `update`/transfer must check
   `@data.owner` (existing). Mixing them up either lets anyone seize accounts or
   locks out transfers.
