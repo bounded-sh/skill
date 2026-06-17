@@ -82,6 +82,14 @@ const bytes = await (await fetch(data[0].url)).text();    // download via the si
 Declare which `String` fields are full-text indexed. The runtime maintains the
 index; you query it through the data plane.
 
+> **You don't strictly need a `search` block to call `search()`.** With no
+> `search` declared, the runtime falls back to an in-memory scan over the whole
+> document (every field), still honoring `read` rules — handy for small or
+> bounded collections. Declaring `search: { fields }` upgrades that to a
+> *maintained index* scoped to those fields: scalable, and `opts.fields` then
+> narrows to a subset of the declared (indexed) fields. Declare it for anything
+> that grows; rely on the fallback only for small working sets.
+
 ```json
 {
   "orgs/$orgId/docs/$docId": {
