@@ -35,9 +35,15 @@ import { createWalletClient } from "bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
-`init(config)` takes `{ appId, authMethod, chain?, apiUrl?, wsApiUrl?,
-authApiUrl? }`. `authMethod` is one of `'privy' | 'wallet' | 'phantom' |
-'privy-expo' | 'none'` (full list and auth flow in [auth.md](auth.md)).
+`init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
+production by default** — `init({ appId })` just works, no endpoints to set. Pass
+`network: 'bounded-staging'` to target staging. `authMethod` is one of `'privy' |
+'wallet' | 'phantom' | 'privy-expo' | 'none'` (full list and auth flow in
+[auth.md](auth.md)); it defaults to `'wallet'`.
+
+> Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
+> can override individual endpoints, but you should never need them — `network`
+> selects the whole set. There is no `/config` round-trip; `init()` is synchronous.
 
 `appId` is your project's **public** app id — it is **not a secret API key**.
 Authentication is done with the user's wallet/session id-token bearer (see
