@@ -56,12 +56,20 @@ detail: [cli-reference.md](cli-reference.md).
 On the server, the same kind of keypair drives `bounded-sh/server`:
 
 ```ts
-import { createWalletClient } from "bounded-sh/server";
+import { init, createWalletClient } from "bounded-sh/server";
+await init({ appId: "<appId>", network: "bounded-staging" });   // no keypair needed here
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });  // base58 or JSON array
 vault.address;   // the signer this app acts as
 ```
 
-## End-user auth — Privy & wallets → `@user.address`
+`init()` on the server takes only `{ appId, network }` — it does **not** require
+a keypair. Each `createWalletClient({ keypair })` carries its own signer, so one
+process can act as many keypairs. If instead you want a single process-wide
+signer for the global `set`/`get` helpers (no explicit client), set
+**`BOUNDED_PRIVATE_KEY`** (same env var the CLI uses; a base58 secret or JSON
+array). The keypair is read lazily — only the first signed write needs it.
+
+## End-user auth — the `user` object: `{ id, address, email }`
 
 Your app's users authenticate through `bounded-sh`. The auth method is set
 once in `init`:
