@@ -143,6 +143,10 @@ bounded subscribe "rooms/r1/scores/alice" --app-id <id> --once   # one doc
 (`rooms/r1`). Do NOT pass a `$variable` template path like `rooms/$roomId` —
 the `$roomId` is matched literally, finds no document, and returns empty.
 
+The path can be a positional arg (`bounded subscribe <path>`) **or** a `--path`
+flag (`bounded subscribe --path <path>`) — the flag mirrors `bounded data
+get/set` so the same muscle memory works.
+
 Flags: `--once` (exit after the first snapshot — good for a one-shot read),
 `--timeout 30s` (exit if idle), `--include-subpaths`, `--filter '<json>'`,
 `--limit N`. Streams until Ctrl-C, auto-reconnecting on drops. Reads obey the
