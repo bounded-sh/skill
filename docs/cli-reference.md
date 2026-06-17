@@ -127,8 +127,11 @@ realtime worker, which enforces the deployed policy atomically. Full semantics:
 
 `bounded subscribe <path> --app-id <id>` opens a realtime subscription (same
 `ws/v2` protocol and auth as the SDK — your `~/.bounded/credentials` identity)
-and prints each update as one JSON line (`{"type":"snapshot"|"delta", ...}`).
-Built for agents/scripts that react to data changes:
+and prints each update as one JSON line. The first line is
+`{"type":"subscribed","data":[...]}` (the initial snapshot); every later change
+is `{"type":"data","data":[...]}` carrying the full current view (control frames:
+`error`/`unsubscribed`/`ping`/`pong`). Built for agents/scripts that react to
+data changes:
 
 ```bash
 # a COLLECTION (all docs) or a CONCRETE doc — NOT a "$var" template path
