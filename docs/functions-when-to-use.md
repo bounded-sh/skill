@@ -39,7 +39,7 @@ If it only *reacts to a write* and stays inside the DB, it's a hook. If it must
 
 | Scenario | Right tool | Why |
 |---|---|---|
-| "Only an admin may hide a post" | **rule** — `get(/admins/@user.address) != null` on `update` | Pure access control. A function here would be un-proven where a *proven* rule fits exactly. |
+| "Only an admin may hide a post" | **rule** — `get(/admins/@user.id) != null` on `update` | Pure access control. A function here would be un-proven where a *proven* rule fits exactly. |
 | "Balances are never minted or destroyed" | **invariant** — `conserve` on the balance field | A cross-write guarantee. Only an invariant *proves* it; a function can't (and its own writes still answer to it anyway). |
 | "An agent spends at most $5000/day" | **invariant** — `rollingSum` window cap | Provable quota. Never enforce a cap in function code — put it where it's proven, then even a function's writes obey it. |
 | "When a message is posted, bump the room's `lastMessageAt`" | **hook** — `hooks.offchain.create` → `updateField` | In-boundary cascade, reacts to a write, no external call. |
@@ -80,6 +80,7 @@ and the `auth` gate (invocation).
 
 ## Related
 
+- [functions-graduation.md](functions-graduation.md) — **start simple, graduate to Cloudflare as you grow**: the tier rule (Bounded function → eject to a CF Worker → Cloudflare Agents SDK) and what carries over
 - [functions.md](functions.md) — declare, write, deploy, invoke, secrets, limits
 - [invariants.md](invariants.md) — the proven tier a function's writes still obey
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — rung 2 (in-boundary hooks) vs notify-out webhooks
