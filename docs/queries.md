@@ -62,6 +62,11 @@ const open = await get("orders", {
 > `filter` is the deterministic structured query. `prompt` (a separate `GetOptions`
 > field) is the AI/natural-language alternative — the runtime translates it to a
 > filter. Use `filter` when you know the shape; `prompt` for free-form.
+>
+> **Prefer `filter` for anything load-bearing.** `prompt` depends on an AI
+> translation; if the prompt can't be translated, the request **fails (422)** — it
+> does NOT silently return the whole collection. So `prompt` is best for
+> exploratory/admin queries, not a production read path you depend on.
 
 ### Sort, limit, cursor pagination
 
