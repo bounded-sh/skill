@@ -28,7 +28,8 @@ npm i bounded-sh        # one install — both entrypoints come from this packag
 ```ts
 // client (browser / RN)
 import { init, login, get, set, subscribe } from "bounded-sh";
-await init({ appId: "<appId>", authMethod: "privy" });   // see auth.md
+await init({ appId: "<appId>" });    // defaults to email login; see auth.md
+await login();                       // inline email-code modal (no popup, no redirect)
 
 // server
 import { createWalletClient } from "bounded-sh/server";
@@ -37,9 +38,12 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 
 `init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
 production by default** — `init({ appId })` just works, no endpoints to set. Pass
-`network: 'bounded-staging'` to target staging. `authMethod` is one of `'privy' |
-'wallet' | 'phantom' | 'privy-expo' | 'none'` (full list and auth flow in
-[auth.md](auth.md)); it defaults to `'wallet'`.
+`network: 'bounded-staging'` to target staging. `authMethod` defaults to
+`'email'` (Bounded Better Auth, inline OTP); other options: `'privy' | 'phantom'
+| 'privy-expo' | 'none'`. Anonymous accounts are via `signInAnonymously()` and
+coexist with email. For a custom/RN email UI use the headless
+`sendEmailOtp(email)` + `verifyEmailOtp(email, code)`. Full flow in
+[auth.md](auth.md).
 
 > Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
 > can override individual endpoints, but you should never need them — `network`
@@ -219,13 +223,21 @@ the list, enforced server-side.
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 
 ```ts
-import { login, logout, getCurrentUser, useAuth } from "bounded-sh";
+import { login, logout, getCurrentUser, useAuth,
+         sendEmailOtp, verifyEmailOtp, signInAnonymously } from "bounded-sh";
 
-await login();                       // opens the configured auth modal (Privy / wallet)
+await login();                       // default: inline email-code modal (no popup/redirect)
 const user = getCurrentUser();       // { id, address: string | null, email: string | null } | null
 
 // React:
 const { user, login, logout, loading } = useAuth();
+
+// Headless email (custom UI / React Native) — no modal:
+await sendEmailOtp("user@example.com");
+await verifyEmailOtp("user@example.com", "123456");
+
+// Anonymous (coexists with email): device-keypair identity, upgradeable later
+await signInAnonymously();
 ```
 
 The `user` object has three fields:

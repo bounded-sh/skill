@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **Dev identity** | you / your agent | an ed25519 keypair the CLI and `bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
-| **End-user auth** | your app's users | Privy (email / social / wallet) or a connected wallet | `@user.address` in policy rules |
+| **End-user auth** | your app's users | Privy / Bounded Better Auth (email / social / wallet) or a connected wallet | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
 ## Dev identity — the keypair IS your account
 
@@ -71,27 +71,63 @@ array). The keypair is read lazily — only the first signed write needs it.
 
 ## End-user auth — the `user` object: `{ id, address, email }`
 
-Your app's users authenticate through `bounded-sh`. The auth method is set
-once in `init`:
+Your app's users authenticate through `bounded-sh`. **Email login is the default
+— `init({ appId })` needs no `authMethod`.**
 
 ```ts
 import { init, login, getCurrentUser } from "bounded-sh";
 
-await init({ appId: "<appId>", authMethod: "privy" });
-await login();                       // opens the Privy modal (email / Google / Apple / wallet)
-const user = getCurrentUser();       // { address, ... } | null
+await init({ appId: "<appId>" });    // defaults to email (Bounded Better Auth)
+await login();                       // opens an INLINE email-code modal — no popup, no redirect
+const user = getCurrentUser();       // { id, address, email } | null
 ```
 
-`authMethod` options (from the SDK): `'privy'`, `'wallet'`, `'phantom'`,
-`'privy-expo'` (React Native), or `'none'`.
+The login UX is **inline and mobile-friendly** — a small in-page modal asks for
+an email, sends a 6-digit code, and verifies it. **No popup** (browsers block
+those) and **no full-page redirect** — the user never leaves your app.
 
-- **Privy** supports email, social (Google/Apple), and external wallets, and
-  creates an **embedded Solana wallet** for users without one
-  (`createOnLogin: "users-without-wallets"`). Email/social users still get an
-  address — so they always have a stable `@user.address`.
-- **Wallet / Phantom** connects an existing Solana wallet directly.
-- Whatever the method, the authenticated user resolves to a Solana **address**,
-  and that is the only thing policy rules see.
+**Headless / custom UI / React Native** — build your own email + code inputs
+(this is the only path on React Native, which has no DOM modal):
+
+```ts
+import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "bounded-sh";
+
+await init({ appId: "<appId>" });
+await sendEmailOtp("user@example.com");          // step 1: emails a code
+const user = await verifyEmailOtp("user@example.com", "123456");  // step 2: signs in
+```
+
+**Anonymous accounts coexist** — offer email login AND zero-friction guest
+accounts side by side (see [anonymous-accounts.md](anonymous-accounts.md)):
+
+```ts
+import { signInAnonymously } from "bounded-sh";
+const guest = await signInAnonymously();   // device-keypair identity, upgradeable later
+```
+
+`authMethod` options: `'email'` (default — Bounded Better Auth inline OTP),
+`'privy'`, `'phantom'`, `'privy-expo'` (React Native), or `'none'`. Anonymous is
+via `signInAnonymously()`, not an `authMethod`. (`'wallet'` is not implemented —
+use `'phantom'` for Solana wallets.)
+
+The authenticated `user` object — mirrored into policy as `@user.*` — has **three
+fields**:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `user.id` | `string` | the **universal stable identity**, **always present** for an authenticated user. For wallet logins it equals the wallet address; for email/social (Bounded Better Auth) logins it is the account identity. **Use this for ownership / membership / identity / auth guards.** |
+| `user.address` | `string \| null` | a **real onchain wallet address**. Present for wallet logins, **`null` for email-only logins**. **Use this only for onchain operations / wallet semantics.** |
+| `user.email` | `string \| null` | the verified, lowercased email (email logins only; `null` for wallet). Use it for email-gating. |
+
+- **Privy / Bounded Better Auth** support email, social (Google/Apple), and
+  external wallets. Email/social users authenticate as an **account identity** —
+  they have a stable `@user.id` but **no** `@user.address` (it is `null`) unless a
+  wallet is connected.
+- **Wallet / Phantom** connects an existing Solana wallet directly; here
+  `@user.id` equals the wallet address and `@user.address` is that same address.
+- Whatever the method, **`@user.id` is the stable thing every authenticated
+  request carries** — reach for it for identity. Reach for `@user.address` only
+  when you genuinely need a wallet.
 
 ### React
 
@@ -102,7 +138,7 @@ function AuthButton() {
   const { user, login, logout, loading } = useAuth();
   if (loading) return null;
   return user
-    ? <button onClick={logout}>{user.address.slice(0, 6)}… ↩</button>
+    ? <button onClick={logout}>{user.id.slice(0, 6)}… ↩</button>   // user.id always present; user.address may be null
     : <button onClick={login}>Sign in</button>;
 }
 ```
@@ -110,25 +146,45 @@ function AuthButton() {
 Imperative equivalents: `onAuthStateChanged(cb)`, `onAuthLoadingChanged(cb)`,
 `logout()`.
 
-## How `@user.address` reaches your rules
+## How `@user.*` reaches your rules
 
-Every authenticated request carries a session token derived from the user's
-address. The realtime worker resolves it and exposes it to the policy as
-`@user.address` (or `null` when unauthenticated). That is the hinge of every
-auth rule:
+Every authenticated request carries a session token. The realtime worker resolves
+it and exposes the identity to the policy as `@user.id` (always present when
+authenticated), plus `@user.address` (the wallet, or `null` for email-only
+logins) and `@user.email` (or `null`). `@user.id` is the hinge of every **auth /
+ownership** rule:
 
 ```json
-"create": "@user.address != null && @newData.owner == @user.address"
+"create": "@user.id != null && @newData.owner == @user.id"
 ```
 
-The leading `@user.address != null` is mandatory — without it an unauthenticated
+The leading `@user.id != null` is mandatory — without it an unauthenticated
 caller writing `owner: null` satisfies `null == null`. The proof engine hands
 you that exact counterexample if you forget it
 ([verify-and-counterexamples.md](verify-and-counterexamples.md)).
 
+Use `@user.id` — **not** `@user.address` — for ownership, membership, allowlist
+gates, and bare auth guards. `@user.id` is always present, so email/social users
+(who have **no** wallet) are still first-class owners. `@user.address` is `null`
+for those users, so an `owner == @user.address` rule would silently break them.
+
+**Onchain-only rule for `@user.address`:** inside an **`onchain: true`**
+collection, `@user.id` and `@user.email` are **forbidden** — only `@user.address`
+(a real wallet) is allowed, because onchain operations are wallet semantics. So
+the split is:
+
+```json
+// offchain collection — identity / ownership
+"create": "@user.id != null && @newData.owner == @user.id"
+
+// onchain: true collection — wallet semantics only
+"create": "@user.address != null && @newData.owner == @user.address"
+```
+
 Server-signed writes from `bounded-sh/server` arrive with the **keypair's**
-address as `@user.address`, so server logic is just another authenticated actor
-the rules judge — give the vault key the access its rules require, no more.
+wallet address; for onchain operations that is `@user.address`. Server logic is
+just another authenticated actor the rules judge — give the vault key the access
+its rules require, no more.
 
 ## Related
 
@@ -137,4 +193,4 @@ the rules judge — give the vault key the access its rules require, no more.
 - [sdk-reference.md](sdk-reference.md) — `login` / `useAuth` / `createWalletClient`
 - [admin-and-ownership.md](admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)
 - [cli-reference.md](cli-reference.md) — `link`, `share`/`unshare`/`collaborators` flags
-- [policy-reference.md](policy-reference.md) — `@user.address` in the rule language
+- [policy-reference.md](policy-reference.md) — `@user.id` / `@user.address` / `@user.email` in the rule language
