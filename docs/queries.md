@@ -25,7 +25,20 @@ document the caller can't read (the read rule is compiled into the query).
 | `$in` `$nin` | value in / not in a list |
 | `$regex` (+ `$options`) | string pattern match |
 | `$exists` | field present / absent |
+| `$not` | negate an operator expression, e.g. `{ score: { $not: { $gt: 90 } } }` |
+| `$type` | match by type: `"string"`, `"number"`, `"bool"`, `"array"`, `"object"`, `"null"` |
 | `$and` `$or` `$nor` | combine sub-filters |
+
+**Array-valued fields** behave like MongoDB: a field that holds an array matches
+when it *contains* the value. So with `tags: ["red","blue"]`, both `{ tags: "red" }`
+(membership) and `{ tags: { $in: ["blue","green"] } }` (intersection) match. Array-only
+operators:
+
+| Operator | Meaning |
+|---|---|
+| `$all` | array contains **all** listed values, e.g. `{ tags: { $all: ["red","blue"] } }` |
+| `$size` | array has exactly N elements, e.g. `{ tags: { $size: 2 } }` |
+| `$elemMatch` | some element matches a sub-condition, e.g. `{ scores: { $elemMatch: { $gte: 90 } } }` |
 
 ```ts
 // SDK — get(path, { filter, sort, limit, cursor }) on a collection path.
