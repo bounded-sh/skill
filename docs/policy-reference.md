@@ -38,8 +38,9 @@ an even number of segments:
 ## Fields
 
 `fields` maps names to types. Names start with a letter and contain only
-alphanumerics and underscores; `id`, `pathId`, `_id`, and `tarobase_*` names are
-reserved.
+alphanumerics and underscores; `id`, `pathId`, leading-underscore names (`_id`,
+and the system timestamps `_createdAt` / `_updatedAt` / `_createdBy`), and
+`tarobase_*` names (onchain result fields) are reserved.
 
 The accepted scalar type names are **exactly** `String`, `Int`, `UInt`, `Bool`,
 `Float`, `Address` (plus the `?` / `!` suffixes below). Anything else is rejected

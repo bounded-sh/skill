@@ -63,7 +63,7 @@ Chain effects with `&&`; a falsy result short-circuits later calls.
 >   builtin) and the literal `"now"` just stores the string `"now"` — so you can't
 >   stamp a server timestamp from a hook. Stamp it from the **client write** with
 >   `serverTimestamp()` ([sdk-reference.md](sdk-reference.md)), propagate via
->   `@newData.<field>`, or read the `tarobase_created_at` / `tarobase_updated_at`
+>   `@newData.<field>`, or read the `_createdAt` / `_updatedAt`
 >   system fields on read.
 >
 > For `putDocument`, pass the data as an **object literal**
