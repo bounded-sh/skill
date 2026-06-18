@@ -13,7 +13,9 @@ bypasses the deployed policy.
 ## Install & connect
 
 ```bash
-npm install bounded-sh        # one package; the server client is the /server subpath export
+# Early access: install the bundle's local tarball (a bare `npm i ./sdk/bounded-sh`
+# dir install skips its deps and fails at runtime). At GA: npm i bounded-sh
+npm install ./sdk/bounded-sh.tgz   # one package; the server client is the /server subpath export
 ```
 
 ```ts
@@ -25,10 +27,14 @@ const vault = await createWalletClient({
 vault.address;                        // the address this server acts as
 ```
 
-The keypair is the server's identity. Whatever address it derives is what shows
-up as `@user.address` in rules — so grant the vault key exactly the access its
-rules require, no more. Each client owns its own session; you can hold several
-for different signers.
+The keypair is the server's identity — a **real wallet**. Whatever address it
+derives surfaces in rules as both `@user.id` (the stable identity every
+authenticated request carries; for a wallet signer it equals the wallet address)
+and `@user.address` (the same address, used for onchain / wallet semantics). So
+identity / ownership / membership rules — which key on `@user.id` — match the
+vault by that address, while onchain rules see it as `@user.address`. Grant the
+vault key exactly the access its rules require, no more. Each client owns its own
+session; you can hold several for different signers.
 
 ## Server-signed writes
 
@@ -105,5 +111,5 @@ invariant.
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — `createWalletClient` and the full method surface
 - [../docs/data-plane.md](../docs/data-plane.md) — atomic writes, failure codes, composition
 - [../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md) — declaring webhooks + in-boundary hooks
-- [../docs/auth.md](../docs/auth.md) — the server keypair as `@user.address`
+- [../docs/auth.md](../docs/auth.md) — the server keypair as a real wallet (`@user.id` = `@user.address` for a signer)
 - [capabilities-and-limits.md](capabilities-and-limits.md) — hooks vs your own server code

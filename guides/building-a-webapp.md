@@ -10,7 +10,9 @@ the deployed policy enforcing every operation. The backend is your `policy.json`
 ## Install
 
 ```bash
-npm install bounded-sh buffer
+# Early access: install the bundle's local tarball (a bare `npm i ./sdk/bounded-sh`
+# dir install skips its deps and fails at runtime). At GA: npm i bounded-sh
+npm install ./sdk/bounded-sh.tgz buffer
 ```
 
 `buffer` is a required browser polyfill for the Solana libraries the SDK pulls
@@ -43,9 +45,18 @@ Mount your UI first and `init()` asynchronously — don't block first paint on i
 
 ## Authenticate users
 
-Privy gives you email, social (Google/Apple), and external wallets; email/social
-users get an embedded Solana wallet, so everyone ends up with an
-`@user.address`. Full auth model: [../docs/auth.md](../docs/auth.md).
+Privy gives you email, social (Google/Apple), and external wallets. Whatever the
+method, an authenticated `user` is `{ id, address, email }`:
+
+- `user.id` — the universal stable identity, **always present**. For wallet
+  logins it equals the wallet address; for email/social logins it is the account
+  identity. Use this for ownership / membership / identity.
+- `user.address` — a real onchain wallet address. Present for wallet logins,
+  `null` for email-only logins. Use only for onchain / wallet operations.
+- `user.email` — the verified, lowercased email (email logins only; `null` for
+  wallet). Use for email-gating.
+
+Full auth model: [../docs/auth.md](../docs/auth.md).
 
 ```tsx
 import { useAuth } from "bounded-sh";
@@ -54,7 +65,7 @@ function SignIn() {
   const { user, login, logout, loading } = useAuth();
   if (loading) return null;
   return user
-    ? <button onClick={logout}>Sign out ({user.address.slice(0, 6)}…)</button>
+    ? <button onClick={logout}>Sign out ({user.id.slice(0, 6)}…)</button>
     : <button onClick={login}>Sign in</button>;
 }
 ```
@@ -72,11 +83,11 @@ import { get, set, setMany } from "bounded-sh";
 const note   = await get("notes/n1");
 const recent = await get("notes", { sort: { createdAt: -1 }, limit: 20 });
 const mine   = await get("orders", {
-  filter: { buyer: { $eq: user.address } }, limit: 50,
+  filter: { buyer: { $eq: user.id } }, limit: 50,
 });
 
 // write (signed by the logged-in user → @newData/@user in rules)
-await set("notes/n1", { title: "Hello", body: "…", owner: user.address });
+await set("notes/n1", { title: "Hello", body: "…", owner: user.id });
 
 // atomic multi-write (e.g. a transfer under conserve)
 await setMany([
@@ -125,7 +136,7 @@ the same `bounded-sh` package — see
 ## Related
 
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — full client method surface
-- [../docs/auth.md](../docs/auth.md) — Privy email/social/wallet → `@user.address`
+- [../docs/auth.md](../docs/auth.md) — Privy email/social/wallet → `@user.id` (universal identity), `@user.address` (wallet-or-null), `@user.email`
 - [../docs/queries.md](../docs/queries.md) — filters, sort, paging, aggregations, search
 - [building-for-react-native.md](building-for-react-native.md) — shipping to iOS/Android
 - [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do

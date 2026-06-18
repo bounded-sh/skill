@@ -16,13 +16,17 @@ subpath exports — like `convex` or `@supabase/supabase-js`:
 Both speak to the realtime worker that enforces the deployed policy — the SDK can
 never bypass a rule or invariant.
 
-> Beta: the package is not yet published to npm. APIs below are exported from
-> source today and stable in shape.
+> Beta: the package is not yet published to npm. Install the local tarball that
+> ships in your Bounded bundle. APIs below are stable in shape.
 
 ## Setup
 
 ```sh
-npm i bounded-sh        # one install — both entrypoints come from this package
+# Early access: install the tarball from the bundle (NOT the bare dir — a
+# `npm i ./sdk/bounded-sh` dir install symlinks without its deps and fails at
+# runtime with "Cannot find package '@solana/web3.js'").
+npm i ./sdk/bounded-sh.tgz   # one install — both entrypoints come from this package
+# At GA this becomes:  npm i bounded-sh
 ```
 
 ```ts

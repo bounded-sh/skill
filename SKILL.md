@@ -117,7 +117,7 @@ for the *next* question.
 | `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
 | `rules` (`read`/`create`/`update`/`delete`), `@user`, `@data`, `@newData`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
 | `roles`, `members`, `read:"*"`, `write:["posts"]`, provably-scoped admin | [docs/roles.md](docs/roles.md) |
-| `admins/$address`, `verifyAuthorityClosure` | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
+| `admins/$userId`, `verifyAuthorityClosure` | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
 | `constants`, `@const.NAME`, `defs`, `@def.name` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
 | `environments`, `--environment`, per-env appId/constants | [docs/environments.md](docs/environments.md) |
 | `functions`, `auth`, `entry`, `secrets`, `ctx.env`, `ctx.bounded`, `ctx.user` | [docs/functions.md](docs/functions.md) |
@@ -162,10 +162,10 @@ Open the linked doc for the full treatment.
 
 ```json
 { "spend/$spendId": {
-  "rules": { "read": "@user.address != null",
-             "create": "@user.address != null && @newData.agent == @user.address",
+  "rules": { "read": "@user.id != null",
+             "create": "@user.id != null && @newData.agent == @user.id",
              "update": "false", "delete": "false" },
-  "fields": { "agent": "Address!", "amountUsd": "UInt" },
+  "fields": { "agent": "String!", "amountUsd": "UInt" },
   "tier": "durable",
   "invariants": [ { "type": "rollingSum", "name": "daily_spend_cap",
     "field": "amountUsd", "windowSeconds": 86400, "limit": 5000, "scopeVariable": "$spendId" } ] } }
@@ -175,10 +175,10 @@ Open the linked doc for the full treatment.
 
 ```json
 { "accounts/$accountId": {
-  "rules": { "read": "@user.address != null",
-             "create": "@user.address != null && @newData.owner == @user.address",
-             "update": "@user.address != null && @data.owner == @user.address", "delete": "false" },
-  "fields": { "owner": "Address!", "balance": "UInt" },
+  "rules": { "read": "@user.id != null",
+             "create": "@user.id != null && @newData.owner == @user.id",
+             "update": "@user.id != null && @data.owner == @user.id", "delete": "false" },
+  "fields": { "owner": "String!", "balance": "UInt" },
   "tier": "durable",
   "invariants": [ { "type": "conserve", "name": "no_minting", "field": "balance" } ] } }
 ```
@@ -188,27 +188,27 @@ A transfer is one atomic `setMany` of both accounts (see data-plane.md).
 ### Admin model — [docs/admin-and-ownership.md](docs/admin-and-ownership.md)
 
 ```json
-{ "admins/$address": {
+{ "admins/$userId": {
     "fields": { "active": "Bool" }, "tier": "durable",
-    "rules": { "read": "@user.address != null",
-      "create": "@user.address != null && get(/admins/@user.address) != null",
-      "update": "@user.address != null && get(/admins/@user.address) != null",
-      "delete": "@user.address != null && get(/admins/@user.address) != null" } },
+    "rules": { "read": "@user.id != null",
+      "create": "@user.id != null && get(/admins/@user.id) != null",
+      "update": "@user.id != null && get(/admins/@user.id) != null",
+      "delete": "@user.id != null && get(/admins/@user.id) != null" } },
   "posts/$postId": {
-    "fields": { "author": "Address!", "body": "String", "hidden": "Bool?" }, "tier": "durable",
+    "fields": { "author": "String!", "body": "String", "hidden": "Bool?" }, "tier": "durable",
     "rules": { "read": "true",
-      "create": "@user.address != null && @newData.author == @user.address",
-      "update": "@user.address != null && get(/admins/@user.address) != null",
-      "delete": "@user.address != null && get(/admins/@user.address) != null" } } }
+      "create": "@user.id != null && @newData.author == @user.id",
+      "update": "@user.id != null && get(/admins/@user.id) != null",
+      "delete": "@user.id != null && get(/admins/@user.id) != null" } } }
 ```
 
 ### Roles — admin reads everything — [docs/roles.md](docs/roles.md)
 
 ```json
-{ "constants": { "ADMIN": "<your-wallet>" },
+{ "constants": { "ADMIN": "<your-user-id>" },
   "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
-  "orders/$id": { "fields": { "buyer": "Address", "total": "UInt" },
-    "rules": { "read": "@user.address == @data.buyer", "create": "@user.address == @newData.buyer", "update": "false", "delete": "false" } } }
+  "orders/$id": { "fields": { "buyer": "String", "total": "UInt" },
+    "rules": { "read": "@user.id == @data.buyer", "create": "@user.id == @newData.buyer", "update": "false", "delete": "false" } } }
 ```
 Normal users read only their own orders; the `admin` member reads every row. `bounded verify` lists the grant and flags `read:*` as over-broad.
 
@@ -216,9 +216,9 @@ Normal users read only their own orders; the `admin` member reads every row. `bo
 
 ```json
 { "constants": { "CAP": 5000 },
-  "defs": { "isOwner": "@user.address == @data.owner" },
-  "posts/$id": { "fields": { "owner": "Address", "body": "String" },
-    "rules": { "read": "true", "create": "@user.address == @newData.owner", "update": "@def.isOwner", "delete": "@def.isOwner" } } }
+  "defs": { "isOwner": "@user.id == @data.owner" },
+  "posts/$id": { "fields": { "owner": "String", "body": "String" },
+    "rules": { "read": "true", "create": "@user.id == @newData.owner", "update": "@def.isOwner", "delete": "@def.isOwner" } } }
 ```
 `@const`/`@def` resolve at compile time (deploy + verify); the worker sees only literals.
 
@@ -234,14 +234,14 @@ The `environments` block (per-env `appId` + `constants`) is resolved client-side
 
 ```json
 { "functions": { "syncStripe": {
-  "auth": "get(/admins/@user.address) != null",
+  "auth": "get(/admins/@user.id) != null",
   "entry": "functions/syncStripe.ts", "timeout": 30, "secrets": ["STRIPE_KEY"] } } }
 ```
 ```ts
 export default async function (args, ctx) {
   const r = await fetch("https://api.stripe.com/v1/...", {
     headers: { Authorization: `Bearer ${ctx.env.STRIPE_KEY}` } });
-  await ctx.bounded.set(`subs/${ctx.user.address}`, { active: (await r.json()).active });
+  await ctx.bounded.set(`subs/${ctx.user.id}`, { active: (await r.json()).active });
   return { ok: true };
 }
 ```
@@ -253,14 +253,14 @@ export default async function (args, ctx) {
     "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
     "fields": { "total": "UInt" }, "schedule": { "every": "1d", "run": "rollupDaily" } },
   "functions": { "rollupDaily": {
-    "auth": "get(/admins/@user.address) != null", "entry": "functions/rollupDaily.ts", "timeout": 120 } } }
+    "auth": "get(/admins/@user.id) != null", "entry": "functions/rollupDaily.ts", "timeout": 120 } } }
 ```
 
 ### Live subscription — [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe)
 
 ```ts
 import { subscribe } from "bounded-sh";
-const stop = await subscribe("rooms/r1/view/" + myAddress, { onData: render });
+const stop = await subscribe("rooms/r1/view/" + myId, { onData: render });
 ```
 
 ### Native live runtime (3 pure fns, no deploy) — [docs/live-runtime.md](docs/live-runtime.md)
@@ -270,13 +270,13 @@ editor, whiteboard, live dashboard). Pong below is one example.
 
 ```json
 { "rooms/$roomId": { "tier": "checkpointed",
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
     "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800 } } },
-  "rooms/$roomId/view/$addr": { "tier": "ephemeral",
-    "rules": { "read": "$addr == @user.address", "create": "false", "update": "false", "delete": "false" } } }
+  "rooms/$roomId/view/$userId": { "tier": "ephemeral",
+    "rules": { "read": "$userId == @user.id", "create": "false", "update": "false", "delete": "false" } } }
 ```
 Upload + drive: `bounded live deploy pong.live.ts --app-id <id>`, then
-`subscribe("rooms/r1/view/"+addr,{onData:render})` and `POST /live/intent {path,intent}`.
+`subscribe("rooms/r1/view/"+userId,{onData:render})` and `POST /live/intent {path,intent}`.
 
 ### Email share — [docs/auth.md](docs/auth.md#linking--teams)
 
@@ -295,7 +295,9 @@ bounded data search    --app-id <id> --path notes  --query "shipping"
 ## Setup (60 seconds)
 
 ```bash
-curl -fsSL bounded.sh/install | sh      # or: npm install -g bounded-sh
+# Early access: install the CLI from your Bounded bundle
+cd cli && ./install.sh                   # installs `bounded` to /usr/local/bin
+# At GA: curl -fsSL bounded.sh/install | sh   (or: npm install -g bounded-sh)
 ```
 
 **No login step.** The first `bounded` command generates an ed25519 keypair in
@@ -317,6 +319,19 @@ bounded data get --app-id <appId> --path spend
 - **Rules answer *who may act*.** Each action (`read`/`create`/`update`/`delete`)
   is a boolean expression; a denied action is a `403`. Omitted actions default to
   deny.
+- **Identity has three fields: `@user` is `{ id, address, email }`** (SDK `user`
+  object is the same shape).
+  - **`@user.id`** — the **universal, stable identity, always present** for an
+    authenticated user. For wallet logins it equals the wallet address; for
+    email/social (Bounded Better Auth) logins it is the account identity. **Use it
+    for ownership / membership / identity / auth guards** (`owner == @user.id`,
+    `get(/admins/@user.id)`, doc ids keyed on the user, `@user.id != null`).
+  - **`@user.address`** — a **real onchain wallet address; present for wallet
+    logins, `null` for email-only logins.** Use it **only** for onchain / wallet
+    semantics. **Hard rule: inside `onchain: true` collections/rules, only
+    `@user.address` is allowed — `@user.id` and `@user.email` are forbidden.**
+  - **`@user.email`** — the verified, lowercased email (email logins only; `null`
+    for wallet). Use it for email-gating.
 - **Invariants answer *what must hold across every transaction*** — caps,
   conservation, tenancy. Proven at deploy, enforced atomically at runtime
   (`409` + the invariant's declared name). They bind **every** write path:
@@ -335,7 +350,7 @@ Failure semantics are in the **(c) By error / status** table above and in full i
   the `409` your error handling branches on.
 - **Verify locally before every deploy** — reading counterexamples is the fast loop.
 - **Treat a DISPROVED as information**, not an obstacle: strengthen the rule
-  (add `@user.address != null`, null-check optionals), never weaken the property.
+  (add `@user.id != null`, null-check optionals), never weaken the property.
 - **Use `set-many` whenever correctness spans writes** (transfers, guard + gated
   write) — one atomic batch is not a TOCTOU race; a sequence of `set`s is.
 - **Don't update capped documents** — `rollingSum` collections are append-only;
