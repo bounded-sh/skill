@@ -18,8 +18,8 @@ for membership/ownership gates so they work for every login type, not just walle
 logins. (Reserve `@user.address` for genuinely onchain/wallet operations, where
 it is the only allowed identity variable; it is `null` for email-only logins.)
 
-"Linked to the same account" means the human's other wallets/devices (Privy
-wallet + linked CLI keypairs) — so a teammate signing in from a different device
+"Linked to the same account" means the human's other wallets/devices (their
+embedded wallet + linked CLI keypairs) — so a teammate signing in from a different device
 still counts, with **no policy edit** when the team changes. These are resolved
 by the platform into the app config and injected at rule-eval time (no datastore
 read). Existence-checks (`get(...) != null`) are a **sound uninterpreted boolean**

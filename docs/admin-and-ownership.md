@@ -28,42 +28,53 @@ proven backend unprovable. So Bounded splits authority into two planes:
 | **Data plane** | Read/write app **data** | **Whoever the policy rules + invariants allow — and ONLY them** | Declared in `policy.json`. **No owner bypass.** |
 
 The owner's legitimate reign is the *control plane* (it's their app). On the
-*data plane* the owner is just another `@user.address` — if you want the creator
+*data plane* the owner is just another `@user.id` — if you want the creator
 to moderate posts or issue refunds, you must **grant that explicitly in the
 policy**, and even then they remain bound by every invariant.
 
+> **Identity, in one line.** The SDK `user` object is `{ id, address, email }`.
+> `@user.id` is the **universal stable identity** — always present for an
+> authenticated user (for wallet logins it equals the wallet address; for
+> email/social logins it is the account identity). `@user.address` is a **real
+> onchain wallet address** — present for wallet logins, **null** for email-only
+> logins. `@user.email` is the verified, lowercased email (email logins only;
+> null for wallet). Use **`@user.id` for ownership / membership / admin gates**;
+> reserve `@user.address` for genuinely onchain / wallet operations. (Inside an
+> `onchain:true` collection only `@user.address` is allowed — `@user.id` and
+> `@user.email` are forbidden there.)
+
 ## Granting data powers explicitly — the admins collection
 
-Declare an `admins/$address` collection and gate the privileged actions on
+Declare an `admins/$userId` collection and gate the privileged actions on
 membership in it. The create rule must include a **genesis clause** so the first
 admin can seed itself — see the bootstrap section below for why.
 
 ```json
 {
-  "constants": { "FOUNDER": "<the-creators-wallet-address>" },
-  "admins/$address": {
+  "constants": { "FOUNDER": "<the-creators-user-id>" },
+  "admins/$userId": {
     "fields": { "active": "Bool" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null && (get(/admins/@user.address) != null || @user.address == @const.FOUNDER)",
-      "update": "@user.address != null && get(/admins/@user.address) != null",
-      "delete": "@user.address != null && get(/admins/@user.address) != null"
+      "read": "@user.id != null",
+      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id) != null",
+      "delete": "@user.id != null && get(/admins/@user.id) != null"
     }
   },
   "posts/$postId": {
-    "fields": { "author": "Address!", "body": "String", "hidden": "Bool?" },
+    "fields": { "author": "String!", "body": "String", "hidden": "Bool?" },
     "tier": "durable",
     "rules": {
       "read": "true",
-      "create": "@user.address != null && @newData.author == @user.address",
-      "update": "@user.address != null && get(/admins/@user.address) != null",
-      "delete": "@user.address != null && get(/admins/@user.address) != null"
+      "create": "@user.id != null && @newData.author == @user.id",
+      "update": "@user.id != null && get(/admins/@user.id) != null",
+      "delete": "@user.id != null && get(/admins/@user.id) != null"
     }
   },
   "attestations": [
     { "claim": "the admin set only grows through existing admins, seeded only by the founder",
-      "kind": "authorityClosure", "roleScope": "admins/$address",
+      "kind": "authorityClosure", "roleScope": "admins/$userId",
       "initialMember": "@const.FOUNDER" }
   ]
 }
@@ -72,52 +83,59 @@ admin can seed itself — see the bootstrap section below for why.
 *(Validates clean against the real PolicyValidator.)*
 
 - Only an existing admin **or the founder** can mint an admin. The
-  `@user.address == @const.FOUNDER` disjunct is the **genesis clause**: on a
-  fresh app where `get(/admins/@user.address)` is null for everyone, it lets the
-  one constant founder address create the first admin row (`admins/<FOUNDER>`).
-  After that, `get(/admins/@user.address) != null` carries every subsequent
+  `@user.id == @const.FOUNDER` disjunct is the **genesis clause**: on a
+  fresh app where `get(/admins/@user.id)` is null for everyone, it lets the
+  one constant founder identity create the first admin row (`admins/<FOUNDER>`).
+  After that, `get(/admins/@user.id) != null` carries every subsequent
   promotion — the founder clause is dormant once the set is non-empty.
 - End-users default to **least privilege**: an author may create their own post;
   only an admin may hide or delete one.
 - The admin gate is the same `get()` expression the prover already understands —
   so "who may moderate" stays declarative and analyzable, not buried in code.
+  Note the gate keys on `@user.id` (stable identity), so an email-login admin
+  (no wallet) and a wallet-login admin are gated identically.
 
-## Linked accounts: an account is a set of wallets
+## Linked accounts: one stable identity across logins
 
 `bounded link` / email `bounded share` bind a human's **CLI keypair** and their
-**Privy embedded wallet** together as admin-collaborators ([auth.md](auth.md)).
-So one "account" is really a *set* of wallet addresses. When you seed the admins
-collection, seed **each** address the creator acts from. In a rule,
-`@user.address` is always the **specific acting wallet** — so an admin gate
-matches whichever of the account's wallets made the request, provided that
-address is in `admins`.
+**auto-provisioned embedded wallet** together as admin-collaborators ([auth.md](auth.md)).
+Because you gate on `@user.id` — the **universal stable identity** that is the
+same regardless of which login the human used — you seed the admins collection
+**once** at the account's `@user.id`, and the gate matches every authenticated
+request from that account.
+
+This is exactly why ownership/membership should key on `@user.id` rather than
+`@user.address`: `@user.address` is the *specific acting wallet* (and is **null**
+for an email-only login), so gating membership on it would miss email logins and
+fracture across an account's wallets. Reserve `@user.address` for genuinely
+onchain operations where you need a real wallet pubkey.
 
 ## Bootstrapping the first admin — the genesis flow
 
 There is a chicken-and-egg here that bites every fresh app: a create rule of
-**only** `get(/admins/@user.address) != null` means you must *already* be an
+**only** `get(/admins/@user.id) != null` means you must *already* be an
 admin to create one. On a brand-new app **nobody** is — the app owner is **not**
 implicitly an admin on the data plane (no god-mode). And `bounded data set` does
-**not** bypass create rules: the owner's keypair shows up as just another
-`@user.address`, so a genesis `set` to `admins/<owner>` is rejected with
+**not** bypass create rules: the owner shows up as just another
+`@user.id`, so a genesis `set` to `admins/<owner>` is rejected with
 `403 Policy failed`. There is no system/bootstrap principal that side-steps the
 rule.
 
 The idiom that actually works, end to end:
 
-1. **Put a constant founder address in the policy** —
-   `"constants": { "FOUNDER": "<wallet>" }` (use an `environments` block for a
+1. **Put a constant founder identity in the policy** —
+   `"constants": { "FOUNDER": "<user-id>" }` (use an `environments` block for a
    per-env founder, see [environments.md](environments.md)).
 2. **Add the genesis clause to the `admins` create rule** —
-   `get(/admins/@user.address) != null || @user.address == @const.FOUNDER`
+   `get(/admins/@user.id) != null || @user.id == @const.FOUNDER`
    (shown in the collection above). This is the *only* sanctioned side door, and
-   it admits exactly one address.
+   it admits exactly one identity.
 3. **Seed once from the founder identity** — run
    `bounded data set --path admins/<FOUNDER> --data '{"active":true}'` **as the
-   founder wallet** (the keypair whose address equals `@const.FOUNDER`). The
+   founder** (the identity whose `@user.id` equals `@const.FOUNDER`). The
    genesis disjunct now passes and the first admin row lands.
 4. **Promote everyone else through the founder/admin** — every later
-   `admins/<x>` write is carried by `get(/admins/@user.address) != null`; the
+   `admins/<x>` write is carried by `get(/admins/@user.id) != null`; the
    genesis clause never fires again once the set is non-empty.
 
 Pair this with the `authorityClosure` attestation above (`initialMember:
@@ -135,7 +153,7 @@ the admin scope (create rules, hooks, plugin calls) implies the writer is alread
 an admin (no self-promotion, no side doors), and — given `initialMember` — that
 the create path forces the founder in. It's the formal version of "only an admin
 can make an admin." (`authorityClosure` currently supports only a **flat**
-`admins/$address` role scope — see [invariants.md](invariants.md#attestations--global-policy-wide-claims)
+`admins/$userId` role scope — see [invariants.md](invariants.md#attestations--global-policy-wide-claims)
 for the multi-tenant pattern and the nested-scope limitation.)
 
 > It runs in the verification engine (the same one `bounded verify` drives). The
@@ -153,14 +171,17 @@ When you build an app, **identify who the owner/admin is** (the creator) and
 Then:
 
 1. Express each admin action as an **explicit, admin-gated rule**
-   (`get(/admins/@user.address) != null`) — **never** as a bypass.
+   (`get(/admins/@user.id) != null`) — **never** as a bypass.
 2. Keep every constraint that must hold (caps, conservation, isolation) in an
    **invariant** — admins are bound by it too.
 3. Default end-users to **least privilege**; widen only where the description
    requires it.
-4. Add a **genesis clause** (`|| @user.address == @const.FOUNDER`) to the admins
-   create rule, then seed the founder's address from the founder identity — see
+4. Add a **genesis clause** (`|| @user.id == @const.FOUNDER`) to the admins
+   create rule, then seed the founder's `@user.id` from the founder identity — see
    the bootstrap flow above. A plain `bounded data set` without the clause 403s.
+5. Gate ownership/membership on `@user.id` (the always-present stable identity),
+   not `@user.address` — the wallet address is null for email logins and is only
+   appropriate for onchain operations.
 
 If you catch yourself wanting "the owner can just do X," stop: write the rule
 that says *which* X and *to whom*, and let the prover keep everyone honest.

@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **Dev identity** | you / your agent | an ed25519 keypair the CLI and `bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
-| **End-user auth** | your app's users | Privy / Bounded Better Auth (email / social / wallet) or a connected wallet | `@user.id` / `@user.address` / `@user.email` in policy rules |
+| **End-user auth** | your app's users | Bounded Better Auth (email — the default) or a connected Solana wallet (Phantom) | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
 ## Dev identity — the keypair IS your account
 
@@ -43,7 +43,7 @@ teammates — without anyone juggling raw wallet keys:
 - **`bounded share <wallet|email> --app-id <id>`** adds a collaborator. Pass a
   **wallet** to add it directly (default role `policy` — may update the policy
   only). Pass an **email** and Bounded resolves it to that person's canonical
-  wallet — a **Privy pre-generated embedded wallet**, so the invitee needs no
+  wallet — an **auto-provisioned embedded wallet**, so the invitee needs no
   wallet of their own — added as an **`admin`** collaborator (may also act/sign on
   the app's data the way the owner can). `--role policy|admin` overrides the
   default. Only the owner can add collaborators; the server enforces it against
@@ -69,7 +69,7 @@ signer for the global `set`/`get` helpers (no explicit client), set
 **`BOUNDED_PRIVATE_KEY`** (same env var the CLI uses; a base58 secret or JSON
 array). The keypair is read lazily — only the first signed write needs it.
 
-## End-user auth — the `user` object: `{ id, address, email }`
+## End-user auth — the `user` object
 
 Your app's users authenticate through `bounded-sh`. **Email login is the default
 — `init({ appId })` needs no `authMethod`.**
@@ -105,10 +105,12 @@ import { signInAnonymously } from "bounded-sh";
 const guest = await signInAnonymously();   // device-keypair identity, upgradeable later
 ```
 
-`authMethod` options: `'email'` (default — Bounded Better Auth inline OTP),
-`'privy'`, `'phantom'`, `'privy-expo'` (React Native), or `'none'`. Anonymous is
-via `signInAnonymously()`, not an `authMethod`. (`'wallet'` is not implemented —
-use `'phantom'` for Solana wallets.)
+`authMethod` options: `'email'` (the default — Bounded Better Auth inline OTP),
+`'phantom'` (connect a Solana wallet — the recommended wallet option), or
+`'none'`. Anonymous is via `signInAnonymously()`, not an `authMethod`.
+(`'wallet'` is not implemented — use `'phantom'` for Solana wallets. The SDK also
+still accepts the legacy `'privy'` / `'privy-expo'` values as an inert opt-in, but
+they are no longer recommended — reach for `'email'` or `'phantom'`.)
 
 The authenticated `user` object — mirrored into policy as `@user.*` — has **three
 fields**:
@@ -119,11 +121,11 @@ fields**:
 | `user.address` | `string \| null` | a **real onchain wallet address**. Present for wallet logins, **`null` for email-only logins**. **Use this only for onchain operations / wallet semantics.** |
 | `user.email` | `string \| null` | the verified, lowercased email (email logins only; `null` for wallet). Use it for email-gating. |
 
-- **Privy / Bounded Better Auth** support email, social (Google/Apple), and
-  external wallets. Email/social users authenticate as an **account identity** —
-  they have a stable `@user.id` but **no** `@user.address` (it is `null`) unless a
-  wallet is connected.
-- **Wallet / Phantom** connects an existing Solana wallet directly; here
+- **Email (Bounded Better Auth)** supports email and social (Google/Apple) login.
+  Email/social users authenticate as an **account identity** — they have a stable
+  `@user.id` but **no** `@user.address` (it is `null`) unless a wallet is
+  connected.
+- **Phantom (wallet)** connects an existing Solana wallet directly; here
   `@user.id` equals the wallet address and `@user.address` is that same address.
 - Whatever the method, **`@user.id` is the stable thing every authenticated
   request carries** — reach for it for identity. Reach for `@user.address` only
@@ -188,7 +190,7 @@ its rules require, no more.
 
 ## Related
 
-- [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — wiring Privy auth into a web app
+- [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — wiring end-user auth into a web app
 - [../guides/building-for-agents.md](../guides/building-for-agents.md) — the zero-ceremony keypair flow
 - [sdk-reference.md](sdk-reference.md) — `login` / `useAuth` / `createWalletClient`
 - [admin-and-ownership.md](admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)

@@ -8,8 +8,8 @@ collaborators, `createWalletClient`, `verifyWebhook`, and invoking a function.
 subpath exports — like `convex` or `@supabase/supabase-js`:
 
 - `bounded-sh` (the default/browser export) runs in the browser and React Native:
-  end-user auth via Privy/wallet, live subscriptions, `subscribe`, `live`, and
-  function invocation.
+  end-user auth via email (default) or a Phantom wallet, live subscriptions,
+  `subscribe`, `live`, and function invocation.
 - `bounded-sh/server` runs on a server, signs with a keypair (no browser auth),
   and adds `createWalletClient` + `verifyWebhook`.
 
@@ -43,9 +43,11 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 `init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
 production by default** — `init({ appId })` just works, no endpoints to set. Pass
 `network: 'bounded-staging'` to target staging. `authMethod` defaults to
-`'email'` (Bounded Better Auth, inline OTP); other options: `'privy' | 'phantom'
-| 'privy-expo' | 'none'`. Anonymous accounts are via `signInAnonymously()` and
-coexist with email. For a custom/RN email UI use the headless
+`'email'` (Bounded Better Auth, inline OTP); the recommended wallet option is
+`'phantom'` (connect a Solana wallet), or use `'none'`. Anonymous accounts are
+via `signInAnonymously()` and coexist with email. (The SDK still accepts the
+legacy `'privy'` / `'privy-expo'` values as an inert opt-in, but they are no
+longer recommended.) For a custom/RN email UI use the headless
 `sendEmailOtp(email)` + `verifyEmailOtp(email, code)`. Full flow in
 [auth.md](auth.md).
 
@@ -358,7 +360,7 @@ proof boundary): [functions.md](functions.md).
 
 - [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — client setup + auth + live reads
 - [../guides/building-a-backend.md](../guides/building-a-backend.md) — server-signed writes
-- [auth.md](auth.md) — dev keypair identity vs end-user Privy/wallet auth
+- [auth.md](auth.md) — dev keypair identity vs end-user email/wallet auth
 - [queries.md](queries.md) — filters, sort, paging, aggregations, search
 - [data-plane.md](data-plane.md) — atomic writes and failure semantics
 - [cli-reference.md](cli-reference.md) — the same operations from the CLI

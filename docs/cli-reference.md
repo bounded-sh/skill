@@ -26,7 +26,7 @@ secret string, which overrides the file). See [auth.md](auth.md).
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
 | `whoami` | Show address, environment, key source (creates the key on first run) | `bounded whoami` |
 | `link` | Bind the keypair to a human (email) account via an **OAuth device flow**; keypair + email-wallet become admin-collaborators on each other's apps. Keypair keeps signing. | `bounded link` |
-| `share <wallet\|email> --app-id <id>` | Add a collaborator. **Wallet** → direct (default role `policy`). **Email** → resolved to its Privy pre-generated wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. | `bounded share teammate@example.com --app-id <id>` |
+| `share <wallet\|email> --app-id <id>` | Add a collaborator. **Wallet** → direct (default role `policy`). **Email** → resolved to its auto-provisioned embedded wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. | `bounded share teammate@example.com --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 

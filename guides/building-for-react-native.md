@@ -13,55 +13,69 @@ Everything in the data layer: `init`, `get`, `getPage`, `getMany`, `set`,
 `setMany`, `subscribe`, `search`, `queryAggregate`, `count`, `setFile`. Use them
 exactly as in [building-a-webapp.md](building-a-webapp.md) and
 [../docs/sdk-reference.md](../docs/sdk-reference.md). Metro resolves the SDK's
-`react-native` entry automatically; web-only providers (react-dom, Privy web,
-Phantom browser SDK) are excluded from that build.
+`react-native` entry automatically; web-only providers (react-dom, the browser
+auth modal, the Phantom browser SDK) are excluded from that build.
 
-## What's different: auth uses Privy Expo
+## What's different: auth
 
-Web Privy can't run in RN. Instead you construct a **PrivyExpoProvider** with
-Expo's Privy hooks and pass it to `init` with `authMethod: "privy-expo"`. Embedded
-Solana wallets are created on login (`createOnLogin: "users-without-wallets"`),
-so email/social users still resolve to an `@user.address`.
+Email is the default auth everywhere, including RN — but RN has **no DOM**, so the
+web's inline email-code modal isn't available. On RN you drive the same email-OTP
+flow yourself with the SDK's **headless** primitives (`sendEmailOtp` /
+`verifyEmailOtp`). Phantom (a Solana wallet, opening via the Phantom mobile app)
+is the opt-in path when you specifically need an onchain `@user.address`.
+
+The SDK `user` object is `{ id, address, email }` and means the same thing in RN
+as on web: `@user.id` is the universal stable identity (always present — use it
+for ownership/membership/identity), `@user.address` is the real onchain wallet
+address (present for wallet logins, **`null` for email-only logins** — use it only
+for onchain/wallet operations), and `@user.email` is the verified, lowercased
+email (email logins only, `null` otherwise). Full model:
+[../docs/auth.md](../docs/auth.md).
+
+### Email OTP (default, headless — works on any device)
+
+No wallet extension or app is needed; email OTP runs entirely headless, so it's
+the path that "just works" on a phone. Build your own email + code inputs and
+call the two-step flow:
 
 ```tsx
-import { PrivyProvider } from "@privy-io/expo";
+import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "bounded-sh";
 
-// 1) Wrap your app in Expo's PrivyProvider (config per Privy Expo docs):
-export default function Root() {
-  return (
-    <PrivyProvider
-      appId={PRIVY_APP_ID}
-      config={{ embeddedWallets: { solana: { createOnLogin: "users-without-wallets" } } }}
-    >
-      <App />
-    </PrivyProvider>
-  );
-}
+await init({ appId: "<appId>", authMethod: "email" }); // 'email' is the default
+
+// step 1 — collect the email from your own <TextInput>, then:
+await sendEmailOtp("user@example.com");                  // emails a 6-digit code
+
+// step 2 — collect the code from your own <TextInput>, then:
+const user = await verifyEmailOtp("user@example.com", "123456"); // signs in
+getCurrentUser();                                        // { id, address, email } | null
 ```
 
-```tsx
-// 2) Build the bridge provider from Privy's hooks and init Bounded with it.
-import { init, PrivyExpoProvider } from "bounded-sh";
-import { usePrivy, useEmbeddedSolanaWallet } from "@privy-io/expo";
+`useAuth()`, `logout()`, and every data operation behave exactly as on web once
+a user is signed in.
 
-function useBoundedInit() {
-  const privy = usePrivy();
-  const wallet = useEmbeddedSolanaWallet();
-  useEffect(() => {
-    if (!privy.isReady) return;
-    const provider = new PrivyExpoProvider({
-      // wire Privy Expo methods the provider needs (login, getWalletProvider, tokens)
-      // per the PrivyExpoProvider contract
-    });
-    init({ appId: "<appId>", authMethod: "privy-expo", privyExpoProvider: provider });
-  }, [privy.isReady, wallet.wallets]);
-}
+### Phantom wallet (opt-in, for onchain `@user.address`)
+
+When your app needs a real Solana wallet, use Phantom with
+`authMethod: "phantom"`. On mobile the connection hands off to the Phantom app
+(deeplink) rather than a browser extension. Conceptually:
+
+```ts
+await init({ appId: "<appId>", authMethod: "phantom" });
+// then login() / useAuth() as on web; @user.address is the connected wallet
 ```
 
-The exact methods `PrivyExpoProvider` expects (e.g. `getWalletProvider`,
-`getAccessToken`, `getIdentityToken`) come from Privy's Expo hooks; follow the
-provider's JSDoc. Once `init` runs, `login()`, `useAuth()`, and all data
-operations behave exactly as on web.
+The exact RN wiring for the Phantom mobile hand-off (deeplink redirect/return URL
+setup, and whether extra Phantom mobile config is required) is **not yet pinned
+down in these docs** — treat the snippet above as conceptual and verify the
+mobile connect flow before relying on it. The web flow is the detailed reference:
+[building-a-webapp.md](building-a-webapp.md).
+
+### Anonymous (zero-friction guest)
+
+`signInAnonymously()` works on RN too and can coexist with email — a device
+keypair identity, upgradeable later (see
+[../docs/anonymous-accounts.md](../docs/anonymous-accounts.md)).
 
 ## Reads, writes, subscriptions
 
@@ -71,28 +85,30 @@ live example:
 ```tsx
 import { subscribe } from "bounded-sh";
 
+// myId is the user's universal identity (user.id) — use it to key per-user docs.
 useEffect(() => {
   let stop: (() => Promise<void>) | undefined;
-  subscribe("rooms/r1/view/" + myAddress, {
+  subscribe("rooms/r1/view/" + myId, {
     onData: setView,
     onError: console.error,
   }).then((fn) => { stop = fn; });
   return () => { stop?.(); };
-}, [myAddress]);
+}, [myId]);
 ```
 
 ## Gotchas
 
 - **Metro entry**: ensure your bundler honors the `react-native` condition so the
   RN-safe entry is picked. Don't import web provider modules directly.
-- **No `authMethod: "privy"` in RN** — that's the web flow. Use `"privy-expo"`
-  with a constructed `PrivyExpoProvider`.
+- **No DOM auth modal in RN** — the web's inline email-code modal needs a DOM, so
+  on RN drive email login yourself with the headless `sendEmailOtp` /
+  `verifyEmailOtp` primitives (above).
 - **Polyfills**: RN needs the same Buffer/crypto shims the Solana libs require;
   add them in your Metro/babel config.
 
 ## Related
 
 - [building-a-webapp.md](building-a-webapp.md) — the shared client flow (reads/writes/subscribe)
-- [../docs/auth.md](../docs/auth.md) — Privy auth and `@user.address`
+- [../docs/auth.md](../docs/auth.md) — email (default) / Phantom wallet auth and the `@user.id` / `@user.address` / `@user.email` identity model
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — the client method surface
 - [capabilities-and-limits.md](capabilities-and-limits.md) — why RN, not a native SDK

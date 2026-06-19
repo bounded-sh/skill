@@ -1,9 +1,10 @@
 # Building a Web App
 
 A React frontend on a Bounded backend with `bounded-sh`: install, sign
-users in with Privy (email / social / wallet), and read / write / subscribe with
-the deployed policy enforcing every operation. The backend is your `policy.json`
-— deploy it first ([../docs/policy-generation-guide.md](../docs/policy-generation-guide.md)).
+users in with email (the default — inline OTP, no wallet needed; Phantom is the
+opt-in Solana wallet), and read / write / subscribe with the deployed policy
+enforcing every operation. The backend is your `policy.json` — deploy it first
+([../docs/policy-generation-guide.md](../docs/policy-generation-guide.md)).
 
 > Beta: `bounded-sh` is not yet on npm. The API shape below is stable.
 
@@ -37,7 +38,7 @@ import { init } from "bounded-sh";
 
 await init({
   appId: "<appId>",          // from `bounded deploy --create`
-  authMethod: "privy",       // 'privy' | 'wallet' | 'phantom' | 'none'
+  authMethod: "email",       // 'email' (default) | 'phantom' | 'none'
 });
 ```
 
@@ -45,8 +46,9 @@ Mount your UI first and `init()` asynchronously — don't block first paint on i
 
 ## Authenticate users
 
-Privy gives you email, social (Google/Apple), and external wallets. Whatever the
-method, an authenticated `user` is `{ id, address, email }`:
+Email OTP is the default (inline 6-digit code, no wallet needed); Phantom is the
+opt-in path when you want a Solana wallet (`@user.address`). Whatever the method,
+an authenticated `user` is `{ id, address, email }`:
 
 - `user.id` — the universal stable identity, **always present**. For wallet
   logins it equals the wallet address; for email/social logins it is the account
@@ -136,7 +138,7 @@ the same `bounded-sh` package — see
 ## Related
 
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — full client method surface
-- [../docs/auth.md](../docs/auth.md) — Privy email/social/wallet → `@user.id` (universal identity), `@user.address` (wallet-or-null), `@user.email`
+- [../docs/auth.md](../docs/auth.md) — email (default) / Phantom wallet → `@user.id` (universal identity), `@user.address` (wallet-or-null), `@user.email`
 - [../docs/queries.md](../docs/queries.md) — filters, sort, paging, aggregations, search
 - [building-for-react-native.md](building-for-react-native.md) — shipping to iOS/Android
 - [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do

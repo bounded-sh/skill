@@ -91,7 +91,7 @@ for the *next* question.
 | **What anti-cheat can / can't provably guarantee** (hooks bypass rules but never invariants; on-chain signing) | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | **Build a game with a server tick + settlement** (bytecode `session.tick` model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | Full rule / field-type / `get()`/`getAfter()` **syntax reference** | [docs/policy-reference.md](docs/policy-reference.md) |
-| **Let users log in** (Privy / wallet) | [docs/auth.md](docs/auth.md#end-user-auth--privy--wallets--useraddress) · example below |
+| **Let users log in** (email — default — or Phantom wallet) | [docs/auth.md](docs/auth.md#end-user-auth--the-user-object) · example below |
 | **Anonymous / guest users, invite links, try-before-signup; transfer or upgrade an account** | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
 | **Paginate / filter / sort** a collection | [docs/queries.md](docs/queries.md#sort-limit-cursor-pagination) · example below |
@@ -283,7 +283,7 @@ Upload + drive: `bounded live deploy pong.live.ts --app-id <id>`, then
 ### Email share — [docs/auth.md](docs/auth.md#linking--teams)
 
 ```sh
-bounded share teammate@example.com --app-id <id>   # Privy pre-generates their wallet; added as admin
+bounded share teammate@example.com --app-id <id>   # auto-provisions their embedded wallet; added as admin
 ```
 
 ### Pagination / aggregation / search — [docs/queries.md](docs/queries.md) · [docs/files-and-search.md](docs/files-and-search.md)
