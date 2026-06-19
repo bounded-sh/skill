@@ -72,7 +72,7 @@ expression:
 ```bash
 bounded verify ./policy.json --app-id <id> \
   --operation checkImplication \
-  --rule '@user.address != null && @newData.amount <= 100' \
+  --rule '@user.id != null && @newData.amount <= 100' \
   --property '@newData.amount <= 100'
 ```
 
@@ -103,6 +103,20 @@ bounded deploy ./policy.json --environment production   # production appId + pro
 ```
 
 Full treatment: [environments.md](environments.md).
+
+## Backend code & hosting (deployed THROUGH Bounded)
+
+| Command | Does | Example |
+|---|---|---|
+| `runtime init [dir]` | Scaffold a backend project (`bounded.manifest` + `index.ts` agent) | `bounded runtime init my-agent` |
+| `runtime deploy [dir]` | Bundle source + custom npm deps (cooldown-resolved, server-side) into an immutable artifact + run it through the host | `bounded runtime deploy --app-id <id>` |
+| `runtime info` | Show the deployed artifact (codeId, profile, kind, manifest, lockset) | `bounded runtime info --app-id <id>` |
+| `runtime invoke <agent>` | Invoke a deployed agent/backend through the host (attaches your session token) | `bounded runtime invoke my-agent --app-id <id> --data '{}'` |
+| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to `<app>.bounded.page` (replace-deploy) | `bounded site deploy ./dist --app-id <id>` |
+
+The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
+[backend-runtime.md](backend-runtime.md). Frontend hosting: [frontend-hosting.md](frontend-hosting.md).
+`<app>-api.bounded.page` routes to your backend; `<app>.bounded.page` serves the site.
 
 ## Data plane
 

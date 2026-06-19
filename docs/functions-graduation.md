@@ -31,48 +31,40 @@ Bounded's guarantees no matter where the compute runs**.
 Canonical fit: charge Stripe then mark an order paid; enrich/summarize with an LLM;
 authenticated server actions; `actAs` service writes (payout bot); scheduled rollups.
 
-### Tier 2 — eject to a plain Cloudflare Worker (when ANY hold)
-- You need **durable state / Durable Objects / alarms**, **WebSockets**, or **streaming/SSE** (token-by-token LLM output).
-- You need **arbitrary npm/WASM deps**, a real build, or **>5 min** CPU.
-- You need **direct CF bindings** (KV / R2 / D1 / Queues / Workers AI).
-- You need a real **inbound webhook endpoint** you own.
+### Tier 2 — Bounded runtime, THROUGH us (when ANY hold) — [backend-runtime.md](backend-runtime.md)
+Deploy a backend project (`bounded.manifest` + TS) that we run on Cloudflare's edge
+**for you**, with capabilities handed in as a sealed, metered, spend-capped `ctx`:
+- You need **arbitrary npm deps** (cooldown-resolved + bundled for you), a real build, or **persistent state**.
+- You need **scheduling** (`ctx.schedule` → host-owned alarm), **AI** (`ctx.ai`, spend-capped), or **outbound `fetch`** to an allowlist.
+- You want an **agent** (`onInvoke`/`onSchedule`) or a backend HTTP handler at `<app>-api.bounded.page`.
 
-### Tier 3 — Cloudflare Agents SDK (a remote AI agent)
-- Must **remember across turns/reconnects** (durable per-user memory).
-- **Streams** chat, **pushes proactive** messages, or **schedules follow-ups** that survive restart.
-- Needs **human-in-the-loop** approval that pauses for hours/days, durable multi-step workflows, or is/consumes an **MCP server**.
+You DON'T give up anything: no Cloudflare account, no `wrangler`, no raw bindings —
+auth identity, the AI bucket, version pinning, and billing are still ours. Deploy with
+`bounded runtime deploy`. This is the normal upgrade from a Bounded function.
 
-## Graduating is mechanical, not a rewrite
+### Tier 3 — eject to your OWN Cloudflare account (the final off-ramp; only if you must)
+Reach for this only when you want **full control of your own CF account/billing** or
+something the runtime doesn't expose yet. You **leave Bounded's guarantees** for the
+compute (you now own auth, secrets, scheduling, logs, the invoke route) — but your
+**data + invariants stay in Bounded**: the ejected Worker calls Bounded over
+`bounded-sh/server` (`createWalletClient({ keypair })` — same `get/set/setMany/delete/
+runQuery`, every write still through your proven policy). Hybrid is the norm.
 
-Your function body **already runs inside a Cloudflare Worker** — the deploy pipeline
-wraps your `(args, ctx)` handler in a Worker fetch handler. So ejecting carries the
-**logic over verbatim**; only the *boundary* changes:
+## Graduating to the runtime is mechanical, not a rewrite
 
-- **Data access:** `ctx.bounded` becomes `createWalletClient({ keypair })` from
-  `bounded-sh/server` — same `get/set/setMany/delete/runQuery`, and **every write
-  still goes through your deployed policy (rules + invariants)**. Same proof
-  boundary, different signer.
-- **Hybrid is the norm:** for Tier 2/3, keep your **data + invariants in Bounded**
-  and run the Worker / agent as a separate Cloudflare service that calls Bounded
-  over `bounded-sh/server`. You don't give up the guarantees to get the power.
+Your function logic carries over to the Bounded runtime almost verbatim — the runtime
+wraps your code with the same kind of sealed `ctx`. `bounded runtime deploy` and you're
+on Tier 2 with custom deps + state + schedules, still inside our guarantees.
 
-### What you take on when you eject (the honest tradeoffs)
-- **You act as one service identity, not per-caller.** In a Bounded function
-  `ctx.bounded` acts *as the verified caller* (can never exceed what that user
-  could do). An ejected Worker acts as a single service key — so eject is a clean
-  ~1:1 mapping for **`actAs`/service-identity/cron** functions; **per-caller**
-  functions must verify the caller's token and re-impose the gate themselves.
-- **Email/account-id callers can't be a server signer** (the server SDK is
-  keypair-only) — eject targets **wallet/service identities**.
-- **You now own** auth (the `auth` rule is no longer enforced for you — paste the
-  gate back), secrets (`wrangler secret put`), scheduling (`[triggers] crons`),
-  logs (`wrangler tail`), and the invoke route.
+### What you take on if you go all the way to Tier 3 (eject — the honest tradeoffs)
+- **You act as one service identity, not per-caller.** A Bounded function/runtime acts
+  *as the verified caller*; an ejected Worker acts as a single service key — clean for
+  **`actAs`/service/cron**, but **per-caller** code must verify the caller's token and
+  re-impose the gate itself.
+- **Email/account-id callers can't be a server signer** (the server SDK is keypair-only)
+  — eject targets **wallet/service identities**.
+- **You now own** auth, secrets, scheduling, logs, and the invoke route.
 
-> Rule of thumb: **`actAs` / cron functions eject cleanly. Per-caller functions are
-> best kept as Bounded functions** until you genuinely need Tier-2/3 power, then
-> re-impose caller auth yourself.
-
-## When NOT to eject
-If it fits Tier 1, **stay** — you'd be trading away free auth, invariant proofs,
-secrets, and metering for infrastructure you now operate. Eject only when you cross
-a hard line above.
+> Rule of thumb: outgrow a function → **graduate to the Bounded runtime (Tier 2)**; it
+> covers nearly everything (deps, state, schedules, agents) without leaving the
+> guarantees. Eject to your own CF account (Tier 3) only for full self-ownership.
