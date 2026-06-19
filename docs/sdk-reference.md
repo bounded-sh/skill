@@ -186,7 +186,15 @@ await stop();
 `SubscribeOptions`: `filter`, `prompt`, `shape`, `limit`, `cursor`, `onData`,
 `onError`, `appId`. `filter`/`shape`/paging match `get` and apply to the initial
 snapshot AND deltas (no `sort` — a live feed is event-ordered). Read rules are
-enforced per delivered document. More: [realtime-and-games.md](realtime-and-games.md).
+enforced per delivered document.
+
+`onData` payload follows the path, **not** `get`'s paged envelope: a single-doc
+path delivers the document (or `null`); a collection path delivers a **plain
+array** (`[]` when empty), re-delivering the whole matching set on each change.
+Note the contrast — `get("c", { limit })` returns `{ data, nextCursor }` but
+`subscribe("c", { limit })` hands `onData` the **bare array** (write
+`onData: (rows) => …`, not `onData: ({ data }) => …`). More:
+[realtime-and-games.md](realtime-and-games.md).
 
 ## Files — `setFile` / `getFiles`
 

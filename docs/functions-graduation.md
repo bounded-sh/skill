@@ -39,8 +39,9 @@ Deploy a backend project (`bounded.manifest` + TS) that we run on Cloudflare's e
 - You want an **agent** (`onInvoke`/`onSchedule`) or a backend HTTP handler at `<app>-api.bounded.page`.
 
 You DON'T give up anything: no Cloudflare account, no `wrangler`, no raw bindings —
-auth identity, the AI bucket, version pinning, and billing are still ours. Deploy with
-`bounded runtime deploy`. This is the normal upgrade from a Bounded function.
+auth identity, the AI bucket, version pinning, and billing ([billing.md](billing.md))
+are still ours. Deploy with `bounded runtime deploy`. This is the normal upgrade
+from a Bounded function.
 
 ### Tier 3 — eject to your OWN Cloudflare account (the final off-ramp; only if you must)
 Reach for this only when you want **full control of your own CF account/billing** or

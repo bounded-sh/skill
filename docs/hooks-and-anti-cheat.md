@@ -34,14 +34,26 @@ those hooks are held to the same per-actor `rules` an external writer would
 face. Use it when a hook fans out writes you want bound by the same
 authorization logic an external caller has.
 
+> **Identity in rules.** The SDK `user` object is `{ id, address, email }`.
+> `@user.id` is the **universal stable identity** — always present for any
+> authenticated player (for wallet logins it equals the wallet address; for
+> email/social logins it is the account identity). `@user.address` is a **real
+> onchain wallet address** — present for wallet logins, `null` for email-only
+> logins. `@user.email` is the verified, lowercased email (email logins only;
+> null for wallet). Use **`@user.id` for ownership / membership / player-identity
+> gates** — the offchain game collections below all key on `@user.id`. Reserve
+> `@user.address` for genuinely onchain / wallet operations; inside an
+> `onchain:true` collection only `@user.address` is allowed (`@user.id` and
+> `@user.email` are forbidden there).
+
 ```json
 {
   "matches/$matchId": {
     "tier": "ephemeral",
-    "fields": { "tick": "UInt", "winner": "Address?", "host": "Address!" },
+    "fields": { "tick": "UInt", "winner": "String?", "host": "String!" },
     "rules": {
-      "read":   "@user.address != null",
-      "create": "@user.address != null && @newData.host == @user.address",
+      "read":   "@user.id != null",
+      "create": "@user.id != null && @newData.host == @user.id",
       "update": "false",
       "delete": "false"
     },
@@ -52,11 +64,11 @@ authorization logic an external caller has.
   },
   "matches/$matchId/pot/$entryId": {
     "tier": "durable",
-    "fields": { "amount": "Int", "owner": "Address!" },
+    "fields": { "amount": "Int", "owner": "String!" },
     "rules": {
-      "read":   "@user.address != null",
-      "create": "@user.address != null && @newData.owner == @user.address",
-      "update": "@user.address != null && @data.owner == @user.address && @newData.owner == @data.owner",
+      "read":   "@user.id != null",
+      "create": "@user.id != null && @newData.owner == @user.id",
+      "update": "@user.id != null && @data.owner == @user.id && @newData.owner == @data.owner",
       "delete": "false"
     },
     "invariants": [
@@ -98,7 +110,7 @@ the one class no backend fully cures.
   "matches/$matchId": {
     "tier": "ephemeral",
     "fields": { "tick": "UInt" },
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
     "hooks": { "tick": { "advance": "@DocumentPlugin.updateField(\"matches/sys\", \"tick\", \"1\")" } },
     "session": { "tick": { "everyMs": 100, "run": "advance", "maxLifetimeSec": 3600 } }
   },
@@ -111,7 +123,7 @@ the one class no backend fully cures.
     "tier": "ephemeral",
     "fields": { "visibleJson": "String" },
     "rules": {
-      "read":   "@user.address != null && $playerId == @user.address",
+      "read":   "@user.id != null && $playerId == @user.id",
       "create": "false",
       "update": "false",
       "delete": "false"
@@ -122,7 +134,7 @@ the one class no backend fully cures.
     "fields": { "player": "String", "action": "String", "weight": "UInt", "at": "UInt!" },
     "rules": {
       "read":   "false",
-      "create": "@user.address != null && @newData.player == @user.address",
+      "create": "@user.id != null && @newData.player == @user.id && @newData.weight == 1",
       "update": "false",
       "delete": "false"
     },
@@ -137,6 +149,14 @@ the one class no backend fully cures.
 (A `rollingSum` field is `UInt`, lives on the collection it caps, and forces
 `tier: "durable"`. `scopeVariable` is a `$path` variable; per-player scoping
 uses a player path segment. The view/state collections stay `ephemeral`.)
+
+> **Pin the cap weight in the create rule** (`@newData.weight == 1`). Without it
+> a client can append `weight: 0` and the rate cap never increments — the limit is
+> silently bypassed. The rule, not the client, must fix each event's cost. (Use a
+> fixed set like `@newData.weight == 1 || @newData.weight == 5` when different
+> inputs cost different amounts.) Full recipe — including writing the input and
+> any paired action in one atomic `setMany` — in
+> [invariants.md](invariants.md#recipe--rate-limit-an-action-with-a-separate-event-log).
 
 ### NOT FULLY SOLVABLE — by anyone
 
@@ -158,6 +178,23 @@ directly into a collection (no tick, no server projection), nothing above
 applies — the client is the source of truth and the client is the attacker.
 This is the one design Bounded cannot rescue. The fix is structural: move
 state behind a tick and accept intents.
+
+**Client-reported results / leaderboards.** The same trap, one step later: the
+game is server-authoritative, but the *outcome* is recorded by a client write into
+a durable `matches`/leaderboard collection gated by `create: "@newData.winner ==
+@user.address"`. That rule only checks the caller *names themselves* the winner —
+it has **no link to the server-authoritative result the tick computed** — so the
+loser (or anyone who never joined) can forge a win. (Verified by dogfooding a
+native game: a fresh keypair wrote a winning record for a non-existent room.) The
+fix is the same — keep the result on the **server-authoritative side**: have the tick
+decide the winner and project it in `views(state)`, then read it from the player's
+**view** (`subscribeView`). Do *not* `get()`/`subscribe()` the live room doc — those
+route to the project DO and return null for live session state; only `subscribeView`
+is room-DO-routed. For a *durably queryable* leaderboard, fold results through
+`session.tick` settlement (`settleFrom` is server-computed); a **native** `session.live`
+facet can't write durable collections or trigger settlement yet, so its result is
+read live from the view until facet-triggered settlement lands — see
+[live-runtime.md](live-runtime.md#recording-the-result-per-room-authoritative-today-read-it-through-the-view).
 
 ## Onchain-update signing note
 

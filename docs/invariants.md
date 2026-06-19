@@ -221,6 +221,74 @@ collection and only with `windowSeconds <= 31536000`; the onchain runtime enforc
 it epoch-bucketed (conservatively — it can over-enforce near the boundary, never
 under-enforce). See [proof-coverage.md](proof-coverage.md).
 
+### Recipe — rate-limit an action with a separate event log
+
+The examples above cap a field that *is* the value being limited (a spend log
+where `amount` is the spend). The other common shape is **rate-limiting a
+different action**: "no more than N messages / requests / moves per window." The
+action you want to limit (a chat message, an API call, a game move) lives in its
+own collection; you cap it by **atomically appending one weight=1 event to a
+dedicated append-only log** in the *same* `setMany` as the real write, and put the
+`rollingSum` on the log.
+
+```json
+{
+  "messages/$messageId": {
+    "fields": { "author": "Address!", "body": "String!", "createdAt": "UInt!" },
+    "tier": "durable",
+    "rules": {
+      "read": "@user.address != null",
+      "create": "@user.address != null && @newData.author == @user.address",
+      "update": "false", "delete": "false"
+    }
+  },
+  "users/$userId/posts/$postId": {
+    "description": "Append-only per-author rate-limit log. Every message appends one weight=1 event here in the SAME atomic setMany.",
+    "fields": { "author": "Address!", "weight": "UInt!" },
+    "tier": "durable",
+    "rules": {
+      "read":   "@user.address != null && $userId == @user.address",
+      "create": "@user.address != null && $userId == @user.address && @newData.author == @user.address && @newData.weight == 1",
+      "update": "false", "delete": "false"
+    },
+    "invariants": [
+      { "type": "rollingSum", "name": "messages_per_hour_cap",
+        "field": "weight", "windowSeconds": 3600, "limit": 50, "scopeVariable": "$userId" }
+    ]
+  }
+}
+```
+
+```ts
+// Client writes BOTH legs in one atomic setMany — the message and its cap event
+// commit together or not at all. The 51st post in an hour fails the whole batch
+// (409), so the message is never written either.
+await setMany([
+  { path: `messages/${id}`,            document: { author: user.address, body, createdAt } },
+  { path: `users/${user.address}/posts/${postId}`, document: { author: user.address, weight: 1 } },
+]);
+```
+
+Three things make this airtight, and each is a common omission:
+
+1. **Atomic pairing.** Write the action and the cap event in **one `setMany`**.
+   Because `setMany` is all-or-nothing, you can't do the action without recording
+   the event, and a rejected cap event (over the limit) rolls back the action too.
+2. **Pin the weight in the create rule** (`@newData.weight == 1`). Without this a
+   client can append `weight: 0` (or omit it) and **the cap never increments** —
+   the limit is silently bypassed. The rule, not the client, fixes the per-event
+   cost. (Use a small fixed set, e.g. `@newData.weight == 1 || @newData.weight == 5`,
+   if different actions cost different amounts.)
+3. **Append-only + scoped path.** `update`/`delete` are `"false"` so the history
+   can't be rewritten, and `$userId == @user.address` (or `$userId == @user.id`)
+   means a caller can only append under their own partition — the same
+   `scopeVariable` the cap partitions on. A caller can't dilute someone else's
+   budget or inflate their own by writing under another partition.
+
+This is the pattern behind the scaffolder's chat template and any "N per window
+per user" limit. Cap the field that *is* the value (the spend-log shape above)
+only when the action's magnitude is itself the thing being limited.
+
 ## `bound` — hard ceilings / floors on a field (anti-cheat)
 
 A numeric field (or every value of a map field) must always satisfy a fixed

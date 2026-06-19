@@ -26,7 +26,7 @@ returns an unsubscribe function.
 ```ts
 import { subscribe } from "bounded-sh";
 
-const stop = await subscribe(`rooms/${roomId}/view/${myAddress}`, {
+const stop = await subscribe(`rooms/${roomId}/view/${user.id}`, {
   onData: (view) => render(view),   // called on every change
   onError: (e) => console.error(e),
 });
@@ -41,15 +41,32 @@ relationships expanded:
 const stop = await subscribe("orders", {
   filter: { status: "open", total: { $gt: 100 } },   // deterministic; same operators as get()
   shape: { buyer: {} },                               // expand links on each delivered doc
-  onData: (rows) => render(rows),
+  onData: (rows) => render(rows),                     // rows is a plain array (see payload shape)
 });
 ```
 
+**`onData` payload shape.** The argument passed to `onData` mirrors the *path*,
+not `get`'s paged envelope:
+
+- **Single document** (`subscribe("users/u1", …)`) → the document object, or
+  `null` when it doesn't exist / the read rule denies it.
+- **Collection** (`subscribe("messages", …)`, with or without `filter`/`limit`)
+  → a **plain array** of the matching documents (`[]` when none match). The whole
+  current matching set is re-delivered on each change; `onData` is *not* a
+  per-row delta callback.
+
+> **Differs from `get()` on purpose.** A *paged* `get("messages", { limit })`
+> returns `{ data, nextCursor, status }`. `subscribe("messages", { limit })`
+> delivers the **bare array** to `onData` (there is no `nextCursor` on a live
+> feed — `limit` caps how many docs the feed tracks). Destructure the array
+> directly (`onData: (rows) => …`), **not** `onData: ({ data }) => …` — the
+> latter yields `undefined`.
+
 `SubscribeOptions`: `filter`, `shape`, `limit`, `cursor`, `prompt`, `onData`,
-`onError`. (No `sort` — a live feed is event-ordered, not sorted; sort with `get`.)
-Read access is enforced per delivered document — a player's subscription to
-`view/$playerId` only ever delivers their own view, and a `shape` expansion the
-caller can't read is omitted.
+`onError`. (No `sort` — a live feed is event-ordered, not sorted; sort the array
+client-side, or use `get` for a sorted snapshot.) Read access is enforced per
+delivered document — a player's subscription to `view/$playerId` only ever
+delivers their own view, and a `shape` expansion the caller can't read is omitted.
 
 ## Tiers for realtime
 
@@ -74,7 +91,7 @@ or `checkpointed` top-level template (never `durable`, never onchain).
 "rooms/$roomId": {
   "tier": "ephemeral",
   "fields": { "status": "String", "tick": "UInt" },
-  "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+  "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
   "hooks": { "tick": { "advance": "@DocumentPlugin.updateField(\"rooms/system\", \"tick\", \"1\")" } },
   "session": {
     "checkpointSeconds": 5,
@@ -106,7 +123,7 @@ Game state lives in collections **no external writer can update**:
 
 ```json
 "rooms/$roomId": {
-  "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" }
+  "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" }
 }
 ```
 
@@ -126,7 +143,7 @@ ceiling per window. The cap forces the intent collection to `durable`.
   "fields": { "player": "String", "kind": "String", "weight": "UInt" },
   "rules": {
     "read": "false",
-    "create": "@user.address != null && @newData.player == @user.address",
+    "create": "@user.id != null && @newData.player == @user.id",
     "update": "false",
     "delete": "false"
   },
@@ -152,7 +169,7 @@ owner.
 "rooms/$roomId/view/$playerId": {
   "tier": "ephemeral",
   "fields": { "visibleJson": "String" },
-  "rules": { "read": "@user.address != null && $playerId == @user.address", "create": "false", "update": "false", "delete": "false" }
+  "rules": { "read": "@user.id != null && $playerId == @user.id", "create": "false", "update": "false", "delete": "false" }
 }
 ```
 

@@ -174,6 +174,10 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
   @user.id`.
 - The per-player rate cap is a `rollingSum`, which **requires `durable` tier**,
   so the `intents` collection is durable while the rest of the room is ephemeral.
+  The create rule **pins `@newData.weight == 1`** so a client can't append a
+  `weight: 0` intent to bypass the cap. (Recipe for capping an action via a
+  separate event log:
+  [invariants.md](invariants.md#recipe--rate-limit-an-action-with-a-separate-event-log).)
 - `session.settleTo` + `settleFrom` fold per-player scores into a durable
   `results` row when the room ends.
 
@@ -203,7 +207,7 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
     "fields": { "player": "String", "kind": "String", "weight": "UInt" },
     "rules": {
       "read": "false",
-      "create": "@user.id != null && @newData.player == @user.id",
+      "create": "@user.id != null && @newData.player == @user.id && @newData.weight == 1",
       "update": "false",
       "delete": "false"
     },

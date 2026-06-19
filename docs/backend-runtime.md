@@ -77,6 +77,28 @@ to serve arbitrary HTTP at `https://<app>-api.bounded.page/...`.
 | `ctx.identity` | `{ user, address, email }` — the verified caller |
 | `ctx.log(...)` | tagged logging |
 
+### How the gateways enforce (the sealed capabilities)
+
+Every capability is a host-owned gateway that seals your `appId` server-side, so
+the limits aren't advisory — your code physically cannot exceed them:
+
+- **AI gateway** (`ctx.ai.run`) — the host holds the provider key (you never see
+  it) and **reserves the per-call cost against your rolling `aiCapUSD` BEFORE
+  running inference**, atomically (one DO RPC), so concurrent calls can't race
+  past the cap. Over the cap → `ai_spend_cap_exceeded` (no inference, no charge).
+  A **failed** inference is **refunded** — you're never billed for an error. Each
+  charge is also recorded against your **account's monthly AI bucket** (the plan
+  gift; see [billing.md](billing.md)).
+- **Schedule gateway** (`ctx.schedule`) — facets can't `setAlarm`, so the host
+  owns a single durable alarm and RPCs `onSchedule` back into your facet. Interval
+  is **clamped to a 15s minimum** (a too-frequent schedule would hammer the shared
+  per-app DO), and concurrent schedules are capped per app by your plan
+  (`maxSchedules`). A schedule that keeps crashing **self-disables** after repeated
+  failures so it can't loop forever.
+- **Egress gateway** (`ctx.fetch`) — only the hosts in your manifest
+  `allowedHosts` are reachable (subdomains of a listed host count); **everything
+  else is denied `egress_denied`, fail-closed**, and every request is metered.
+
 ## Deploy + run (CLI)
 
 ```bash
