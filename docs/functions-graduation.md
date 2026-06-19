@@ -7,15 +7,19 @@ free: a function **provably cannot break an invariant** (every write is re-check
 → 409 → throws).
 
 They are deliberately a simple *imperative escape hatch*, not a general compute
-platform. When you outgrow them, **graduate to Cloudflare** — the same code, more
-power. The point isn't to win on functions; it's that your **data + invariants stay
-inside Bounded's guarantees no matter where the compute runs**.
+platform. When you outgrow them, **graduate to the Bounded runtime** — the same code
+with custom npm deps, persistent state, schedules, and full Cloudflare power, still
+running **THROUGH Bounded** (sealed capabilities, metered, spend-capped, version-
+pinned — no Cloudflare account of your own; see [backend-runtime.md](backend-runtime.md)).
+Ejecting to your *own* Cloudflare account is the final off-ramp, for when you want to
+leave Bounded's guarantees entirely. The point: your **data + invariants stay inside
+Bounded's guarantees no matter where the compute runs**.
 
 ## The rule
 
 > **Short + stateless + proven-write → Bounded function.**
-> **Stateful / streaming / heavy → eject to a plain Cloudflare Worker.**
-> **Lives between turns & remembers → Cloudflare Agents SDK.**
+> **Custom deps / stateful / scheduled / an agent → Bounded runtime (through us)** — [backend-runtime.md](backend-runtime.md).
+> **Want your own Cloudflare account + full control → eject** (you leave the guarantees).
 
 ### Tier 1 — Bounded function (the default; use when ALL hold)
 - Work is **short** (≤300s; default 30s) and **stateless** (state goes through `ctx.bounded`).

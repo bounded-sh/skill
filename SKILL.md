@@ -82,6 +82,7 @@ for the *next* question.
 | **Deploy one policy to staging + production** (per-env appId + constants) | [docs/environments.md](docs/environments.md) · example below |
 | **Decide: rule vs invariant vs hook vs function** | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
 | **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
+| **Deploy backend code / an agent with custom npm deps, persistent state, or its own schedule** (run full Cloudflare power THROUGH Bounded — sealed/metered/capped) | [docs/backend-runtime.md](docs/backend-runtime.md) |
 | **Gate access on app managers / owner / collaborators** (incl. linked accounts) or **control who views function logs** (`logsAuth`) | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
 | **Have a function act as its own backend identity** (payout bot, market-maker, settler — mint a key, policy authorizes its address) | [docs/service-keys.md](docs/service-keys.md) |
 | **Run a function / hook on a schedule** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) · [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence) |
