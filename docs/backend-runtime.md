@@ -92,12 +92,17 @@ hash of the bundled content). A new upload = a fresh isolate; re-uploading ident
 code is a no-op. You can't deploy under an app you don't own (owner/admin only).
 
 ## What's guaranteed (and what isn't)
-- **Isolation**: your code can't reach another tenant's data, the host, or a raw
-  binding — only the sealed `ctx`. Egress is allowlisted; AI is capped; a runaway
-  can't run an unbounded bill or wedge the host.
-- **Supply chain**: deps are pinned to versions ≥7 days old (cooldown) and frozen
-  into the artifact; the edge re-verifies the cooldown before accepting an upload.
+- **Isolation** (a hard boundary): your code can't reach another tenant's data, the
+  host, or a raw binding — only the sealed `ctx`. Egress is allowlisted; AI is capped;
+  a runaway can't run an unbounded bill or wedge the host. Each app is a separate
+  sharded Durable Object; the capability gateways seal your appId server-side.
+- **Supply chain** (the 7-day cooldown): your declared `dependencies` are resolved to
+  versions ≥7 days old and frozen into the artifact by the **Bounded bundler** (the
+  trusted control plane) — that's where the cooldown is enforced. The edge additionally
+  pins the runtime profile + its frozen entry wrapper, and rejects any upload whose
+  lockset doesn't cover every declared dependency. Practically: deploy through
+  `bounded runtime deploy` (which routes to our bundler) and your deps are cooldown-clean.
 - **NOT proven**: unlike policy rules/invariants, your imperative code is **not
-  formally proven**. Its *writes* to Bounded data still go through the proven
-  boundary (invariants hold), but its own logic is ordinary code. Keep money-safety
-  in **invariants**, not in backend code.
+  formally proven**. Its *writes* to Bounded data still go through the proven boundary
+  (invariants hold), but its own logic — and any code you bundle — is ordinary code
+  running in *your own* sandbox. Keep money-safety in **invariants**, not backend code.
