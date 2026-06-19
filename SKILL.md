@@ -208,7 +208,7 @@ A transfer is one atomic `setMany` of both accounts (see data-plane.md).
 { "constants": { "ADMIN": "<your-user-id>" },
   "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
   "orders/$id": { "fields": { "buyer": "String", "total": "UInt" },
-    "rules": { "read": "@user.id == @data.buyer", "create": "@user.id == @newData.buyer", "update": "false", "delete": "false" } } }
+    "rules": { "read": "@user.id != null && @user.id == @data.buyer", "create": "@user.id != null && @user.id == @newData.buyer", "update": "false", "delete": "false" } } }
 ```
 Normal users read only their own orders; the `admin` member reads every row. `bounded verify` lists the grant and flags `read:*` as over-broad.
 
