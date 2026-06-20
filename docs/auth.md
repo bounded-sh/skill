@@ -132,6 +132,13 @@ import { signInAnonymously } from "bounded-sh";
 const guest = await signInAnonymously();   // device-keypair identity, upgradeable later
 ```
 
+> **Browser / React-Native only.** `signInAnonymously`, `sendEmailOtp`, and
+> `verifyEmailOtp` persist their session through `localStorage`, so they only work
+> where there's a `window`. Calling them in Node throws a clear error (the session
+> would otherwise be silently dropped and every request would 403). For Node /
+> server code use **`bounded-sh/server`** with a keypair
+> (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
+
 `authMethod` options: `'email'` (the default — Bounded Better Auth inline OTP),
 `'phantom'` (connect a Solana wallet — the recommended wallet option), or
 `'none'`. Anonymous is via `signInAnonymously()`, not an `authMethod`.
