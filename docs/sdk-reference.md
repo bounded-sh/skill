@@ -2,7 +2,8 @@
 
 **What's in here / when to read this:** every SDK method —
 `get`/`setMany`/`subscribe`/`search`/`count`/`aggregate`, auth,
-collaborators, `createWalletClient`, `verifyWebhook`, and invoking a function.
+`createWalletClient`, `verifyWebhook`, and invoking a function. (Collaborators
+are managed by the CLI, not the SDK — see below.)
 
 **One package, two entrypoints.** `bounded-sh` is a single npm install with two
 subpath exports — like `convex` or `@supabase/supabase-js`:
@@ -223,16 +224,22 @@ const ok    = await runExpression("@newData.amount <= 100", { amount: 60 });
 `runQueryMany` / `runExpressionMany` batch these. Policy `queries` are declared
 and proven at deploy — see [queries.md](queries.md).
 
-## Collaborators — `addCollaborator` / `removeCollaborator` / `listCollaborators`
+## Collaborators — managed via the CLI (not the SDK)
 
-```ts
-await addCollaborator(appId, walletAddress);
-const list = await listCollaborators(appId);       // Collaborator[]
-await removeCollaborator(appId, walletAddress);
+Collaborators (who may deploy/update an app's policy) are a **control-plane**
+concern, managed with the **CLI**, not the data-plane `bounded-sh` SDK — the SDK
+talks to the runtime (realtime worker), not the developer API where app access
+lives. Use:
+
+```bash
+bounded share <walletAddress|email> --app-id <id>   # add (role: --role policy|admin)
+bounded collaborators --app-id <id>                 # list
+bounded unshare <walletAddress|email> --app-id <id> # remove
 ```
 
-Same model as `bounded share/unshare/collaborators` — only the owner may modify
-the list, enforced server-side.
+Only the owner may modify the list (enforced server-side). Email shares default
+to `admin`, wallet shares to `policy`. Validated working e2e on staging
+(share → list → unshare round-trip).
 
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 
@@ -298,6 +305,13 @@ vault.address;                                   // the signer's address
 await vault.set("markets/123", { open: true });
 await vault.setMany([ /* atomic batch */ ]);
 const doc = await vault.get("markets/123");
+
+// Subscribe AS this wallet — no BOUNDED_PRIVATE_KEY env var needed. The live
+// connection authenticates with the client's own session, so read rules see the
+// right principal. Accepts a bare callback or { onData, onError, filter, ... }.
+const stop = await vault.subscribe("markets", (rows) => console.log(rows));
+// ... later
+await stop();
 ```
 
 ```ts
@@ -307,8 +321,12 @@ const { init, createWalletClient } = await import("bounded-sh/server");
 
 The wallet client (`vault` above) exposes `get`, `getMany`, `set`, `setMany`, `setFile`,
 `getFiles`, `search`, `count`, `aggregate`, `queryAggregate`, `runQuery`,
-`runQueryMany`, `runExpression`, `runExpressionMany`, and the collaborator
-methods. `keypair` is a base58 string or JSON array secret key — the **base58**
+`runQueryMany`, `runExpression`, `runExpressionMany`, and `subscribe`.
+Prefer these client methods over the top-level `get` /
+`subscribe` exports when you hold a `createWalletClient` instance: the top-level
+ones use the ambient `BOUNDED_PRIVATE_KEY` session and throw `No server keypair`
+if it isn't set, whereas the client methods authenticate as the client's own
+keypair. `keypair` is a base58 string or JSON array secret key — the **base58**
 form is the same value the CLI stores as the `privateKey` field in
 `~/.bounded/credentials` (and accepts via `BOUNDED_PRIVATE_KEY`), so a server can
 sign as the CLI identity by reading that key. Server tasks:
