@@ -69,6 +69,21 @@ const res = await ctx.fetch("https://api.stripe.com/v1/charges", { method: "POST
 { "name": "STRIPE_KEY", "egress": { "host": "api.stripe.com", "header": "Authorization", "scheme": "Bearer" } }
 ```
 
+**The bare `egress: "host"` is shorthand for `Authorization: Bearer <value>`** — the most common
+API-key format. It's not magic: if your API wants a different header, set it. Cheat-sheet for
+common APIs:
+
+| API | Declaration |
+|---|---|
+| OpenAI, Stripe, most OAuth2 | `{ "name": "K", "egress": "api.openai.com" }` (default `Authorization: Bearer` works) |
+| GitHub | `{ "name": "GH", "egress": { "host": "api.github.com", "scheme": "token" } }` |
+| Anthropic | `{ "name": "ANTHROPIC_KEY", "egress": { "host": "api.anthropic.com", "header": "x-api-key", "scheme": "" } }` |
+| Custom header | `{ "name": "K", "egress": { "host": "…", "header": "X-Api-Key", "scheme": "" } }` |
+| Query param | `{ "name": "K", "egress": { "host": "…", "in": "query", "param": "api_key" } }` |
+
+If the default `Authorization: Bearer` is wrong for your API, the call just gets a 401 from
+upstream — so match the header to the API (the cheat-sheet above covers the common ones).
+
 ## One secret, multiple uses
 
 A secret can be used more than one way — list them in `uses`:
@@ -80,6 +95,11 @@ A secret can be used more than one way — list them in `uses`:
 ```
 Here `GH_TOKEN` is injected on calls to api.github.com **and** readable via `ctx.secrets.get`.
 (`"in"` is the in-process usage; an egress object is an egress usage.)
+
+> **Footgun:** adding `"in"` to an egress secret makes it readable by your code again — so the
+> "value never enters your code" guarantee no longer holds for that secret. `bounded runtime
+> deploy` prints a `warnings` line when a secret is both. If you want the egress-only guarantee,
+> declare it egress-**only** (no `"in"`).
 
 ## Which form should I use?
 
@@ -105,6 +125,11 @@ Values are write-only over the API: there is no command that prints a secret val
 
 - Names: `[A-Za-z_][A-Za-z0-9_]{0,63}` (env-var style). Value ≤ 8 KB. ≤ 100 secrets per app.
 - Secrets are **per-app and isolated** — one app can only ever read/inject its own.
+- **A value is set ONCE per app**, not per handler. `bounded secret put STRIPE_KEY … --app-id X`
+  is read by every agent / `onInvoke` / `onSchedule` / queue handler in app X — no copying. The
+  manifest declares the *name* once. (Today the backend runtime and Functions use separate value
+  stores; a single central per-app store + central declaration referenced by name is in progress —
+  ask if you hit the seam.)
 - Declaring a `secrets` block makes it the allow-list: with a block present, only **declared**
   in-process names are readable. With **no** block, any value you `secret put` is readable
   in-process (the simplest path "just works").
