@@ -82,9 +82,36 @@ await login();                       // opens an INLINE email-code modal — no 
 const user = getCurrentUser();       // { id, address, email } | null
 ```
 
-The login UX is **inline and mobile-friendly** — a small in-page modal asks for
-an email, sends a 6-digit code, and verifies it. **No popup** (browsers block
-those) and **no full-page redirect** — the user never leaves your app.
+The inline modal is **email-only** (a 6-digit code, no popup, no full-page redirect).
+It's the quickest drop-in, but it can't do social login (Google needs a redirect) and
+it asserts your `appId` from the app origin.
+
+### Hosted login (email + Google) — the secure redirect flow ← use this for Google / production
+
+For **Google** (or any social provider) and the strongest multi-tenant security, use the
+hosted OAuth2 + PKCE redirect flow. The token's `appId` is bound to a `redirect_uri` you
+**register** for your app, so it can only be minted-through and delivered-to your own
+origin — never spoofed by another app.
+
+```ts
+import { init, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from "bounded-sh";
+
+await init({ appId: "<appId>" });
+
+// On your "Sign in" button:
+await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
+//  → redirects to the hosted Bounded login (email + Google), then back to redirectUri?code=
+
+// On your callback page (e.g. /auth/callback), on load:
+const user = await completeLoginFromRedirect();   // exchanges the code (PKCE) → signs in
+```
+
+There's also `loginWithPopup({ redirectUri })` + `completeLoginInPopup(openerOrigin)` for a
+popup instead of a full-page redirect. **Register your redirect URIs** for the app first
+(exact match, https) — an unregistered `redirect_uri` is rejected, by design.
+
+The inline email modal (`login()` above) and this redirect flow can coexist; pick inline for
+a fast email-only drop-in, the redirect flow for Google + production-grade app isolation.
 
 **Headless / custom UI / React Native** — build your own email + code inputs
 (this is the only path on React Native, which has no DOM modal):
@@ -121,7 +148,9 @@ fields**:
 | `user.address` | `string \| null` | a **real onchain wallet address**. Present for wallet logins, **`null` for email-only logins**. **Use this only for onchain operations / wallet semantics.** |
 | `user.email` | `string \| null` | the verified, lowercased email (email logins only; `null` for wallet). Use it for email-gating. |
 
-- **Email (Bounded Better Auth)** supports email and social (Google/Apple) login.
+- **Email (Bounded Better Auth)** supports email (inline modal) and, via the hosted
+  redirect flow (`loginWithRedirect`), social login (Google). Social requires the redirect
+  flow — the inline modal is email-only.
   Email/social users authenticate as an **account identity** — they have a stable
   `@user.id` but **no** `@user.address` (it is `null`) unless a wallet is
   connected.
