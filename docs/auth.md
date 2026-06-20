@@ -142,9 +142,7 @@ const guest = await signInAnonymously();   // device-keypair identity, upgradeab
 `authMethod` options: `'email'` (the default — Bounded Better Auth inline OTP),
 `'phantom'` (connect a Solana wallet — the recommended wallet option), or
 `'none'`. Anonymous is via `signInAnonymously()`, not an `authMethod`.
-(`'wallet'` is not implemented — use `'phantom'` for Solana wallets. The SDK also
-still accepts the legacy `'privy'` / `'privy-expo'` values as an inert opt-in, but
-they are no longer recommended — reach for `'email'` or `'phantom'`.)
+(`'wallet'` is not implemented — use `'phantom'` for Solana wallets.)
 
 The authenticated `user` object — mirrored into policy as `@user.*` — has **three
 fields**:

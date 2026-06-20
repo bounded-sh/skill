@@ -46,9 +46,7 @@ production by default** — `init({ appId })` just works, no endpoints to set. P
 `network: 'bounded-staging'` to target staging. `authMethod` defaults to
 `'email'` (Bounded Better Auth, inline OTP); the recommended wallet option is
 `'phantom'` (connect a Solana wallet), or use `'none'`. Anonymous accounts are
-via `signInAnonymously()` and coexist with email. (The SDK still accepts the
-legacy `'privy'` / `'privy-expo'` values as an inert opt-in, but they are no
-longer recommended.) For a custom/RN email UI use the headless
+via `signInAnonymously()` and coexist with email. For a custom/RN email UI use the headless
 `sendEmailOtp(email)` + `verifyEmailOtp(email, code)`. Full flow in
 [auth.md](auth.md).
 
