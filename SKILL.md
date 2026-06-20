@@ -84,6 +84,7 @@ for the *next* question.
 | **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
 | **Deploy backend code / an agent with custom npm deps, persistent state, or its own schedule** (run full Cloudflare power THROUGH Bounded — sealed/metered/capped) | [docs/backend-runtime.md](docs/backend-runtime.md) |
 | **Host a static frontend** (`bounded site deploy ./dist` → `<app>.bounded.page`, with `<app>-api.bounded.page` for the backend) | [docs/frontend-hosting.md](docs/frontend-hosting.md) |
+| **Give an app a nice URL** (a vanity `<slug>.bounded.page`, or your own custom domain on Pro) | [docs/domains.md](docs/domains.md) |
 | **Plans, pricing & paying** (free/pro/enterprise, the $5 AI bucket + top-ups, upgrade via Stripe or x402, admin adjust plan/credit/overrides) | [docs/billing.md](docs/billing.md) |
 | **Give backend code an API key** (Stripe/OpenAI secret — declare in manifest, `bounded secret put`, read via `ctx.secrets.get` or auto-inject on egress) | [docs/secrets.md](docs/secrets.md) |
 | **Gate access on app managers / owner / collaborators** (incl. linked accounts) or **control who views function logs** (`logsAuth`) | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
