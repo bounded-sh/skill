@@ -27,6 +27,32 @@ EOF
 bounded data set-many --from-json bundle.json
 ```
 
+## On-chain vs off-chain collections
+
+By default every collection is **off-chain** (Bounded's durable store) and `set`/
+`get`/`set-many`/`delete`/`subscribe`/`aggregate` all just work.
+
+To store a collection **on Solana**, two things are required together:
+1. deploy the app with an on-chain protocol: `bounded deploy <policy.json> --create --name <n> --protocol realtime_devnet` (or a mainnet protocol), and
+2. mark **each** on-chain collection `"onchain": true` in the policy.
+
+```json
+{
+  "players/$id": {
+    "onchain": true,
+    "fields": { "score": "UInt", "wallet": "Address", "active": "Bool" },
+    "rules": { "read": "true", "create": "@user.address != null", "update": "@user.address != null", "delete": "@user.address != null" }
+  }
+}
+```
+
+What changes for an on-chain collection:
+- A write/delete is a **real Solana transaction your wallet signs** (the document is a program account/PDA). Field types map to on-chain types — `UInt`→u64, `Int`→i64, `String`, `Bool`, `Address`→a 32-byte pubkey.
+- **Reads, lists, `subscribe`, and `aggregate` work identically** — Bounded mirrors the on-chain state into the read path, so you query it like any collection.
+- On-chain data is **public** (anyone can read the chain): use `"read": "true"`, and rules may reference **only `@user.address`** (the wallet) — `@user.id` / `@user.email` are rejected inside `onchain: true` collections.
+
+> **Gotcha:** if you forget `"onchain": true`, the collection stays off-chain *even on an on-chain-protocol app* — writes won't land on Solana. The flag is what puts a collection on-chain, not the app protocol alone.
+
 ## Failure semantics
 
 | What failed | Status | What you get back | What committed |
