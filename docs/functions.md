@@ -141,32 +141,31 @@ It prints the function's JSON result, or fails with the dispatcher's error
 (`401` not logged in, `403` the `auth` rule denied you, `404` unknown function,
 `503` Functions not configured, or any error the function threw).
 
-### From TypeScript (today)
+### From TypeScript
 
-> A dedicated `functions.invoke` SDK helper is **not yet exported** from
-> `bounded-sh` / `bounded-sh/server` — don't import it. Invoke the dispatcher
-> directly with the SDK's id token (the same token the data plane sends):
+Use the first-class `functions.invoke(name, args)` helper (exported from both
+`bounded-sh` and `bounded-sh/server`). It attaches the caller's session token
+automatically — the **same** token the data plane sends — so you never hand-roll
+auth headers:
 
 ```ts
-import { getIdToken } from "bounded-sh"; // exported today
+import { functions } from "bounded-sh"; // or "bounded-sh/server"
 
-const token = await getIdToken();
-const res = await fetch(`${FUNCTIONS_URL}/invoke`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-App-Id": appId,
-    Authorization: `Bearer ${token}`,
-  },
-  body: JSON.stringify({ appId, functionName: "syncStripe", args: { customerId } }),
-});
-// → the function's JSON, or the dispatcher's 401/403/404/503 error.
+const res = await functions.invoke("syncStripe", { customerId });
+// → the function's JSON return value.
 ```
+
+`invokeFunction(name, args)` is the same call as a plain function if you prefer.
+Both accept an optional 3rd arg `{ timeoutMs, headers }`. On `bounded-sh/server`
+the session is the ambient `BOUNDED_PRIVATE_KEY` keypair (set it, or log in on the
+browser); a `createWalletClient` instance does not yet carry its own `invoke`.
 
 The dispatcher gates the call on the function's `auth` rule using the verified
 caller — so the identity the function sees is exactly the one your data plane
-would see. A first-class `functions.invoke(name, args)` SDK helper is planned (see
-[functions-when-to-use.md](functions-when-to-use.md#roadmap--toward-formally-bounded-functions)).
+would see. On failure it throws `FunctionInvokeError` (`.statusCode` = 401 not
+logged in / 403 `auth` denied / 404 unknown function / 503 Functions not
+configured). Validated e2e on staging (deploy → `functions.invoke` → JSON result
+with the verified `ctx.user.id`).
 
 ## Deploy a function
 

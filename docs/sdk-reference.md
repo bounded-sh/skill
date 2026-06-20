@@ -355,28 +355,21 @@ staging signing keys), falling back to production when no network is set — so 
 only pass `keysUrl` for a custom worker. Declaring webhooks:
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 
-### Invoking a function — today (and the planned helper)
+### Invoking a function — `functions.invoke`
 
-A first-class `functions.invoke(name, args)` SDK helper is **planned but not yet
-exported** from `bounded-sh` / `bounded-sh/server` — don't import it. Today, invoke
-the dispatcher directly with the SDK's id token (the same token the data plane
-sends), so the dispatcher verifies your identity and evaluates the function's
-`auth` policy rule before it runs:
+Use the first-class `functions.invoke(name, args)` helper — exported from both
+`bounded-sh` and `bounded-sh/server`. It attaches the caller's session token
+automatically (the same token the data plane sends), so the dispatcher verifies
+your identity and evaluates the function's `auth` policy rule before it runs:
 
 ```ts
-import { getIdToken } from "bounded-sh"; // exported today
+import { functions } from "bounded-sh"; // or "bounded-sh/server"
 
-const token = await getIdToken();
-const res = await fetch(`${FUNCTIONS_URL}/invoke`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "X-App-Id": appId,
-    Authorization: `Bearer ${token}`,
-  },
-  body: JSON.stringify({ appId, functionName: "syncStripe", args: { customerId } }),
-});
-// → the function's JSON, or the dispatcher's 401/403/404/503 error.
+const res = await functions.invoke("syncStripe", { customerId });
+// → the function's JSON return value.
+// `invokeFunction("syncStripe", { customerId })` is the same call as a plain fn.
+// Optional 3rd arg: { timeoutMs, headers }. Throws FunctionInvokeError on
+// 401/403/404/503 (see .statusCode). Server session = ambient BOUNDED_PRIVATE_KEY.
 ```
 
 Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the
