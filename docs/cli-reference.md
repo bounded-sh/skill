@@ -112,6 +112,9 @@ Full treatment: [environments.md](environments.md).
 | `runtime deploy [dir]` | Bundle source + custom npm deps (cooldown-resolved, server-side) into an immutable artifact + run it through the host | `bounded runtime deploy --app-id <id>` |
 | `runtime info` | Show the deployed artifact (codeId, profile, kind, manifest, lockset) | `bounded runtime info --app-id <id>` |
 | `runtime invoke <agent>` | Invoke a deployed agent/backend through the host (attaches your session token) | `bounded runtime invoke my-agent --app-id <id> --data '{}'` |
+| `secret put <NAME> <VALUE>` | Set/update a backend secret VALUE for an app (declare the name in `bounded.manifest`; read via `ctx.secrets.get` or auto-inject on egress — see [secrets.md](secrets.md)) | `bounded secret put STRIPE_KEY sk_live_xxx --app-id <id>` |
+| `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
+| `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |
 | `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to `<app>.bounded.page` (replace-deploy) | `bounded site deploy ./dist --app-id <id>` |
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see

@@ -73,7 +73,8 @@ to serve arbitrary HTTP at `https://<app>-api.bounded.page/...`.
 | `ctx.store.get/put` | per-app namespaced key/value |
 | `ctx.ai.run(model, input)` | Workers AI, **fail-closed** spend cap (`aiCapUSD`) |
 | `ctx.schedule.every(name, sec)` / `.at(name, epochMs)` / `.cancel(name)` | host-owned scheduling → `onSchedule` (facets can't `setAlarm`) |
-| `ctx.fetch(url, init)` | outbound HTTP, **allowlist-gated + metered** |
+| `ctx.fetch(url, init)` | outbound HTTP, **allowlist-gated + metered**; a secret bound to the host is auto-injected on the way out |
+| `ctx.secrets.get(name)` | read a tenant secret (declare `secrets` in the manifest; returns `null` for an egress-only secret) — see [secrets.md](secrets.md) |
 | `ctx.identity` | `{ user, address, email }` — the verified caller |
 | `ctx.log(...)` | tagged logging |
 
