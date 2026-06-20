@@ -321,7 +321,7 @@ const { init, createWalletClient } = await import("bounded-sh/server");
 
 The wallet client (`vault` above) exposes `get`, `getMany`, `set`, `setMany`, `setFile`,
 `getFiles`, `search`, `count`, `aggregate`, `queryAggregate`, `runQuery`,
-`runQueryMany`, `runExpression`, `runExpressionMany`, and `subscribe`.
+`runQueryMany`, `runExpression`, `runExpressionMany`, `subscribe`, and `invoke`.
 Prefer these client methods over the top-level `get` /
 `subscribe` exports when you hold a `createWalletClient` instance: the top-level
 ones use the ambient `BOUNDED_PRIVATE_KEY` session and throw `No server keypair`
@@ -369,7 +369,9 @@ const res = await functions.invoke("syncStripe", { customerId });
 // → the function's JSON return value.
 // `invokeFunction("syncStripe", { customerId })` is the same call as a plain fn.
 // Optional 3rd arg: { timeoutMs, headers }. Throws FunctionInvokeError on
-// 401/403/404/503 (see .statusCode). Server session = ambient BOUNDED_PRIVATE_KEY.
+// 401/403/404/503 (see .statusCode). Top-level uses the ambient session
+// (BOUNDED_PRIVATE_KEY on server). To invoke as a specific keypair with no env
+// var: `await vault.invoke("syncStripe", { customerId })` on a createWalletClient.
 ```
 
 Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the

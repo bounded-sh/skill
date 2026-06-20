@@ -156,9 +156,16 @@ const res = await functions.invoke("syncStripe", { customerId });
 ```
 
 `invokeFunction(name, args)` is the same call as a plain function if you prefer.
-Both accept an optional 3rd arg `{ timeoutMs, headers }`. On `bounded-sh/server`
-the session is the ambient `BOUNDED_PRIVATE_KEY` keypair (set it, or log in on the
-browser); a `createWalletClient` instance does not yet carry its own `invoke`.
+Both accept an optional 3rd arg `{ timeoutMs, headers }`. The top-level helper uses
+the ambient session — `BOUNDED_PRIVATE_KEY` on the server (set it, or log in on the
+browser). To invoke **as a specific keypair** with no env var, use the wallet
+client's own method, which authenticates as that wallet (the function's `auth`
+rule + `ctx.user` then reflect it):
+
+```ts
+const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
+const res = await vault.invoke("syncStripe", { customerId });
+```
 
 The dispatcher gates the call on the function's `auth` rule using the verified
 caller — so the identity the function sees is exactly the one your data plane
