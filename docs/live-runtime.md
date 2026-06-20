@@ -124,7 +124,7 @@ intents (worked example at the end).
 | `everyMs` | **Required.** Integer, `20`–`60000` | Native tick cadence (ms). ~33 ≈ 30Hz. |
 | `maxLifetimeSec` | **Required.** Integer, `1`–`86400` | Hard lifetime cap; the room is torn down at this age regardless of state. |
 | `snapshotEveryTicks` | Optional. Integer, `1`–`600` | Snapshot the facet's in-memory state to its own SQLite every N ticks. Bounds post-eviction reconcile loss. Default: derived from `checkpointSeconds / everyMs` (≈ one checkpoint window). |
-| `secrets` | Optional. Array of identifiers (`/^[a-zA-Z][a-zA-Z0-9_]*$/`) | Secret **names** injected into the facet's `env`. (Identifier rule — **not** the UPPER_SNAKE_CASE rule that [functions.md](functions.md) secrets use.) |
+| `secrets` | **Not supported yet — do not use.** | Reserved for future Mode-B (live/game) secret injection; **not wired** (declaring it is rejected at deploy — it would otherwise be `undefined` at runtime). Need an API key in live/game code today? Call out via a [function](functions.md) or a backend-runtime [agent](secrets.md), where secrets work. |
 
 **Two hard placement rules:**
 
@@ -218,7 +218,24 @@ them — a violating fold is rejected and fails closed, exactly like every other
 write path in Bounded. So even your own room code can't checkpoint an impossible
 score (game) or an out-of-bounds value (any app).
 
-The three roles stay clean:
+**Three control surfaces, three different rules — keep them straight:**
+
+| Surface | Rule | Governs |
+|---|---|---|
+| Who may **ACT** | `session.intentRule` | which clients may send intents (falls back to the read rule if absent) |
+| Who may **SEE** | the per-collection **read rule** | reading a doc + subscribing to the per-player view (`$userId == @user.id`) |
+| What the **STATE** may be | **invariants** | postconditions on the **authoritative** state — enforced on every durable write **and at the checkpoint** |
+
+Invariants are postconditions on the **authoritative / checkpointed** state, *not* on
+the ephemeral view. The per-player view is the ~30Hz display **projection** of state
+that is *already* invariant-gated at the checkpoint; it is governed by the **read
+rule** (visibility), not by invariants. **So declare an invariant on the authoritative
+collection (the room / durable state) — never on a `.../view/$x` subcollection** (a
+bound on a view doc would not be enforced; the view is a projection, not a source of
+truth). The intent rule decides who acts, the read rule decides who sees, invariants
+decide what the persisted state may be.
+
+The three runtime roles stay clean:
 
 - **intents** are the only client write path, and they are **server-ordered** by
   Bounded.
@@ -242,6 +259,159 @@ rejects it; the residual is a statistical/ML problem on legal inputs, best fed b
 the tamper-proof, server-ordered intent log via `webhooks`. Be explicit with
 users: Bounded solves the **structural** part and gives the best substrate for
 the statistical part — it does **not** "solve cheating."
+
+## Recording the result (per-room: authoritative today, read it through the view)
+
+The native runtime is server-authoritative for everything *inside* a room — but a
+native facet (`init`/`tick`/`views` + snapshot) has **no write path into durable
+collections** and **cannot trigger settlement**. That shapes how you persist the
+outcome, and there is one forgeable trap to avoid.
+
+**The forgeable trap — do NOT record results with a client-written collection:**
+
+```json
+"matches/$matchId": {
+  "tier": "durable",
+  "rules": { "create": "@user.address != null && @newData.winner == @user.address" }
+}
+```
+
+This is **forgeable**. The rule only checks that the caller *names themselves* the
+winner — it has no link to the server-authoritative outcome the facet computed. So
+any authenticated user (the player who just lost, or someone who never joined) can
+write a record claiming they won. (Verified by dogfooding: a fresh keypair that
+joined no room wrote a winning `matches` record for a non-existent room — the rule
+passed.) `winner == @user.address` is self-report, not authority.
+
+**Per-room result — authoritative today, read it through the VIEW.** The winner the
+`tick` writes into state is server-decided — no client wrote it (the room is
+`update:"false"`), so it can't be forged. Clients learn the result the same way they
+learn everything else live: from **their view** (`live.subscribeView`). Just include
+the outcome in what `views(state)` projects (e.g. `winner`, `phase:"over"`), and the
+view stream delivers it. (Validated by dogfooding: a server-decided winner — the first
+joiner — arrived in both players' views as `winner=<P1> phase=over`; the player who
+*wanted* to win saw the real winner, not themselves.)
+
+> ⚠️ **Do NOT read live room state with `get()`/`subscribe()` on the room doc.** Those
+> route to the **project DO**, while live session state lives in the **room DO** — so
+> `get("rooms/<id>")` on a running/finished live room returns `{ data: null }` (no
+> error, just empty), and a plain `subscribe("rooms/<id>")` delivers only an initial
+> `null` snapshot and then **no live room state**. This is the same routing boundary as
+> views (a plain subscribe lands on the project DO and never sees room writes). The
+> **only** room-DO-routed client read is `subscribeView`. Read the result there.
+> (Verified: across a whole match on a checkpointed live room, `get` stayed `null` and
+> `subscribe` got one `null` snapshot + zero updates while the facet ticked and decided a
+> winner — the same state was live in the view.)
+
+Use `checkpointed` (not `ephemeral`) when you want that authoritative state **fold-gated
+by your invariants** every checkpoint (the anti-cheat proof boundary) and surviving
+eviction provably — but note `checkpointed` changes *durability/provability of the
+state*, **not** how you read it: still the view, never `get()`.
+
+**Cross-room leaderboard — not facet-authoritative yet.** Folding each room's result
+into a *shared* durable leaderboard/`matches` collection is **settlement** (`settleTo`
++ `settleFrom`). For a native room there is a real gap:
+- `settleFrom` aggregates a per-player field from a **room sub-collection**, but a
+  native facet can't write that sub-collection (no durable write path), so it can't
+  carry the facet's in-memory winner.
+- `POST /settle` with client-provided data is gated by `settleRule`, but the value
+  is **client-asserted** — `settleRule` can't verify it against facet memory.
+- Facet-triggered settlement (the supervisor settling *server-computed* data under a
+  dedicated **system principal**) is on the roadmap: the settle path is built; the
+  system principal is the missing piece.
+
+So today: authoritative **per-room** result → project it in `views(state)` and read it
+via `subscribeView` (`checkpointed` if you want it invariant-gated + eviction-durable).
+Authoritative **cross-room** settlement → use the declarative `session.tick` runtime
+(its `settleFrom` is server-computed from a tick-written sub-collection,
+[realtime-and-games.md](realtime-and-games.md#sessions--rooms-with-a-server-loop)),
+or treat native client-reported results as **advisory** until facet-triggered
+settlement lands.
+
+## Listing rooms (the lobby / discovery)
+
+Same routing boundary, read side: a session room (`rooms/$roomId` with `session.live`)
+is **not listable**. `get`/`subscribe` on the session collection route to the project DO
+and never see room-DO state, so you **cannot build a lobby by querying `rooms`** — it
+comes back empty. (This is why invite-link games just share the room id directly and skip
+discovery.)
+
+For a browsable lobby, use a **separate durable index collection** that clients can list
+and subscribe normally:
+
+```json
+"lobby/$roomId": {
+  "tier": "durable",
+  "fields": { "host": "Address", "name": "String", "status": "String", "createdAt": "UInt" },
+  "rules": {
+    "read": "true",
+    "create": "@user.address != null && @newData.host == @user.address",
+    "update": "@user.address != null && @data.host == @user.address && @newData.host == @data.host && @newData.createdAt == @data.createdAt",
+    "delete": "@user.address != null && @data.host == @user.address"
+  }
+}
+```
+
+When the host creates a room, it also writes `lobby/<id>`. Clients browse with
+`get("lobby", { sort: { createdAt: "desc" } })` and get **live** updates via
+`subscribe("lobby", { onData })`. Both validated by dogfooding: a new `status:"open"`
+room reached a subscriber in ~200ms, and an `open → playing` update streamed through.
+
+> **Honest limitation — lobby status is client-maintained, not facet-authoritative.** A
+> native facet can't write durable collections (same boundary as settlement), so it can't
+> flip a room to `playing`/`full`/`ended`. The **host client** updates the entry
+> best-effort — e.g. mirror its own view's `phase` into the lobby `status`. If the host
+> drops, the entry can go stale (`open` forever). Mitigate with a **scheduled hook**
+> (hooks *can* write durable) or a `dueRows` one-shot that expires entries older than N
+> seconds. Treat lobby `status` as a discovery *hint*, not ground truth — the room's own
+> view is ground truth.
+
+Two rule gotchas the verifier will (correctly) flag if you omit them: pin **both**
+`host` and `createdAt` immutable on `update` (`@newData.x == @data.x`) — otherwise the
+host can rewrite ownership or backdate the entry, and verify `[FAIL]`s
+field-immutability. The public `read: "true"` is fine for an open lobby (verify reports
+it as an intentional public-read advisory, not a failure).
+
+## Reconnection & presence (drops, rejoins, leaves)
+
+**Reconnect just works — players are keyed by their stable address.** A client that
+drops (tab close, network blip) and comes back simply calls `subscribeView` again with
+the same identity; the stream resumes mid-match. Validated by dogfooding: a player
+dropped its view for 6s and reconnected into the **same slot**, fighter + HP intact,
+with the match having advanced server-side the entire time (the server is authoritative
+— it never pauses for one client). No re-join is required to resume.
+
+**Guard `join` by address, or a reconnecting re-join duplicates the player.** If your
+reconnect flow re-sends `join`, the tick must treat a join from an address already in
+the room as idempotent:
+
+```js
+if (intent.type === "join") {
+  if (!state.players[address]) {                 // new player → assign a slot
+    state.players[address] = freshPlayer(...);
+  } else {
+    state.players[address].name = intent.name;   // returning player → keep slot/HP
+  }
+}
+```
+
+Without the `if (!state.players[address])` guard, a re-join grabs a second slot (or
+clobbers live state) — a self-inflicted bug, not a runtime one.
+
+**There is NO disconnect/presence signal to the facet.** The tick sees **intents only**.
+When a client's socket closes, the runtime records it for usage metering but does **not**
+notify your module — so a dropped player keeps their slot until the room ends. For
+"opponent left" / forfeit / free-the-slot behavior, detect it in the tick yourself: stamp
+`player.lastSeen = state.now` on each intent and evict/forfeit players whose `lastSeen`
+is older than a timeout.
+
+> **Send-on-change + timeout gotcha.** If your input is send-on-change (the efficient
+> model — a still player sends nothing, see [realtime-netcode.md](realtime-netcode.md)),
+> an activity timeout will falsely flag an idle-but-connected player as gone. Add a
+> lightweight **heartbeat intent** (client sends a `ping` every few seconds) and base the
+> timeout on that, not on gameplay input. Runtime-level presence (the supervisor knows
+> the socket is open) is not exposed to the facet today — it's a roadmap item, not a
+> capability to assume.
 
 ## Deploy + run lifecycle
 
