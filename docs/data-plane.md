@@ -51,7 +51,7 @@ What changes for an on-chain collection:
 - **Reads, lists, `subscribe`, and `aggregate` work identically** — Bounded mirrors the on-chain state into the read path, so you query it like any collection.
 - On-chain data is **public** (anyone can read the chain): use `"read": "true"`, and rules may reference **only `@user.address`** (the wallet) — `@user.id` / `@user.email` are rejected inside `onchain: true` collections.
 
-> **Gotcha:** if you forget `"onchain": true`, the collection stays off-chain *even on an on-chain-protocol app* — writes won't land on Solana. The flag is what puts a collection on-chain, not the app protocol alone.
+> **Gotcha — on an on-chain-protocol app, forgetting `"onchain": true` is a hard failure, not a silent off-chain fallback.** On an on-chain protocol the worker routes **every** collection's write on-chain (it keys on the *protocol*), but deploy only **registers** the collections you marked `onchain: true`. A collection left without the flag is written on-chain yet was never registered on-chain — so every write to it fails `AccountNotInitialized` (Solana custom error **`0xbc4`**) with no off-chain fallback. So on `realtime_devnet`/`realtime_mainnet`, mark **every** collection `onchain: true`. `bounded deploy` now warns and names any unflagged collections. (On the off-chain `realtime_offchain` protocol it's the reverse: `onchain: true` collections are stored off-chain — see the warning deploy prints there too.)
 
 ## Failure semantics
 
