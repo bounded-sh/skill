@@ -30,6 +30,11 @@ This is the imperative sibling of [functions.md](functions.md): code you upload
 difference is *where* the code runs — a function runs once per call; a live room
 runs continuously inside the room.
 
+> **Availability — STAGING-ONLY today.** The native live runtime (Worker-Loader
+> facets) is bound on **staging only**; it is not yet enabled in production. The
+> client SDK **data plane** (`get`/`set`/`subscribe`) works in prod — only the
+> native `session.live` rooms are staging-gated for now.
+
 ## The four-artifact DX
 
 A complete native live room is **four artifacts** and no infrastructure:
@@ -260,6 +265,28 @@ the tamper-proof, server-ordered intent log via `webhooks`. Be explicit with
 users: Bounded solves the **structural** part and gives the best substrate for
 the statistical part — it does **not** "solve cheating."
 
+## Data in a game (the three paths)
+
+A game reaches durable data **three** ways — know which is which:
+
+- **(a) tick → `call` → a function using `ctx.bounded` (server-authoritative).** The
+  only way the *tick* writes durable state. The tick returns `{ state, call: { fn, args } }`,
+  the called function does the durable write / settlement / onchain submit with
+  `ctx.bounded`, and the result re-enters a later tick as an `@effect` intent. Give it a
+  funded identity with `session.live.runAs` and gate it with `@origin.kind == 'live'` (see
+  [ai-npcs.md](ai-npcs.md), [principals-and-origins.md](principals-and-origins.md)). This is
+  the value that *can't* be forged — it comes from facet memory, not a client.
+- **(b) the player's client → normal SDK `get`/`set`/`subscribe`.** The ordinary data
+  plane, rule-enforced per `@user`. Use it for everything the player owns/reads directly
+  (profile, lobby, inventory). **This works in prod.**
+- **(c) the tick CANNOT read durable state synchronously.** `tick` is pure and
+  egress-disabled — no `get`, no `fetch`. To read durable data, round-trip via
+  **`call` → a function → `@effect`** on a *later* tick. For data the room needs at boot,
+  **seed it statically** through `init(seed)` (the host's `rooms/<id>` doc) instead.
+
+> **Availability.** The native **live runtime** (paths a + c, Worker-Loader facets) is
+> **staging-only** today. The **client SDK data plane** (path b) works in **prod**.
+
 ## Calling out from a tick (the `call` primitive)
 
 `tick` is **pure, synchronous, and egress-disabled** — it can't `fetch`, can't read
@@ -269,14 +296,18 @@ alongside the next state instead of a bare `return state`:
 ```ts
 // inside tick(state, intents, dt):
 return { state, call: { fn: "npcBrain", args: { board: state.board } } };
-//                                ^ add `as: state.currentPlayer` to attribute the call to a player (optional)
+//                                ^ optional `as: state.currentPlayer` only gates the same-tick check — it does NOT make the call act as that player (no-op on identity today)
 // or several at once:
 return { state, calls: [ { fn: "npcBrain", args: {...} }, { fn: "settleMatch", args: {...} } ] };
 ```
 
 A bare `return state` is unchanged and fully back-compatible — adding a `call` is the
-only opt-in. The field a developer writes is **`as`** (the player id to act for) — never
-`onBehalfOf`. `as` is optional; omit it for a call with no acting user.
+only opt-in. The optional field is **`as`** (a player id) — never `onBehalfOf`. **Today
+`as` is NOT wired to identity:** it only gates the facet's same-tick check (a tick can't
+name a player who didn't act this tick). A permitted `as` is a **no-op on identity** —
+the call still acts as the session `runAs` / function `actAs` / anonymous system, never
+as that player. Per-player acting is roadmap (cheap, non-breaking to add later). Omit
+`as` for a call with no acting user.
 
 **What `call` runs.** `fn` must be a function name in the owner-declared whitelist
 **`session.live.calls`**, and the called function's own `auth` rule **is** evaluated for
@@ -354,8 +385,13 @@ function tick(state, intents, dt) {
 }
 ```
 
-The `@effect` address is **host-only**: an intent carrying `__effect` that did not arrive
-on `@effect` is rejected as forged, so a client cannot inject a fake result.
+**Security guarantee — effect results are host-only, forgery is foreclosed (ENFORCED).** A
+client live intent may **never** carry the reserved **`@effect`** address **or** the
+**`__effect`** discriminator — either is rejected (`403`) before it reaches the tick. Only
+the host feeds effect results back in (the supervisor drains the outbox and re-injects on
+`@effect` after the checkpoint). So a client cannot inject a fake result or impersonate the
+effect channel; the only `@effect`/`__effect` intents your tick ever sees came from the
+host, never from a player.
 
 **SHIPPED truth — read this before you build on it:**
 
@@ -618,9 +654,9 @@ Status/liveness is still a raw GET (no helper yet):
 The per-client view read rule is what makes the subscribe line safe by
 construction: it can only ever resolve to *your* view, so you cannot subscribe
 your way into another client's hidden state. (The SDK surface for this primitive
-is `live.intent` for sending and `subscribeLiveView` as the typed subscribe
-helper once first-class helpers land; today, use raw `subscribe` + `fetch` as
-above.)
+ships today in `bounded-sh`: `live.intent` for sending and
+`live.subscribeView` as the typed per-view subscribe helper — use them, as in the
+example above; no raw `subscribe` + `fetch` needed.)
 
 ## Related
 

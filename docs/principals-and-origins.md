@@ -113,7 +113,11 @@ client cannot assert or spoof it.
 
 - **`@origin.kind` is ALWAYS set** (never null). `'live'` = a live game tick;
   `'user'` = a direct end-user/SDK call (the **no-live-origin sentinel**);
-  `'scheduled'`, `'function'`, `'webhook'` for those dispatch kinds.
+  `'scheduled'`, `'function'`, `'webhook'` for those dispatch kinds. Because it
+  is never null, **`@origin.kind != 'user'` correctly excludes direct callers** —
+  it is true for every non-direct dispatch (`live`/`scheduled`/`function`/
+  `webhook`) and false only for an end-user/SDK call. This is **sound both at
+  runtime and in `bounded verify`**.
 - `path` / `module` / `room` / `tick` are **null when not applicable** (e.g. all
   null for `kind: 'user'`). So a rule gating on `@origin.module` should also
   require `@origin.kind == 'live'`.
@@ -161,12 +165,17 @@ The identity plumbing is not forgeable:
 - `@origin` is **dispatcher-derived**, never a client-asserted header — a forged
   `X-Bounded-Origin` is ignored. `@origin.kind == 'live'` can only be true for a
   real tick dispatch.
-- The `@effect` result address is **host-only** — an intent carrying `__effect`
-  not on the `@effect` address is rejected as forged. A client cannot inject fake
-  function results.
-- A tick **cannot escalate `as`** to a player who didn't act this tick (the
-  same-tick check runs in the facet; `@effect` is excluded from the principal
-  set).
+- **Forgery foreclosure (reserved-address):** a client live intent may **never**
+  carry the reserved `@effect` address or an `__effect` discriminator — the
+  facet rejects it (**403**). **Only the host feeds effect results** back onto
+  the `@effect` address; a client cannot inject or replay a fake function
+  result. `@effect` is also excluded from the per-tick principal set.
+- **`as` only gates the same-tick check today — it does NOT change identity.**
+  A tick may name `as` for a player who acted this tick (the same-tick check
+  runs in the facet), but a permitted `as` is a **no-op on identity**: the call
+  still acts as the session `runAs` / function `actAs` / anonymous system, NOT
+  as the player. **Per-player acting is ROADMAP** (cheap, non-breaking to add).
+  Do not assume `as` makes a call act on a player's behalf.
 - The acting identity is **never** a caller-asserted header — the dispatcher
   refuses an `X-Bounded-Acting` impersonation header. Identity comes only from a
   verified token, `runAs`, or the function's owner-declared `actAs`.

@@ -145,7 +145,7 @@ for the *next* question.
 | `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `session.tick`, `hooks.tick`, `settleTo`, fog-of-war (bytecode session model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
-| `session.live.calls`, `@effect`, the `call` primitive (`{state,call:{fn,args,as}}`), `as` (act-for player) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/ai-npcs.md](docs/ai-npcs.md) |
+| `session.live.calls`, `@effect`, the `call` primitive (`{state,call:{fn,args,as}}`), `as` (optional; gates same-tick check only — NOT wired to identity today) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/ai-npcs.md](docs/ai-npcs.md) |
 | `@origin`, `@origin.kind` (`'live'`/`'user'`/`'scheduled'`/`'function'`/`'webhook'`, always set), `@origin.module`/`.path`/`.room`/`.tick`, `ctx.origin` (host-set, unforgeable; offchain-only — forbidden onchain) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/policy-reference.md](docs/policy-reference.md) |
 | `session.live.runAs` (session-wide live-call identity; funds AI NPCs), `actAs` as a **system / service principal** (what `@user` is on a live call); precedence `actAs > runAs > anonymous system` | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/service-keys.md](docs/service-keys.md) |
 | AI NPC / AI player, `npcBrain`, tick-calls-a-function, `ctx.ai.run` billing on a live call | [docs/ai-npcs.md](docs/ai-npcs.md) |

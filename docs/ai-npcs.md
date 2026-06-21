@@ -146,11 +146,13 @@ export function tick(state, intents, dt) {
   on any other address is rejected as forged, so a client cannot inject a fake
   NPC reply (see [live-runtime.md](live-runtime.md) and
   [principals-and-origins.md](principals-and-origins.md)).
-- The field a developer writes to act for a player is **`as`** (not
-  `onBehalfOf`). An NPC brain doesn't need it — it speaks as the `runAs` service
-  identity. (Routing a model's action back as the *human player* who triggered
-  it, via `as`, is wired too; see
-  [principals-and-origins.md](principals-and-origins.md).)
+- The optional `as` field on a `call` names a player, but **`as` is NOT wired to
+  identity today** — it only gates the facet's same-tick check (a tick can't name a
+  player who didn't act this tick). A permitted `as` is a **no-op on identity**: the
+  call still acts as the session `runAs` / function `actAs` / anonymous system, never
+  as that player. Per-player acting is roadmap (cheap, non-breaking to add later). An
+  NPC brain doesn't need `as` anyway — it speaks as the `runAs` service identity. See
+  [principals-and-origins.md](principals-and-origins.md).
 
 ### 3. The function — `ctx.ai.run`, funded by `runAs`
 

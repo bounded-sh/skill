@@ -121,8 +121,10 @@ client writes.
 > pure/egress-disabled, but it can `return { state, call: { fn, args, as } }` to
 > invoke a whitelisted Bounded function — the result re-enters a later tick as an
 > `@effect` intent. That is how a tick reaches AI NPCs, settlement, and external
-> calls. The field a dev writes is **`as`** (the player to act for), never
-> `onBehalfOf`. The primitive lives in [live-runtime.md](live-runtime.md);
+> calls. The optional field is **`as`** (a player id), never `onBehalfOf` — but
+> `as` only gates the facet's same-tick check today; it does **not** make the call
+> act as that player (per-player acting is roadmap). The primitive lives in
+> [live-runtime.md](live-runtime.md);
 > NPC/settlement patterns are in [ai-npcs.md](ai-npcs.md).
 
 ## Server-authoritative state (no forged ticks)

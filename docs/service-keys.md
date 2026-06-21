@@ -110,6 +110,7 @@ Then whitelist it for the live session and have the tick call it:
 ```ts
 // inside live.tick — surface a call for the NPC to think
 return { state, call: { fn: "npcBrain", args: { prompt }, as: playerId } };
+// `as` is optional and a no-op on identity today — the call runs as runAs/actAs, NOT as playerId.
 ```
 
 > **No private key needed for this.** `runAs` and `actAs` are policy fields, not

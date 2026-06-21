@@ -62,8 +62,10 @@ Discrete actions (attack, ability) are events — send them on the keypress, alw
 > `session.live` tick can `return { state, call: { fn, args, as } }` to call a
 > whitelisted function — an AI NPC's brain, a settlement step, an external check.
 > The result arrives on a later tick as an `@effect` intent (checkpoint cadence, so
-> a short delay — not instant). The dev-written field is **`as`** (the player to act
-> for), never `onBehalfOf`. See [live-runtime.md](live-runtime.md) for the primitive
+> a short delay — not instant). The optional field is **`as`** (a player id), never
+> `onBehalfOf` — but `as` only gates the same-tick check today; it does **not** make
+> the call act as that player (per-player acting is roadmap). See
+> [live-runtime.md](live-runtime.md) for the primitive
 > and [ai-npcs.md](ai-npcs.md) for NPC/settlement patterns.
 
 ## 3. Interpolate REMOTE players (hide jitter)
