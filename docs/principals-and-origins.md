@@ -103,7 +103,7 @@ client cannot assert or spoof it.
 ```ts
 // @origin — host-populated for every call
 @origin = {
-  kind,   // ALWAYS set: 'live' | 'user' | 'scheduled' | 'function' | 'webhook'
+  kind,   // ALWAYS set. Produced today: 'live' | 'user'. Reserved (roadmap): 'scheduled' | 'function' | 'webhook'
   path,   // the rooms/$roomId or function path; null when N/A
   module, // the live module name; null when N/A
   room,   // the room id (live calls); null when N/A
@@ -111,13 +111,14 @@ client cannot assert or spoof it.
 }
 ```
 
-- **`@origin.kind` is ALWAYS set** (never null). `'live'` = a live game tick;
-  `'user'` = a direct end-user/SDK call (the **no-live-origin sentinel**);
-  `'scheduled'`, `'function'`, `'webhook'` for those dispatch kinds. Because it
-  is never null, **`@origin.kind != 'user'` correctly excludes direct callers** —
-  it is true for every non-direct dispatch (`live`/`scheduled`/`function`/
-  `webhook`) and false only for an end-user/SDK call. This is **sound both at
-  runtime and in `bounded verify`**.
+- **`@origin.kind` is ALWAYS set** (never null). **Produced today: `'live'`** = a
+  live game tick, and **`'user'`** = a direct end-user/SDK call (the
+  **no-live-origin sentinel**). `'scheduled'`, `'function'`, `'webhook'` are
+  **reserved for future dispatch paths** (not stamped yet — don't gate on them
+  today; such a rule verifies but never matches at runtime). Because kind is never
+  null, **`@origin.kind == 'live'`** is the way to allow only a live tick, and
+  **`@origin.kind != 'user'`** excludes direct callers — **sound both at runtime
+  and in `bounded verify`**.
 - `path` / `module` / `room` / `tick` are **null when not applicable** (e.g. all
   null for `kind: 'user'`). So a rule gating on `@origin.module` should also
   require `@origin.kind == 'live'`.

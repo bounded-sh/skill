@@ -122,7 +122,7 @@ expressions at deploy. **An omitted rule defaults to deny.**
 | `@user.address` | A **real wallet**, only. **`null` for email/social logins** (email tokens omit the wallet claim). Use only for onchain/wallet semantics. | — |
 | `@user.email` | Verified, lowercased email; `null` for wallet/guest logins. | offchain only |
 | `@user.isAnonymous` | Strict boolean; `true` only for guest tokens. Gate with `== false` (no unary `!` on special vars). | offchain only |
-| `@origin.kind` | **Host-set live/dispatch provenance**, unforgeable (derived from internal-secret-gated dispatch, never a client). **Always set** — `'live'` (a live game tick), `'user'` (a direct end-user/SDK call), `'scheduled'`, `'function'`, `'webhook'`. | offchain only |
+| `@origin.kind` | **Host-set live/dispatch provenance**, unforgeable (derived from internal-secret-gated dispatch, never a client). **Always set.** Produced today: `'live'` (a live game tick), `'user'` (a direct end-user/SDK call). `'scheduled'`/`'function'`/`'webhook'` are reserved/roadmap (not stamped yet — gating on them verifies but never matches). | offchain only |
 | `@origin.path` / `@origin.module` / `@origin.room` / `@origin.tick` | The live/dispatch source detail; **`null` when not applicable** (e.g. all null for `kind:'user'`). Gate `@origin.module` together with `@origin.kind == 'live'`. | offchain only |
 | `@data.field` | Existing document | **not** in `create` rules |
 | `@newData.field` | Incoming document | **not** in `delete` rules |
