@@ -20,22 +20,62 @@ world it returns a **call** that the room runs as a function — for an LLM NPC,
 something like `npcBrain`. See [ai-npcs.md](ai-npcs.md) and
 [principals-and-origins.md](principals-and-origins.md) for the full picture.
 
-The catch: **a live call runs as the SYSTEM principal**
+The catch: **a live call runs as the anonymous SYSTEM principal by default**
 (`ctx.user = {id:null, address:null, email:null, system:true}`) — no human, no
 wallet, no account. `ctx.ai.run` bills the caller's `user.id`, so a system call
 has no account to bill and inference FAILS with a 402.
 
-**The fix is a service key.** Declare `actAs: <serviceAddress>` on the *called*
-function and the owner funds that service account with AI credit. Now the
-function runs as the funded service identity instead of the unbillable system
-principal, so `ctx.ai` works:
+### The simple way — `session.live.runAs` (session-wide identity)
+
+Declare a service wallet **once** on the room's `live` block and **every** live
+call this game makes runs AS it — funding all your AI NPCs from one account:
+
+```json
+{
+  "constants": { "NPC_BRAIN": "7nQ…address" },
+
+  "rooms/$roomId": {
+    "tier": "checkpointed",
+    "fields": { "status": "String", "tick": "UInt" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null",
+               "update": "false", "delete": "false" },
+    "session": {
+      "live": {
+        "module": "arena",
+        "everyMs": 33,
+        "calls": ["npcBrain"],
+        "runAs": "7nQ…address"
+      }
+    }
+  },
+
+  "functions": {
+    "npcBrain": { "auth": "@origin.kind == 'live' && @origin.module == 'arena'",
+                  "entry": "functions/npcBrain.ts" }
+  }
+}
+```
+
+With `runAs` set, the NPC function runs as the funded service identity
+(`ctx.user.id == ctx.user.address == runAs`), so `ctx.ai` works — no per-function
+field needed. Gate the function with its own `auth` rule on `@origin` so only
+your game's tick can reach it (a live call **does** evaluate the function's `auth`
+rule now, with `@user` = system + `@origin` populated — see
+[principals-and-origins.md](principals-and-origins.md)). Owner-declaring `runAs`
+**is** the authorization to act as it — same posture as `actAs` below.
+
+### The per-function override — `actAs`
+
+`actAs` on a single function pins that one function to a service identity and
+**wins over `runAs`** for that function only. Use it for a one-off that should
+act as a different identity than the game's session-wide one:
 
 ```json
 {
   "constants": { "NPC_BRAIN": "7nQ…address" },
 
   "functions": {
-    "npcBrain": { "auth": "true",
+    "npcBrain": { "auth": "@origin.kind == 'live' && @origin.module == 'arena'",
                   "entry": "functions/npcBrain.ts", "actAs": "7nQ…address" }
   },
 
@@ -46,8 +86,13 @@ principal, so `ctx.ai` works:
 }
 ```
 
+> **Precedence (live calls):** function `actAs` > session `runAs` > anonymous
+> SYSTEM. Whichever applies, AI spend is always **capped at the app account**.
+> `@origin` + the `session.live.calls` whitelist say *who may call*; `runAs` /
+> `actAs` say *who the call acts as* — orthogonal and composable.
+
 ```ts
-// functions/npcBrain.ts — runs as NPC_BRAIN, so ctx.ai is funded
+// functions/npcBrain.ts — runs as NPC_BRAIN (via runAs or actAs), so ctx.ai is funded
 export default async function npcBrain(args, ctx) {
   const reply = await ctx.ai.run("@cf/meta/llama-3.1-8b-instruct", {
     messages: [{ role: "user", content: args.prompt }],
@@ -67,11 +112,12 @@ Then whitelist it for the live session and have the tick call it:
 return { state, call: { fn: "npcBrain", args: { prompt }, as: playerId } };
 ```
 
-> **No private key needed for this.** `actAs` is a policy field, not a stored
-> secret — for AI and data-plane writes there is nothing to mint or leak. A real
-> private key is only required when the service identity must *cryptographically
-> sign* an on-chain Solana tx (see [Key storage](#key-storage--the-important-part)
-> below). Funding the NPC is just crediting the service account's AI budget.
+> **No private key needed for this.** `runAs` and `actAs` are policy fields, not
+> stored secrets — for AI and data-plane writes there is nothing to mint or leak.
+> A real private key is only required when the service identity must
+> *cryptographically sign* an on-chain Solana tx (see
+> [Key storage](#key-storage--the-important-part) below). Funding the NPC is just
+> crediting the service account's AI budget.
 
 Fund the service account so the NPC can think. The reply lands on a *later* tick
 as an `@effect` result on the checkpoint cadence — not instantly — so expect a
@@ -194,4 +240,6 @@ just a data-plane write). In that case:
 | Write **on behalf of the user** who called the function | default `ctx.bounded` (acts as the caller) |
 | Write **as a backend identity** the user can't impersonate | a **service key** (`actAs`, this doc) |
 | A scheduled/cron write with no caller | a **service key** (`actAs`), or the SYSTEM principal |
-| A **live game call with no player** (e.g. an AI NPC) | a **service key** (`actAs` on the called function) — the live call is otherwise the SYSTEM principal and can't bill AI; see [ai-npcs.md](ai-npcs.md) |
+| **All** of a game's live calls to share one funded identity | `session.live.runAs` (session-wide; funds AI NPCs) — see [ai-npcs.md](ai-npcs.md) + [principals-and-origins.md](principals-and-origins.md) |
+| One live function to act as a *different* identity than the game's `runAs` | per-function `actAs` (overrides `runAs` for that function) |
+| A **live game call with no player** (e.g. an AI NPC) | declare `session.live.runAs` (or per-function `actAs`) — the live call is otherwise the anonymous SYSTEM principal and can't bill AI; see [ai-npcs.md](ai-npcs.md) |

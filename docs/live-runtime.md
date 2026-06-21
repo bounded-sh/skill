@@ -268,7 +268,8 @@ alongside the next state instead of a bare `return state`:
 
 ```ts
 // inside tick(state, intents, dt):
-return { state, call: { fn: "npcBrain", args: { board: state.board }, as: playerId } };
+return { state, call: { fn: "npcBrain", args: { board: state.board } } };
+//                                ^ add `as: state.currentPlayer` to attribute the call to a player (optional)
 // or several at once:
 return { state, calls: [ { fn: "npcBrain", args: {...} }, { fn: "settleMatch", args: {...} } ] };
 ```
@@ -278,10 +279,41 @@ only opt-in. The field a developer writes is **`as`** (the player id to act for)
 `onBehalfOf`. `as` is optional; omit it for a call with no acting user.
 
 **What `call` runs.** `fn` must be a function name in the owner-declared whitelist
-**`session.live.calls`** — this whitelist is the **only** authorization gate on a live
-call today (see [principals-and-origins.md](principals-and-origins.md)). The called
-function is an ordinary Bounded [function](functions.md): it has an `entry`, can use
-`ctx.bounded`, `ctx.ai`, secrets, and `actAs`.
+**`session.live.calls`**, and the called function's own `auth` rule **is** evaluated for
+the call. The called function is an ordinary Bounded [function](functions.md): it has an
+`entry`, can use `ctx.bounded`, `ctx.ai`, secrets, `actAs`, and now `ctx.origin`.
+
+**Authorization (`@origin`) and identity (`runAs`/`actAs`) are orthogonal — both are now
+wired:**
+
+- **`@origin` — who may call (authorization, now REAL).** Every dispatch carries an
+  unforgeable, host-set `@origin` in scope of the function's `auth` rule. It is the same
+  trust class as `@user` from a verified token — derived from the internal-secret-gated
+  dispatch, never from a client. Fields: `@origin.kind` (always set: `'live'` for a game
+  tick, `'user'` for a direct end-user/SDK call, plus `'scheduled'`/`'function'`/`'webhook'`),
+  and `@origin.path` / `@origin.module` / `@origin.room` / `@origin.tick` (null when not
+  applicable — e.g. all null for `kind:'user'`). A function gates "**only my game's live
+  tick may call me**" with its own `auth` rule:
+
+  ```json
+  "functions": {
+    "npcBrain": { "entry": "functions/npcBrain.ts", "auth": "@origin.kind == 'live' && @origin.module == 'arena'" }
+  }
+  ```
+
+  `@origin` is offchain-only (forbidden in `onchain:true` rules, like `@user.id`) and is a
+  first-class proof-engine special var, so `bounded verify` earns the obligation. Because
+  `@origin.module`/`room`/`tick` are null for a non-live call, a rule gating on them should
+  also require `@origin.kind == 'live'`. Inside the function body, `ctx.origin` is
+  `{ kind, path, module, room, tick }` (or null). See
+  [principals-and-origins.md](principals-and-origins.md).
+
+- **`session.live.runAs` — who the call acts as (identity, now REAL).** Declare a service
+  wallet **once** on the session's `live` block and **all** of this game's live calls run
+  as it — it can bill AI (capped at the app account) and own offchain writes. Owner-declaring
+  it IS the authorization to act as it. This is the simple, mature way to fund AI NPCs.
+  Precedence: **function `actAs` > session `runAs` > anonymous system.** See
+  [ai-npcs.md](ai-npcs.md) for the funded-NPC recipe.
 
 ```json
 "rooms/$roomId": {
@@ -327,16 +359,18 @@ on `@effect` is rejected as forged, so a client cannot inject a fake result.
 
 **SHIPPED truth — read this before you build on it:**
 
-- **The call runs as the SYSTEM principal — there is no user.** Inside the called
-  function `ctx.user` is `{ id: null, address: null, email: null, system: true }`. A
-  `call` with an `as` does **not** yet bill or authenticate that player — acting-user is
-  **ROADMAP**; a valid `as` is currently treated as system. See
+- **The acting identity follows precedence: function `actAs` > session `runAs` > anonymous
+  system.** With neither declared, the call runs as the anonymous SYSTEM principal — inside
+  the called function `ctx.user` is `{ id: null, address: null, email: null, system: true }`,
+  which **cannot** bill AI (no account → `402`). Declare `session.live.runAs` (or a
+  per-function `actAs`) to give the call a funded identity. See
   [principals-and-origins.md](principals-and-origins.md).
-- **To bill AI you need `actAs`.** `ctx.ai.run` bills the caller's `user.id`; for a system
-  call that's `null` → no account → inference fails (402). To ship a funded LLM NPC the
-  *called function* must declare `actAs: <serviceAddress>` and the owner funds that service
-  account with AI credit. `actAs` needs no private key for AI/data (only onchain signing
-  needs a key). This is the way to ship a real Claude/LLM NPC today — see
+- **To fund an AI NPC, declare `session.live.runAs`.** Point it at a service wallet the
+  owner funds with AI credit, then `ctx.ai` in any whitelisted live-call function Just
+  Works (capped at the app account). Gate that function with
+  `auth: "@origin.kind == 'live' && @origin.module == '<yourGame>'"` so only your game's
+  tick can call it. (A per-function `actAs` still works for a one-off and wins over
+  `runAs`.) Neither needs a private key for AI/data — only onchain signing needs a key. See
   [ai-npcs.md](ai-npcs.md).
 - **Effects run on the checkpoint cadence, not per-tick.** Replies land after a short
   delay (the next checkpoint window), not on the very next frame. Don't block the loop on
@@ -410,13 +444,14 @@ durable leaderboard/`matches` collection is **settlement**. Built-in `settleTo` 
 The path that **does** work today: have the tick **`call` a settle function** with the
 server-decided result (`return { state, call: { fn: "settleMatch", args: { winner } } }`).
 The function runs server-side and writes the shared durable collection — the value comes
-from facet memory, not a client. Today that function runs as the **system principal**
-(no acting user; see [principals-and-origins.md](principals-and-origins.md)), so write the
-settle collection's rules to trust a system/service write, not a client `winner ==
-@user.address`. For onchain settlement the same function holds the signing capability via
-`actAs` / a key ([onchain.md](onchain.md)). (Built-in facet-triggered `settleFrom` under a
-dedicated system principal is still roadmap — the `call`-a-function path supersedes the
-need to wait for it.)
+from facet memory, not a client. Give that function a funded, attributable identity with
+`session.live.runAs` (or a per-function `actAs`), then write the settle collection's rules
+to trust that service write, not a client `winner == @user.address`; gate the function's own
+`auth` with `@origin.kind == 'live' && @origin.module == '<yourGame>'` so only your tick can
+call it (see [principals-and-origins.md](principals-and-origins.md)). For onchain settlement
+the same function holds the signing capability via `actAs` / a key ([onchain.md](onchain.md)).
+(Built-in facet-triggered `settleFrom` under a dedicated system principal is still roadmap —
+the `call`-a-function path supersedes the need to wait for it.)
 
 So today: authoritative **per-room** result → project it in `views(state)` and read it
 via `subscribeView` (`checkpointed` if you want it invariant-gated + eviction-durable).
@@ -595,6 +630,6 @@ above.)
 - [policy-reference.md](policy-reference.md) — `tier` + read-rule expression language
 - [sdk-reference.md](sdk-reference.md) — `subscribe`, `getIdToken`
 - [functions.md](functions.md) — the sibling code-upload model (secrets + proof boundary)
-- [principals-and-origins.md](principals-and-origins.md) — who `@user` is when a tick calls a function (system today; acting-user roadmap)
-- [ai-npcs.md](ai-npcs.md) — the tick `call`s a function = an NPC; funding an LLM NPC with `actAs`
+- [principals-and-origins.md](principals-and-origins.md) — `@origin` (who may call) + the three principals & precedence (`actAs` > `runAs` > system)
+- [ai-npcs.md](ai-npcs.md) — the tick `call`s a function = an NPC; funding an LLM NPC with `session.live.runAs`
 - [onchain.md](onchain.md) — server-signed (today) + client-signed (roadmap) settlement from a live room

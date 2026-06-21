@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **Dev identity** | you / your agent | an ed25519 keypair the CLI and `bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
-| **End-user auth** | your app's users | Bounded Better Auth (email — what scaffolded apps use) or a connected Solana wallet (Phantom) | `@user.id` / `@user.address` / `@user.email` in policy rules |
+| **End-user auth** | your app's users | Bounded Better Auth (email — the default) or a connected Solana wallet (Phantom) | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
 ## Dev identity — the keypair IS your account
 
@@ -78,19 +78,22 @@ array). The keypair is read lazily — only the first signed write needs it.
 
 ## End-user auth — the `user` object
 
-Your app's users authenticate through `bounded-sh`. **Scaffolded apps default to
-email** because the `create-bounded` template hard-codes `authMethod: 'email'`.
-**If you call the SDK directly, pass `authMethod: 'email'` yourself — the bare SDK
-default is `phantom`** (which needs a wallet extension and throws in Node). So
-`init({ appId })` with no `authMethod` selects Phantom, not email.
+Your app's users authenticate through `bounded-sh`. **Email is the default.**
+`init({ appId })` with **no** `authMethod` selects email (Bounded Better Auth
+inline OTP) — nothing extra to pass. A returning user's stored method still wins;
+an explicit `authMethod` still wins.
 
 ```ts
 import { init, login, getCurrentUser } from "bounded-sh";
 
-await init({ appId: "<appId>", authMethod: "email" });  // email (Bounded Better Auth); scaffold sets this for you
+await init({ appId: "<appId>" });    // email is the default — no authMethod needed
 await login();                       // opens an INLINE email-code modal — no popup, no redirect
 const user = getCurrentUser();       // { id, address, email } | null
 ```
+
+> For a **live game**, the tick's calls have no human — `@user` is the **system
+> principal** (all fields null unless you declare an acting identity). See
+> [principals-and-origins.md](principals-and-origins.md).
 
 The inline modal is **email-only** (a 6-digit code, no popup, no full-page redirect).
 It's the quickest drop-in, but it can't do social login (Google needs a redirect).
@@ -161,11 +164,12 @@ in policy, `@user.isAnonymous == false` gates guests out of a rule (Supabase par
 > server code use **`bounded-sh/server`** with a keypair
 > (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
 
-`authMethod` options: `'email'` (Bounded Better Auth inline OTP — what the
-`create-bounded` scaffold sets; the bare SDK default is `'phantom'`, so pass
-`authMethod: 'email'` if you call `init` directly), `'phantom'` (connect a Solana
-wallet — the recommended wallet option), or
-`'none'`. Anonymous is via `signInAnonymously()`, not an `authMethod`.
+`authMethod` options: **`'email'` is THE default** (Bounded Better Auth inline
+OTP) — `init({ appId })` with no `authMethod` selects it. **Guest** via
+`signInAnonymously()` is the natural frictionless second choice (not an
+`authMethod`; see below). **`'phantom'`** (connect a Solana wallet) is the
+explicit opt-in — reach for it only when your app is onchain / money / wallet-
+oriented. `'none'` disables end-user auth.
 (`'wallet'` is not implemented — use `'phantom'` for Solana wallets.)
 
 The authenticated `user` object — mirrored into policy as `@user.*` — has **three

@@ -13,18 +13,44 @@ the outside world itself (it's pure/sync/egress-disabled), so it delegates to a
 function and reads the answer next time around. Read
 [live-runtime.md](live-runtime.md) for the `call` primitive itself and
 [principals-and-origins.md](principals-and-origins.md) for *who* the function
-runs as.
+runs as and *where* the call came from (`@origin`).
+
+## The funding recipe — `session.live.runAs` (the mature default)
+
+A live tick has **no human** behind it. By default a call runs as the anonymous
+**system principal** (`@user.*` all null) — which can't bill AI. To fund an NPC,
+declare **`session.live.runAs`** once on the room's `live` block, pointing at a
+**service wallet the owner funds with AI credit**. Every live call from that game
+then acts as that wallet, and `ctx.ai` **Just Works** (capped at the app
+account). That's the whole story:
+
+1. **Fund it:** set `session.live.runAs: "<serviceAddress>"`; fund that account
+   with AI credit.
+2. **Gate it:** give the NPC function
+   `auth: "@origin.kind == 'live' && @origin.module == '<yourGame>'"` so **only
+   your game's tick** can reach it (`@origin` is host-set and unforgeable).
+3. **Call it:** the tick returns `{ state, call: { fn, args } }`; the reply lands
+   as an `@effect` intent on a later tick.
+
+> `runAs` is the session-wide live-call identity (declaring it IS the
+> authorization to act as it — same posture as a function's `actAs`). A
+> per-function **`actAs` still works** and overrides `runAs` for that one
+> function; reach for it only when a single function needs a *different* identity.
+> Precedence: `actAs` > `runAs` > anonymous system. See
+> [service-keys.md](service-keys.md).
 
 ## The shape — three pieces
 
-1. **Whitelist the function** in the session policy: `session.live.calls`.
+1. **Fund + whitelist + gate** in the policy: `session.live.runAs` (identity) +
+   `session.live.calls` (whitelist) + the function's `@origin` `auth` rule (who
+   may call).
 2. **Emit the call from the tick:** `return { state, call: { fn, args } }`.
 3. **Read the result on a later tick:** match the `@effect` intent by the `ref`
    you emitted.
 
 ```
 tick N      → return { state, call: { fn: "npcBrain", args: {...}, ref } }
-   (host drains the call after the checkpoint alarm → POSTs the function → runs ctx.ai)
+   (host drains the call after the checkpoint alarm → POSTs the function as runAs → runs ctx.ai)
 tick N+k    → intents include { address: "@effect", intent: { effectId: ref, ok, result } }
 ```
 
@@ -33,17 +59,12 @@ not per tick, so an NPC turn lands after a short delay (see Caveats).
 
 ## Worked example — a Claude/LLM NPC
 
-### 1. Policy — whitelist `npcBrain`, declare it as a funded function
+### 1. Policy — fund with `runAs`, whitelist `npcBrain`, gate it with `@origin`
 
-`session.live.calls` is the owner-declared list of function names the tick may
-invoke. It is the **primary (today, the only) authorization gate** on a live
-call — a whitelisted function runs for live calls **without** an additional
-per-function `auth` check (see [functions.md](functions.md) and
-[principals-and-origins.md](principals-and-origins.md)). Only whitelist
-functions you trust the game to invoke unconditionally.
-
-The function declares `actAs: <serviceAddress>` — this is what makes the NPC
-**funded** (see step 3 for why a bare call's `ctx.ai` fails).
+`session.live.runAs` declares the funded identity for *all* of this game's live
+calls; `session.live.calls` is the whitelist of function names the tick may
+invoke. The function's own `auth` rule — **now evaluated for live calls** —
+pins it to your game's tick via `@origin`.
 
 ```json
 {
@@ -58,6 +79,7 @@ The function declares `actAs: <serviceAddress>` — this is what makes the NPC
         "module": "arena",
         "everyMs": 33,
         "maxLifetimeSec": 1800,
+        "runAs": "9aZ…serviceAddress",
         "calls": ["npcBrain"]
       }
     }
@@ -71,18 +93,21 @@ The function declares `actAs: <serviceAddress>` — this is what makes the NPC
 
   "functions": {
     "npcBrain": {
-      "auth": "false",
-      "entry": "functions/npcBrain.ts",
-      "actAs": "9aZ…serviceAddress"
+      "auth": "@origin.kind == 'live' && @origin.module == 'arena'",
+      "entry": "functions/npcBrain.ts"
     }
   }
 }
 ```
 
-> The `auth: "false"` is deliberate: a live (system) call does **not** evaluate
-> the function's own `auth` rule, so this function can't be invoked directly by a
-> client (its `auth` denies everyone) — only the game's `calls` whitelist lets
-> the tick reach it. That's the secure default for an NPC brain.
+> The `auth` rule is the gate: `@origin.kind == 'live'` admits only a live tick
+> (a direct end-user/SDK call has `@origin.kind == 'user'`), and
+> `@origin.module == 'arena'` pins it to **this** game's module. `@origin` is
+> host-set and unforgeable (derived from the internal-secret-gated dispatch,
+> never from a client), so no client and no other module can satisfy it. Always
+> pair the `module` check with `@origin.kind == 'live'` — `module` is null for a
+> `user` call. `bounded verify` understands `@origin`, so this rule both runs and
+> proves.
 
 ### 2. The tick — emit a call, then read its `@effect` result later
 
@@ -107,7 +132,7 @@ export function tick(state, intents, dt) {
       state,
       call: {
         fn: "npcBrain",                                         // must be in session.live.calls
-        args: { prompt: buildPrompt(state) },
+        args: { prompt: buildPrompt(state), effectId: ref },
         ref,                                                    // YOUR idempotency key
       },
     };
@@ -122,22 +147,27 @@ export function tick(state, intents, dt) {
   NPC reply (see [live-runtime.md](live-runtime.md) and
   [principals-and-origins.md](principals-and-origins.md)).
 - The field a developer writes to act for a player is **`as`** (not
-  `onBehalfOf`) — but acting **as the triggering player** is **ROADMAP**, not
-  wired today (a valid `as` is currently treated as the system principal). An NPC
-  brain doesn't need `as`; it speaks as itself.
+  `onBehalfOf`). An NPC brain doesn't need it — it speaks as the `runAs` service
+  identity. (Routing a model's action back as the *human player* who triggered
+  it, via `as`, is wired too; see
+  [principals-and-origins.md](principals-and-origins.md).)
 
-### 3. The function — `ctx.ai.run`, funded via `actAs`
+### 3. The function — `ctx.ai.run`, funded by `runAs`
 
 ```ts
-// functions/npcBrain.ts — runs as the service principal (actAs: NPC_BOT).
+// functions/npcBrain.ts — runs as the service principal declared in session.live.runAs.
 const seen = new Set<string>();
 
 export default async function npcBrain(args, ctx) {
-  // Dedup on YOUR effectId — the platform does NOT dedup the ref yet.
+  // Belt-and-braces: only this game's live tick should ever reach here.
+  if (ctx.origin?.kind !== "live" || ctx.origin?.module !== "arena") {
+    return { text: "" };
+  }
+  // Dedup on YOUR effectId — the platform does NOT dedup the ref.
   if (args.effectId && seen.has(args.effectId)) return { text: "" };
   if (args.effectId) seen.add(args.effectId);
 
-  const out = await ctx.ai.run("claude-opus-4-8", {            // billed to ctx.user.id
+  const out = await ctx.ai.run("claude-opus-4-8", {            // billed to runAs, capped at the app account
     messages: [
       { role: "system", content: "You are a terse arena NPC. One sentence." },
       { role: "user", content: args.prompt },
@@ -149,30 +179,11 @@ export default async function npcBrain(args, ctx) {
 }
 ```
 
-## The billing truth (read this before shipping)
-
-`ctx.ai.run` bills the **caller's `user.id`**. A bare live `call` runs as the
-**SYSTEM principal** — `ctx.user` is `{ id: null, address: null, email: null,
-system: true }`. With `user.id == null` there is **no account to bill**, so
-`ctx.ai` **fails with `402`**. A system-principal NPC literally cannot run
-inference.
-
-**To get a funded Claude/LLM NPC, the called function MUST declare
-`actAs: <serviceAddress>`** and the **owner funds that service account with AI
-credit**. With `actAs`, `ctx.user.id == ctx.user.address == <serviceAddress>`,
-inference bills that funded service account, and the NPC works. This is the
-**only** way to ship a real LLM NPC today.
-
-`actAs` needs **no private key** for AI or data-plane writes — it's an
-owner-declared policy field (`functions` block), and identity is asserted by the
-platform, never by a caller header. A key is only needed if the function also
-*signs* an onchain transaction. See [service-keys.md](service-keys.md) for the
-full `actAs` model (the live-call row is in its no-caller table).
-
-| Caller of the function | `ctx.user` | `ctx.ai` works? |
-|---|---|---|
-| Bare live `call` (no `actAs`) | system, all-null | **No** — `402`, no account to bill |
-| Live `call` to a function with `actAs` | the funded service address | **Yes** — bills the service account |
+`ctx.ai.run` bills the call's principal — here the `runAs` service account — and
+spend is **capped at the app account** regardless of principal, so a depleted
+account fails closed (no runaway bill). `ctx.origin` is `{kind,path,module,room,tick}`
+inside the body (or `null`); the `auth` rule already gated the call, so the
+in-body check above is just defense-in-depth.
 
 ## Caveats — state them to the user
 
@@ -183,19 +194,16 @@ full `actAs` model (the live-call row is in its no-caller table).
 - **No platform dedup yet.** The platform does **not** dedup on the idempotency
   `ref`, so a call can in principle run more than once. **Dedup on `effectId`
   inside the function** (as the example does). Do **not** assume exactly-once.
-- **Whitelist = the gate.** A function in `session.live.calls` runs for live
-  calls with no per-function `auth` check, so only whitelist functions you trust
-  the game to invoke unconditionally.
-- **Cap NPC spend / rate.** `ctx.ai` is capped per the service account's AI
-  credit (a depleted account fails closed — no runaway bill), but also bound the
-  *rate*: gate `npcShouldSpeak` (e.g. once every N ticks, or only on a player
-  action) and keep `pendingRef` so at most one call is in flight. For a hard
-  ceiling, fund the service account with a small AI-credit budget — see
+- **Cap NPC spend / rate.** `ctx.ai` is capped per the app account's AI credit (a
+  depleted account fails closed — no runaway bill), but also bound the *rate*:
+  gate `npcShouldSpeak` (e.g. once every N ticks, or only on a player action) and
+  keep `pendingRef` so at most one call is in flight. For a hard ceiling, fund the
+  `runAs` service account with a small AI-credit budget — see
   [billing.md](billing.md).
-- **Acting as the triggering player is ROADMAP.** Today an NPC speaks as the
-  funded service identity. Routing a model's action back as the *human player who
-  triggered it* (`as: playerId`) is not wired — see
-  [principals-and-origins.md](principals-and-origins.md).
+- **Gate by `@origin`, keep `calls` tight.** The `@origin` `auth` rule is what
+  stops a direct client call from reaching the NPC brain; the `session.live.calls`
+  whitelist is what the tick may invoke. Whitelist only functions the game should
+  invoke, and gate each with `@origin.kind == 'live' && @origin.module == '<game>'`.
 
 ## Alternative — an external agent joins a room AS a player
 
@@ -236,9 +244,9 @@ human's key (see [key-and-account-safety.md](key-and-account-safety.md)).
 ## Related
 
 - [live-runtime.md](live-runtime.md) — the `call` primitive, `@effect`, the native tick
-- [principals-and-origins.md](principals-and-origins.md) — system vs `actAs` vs acting-user; `@origin` (ROADMAP)
-- [functions.md](functions.md) — the function the tick calls (the live-call principal context)
-- [service-keys.md](service-keys.md) — `actAs`: fund an AI NPC / live call with a service account
+- [principals-and-origins.md](principals-and-origins.md) — system vs `runAs` vs acting-user; `@origin` (wired)
+- [functions.md](functions.md) — the function the tick calls (the `@origin` auth gate, the live-call principal)
+- [service-keys.md](service-keys.md) — `runAs` (session-wide) + `actAs` (per-function override) funded identities
 - [backend-runtime.md](backend-runtime.md) — a long-running external agent through Bounded
 - [guides/building-for-agents.md](../guides/building-for-agents.md) — a `bounded-sh/server` keypair agent, per-agent key isolation
 - [billing.md](billing.md) — AI credit + per-account caps

@@ -122,6 +122,8 @@ expressions at deploy. **An omitted rule defaults to deny.**
 | `@user.address` | A **real wallet**, only. **`null` for email/social logins** (email tokens omit the wallet claim). Use only for onchain/wallet semantics. | — |
 | `@user.email` | Verified, lowercased email; `null` for wallet/guest logins. | offchain only |
 | `@user.isAnonymous` | Strict boolean; `true` only for guest tokens. Gate with `== false` (no unary `!` on special vars). | offchain only |
+| `@origin.kind` | **Host-set live/dispatch provenance**, unforgeable (derived from internal-secret-gated dispatch, never a client). **Always set** — `'live'` (a live game tick), `'user'` (a direct end-user/SDK call), `'scheduled'`, `'function'`, `'webhook'`. | offchain only |
+| `@origin.path` / `@origin.module` / `@origin.room` / `@origin.tick` | The live/dispatch source detail; **`null` when not applicable** (e.g. all null for `kind:'user'`). Gate `@origin.module` together with `@origin.kind == 'live'`. | offchain only |
 | `@data.field` | Existing document | **not** in `create` rules |
 | `@newData.field` | Incoming document | **not** in `delete` rules |
 | `@time.now` | Server time (seconds) | — |
@@ -140,9 +142,16 @@ expressions at deploy. **An omitted rule defaults to deny.**
 > with `@user.id != null` (not `@user.address`).
 
 > **There is no `@constants`.** The special variables are `@user.id`,
-> `@user.address`, `@user.email`, `@user.isAnonymous`, `@data`, `@newData`,
-> `@time.now`, `@contract.address`. Express "admin" by comparing a `get()`-read
-> role field or a literal address — not a constant.
+> `@user.address`, `@user.email`, `@user.isAnonymous`, `@origin.*`, `@data`,
+> `@newData`, `@time.now`, `@contract.address`. Express "admin" by comparing a
+> `get()`-read role field or a literal address — not a constant.
+
+> **`@origin.*` is offchain-only — forbidden in `onchain:true` rules**, same as
+> `@user.id`. It's host-set provenance for live ticks and dispatch, so a function
+> can gate to *only its own game's tick*:
+> `"auth": "@origin.kind == 'live' && @origin.module == 'arena'"`. See
+> [principals-and-origins.md](principals-and-origins.md) and
+> [functions.md](functions.md).
 
 ### Operators & literals
 

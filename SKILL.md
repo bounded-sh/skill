@@ -102,11 +102,11 @@ for the *next* question.
 | Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | **What anti-cheat can / can't provably guarantee** (hooks bypass rules but never invariants; on-chain signing) | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | **Build a game with a server tick + settlement** (bytecode `session.tick` model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| **Build an AI NPC / AI player** (the tick `call`s a function; `actAs`-funded LLM; an agent joining a room as a player) | [docs/ai-npcs.md](docs/ai-npcs.md) |
-| **Who is the actor / system vs service principal / origin auth** (what `@user` is when a tick calls a function; the `call` primitive's auth; `@origin` is ROADMAP) | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
+| **Build an AI NPC / AI player** (the tick `call`s a function; `session.live.runAs`-funded LLM, `actAs` per-function override; an agent joining a room as a player) | [docs/ai-npcs.md](docs/ai-npcs.md) |
+| **Who is the actor / system vs service principal / origin auth** (what `@user` is when a tick calls a function; `@origin` host-set + unforgeable; the function's `auth` rule IS evaluated for live; `session.live.runAs` funds it) | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | **Store data on Solana / sign onchain or client transactions / go to mainnet** (`onchain` collections, `--protocol`, `@user.address`-only, client-signed tx is ROADMAP) | [docs/onchain.md](docs/onchain.md) |
 | Full rule / field-type / `get()`/`getAfter()` **syntax reference** | [docs/policy-reference.md](docs/policy-reference.md) |
-| **Let users log in** (email — the scaffolder default; bare SDK default is Phantom) | [docs/auth.md](docs/auth.md#end-user-auth--the-user-object) · example below |
+| **Let users log in** (email is the default — inline OTP; guest = `signInAnonymously()`; Phantom = `authMethod:'phantom'`, opt-in for onchain/money apps) | [docs/auth.md](docs/auth.md#end-user-auth--the-user-object) · example below |
 | **Don't lose my key / back up / recover my account** (the credentials file IS your account; `bounded link` it; gitignore secrets) | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 | **Anonymous / guest users, invite links, try-before-signup; transfer or upgrade an account** | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
@@ -146,7 +146,8 @@ for the *next* question.
 | `session.tick`, `hooks.tick`, `settleTo`, fog-of-war (bytecode session model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
 | `session.live.calls`, `@effect`, the `call` primitive (`{state,call:{fn,args,as}}`), `as` (act-for player) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/ai-npcs.md](docs/ai-npcs.md) |
-| `actAs` as a **system / service principal** (what `@user` is on a live call; fund an NPC), `@origin`/`ctx.origin` (ROADMAP) | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
+| `@origin`, `@origin.kind` (`'live'`/`'user'`/`'scheduled'`/`'function'`/`'webhook'`, always set), `@origin.module`/`.path`/`.room`/`.tick`, `ctx.origin` (host-set, unforgeable; offchain-only — forbidden onchain) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/policy-reference.md](docs/policy-reference.md) |
+| `session.live.runAs` (session-wide live-call identity; funds AI NPCs), `actAs` as a **system / service principal** (what `@user` is on a live call); precedence `actAs > runAs > anonymous system` | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/service-keys.md](docs/service-keys.md) |
 | AI NPC / AI player, `npcBrain`, tick-calls-a-function, `ctx.ai.run` billing on a live call | [docs/ai-npcs.md](docs/ai-npcs.md) |
 | `onchain: true`, `--protocol` (`realtime_devnet`/`realtime_mainnet`), `--skip-preflight`, client-signed tx, `0xbc4`, devnet/mainnet | [docs/onchain.md](docs/onchain.md) |
 | live game *feel*: input cadence, interpolation, prediction, `session.intentRule` | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
