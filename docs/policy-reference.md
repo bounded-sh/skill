@@ -228,6 +228,7 @@ rejected):
 | `fields` | `{ name: Type }` | this doc |
 | `rules` | `{ read, create, update, delete }` | this doc |
 | `tier` | `"durable" \| "checkpointed" \| "ephemeral"` | this doc |
+| `errorDisclosure` | `"full" \| "minimal"` — how much of a rejection reason reaches the client | [§ Error disclosure](#error-disclosure) |
 | `invariants` | array of invariant objects | [invariants.md](invariants.md) |
 | `onchain` | boolean | [proof-coverage.md](proof-coverage.md) |
 | `hooks` | `{ offchain, onchain, tick, scheduled, enforceRules }` | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
@@ -257,6 +258,7 @@ never treated as path templates:
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
 | `attestations` | `[{ claim, kind, ... }]` — GLOBAL, policy-wide proven claims (see notes below) | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
+| `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
 | `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](environments.md) |
 
 `constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
@@ -274,6 +276,44 @@ only literals; `environments` is stripped by the CLI before the policy is sent.
   nested role scopes are not yet supported. For multi-tenant admin sets use a flat
   `admins/$address` registry — see
   [invariants.md](invariants.md#nested-authority--authorityclosure-is-flat-only-known-limitation).
+
+## Error disclosure
+
+`errorDisclosure` controls **how much of a policy-rejection reason reaches the
+client**. It never changes enforcement, and never hides anything from the owner.
+
+- **`"full"`** — the client gets the full reason: the failed rule trace, and the
+  violated invariant's **name + formula + limit** (e.g. `postcondition failed:
+  invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100`).
+- **`"minimal"`** — the client gets a generic message plus a stable `code`:
+  "Access denied by policy." (`403`) or "This change was rejected because it
+  would violate a data constraint." (`409`). The invariant name/formula/limit
+  and the rule expression are **not** sent.
+
+**Resolution — most specific wins:** per-collection `errorDisclosure` > policy-global
+`errorDisclosure` > **env default**. The env default is **`minimal` in production**
+and **`full` everywhere else** (dev/staging) — so you debug freely locally and prod
+is locked down with zero config.
+
+**The full reason always stays in the decision log**, regardless of disclosure
+level. The owner reads it via `bounded decisions --denied-only`; only the
+*client-facing* envelope is trimmed.
+
+**The error envelope** is `{ error, code, status, requestId }`. `code` is a stable
+category clients can branch on **even in minimal mode**:
+
+| `code` | `status` | Meaning |
+|---|---|---|
+| `policy_denied` | `403` | a read/write rule returned false |
+| `invariant_violation` | `409` | a postcondition/invariant (`rollingSum`, `conserve`, …) was violated |
+
+```json
+"orders/$id": {
+  "fields": { "amount": "UInt" },
+  "rules": { "read": "true", "create": "@user.id != null" },
+  "errorDisclosure": "full"   // verbose rejections for this collection only
+}
+```
 
 ## Related
 

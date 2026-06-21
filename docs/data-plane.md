@@ -58,6 +58,21 @@ rejected), and forgetting the flag on an on-chain-protocol app is a hard
 | Update/delete on a capped collection | `409 append_only` | rolling-cap collections reject history rewrites by design | nothing |
 | Policy fails verification at deploy | deploy fails | the proof report with counterexamples | previous-good policy stays active |
 
+> **How much detail you get back is governed by `errorDisclosure`.** The
+> message *detail* in the rows above (the invariant name/formula, the failed
+> rule trace) is sent to the client only under **full** disclosure. The default
+> in production is **minimal** — a generic message plus a stable `code`, with the
+> invariant name/formula and rule expression withheld. Enforcement is identical
+> either way, and the **full** reason is always written to the decision log
+> (`bounded decisions --denied-only`). Set per-collection or policy-global; see
+> [policy-reference.md](policy-reference.md#error-disclosure).
+
+> **Error envelope.** Every rejection returns
+> `{ "error", "code", "status", "requestId" }`. `code` is a stable category you
+> can branch on even in minimal mode: **`policy_denied`** (`403` — a read/write
+> rule returned false) and **`invariant_violation`** (`409` — a postcondition
+> like `rollingSum`/`conserve` was violated).
+
 > **Read denials never return `403`.** A read your `read` rule denies comes back
 > with HTTP `200` and an **empty payload** — `{"data": null}` for a single
 > document, `{"data": []}` for a collection list (silent read-hiding / filtering).
@@ -109,15 +124,21 @@ $ bounded data set --path "agents/a1/spend/s1" --data '{"amount": 60}'
 ✓ committed                                  # window sum: 60 / 100
 
 $ bounded data set --path "agents/a1/spend/s2" --data '{"amount": 60}'
-✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 60+60=120
+✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 60+60=120   [full disclosure]
   nothing committed
 
 $ bounded data set --path "agents/a1/spend/s3" --data '{"amount": 40}'
 ✓ committed                                  # window sum: 100 / 100
 
 $ bounded data set --path "agents/a1/spend/s4" --data '{"amount": 1}'
-✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 100+1=101
+✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 100+1=101   [full disclosure]
 ```
+
+> The full invariant message above (name + formula) is sent only under **full**
+> disclosure. In **minimal** mode (the prod default) the same `409` returns a
+> generic message — "This change was rejected because it would violate a data
+> constraint." — plus `code: "invariant_violation"`; the name/formula stays in
+> the decision log. See [policy-reference.md](policy-reference.md#error-disclosure).
 
 ## Atomic `set-many`
 
