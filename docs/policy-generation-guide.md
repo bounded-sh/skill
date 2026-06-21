@@ -66,8 +66,10 @@ field: members are `orgs/$orgId/members/$memberId`, never a `members` array.
 | Genuinely optional? | Mark `?` — but then **null-guard it in rules** (see step 8). |
 | An onchain collection? | No `Float` (use Int/UInt). |
 
-Prefer `!` aggressively. An `owner: "Address!"` field proves no payload can ever
-reassign ownership — a free, strong guarantee.
+Prefer `!` aggressively. An `owner: "String!"` field (holding `@user.id`, the
+universal identity) proves no payload can ever reassign ownership — a free,
+strong guarantee. Use `Address` only for fields that hold a real onchain wallet
+address.
 
 ### Step 3 — Auth rules
 
@@ -84,7 +86,17 @@ defaults to deny.** Give every collection an explicit, deliberate rule for each 
 The expression language (full reference in
 [policy-reference.md](policy-reference.md)):
 
-- `@user.address` — the authenticated caller, or `null` if unauthenticated.
+- `@user` — the authenticated caller, or `null` if unauthenticated. It has three
+  fields: `@user.id` — the **universal stable identity**, always present for an
+  authenticated user (for wallet logins it equals the wallet address; for
+  email/social logins it is the account identity); `@user.address` — a **real
+  onchain wallet address**, present for wallet logins and `null` for email-only
+  logins; `@user.email` — the verified, lowercased email (email logins only;
+  `null` for wallet). **Use `@user.id` for ownership / membership / identity /
+  auth guards.** Use `@user.address` only for onchain / wallet semantics
+  (and in `onchain: true` collections it is the *only* user field allowed —
+  `@user.id` and `@user.email` are forbidden there). Use `@user.email` for
+  email-gating.
 - `@data.field` — the existing document (not in `create`).
 - `@newData.field` — the incoming document (not in `delete`).
 - `@time.now` — server time, seconds.
@@ -103,17 +115,19 @@ The single most important rule pattern — **always lead a write rule with an au
 guard**:
 
 ```json
-"create": "@user.address != null && @newData.owner == @user.address"
+"create": "@user.id != null && @newData.owner == @user.id"
 ```
 
-Without the `@user.address != null &&`, an unauthenticated caller writing
+Without the `@user.id != null &&`, an unauthenticated caller writing
 `owner: null` satisfies `null == null` and the rule passes. The prover will hand
-you this exact counterexample; write the guard up front.
+you this exact counterexample; write the guard up front. (Ownership keys off
+`@user.id`, the universal identity — not `@user.address`, which is `null` for
+email-only logins. Reserve `@user.address` for onchain/wallet semantics.)
 
 Cross-collection authorization uses `get()`:
 
 ```json
-"update": "@user.address != null && get(/orgs/$orgId/members/@user.address).role == \"admin\""
+"update": "@user.id != null && get(/orgs/$orgId/members/@user.id).role == \"admin\""
 ```
 
 #### Who is the admin? (do this while writing rules)
@@ -121,14 +135,14 @@ Cross-collection authorization uses `get()`:
 There is **no implicit creator god-mode** — Bounded has no service-role bypass,
 and invariants bind the owner too. So ask explicitly: **who is the owner/admin,
 and what admin actions does this app genuinely need?** (moderation, config,
-refunds). Declare an `admins/$address` collection and gate each privileged action
+refunds). Declare an `admins/$userId` collection and gate each privileged action
 on membership — never a bypass:
 
 ```json
-"update": "@user.address != null && get(/admins/@user.address) != null"
+"update": "@user.id != null && get(/admins/@user.id) != null"
 ```
 
-Only an admin can mint an admin (no self-promotion); seed the creator's address
+Only an admin can mint an admin (no self-promotion); seed the creator's `@user.id`
 at bootstrap; default end-users to least privilege; admins stay bound by every
 invariant. Full model + the validated `admins` collection:
 [admin-and-ownership.md](admin-and-ownership.md).
@@ -228,9 +242,9 @@ Every DISPROVED is a concrete breaking assignment. The two you will hit most:
 1. **The `null` counterexample** — an optional field makes a "tautology" false.
    `amount <= 100 || amount > 100` is DISPROVED by `amount = null`. Fix: drop the
    `?`, or guard (`@newData.amount != null && @newData.amount <= 100`).
-2. **The `null == null` auth bypass** — `@newData.owner == @user.address` is
+2. **The `null == null` auth bypass** — `@newData.owner == @user.id` is
    satisfied by an unauthenticated caller writing `owner: null`. Fix: prepend
-   `@user.address != null &&`.
+   `@user.id != null &&`.
 
 Never weaken the property to make a proof pass — the counterexample is a write
 production would have accepted. Strengthen the expression, re-verify until clean,
@@ -256,7 +270,7 @@ stays focused on method. Read them once you have the eight steps.
 | `rollingSum` on `ephemeral`/`checkpointed` | deploy error | set `tier: "durable"` |
 | `rollingSum` field typed `Int` | rejected: must be `UInt` | use `UInt` |
 | onchain collection with `"read": "<expr>"` | rejected: onchain data is public | set `"read": "true"` |
-| Write rule without `@user.address != null` | DISPROVED (`null == null` bypass) | lead with the auth guard |
+| Write rule without `@user.id != null` | DISPROVED (`null == null` bypass) | lead with the auth guard |
 | Optional field in a numeric guard | DISPROVED (`null` counterexample) | null-guard or make it required |
 | No invariant on a money/quota field | green but unprotected | add the invariant (step 4) |
 

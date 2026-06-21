@@ -13,14 +13,21 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Every collection has an explicit rule for `read`, `create`, `update`,
   `delete`.** Omitted = deny, but write it out so "deny" is a decision, not an
   oversight.
-- [ ] **Every write rule leads with `@user.address != null`** (unless the write is
-  genuinely public). Without it, `@newData.owner == @user.address` is satisfied by
+- [ ] **Every write rule leads with `@user.id != null`** (unless the write is
+  genuinely public). Without it, `@newData.owner == @user.id` is satisfied by
   an unauthenticated caller writing `owner: null`.
 - [ ] **Ownership / role is actually checked**, not just referenced. "Only the
-  owner updates" → `@data.owner == @user.address`. "Only an admin" →
-  `get(/.../members/@user.address).role == "admin"`.
+  owner updates" → `@data.owner == @user.id`. "Only an admin" →
+  `get(/.../members/@user.id).role == "admin"`.
 - [ ] **Sensitive reads are scoped.** A user's private data uses `$userId ==
-  @user.address` or a membership `get()`, not `read: "true"`.
+  @user.id` or a membership `get()`, not `read: "true"`.
+- [ ] **Identity uses `@user.id`, not `@user.address`.** `@user.id` is the
+  universal stable identity, always present for an authenticated user (the wallet
+  address for wallet logins, the account identity for email/social logins).
+  `@user.address` is a real onchain wallet address — present for wallet logins,
+  `null` for email-only logins — so reserve it for onchain / wallet semantics. In
+  `onchain: true` collections only `@user.address` is allowed; `@user.id` and
+  `@user.email` are forbidden there.
 
 ### No trivial, dead, or unsatisfiable rules
 
@@ -93,8 +100,8 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 1. **Hollow** — compiles, but a money/quota/tenant property has no invariant.
    Nothing is actually protected. Fix: do step 4; add the invariant.
 2. **Leaky** — compiles, but a write rule is satisfiable by an unauthenticated or
-   wrong caller (`null == null`, missing role check). Fix: lead with the auth
-   guard; check ownership/role concretely. `bounded verify`'s
+   wrong caller (`@user.id == null` matching a `null` owner, missing role check).
+   Fix: lead with the auth guard; check ownership/role concretely. `bounded verify`'s
    `requires authentication` obligation catches the first; your own review catches
    the second.
 

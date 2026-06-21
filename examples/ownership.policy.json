@@ -2,8 +2,8 @@
   "accounts/$accountId": {
     "rules": {
       "read": "true",
-      "create": "@user.address == @newData.owner",
-      "update": "@user.address == @data.owner",
+      "create": "@user.id != null && @user.id == @newData.owner",
+      "update": "@user.id != null && @user.id == @data.owner",
       "delete": "false"
     },
     "fields": { "owner": "String", "label": "String" }
@@ -11,9 +11,9 @@
   "accounts/$accountId/items/$itemId": {
     "rules": {
       "read": "true",
-      "create": "@user.address == get(`accounts/${accountId}`).owner",
-      "update": "@user.address == get(`accounts/${accountId}`).owner",
-      "delete": "@user.address == get(`accounts/${accountId}`).owner"
+      "create": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
+      "update": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
+      "delete": "@user.id != null && @user.id == get(/accounts/$accountId).owner"
     },
     "fields": { "text": "String" }
   }

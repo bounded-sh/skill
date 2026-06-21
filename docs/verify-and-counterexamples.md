@@ -46,10 +46,10 @@ checkTautology(amount <= 100 || amount > 100)        DISPROVED  (89ms)
   counterexample: @newData.amount = null
 
 checkAuthRequired(create)                            DISPROVED  (52ms)
-  counterexample: @user.address = null,
+  counterexample: @user.id = null,
                   @newData.ownerId = null
-  null == null satisfies "ownerId == @user.address"
-  suggestion: add "@user.address != null" before the ownership check
+  null == null satisfies "ownerId == @user.id"
+  suggestion: add "@user.id != null" before the ownership check
 ```
 
 How to act on the two above (these are the canonical patterns):
@@ -59,14 +59,29 @@ How to act on the two above (these are the canonical patterns):
    guard it (`@newData.amount != null && @newData.amount <= 100`). Do not
    "fix" it by removing the check.
 2. **The `null == null` auth bypass.** An ownership rule like
-   `@newData.ownerId == @user.address` is satisfied by an unauthenticated
-   caller writing `ownerId: null`. Fix: prepend `@user.address != null &&`.
+   `@newData.ownerId == @user.id` is satisfied by an unauthenticated
+   caller writing `ownerId: null`. Fix: prepend `@user.id != null &&`.
    The verifier's suggestion line literally tells you this.
 
 The fix loop is mechanical: read the assignment → reproduce the intent the
 policy *should* have had → strengthen the expression → re-run `bounded
 verify`. Never weaken the property to make the proof pass; the
 counterexample is showing you a write that production would have accepted.
+
+> **Identity vs. wallet in counterexamples.** The SDK `user` object is
+> `{ id: string, address: string | null, email: string | null }`. `@user.id`
+> is the universal stable identity — **always present** for an authenticated
+> caller (it equals the wallet address for wallet logins, the account identity
+> for email/social logins) — so ownership, membership, and auth-guard rules
+> should compare against `@user.id` (`ownerId == @user.id`,
+> `@user.id != null`, `get(/admins/@user.id)`). `@user.address` is a **real
+> onchain wallet address**: present for wallet logins, **null** for email-only
+> logins, and used only for onchain/wallet semantics. `@user.email` is the
+> verified, lowercased email (null for wallet logins), for email-gating. In
+> `onchain: true` collections only `@user.address` is allowed; `@user.id` and
+> `@user.email` are forbidden there. When the verifier reports a
+> `@user.id = null` auth-bypass counterexample, it is telling you an
+> unauthenticated caller satisfied an identity check.
 
 ## The obligations list
 
@@ -75,7 +90,7 @@ counterexample is showing you a write that production would have accepted.
 | Obligation | Proves |
 |---|---|
 | `<action> rule is satisfiable` | The rule can be true at all — dead rules (contradictions that silently deny everything) are surfaced |
-| `<action> requires authentication` | No assignment with `@user.address = null` passes a write rule, incl. the `null == null` bypass |
+| `<action> requires authentication` | No assignment with `@user.id = null` passes a write rule, incl. the `null == null` bypass |
 | `field immutability` | Fields marked `!` can never be rewritten by any payload satisfying the update rule |
 | `implication` / `equivalence` | Relations between rules (e.g. everything update admits, create admits) — feeds dead-rule and auth-consistency analysis |
 | `tautology` / `contradiction` | Always-true rules (no protection) and always-false rules (dead code), with witnesses |
@@ -102,7 +117,7 @@ failing any blocks deploy):
 
 | Obligation | Proves |
 |---|---|
-| `function <name>: only admin can call` | The function's `auth` rule **implies** the admin predicate — i.e. every caller who can invoke it is an admin (`get(/admins/@user.address) != null` where the policy declares an `admins/$address` role scope, else `hasRole("admin")`). An over-permissive hatch (`auth: "true"` or `"@user.address != null"`) is **disproved with a non-admin counterexample** and fails the gate; an `auth: "false"` proves vacuously (unreachable). This catches a function that quietly grants more than admin-only access at **deploy**, not runtime. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
+| `function <name>: only admin can call` | The function's `auth` rule **implies** the admin predicate — i.e. every caller who can invoke it is an admin (`get(/admins/@user.id) != null` where the policy declares an `admins/$userId` role scope, else `hasRole("admin")`). An over-permissive hatch (`auth: "true"` or `"@user.id != null"`) is **disproved with a non-admin counterexample** and fails the gate; an `auth: "false"` proves vacuously (unreachable). This catches a function that quietly grants more than admin-only access at **deploy**, not runtime. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
 
 > **Roadmap — negative/global authority.** Today the function-auth obligation proves a *lower bound* ("only admin can call"). A complementary *upper-bound* capability — "this role can do X and **nothing else**" (closure over the full action set) — is planned; it extends the authority-closure sweep so a policy can prove a role's total reach, not just gate individual rules.
 

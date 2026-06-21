@@ -57,8 +57,8 @@ the agent can then do anything its rules allow. Full method:
     "fields": { "amount": "UInt" },
     "tier": "durable",
     "rules": {
-      "read": "@user.address != null",
-      "create": "@user.address != null",
+      "read": "@user.id != null",
+      "create": "@user.id != null",
       "update": "false",
       "delete": "false"
     },
@@ -74,6 +74,17 @@ With this deployed, the agent can write spend entries freely — until the rolli
 hour's sum would exceed 100, at which point the write rejects with
 `409 spend_cap` and nothing commits. The cap is enforced atomically; there is no
 read-check-write race for the agent to lose.
+
+> **Which identity does an agent guard on?** The runtime `user` object is
+> `{ id, address, email }`. `@user.id` is the universal stable identity and is
+> **always** present for an authenticated caller (for a wallet/keypair agent it
+> equals the wallet address; for an email/social login it is the account
+> identity) — guard ownership, membership, and bare auth on `@user.id`, as the
+> example above does. `@user.address` is a *real onchain wallet address*: present
+> for wallet logins, `null` for email-only ones — reach for it only in
+> `onchain: true` collections or genuine wallet/transfer semantics (and inside
+> those, `@user.id`/`@user.email` are forbidden). `@user.email` is the verified,
+> lowercased email (null for wallet callers), for email-gating.
 
 ## Reading and writing: CLI or SDK
 

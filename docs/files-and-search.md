@@ -20,18 +20,20 @@ data.
     "type": "storage",
     "fields": { "name": "String", "owner": "Address!" },
     "rules": {
-      "read":   "@user.address != null && $userId == @user.address",
-      "create": "@user.address != null && $userId == @user.address",
+      "read":   "@user.id != null && $userId == @user.id",
+      "create": "@user.id != null && $userId == @user.id",
       "update": "false",
-      "delete": "@user.address != null && $userId == @user.address"
+      "delete": "@user.id != null && $userId == @user.id"
     }
   }
 }
 ```
 
 - The path scopes the file. `users/$userId/files/$fileId` with
-  `$userId == @user.address` means a user can only touch files under their own id —
-  the path is the access boundary, proven by the rule.
+  `$userId == @user.id` means a user can only touch files under their own id —
+  the path is the access boundary, proven by the rule. `@user.id` is the universal
+  stable identity (always present for an authenticated user, wallet or email/social),
+  so it's the right key for ownership here.
 - Storage collections are offchain.
 
 ### System metadata vs your declared fields
@@ -52,13 +54,14 @@ import { setFile, getFiles, get } from "bounded-sh";
 
 // Upload the bytes AND set declared fields in one call (atomic create).
 await setFile("users/u1/files/avatar", file, {
-  metadata: { name: "avatar.png", owner: myAddress },
+  metadata: { name: "avatar.png", owner: user.id },
 });
 ```
 
 So a create rule can gate on the metadata you upload, e.g.
-`"create": "@newData.owner == @user.address"` — the file is created only if the
-`owner` you pass matches the caller.
+`"create": "@newData.owner == @user.id"` — the file is created only if the
+`owner` you pass matches the caller. (`owner` here is an identity/ownership key, so
+use `@user.id`, the universal identity — not the wallet `@user.address`.)
 
 `setFile`'s `metadata` applies on **create** only. To change an existing file's
 declared fields, `set(path, {...})` it like any doc (an update — your `update` rule
@@ -97,10 +100,10 @@ index; you query it through the data plane.
     "tier": "durable",
     "search": { "fields": ["title", "body"] },
     "rules": {
-      "read":   "@user.address != null",
-      "create": "@user.address != null",
-      "update": "@user.address != null",
-      "delete": "@user.address != null"
+      "read":   "@user.id != null",
+      "create": "@user.id != null",
+      "update": "@user.id != null",
+      "delete": "@user.id != null"
     }
   }
 }
@@ -132,7 +135,7 @@ bounded data search --app-id <id> --path orgs/o1/docs --query "quarterly revenue
   (restrict to a subset of the indexed fields), `limit`, and `cursor` (paging).
 - Match is case-insensitive over the declared `search.fields`.
 - **Read rules are enforced per document** — a caller only gets matches they are
-  allowed to read (e.g. with `read: "@data.owner == @user.address"`, each user
+  allowed to read (e.g. with `read: "@data.owner == @user.id"`, each user
   searches only their own rows).
 
 ## Choosing between them and ordinary data

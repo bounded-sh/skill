@@ -21,7 +21,8 @@ behaves exactly as before.
 > **No bootstrap problem here.** A `roles` block lists its `members` statically
 > in the policy (e.g. `@const.ADMIN`), so the admin set exists the moment you
 > deploy — nothing to seed. The chicken-and-egg only affects the **data-driven**
-> `admins/$address` collection (where membership is a row you must write); its
+> `admins/$userId` collection (keyed by `@user.id`, where membership is a row you
+> must write); its
 > genesis idiom (`@const.FOUNDER` clause + `bounded data set` from the founder)
 > is in [admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
 
@@ -30,16 +31,21 @@ behaves exactly as before.
 ```json
 {
   "roles": {
-    "admin":  { "members": ["<addr1>", "<addr2>"], "read": "*",          "write": "*" },
-    "editor": { "members": ["<addr3>"],            "read": "*",          "write": ["posts", "comments"] },
-    "viewer": { "members": ["<addr4>"],            "read": ["posts"] }
+    "admin":  { "members": ["<id1>", "<id2>"], "read": "*",          "write": "*" },
+    "editor": { "members": ["<id3>"],          "read": "*",          "write": ["posts", "comments"] },
+    "viewer": { "members": ["<id4>"],          "read": ["posts"] }
   },
-  "posts/$id": { "rules": { "read": "@user.address == @data.owner", "create": "...", "update": "...", "delete": "false" }, "fields": { "owner": "Address", "body": "String" } }
+  "posts/$id": { "rules": { "read": "@user.id != null && @user.id == @data.owner", "create": "...", "update": "...", "delete": "false" }, "fields": { "owner": "String", "body": "String" } }
 }
 ```
 
-- `members` — a non-empty array of principal strings (wallet addresses). Use
-  `@const.NAME` to keep addresses in a `constants` block — see
+- `members` — a non-empty array of principal identities, matched against the
+  caller's `@user.id` (the **universal stable identity** — always present for an
+  authenticated user; for a wallet login it equals the wallet address, for an
+  email/social login it is the account identity). Role membership is an
+  identity/auth gate, so it keys on `@user.id`, not the wallet `@user.address`
+  (which is null for email-only logins). Use `@const.NAME` to keep these
+  identities in a `constants` block — see
   [constants-and-defs.md](constants-and-defs.md).
 - `read` — gates the `read` action. `"*"` = every collection; an array lists
   collection names (the first path segment, e.g. `"posts"` for `posts/$id`).
@@ -61,7 +67,7 @@ Concretely, for a caller who is a member of `admin` with `read:"*"`:
 - a non-member is unaffected: the per-collection rule still decides (so a missing
   rule still denies them).
 
-Anonymous callers (no authenticated address) are **never** granted a role.
+Anonymous callers (no authenticated identity — `@user.id == null`) are **never** granted a role.
 
 ## Why this is "provably-scoped", not god-mode
 
@@ -85,25 +91,28 @@ touches posts.
 
 ```json
 {
-  "constants": { "ADMIN": "<your-wallet-address>" },
+  "constants": { "ADMIN": "<your-admin-user-id>" },
   "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
-  "users/$id":  { "rules": { "read": "@user.address == $id", "create": "@user.address == $id", "update": "@user.address == $id", "delete": "false" }, "fields": { "name": "String", "email": "String" } },
-  "orders/$id": { "rules": { "read": "@user.address == @data.buyer", "create": "@user.address == @newData.buyer", "update": "false", "delete": "false" }, "fields": { "buyer": "Address", "total": "UInt" } }
+  "users/$id":  { "rules": { "read": "@user.id == $id", "create": "@user.id == $id", "update": "@user.id == $id", "delete": "false" }, "fields": { "name": "String", "email": "String" } },
+  "orders/$id": { "rules": { "read": "@user.id != null && @user.id == @data.buyer", "create": "@user.id != null && @user.id == @newData.buyer", "update": "false", "delete": "false" }, "fields": { "buyer": "String", "total": "UInt" } }
 }
 ```
 
 Normal users read only their own `users`/`orders` rows; the `admin` member reads
 every row in every collection — which is exactly what a dashboard or support
-console needs, with zero god-mode code path. Pairs with the local dashboard
-template (`bounded dev`).
+console needs, with zero god-mode code path. The ownership gates key on
+`@user.id` (the universal stable identity), so they hold for wallet **and**
+email/social logins alike. `@const.ADMIN` is the admin's `@user.id`, not a wallet
+address — a wallet login's id equals its address, so existing wallet-based admin
+values keep working. Pairs with the local dashboard template (`bounded dev`).
 
 ## Common mistakes
 
 - **Granting `write:"*"` when you meant read-only.** `write` covers delete too.
   An admin dashboard usually wants `read:"*"` only.
-- **Putting an address literal in `members` and forgetting staging vs prod.**
-  Use `@const.ADMIN` + an `environments` block so each environment injects its
-  own admin — see [environments.md](environments.md).
+- **Putting an identity literal in `members` and forgetting staging vs prod.**
+  Use `@const.ADMIN` (the admin's `@user.id`) + an `environments` block so each
+  environment injects its own admin — see [environments.md](environments.md).
 - **Expecting a role to *restrict* access.** Roles only ever *grant*; to restrict,
   tighten the per-collection rule.
 

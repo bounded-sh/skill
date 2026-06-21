@@ -17,7 +17,7 @@ the CLI resolves it and ships a normal policy. Builds on
   "constants": { "ADMIN": "StgAdminWallet", "DAILY_CAP": 50 },
   "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
   "spend/$id": {
-    "rules": { "read": "@user.address != null", "create": "@user.address != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
     "fields": { "amount": "UInt" }, "tier": "durable",
     "invariants": [ { "type": "rollingSum", "name": "cap", "field": "amount", "windowSeconds": 86400, "limit": "@const.DAILY_CAP" } ]
   }
