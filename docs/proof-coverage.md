@@ -66,6 +66,11 @@ Operational notes for capped onchain collections:
 - Capped collections reject updates and deletes onchain too — the
   append-only contract is the same on both runtimes.
 
+> This page is about which *runtime* enforces which *proof*. For how onchain
+> collections actually behave — Solana transactions, client-signed writes,
+> `--protocol`, the eventually-consistent read mirror, the `0xbc4` gotcha —
+> see [onchain.md](onchain.md).
+
 ## What is NOT claimed
 
 Keep these scope edges in mind when describing guarantees to a user:
@@ -88,4 +93,5 @@ Keep these scope edges in mind when describing guarantees to a user:
 
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — the obligations that back this table
 - [invariants.md](invariants.md) — declaring `onchain` coverage per invariant
+- [onchain.md](onchain.md) — onchain runtime behavior: transactions, mirror, `--protocol`, client-signed tx
 - [policy-generation-guide.md](policy-generation-guide.md) — when to go onchain at all

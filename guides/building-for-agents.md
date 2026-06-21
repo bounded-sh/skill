@@ -41,6 +41,8 @@ bounded data get --app-id <appId> --path spend
 
 > Run each agent under a **distinct** `HOME` or `BOUNDED_PRIVATE_KEY` so
 > identities don't collide. Never hand an autonomous agent a human's keypair.
+> That per-agent key *owns every app the agent creates* — lose it and the apps
+> are unrecoverable. Link or back it up: [../docs/key-and-account-safety.md](../docs/key-and-account-safety.md).
 
 ## Designing the policy for an agent
 
@@ -118,3 +120,4 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
 - [building-a-backend.md](building-a-backend.md) — the `bounded-sh/server` path
 - [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do
 - [../docs/auth.md](../docs/auth.md) — the keypair identity model
+- [../docs/key-and-account-safety.md](../docs/key-and-account-safety.md) — per-agent key isolation; the key owns the agent's apps, so link or back it up

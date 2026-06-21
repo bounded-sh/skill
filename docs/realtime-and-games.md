@@ -117,6 +117,14 @@ state; on end, `settleFrom` aggregates a per-player field and `settleTo` writes 
 durable result. State the players see is whatever the tick projects — never what a
 client writes.
 
+> **A live tick can call out to a function.** A native `session.live` tick is
+> pure/egress-disabled, but it can `return { state, call: { fn, args, as } }` to
+> invoke a whitelisted Bounded function — the result re-enters a later tick as an
+> `@effect` intent. That is how a tick reaches AI NPCs, settlement, and external
+> calls. The field a dev writes is **`as`** (the player to act for), never
+> `onBehalfOf`. The primitive lives in [live-runtime.md](live-runtime.md);
+> NPC/settlement patterns are in [ai-npcs.md](ai-npcs.md).
+
 ## Server-authoritative state (no forged ticks)
 
 Game state lives in collections **no external writer can update**:
@@ -209,7 +217,8 @@ statistical part — it does not "solve cheating." Full treatment:
 
 ## Related
 
-- [live-runtime.md](live-runtime.md) — the **native** `session.live` runtime (3 pure fns, no deploy) for any realtime room
+- [live-runtime.md](live-runtime.md) — the **native** `session.live` runtime (3 pure fns, no deploy) for any realtime room; the tick `call` primitive lives here
+- [ai-npcs.md](ai-npcs.md) — a tick that `call`s a function = an AI NPC / in-game settlement
 - [policy-examples.md](policy-examples.md) — worked example C, end to end
 - [sdk-reference.md](sdk-reference.md) — `subscribe` and `SubscribeOptions`
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — `hooks.tick`, `enforceRules`

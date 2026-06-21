@@ -43,8 +43,8 @@ authorization logic an external caller has.
 > null for wallet). Use **`@user.id` for ownership / membership / player-identity
 > gates** — the offchain game collections below all key on `@user.id`. Reserve
 > `@user.address` for genuinely onchain / wallet operations; inside an
-> `onchain:true` collection only `@user.address` is allowed (`@user.id` and
-> `@user.email` are forbidden there).
+> `onchain:true` collection only `@user.address` is allowed (`@user.id`,
+> `@user.email`, and `@user.isAnonymous` are forbidden there).
 
 ```json
 {

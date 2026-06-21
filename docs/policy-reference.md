@@ -40,7 +40,8 @@ an even number of segments:
 `fields` maps names to types. Names start with a letter and contain only
 alphanumerics and underscores; `id`, `pathId`, leading-underscore names (`_id`,
 and the system timestamps `_createdAt` / `_updatedAt` / `_createdBy`), and
-`tarobase_*` names (onchain result fields) are reserved.
+`tarobase_*` names (legacy onchain result-field prefix, kept by design) are
+reserved.
 
 The accepted scalar type names are **exactly** `String`, `Int`, `UInt`, `Bool`,
 `Float`, `Address` (plus the `?` / `!` suffixes below). Anything else is rejected
@@ -82,11 +83,11 @@ with e.g. `field immutability` / `<field> is immutable on update`. You must add
 
 ```json
 "posts/$id": {
-  "fields": { "author": "Address!", "createdAt": "UInt!", "body": "String" },
+  "fields": { "author": "String!", "createdAt": "UInt!", "body": "String" },
   "rules": {
-    "create": "@user.address != null && @newData.author == @user.address",
-    "update": "@user.address == @data.author && @newData.author == @data.author && @newData.createdAt == @data.createdAt",
-    "delete": "@user.address == @data.author"
+    "create": "@user.id != null && @newData.author == @user.id",
+    "update": "@user.id == @data.author && @newData.author == @data.author && @newData.createdAt == @data.createdAt",
+    "delete": "@user.id == @data.author"
   }
 }
 ```
@@ -106,10 +107,10 @@ expressions at deploy. **An omitted rule defaults to deny.**
 
 ```json
 "rules": {
-  "read":   "@user.address != null && @data.ownerId == @user.address",
-  "create": "@user.address != null && @newData.ownerId == @user.address",
-  "update": "@data.ownerId == @user.address && @newData.ownerId == @data.ownerId",
-  "delete": "@data.ownerId == @user.address"
+  "read":   "@user.id != null && @data.ownerId == @user.id",
+  "create": "@user.id != null && @newData.ownerId == @user.id",
+  "update": "@data.ownerId == @user.id && @newData.ownerId == @data.ownerId",
+  "delete": "@data.ownerId == @user.id"
 }
 ```
 
@@ -117,7 +118,10 @@ expressions at deploy. **An omitted rule defaults to deny.**
 
 | Variable | Meaning | Restrictions |
 |---|---|---|
-| `@user.address` | Authenticated caller (keypair identity); `null` when unauthenticated | — |
+| `@user.id` | **Universal principal** — always present for any authenticated user (JWT `custom:userId`, falling back to the wallet address). Use for ownership, membership, roles, identity-sets. `null` when unauthenticated. | offchain only |
+| `@user.address` | A **real wallet**, only. **`null` for email/social logins** (email tokens omit the wallet claim). Use only for onchain/wallet semantics. | — |
+| `@user.email` | Verified, lowercased email; `null` for wallet/guest logins. | offchain only |
+| `@user.isAnonymous` | Strict boolean; `true` only for guest tokens. Gate with `== false` (no unary `!` on special vars). | offchain only |
 | `@data.field` | Existing document | **not** in `create` rules |
 | `@newData.field` | Incoming document | **not** in `delete` rules |
 | `@time.now` | Server time (seconds) | — |
@@ -129,9 +133,16 @@ expressions at deploy. **An omitted rule defaults to deny.**
 `get(/users/$userId).role` — property access chains off the call. `@data` /
 `@newData` must reference a specific field (`@data.foo`, never bare `@data`).
 
-> **There is no `@constants`.** The only special variables are `@user.address`,
-> `@data`, `@newData`, `@time.now`, `@contract.address`. Express "admin" by
-> comparing a `get()`-read role field or a literal address — not a constant.
+> **Identity: use `@user.id` for ownership, `@user.address` only for wallets.**
+> `@user.id` is the universal principal and is present for every authenticated
+> user; `@user.address` is `null` for email/social logins, so an ownership rule
+> keyed on it silently locks out email users. Always guard auth-required rules
+> with `@user.id != null` (not `@user.address`).
+
+> **There is no `@constants`.** The special variables are `@user.id`,
+> `@user.address`, `@user.email`, `@user.isAnonymous`, `@data`, `@newData`,
+> `@time.now`, `@contract.address`. Express "admin" by comparing a `get()`-read
+> role field or a literal address — not a constant.
 
 ### Operators & literals
 

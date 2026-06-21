@@ -95,7 +95,7 @@ The expression language (full reference in
   `null` for wallet). **Use `@user.id` for ownership / membership / identity /
   auth guards.** Use `@user.address` only for onchain / wallet semantics
   (and in `onchain: true` collections it is the *only* user field allowed —
-  `@user.id` and `@user.email` are forbidden there). Use `@user.email` for
+  `@user.id`, `@user.email`, and `@user.isAnonymous` are forbidden there). Use `@user.email` for
   email-gating.
 - `@data.field` — the existing document (not in `create`).
 - `@newData.field` — the incoming document (not in `delete`).

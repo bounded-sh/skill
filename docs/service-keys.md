@@ -13,6 +13,71 @@ Authorization stays in the policy, so the service identity can only do exactly
 what the policy grants its address. **A service identity is the app developer's
 own backend actor — Bounded never custodies *user* funds.**
 
+## Fund an AI NPC / a live game call
+
+A live tick (`live.tick`) is pure and egress-disabled; to reach the outside
+world it returns a **call** that the room runs as a function — for an LLM NPC,
+something like `npcBrain`. See [ai-npcs.md](ai-npcs.md) and
+[principals-and-origins.md](principals-and-origins.md) for the full picture.
+
+The catch: **a live call runs as the SYSTEM principal**
+(`ctx.user = {id:null, address:null, email:null, system:true}`) — no human, no
+wallet, no account. `ctx.ai.run` bills the caller's `user.id`, so a system call
+has no account to bill and inference FAILS with a 402.
+
+**The fix is a service key.** Declare `actAs: <serviceAddress>` on the *called*
+function and the owner funds that service account with AI credit. Now the
+function runs as the funded service identity instead of the unbillable system
+principal, so `ctx.ai` works:
+
+```json
+{
+  "constants": { "NPC_BRAIN": "7nQ…address" },
+
+  "functions": {
+    "npcBrain": { "auth": "true",
+                  "entry": "functions/npcBrain.ts", "actAs": "7nQ…address" }
+  },
+
+  "messages/$id": {
+    "rules": { "read": "true", "create": "true",
+               "update": "false", "delete": "false" }
+  }
+}
+```
+
+```ts
+// functions/npcBrain.ts — runs as NPC_BRAIN, so ctx.ai is funded
+export default async function npcBrain(args, ctx) {
+  const reply = await ctx.ai.run("@cf/meta/llama-3.1-8b-instruct", {
+    messages: [{ role: "user", content: args.prompt }],
+  });
+  return { ok: true, text: reply.response };
+}
+```
+
+Then whitelist it for the live session and have the tick call it:
+
+```json
+{ "session": { "live": { "calls": ["npcBrain"] } } }
+```
+
+```ts
+// inside live.tick — surface a call for the NPC to think
+return { state, call: { fn: "npcBrain", args: { prompt }, as: playerId } };
+```
+
+> **No private key needed for this.** `actAs` is a policy field, not a stored
+> secret — for AI and data-plane writes there is nothing to mint or leak. A real
+> private key is only required when the service identity must *cryptographically
+> sign* an on-chain Solana tx (see [Key storage](#key-storage--the-important-part)
+> below). Funding the NPC is just crediting the service account's AI budget.
+
+Fund the service account so the NPC can think. The reply lands on a *later* tick
+as an `@effect` result on the checkpoint cadence — not instantly — so expect a
+short delay. See [ai-npcs.md](ai-npcs.md) for credit/rate caps and dedup
+(`effectId`).
+
 > **Identity vs. wallet, in one line.** When a function acts as a service
 > identity, `@user.address` is the *real wallet* the function transacts as, so
 > service-key rules compare it against a wallet pubkey constant
@@ -21,8 +86,8 @@ own backend actor — Bounded never custodies *user* funds.**
 > ownership, membership, admin/auth guards on the people who invoke the function
 > — use the universal `@user.id` (always present; equals the wallet address for
 > wallet logins, the account identity for email/social logins). Never use
-> `@user.id` or `@user.email` inside an `onchain:true` collection — only
-> `@user.address` is allowed there.
+> `@user.id`, `@user.email`, or `@user.isAnonymous` inside an `onchain:true`
+> collection — only `@user.address` is allowed there.
 
 ## You can have as many as you want
 
@@ -129,3 +194,4 @@ just a data-plane write). In that case:
 | Write **on behalf of the user** who called the function | default `ctx.bounded` (acts as the caller) |
 | Write **as a backend identity** the user can't impersonate | a **service key** (`actAs`, this doc) |
 | A scheduled/cron write with no caller | a **service key** (`actAs`), or the SYSTEM principal |
+| A **live game call with no player** (e.g. an AI NPC) | a **service key** (`actAs` on the called function) — the live call is otherwise the SYSTEM principal and can't bill AI; see [ai-npcs.md](ai-npcs.md) |

@@ -1,60 +1,115 @@
-# Anonymous accounts + transferable, provable ownership
+# Anonymous (guest) accounts + seamless upgrade
 
 The smoothest onboarding Bounded offers: a **guest** signs in with **zero friction**
-— no email, no wallet extension, no popup — and still gets a real, durable
-identity that owns data. Later they can **upgrade** (attach an email so they don't
-lose it) or **transfer ownership** of the account to another key — and the
-transfer rules are enforced by the proven boundary, not by app code.
+— no email, no wallet extension, no popup — gets a real, durable identity that owns
+data, and **later upgrades to a real account (email) while keeping the exact same
+identity and all its data**. This is the Firebase/Supabase "anonymous auth" model,
+enforced by Bounded's proven boundary.
 
-This works because in Bounded **a keypair *is* an account**. A guest is just an
-ed25519 keypair generated in the browser that signs the same auth challenge a
-wallet would.
+In Bounded **a keypair *is* an account**: a guest is an ed25519 keypair generated in
+the browser that signs the same auth challenge a wallet would. The upgrade preserves
+that identity at the **auth layer** (the email account *adopts* the guest's id), so
+your policies and data never change — `@user.id` is stable across the upgrade.
 
-> **The `user` object.** Every authenticated session exposes
-> `{ id: string, address: string | null, email: string | null }`:
-> - `@user.id` — the **universal, stable identity**, always present. For a guest
->   (or any wallet login) it equals the signing key's public address; for an
->   email/social login it's the account identity. **Use this for ownership.**
-> - `@user.address` — a **real onchain wallet address**, present for wallet/guest
->   keypairs and `null` for email-only logins. Use it only for onchain/wallet
->   semantics.
-> - `@user.email` — the verified, lowercased email (email logins only; `null`
->   for wallet/guest).
->
-> Ownership in this doc is keyed by `@user.id`, not the raw wallet address. For a
-> guest those two are the same value today — but keying on `@user.id` is what lets
-> a guest **upgrade to email** (section 4) and keep owning the same data even if
-> the underlying key isn't the identity anymore.
+> **The `user` object** — `{ id, address, email, isAnonymous }`:
+> - `user.id` / `@user.id` — the **universal, stable identity**, always present.
+>   For a guest it's the keypair's address; for an email login it's the account id.
+>   **After an upgrade it is UNCHANGED** (the email account adopts the guest's id).
+>   Use this for ownership.
+> - `user.address` / `@user.address` — a real onchain wallet address (guest/wallet
+>   logins); `null` for email-only logins.
+> - `user.email` / `@user.email` — verified lowercased email (email logins only).
+> - `user.isAnonymous` — **`true` for a guest, `false` after upgrade** (Firebase
+>   parity). Use it to decide whether to show a "save your account" prompt. Also
+>   available in policy as `@user.isAnonymous` (Supabase parity).
 
 ---
+
+## 0. Opt in (anonymous is OFF by default)
+
+Most apps don't want guests, so you **must enable it** in `policy.json` — a top-level
+`auth` block:
+
+```json
+{
+  "auth": { "anonymous": true },
+  "notes/$id": { "rules": { "read": "true", "create": "@user.id != null" }, "fields": { "text": "String" } }
+}
+```
+
+Without `auth.anonymous: true`, `signInAnonymously()` is **refused by the issuer**
+(403). The flag travels in your deployed policy, so it's version-locked and per-env
+(deploy a different policy per environment to vary it).
 
 ## 1. Anonymous sign-in (the guest)
 
 ```ts
-import { init, signInAnonymously } from 'bounded-sh'
+import { init, signInAnonymously, getCurrentUser } from 'bounded-sh'
 
-await init({ appId: '<APP_ID>', network: 'bounded-staging' })
-const me = await signInAnonymously()   // generates + persists a keypair, mints a session
-// me.id === the guest's stable identity (use this for ownership). Durable across reloads.
-// me.address === the same public key (the onchain/wallet view of the guest key).
+await init({ appId: '<APP_ID>' })
+const me = await signInAnonymously()   // generates + persists a keypair, mints a guest session
+me.isAnonymous   // true
+me.id            // the guest's stable identity — use for ownership; durable across reloads
 ```
 
-`signInAnonymously()` generates a non-extractable ed25519 key (stored so an XSS
-can *sign* but never read the private key), runs nonce → sign → session, and
-you're authenticated. No backend change — it's the wallet-signature path with a
-local key.
+`signInAnonymously()` generates a non-extractable ed25519 key (an XSS can *sign* but
+never read it), runs nonce → sign → session. It's the wallet-signature path with a
+local key — durable across reloads. `logout()` keeps the key (same guest next time);
+`forgetGuest()` wipes it (brand-new guest).
 
-> CLI equivalent (and how it's already proven): the `bounded` CLI is itself a
-> generated keypair signing this exact challenge. `bounded whoami` shows the
-> address; every `bounded` command is a "guest" session under the hood.
+## 2. Gate guests in policy with `@user.isAnonymous`
 
-## 2. Model ownership as DATA (so it can move)
+A guest is a first-class identity that owns data — but you often want "**browse as a
+guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` parity):
 
-**Don't** scope a user's data by their raw `@user.id`. Scope it by an
-**account id**, and record the owner in the account document. Then ownership can
-be transferred without touching the data.
+```json
+"posts/$id": {
+  "rules": {
+    "read": "true",
+    "create": "@user.id != null && @user.isAnonymous == false"
+  },
+  "fields": { "author": "String", "body": "String" }
+}
+```
 
-`examples/ownership.policy.json`:
+`@user.isAnonymous == false` admits only upgraded/real users. (Write `== false`, not
+`!@user.isAnonymous` — the unary `!` isn't supported on special vars.) It's
+**offchain-only** — onchain rules must use `@user.address`.
+
+## 3. Upgrade the guest (keep the SAME identity + data)
+
+Send a code, then `linkEmail` — Firebase `linkWithCredential` parity:
+
+```ts
+import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from 'bounded-sh'
+
+await signInAnonymously()                 // user.isAnonymous === true
+// ...user does stuff, owns data keyed by @user.id...
+
+await sendEmailOtp('user@example.com')    // emails a 6-digit code
+const user = await linkEmail('user@example.com', '123456')
+user.isAnonymous   // false — now a real account
+user.id            // UNCHANGED — same id the guest had → all its data is still theirs
+```
+
+What happens under the hood: the issuer verifies the guest token, and **if the email
+is brand-new** the new account *adopts the guest's id* — so `@user.id` (and every row
+owned by it) carries over with zero migration. **If the email already exists**, the
+user just signs into that existing account (no merge — it stays its own identity),
+exactly like Firebase/Supabase. Show the upgrade prompt with `getCurrentUser()?.isAnonymous`.
+
+> **Google / social upgrade** — `linkWithRedirect({ redirectUri })` does the same
+> seamless, id-preserving upgrade via a Google (OIDC) redirect: stash the guest,
+> redirect to sign in with Google, and `completeLoginFromRedirect()` finishes the
+> link automatically. Same rule applies — brand-new social account = id preserved,
+> existing = stays separate.
+
+## 4. Alternative: transferable ownership (ownership-as-data)
+
+Independent of the upgrade, Bounded lets you model ownership as **data** so it can be
+**transferred** between identities under a proven rule — useful for invite links,
+handing an account between agents, or moving data to a different key without sharing
+a private key. Scope data by an **account id** and store the owner:
 
 ```json
 {
@@ -66,92 +121,39 @@ be transferred without touching the data.
       "delete": "false"
     },
     "fields": { "owner": "String", "label": "String" }
-  },
-  "accounts/$accountId/items/$itemId": {
-    "rules": {
-      "read": "true",
-      "create": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
-      "update": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
-      "delete": "@user.id != null && @user.id == get(/accounts/$accountId).owner"
-    },
-    "fields": { "text": "String" }
   }
 }
 ```
 
-The load-bearing rules:
-- **create** `@user.id == @newData.owner` — you can only create an account
-  you list yourself as owner of.
-- **update** `@user.id == @data.owner` — only the **current** owner (the
-  value already stored) may change the row. Changing `owner` *is* the transfer.
-
-## 3. Transfer ownership (no key handoff)
-
-The current owner writes the account with a new `owner`. That's it — the `update`
-rule checks the *old* owner, so only they can hand it off:
+- **create** `@user.id == @newData.owner` — you can only create an account you own.
+- **update** `@user.id == @data.owner` — only the **current** owner may change it.
+  Changing `owner` *is* the transfer; the rule checks the *old* owner, so it's
+  revocable, auditable, single-owner. `bounded verify`/deploy auto-proves the
+  transfer-authority obligation (ownership is transferable but **unseizable**) — see
+  [verify-and-counterexamples.md](verify-and-counterexamples.md).
 
 ```ts
-// current owner transfers to `recipientId` (the recipient's @user.id)
+// current owner hands off to recipientId (their @user.id) — only the old owner can:
 await set(`accounts/${accountId}`, { owner: recipientId, label })
 ```
 
-After this, the original owner is locked out and the recipient can write. This is
-**revocable, auditable, and single-owner** — unlike sharing a private key.
-
-**Proven on staging** (two independent guest keypairs A, B):
-
-| step | actor | result |
-|---|---|---|
-| create `accounts/acc1` (owner=A) | A | ✅ |
-| try to seize it (owner=B) | B | ❌ 403 — not owner |
-| transfer (owner→B) | A | ✅ A is current owner |
-| write again | A | ❌ 403 — no longer owner |
-| write | B | ✅ B owns it now |
-
-## 4. Upgrade a guest (keep the data, add recovery)
-
-Upgrading is **account linking**, not a new identity. Link the guest's key to an
-email so the user can recover it / use it on another device — the address (and
-all its data) stays the same:
-
-```bash
-bounded link --env staging   # links this key to an email account
-```
-
-(Programmatic SDK linking follows the same control plane the CLI uses.)
-
-## 5. The transfer is *proven*, automatically (the Bounded difference)
-
-The rules above *enforce* single-owner transfer. Bounded also **proves** it.
-`bounded verify` / deploy auto-detects a self-gated `owner` field and discharges
-a **transfer-authority** obligation:
-
-> *"any change to `owner` requires `@user.id == @data.owner` (the current
-> holder) — ownership is transferable but unseizable"*
-
-- ✅ correct policy (update gated on `@data.owner`) → **PROVED**.
-- ❌ a policy that gates transfer on `@newData.owner` (so anyone could set
-  themselves as owner) → **DISPROVED**, with a concrete counterexample
-  (`@data.owner = someone-else`, `@newData.owner = me`).
-
-So "we wrote the rule carefully" becomes a machine-checked guarantee across every
-account, for all inputs, forever — no extra annotation needed. (See
-`docs/verify-and-counterexamples.md`.)
+Proven on staging (guests A, B): A creates (owner=A) ✅ · B seizes ❌403 · A transfers
+to B ✅ · A writes again ❌403 · B writes ✅.
 
 ---
 
 ## When to use this
 
-- **Invite links / shareable sessions** — recipient lands, gets a guest identity,
-  optionally receives a transferred account.
-- **Try-before-signup** — let people use the app immediately; upgrade to email later.
-- **Agent identities** — each agent is a guest keypair; hand an account between agents.
+- **Try-before-signup** — use the app instantly as a guest; `linkEmail` later, keep everything.
+- **Invite links / shareable sessions** — recipient lands as a guest, optionally receives a transferred account.
+- **Agent identities** — each agent is a guest keypair; hand an account between agents via the transfer pattern.
 
 ## Gotchas
 
-- Scope data by **accountId**, never raw `@user.id`, or it can't be transferred.
-- `create` must check `@newData.owner` (incoming), `update`/transfer must check
-  `@data.owner` (existing). Mixing them up either lets anyone seize accounts or
-  locks out transfers.
-- Guest keys live on the device. Tell users to **upgrade (link email)** before
-  they care about not losing the account.
+- Anonymous is **opt-in** — set `"auth": { "anonymous": true }` in policy or guest sign-in is 403'd.
+- `@user.isAnonymous == false` (not `!@user.isAnonymous`); offchain-only.
+- Upgrade preserves `@user.id` only for a **brand-new** email; linking an existing
+  email signs into it (separate identity, no merge). Prompt to upgrade before users
+  care about not losing the account (guest keys live on the device).
+- For transferable ownership, scope by **accountId**, never raw `@user.id`; `create`
+  checks `@newData.owner`, `update`/transfer checks `@data.owner`.

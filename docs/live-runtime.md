@@ -260,12 +260,102 @@ the tamper-proof, server-ordered intent log via `webhooks`. Be explicit with
 users: Bounded solves the **structural** part and gives the best substrate for
 the statistical part — it does **not** "solve cheating."
 
+## Calling out from a tick (the `call` primitive)
+
+`tick` is **pure, synchronous, and egress-disabled** — it can't `fetch`, can't read
+the data plane, can't sign a tx. To reach the outside world it returns a **call**
+alongside the next state instead of a bare `return state`:
+
+```ts
+// inside tick(state, intents, dt):
+return { state, call: { fn: "npcBrain", args: { board: state.board }, as: playerId } };
+// or several at once:
+return { state, calls: [ { fn: "npcBrain", args: {...} }, { fn: "settleMatch", args: {...} } ] };
+```
+
+A bare `return state` is unchanged and fully back-compatible — adding a `call` is the
+only opt-in. The field a developer writes is **`as`** (the player id to act for) — never
+`onBehalfOf`. `as` is optional; omit it for a call with no acting user.
+
+**What `call` runs.** `fn` must be a function name in the owner-declared whitelist
+**`session.live.calls`** — this whitelist is the **only** authorization gate on a live
+call today (see [principals-and-origins.md](principals-and-origins.md)). The called
+function is an ordinary Bounded [function](functions.md): it has an `entry`, can use
+`ctx.bounded`, `ctx.ai`, secrets, and `actAs`.
+
+```json
+"rooms/$roomId": {
+  "tier": "checkpointed",
+  "session": {
+    "live": {
+      "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800,
+      "calls": ["npcBrain", "settleMatch"]
+    }
+  }
+}
+```
+
+**How the result comes back — the `@effect` address.** The call runs *off the tick loop*:
+the facet writes it into a durable outbox atomically with the state advance, the room
+supervisor drains it **after the checkpoint alarm**, POSTs the function, and the result
+re-enters a **later** tick as a recorded intent on the reserved **`@effect`** address.
+Your tick reads it by matching `address === "@effect"` and the `effectId` it emitted:
+
+```ts
+function tick(state, intents, dt) {
+  // 1) read any effect results that came back
+  for (const i of intents) {
+    if (i.address === "@effect" && i.intent?.__effect) {
+      const { effectId, ok, result, error } = i.intent;
+      if (ok && state.pending[effectId]) {
+        state.npcMove = result.move;            // consume the function's reply
+        delete state.pending[effectId];         // dedup: don't act on it twice
+      }
+    }
+  }
+  // 2) maybe emit a new call (track its ref so you can match the reply)
+  if (needsNpcMove(state) && !state.pending.npc1) {
+    state.pending.npc1 = true;
+    return { state, call: { fn: "npcBrain", args: { board: state.board } } };
+  }
+  return state;
+}
+```
+
+The `@effect` address is **host-only**: an intent carrying `__effect` that did not arrive
+on `@effect` is rejected as forged, so a client cannot inject a fake result.
+
+**SHIPPED truth — read this before you build on it:**
+
+- **The call runs as the SYSTEM principal — there is no user.** Inside the called
+  function `ctx.user` is `{ id: null, address: null, email: null, system: true }`. A
+  `call` with an `as` does **not** yet bill or authenticate that player — acting-user is
+  **ROADMAP**; a valid `as` is currently treated as system. See
+  [principals-and-origins.md](principals-and-origins.md).
+- **To bill AI you need `actAs`.** `ctx.ai.run` bills the caller's `user.id`; for a system
+  call that's `null` → no account → inference fails (402). To ship a funded LLM NPC the
+  *called function* must declare `actAs: <serviceAddress>` and the owner funds that service
+  account with AI credit. `actAs` needs no private key for AI/data (only onchain signing
+  needs a key). This is the way to ship a real Claude/LLM NPC today — see
+  [ai-npcs.md](ai-npcs.md).
+- **Effects run on the checkpoint cadence, not per-tick.** Replies land after a short
+  delay (the next checkpoint window), not on the very next frame. Don't block the loop on
+  an effect; keep ticking and consume the reply when it arrives.
+- **No platform dedup yet.** The runtime does not dedup on the `effectId` / idempotency
+  ref — this is **not** exactly-once. The function author (and the tick, as above) should
+  dedup on `effectId`.
+
 ## Recording the result (per-room: authoritative today, read it through the view)
 
-The native runtime is server-authoritative for everything *inside* a room — but a
-native facet (`init`/`tick`/`views` + snapshot) has **no write path into durable
-collections** and **cannot trigger settlement**. That shapes how you persist the
-outcome, and there is one forgeable trap to avoid.
+The native runtime is server-authoritative for everything *inside* a room. A
+native facet (`init`/`tick`/`views` + snapshot) cannot **directly** write a durable
+collection or trigger settlement — but it **can `call` a function that does** (see
+[the `call` primitive](#calling-out-from-a-tick-the-call-primitive) below): a tick
+returns `{ state, call: { fn, args, as } }`, the called function does the durable
+write / settlement / onchain submit, and the result re-enters a later tick as an
+`@effect` intent. So "the facet can't persist the outcome itself" is true; "the game
+can't persist the outcome" is not. That shapes how you persist the outcome, and there
+is one forgeable trap to avoid.
 
 **The forgeable trap — do NOT record results with a client-written collection:**
 
@@ -308,25 +398,32 @@ by your invariants** every checkpoint (the anti-cheat proof boundary) and surviv
 eviction provably — but note `checkpointed` changes *durability/provability of the
 state*, **not** how you read it: still the view, never `get()`.
 
-**Cross-room leaderboard — not facet-authoritative yet.** Folding each room's result
-into a *shared* durable leaderboard/`matches` collection is **settlement** (`settleTo`
-+ `settleFrom`). For a native room there is a real gap:
+**Cross-room leaderboard — two paths.** Folding each room's result into a *shared*
+durable leaderboard/`matches` collection is **settlement**. Built-in `settleTo` +
+`settleFrom` is **not facet-authoritative yet** for a native room:
 - `settleFrom` aggregates a per-player field from a **room sub-collection**, but a
-  native facet can't write that sub-collection (no durable write path), so it can't
-  carry the facet's in-memory winner.
+  native facet can't write that sub-collection *directly*, so it can't carry the
+  facet's in-memory winner.
 - `POST /settle` with client-provided data is gated by `settleRule`, but the value
   is **client-asserted** — `settleRule` can't verify it against facet memory.
-- Facet-triggered settlement (the supervisor settling *server-computed* data under a
-  dedicated **system principal**) is on the roadmap: the settle path is built; the
-  system principal is the missing piece.
+
+The path that **does** work today: have the tick **`call` a settle function** with the
+server-decided result (`return { state, call: { fn: "settleMatch", args: { winner } } }`).
+The function runs server-side and writes the shared durable collection — the value comes
+from facet memory, not a client. Today that function runs as the **system principal**
+(no acting user; see [principals-and-origins.md](principals-and-origins.md)), so write the
+settle collection's rules to trust a system/service write, not a client `winner ==
+@user.address`. For onchain settlement the same function holds the signing capability via
+`actAs` / a key ([onchain.md](onchain.md)). (Built-in facet-triggered `settleFrom` under a
+dedicated system principal is still roadmap — the `call`-a-function path supersedes the
+need to wait for it.)
 
 So today: authoritative **per-room** result → project it in `views(state)` and read it
 via `subscribeView` (`checkpointed` if you want it invariant-gated + eviction-durable).
-Authoritative **cross-room** settlement → use the declarative `session.tick` runtime
+Authoritative **cross-room** settlement → either the declarative `session.tick` runtime
 (its `settleFrom` is server-computed from a tick-written sub-collection,
-[realtime-and-games.md](realtime-and-games.md#sessions--rooms-with-a-server-loop)),
-or treat native client-reported results as **advisory** until facet-triggered
-settlement lands.
+[realtime-and-games.md](realtime-and-games.md#sessions--rooms-with-a-server-loop)), or
+**`call` a settle function** from the native tick (above).
 
 ## Listing rooms (the lobby / discovery)
 
@@ -498,5 +595,6 @@ above.)
 - [policy-reference.md](policy-reference.md) — `tier` + read-rule expression language
 - [sdk-reference.md](sdk-reference.md) — `subscribe`, `getIdToken`
 - [functions.md](functions.md) — the sibling code-upload model (secrets + proof boundary)
-</content>
-</invoke>
+- [principals-and-origins.md](principals-and-origins.md) — who `@user` is when a tick calls a function (system today; acting-user roadmap)
+- [ai-npcs.md](ai-npcs.md) — the tick `call`s a function = an NPC; funding an LLM NPC with `actAs`
+- [onchain.md](onchain.md) — server-signed (today) + client-signed (roadmap) settlement from a live room

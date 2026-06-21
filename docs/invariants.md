@@ -28,8 +28,8 @@ There are five types: `conserve`, `rollingSum`, `bound`, `tenantTag`, `tenantEdg
 > `get(/admins/@user.id)`, `@user.id != null`). `@user.address` is a **real
 > onchain wallet address** (null for email-only logins) and is reserved for
 > wallet/onchain semantics; `@user.email` is the verified, lowercased email (null
-> for wallet logins). Inside an `"onchain": true` collection, `@user.id` and
-> `@user.email` are **forbidden** — only `@user.address` is allowed.
+> for wallet logins). Inside an `"onchain": true` collection, `@user.id`,
+> `@user.email`, and `@user.isAnonymous` are **forbidden** — only `@user.address` is allowed.
 
 ## RULES vs INVARIANTS — the decision
 

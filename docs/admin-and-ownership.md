@@ -40,8 +40,8 @@ policy**, and even then they remain bound by every invariant.
 > logins. `@user.email` is the verified, lowercased email (email logins only;
 > null for wallet). Use **`@user.id` for ownership / membership / admin gates**;
 > reserve `@user.address` for genuinely onchain / wallet operations. (Inside an
-> `onchain:true` collection only `@user.address` is allowed — `@user.id` and
-> `@user.email` are forbidden there.)
+> `onchain:true` collection only `@user.address` is allowed — `@user.id`,
+> `@user.email`, and `@user.isAnonymous` are forbidden there.)
 
 ## Granting data powers explicitly — the admins collection
 

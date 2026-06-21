@@ -78,8 +78,8 @@ counterexample is showing you a write that production would have accepted.
 > onchain wallet address**: present for wallet logins, **null** for email-only
 > logins, and used only for onchain/wallet semantics. `@user.email` is the
 > verified, lowercased email (null for wallet logins), for email-gating. In
-> `onchain: true` collections only `@user.address` is allowed; `@user.id` and
-> `@user.email` are forbidden there. When the verifier reports a
+> `onchain: true` collections only `@user.address` is allowed; `@user.id`,
+> `@user.email`, and `@user.isAnonymous` are forbidden there. When the verifier reports a
 > `@user.id = null` auth-bypass counterexample, it is telling you an
 > unauthenticated caller satisfied an identity check.
 

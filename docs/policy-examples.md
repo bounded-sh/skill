@@ -23,8 +23,8 @@ Read these after the method — they show the whole shape, not fragments.
 > logins — and is reserved for onchain/wallet semantics. `@user.email` is the
 > verified, lowercased email (email logins only; null for wallet). Use
 > **`@user.id` for all ownership, membership, and auth-guard checks** (as every
-> example below does). Inside `onchain: true` collections, `@user.id` and
-> `@user.email` are **forbidden** — only `@user.address` is allowed there.
+> example below does). Inside `onchain: true` collections, `@user.id`,
+> `@user.email`, and `@user.isAnonymous` are **forbidden** — only `@user.address` is allowed there.
 
 ---
 

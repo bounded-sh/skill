@@ -282,14 +282,66 @@ run on the cadence — fired by the Bounded heartbeat as the **system principal*
 *(Validates clean: the validator resolves `schedule.run` to either a scheduled
 hook **or** a top-level function.)*
 
-**Two principals, one function.** A **user invocation**
-(`bounded functions invoke`) is gated by the function's `auth` rule. A **system
-run** (the schedule) is authorized by the owner-deployed `schedule` itself — it
-lives in your signed policy, so the heartbeat fires the function as the **system
-principal** (skipping the user-facing `auth` rule). Either way every write still
-goes **through** your rules + invariants via `ctx.bounded`. `every` accepts
-`<n>s|m|h|d` (1s–366d); schedules are offchain-only. Hook form + the full `run`
-unification: [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
+**Three principal contexts, one function.** The same function can run under three
+different callers — see [principals-and-origins.md](principals-and-origins.md) for
+the canonical explainer:
+
+1. **User invocation** (`bounded functions invoke`) — gated by the function's
+   `auth` rule. `@user` / `ctx.user` is the verified caller.
+2. **System / scheduled run** (the schedule, below) — authorized by the
+   owner-deployed `schedule` itself: it lives in your signed policy, so the
+   heartbeat fires the function as the **system principal** (`@user` all-null),
+   skipping the user-facing `auth` rule.
+3. **Live game `call`** (a deterministic tick invokes the function) — covered
+   next.
+
+Either way every write still goes **through** your rules + invariants via
+`ctx.bounded`. `every` accepts `<n>s|m|h|d` (1s–366d); schedules are offchain-only.
+Hook form + the full `run` unification:
+[hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
+
+## Invoked by a live game tick (the `call` path)
+
+A deterministic live tick can reach the outside world by returning a **call** —
+`return { state, call: { fn, args, as } }` — which the runtime drains and routes to
+the functions dispatcher. The tick `call`ing a function is THE primitive behind AI
+NPCs, in-game settlement, and a player action that needs external data
+([live-runtime.md](live-runtime.md), [ai-npcs.md](ai-npcs.md)). Two things about
+this path are unlike user/scheduled invocation and you must design for them:
+
+- **There is NO caller.** For a live call `@user` is the **system principal** —
+  `{ id: null, address: null, email: null, system: true }`. No human, no wallet, no
+  email. (The `as` field is a roadmap acting-identity; today a live call always
+  arrives as system — see [principals-and-origins.md](principals-and-origins.md).)
+- **The function's own `auth` rule is NOT evaluated for a live call.** The live
+  path skips per-function auth entirely. The **only** gate is the game's
+  `session.live.calls` whitelist — the owner-declared list of function names the
+  tick is allowed to invoke. So **only whitelist functions you trust the game to
+  invoke unconditionally**, because a whitelisted function runs for live calls with
+  no additional per-function auth check.
+
+```json
+{
+  "session": {
+    "live": {
+      "module": "live/arena.ts",
+      "calls": ["npcBrain", "settleRound"]
+    }
+  }
+}
+```
+
+`session.live.calls` is the ONLY gate for live calls — the whitelist of function
+names the tick may invoke.
+
+Because the system principal has no account, `ctx.ai.run` (which bills
+`user.id`) FAILS with `402` from a live call — there is no account to charge. **To
+ship a funded AI NPC the called function must declare `actAs: <serviceAddress>`**
+so it runs as a service identity the owner funds with AI credit
+([service-keys.md](service-keys.md), [ai-npcs.md](ai-npcs.md)). Per-origin
+function-auth and the acting-user identity are roadmap (#99); see
+[principals-and-origins.md](principals-and-origins.md) for the full principal
+matrix and what is wired today.
 
 ## Secrets
 
@@ -348,6 +400,9 @@ formally-bounded functions. Not shipped; don't claim it. Detail in
 ## Related
 
 - [functions-when-to-use.md](functions-when-to-use.md) — **when to use a function (and when NOT)** — read first
+- [principals-and-origins.md](principals-and-origins.md) — **who `@user` is** across user / system / live-call invocation (the canonical principal explainer)
+- [ai-npcs.md](ai-npcs.md) — a live tick `call`s a function = an NPC; the `actAs`-funded LLM pattern
+- [live-runtime.md](live-runtime.md) — the deterministic tick and the `call` primitive that reaches functions
 - [../guides/capabilities-and-limits.md](../guides/capabilities-and-limits.md) — where functions fit (now supported)
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — in-boundary hooks vs notify-out webhooks
 - [invariants.md](invariants.md) — the postconditions a function's writes still answer to

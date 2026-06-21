@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **Dev identity** | you / your agent | an ed25519 keypair the CLI and `bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
-| **End-user auth** | your app's users | Bounded Better Auth (email — the default) or a connected Solana wallet (Phantom) | `@user.id` / `@user.address` / `@user.email` in policy rules |
+| **End-user auth** | your app's users | Bounded Better Auth (email — what scaffolded apps use) or a connected Solana wallet (Phantom) | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
 ## Dev identity — the keypair IS your account
 
@@ -21,6 +21,13 @@ owns every app you create and signs every write.
 ```bash
 bounded whoami        # prints address, environment, key source (creates the credentials if absent)
 ```
+
+> **Don't lose this key.** `~/.bounded/credentials` is auto-generated, never shown,
+> and never backed up — and it **owns every app you create**. Lose it without having
+> linked or shared first and those apps are **unrecoverable** (there is no
+> transfer-ownership or key-recovery command). Treat it like an SSH private key: back
+> it up, and run **`bounded link`** on day one as your anti-loss mechanism. Full
+> guidance: [key-and-account-safety.md](key-and-account-safety.md).
 
 - Override the on-disk credentials with **`BOUNDED_PRIVATE_KEY`** (a **base58**
   secret string), or point `HOME` elsewhere so the CLI reads/creates a separate
@@ -71,20 +78,26 @@ array). The keypair is read lazily — only the first signed write needs it.
 
 ## End-user auth — the `user` object
 
-Your app's users authenticate through `bounded-sh`. **Email login is the default
-— `init({ appId })` needs no `authMethod`.**
+Your app's users authenticate through `bounded-sh`. **Scaffolded apps default to
+email** because the `create-bounded` template hard-codes `authMethod: 'email'`.
+**If you call the SDK directly, pass `authMethod: 'email'` yourself — the bare SDK
+default is `phantom`** (which needs a wallet extension and throws in Node). So
+`init({ appId })` with no `authMethod` selects Phantom, not email.
 
 ```ts
 import { init, login, getCurrentUser } from "bounded-sh";
 
-await init({ appId: "<appId>" });    // defaults to email (Bounded Better Auth)
+await init({ appId: "<appId>", authMethod: "email" });  // email (Bounded Better Auth); scaffold sets this for you
 await login();                       // opens an INLINE email-code modal — no popup, no redirect
 const user = getCurrentUser();       // { id, address, email } | null
 ```
 
 The inline modal is **email-only** (a 6-digit code, no popup, no full-page redirect).
-It's the quickest drop-in, but it can't do social login (Google needs a redirect) and
-it asserts your `appId` from the app origin.
+It's the quickest drop-in, but it can't do social login (Google needs a redirect).
+The inline `/email` + `/verify` routes read your `appId` from the **request body** —
+they're credential-free, open-CORS, and work from **any** origin (so inline login is
+not origin-bound). Origin→`appId` binding only exists in the hosted **OIDC redirect
+flow**, via the `redirect_uri` you register (below).
 
 ### Hosted login (email + Google) — the secure redirect flow ← use this for Google / production
 
@@ -125,12 +138,21 @@ const user = await verifyEmailOtp("user@example.com", "123456");  // step 2: sig
 ```
 
 **Anonymous accounts coexist** — offer email login AND zero-friction guest
-accounts side by side (see [anonymous-accounts.md](anonymous-accounts.md)):
+accounts side by side (opt-in: set `"auth": { "anonymous": true }` in policy; see
+[anonymous-accounts.md](anonymous-accounts.md)):
 
 ```ts
-import { signInAnonymously } from "bounded-sh";
-const guest = await signInAnonymously();   // device-keypair identity, upgradeable later
+import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from "bounded-sh";
+
+const guest = await signInAnonymously();    // guest.isAnonymous === true
+// ...later, upgrade WITHOUT losing the identity or data (Firebase linkWithCredential parity):
+await sendEmailOtp("user@example.com");
+const upgraded = await linkEmail("user@example.com", "123456");
+upgraded.isAnonymous;  // false — same @user.id as the guest (its data carries over)
 ```
+
+`user.isAnonymous` (Firebase parity) tells you guest vs real for the upgrade prompt;
+in policy, `@user.isAnonymous == false` gates guests out of a rule (Supabase parity).
 
 > **Browser / React-Native only.** `signInAnonymously`, `sendEmailOtp`, and
 > `verifyEmailOtp` persist their session through `localStorage`, so they only work
@@ -139,8 +161,10 @@ const guest = await signInAnonymously();   // device-keypair identity, upgradeab
 > server code use **`bounded-sh/server`** with a keypair
 > (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
 
-`authMethod` options: `'email'` (the default — Bounded Better Auth inline OTP),
-`'phantom'` (connect a Solana wallet — the recommended wallet option), or
+`authMethod` options: `'email'` (Bounded Better Auth inline OTP — what the
+`create-bounded` scaffold sets; the bare SDK default is `'phantom'`, so pass
+`authMethod: 'email'` if you call `init` directly), `'phantom'` (connect a Solana
+wallet — the recommended wallet option), or
 `'none'`. Anonymous is via `signInAnonymously()`, not an `authMethod`.
 (`'wallet'` is not implemented — use `'phantom'` for Solana wallets.)
 
@@ -152,6 +176,7 @@ fields**:
 | `user.id` | `string` | the **universal stable identity**, **always present** for an authenticated user. For wallet logins it equals the wallet address; for email/social (Bounded Better Auth) logins it is the account identity. **Use this for ownership / membership / identity / auth guards.** |
 | `user.address` | `string \| null` | a **real onchain wallet address**. Present for wallet logins, **`null` for email-only logins**. **Use this only for onchain operations / wallet semantics.** |
 | `user.email` | `string \| null` | the verified, lowercased email (email logins only; `null` for wallet). Use it for email-gating. |
+| `user.isAnonymous` | `boolean` | `true` for a zero-friction **guest** (`signInAnonymously()`); `false` after upgrade (`linkEmail`) or for any real login. Drives the "save your account" prompt. Mirrored in policy as `@user.isAnonymous` (offchain; write `== false` to gate guests out). |
 
 - **Email (Bounded Better Auth)** supports email (inline modal) and, via the hosted
   redirect flow (`loginWithRedirect`), social login (Google). Social requires the redirect
@@ -205,9 +230,9 @@ gates, and bare auth guards. `@user.id` is always present, so email/social users
 for those users, so an `owner == @user.address` rule would silently break them.
 
 **Onchain-only rule for `@user.address`:** inside an **`onchain: true`**
-collection, `@user.id` and `@user.email` are **forbidden** — only `@user.address`
-(a real wallet) is allowed, because onchain operations are wallet semantics. So
-the split is:
+collection, `@user.id`, `@user.email`, and `@user.isAnonymous` are all
+**forbidden** — only `@user.address` (a real wallet) is allowed, because onchain
+operations are wallet semantics. So the split is:
 
 ```json
 // offchain collection — identity / ownership

@@ -14,6 +14,13 @@ without a Cloudflare account, `wrangler`, or bindings of your own.
 > This is the tier ABOVE `bounded functions`. See
 > [functions-graduation.md](functions-graduation.md) for when to use which.
 
+> Want an agent that **plays a game** — an AI NPC the live tick drives, or an
+> agent that joins a room as a player? See [ai-npcs.md](ai-npcs.md).
+
+> An agent runs under its **own keypair**, and that key owns the agent's apps.
+> Keep each agent's key isolated and backed up — see
+> [key-and-account-safety.md](key-and-account-safety.md).
+
 ## The shape of a backend project
 
 A directory with a `bounded.manifest` and a TypeScript entry:

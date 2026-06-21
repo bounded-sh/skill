@@ -32,7 +32,15 @@ description: >-
   "verifyAuthorityClosure", "functions", "bounded functions", "function",
   "invoke", "escape hatch", "when to use a function", "scheduled function",
   "call Stripe", "call an API", "third-party API", "ctx.bounded", "ctx.env",
-  "syncStripe", "getPage", "aggregate", "search", "pagination".
+  "syncStripe", "getPage", "aggregate", "search", "pagination",
+  "don't lose my key", "back up my key", "account recovery", "lost wallet",
+  "wallet safety", "key safety", "credentials", "~/.bounded/credentials",
+  "BOUNDED_PRIVATE_KEY", "who owns the app", "AI NPC", "AI player", "NPC brain",
+  "tick calls a function", "live call", "session.live.calls", "@effect",
+  "system principal", "service principal", "acting user", "origin", "@origin",
+  "ctx.origin", "onchain", "Solana data", "client transaction",
+  "client-signed transaction", "sign onchain", "mainnet", "devnet",
+  "--protocol", "realtime_devnet", "graduate a function", "eject to Cloudflare".
 ---
 
 # Bounded
@@ -81,6 +89,7 @@ for the *next* question.
 | **DRY up a policy** (named values `@const`, reusable rule fragments `@def`) | [docs/constants-and-defs.md](docs/constants-and-defs.md) · example below |
 | **Deploy one policy to staging + production** (per-env appId + constants) | [docs/environments.md](docs/environments.md) · example below |
 | **Decide: rule vs invariant vs hook vs function** | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
+| **Outgrow a Bounded function** (move heavy/long-running code to your own Cloudflare Worker) | [docs/functions-graduation.md](docs/functions-graduation.md) |
 | **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
 | **Deploy backend code / an agent with custom npm deps, persistent state, or its own schedule** (run full Cloudflare power THROUGH Bounded — sealed/metered/capped) | [docs/backend-runtime.md](docs/backend-runtime.md) |
 | **Host a static frontend** (`bounded site deploy ./dist` → `<app>.bounded.page`, with `<app>-api.bounded.page` for the backend) | [docs/frontend-hosting.md](docs/frontend-hosting.md) |
@@ -93,8 +102,12 @@ for the *next* question.
 | Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | **What anti-cheat can / can't provably guarantee** (hooks bypass rules but never invariants; on-chain signing) | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | **Build a game with a server tick + settlement** (bytecode `session.tick` model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| **Build an AI NPC / AI player** (the tick `call`s a function; `actAs`-funded LLM; an agent joining a room as a player) | [docs/ai-npcs.md](docs/ai-npcs.md) |
+| **Who is the actor / system vs service principal / origin auth** (what `@user` is when a tick calls a function; the `call` primitive's auth; `@origin` is ROADMAP) | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
+| **Store data on Solana / sign onchain or client transactions / go to mainnet** (`onchain` collections, `--protocol`, `@user.address`-only, client-signed tx is ROADMAP) | [docs/onchain.md](docs/onchain.md) |
 | Full rule / field-type / `get()`/`getAfter()` **syntax reference** | [docs/policy-reference.md](docs/policy-reference.md) |
-| **Let users log in** (email — default — or Phantom wallet) | [docs/auth.md](docs/auth.md#end-user-auth--the-user-object) · example below |
+| **Let users log in** (email — the scaffolder default; bare SDK default is Phantom) | [docs/auth.md](docs/auth.md#end-user-auth--the-user-object) · example below |
+| **Don't lose my key / back up / recover my account** (the credentials file IS your account; `bounded link` it; gitignore secrets) | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 | **Anonymous / guest users, invite links, try-before-signup; transfer or upgrade an account** | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
 | **Paginate / filter / sort** a collection | [docs/queries.md](docs/queries.md#sort-limit-cursor-pagination) · example below |
@@ -132,6 +145,10 @@ for the *next* question.
 | `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `session.tick`, `hooks.tick`, `settleTo`, fog-of-war (bytecode session model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
+| `session.live.calls`, `@effect`, the `call` primitive (`{state,call:{fn,args,as}}`), `as` (act-for player) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/ai-npcs.md](docs/ai-npcs.md) |
+| `actAs` as a **system / service principal** (what `@user` is on a live call; fund an NPC), `@origin`/`ctx.origin` (ROADMAP) | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
+| AI NPC / AI player, `npcBrain`, tick-calls-a-function, `ctx.ai.run` billing on a live call | [docs/ai-npcs.md](docs/ai-npcs.md) |
+| `onchain: true`, `--protocol` (`realtime_devnet`/`realtime_mainnet`), `--skip-preflight`, client-signed tx, `0xbc4`, devnet/mainnet | [docs/onchain.md](docs/onchain.md) |
 | live game *feel*: input cadence, interpolation, prediction, `session.intentRule` | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
 | `init`/`tick`/`views` (native live functions) | [docs/live-runtime.md](docs/live-runtime.md) |
 | `bounded live deploy/upload`, `GET /live/status`, `POST /live/intent`, `live.intent`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
@@ -141,6 +158,7 @@ for the *next* question.
 | `getPage`, `queryAggregate`, `count`, `setMany`, `subscribe`, `getIdToken` | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | `search`, `setFile`, `getFiles`, storage collection | [docs/files-and-search.md](docs/files-and-search.md) |
 | `bounded link`, `bounded share`, `collaborators` | [docs/auth.md](docs/auth.md#linking--teams) |
+| `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY`, `.bounded/app.json` marker, `ownerKeySource`, key backup / account recovery / `bounded whoami` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 | anonymous / guest / `signInAnonymously`, invite link, transfer ownership, upgrade account, ownership-as-data | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | `bounded functions deploy/list/invoke/logs` | [docs/cli-reference.md](docs/cli-reference.md#functions-the-imperative-escape-hatch) |
 | `bounded data get/aggregate/search` `--filter`/`--sort`/`--cursor` | [docs/cli-reference.md](docs/cli-reference.md#data-plane) |
@@ -309,7 +327,9 @@ cd cli && ./install.sh                   # installs `bounded` to /usr/local/bin
 **No login step.** The first `bounded` command generates an ed25519 keypair in
 `~/.bounded/credentials` (base58 `privateKey`; or supply `BOUNDED_PRIVATE_KEY`) —
 the keypair *is* the identity, so agents go from zero to deployed without a human
-auth step. Details: [docs/auth.md](docs/auth.md).
+auth step. **This key OWNS every app you create — back it up or `bounded link` it
+on day one (lose it unlinked → apps are unrecoverable).**
+Details: [docs/auth.md](docs/auth.md) · [docs/key-and-account-safety.md](docs/key-and-account-safety.md).
 
 ```bash
 bounded init                            # scaffold policy.json (a capped spend ledger)
@@ -325,7 +345,7 @@ bounded data get --app-id <appId> --path spend
 - **Rules answer *who may act*.** Each action (`read`/`create`/`update`/`delete`)
   is a boolean expression; a denied action is a `403`. Omitted actions default to
   deny.
-- **Identity has three fields: `@user` is `{ id, address, email }`** (SDK `user`
+- **Identity is `@user` = `{ id, address, email, isAnonymous }`** (SDK `user`
   object is the same shape).
   - **`@user.id`** — the **universal, stable identity, always present** for an
     authenticated user. For wallet logins it equals the wallet address; for
@@ -335,9 +355,12 @@ bounded data get --app-id <appId> --path spend
   - **`@user.address`** — a **real onchain wallet address; present for wallet
     logins, `null` for email-only logins.** Use it **only** for onchain / wallet
     semantics. **Hard rule: inside `onchain: true` collections/rules, only
-    `@user.address` is allowed — `@user.id` and `@user.email` are forbidden.**
+    `@user.address` is allowed — `@user.id`, `@user.email`, and
+    `@user.isAnonymous` are forbidden.**
   - **`@user.email`** — the verified, lowercased email (email logins only; `null`
     for wallet). Use it for email-gating.
+  - **`@user.isAnonymous`** — strict boolean; `true` only for guest/anonymous
+    tokens. Gate with `== false` (no unary `!` on special vars). Also offchain-only.
 - **Invariants answer *what must hold across every transaction*** — caps,
   conservation, tenancy. Proven at deploy, enforced atomically at runtime
   (`409` + the invariant's declared name). They bind **every** write path:
@@ -361,5 +384,11 @@ Failure semantics are in the **(c) By error / status** table above and in full i
   write) — one atomic batch is not a TOCTOU race; a sequence of `set`s is.
 - **Don't update capped documents** — `rollingSum` collections are append-only;
   write each event with a fresh id.
+- **Safety: your key IS your account — back it up.** `~/.bounded/credentials` owns
+  every app you create; lose it without linking and the apps are unrecoverable. Run
+  `bounded link` on day one (attaches the key to your email account) or
+  `bounded share` a backup owner, and gitignore every secret-bearing path (the CLI
+  manages this; the public `.bounded/app.json` marker is safe to commit). Never
+  echo or commit a private key. — [docs/key-and-account-safety.md](docs/key-and-account-safety.md)
 - **Machine docs:** `https://bounded.sh/llms.txt` and
   `https://bounded.sh/llms-full.txt` stay in sync with this skill.

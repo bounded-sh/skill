@@ -26,8 +26,8 @@ the eval rubrics that grade generated policies; it catches the difference betwee
   address for wallet logins, the account identity for email/social logins).
   `@user.address` is a real onchain wallet address — present for wallet logins,
   `null` for email-only logins — so reserve it for onchain / wallet semantics. In
-  `onchain: true` collections only `@user.address` is allowed; `@user.id` and
-  `@user.email` are forbidden there.
+  `onchain: true` collections only `@user.address` is allowed; `@user.id`,
+  `@user.email`, and `@user.isAnonymous` are forbidden there.
 
 ### No trivial, dead, or unsatisfiable rules
 

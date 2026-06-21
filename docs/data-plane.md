@@ -30,28 +30,22 @@ bounded data set-many --from-json bundle.json
 ## On-chain vs off-chain collections
 
 By default every collection is **off-chain** (Bounded's durable store) and `set`/
-`get`/`set-many`/`delete`/`subscribe`/`aggregate` all just work.
+`get`/`set-many`/`delete`/`subscribe`/`aggregate` all just work — the rest of this
+doc is about that off-chain write path.
 
-To store a collection **on Solana**, two things are required together:
-1. deploy the app with an on-chain protocol: `bounded deploy <policy.json> --create --name <n> --protocol realtime_devnet` (or a mainnet protocol), and
-2. mark **each** on-chain collection `"onchain": true` in the policy.
+To store a collection **on Solana** instead, two things are required together:
+deploy the app with an on-chain protocol (`bounded deploy <policy.json> --create
+--name <n> --protocol realtime_devnet`, or a mainnet protocol) **and** mark **each**
+on-chain collection `"onchain": true`. The on-chain write path differs in ways that
+matter — a write is a **real Solana transaction**, reads come from an
+**eventually-consistent mirror** (no read-after-write), data is **public**, rules may
+reference **only `@user.address`** (`@user.id`/`@user.email`/`@user.isAnonymous` are
+rejected), and forgetting the flag on an on-chain-protocol app is a hard
+`AccountNotInitialized` (`0xbc4`) failure, not a silent off-chain fallback.
 
-```json
-{
-  "players/$id": {
-    "onchain": true,
-    "fields": { "score": "UInt", "wallet": "Address", "active": "Bool" },
-    "rules": { "read": "true", "create": "@user.address != null", "update": "@user.address != null", "delete": "@user.address != null" }
-  }
-}
-```
-
-What changes for an on-chain collection:
-- A write/delete is a **real Solana transaction your wallet signs** (the document is a program account/PDA). Field types map to on-chain types — `UInt`→u64, `Int`→i64, `String`, `Bool`, `Address`→a 32-byte pubkey.
-- **Reads, lists, `subscribe`, and `aggregate` work identically** — Bounded mirrors the on-chain state into the read path, so you query it like any collection. **The mirror is eventually-consistent** (a few seconds behind the chain): a `get` *immediately* after an on-chain `set`/`delete` can still return the prior value until the indexer catches up — it is not a stale cache, it self-corrects. Don't read-after-write to confirm an on-chain mutation; trust the tx (the write returns its signature) or use `subscribe`, which delivers the change once mirrored.
-- On-chain data is **public** (anyone can read the chain): use `"read": "true"`, and rules may reference **only `@user.address`** (the wallet) — `@user.id` / `@user.email` are rejected inside `onchain: true` collections.
-
-> **Gotcha — on an on-chain-protocol app, forgetting `"onchain": true` is a hard failure, not a silent off-chain fallback.** On an on-chain protocol the worker routes **every** collection's write on-chain (it keys on the *protocol*), but deploy only **registers** the collections you marked `onchain: true`. A collection left without the flag is written on-chain yet was never registered on-chain — so every write to it fails `AccountNotInitialized` (Solana custom error **`0xbc4`**) with no off-chain fallback. So on `realtime_devnet`/`realtime_mainnet`, mark **every** collection `onchain: true`. `bounded deploy` now warns and names any unflagged collections. (On the off-chain `realtime_offchain` protocol it's the reverse: `onchain: true` collections are stored off-chain — see the warning deploy prints there too.)
+> **See [onchain.md](onchain.md)** for the full on-chain story: field-type mapping,
+> client-signed transactions, `--protocol` values, the eventual-consistency mirror,
+> the `0xbc4` gotcha, `--skip-preflight`, and the mainnet human-signed policy permit.
 
 ## Failure semantics
 
@@ -214,6 +208,7 @@ await setMany([
 
 ## Related
 
+- [onchain.md](onchain.md) — on-chain collections, client-signed transactions, `--protocol`, the mirror, `0xbc4`
 - [cli-reference.md](cli-reference.md) — `bounded data set/set-many/get` flags
 - [sdk-reference.md](sdk-reference.md) — `set`/`setMany` from TypeScript
 - [policy-generation-guide.md](policy-generation-guide.md) — designing the policy these writes hit

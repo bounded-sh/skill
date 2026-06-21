@@ -58,6 +58,14 @@ function sendInput(roomId, mv, aim) {
 
 Discrete actions (attack, ability) are events — send them on the keypress, always.
 
+> **The tick itself can reach the outside world.** Beyond reading client intents, a
+> `session.live` tick can `return { state, call: { fn, args, as } }` to call a
+> whitelisted function — an AI NPC's brain, a settlement step, an external check.
+> The result arrives on a later tick as an `@effect` intent (checkpoint cadence, so
+> a short delay — not instant). The dev-written field is **`as`** (the player to act
+> for), never `onBehalfOf`. See [live-runtime.md](live-runtime.md) for the primitive
+> and [ai-npcs.md](ai-npcs.md) for NPC/settlement patterns.
+
 ## 3. Interpolate REMOTE players (hide jitter)
 
 If you render the latest snapshot directly, a late snapshot freezes the entity then
@@ -132,7 +140,8 @@ for a public-read room (anyone logged in could inject intents). Declare
   offchain (`ephemeral`) collection, so membership/auth gates use `@user.id` —
   store `@user.id` in `players` and gate with `@user.id in @data.players`. Reserve
   `@user.address` for genuinely onchain/wallet semantics (it is forbidden in
-  `onchain:true` collections' rules to use `@user.id`/`@user.email`).
+  `onchain:true` collections' rules to use `@user.id`, `@user.email`, or
+  `@user.isAnonymous`).
 
 ## Checklist for a smooth live game
 
@@ -174,5 +183,6 @@ and send N views per tick — output, from one object. The climb, in order:
 
 ## Related
 - [realtime-and-games.md](realtime-and-games.md) — sessions, tick, fog-of-war, tiers
-- [live-runtime.md](live-runtime.md) — the native `init/tick/views` module
+- [live-runtime.md](live-runtime.md) — the native `init/tick/views` module; the tick `call` primitive
+- [ai-npcs.md](ai-npcs.md) — a tick that `call`s a function = an AI NPC / in-game settlement
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — what the proof gate can/can't enforce

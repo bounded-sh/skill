@@ -10,23 +10,37 @@ errors are emitted as JSON too), `--quiet` (minimal output), `--env`
 
 ## Identity & teams
 
-No login step — your ed25519 keypair IS your account. It lives in
-`~/.bounded/credentials` (a JSON file with a base58 `privateKey` field, created on
-first run), or is supplied via the `BOUNDED_PRIVATE_KEY` env var (a **base58**
-secret string, which overrides the file). See [auth.md](auth.md).
+No login step — your ed25519 keypair IS your account, and **owns every app you
+create**. It lives in `~/.bounded/credentials` (a JSON file with a base58
+`privateKey` field, mode `0600` in a `0700` dir, auto-created on first run), or is
+supplied via the `BOUNDED_PRIVATE_KEY` env var (a **base58** secret string, which
+overrides the file). See [auth.md](auth.md).
+
+> **This file is your account, and it is unrecoverable if lost.** There is no
+> password reset and no server-side master key — ownership *is* the keypair. If
+> you lose `~/.bounded/credentials` without having linked or shared, every app it
+> created is orphaned forever. Treat it like an SSH private key: **back it up.**
+> Then run `bounded link` (below) so the apps survive local key loss. Full safety
+> model: [key-and-account-safety.md](key-and-account-safety.md).
+
+> **Never commit a key.** `BOUNDED_PRIVATE_KEY` and the raw `privateKey` are
+> secrets — never commit or log them. `deploy --create` writes a managed
+> `.gitignore` secrets block for you (see below), but you are still responsible
+> for keys you drop in a repo by hand.
 
 > **Running a second identity:** point `HOME` at a temp dir
 > (`HOME=$(mktemp -d) bounded whoami`) — the CLI auto-creates a fresh
 > `~/.bounded/credentials` there, giving you a clean separate account. (Or set
 > `BOUNDED_PRIVATE_KEY` to another base58 key.) This is how you run a distinct
-> agent identity without touching your main credentials.
+> agent identity without touching your main credentials. Don't do this by accident
+> — a second identity can't see the first machine's apps.
 
 | Command | Does | Example |
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
-| `whoami` | Show address, environment, key source (creates the key on first run) | `bounded whoami` |
-| `link` | Bind the keypair to a human (email) account via an **OAuth device flow**; keypair + email-wallet become admin-collaborators on each other's apps. Keypair keeps signing. | `bounded link` |
-| `share <wallet\|email> --app-id <id>` | Add a collaborator. **Wallet** → direct (default role `policy`). **Email** → resolved to its auto-provisioned embedded wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. | `bounded share teammate@example.com --app-id <id>` |
+| `whoami` | Show address, environment, key source, linked email (if any), and this folder's app marker if present (creates the key on first run) | `bounded whoami` |
+| `link` | **The anti-loss move.** Bind the keypair to your human (email) account via an **OAuth device flow** (with an anti-phishing fingerprint); keypair + email-account wallet become admin-collaborators on each other's apps, so your apps survive local key loss. The keypair keeps signing — linking only ADDS the association, it never rolls or replaces the key. | `bounded link` |
+| `share <wallet\|email> --app-id <id>` | Add a collaborator (a backup owner). **Wallet** → direct (default role `policy`). **Email** → resolved to its auto-provisioned embedded wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. | `bounded share teammate@example.com --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 
@@ -34,6 +48,38 @@ secret string, which overrides the file). See [auth.md](auth.md).
 `10m`). Collaboration grants **control-plane** authority (manage the app), not a
 data-plane bypass — give data powers explicitly via policy rules
 ([admin-and-ownership.md](admin-and-ownership.md)).
+
+### The per-app marker — `.bounded/app.json`
+
+On `deploy --create`, the CLI writes a per-app marker at
+`<project>/.bounded/app.json`. It records only **PUBLIC** information (never a
+private key) and is **safe to commit** — it tells anyone with the repo which app,
+owner, and env this folder maps to, and which key a teammate needs:
+
+```json
+{
+  "appId": "6a37ecc89def2f10f13aa922",
+  "name": "my-app",
+  "env": "production",
+  "protocol": "realtime_offchain",
+  "owner": "GFdiGThC8DJ5oMdDYj1xgyQJjWkje6EbzH2jdUMcuWBt",
+  "ownerKeySource": "global (~/.bounded/credentials)",
+  "linkedAccount": "amit@poof.new",
+  "createdAt": "2026-06-21T18:00:00Z"
+}
+```
+
+- `owner` — the **public key** that owns the app.
+- `ownerKeySource` — WHERE the private key lives (never the key itself): one of
+  `global (~/.bounded/credentials)`, `project (.bounded/credentials)`, or
+  `env (BOUNDED_PRIVATE_KEY)`. Answers "which key do I need for this app?"
+- `linkedAccount` — the email account this owner is linked to (the recovery path),
+  blank if you haven't run `bounded link`.
+
+`deploy --create` also maintains a managed `.gitignore` block that ignores every
+secret-bearing path (`.bounded/credentials`, `*.key`, `*.keypair.json`, `.env`,
+`.env.*`) while keeping the public `.bounded/app.json` marker committable. Full
+treatment: [key-and-account-safety.md](key-and-account-safety.md).
 
 ## Policy lifecycle
 
