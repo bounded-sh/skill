@@ -114,7 +114,7 @@ buffer of recent WRITE decisions per app. `bounded decisions` reads it
 (owner/collaborator gated); `--json` emits one object per line for agents. See
 [cli-reference.md](cli-reference.md#debugging-denied-writes--bounded-decisions).
 
-## Worked example: the spend cap (staging-verified)
+## Worked example: the spend cap
 
 With `rollingSum(amount) ≤ 100` over 3600s (name `spend_cap`) declared on
 `agents/$agentId/spend/$spendId`:

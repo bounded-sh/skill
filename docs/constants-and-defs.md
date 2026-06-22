@@ -102,7 +102,7 @@ policy.json ──► (deploy / verify) ──► resolvePolicyMacros ──► 
 | `--constants NAME=value` (CLI flag) | command line | client-side, before send | one-off overrides / CI injection — **overrides `@const.NAME`** (overlaid onto the `constants` block, winning over any `environments` value; digit-only values become numbers) and also fills legacy `@constants.NAME` |
 | `@constants.NAME` (legacy) | `--constants` flags | client-side text substitution (write it **unquoted**: `"limit": @constants.CAP`) | pre-existing; prefer `@const` + a block |
 
-For values that differ per environment (staging vs prod admin address, caps),
+For values that differ per environment (preview vs prod admin address, caps),
 keep `@const.NAME` and supply the values from an `environments` block —
 [environments.md](environments.md).
 

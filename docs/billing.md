@@ -97,8 +97,7 @@ founder confirms the address.
 Operators manage accounts at **admin.bounded.page** (API on `bounded-host` under
 `/admin/*`). Access is gated to a small **email allowlist** verified from the
 operator's Bounded email-login JWT (`ADMIN_EMAILS`, default = the founders;
-non-allowlisted → `403`). CORS is a credentialed allowlist of `admin.bounded.page`
-/ `admin-staging.bounded.page`, not a wildcard.
+non-allowlisted → `403`). CORS is a credentialed allowlist of `admin.bounded.page`, not a wildcard.
 
 | Endpoint | What it does |
 |---|---|

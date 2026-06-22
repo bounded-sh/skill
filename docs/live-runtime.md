@@ -30,11 +30,6 @@ This is the imperative sibling of [functions.md](functions.md): code you upload
 difference is *where* the code runs — a function runs once per call; a live room
 runs continuously inside the room.
 
-> **Availability — STAGING-ONLY today.** The native live runtime (Worker-Loader
-> facets) is bound on **staging only**; it is not yet enabled in production. The
-> client SDK **data plane** (`get`/`set`/`subscribe`) works in prod — only the
-> native `session.live` rooms are staging-gated for now.
-
 ## The four-artifact DX
 
 A complete native live room is **four artifacts** and no infrastructure:
@@ -278,14 +273,11 @@ A game reaches durable data **three** ways — know which is which:
   the value that *can't* be forged — it comes from facet memory, not a client.
 - **(b) the player's client → normal SDK `get`/`set`/`subscribe`.** The ordinary data
   plane, rule-enforced per `@user`. Use it for everything the player owns/reads directly
-  (profile, lobby, inventory). **This works in prod.**
+  (profile, lobby, inventory).
 - **(c) the tick CANNOT read durable state synchronously.** `tick` is pure and
   egress-disabled — no `get`, no `fetch`. To read durable data, round-trip via
   **`call` → a function → `@effect`** on a *later* tick. For data the room needs at boot,
   **seed it statically** through `init(seed)` (the host's `rooms/<id>` doc) instead.
-
-> **Availability.** The native **live runtime** (paths a + c, Worker-Loader facets) is
-> **staging-only** today. The **client SDK data plane** (path b) works in **prod**.
 
 ## Calling out from a tick (the `call` primitive)
 
@@ -587,8 +579,8 @@ is older than a timeout.
 bounded live deploy pong.live.ts --app-id <id>   # upload source; prints the version (etag)
 ```
 
-Deploy uploads (transpiled) source to the R2 code registry `bounded-code-<env>`
-(staging: `bounded-code-staging`) at key `<appId>/<module>.js`. The **R2 etag is
+Deploy uploads (transpiled) source to the R2 code registry
+at key `<appId>/<module>.js`. The **R2 etag is
 the version** — a new upload produces a new etag and a fresh facet on the next
 room start. **No worker is redeployed.** If a room references a module that hasn't
 been uploaded yet, the room stays live but dormant (`/live/status` reports
@@ -642,7 +634,8 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 > the destination DO — the worker is the authority on routing.
 >
 > **`init` with a network preset** — no endpoint URLs in app code:
-> `await init({ appId, network: 'bounded-staging' })` (or `'bounded-production'`).
+> `await init({ appId })` (production is the default; the network is
+> `'bounded-production'`).
 > For a zero-friction guest identity (great for invite links), pass
 > `authMethod: 'guest'` and call `login()` — a device-local keypair signs in with
 > no wallet and no signup.

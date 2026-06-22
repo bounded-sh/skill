@@ -121,10 +121,9 @@ failing any blocks deploy):
 
 > **Roadmap — negative/global authority.** Today the function-auth obligation proves a *lower bound* ("only admin can call"). A complementary *upper-bound* capability — "this role can do X and **nothing else**" (closure over the full action set) — is planned; it extends the authority-closure sweep so a policy can prove a role's total reach, not just gate individual rules.
 
-## Staging-verified worked examples
+## Worked examples
 
-These transcripts are from the staging environment; use them as the expected
-behavior contract.
+Use these transcripts as the expected behavior contract.
 
 **Spend cap** — `rollingSum(amount), windowSeconds 3600, limit 100, name
 spend_cap` on `agents/$agentId/spend/$spendId`:

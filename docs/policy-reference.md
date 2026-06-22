@@ -301,7 +301,7 @@ client**. It never changes enforcement, and never hides anything from the owner.
 
 **Resolution — most specific wins:** per-collection `errorDisclosure` > policy-global
 `errorDisclosure` > **env default**. The env default is **`minimal` in production**
-and **`full` everywhere else** (dev/staging) — so you debug freely locally and prod
+and **`full` everywhere else** (local/dev) — so you debug freely locally and prod
 is locked down with zero config.
 
 **The full reason always stays in the decision log**, regardless of disclosure

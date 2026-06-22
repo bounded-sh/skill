@@ -166,27 +166,6 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
 > scheduled work must leave the boundary (pull FX rates, call an LLM). Either
 > way, every write still goes through your rules + invariants.
 
-> ⚠️ **Staging status (verified 2026-06-16):** scheduled **hooks** fire reliably
-> (they ride the room DO's `alarm()`), but scheduled **functions DO NOT fire yet**
-> — confirmed by dogfooding: a `schedule:{every:"1m",run:"<function>"}` on a fresh
-> app never invoked the function, while the same shape with a hook did. Root cause:
-> a function-schedule is fired by the separate **heartbeat-dispatcher**, which reads
-> a KV registry (`bounded-heartbeat-staging`: `cron:<expr> → [{appId, tasks:[{name,
-> kind:"function", functionName}]}]` + `app:<appId>` reverse index). The dispatcher
-> + KV exist, but the feature is non-operational at TWO layers (dogfood-verified):
-> (1) **deploy doesn't register** schedules — nothing scans the policy for
-> function-schedules, converts `every`→cron, and writes the `cron:`/`app:` KV
-> entries; AND (2) **the dispatch chain doesn't fire even when the registry IS
-> populated** — a manually-planted, correctly-formatted entry never invoked the
-> function (and a pre-existing app's entry hadn't either), so the cron→queue→
-> invoke-as-system path is broken/unprovisioned on staging (the queue
-> `bounded-heartbeat-dispatch`, the `HEARTBEAT_SYSTEM_KEY` secret, and a
-> `--env staging` deploy of the dispatcher all need verifying). **Workaround until fixed:** use a scheduled
-> **hook** (`hooks.scheduled`) for the cadence; if you need to leave the boundary,
-> have the hook flip a row that a `hooks.offchain`/function path reacts to, or invoke
-> the function from your own cron. **To fix:** add the registry write (policy scan +
-> duration→cron + KV `put`) to dev-api's policy-deploy path.
-
 ## dueRows — one-shot timers
 
 Where `schedule` is "every N", `dueRows` is "once, when this row is due." A
@@ -218,17 +197,14 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 
 Also offchain-only.
 
-> ✅ **Staging status (verified 2026-06-16):** `dueRows` fires reliably and **on
-> time**. Dogfood: a reminder created with `scheduledAt = now + 15s` ran its
-> `hooks.scheduled` hook at the due second (0s late) and `onComplete: "markDone"`
-> flipped `done = true` — even though the collection's `update` rule is `"false"`,
+> **`dueRows` fires on time.** A reminder created with `scheduledAt = now + 15s`
+> runs its `hooks.scheduled` hook at the due second and `onComplete: "markDone"`
+> flips `done = true` — even though the collection's `update` rule is `"false"`,
 > because the hook write is privileged. Note the hook's *sink* must be a real,
 > declared collection+field it can write to (the example writes to a separate
 > `firelog/global` doc, not back into the timer's own required-field schema).
-
-> Unlike scheduled **functions** (see the schedule note above, broken on staging),
-> `dueRows` running a **hook** is fully operational — it rides the row DO's
-> `alarm()`, the same mechanism scheduled hooks use.
+> `dueRows` running a **hook** rides the row DO's `alarm()`, the same mechanism
+> scheduled hooks use.
 
 ## webhooks — outbound notifications
 
@@ -304,13 +280,10 @@ app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
 });
 ```
 
-> **The keys URL follows your `init({ network })`.** A receiver that did
-> `init({ network: 'bounded-staging' })` verifies against the **staging** signing
-> keys automatically; with no `init` (a pure receiver) it falls back to the
-> production endpoint (fail-closed). Pass `verifyWebhook(body, headers, { keysUrl })`
-> only for a custom worker. (This network-awareness was a dogfood fix — the helper
-> previously always hit the production keys URL, so staging deliveries failed
-> verification unless you passed `keysUrl` by hand.)
+> **The keys URL follows your `init({ network })`.** The receiver verifies against
+> the network's signing keys automatically; with no `init` (a pure receiver) it
+> falls back to the production endpoint (fail-closed). Pass
+> `verifyWebhook(body, headers, { keysUrl })` only for a custom worker.
 
 Webhooks are **read-only fan-out** — never act on an unauthenticated body, and
 treat the event as a *signal*: if you need to mutate Bounded state in response, do

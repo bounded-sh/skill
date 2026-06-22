@@ -171,7 +171,7 @@ The dispatcher gates the call on the function's `auth` rule using the verified
 caller — so the identity the function sees is exactly the one your data plane
 would see. On failure it throws `FunctionInvokeError` (`.statusCode` = 401 not
 logged in / 403 `auth` denied / 404 unknown function / 503 Functions not
-configured). Validated e2e on staging (deploy → `functions.invoke` → JSON result
+configured). The full flow works e2e (deploy → `functions.invoke` → JSON result
 with the verified `ctx.user.id`).
 
 ## Deploy a function

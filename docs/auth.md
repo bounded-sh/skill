@@ -64,7 +64,7 @@ On the server, the same kind of keypair drives `@bounded-sh/server`:
 
 ```ts
 import { init, createWalletClient } from "@bounded-sh/server";
-await init({ appId: "<appId>", network: "bounded-staging" });   // no keypair needed here
+await init({ appId: "<appId>" });   // no keypair needed here
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });  // base58 or JSON array
 vault.address;   // the signer this app acts as
 ```

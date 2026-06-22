@@ -95,9 +95,8 @@ identity. The stored `issuer` keeps silent refresh working for long runs.
 - **Wallet / guest apps**: fully headless — the keypair signs, no human step.
   This is the recommended setup for testable apps.
 - **Email-only login** (the default `login()` modal): an agent can't read the OTP
-  email headlessly. Either (a) give the app a wallet/guest auth method for test
-  builds, or (b) on **staging** set `STAGING_RETURN_OTP=true` and call
-  `sendEmailOtp` + `verifyEmailOtp` server-side, then inject the same two keys.
+  email headlessly. Give the app a wallet/guest auth method for test builds —
+  that's the recommended path.
 - Agents running **in Node** (not a browser) don't need any of this — use
   `@bounded-sh/server`'s `createWalletClient({ keypair })` (or `BOUNDED_PRIVATE_KEY`)
   and call the SDK directly. This page is specifically for driving a **browser**

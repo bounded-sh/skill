@@ -1,7 +1,7 @@
 # Environments — one policy file, many deploys
 
 **What's in here:** the `environments` block — a **client-side** (CLI-only)
-construct that lets one `policy.json` drive several apps (staging, production, …),
+construct that lets one `policy.json` drive several apps (preview, production, …),
 each with its own `appId` and its own constant values. The dev-api never sees it;
 the CLI resolves it and ships a normal policy. Builds on
 [constants-and-defs.md](constants-and-defs.md).
@@ -11,10 +11,10 @@ the CLI resolves it and ships a normal policy. Builds on
 ```json
 {
   "environments": {
-    "staging":    { "appId": "6a2e...stg", "constants": { "ADMIN": "StgAdminWallet", "DAILY_CAP": 50 } },
+    "preview":    { "appId": "6a2e...pre", "constants": { "ADMIN": "PreAdminWallet", "DAILY_CAP": 50 } },
     "production": { "appId": "6a2e...prd", "constants": { "ADMIN": "PrdAdminWallet", "DAILY_CAP": 5000 } }
   },
-  "constants": { "ADMIN": "StgAdminWallet", "DAILY_CAP": 50 },
+  "constants": { "ADMIN": "PreAdminWallet", "DAILY_CAP": 50 },
   "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
   "spend/$id": {
     "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
@@ -35,7 +35,7 @@ The top-level `constants` block is the **default** (handy for a bare
 ## Usage
 
 ```bash
-bounded deploy ./policy.json --environment staging      # → staging appId, staging constants
+bounded deploy ./policy.json --environment preview      # → preview appId, preview constants
 bounded deploy ./policy.json --environment production   # → production appId, production constants
 bounded verify ./policy.json --environment production   # prove the prod-resolved policy
 ```
@@ -48,15 +48,15 @@ What the CLI does for `--environment <name>`:
    `@const`/`@def` resolution ([constants-and-defs.md](constants-and-defs.md))
    inlines the now env-specific values.
 
-So one file gives staging and production **different admin members and different
+So one file gives preview and production **different admin members and different
 caps** with no flags and no copy-paste. Per-env `appId`s keep the two apps
 cleanly separated.
 
 ## Notes
 
-- `--environment` is distinct from the global `--env staging|production` flag,
-  which selects the *API endpoint pool*. `--environment` selects an *entry in
-  your policy*. (Typically you pair them: `--env staging --environment staging`.)
+- `--environment` selects an *entry in your policy* (a per-env `appId` +
+  constants). Deploys target Bounded production by default; you don't need any
+  other flag to pick an endpoint.
 - The `environments` block is **never** sent to the dev-api — it's a CLI
   authoring convenience. Deploying without `--environment` strips it too.
 - Combine with `--constants NAME=value` for one-off CI overrides on top of the

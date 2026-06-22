@@ -40,8 +40,8 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
 `init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
-production by default** — `init({ appId })` just works, no endpoints to set. Pass
-`network: 'bounded-staging'` to target staging. `authMethod` defaults to
+production by default** — `init({ appId })` just works, no endpoints to set (the
+network is `'bounded-production'`). `authMethod` defaults to
 `'email'` (Bounded Better Auth, inline OTP); the recommended wallet option is
 `'phantom'` (connect a Solana wallet), or use `'none'`. Anonymous accounts are
 via `signInAnonymously()` and coexist with email. For a custom/RN email UI use the headless
@@ -140,7 +140,7 @@ composition, and failure codes: [data-plane.md](data-plane.md).
 
 A field in a `set`/`setMany` payload can be a plain value **or** a field-value
 operation the server resolves atomically when the write commits. Two are
-exported (staging-verified):
+exported:
 
 ```ts
 import { set, increment, serverTimestamp } from "@bounded-sh/client";
@@ -234,8 +234,8 @@ bounded unshare <walletAddress|email> --app-id <id> # remove
 ```
 
 Only the owner may modify the list (enforced server-side). Email shares default
-to `admin`, wallet shares to `policy`. Validated working e2e on staging
-(share → list → unshare round-trip).
+to `admin`, wallet shares to `policy`. The full `share → list → unshare`
+round-trip is supported.
 
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 
@@ -346,8 +346,8 @@ const event = await verifyWebhook(rawBody, headers);
 Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
 `DEFAULT_WEBHOOK_KEYS_URL`. `verifyWebhook(rawBody, headers, opts?)` — `opts`
 overrides `keysUrl` / `maxSkewSeconds` / cache TTL. The default keys URL follows
-your `init({ network })` (a `bounded-staging` receiver verifies against the
-staging signing keys), falling back to production when no network is set — so you
+your `init({ network })` (the receiver verifies against that network's signing
+keys), falling back to production when no network is set — so you
 only pass `keysUrl` for a custom worker. Declaring webhooks:
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 

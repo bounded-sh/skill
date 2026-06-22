@@ -137,7 +137,7 @@ a private key. Scope data by an **account id** and store the owner:
 await set(`accounts/${accountId}`, { owner: recipientId, label })
 ```
 
-Proven on staging (guests A, B): A creates (owner=A) ✅ · B seizes ❌403 · A transfers
+Behavior (guests A, B): A creates (owner=A) ✅ · B seizes ❌403 · A transfers
 to B ✅ · A writes again ❌403 · B writes ✅.
 
 ---

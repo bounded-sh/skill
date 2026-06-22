@@ -6,7 +6,7 @@ same with an Example block.
 
 **Global flags** (any command): `--json` (structured output for agents —
 errors are emitted as JSON too), `--quiet` (minimal output), `--env`
-(`production` default, or `staging`; also `BOUNDED_ENV`).
+(`production`; also `BOUNDED_ENV`).
 
 ## Identity & teams
 
@@ -97,7 +97,7 @@ bounded deploy ./policy.json --app-id <appId>           # redeploy
 ```
 
 > **`verify` / `verify-formal` is rate-limited** — about **5 requests per minute
-> per app owner** on staging (`429: Too many formal verification requests`). The
+> per app owner** (`429: Too many formal verification requests`). The
 > "declare → verify → fix" fast loop is real, but pace it: batch edits before
 > re-running, and don't spin `verify` in a tight retry. A `429` is throttling, not
 > a policy error — back off ~60s and retry.
@@ -144,7 +144,7 @@ env's constants, targets its `appId`, and strips the block before shipping a
 normal policy. One file → many apps.
 
 ```bash
-bounded deploy ./policy.json --environment staging      # staging appId + staging constants
+bounded deploy ./policy.json --environment preview      # preview appId + preview constants
 bounded deploy ./policy.json --environment production   # production appId + production constants
 ```
 

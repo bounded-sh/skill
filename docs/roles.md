@@ -110,7 +110,7 @@ values keep working. Pairs with the local dashboard template (`bounded dev`).
 
 - **Granting `write:"*"` when you meant read-only.** `write` covers delete too.
   An admin dashboard usually wants `read:"*"` only.
-- **Putting an identity literal in `members` and forgetting staging vs prod.**
+- **Putting an identity literal in `members` and forgetting preview vs prod.**
   Use `@const.ADMIN` (the admin's `@user.id`) + an `environments` block so each
   environment injects its own admin — see [environments.md](environments.md).
 - **Expecting a role to *restrict* access.** Roles only ever *grant*; to restrict,

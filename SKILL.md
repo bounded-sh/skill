@@ -27,7 +27,7 @@ description: >-
   "bounded link", "share by email", "admin", "admins collection", "no god-mode",
   "roles", "roles block", "provably-scoped admin", "read everything",
   "admin dashboard", "constants block", "@const", "defs", "@def",
-  "reusable rule fragment", "environments", "staging and production",
+  "reusable rule fragment", "environments", "preview and production",
   "multi-environment", "per-environment", "--environment",
   "verifyAuthorityClosure", "functions", "bounded functions", "function",
   "invoke", "escape hatch", "when to use a function", "scheduled function",
@@ -87,7 +87,7 @@ for the *next* question.
 | **Make an admin who reads/writes everything** (dashboard, support) | [docs/roles.md](docs/roles.md) · example below |
 | **Make a per-doc admin / moderator** (no creator god-mode) | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) · example below |
 | **DRY up a policy** (named values `@const`, reusable rule fragments `@def`) | [docs/constants-and-defs.md](docs/constants-and-defs.md) · example below |
-| **Deploy one policy to staging + production** (per-env appId + constants) | [docs/environments.md](docs/environments.md) · example below |
+| **Deploy one policy to multiple environments** (per-env appId + constants) | [docs/environments.md](docs/environments.md) · example below |
 | **Decide: rule vs invariant vs hook vs function** | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
 | **Outgrow a Bounded function** (move heavy/long-running code to your own Cloudflare Worker) | [docs/functions-graduation.md](docs/functions-graduation.md) |
 | **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
@@ -251,7 +251,7 @@ Normal users read only their own orders; the `admin` member reads every row. `bo
 ### Environments — one file, two apps — [docs/environments.md](docs/environments.md)
 
 ```sh
-bounded deploy ./policy.json --environment staging      # → staging appId + staging constants
+bounded deploy ./policy.json --environment preview      # → preview appId + preview constants
 bounded deploy ./policy.json --environment production   # → production appId + production constants
 ```
 The `environments` block (per-env `appId` + `constants`) is resolved client-side; a normal policy ships.
