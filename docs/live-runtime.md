@@ -597,6 +597,10 @@ reducers are unchanged.
 
 ```sh
 bounded live deploy pong.live.ts --app-id <id>   # upload source; prints the version (etag)
+
+# Drive (or cold-start) a room from the CLI — queues an intent for the next tick
+# AND arms the loop if it isn't running. The CLI equivalent of bounded.live.intent.
+bounded live intent rooms/r1 --app-id <id> --intent '{"type":"join","name":"alice"}'
 ```
 
 Deploy uploads (transpiled) source to the R2 code registry
@@ -614,6 +618,10 @@ sets `X-Room-Id` itself. **Clients never set `X-Room-Id`.**
 |---|---|---|---|
 | `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | `{ available, started, running, tick, module }` |
 | `POST /live/intent` | `body.path` | **required** | `{ ok: true }` |
+
+Drive intents from anywhere: the browser SDK (`bounded.live.intent(roomPath, intent)`),
+a server with `@bounded-sh/server`, or the **CLI** — `bounded live intent <roomPath>
+--app-id <id> --intent '<json>'` (great for cold-starting a room, scripts, and tests).
 
 ## SDK client — worked example
 

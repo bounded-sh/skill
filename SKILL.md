@@ -154,7 +154,7 @@ for the *next* question.
 | `onchain: true`, `--protocol` (`realtime_devnet`/`realtime_mainnet`), `--skip-preflight`, client-signed tx, `0xbc4`, devnet/mainnet | [docs/onchain.md](docs/onchain.md) |
 | live game *feel*: input cadence, interpolation, prediction, `session.intentRule` | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
 | `init`/`tick`/`views` (native live functions) | [docs/live-runtime.md](docs/live-runtime.md) |
-| `bounded live deploy/upload`, `GET /live/status`, `POST /live/intent`, `live.intent`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
+| `bounded live deploy`, `bounded live intent` (drive/arm a room from the CLI), `GET /live/status`, `POST /live/intent`, `live.intent`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
 | plans (`free`/`pro`/`enterprise`), `aiBucketUsdCents`, AI credit bucket, `aiCreditGrantedUsd`, overrides, Stripe `/billing/checkout`/`/billing/portal`, x402 `/billing/x402/intent`/`/billing/x402/settle`, `admin.bounded.page` / `/admin/account` | [docs/billing.md](docs/billing.md) |
 | `tier` (`durable`/`checkpointed`/`ephemeral`) | [docs/policy-reference.md](docs/policy-reference.md) · [docs/invariants.md](docs/invariants.md) |
 | `links`, `relationships`, `queries`, `$regex`/`$gte`/`$in` | [docs/queries.md](docs/queries.md) |
@@ -304,8 +304,9 @@ editor, whiteboard, live dashboard). Pong below is one example.
   "rooms/$roomId/view/$userId": { "tier": "ephemeral",
     "rules": { "read": "$userId == @user.id", "create": "false", "update": "false", "delete": "false" } } }
 ```
-Upload + drive: `bounded live deploy pong.live.ts --app-id <id>`, then
-`subscribe("rooms/r1/view/"+userId,{onData:render})` and `POST /live/intent {path,intent}`.
+Upload + drive: `bounded live deploy pong.live.ts --app-id <id>`, then drive a room
+with `bounded live intent rooms/r1 --app-id <id> --intent '{...}'` (CLI) — or in-app
+`subscribe("rooms/r1/view/"+userId,{onData:render})` + `POST /live/intent {path,intent}`.
 
 ### Email share — [docs/auth.md](docs/auth.md#linking--teams)
 
