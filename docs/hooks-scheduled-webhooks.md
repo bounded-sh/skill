@@ -156,15 +156,18 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
   which an onchain collection lacks. Declaring `schedule` on `"onchain": true` is
   rejected.
 
-> **`run` is unified: it may name a hook OR a Function.** The validator resolves
-> `schedule.run` (and `dueRows.run`) to **either** a declared
-> `hooks.scheduled.<run>` bytecode hook **or** a top-level `functions.<run>`
-> [Bounded Function](functions.md). Naming a function runs it on the cadence,
-> fired by the heartbeat as the **system principal** (the owner-deployed schedule
-> *is* the authorization; the user-facing `auth` rule is skipped). Use a **hook**
-> for an in-boundary cadence (reset a quota); use a **function** when the
-> scheduled work must leave the boundary (pull FX rates, call an LLM). Either
-> way, every write still goes through your rules + invariants.
+> **A schedule runs a HOOK.** `schedule.run` (and `dueRows.run`) names a declared
+> `hooks.scheduled.<run>` bytecode hook, fired on the cadence as a privileged
+> in-boundary write (still checked by your invariants). This is the recurring-job
+> primitive — use it to reset a quota, roll a counter, advance a clock.
+>
+> **Running a Bounded *function* on a schedule is not available yet** (roadmap).
+> The validator accepts a `schedule.run` that names a `functions.<name>`, but the
+> heartbeat does **not** invoke it — it never fires. Until it lands, if the
+> scheduled work must leave the boundary (pull FX rates, call an LLM), have a
+> scheduled **hook** flip a marker row and react to that change from your own
+> trigger (e.g. a webhook target or your own cron calling `functions.invoke`), or
+> invoke the function from your own scheduler.
 
 ## dueRows — one-shot timers
 
@@ -191,7 +194,7 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 
 | Key | Required | Meaning |
 |---|---|---|
-| `run` | yes | a declared `hooks.scheduled.<run>` **or** a top-level `functions.<run>` (same unification as `schedule.run`) |
+| `run` | yes | a declared `hooks.scheduled.<run>` hook (naming a `functions.<run>` is accepted by the validator but does not fire yet — see the schedule note above) |
 | `onComplete` | no | `"delete"` (default-ish) or `"markDone"` |
 | `doneField` | no | the `Bool` field flipped when `onComplete: "markDone"` |
 

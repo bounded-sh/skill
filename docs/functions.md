@@ -251,12 +251,22 @@ resolve `@user` → evaluate `get(/admins/@user.id) != null` → allow) → the
 function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your rules +
 invariants) → returns JSON.
 
-## Scheduled functions (run a function on a cadence)
+## Scheduled functions (run a function on a cadence) — ROADMAP, not firing yet
 
-A function can be invoked **on a schedule**, not just on demand. A collection's
-`schedule { every, run }` (or `dueRows { run }`) whose `run` names a **function**
-(instead of a `hooks.scheduled.<run>` bytecode hook) registers that function to
-run on the cadence — fired by the Bounded heartbeat as the **system principal**.
+> **Not available yet.** The validator accepts a `schedule.run` / `dueRows.run`
+> that names a `functions.<name>`, and deploy registers the function — but the
+> heartbeat does **not** invoke it on the cadence (verified: it never fires).
+> For a recurring job today, use a scheduled **hook** (`hooks.scheduled.<name>`,
+> see [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md)); to do
+> out-of-boundary work on a cadence, have a scheduled hook flip a marker row and
+> drive `functions.invoke` from your own trigger. The shape below is the intended
+> model for when this lands.
+
+A function is *meant* to be invokable **on a schedule**, not just on demand: a
+collection's `schedule { every, run }` (or `dueRows { run }`) whose `run` names a
+**function** (instead of a `hooks.scheduled.<run>` bytecode hook) would register
+that function to run on the cadence, fired by the Bounded heartbeat as the
+**system principal**.
 
 ```json
 {
@@ -279,8 +289,8 @@ run on the cadence — fired by the Bounded heartbeat as the **system principal*
 }
 ```
 
-*(Validates clean: the validator resolves `schedule.run` to either a scheduled
-hook **or** a top-level function.)*
+*(Validates clean — the validator resolves `schedule.run` to either a scheduled
+hook or a top-level function — but a function target will not actually fire yet.)*
 
 **Three principal contexts, one function.** The same function can run under three
 different callers — see [principals-and-origins.md](principals-and-origins.md) for

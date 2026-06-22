@@ -98,7 +98,7 @@ for the *next* question.
 | **Give backend code an API key** (Stripe/OpenAI secret — declare in manifest, `bounded secret put`, read via `ctx.secrets.get` or auto-inject on egress) | [docs/secrets.md](docs/secrets.md) |
 | **Gate access on app managers / owner / collaborators** (incl. linked accounts) or **control who views function logs** (`logsAuth`) | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
 | **Have a function act as its own backend identity** (payout bot, market-maker, settler — mint a key, policy authorizes its address) | [docs/service-keys.md](docs/service-keys.md) |
-| **Run a function / hook on a schedule** | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) · [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence) |
+| **Run a recurring job on a schedule** (use a scheduled **hook**; running a *function* on a schedule is roadmap — not firing yet) | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) |
 | Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | **What anti-cheat can / can't provably guarantee** (hooks bypass rules but never invariants; on-chain signing) | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | **Build a game with a server tick + settlement** (bytecode `session.tick` model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
@@ -272,15 +272,16 @@ export default async function (args, ctx) {
 }
 ```
 
-### Scheduled function — [docs/functions.md](docs/functions.md#scheduled-functions-run-a-function-on-a-cadence)
+### Scheduled job (a recurring **hook**) — [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs)
 
 ```json
-{ "rollups/$day": {
-    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
-    "fields": { "total": "UInt" }, "schedule": { "every": "1d", "run": "rollupDaily" } },
-  "functions": { "rollupDaily": {
-    "auth": "get(/admins/@user.id) != null", "entry": "functions/rollupDaily.ts", "timeout": 120 } } }
+{ "quotas/$quotaId": {
+    "fields": { "used": "UInt", "owner": "Address!" }, "tier": "durable",
+    "rules": { "read": "@user.id != null", "create": "@user.id != null && @newData.owner == @user.id", "update": "@user.id != null && @newData.owner == @data.owner", "delete": "false" },
+    "hooks": { "scheduled": { "resetQuota": "@DocumentPlugin.updateField(\"quotas/global\", \"used\", \"0\")" } },
+    "schedule": { "every": "1d", "run": "resetQuota" } } }
 ```
+> Naming a `functions.<name>` in `schedule.run` is roadmap — it won't fire yet; use a hook.
 
 ### Live subscription — [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe)
 
