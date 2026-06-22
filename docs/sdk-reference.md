@@ -136,6 +136,27 @@ A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
 composition, and failure codes: [data-plane.md](data-plane.md).
 
+### Delete — `set(path, null)`
+
+There is **no separate `del`/`remove`** — a write with a `null` document **is**
+the delete. `set(path, null)` hard-deletes the document at `path`, routed through
+that collection's policy **`delete` rule** (so a delete is denied unless `delete`
+allows it). Subscribers receive a delete event for that path.
+
+```ts
+await set("presence/p1", null);                 // delete one doc (checks the `delete` rule)
+
+await setMany([                                  // atomic multi-delete (all-or-nothing)
+  { path: "rooms/r1/players/alice", document: null },
+  { path: "rooms/r1/players/bob",   document: null },
+]);
+```
+
+Deletes compose inside a `setMany` alongside upserts — one atomic transaction
+where every affected row's rule + the batch's invariants must pass. To *allow*
+deletes, set a real `delete` rule in your policy (the default scaffolds
+`"delete": "false"`, which blocks them).
+
 ### Server-resolved field values — `increment` / `serverTimestamp`
 
 A field in a `set`/`setMany` payload can be a plain value **or** a field-value

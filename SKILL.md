@@ -115,6 +115,7 @@ for the *next* question.
 | **Aggregate** (count/sum/avg/min/max/group) | [docs/queries.md](docs/queries.md#aggregations) · example below |
 | **Full-text search** | [docs/files-and-search.md](docs/files-and-search.md) · example below |
 | **Subscribe to live data** | [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe) · example below |
+| **Delete / remove a doc** (there's no `del`/`remove` — `set(path, null)` is the delete, via the `delete` rule) | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
 | Upload / read files | [docs/files-and-search.md](docs/files-and-search.md) |
 | Build for an **agent** / **web** / **mobile** / **server** / **realtime room** | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) · [docs/live-runtime.md](docs/live-runtime.md) |
 | **Build a server-authoritative realtime app** (game, Figma-style editor, whiteboard, dashboard — 3 pure fns, no deploy) | [docs/live-runtime.md](docs/live-runtime.md) |
@@ -158,6 +159,7 @@ for the *next* question.
 | `tier` (`durable`/`checkpointed`/`ephemeral`) | [docs/policy-reference.md](docs/policy-reference.md) · [docs/invariants.md](docs/invariants.md) |
 | `links`, `relationships`, `queries`, `$regex`/`$gte`/`$in` | [docs/queries.md](docs/queries.md) |
 | `getPage`, `queryAggregate`, `count`, `setMany`, `subscribe`, `getIdToken` | [docs/sdk-reference.md](docs/sdk-reference.md) |
+| `del`, `delete`, `remove` (no such method — delete = `set(path, null)`) | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
 | `search`, `setFile`, `getFiles`, storage collection | [docs/files-and-search.md](docs/files-and-search.md) |
 | `bounded link`, `bounded share`, `collaborators` | [docs/auth.md](docs/auth.md#linking--teams) |
 | `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY`, `.bounded/app.json` marker, `ownerKeySource`, key backup / account recovery / `bounded whoami` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
