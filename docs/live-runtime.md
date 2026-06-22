@@ -47,7 +47,8 @@ deploy). Quoting the contract from the top of `pong.live.ts`:
 
 ```ts
 //   1. init(seed)               -> initial state           (optional)
-//   2. tick(state, intents, dt) -> next state              (required; server-authoritative)
+//   2. tick(state, intents, dt, ctx) -> next state         (required; server-authoritative)
+//      ctx = { presence: userId[], tick } — who's connected (4th arg, optional to read)
 //   3. views(state)             -> { [userId]: view }      (optional; per-client visibility)
 //
 // `intents` is the list of client inputs received since the last tick:
@@ -62,11 +63,13 @@ deploy). Quoting the contract from the top of `pong.live.ts`:
   This runs ONCE at cold start (replays use the snapshot, never re-run `init`), so
   it never affects tick determinism. The facet itself has no data-plane access —
   the supervisor injects this seed, keeping `tick`/`views` pure.
-- `tick(state, intents, dtMs): State` — **required, server-authoritative.**
+- `tick(state, intents, dtMs, ctx): State` — **required, server-authoritative.**
   `intents` is `[{ userId, intent }, ...]` ordered by Bounded; return the next
   state. This is the only thing that advances the room. (`userId` is the sender's
   universal `@user.id` — present for every authenticated client, wallet or
-  email/social login alike.)
+  email/social login alike.) The optional **4th arg** `ctx = { presence, tick }`
+  gives the set of currently-connected `userId`s — use `ctx.presence` to evict
+  players who disconnected (see [Reconnection & presence](#reconnection--presence-drops-rejoins-leaves)).
 - `views(state): Record<userId, View>` — **optional.** Maps each client's
   universal `@user.id` to *what that client may see*. Bounded fans each entry out
   to that user's view collection.
@@ -558,20 +561,37 @@ if (intent.type === "join") {
 Without the `if (!state.players[address])` guard, a re-join grabs a second slot (or
 clobbers live state) — a self-inflicted bug, not a runtime one.
 
-**There is NO disconnect/presence signal to the facet.** The tick sees **intents only**.
-When a client's socket closes, the runtime records it for usage metering but does **not**
-notify your module — so a dropped player keeps their slot until the room ends. For
-"opponent left" / forfeit / free-the-slot behavior, detect it in the tick yourself: stamp
-`player.lastSeen = state.now` on each intent and evict/forfeit players whose `lastSeen`
-is older than a timeout.
+**The tick gets a live presence set — drop ghosts with it.** `tick` receives an
+optional **4th argument** `ctx` carrying the principals currently connected to the
+room:
 
-> **Send-on-change + timeout gotcha.** If your input is send-on-change (the efficient
-> model — a still player sends nothing, see [realtime-netcode.md](realtime-netcode.md)),
-> an activity timeout will falsely flag an idle-but-connected player as gone. Add a
-> lightweight **heartbeat intent** (client sends a `ping` every few seconds) and base the
-> timeout on that, not on gameplay input. Runtime-level presence (the supervisor knows
-> the socket is open) is not exposed to the facet today — it's a roadmap item, not a
-> capability to assume.
+```js
+//   tick(state, intents, dtMs, ctx)
+//   ctx = { presence: string[], tick: number }
+//   ctx.presence = the @user.id (or wallet address) of every OPEN connection,
+//                  keyed identically to an intent's `address`.
+
+export function tick(state, intents, dtMs, ctx) {
+  const present = new Set(ctx?.presence ?? []);
+  for (const id of Object.keys(state.players)) {
+    if (!present.has(id)) delete state.players[id];   // someone left → free the slot
+  }
+  // ... advance the sim ...
+  return state;
+}
+```
+
+This is **event-driven and free**: the runtime pushes the updated set to the facet
+**only** when a connection opens or closes (no polling, no alarm, no per-tick cost).
+A player who closes their tab drops out of `ctx.presence` and your reducer evicts
+them on the **next tick** (~instantly). The 4th arg is additive — existing 3-arg
+reducers are unchanged.
+
+> **`ctx.presence` is "has an open socket," not "is actively playing."** For a clean
+> tab-close it's instant. A hard crash / network partition where no close frame is
+> sent clears within the platform's socket-keepalive window (seconds). If you want a
+> *tighter* idle/zombie timeout than that, layer your own `lastSeen` on top (stamp it
+> on each intent or a `ping`) — but you no longer need it just to handle disconnects.
 
 ## Deploy + run lifecycle
 
