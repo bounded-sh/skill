@@ -92,7 +92,7 @@ for the *next* question.
 | **Outgrow a Bounded function** (move heavy/long-running code to your own Cloudflare Worker) | [docs/functions-graduation.md](docs/functions-graduation.md) |
 | **Call an external API (Stripe/LLM) then write** | [docs/functions.md](docs/functions.md) · example below |
 | **Deploy backend code / an agent with custom npm deps, persistent state, or its own schedule** (run full Cloudflare power THROUGH Bounded — sealed/metered/capped) | [docs/backend-runtime.md](docs/backend-runtime.md) |
-| **Host a static frontend** (`bounded site deploy ./dist` → `<app>.bounded.page`, with `<app>-api.bounded.page` for the backend) | [docs/frontend-hosting.md](docs/frontend-hosting.md) |
+| **Host a static frontend** (`bounded site deploy ./dist` → `<app>.bounded.page`, with `<app>-api.bounded.page` for the backend) — **static bundles only** (Vite/CRA/static export); **not** SSR Next.js / request-time servers | [docs/frontend-hosting.md](docs/frontend-hosting.md#what-it-can-and-cannot-host) |
 | **Give an app a nice URL** (a vanity `<slug>.bounded.page`, or your own custom domain on Pro) | [docs/domains.md](docs/domains.md) |
 | **Plans, pricing & paying** (free/pro/enterprise, the $5 AI bucket + top-ups, upgrade via Stripe or x402, admin adjust plan/credit/overrides) | [docs/billing.md](docs/billing.md) |
 | **Give backend code an API key** (Stripe/OpenAI secret — declare in manifest, `bounded secret put`, read via `ctx.secrets.get` or auto-inject on egress) | [docs/secrets.md](docs/secrets.md) |
@@ -107,6 +107,7 @@ for the *next* question.
 | **Store data on Solana / sign onchain or client transactions / go to mainnet** (`onchain` collections, `--protocol`, `@user.address`-only, client-signed tx is ROADMAP) | [docs/onchain.md](docs/onchain.md) |
 | Full rule / field-type / `get()`/`getAfter()` **syntax reference** | [docs/policy-reference.md](docs/policy-reference.md) |
 | **Let users log in** (email is the default — inline OTP; guest = `signInAnonymously()`; Phantom = `authMethod:'phantom'`, opt-in for onchain/money apps) | [docs/auth.md](docs/auth.md#end-user-auth--the-user-object) · example below |
+| **Log an agent / Playwright into a deployed authed app to e2e-test** (inject a real keypair session into the browser — no login UI; mint via CLI, seed `localStorage`) | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |
 | **Don't lose my key / back up / recover my account** (the credentials file IS your account; `bounded link` it; gitignore secrets) | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 | **Anonymous / guest users, invite links, try-before-signup; transfer or upgrade an account** | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
