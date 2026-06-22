@@ -157,6 +157,10 @@ where every affected row's rule + the batch's invariants must pass. To *allow*
 deletes, set a real `delete` rule in your policy (the default scaffolds
 `"delete": "false"`, which blocks them).
 
+**From the CLI** it's a dedicated command, not `set` with null (the CLI rejects a
+null body): `bounded data delete --app-id <id> --path <collection>/<id>` — same
+`delete`-rule enforcement. See [cli-reference.md](cli-reference.md#data-delete).
+
 ### Server-resolved field values — `increment` / `serverTimestamp`
 
 A field in a `set`/`setMany` payload can be a plain value **or** a field-value
