@@ -38,10 +38,12 @@ an even number of segments:
 ## Fields
 
 `fields` maps names to types. Names start with a letter and contain only
-alphanumerics and underscores; `id`, `pathId`, leading-underscore names (`_id`,
-and the system timestamps `_createdAt` / `_updatedAt` / `_createdBy`), and
-`tarobase_*` names (legacy onchain result-field prefix, kept by design) are
-reserved.
+alphanumerics and underscores; `id`, `pathId`, and the entire
+**leading-underscore (`_*`) namespace** are reserved for system fields — `_id`,
+the timestamps `_createdAt` / `_updatedAt` / `_createdBy`, and on-chain
+transaction metadata stamped on confirmation (`_transaction_hash`,
+`_block_number`, `_modified_date`, …). You can read these but never declare or
+write them.
 
 The accepted scalar type names are **exactly** `String`, `Int`, `UInt`, `Bool`,
 `Float`, `Address` (plus the `?` / `!` suffixes below). Anything else is rejected
