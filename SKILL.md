@@ -6,8 +6,8 @@ description: >-
   policy.json (collections, field types, auth rules, and provable invariants —
   spending caps, conservation, tenant isolation), running `bounded verify` for
   SMT proof reports with counterexamples, deploying through the fail-closed proof
-  gate, and reading/writing data via `bounded data` or the single `bounded-sh`
-  SDK package (subpath exports: `bounded-sh` for web/React Native, `bounded-sh/server`
+  gate, and reading/writing data via `bounded data` or the `@bounded-sh` SDK
+  packages (`@bounded-sh/client` for web/React Native, `@bounded-sh/server`
   for server). This SKILL.md is a ROUTER:
   it maps your intent to the one doc that answers it. Triggers: "bounded",
   "bounded.sh", "bounded CLI", "bounded verify", "bounded deploy", "policy.json",
@@ -23,7 +23,7 @@ description: >-
   "__managers__", "__owners__", "__collaborators__", "logsAuth",
   "who can view logs", "function log access", "linked accounts",
   "hooks", "scheduled", "webhooks",
-  "bounded-sh", "bounded-sh SDK", "collaborator", "bounded share",
+  "@bounded-sh", "@bounded-sh/client", "@bounded-sh/server", "collaborator", "bounded share",
   "bounded link", "share by email", "admin", "admins collection", "no god-mode",
   "roles", "roles block", "provably-scoped admin", "read everything",
   "admin dashboard", "constants block", "@const", "defs", "@def",
@@ -163,7 +163,7 @@ for the *next* question.
 | anonymous / guest / `signInAnonymously`, invite link, transfer ownership, upgrade account, ownership-as-data | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | `bounded functions deploy/list/invoke/logs` | [docs/cli-reference.md](docs/cli-reference.md#functions-the-imperative-escape-hatch) |
 | `bounded data get/aggregate/search` `--filter`/`--sort`/`--cursor` | [docs/cli-reference.md](docs/cli-reference.md#data-plane) |
-| `verifyWebhook`, `createWalletClient`, `bounded-sh/server` | [docs/sdk-reference.md](docs/sdk-reference.md) |
+| `verifyWebhook`, `createWalletClient`, `@bounded-sh/server` | [docs/sdk-reference.md](docs/sdk-reference.md) |
 
 ### (c) By error / status → file
 
@@ -284,7 +284,7 @@ export default async function (args, ctx) {
 ### Live subscription — [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe)
 
 ```ts
-import { subscribe } from "bounded-sh";
+import { subscribe } from "@bounded-sh/client";
 const stop = await subscribe("rooms/r1/view/" + myId, { onData: render });
 ```
 
@@ -320,9 +320,8 @@ bounded data search    --app-id <id> --path notes  --query "shipping"
 ## Setup (60 seconds)
 
 ```bash
-# Early access: install the CLI from your Bounded bundle
-cd cli && ./install.sh                   # installs `bounded` to /usr/local/bin
-# At GA: curl -fsSL bounded.sh/install | sh   (or: npm install -g bounded-sh)
+# Install the CLI (Bounded is in beta):
+curl -fsSL https://get.bounded.sh/install.sh | sh   # installs `bounded` to your PATH
 ```
 
 **No login step.** The first `bounded` command generates an ed25519 keypair in

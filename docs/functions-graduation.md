@@ -48,7 +48,7 @@ Reach for this only when you want **full control of your own CF account/billing*
 something the runtime doesn't expose yet. You **leave Bounded's guarantees** for the
 compute (you now own auth, secrets, scheduling, logs, the invoke route) — but your
 **data + invariants stay in Bounded**: the ejected Worker calls Bounded over
-`bounded-sh/server` (`createWalletClient({ keypair })` — same `get/set/setMany/delete/
+`@bounded-sh/server` (`createWalletClient({ keypair })` — same `get/set/setMany/delete/
 runQuery`, every write still through your proven policy). Hybrid is the norm.
 
 ## Graduating to the runtime is mechanical, not a rewrite

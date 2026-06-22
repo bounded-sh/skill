@@ -1,11 +1,11 @@
 # Building for React Native (iOS / Android)
 
 **React Native is how you ship Bounded to phones.** There is no native iOS or
-Android SDK — the same `bounded-sh` package runs in RN via a dedicated
+Android SDK — the same `@bounded-sh/client` package runs in RN via a dedicated
 entry point, so your reads, writes, subscriptions, and policy enforcement are
 identical to web. Only the auth wiring differs.
 
-> Beta: `bounded-sh` is not yet on npm. The API shape below is stable.
+> Beta: Bounded is in beta; the API shape below is stable.
 
 ## What's the same as web
 
@@ -39,7 +39,7 @@ the path that "just works" on a phone. Build your own email + code inputs and
 call the two-step flow:
 
 ```tsx
-import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "bounded-sh";
+import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>", authMethod: "email" }); // 'email' is the default
 
@@ -83,7 +83,7 @@ Identical to web — see [building-a-webapp.md](building-a-webapp.md). A quick
 live example:
 
 ```tsx
-import { subscribe } from "bounded-sh";
+import { subscribe } from "@bounded-sh/client";
 
 // myId is the user's universal identity (user.id) — use it to key per-user docs.
 useEffect(() => {

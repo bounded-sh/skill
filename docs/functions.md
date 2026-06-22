@@ -44,7 +44,7 @@ function-vs-not examples — is its own doc:
 One-line rule of thumb: if the logic must *pull from / push to* the outside
 world and *then* write, it's a function. If it only *reacts* to a write, it's a
 hook (in-boundary) or a webhook (notify-out). Heavy/long compute or
-native-binding npm is **not** Bounded — use your own server as a `bounded-sh/server`
+native-binding npm is **not** Bounded — use your own server as a `@bounded-sh/server`
 client.
 
 ## Declare a function (policy)
@@ -97,7 +97,7 @@ A function is a default-exported async function. It receives the caller-supplied
 export default async function (args, ctx) {
   // ctx.user   — the VERIFIED caller { id, address, email }; auth was already enforced
   //              ctx.user.id = universal identity (use for ownership); address = wallet-or-null
-  // ctx.bounded — pre-authed bounded-sh client; writes go THROUGH invariants
+  // ctx.bounded — pre-authed @bounded-sh/client client; writes go THROUGH invariants
   // ctx.env    — only the secrets you declared in policy
   // fetch      — standard outbound HTTP
   return { ok: true };
@@ -144,12 +144,12 @@ It prints the function's JSON result, or fails with the dispatcher's error
 ### From TypeScript
 
 Use the first-class `functions.invoke(name, args)` helper (exported from both
-`bounded-sh` and `bounded-sh/server`). It attaches the caller's session token
+`bounded-sh` and `@bounded-sh/server`). It attaches the caller's session token
 automatically — the **same** token the data plane sends — so you never hand-roll
 auth headers:
 
 ```ts
-import { functions } from "bounded-sh"; // or "bounded-sh/server"
+import { functions } from "@bounded-sh/client"; // or "bounded-sh/server"
 
 const res = await functions.invoke("syncStripe", { customerId });
 // → the function's JSON return value.
@@ -400,7 +400,7 @@ dispatcher isn't configured on the platform, deploy and invoke return a clean
   and SDK writes; ~5 ms cold start; global.
 - **Timeout:** `1`–`300` s wall-clock per invocation (`timeout`, default `30`).
 - **Not for:** multi-minute jobs or native-binding npm — use your own server as a
-  `bounded-sh/server` client for those.
+  `@bounded-sh/server` client for those.
 - **Memory / subrequests:** standard Workers limits apply.
 
 ## What's proven vs not, and the roadmap

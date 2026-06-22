@@ -50,7 +50,7 @@ A storage document carries **two** kinds of metadata:
   or reserved key is a 400, never a silent drop).
 
 ```ts
-import { setFile, getFiles, get } from "bounded-sh";
+import { setFile, getFiles, get } from "@bounded-sh/client";
 
 // Upload the bytes AND set declared fields in one call (atomic create).
 await setFile("users/u1/files/avatar", file, {
@@ -120,7 +120,7 @@ Search is a query mode on the collection, combinable with filters and paging (se
 
 ```ts
 // SDK — search(path, query, opts?). Returns the matching documents.
-import { search } from "bounded-sh";          // or "bounded-sh/server"
+import { search } from "@bounded-sh/client";          // or "bounded-sh/server"
 const hits = await search("orgs/o1/docs", "quarterly revenue");
 // restrict to a subset of the indexed fields, and/or page:
 const titleHits = await search("orgs/o1/docs", "revenue", { fields: ["title"], limit: 20 });

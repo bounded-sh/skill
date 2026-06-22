@@ -8,7 +8,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
-| **Dev identity** | you / your agent | an ed25519 keypair the CLI and `bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
+| **Dev identity** | you / your agent | an ed25519 keypair the CLI and `@bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
 | **End-user auth** | your app's users | Bounded Better Auth (email — the default) or a connected Solana wallet (Phantom) | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
 ## Dev identity — the keypair IS your account
@@ -60,10 +60,10 @@ Collaboration is **control-plane** authority (manage the app). It is **not** a
 data-plane bypass — see [admin-and-ownership.md](admin-and-ownership.md). Command
 detail: [cli-reference.md](cli-reference.md).
 
-On the server, the same kind of keypair drives `bounded-sh/server`:
+On the server, the same kind of keypair drives `@bounded-sh/server`:
 
 ```ts
-import { init, createWalletClient } from "bounded-sh/server";
+import { init, createWalletClient } from "@bounded-sh/server";
 await init({ appId: "<appId>", network: "bounded-staging" });   // no keypair needed here
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });  // base58 or JSON array
 vault.address;   // the signer this app acts as
@@ -78,13 +78,13 @@ array). The keypair is read lazily — only the first signed write needs it.
 
 ## End-user auth — the `user` object
 
-Your app's users authenticate through `bounded-sh`. **Email is the default.**
+Your app's users authenticate through `@bounded-sh/client`. **Email is the default.**
 `init({ appId })` with **no** `authMethod` selects email (Bounded Better Auth
 inline OTP) — nothing extra to pass. A returning user's stored method still wins;
 an explicit `authMethod` still wins.
 
 ```ts
-import { init, login, getCurrentUser } from "bounded-sh";
+import { init, login, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });    // email is the default — no authMethod needed
 await login();                       // opens an INLINE email-code modal — no popup, no redirect
@@ -110,7 +110,7 @@ hosted OAuth2 + PKCE redirect flow. The token's `appId` is bound to a `redirect_
 origin — never spoofed by another app.
 
 ```ts
-import { init, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from "bounded-sh";
+import { init, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
 
@@ -133,7 +133,7 @@ a fast email-only drop-in, the redirect flow for Google + production-grade app i
 (this is the only path on React Native, which has no DOM modal):
 
 ```ts
-import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "bounded-sh";
+import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
 await sendEmailOtp("user@example.com");          // step 1: emails a code
@@ -145,7 +145,7 @@ accounts side by side (opt-in: set `"auth": { "anonymous": true }` in policy; se
 [anonymous-accounts.md](anonymous-accounts.md)):
 
 ```ts
-import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from "bounded-sh";
+import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from "@bounded-sh/client";
 
 const guest = await signInAnonymously();    // guest.isAnonymous === true
 // ...later, upgrade WITHOUT losing the identity or data (Firebase linkWithCredential parity):
@@ -161,7 +161,7 @@ in policy, `@user.isAnonymous == false` gates guests out of a rule (Supabase par
 > `verifyEmailOtp` persist their session through `localStorage`, so they only work
 > where there's a `window`. Calling them in Node throws a clear error (the session
 > would otherwise be silently dropped and every request would 403). For Node /
-> server code use **`bounded-sh/server`** with a keypair
+> server code use **`@bounded-sh/server`** with a keypair
 > (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
 
 `authMethod` options: **`'email'` is THE default** (Bounded Better Auth inline
@@ -197,7 +197,7 @@ fields**:
 ### React
 
 ```tsx
-import { useAuth } from "bounded-sh";
+import { useAuth } from "@bounded-sh/client";
 
 function AuthButton() {
   const { user, login, logout, loading } = useAuth();
@@ -246,7 +246,7 @@ operations are wallet semantics. So the split is:
 "create": "@user.address != null && @newData.owner == @user.address"
 ```
 
-Server-signed writes from `bounded-sh/server` arrive with the **keypair's**
+Server-signed writes from `@bounded-sh/server` arrive with the **keypair's**
 wallet address; for onchain operations that is `@user.address`. Server logic is
 just another authenticated actor the rules judge — give the vault key the access
 its rules require, no more.

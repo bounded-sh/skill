@@ -79,7 +79,7 @@ and which key to use.
   "protocol": "realtime_offchain",
   "owner": "GFdiGThC8DJ5oMdDYj1xgyQJjWkje6EbzH2jdUMcuWBt",
   "ownerKeySource": "global (~/.bounded/credentials)",
-  "linkedAccount": "amit@poof.new",
+  "linkedAccount": "you@example.com",
   "createdAt": "2026-06-21T18:00:00Z"
 }
 ```

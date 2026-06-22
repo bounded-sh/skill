@@ -24,7 +24,7 @@ or a filtered collection, delivering sub-millisecond deltas, not polls, and
 returns an unsubscribe function.
 
 ```ts
-import { subscribe } from "bounded-sh";
+import { subscribe } from "@bounded-sh/client";
 
 const stop = await subscribe(`rooms/${roomId}/view/${user.id}`, {
   onData: (view) => render(view),   // called on every change

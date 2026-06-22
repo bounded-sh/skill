@@ -283,13 +283,13 @@ The public keys are served at
 ### Verifying a webhook on your server
 
 Anyone can POST to a public URL, so verify the signature before acting on the
-body. Use the shipped helper — `bounded-sh/server` exports **`verifyWebhook`**,
+body. Use the shipped helper — `@bounded-sh/server` exports **`verifyWebhook`**,
 which fetches + caches Bounded's public key (from the well-known endpoint above),
 checks the Ed25519 signature over the raw body, and enforces timestamp skew —
 returning the typed payload or throwing `WebhookVerificationError`:
 
 ```ts
-import { verifyWebhook, WebhookVerificationError } from "bounded-sh/server";
+import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
 
 app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
   let event;
@@ -314,7 +314,7 @@ app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
 
 Webhooks are **read-only fan-out** — never act on an unauthenticated body, and
 treat the event as a *signal*: if you need to mutate Bounded state in response, do
-it through a `bounded-sh/server` client so every rule + invariant is re-checked.
+it through a `@bounded-sh/server` client so every rule + invariant is re-checked.
 Full receiver walkthrough:
 [../guides/building-a-backend.md](../guides/building-a-backend.md#receiving-webhooks).
 

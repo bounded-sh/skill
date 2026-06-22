@@ -214,7 +214,7 @@ own logic, memory, and model loop — compose it as an ordinary player instead o
 an in-tick `call`:
 
 - A **backend-runtime agent** ([backend-runtime.md](backend-runtime.md)) or a
-  plain **`bounded-sh/server` keypair client**
+  plain **`@bounded-sh/server` keypair client**
   ([guides/building-for-agents.md](../guides/building-for-agents.md))
   `subscribeView`s the room and sends `live.intent` like any other client.
 - **Its own keypair is its `@user.id`** — the agent is a first-class player, not
@@ -224,7 +224,7 @@ an in-tick `call`:
 
 ```ts
 // agent.ts — an external AI player. Its keypair = its @user.id.
-import { live, createWalletClient } from "bounded-sh/server";
+import { live, createWalletClient } from "@bounded-sh/server";
 
 const client = createWalletClient({ keypair });               // the agent's own identity
 const roomPath = "rooms/r1";
@@ -250,5 +250,5 @@ human's key (see [key-and-account-safety.md](key-and-account-safety.md)).
 - [functions.md](functions.md) — the function the tick calls (the `@origin` auth gate, the live-call principal)
 - [service-keys.md](service-keys.md) — `runAs` (session-wide) + `actAs` (per-function override) funded identities
 - [backend-runtime.md](backend-runtime.md) — a long-running external agent through Bounded
-- [guides/building-for-agents.md](../guides/building-for-agents.md) — a `bounded-sh/server` keypair agent, per-agent key isolation
+- [guides/building-for-agents.md](../guides/building-for-agents.md) — a `@bounded-sh/server` keypair agent, per-agent key isolation
 - [billing.md](billing.md) — AI credit + per-account caps

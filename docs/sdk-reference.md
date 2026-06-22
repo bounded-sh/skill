@@ -1,43 +1,41 @@
-# SDK Reference — `bounded-sh` (one package, two subpath exports)
+# SDK Reference — `@bounded-sh/client` + `@bounded-sh/server`
 
 **What's in here / when to read this:** every SDK method —
 `get`/`setMany`/`subscribe`/`search`/`count`/`aggregate`, auth,
 `createWalletClient`, `verifyWebhook`, and invoking a function. (Collaborators
 are managed by the CLI, not the SDK — see below.)
 
-**One package, two entrypoints.** `bounded-sh` is a single npm install with two
-subpath exports — like `convex` or `@supabase/supabase-js`:
+**Two packages, one operation surface.** The SDK ships as two npm packages:
 
-- `bounded-sh` (the default/browser export) runs in the browser and React Native:
-  end-user auth via email (default) or a Phantom wallet, live subscriptions,
-  `subscribe`, `live`, and function invocation.
-- `bounded-sh/server` runs on a server, signs with a keypair (no browser auth),
+- `@bounded-sh/client` runs in the browser and React Native: end-user auth via
+  email (default) or a Phantom wallet, live subscriptions, `subscribe`, `live`,
+  and function invocation.
+- `@bounded-sh/server` runs on a server, signs with a keypair (no browser auth),
   and adds `createWalletClient` + `verifyWebhook`.
+
+(`@bounded-sh/core` is a shared dependency of both — you rarely install it directly.)
 
 Both speak to the realtime worker that enforces the deployed policy — the SDK can
 never bypass a rule or invariant.
 
-> Beta: the package is not yet published to npm. Install the local tarball that
-> ships in your Bounded bundle. APIs below are stable in shape.
+> Beta: Bounded is in beta. The packages are published on npm; the APIs below are
+> stable in shape.
 
 ## Setup
 
 ```sh
-# Early access: install the tarball from the bundle (NOT the bare dir — a
-# `npm i ./sdk/bounded-sh` dir install symlinks without its deps and fails at
-# runtime with "Cannot find package '@solana/web3.js'").
-npm i ./sdk/bounded-sh.tgz   # one install — both entrypoints come from this package
-# At GA this becomes:  npm i bounded-sh
+npm i @bounded-sh/client      # browser / React Native
+npm i @bounded-sh/server      # Node / server (keypair client)
 ```
 
 ```ts
 // client (browser / RN)
-import { init, login, get, set, subscribe } from "bounded-sh";
+import { init, login, get, set, subscribe } from "@bounded-sh/client";
 await init({ appId: "<appId>" });    // defaults to email login; see auth.md
 await login();                       // inline email-code modal (no popup, no redirect)
 
 // server
-import { createWalletClient } from "bounded-sh/server";
+import { createWalletClient } from "@bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
@@ -145,7 +143,7 @@ operation the server resolves atomically when the write commits. Two are
 exported (staging-verified):
 
 ```ts
-import { set, increment, serverTimestamp } from "bounded-sh";
+import { set, increment, serverTimestamp } from "@bounded-sh/client";
 
 await set("counters/likes", { n: increment(1) });           // atomic server-side +1
 await set("scores/p1",      { points: increment(-5) });     // negative = decrement
@@ -169,7 +167,7 @@ would breach a `rollingSum`/`bound` cap is rejected (409) like any other write.
 
 ## Subscribe (live) — `subscribe`
 
-`bounded-sh` only. Every collection is live; `subscribe` streams a single
+`@bounded-sh/client` only. Every collection is live; `subscribe` streams a single
 document or a filtered collection and calls `onData` on every change. It returns
 an unsubscribe function.
 
@@ -225,7 +223,7 @@ and proven at deploy — see [queries.md](queries.md).
 ## Collaborators — managed via the CLI (not the SDK)
 
 Collaborators (who may deploy/update an app's policy) are a **control-plane**
-concern, managed with the **CLI**, not the data-plane `bounded-sh` SDK — the SDK
+concern, managed with the **CLI**, not the data-plane `@bounded-sh` SDK — the SDK
 talks to the runtime (realtime worker), not the developer API where app access
 lives. Use:
 
@@ -243,7 +241,7 @@ to `admin`, wallet shares to `policy`. Validated working e2e on staging
 
 ```ts
 import { login, logout, getCurrentUser, useAuth,
-         sendEmailOtp, verifyEmailOtp, signInAnonymously } from "bounded-sh";
+         sendEmailOtp, verifyEmailOtp, signInAnonymously } from "@bounded-sh/client";
 
 await login();                       // default: inline email-code modal (no popup/redirect)
 const user = getCurrentUser();       // { id, address: string | null, email: string | null } | null
@@ -278,7 +276,7 @@ the **only** `@user.*` variable allowed inside `onchain:true` collections); and
 `@user.email` is the verified email. Use `@user.id` for ownership/membership.
 Full flow, providers, and embedded wallets: [auth.md](auth.md).
 
-## `bounded-sh/server` — `createWalletClient`
+## `@bounded-sh/server` — `createWalletClient`
 
 > **Requires Node ≥ 18** (declared in the package's `engines`). The server SDK
 > pulls in ESM-only transitive deps (e.g. via `@solana/web3.js` →
@@ -292,7 +290,7 @@ browser auth. Each client has its own session — no global state.
 There are two server setup shapes; both work:
 
 ```ts
-import { init, createWalletClient } from "bounded-sh/server";
+import { init, createWalletClient } from "@bounded-sh/server";
 
 // 1) init({appId}) once, then create keypair-signed clients against that app.
 //    init pins the appId/endpoints; createWalletClient adds the signer.
@@ -314,7 +312,7 @@ await stop();
 
 ```ts
 // 2) ESM import works identically (engines >=18 guarantees both forms load):
-const { init, createWalletClient } = await import("bounded-sh/server");
+const { init, createWalletClient } = await import("@bounded-sh/server");
 ```
 
 The wallet client (`vault` above) exposes `get`, `getMany`, `set`, `setMany`, `setFile`,
@@ -332,13 +330,13 @@ sign as the CLI identity by reading that key. Server tasks:
 
 ### Verifying webhooks — `verifyWebhook`
 
-`bounded-sh/server` also exports `verifyWebhook` for inbound mutation webhooks.
+`@bounded-sh/server` also exports `verifyWebhook` for inbound mutation webhooks.
 It fetches + caches Bounded's Ed25519 public key (from the hosted `/.well-known`
 keys endpoint), checks the signature over the raw body, and enforces timestamp
 skew — returning the typed payload or throwing `WebhookVerificationError`.
 
 ```ts
-import { verifyWebhook, WebhookVerificationError } from "bounded-sh/server";
+import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
 
 // rawBody is the unparsed request body string; headers is the request headers.
 const event = await verifyWebhook(rawBody, headers);
@@ -356,12 +354,12 @@ only pass `keysUrl` for a custom worker. Declaring webhooks:
 ### Invoking a function — `functions.invoke`
 
 Use the first-class `functions.invoke(name, args)` helper — exported from both
-`bounded-sh` and `bounded-sh/server`. It attaches the caller's session token
+`bounded-sh` and `@bounded-sh/server`. It attaches the caller's session token
 automatically (the same token the data plane sends), so the dispatcher verifies
 your identity and evaluates the function's `auth` policy rule before it runs:
 
 ```ts
-import { functions } from "bounded-sh"; // or "bounded-sh/server"
+import { functions } from "@bounded-sh/client"; // or "bounded-sh/server"
 
 const res = await functions.invoke("syncStripe", { customerId });
 // → the function's JSON return value.

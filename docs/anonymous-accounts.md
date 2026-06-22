@@ -44,7 +44,7 @@ Without `auth.anonymous: true`, `signInAnonymously()` is **refused by the issuer
 ## 1. Anonymous sign-in (the guest)
 
 ```ts
-import { init, signInAnonymously, getCurrentUser } from 'bounded-sh'
+import { init, signInAnonymously, getCurrentUser } from '@bounded-sh/client'
 
 await init({ appId: '<APP_ID>' })
 const me = await signInAnonymously()   // generates + persists a keypair, mints a guest session
@@ -81,7 +81,7 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 Send a code, then `linkEmail` — Firebase `linkWithCredential` parity:
 
 ```ts
-import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from 'bounded-sh'
+import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from '@bounded-sh/client'
 
 await signInAnonymously()                 // user.isAnonymous === true
 // ...user does stuff, owns data keyed by @user.id...

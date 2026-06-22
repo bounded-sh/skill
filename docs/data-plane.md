@@ -214,13 +214,13 @@ idempotency comes from your ids, not from overwrites.
 
 ## SDK write path
 
-The same atomic semantics apply through the SDKs. `bounded-sh` writes from a
-browser (user-signed, with live subscriptions); `bounded-sh/server` writes from a
+The same atomic semantics apply through the SDKs. `@bounded-sh/client` writes from a
+browser (user-signed, with live subscriptions); `@bounded-sh/server` writes from a
 server (keypair-signed). A batch is `setMany([{ path, document }, ...])`; a
 guarded batch uses `getAfter()` in the rule exactly as above.
 
 ```ts
-import { setMany } from "bounded-sh";   // or `vault.setMany` from bounded-sh/server
+import { setMany } from "@bounded-sh/client";   // or `vault.setMany` from @bounded-sh/server
 await setMany([
   { path: "accounts/alice", document: { balance: 50 } },
   { path: "accounts/bob",   document: { balance: 150 } },

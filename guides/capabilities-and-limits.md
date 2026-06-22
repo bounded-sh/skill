@@ -20,8 +20,8 @@ promising a user something Bounded can't deliver.
 
 | Limit | Use instead |
 |---|---|
-| **No native iOS/Android SDK** | Ship to phones with **React Native** + `bounded-sh` ([building-for-react-native.md](building-for-react-native.md)). |
-| **No heavy/long-running or native-binding compute** | Functions run on Cloudflare Workers (V8 isolates): great for API calls + transforms + SDK writes, not for multi-minute jobs or native-binding npm. For in-boundary logic prefer policy **hooks**; for outbound integration use **Functions** ([functions.md](../docs/functions.md)) or **webhooks** + your own `bounded-sh/server` ([../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md), [building-a-backend.md](building-a-backend.md)). |
+| **No native iOS/Android SDK** | Ship to phones with **React Native** + `@bounded-sh/client` ([building-for-react-native.md](building-for-react-native.md)). |
+| **No heavy/long-running or native-binding compute** | Functions run on Cloudflare Workers (V8 isolates): great for API calls + transforms + SDK writes, not for multi-minute jobs or native-binding npm. For in-boundary logic prefer policy **hooks**; for outbound integration use **Functions** ([functions.md](../docs/functions.md)) or **webhooks** + your own `@bounded-sh/server` ([../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md), [building-a-backend.md](building-a-backend.md)). |
 | **No `@constants` or built-in roles in rules** | Express "admin" via a `get()`-read role or an address literal; pass deploy-time values with the CLI `--constants` flag. |
 | **No array/object fields; no ternary; `/` reserved** | Model lists as sub-collections; branch with `(c && A) \|\| (!c && B)`; use `//` for integer division ([../docs/policy-reference.md](../docs/policy-reference.md)). |
 
@@ -49,14 +49,15 @@ yet wired in the CLI flow. Offchain (realtime) apps deploy policy updates with
 `bounded deploy` directly. Plan onchain policy changes as a human-signed step
 until this lands.
 
-## SDK status: beta, not published
+## SDK status: beta
 
-The SDK ships as a **single** npm package, `bounded-sh`, with two subpath exports
-(`bounded-sh` for the browser/RN client, `bounded-sh/server` for the keypair
-client + `verifyWebhook`) — one install, like `convex` or `@supabase/supabase-js`.
-It is **not yet on npm**. The operation surface in
-[../docs/sdk-reference.md](../docs/sdk-reference.md) is exported from source and
-stable in shape, but treat versions/install as pre-release.
+The SDK ships as **two** npm packages: `@bounded-sh/client` for the browser/RN
+client, and `@bounded-sh/server` for the keypair client + `verifyWebhook` (the
+shared `@bounded-sh/core` comes in transitively). Both are published on npm —
+`npm i @bounded-sh/client` for a frontend, `npm i @bounded-sh/server` for a
+backend. The operation surface in
+[../docs/sdk-reference.md](../docs/sdk-reference.md) is stable in shape; Bounded
+is in beta, so treat versions as pre-release.
 
 ## What is NOT proven
 

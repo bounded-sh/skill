@@ -1,19 +1,17 @@
 # Building a Web App
 
-A React frontend on a Bounded backend with `bounded-sh`: install, sign
+A React frontend on a Bounded backend with `@bounded-sh/client`: install, sign
 users in with email (the default — inline OTP, no wallet needed; Phantom is the
 opt-in Solana wallet), and read / write / subscribe with the deployed policy
 enforcing every operation. The backend is your `policy.json` — deploy it first
 ([../docs/policy-generation-guide.md](../docs/policy-generation-guide.md)).
 
-> Beta: `bounded-sh` is not yet on npm. The API shape below is stable.
+> Beta: Bounded is in beta; the API shape below is stable.
 
 ## Install
 
 ```bash
-# Early access: install the bundle's local tarball (a bare `npm i ./sdk/bounded-sh`
-# dir install skips its deps and fails at runtime). At GA: npm i bounded-sh
-npm install ./sdk/bounded-sh.tgz buffer
+npm i @bounded-sh/client buffer
 ```
 
 `buffer` is a required browser polyfill for the Solana libraries the SDK pulls
@@ -23,7 +21,7 @@ assigned before any SDK module evaluates and the wallet adapters need Node
 globals shimmed.
 
 ```ts
-// must run before any bounded-sh import evaluates
+// must run before any @bounded-sh/client import evaluates
 import { Buffer } from "buffer";
 globalThis.Buffer = Buffer;
 ```
@@ -34,7 +32,7 @@ interop resolves.
 ## Initialize (once, at startup)
 
 ```ts
-import { init } from "bounded-sh";
+import { init } from "@bounded-sh/client";
 
 await init({
   appId: "<appId>",          // from `bounded deploy --create`
@@ -61,7 +59,7 @@ an authenticated `user` is `{ id, address, email }`:
 Full auth model: [../docs/auth.md](../docs/auth.md).
 
 ```tsx
-import { useAuth } from "bounded-sh";
+import { useAuth } from "@bounded-sh/client";
 
 function SignIn() {
   const { user, login, logout, loading } = useAuth();
@@ -79,7 +77,7 @@ Reads obey each collection's `read` rule; writes are checked against rules and
 invariants atomically.
 
 ```ts
-import { get, set, setMany } from "bounded-sh";
+import { get, set, setMany } from "@bounded-sh/client";
 
 // one document, or a filtered collection
 const note   = await get("notes/n1");
@@ -108,7 +106,7 @@ Every collection is live. `subscribe` calls `onData` on every change and returns
 an unsubscribe function — wire it to a React effect.
 
 ```tsx
-import { subscribe } from "bounded-sh";
+import { subscribe } from "@bounded-sh/client";
 import { useEffect, useState } from "react";
 
 function Notes() {
@@ -132,7 +130,7 @@ read rule is enforced per delivered row, so live UIs can't leak.
 ## Shipping to mobile
 
 There is **no native iOS/Android SDK**. To ship to phones, use React Native with
-the same `bounded-sh` package — see
+the same `@bounded-sh/client` package — see
 [building-for-react-native.md](building-for-react-native.md).
 
 ## Related

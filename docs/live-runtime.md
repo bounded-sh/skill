@@ -611,7 +611,7 @@ an intent** to influence the room. Both are first-class helpers under the
 path for you.
 
 ```ts
-import { live } from "bounded-sh";
+import { live } from "@bounded-sh/client";
 
 const roomPath = `rooms/r1`;                 // the session collection + room id
 
@@ -654,7 +654,7 @@ Status/liveness is still a raw GET (no helper yet):
 The per-client view read rule is what makes the subscribe line safe by
 construction: it can only ever resolve to *your* view, so you cannot subscribe
 your way into another client's hidden state. (The SDK surface for this primitive
-ships today in `bounded-sh`: `live.intent` for sending and
+ships today in `@bounded-sh/client`: `live.intent` for sending and
 `live.subscribeView` as the typed per-view subscribe helper — use them, as in the
 example above; no raw `subscribe` + `fetch` needed.)
 

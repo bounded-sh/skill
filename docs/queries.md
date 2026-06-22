@@ -43,7 +43,7 @@ operators:
 ```ts
 // SDK — get(path, { filter, sort, limit, cursor }) on a collection path.
 // Deterministic (no AI). Returns { data, nextCursor } when limited/paged.
-import { get } from "bounded-sh";              // or "bounded-sh/server"
+import { get } from "@bounded-sh/client";              // or "bounded-sh/server"
 const open = await get("orders", {
   filter: {
     $and: [
@@ -103,7 +103,7 @@ Two SDK shapes:
 narrowed by a structured `filter` (same shape as `get`/`queryAggregate`):
 
 ```ts
-import { count, aggregate } from "bounded-sh";
+import { count, aggregate } from "@bounded-sh/client";
 const open  = await count("orders", { filter: { status: "open" } });           // { value: 4 }
 const spend = await aggregate("orders", "sum", { field: "total" });            // { value: 920 }
 const big   = await aggregate("orders", "sum", { field: "total", filter: { total: { $gt: 100 } } });
@@ -117,7 +117,7 @@ On Bounded these run as the deterministic server aggregation (the same engine as
 aggregation server-side and returns one row per group:
 
 ```ts
-import { queryAggregate } from "bounded-sh";
+import { queryAggregate } from "@bounded-sh/client";
 const byStatus = await queryAggregate("orders", {
   groupBy: ["status"], count: true, sum: ["total"], avg: ["total"],
 }, { filter: { total: { $gte: 100 } } });        // optional pre-aggregation filter
