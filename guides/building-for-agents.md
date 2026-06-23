@@ -34,7 +34,7 @@ bounded init                                            # or write policy.json d
 bounded deploy ./policy.json --create --name agent-ledger   # creates app, prints <appId>
 bounded verify ./policy.json --app-id <appId>               # PROVED / DISPROVED
 
-# 4. Keep the dashboard up while you build, then use it
+# 4. The installer starts the dashboard daemon; open the web UI while you build
 bounded dashboard
 bounded data set --app-id <appId> --path agents/<agent-id>/spend/s1 --data '{"amount":60}'
 bounded data get --app-id <appId> --path agents/<agent-id>/spend

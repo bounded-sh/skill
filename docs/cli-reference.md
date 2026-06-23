@@ -99,7 +99,11 @@ bounded deploy ./policy.json --app-id <appId>           # redeploy
 
 ## Local dashboard
 
-Run this beside the normal CLI loop:
+The installer starts the dashboard daemon on `http://127.0.0.1:8011` by
+default. Set `BOUNDED_DASHBOARD=0` during install only when you do not want a
+background local daemon.
+
+Open the full web UI beside the normal CLI loop:
 
 ```bash
 bounded dashboard

@@ -384,6 +384,9 @@ bounded data search    --app-id <id> --path notes  --query "shipping"
 # Install the CLI (Bounded is in beta):
 curl -fsSL https://get.bounded.sh/install.sh | sh   # installs `bounded` to your PATH
 ```
+The installer also starts the loopback-only dashboard daemon on
+`http://127.0.0.1:8011` by default; set `BOUNDED_DASHBOARD=0` only when a
+background local daemon is unwanted.
 
 **No login step.** The first `bounded` command generates an ed25519 keypair in
 `~/.bounded/credentials` (base58 `privateKey`; or supply `BOUNDED_PRIVATE_KEY`) —
@@ -397,7 +400,7 @@ bounded init                            # scaffold policy.json (an append-only c
 # edit policy.json — see docs/policy-generation-guide.md
 bounded deploy ./policy.json --create --name my-app   # creates app, prints <appId>
 bounded verify ./policy.json --app-id <appId>         # PROVED / DISPROVED + counterexamples
-bounded dashboard                                      # keep the local dashboard running while you build
+bounded dashboard                                      # open the full dashboard web UI while you build
 bounded data set --app-id <appId> --path agents/<your-id>/spend/s1 --data '{"amountUsd":60}'
 bounded data get --app-id <appId> --path agents/<your-id>/spend
 ```
