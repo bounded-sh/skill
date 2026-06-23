@@ -537,29 +537,31 @@ it as an intentional public-read advisory, not a failure).
 
 ## Reconnection & presence (drops, rejoins, leaves)
 
-**Reconnect just works — players are keyed by their stable address.** A client that
-drops (tab close, network blip) and comes back simply calls `subscribeView` again with
-the same identity; the stream resumes mid-match. Validated by dogfooding: a player
+**Reconnect just works — players are keyed by their stable user id/principal.** A
+client that drops (tab close, network blip) and comes back simply calls
+`subscribeView` again with the same identity; the stream resumes mid-match.
+Validated by dogfooding: a player
 dropped its view for 6s and reconnected into the **same slot**, fighter + HP intact,
 with the match having advanced server-side the entire time (the server is authoritative
 — it never pauses for one client). No re-join is required to resume.
 
-**Guard `join` by address, or a reconnecting re-join duplicates the player.** If your
-reconnect flow re-sends `join`, the tick must treat a join from an address already in
-the room as idempotent:
+**Guard `join` by principal, or a reconnecting re-join duplicates the player.** If
+your reconnect flow re-sends `join`, the tick must treat a join from a principal
+already in the room as idempotent:
 
 ```js
 if (intent.type === "join") {
-  if (!state.players[address]) {                 // new player → assign a slot
-    state.players[address] = freshPlayer(...);
+  const playerId = address;                      // intent principal/user id
+  if (!state.players[playerId]) {
+    state.players[playerId] = freshPlayer(...);  // new player → assign a slot
   } else {
-    state.players[address].name = intent.name;   // returning player → keep slot/HP
+    state.players[playerId].name = intent.name;  // returning player → keep slot/HP
   }
 }
 ```
 
-Without the `if (!state.players[address])` guard, a re-join grabs a second slot (or
-clobbers live state) — a self-inflicted bug, not a runtime one.
+Without the `if (!state.players[playerId])` guard, a re-join grabs a second slot
+(or clobbers live state) — a self-inflicted bug, not a runtime one.
 
 **The tick gets a live presence set — drop ghosts with it.** `tick` receives an
 optional **4th argument** `ctx` carrying the principals currently connected to the
@@ -616,12 +618,30 @@ sets `X-Room-Id` itself. **Clients never set `X-Room-Id`.**
 
 | Route | Addressed by | Auth | Returns |
 |---|---|---|---|
-| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | `{ available, started, running, tick, module }` |
+| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | `{ available, started, running, tick, module, etag, stopReason, generation, connections, lastTickAt, nextAlarmAt }` |
 | `POST /live/intent` | `body.path` | **required** | `{ ok: true }` |
 
 Drive intents from anywhere: the browser SDK (`bounded.live.intent(roomPath, intent)`),
 a server with `@bounded-sh/server`, or the **CLI** — `bounded live intent <roomPath>
 --app-id <id> --intent '<json>'` (great for cold-starting a room, scripts, and tests).
+Use `bounded live status <roomPath> --app-id <id>` or `live.status(roomPath)` when
+debugging liveness: parked rooms report `running:false` plus `stopReason`,
+`generation`, loaded `etag`, open `connections`, and alarm/tick timestamps.
+`live.intent` and `live.subscribeView` re-arm a parked room; a terminal stopped
+room (`lifetime`/`manual`) cold-starts a fresh generation on the next intent.
+
+### Cold starts and keep-warm
+
+A dormant live room has to route to the room DO, load the live facet, start the
+module, and deliver the first view. That first view can take a couple of seconds;
+show a real "starting arena" / "joining room" state instead of treating it as a
+broken subscription. Once warm, the view stream is paced at the live tick cadence.
+
+There is not yet a first-class `session.live.keepWarm` or scheduled-hook-to-live
+bridge. If you need public arenas to stay hot, run an external pinger that sends an
+idempotent low-cost live intent (for example `{ "type": "ping" }`) before the room
+goes idle. Do not use a client as the only warmer for shared public rooms; make the
+ping non-player/system-owned so it cannot create a sticky player-specific view.
 
 ## SDK client — worked example
 
@@ -668,9 +688,10 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 > `authMethod: 'guest'` and call `login()` — a device-local keypair signs in with
 > no wallet and no signup.
 
-Status/liveness is still a raw GET (no helper yet):
-`GET {realtime}/live/status?path=<collection>/<roomId>` →
-`{ available, started, running, tick, module }`.
+Status/liveness is first-class in the SDK and CLI:
+`await live.status(roomPath)` or `bounded live status <roomPath> --app-id <id>`
+returns `{ available, started, running, tick, module, etag, stopReason,
+generation, connections, lastTickAt, nextAlarmAt }`.
 
 The per-client view read rule is what makes the subscribe line safe by
 construction: it can only ever resolve to *your* view, so you cannot subscribe

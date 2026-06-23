@@ -72,13 +72,15 @@ Discrete actions (attack, ability) are events — send them on the keypress, alw
 
 If you render the latest snapshot directly, a late snapshot freezes the entity then
 rubber-bands when it arrives (a visible snap). Instead, buffer timestamped snapshots
-and render ~100ms **in the past**, lerping between the two surrounding ones. The
-buffer absorbs jitter and delivery gaps.
+and render roughly **100-180ms in the past**, lerping between the two surrounding
+ones. Use ~100ms for same-region/light rooms; use ~150-180ms when you measure p95
+delivery gaps near 100ms or users are far from the room's Durable Object. The buffer
+absorbs jitter and delivery gaps.
 
 ```ts
 // on each view: f.buf.push({ t: performance.now()/1000, x: pv.x, z: pv.z }) (keep ~20)
 // each frame:
-const target = nowS - 0.10;                     // 100ms interpolation delay
+const target = nowS - 0.16;                     // 100-180ms interpolation delay
 let i = f.buf.findIndex((b, k) => f.buf[k+1] && b.t <= target && f.buf[k+1].t >= target);
 if (i >= 0) {
   const a = f.buf[i], b = f.buf[i+1], u = (target - a.t) / ((b.t - a.t) || 1);
@@ -149,7 +151,7 @@ for a public-read room (anyone logged in could inject intents). Declare
 
 - [ ] Inputs go through `live.intent` (rides the WS) — no per-action HTTP.
 - [ ] Input sent only on change + a small throttle (not every frame).
-- [ ] Remote entities interpolated from a snapshot buffer (~100ms delay).
+- [ ] Remote entities interpolated from a snapshot buffer (~100-180ms delay).
 - [ ] Local player predicted from input, reconciled to the server.
 - [ ] Continuous fields interpolated; discrete fields stepped.
 - [ ] `intentRule` set if "can see" ≠ "can act" for your room.
