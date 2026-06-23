@@ -213,7 +213,7 @@ for the *next* question.
 | `onchain: true`, `--protocol` (`realtime_devnet`/`realtime_mainnet`), `--skip-preflight`, client-signed tx, `0xbc4`, devnet/mainnet | [docs/onchain.md](docs/onchain.md) |
 | live game *feel*: input cadence, interpolation, prediction, `session.intentRule` | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
 | `init`/`tick`/`views` (native live functions) | [docs/live-runtime.md](docs/live-runtime.md) |
-| `bounded live deploy`, `bounded live intent` (drive/arm a room from the CLI), `GET /live/status`, `POST /live/intent`, `live.intent`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
+| `bounded live deploy`, `bounded live intent` (drive/arm a room from the CLI), `bounded live status`, `GET /live/status`, `POST /live/intent`, `live.intent`, `live.status`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
 | plans (`free`/`pro`/`enterprise`), `aiBucketUsdCents`, AI credit bucket, `aiCreditGrantedUsd`, overrides, Stripe `/billing/checkout`/`/billing/portal`, x402 `/billing/x402/intent`/`/billing/x402/settle`, `admin.bounded.page` / `/admin/account` | [docs/billing.md](docs/billing.md) |
 | usage snapshot, `alerts[]`, `dimension`, `projectedUsage`, `datastoreWriteUnits`, `datastoreReadUnits`, `r2ClassAOps`, `r2ClassBOps`, `computeSeconds`, infra spend cap | [docs/billing.md](docs/billing.md#checking-usage-and-near-limit-status) |
 | `tier` (`durable`/`checkpointed`/`ephemeral`) | [docs/policy-reference.md](docs/policy-reference.md) · [docs/invariants.md](docs/invariants.md) |
@@ -349,8 +349,8 @@ export default async function (args, ctx) {
 ### Live subscription — [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe)
 
 ```ts
-import { subscribe } from "@bounded-sh/client";
-const stop = await subscribe("rooms/r1/view/" + myId, { onData: render });
+import { live } from "@bounded-sh/client";
+const stop = await live.subscribeView("rooms/r1", { onData: render });
 ```
 
 ### Native live runtime (3 pure fns, no deploy) — [docs/live-runtime.md](docs/live-runtime.md)
@@ -367,7 +367,9 @@ editor, whiteboard, live dashboard). Pong below is one example.
 ```
 Upload + drive: `bounded live deploy pong.live.ts --app-id <id>`, then drive a room
 with `bounded live intent rooms/r1 --app-id <id> --intent '{...}'` (CLI) — or in-app
-`subscribe("rooms/r1/view/"+userId,{onData:render})` + `POST /live/intent {path,intent}`.
+`live.subscribeView("rooms/r1",{onData:render})` + `live.intent("rooms/r1", intent)`.
+Debug liveness with `bounded live status rooms/r1 --app-id <id>` or
+`live.status("rooms/r1")`.
 
 ### Email share — [docs/auth.md](docs/auth.md#linking--teams)
 
