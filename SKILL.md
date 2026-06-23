@@ -5,10 +5,10 @@ description: >-
   realtime backend an agent builds from a description. Covers: generating a
   policy.json (collections, field types, auth rules, and provable invariants —
   spending caps, conservation, tenant isolation), running `bounded verify` for
-  SMT proof reports with counterexamples, deploying through the fail-closed proof
-  gate, and reading/writing data via `bounded data` or the `@bounded-sh` SDK
-  packages (`@bounded-sh/client` for web/React Native, `@bounded-sh/server`
-  for server). This SKILL.md is a ROUTER:
+  SMT proof reports with counterexamples, deploying through the validation/compile
+  gate after proof review, and reading/writing data via `bounded data` or the
+  `@bounded-sh` SDK packages (`@bounded-sh/client` for web/React Native,
+  `@bounded-sh/server` for server). This SKILL.md is a ROUTER:
   it maps your intent to the one doc that answers it. Triggers: "bounded",
   "bounded.sh", "bounded CLI", "bounded verify", "bounded deploy", "policy.json",
   "provable backend", "formally verified database", "Convex alternative",
@@ -52,22 +52,26 @@ description: >-
 Bounded (bounded.sh) is a **provable realtime backend an agent builds from a
 description**. You write one JSON policy — collections, field types, auth rules,
 and **invariants** (the non-negotiables: spending caps, conserved totals, tenant
-isolation) — and a Z3-based prover checks every declared constraint at deploy
-time, returning concrete counterexamples on failure. At runtime a single-writer
-cell per app enforces those constraints atomically over a realtime Durable
-Object. Everything is fail-closed: a constraint-breaking write is a `409`, an
-unprovable policy never deploys, nothing partial is ever applied.
+isolation) — then run `bounded verify` to have a Z3-based prover check declared
+constraints and return concrete counterexamples on failure. `bounded deploy`
+validates, compiles, and pushes the policy; it does **not** rerun the prover, so
+run `bounded verify` before deploying and treat DISPROVED findings as work to fix
+or explicitly accept. At runtime a single-writer cell per app enforces rules and
+invariants atomically over a realtime Durable Object. Everything on the data
+plane is fail-closed: a constraint-breaking write is a `409`, invalid policies do
+not deploy, and nothing partial is ever applied.
 
 ## The loop
 
 ```
 describe app → generate policy.json → bounded verify → read counterexamples →
-fix → bounded verify (clean) → bounded deploy (same gate) → use via SDK / CLI
+fix → bounded verify (clean) → bounded deploy → use via SDK / CLI
 ```
 
 `bounded verify` does not say "tests passed" — it proves a property over *all*
 inputs and, on failure, hands you the exact assignment that breaks your policy.
-That is the heart of Bounded.
+That is the heart of Bounded. `bounded deploy` is intentionally separate:
+validation/compile/push, not a second proof run.
 
 ## Build the real thing — not a stub
 
@@ -231,7 +235,7 @@ for the *next* question.
 | `403` | rule denied the caller/payload — fix the request — [docs/data-plane.md](docs/data-plane.md) · [docs/auth.md](docs/auth.md) |
 | `409 append_only` | capped collections are append-only logs — [docs/data-plane.md](docs/data-plane.md) |
 | `429` + `dimension`/`projectedUsage` | plan or spend cap would be exceeded; explain the exact axis and upgrade/top-up/reduce usage — [docs/billing.md](docs/billing.md#checking-usage-and-near-limit-status) |
-| `deploy fails` / `DISPROVED` + counterexample | unprovable policy; read the breaking assignment — [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
+| `DISPROVED` + counterexample | proof found a breaking assignment; fix the policy or explicitly accept the risk before deploy — [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
 | Validator rejects (`@constants`, `/` division, `@data` in create…) | static errors + fixes — [docs/policy-generation-guide.md](docs/policy-generation-guide.md#common-mistakes-caught-by-the-validator-or-the-prover) |
 | `503` from a function invoke | Functions not configured on the platform — [docs/functions.md](docs/functions.md) |
 | `403`/`404` from a function invoke | `auth` rule denied / unknown function — [docs/functions.md](docs/functions.md) |
@@ -427,13 +431,14 @@ bounded data get --app-id <appId> --path agents/<your-id>/spend
   - **`@user.isAnonymous`** — strict boolean; `true` only for guest/anonymous
     tokens. Gate with `== false` (no unary `!` on special vars). Also offchain-only.
 - **Invariants answer *what must hold across every transaction*** — caps,
-  conservation, tenancy. Proven at deploy, enforced atomically at runtime
+  conservation, tenancy. Proven with `bounded verify`, enforced atomically at runtime
   (`409` + the invariant's declared name). They bind **every** write path:
   hooks, ticks, schedules, batches, your own migrations.
 - **Proofs are over all inputs.** `PROVED` ≠ "tests passed"; `DISPROVED` hands
   you the breaking assignment.
-- **Everything fails closed.** Unprovable policies don't deploy; runtime checks
-  reject rather than skip.
+- **Runtime checks fail closed.** `bounded deploy` rejects schema/compile errors;
+  `bounded verify` surfaces proof failures before deploy; runtime rule/invariant
+  checks reject rather than skip.
 
 Failure semantics are in the **(c) By error / status** table above and in full in
 [docs/data-plane.md](docs/data-plane.md).

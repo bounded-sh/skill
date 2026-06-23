@@ -1,9 +1,11 @@
 # `bounded verify` — Proof Reports & Counterexamples
 
 `bounded verify` compiles the policy into proof obligations and discharges
-them with an SMT solver (Z3). It is the local fast loop; `bounded deploy`
-runs the same gate server-side and **fails closed** — an unprovable policy
-never replaces the previous good one.
+them with an SMT solver (Z3). It is the proof loop you run before deploy.
+`bounded deploy` is separate: it validates, compiles, and pushes the policy,
+but it does **not** rerun the prover or block on DISPROVED proof findings.
+Treat DISPROVED output as work to fix, or as an explicit human acceptance,
+before shipping.
 
 ## Verdicts
 
@@ -12,13 +14,13 @@ never replaces the previous good one.
   integrity hash) is kept for the audit trail.
 - **DISPROVED** — a concrete counterexample exists, and the report gives it
   to you: the exact variable assignments that break the property.
-- **FAILS CLOSED / UNSUPPORTED** — the policy claims something the runtime
-  cannot enforce (e.g. an unsupported onchain invariant, or a `bound` invariant —
-  the proof engine does not support `bound`). Deploy is rejected rather than
-  silently weakened. **Exception:** a **bare-string attestation** is `UNSUPPORTED`
-  but **non-blocking** — surfaced as a "NOT proven (advisory) — bind to prove"
-  TODO, never counted as proven, and it does not fail the gate (see the
-  attestation row below).
+- **UNSUPPORTED / NOT PROVEN** — the proof engine cannot prove that obligation.
+  It never counts as PROVED. If the unsupported construct is also an invalid
+  runtime declaration, static deploy validation rejects it; otherwise it is a
+  proof finding you must fix or explicitly accept. A **bare-string
+  attestation** is always non-blocking advisory: surfaced as "NOT proven
+  (advisory) — bind to prove", never counted as proven (see the attestation row
+  below).
 
 A clean run:
 
@@ -95,11 +97,11 @@ counterexample is showing you a write that production would have accepted.
 | `implication` / `equivalence` | Relations between rules (e.g. everything update admits, create admits) — feeds dead-rule and auth-consistency analysis |
 | `tautology` / `contradiction` | Always-true rules (no protection) and always-false rules (dead code), with witnesses |
 | `read rule uses no getAfter()` | Read rules see committed state only |
-| `ownership field exists in schema` | A rule referencing a missing field fails the gate, not the runtime |
+| `ownership field exists in schema` | A rule referencing a missing field fails static validation, not the runtime |
 | `<action> rule runtime safety` (advisory) | Division/exponent expressions that can trap (divide by zero) get a suggested guard; advisory, non-blocking |
 
 **Invariant obligations** (the `transaction postcondition <name> ...` checks;
-failing any blocks deploy):
+failing any is a red-line proof finding to fix before deploy):
 
 | Obligation | Proves |
 |---|---|
@@ -108,7 +110,7 @@ failing any blocks deploy):
 | `... onchain epoch-bucket conservatism` | (Onchain rollingSum only) the bucketed window sum **dominates** the exact event sum, so accepting against the bucket sum implies the exact rolling sum respects the limit — the approximation can only over-enforce, never under-enforce |
 | `... tenant tag binding` | If the generated runtime postcondition accepts, the tag field equals the declared path variable (modeled with an explicit `runtimeAccepts` variable, not a degenerate tautology) |
 | `... tenant edge preservation` | An accepted reference write implies source and target tenant tags match |
-| `tenant isolation relationship edge coverage` | (Opt-in) every declared relationship edge is covered by source tag + target tag + matching `tenantEdge` invariants, or deploy fails |
+| `tenant isolation relationship edge coverage` | (Opt-in) every declared relationship edge is covered by source tag + target tag + matching `tenantEdge` invariants, or verification fails |
 | `tenant isolation relationship depth <= k` / `declared graph induction` | (Opt-in) bounded-depth isolation (acyclic within k ≤ 10 hops) or inductive isolation over any finite declared path, cycles included |
 | `combined declared DSL formal claim` | One policy-level conjunctive check (`__policy__/formalClaims`) composing every generated obligation into a single verdict |
 | `attestation: <claim> — <sub-check>` | A GLOBAL top-level [`attestations`](invariants.md#attestations--global-policy-wide-claims) entry, under the `__policy__/attestations` scope. The human `claim` is echoed verbatim, followed by the discharged obligation (a `roleGatedRead` exposure sweep, `authorityClosure` step, or rolling-limit algebra). A **bare-string** claim with no bound `kind` shows as `UNSUPPORTED` (non-blocking advisory, "NOT proven — bind to prove") — never counted as proven, never blocks deploy |
@@ -117,9 +119,10 @@ failing any blocks deploy):
 
 | Obligation | Proves |
 |---|---|
-| `function <name>: only admin can call` | The function's `auth` rule **implies** the admin predicate — i.e. every caller who can invoke it is an admin (`get(/admins/@user.id) != null` where the policy declares an `admins/$userId` role scope, else `hasRole("admin")`). An over-permissive hatch (`auth: "true"` or `"@user.id != null"`) is **disproved with a non-admin counterexample** and fails the gate; an `auth: "false"` proves vacuously (unreachable). This catches a function that quietly grants more than admin-only access at **deploy**, not runtime. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
+| `function <name>: caller-scoped invocation` | The function has no `actAs`, so `ctx.bounded` writes as the verified caller. Public/authenticated caller gates are allowed; writes still run through the caller's normal rules and every invariant. This is surfaced as a report entry, not a deploy-blocking admin proof. |
+| `function <name>: actAs service identity is admin-gated` | The function declares `actAs`, so its `auth` rule must **imply** the admin predicate — i.e. every caller who can invoke the service identity is an admin (`get(/admins/@user.id) != null` where the policy declares an `admins/$userId` role scope, else `hasRole("admin")`). An over-permissive hatch (`auth: "true"` or `"@user.id != null"`) is disproved with a non-admin counterexample and fails `bounded verify`. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
 
-> **Roadmap — negative/global authority.** Today the function-auth obligation proves a *lower bound* ("only admin can call"). A complementary *upper-bound* capability — "this role can do X and **nothing else**" (closure over the full action set) — is planned; it extends the authority-closure sweep so a policy can prove a role's total reach, not just gate individual rules.
+> **Roadmap — negative/global authority.** Today the function-auth obligation proves who may invoke a privileged `actAs` identity; it does not prove the function body's full write/call reach. A complementary *upper-bound* capability — "this function can write X and **nothing else**" — is planned as a capability contract.
 
 ## Worked examples
 
@@ -137,7 +140,7 @@ set amount=1    → ✗ 409 spend_cap        (100+1 = 101 > 100)
 
 The second 60 is identical to the first and still rejected — the cap is about
 the window sum, not the write. There is no payload that lands the window
-above 100: that is the property the prover discharged at deploy.
+above 100: that is the property `bounded verify` discharged.
 
 **Conserve + set-many** — `conserve(balance), name no_minting`; alice=100,
 bob=100:
@@ -175,7 +178,7 @@ drafts → engine proves or refutes with counterexamples → human decides.
 > (soundness), and **non-blocking**. So a policy whose only non-passing items are
 > literal-`false` rules or bare-string attestation TODOs **verifies (exit 0) and
 > deploys**. Reserve concern for `DISPROVED` lines that carry a **counterexample**
-> (concrete variable assignments) — those are the ones that block deploy. Don't
+> (concrete variable assignments) — those are the ones to fix before deploy. Don't
 > loop trying to "fix" an intentional `false` rule.
 
 ## Related
