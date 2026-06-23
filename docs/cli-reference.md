@@ -88,12 +88,34 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `init` | Write a starter `policy.json` (spend ledger + `spend_cap`) | `--force` overwrite |
 | `verify <policy.json>` | Run the proof engine, print the report + counterexamples | `--app-id` (or `--environment`), `--operation`, `--constants`, `--environment` |
 | `deploy <policy.json>` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` or `--create --name` or `--environment`, `--protocol`, `--constants`, `--environment` |
+| `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
 
 ```bash
 bounded init                                            # scaffold policy.json
 bounded deploy ./policy.json --create --name my-app     # create app + deploy (prints appId)
 bounded verify ./policy.json --app-id <appId>           # re-prove after edits
 bounded deploy ./policy.json --app-id <appId>           # redeploy
+```
+
+## Local dashboard
+
+Run this beside the normal CLI loop:
+
+```bash
+bounded dashboard
+```
+
+It starts a loopback-only daemon and the local web UI. The daemon holds the
+keypair and mints app-pinned sessions on demand; the browser never receives the
+private key. Use it as the default companion surface while building: inspect all
+local apps, read data through the daemon, view deployed policy/proof reports,
+invoke functions, and check dashboard-brokered invocation logs.
+
+Useful flags:
+
+```bash
+bounded dashboard --port 8008 --api-port 8011
+bounded dashboard --no-web   # daemon API only, for a separate SPA dev server
 ```
 
 > **`verify` / `verify-formal` is rate-limited** — about **5 requests per minute
@@ -176,13 +198,13 @@ realtime worker, which enforces the deployed policy atomically. Full semantics:
 
 | Command | Does | Example |
 |---|---|---|
-| `data set` | Write one document | `bounded data set --app-id <id> --path spend/a --data '{"amount":60}'` |
+| `data set` | Write one document | `bounded data set --app-id <id> --path agents/a1/spend/a --data '{"amount":60}'` |
 | `data set-many` | Atomic all-or-nothing batch (**max 100 docs/bundle**) | `bounded data set-many --app-id <id> --from-json bundle.json` |
-| `data delete` | Delete one document (runs the path's `delete` rule) | `bounded data delete --app-id <id> --path spend/a` |
-| `data get` | Read a doc, or list/filter a collection | `bounded data get --app-id <id> --path spend --limit 20` |
-| `data get-many` | Batch-read paths from a JSON array | `echo '["spend/a","spend/b"]' \| bounded data get-many --app-id <id> --from-json /dev/stdin` |
+| `data delete` | Delete one document (runs the path's `delete` rule) | `bounded data delete --app-id <id> --path agents/a1/spend/a` |
+| `data get` | Read a doc, or list/filter a collection | `bounded data get --app-id <id> --path agents/a1/spend --limit 20` |
+| `data get-many` | Batch-read paths from a JSON array | `echo '["agents/a1/spend/a","agents/a1/spend/b"]' \| bounded data get-many --app-id <id> --from-json /dev/stdin` |
 | `data query` | Run a named policy query | `bounded data query --app-id <id> --name myQuery --args '{"k":"v"}'` |
-| `data aggregate` | Grouped count/sum/avg/min/max | `bounded data aggregate --app-id <id> --path spend --group category --sum amount` |
+| `data aggregate` | Grouped count/sum/avg/min/max | `bounded data aggregate --app-id <id> --path agents/a1/spend --group category --sum amount` |
 | `data search` | Full-text search a collection | `bounded data search --app-id <id> --path notes --query "shipping"` |
 | `subscribe` | **Stream realtime changes** for a path (one JSON line per server message) | `bounded subscribe "tasks/$taskId" --app-id <id>` |
 
@@ -232,7 +254,7 @@ allowed to read.
 | `--shape '{...}'` | resolve related docs inline |
 
 ```bash
-bounded data get --app-id <id> --path spend \
+bounded data get --app-id <id> --path agents/a1/spend \
   --filter '{"amount":{"$gt":10}}' --sort amount:desc --limit 20
 ```
 
@@ -318,7 +340,10 @@ bounded functions logs   <name> --app-id <id>
 rule, `entry`, `timeout`, `secrets`) into the policy — owner/admin only. `invoke`
 attaches your session token automatically (same token as `data`) so the
 dispatcher gates the call on the `auth` rule, then prints the function's JSON (or
-the dispatcher error — `403` if the rule denies you). Full guide:
+the dispatcher error — `403` if the rule denies you). Caller-scoped functions may
+be invoked by any caller their `auth` rule admits; functions that declare
+`actAs` in policy are service-identity functions and must be admin-gated at
+verify/deploy. Full guide:
 [functions.md](functions.md).
 
 ## Related

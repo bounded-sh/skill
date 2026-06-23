@@ -124,7 +124,7 @@ batch or nothing commits. This is what makes transfers under `conserve` and
 guard-then-write composition safe.
 
 ```ts
-await set("spend/s1", { amount: 60 });
+await set("agents/a1/spend/s1", { amount: 60 });
 
 await setMany([                                            // atomic transfer
   { path: "accounts/alice", document: { balance: 50 } },
@@ -135,6 +135,10 @@ await setMany([                                            // atomic transfer
 A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
 composition, and failure codes: [data-plane.md](data-plane.md).
+
+Inside Bounded Functions, the same batch shape is available as
+`ctx.bounded.setMany([{ path, document }, ...])`; it targets the same data-plane
+transaction path and is the right API for function-assembled settlements.
 
 ### Delete — `set(path, null)`
 

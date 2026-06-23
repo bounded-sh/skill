@@ -165,6 +165,12 @@ limits, there is a non-negotiable hiding in it. Name each one as a sentence
 ("each buyer spends at most $5000/day"); step 5 turns the sentence into an
 invariant.
 
+For per-actor or per-tenant caps, make the actor/tenant a **path variable** before
+you write the invariant. A per-agent spend cap should look like
+`agents/$agentId/spend/$spendId` with `"scopeVariable": "$agentId"` and
+`update`/`delete` set to `"false"`. Do not partition on the event id
+(`$spendId`) — that gives each event its own cap and proves the wrong property.
+
 If you skip this step, the policy still compiles — it just doesn't protect
 anything. This is the #1 way a generated policy is *wrong but green*.
 

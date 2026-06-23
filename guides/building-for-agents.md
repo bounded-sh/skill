@@ -1,8 +1,8 @@
 # Building for Agents
 
-The flow when **an agent owns a backend**: no human in the loop, no auth
-ceremony, no dashboard. Generate a policy, prove it, deploy it, read and write —
-all from one keypair the agent controls.
+The flow when **an agent owns a backend**: no human auth ceremony, one keypair
+the agent controls, and a local dashboard running beside the CLI for visibility.
+Generate a policy, prove it, deploy it, inspect it, then read and write.
 
 This is what Bounded is built for: an autonomous agent that needs a real,
 provably-safe backend (a spend ledger, a task store, a multi-tenant data plane)
@@ -34,9 +34,10 @@ bounded init                                            # or write policy.json d
 bounded deploy ./policy.json --create --name agent-ledger   # creates app, prints <appId>
 bounded verify ./policy.json --app-id <appId>               # PROVED / DISPROVED
 
-# 4. Use it
-bounded data set --app-id <appId> --path spend/s1 --data '{"amount":60}'
-bounded data get --app-id <appId> --path spend
+# 4. Keep the dashboard up while you build, then use it
+bounded dashboard
+bounded data set --app-id <appId> --path agents/<agent-id>/spend/s1 --data '{"amount":60}'
+bounded data get --app-id <appId> --path agents/<agent-id>/spend
 ```
 
 > Run each agent under a **distinct** `HOME` or `BOUNDED_PRIVATE_KEY` so

@@ -101,6 +101,39 @@ the field because nothing can update at all — which is why server-authoritativ
 collections never hit this.) Note: a tenant-tag field bound by a `tenantTag`
 invariant does **not** need `!` — the invariant rebinds it on every write.
 
+## Conditional Transfer Authority
+
+Ownership-like fields (`owner`, `ownerAddress`, `holder`, or a field detected
+from rules) are protected by a deploy proof: the field may stay unchanged, or it
+may be reassigned only by its current holder. Use `transferAuthority` when a
+different atomic condition is intentionally safe, such as a listed good moving
+to a buyer only when the paired payment lands in the same `setMany`.
+
+```json
+"goods/$goodId": {
+  "fields": { "holder": "String", "forSale": "Bool", "price": "UInt" },
+  "transferAuthority": [{
+    "field": "holder",
+    "name": "settledSale",
+    "allow": "@data.forSale == true && @newData.holder == @user.id && getAfter(/wallets/@data.holder).ink == get(/wallets/@data.holder).ink + @data.price && getAfter(/wallets/@user.id).ink == get(/wallets/@user.id).ink - @data.price"
+  }],
+  "rules": {
+    "read": "true",
+    "create": "@user.id != null && @newData.holder == @user.id",
+    "update": "@user.id != null && (@data.holder == @user.id || (@data.forSale == true && @newData.holder == @user.id && getAfter(/wallets/@data.holder).ink == get(/wallets/@data.holder).ink + @data.price && getAfter(/wallets/@user.id).ink == get(/wallets/@user.id).ink - @data.price))",
+    "delete": "false"
+  }
+}
+```
+
+`transferAuthority` is a proof declaration, not a runtime bypass. The collection
+`update` rule still authorizes the write at runtime; deploy proves every update
+that changes the field is either current-holder authorized or satisfies the
+declared `allow` predicate, and separately proves that the declared predicate can
+only assign the ownership field to the caller (`@newData.holder == @user.id` or
+the equivalent recognized caller principal). Put money/points under `conserve`
+and submit the good move plus wallet debit/credit in one atomic `setMany`.
+
 ## Rules & the expression language
 
 `rules` gates `read`, `create`, `update`, `delete` with boolean expressions. A
@@ -295,7 +328,7 @@ client**. It never changes enforcement, and never hides anything from the owner.
 
 - **`"full"`** — the client gets the full reason: the failed rule trace, and the
   violated invariant's **name + formula + limit** (e.g. `postcondition failed:
-  invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100`).
+  invariant "spend_cap" requires rolling sum(agents/$agentId/spend/$spendId.amount) <= 100`).
 - **`"minimal"`** — the client gets a generic message plus a stable `code`:
   "Access denied by policy." (`403`) or "This change was rejected because it
   would violate a data constraint." (`409`). The invariant name/formula/limit

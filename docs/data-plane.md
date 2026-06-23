@@ -124,14 +124,14 @@ $ bounded data set --path "agents/a1/spend/s1" --data '{"amount": 60}'
 ✓ committed                                  # window sum: 60 / 100
 
 $ bounded data set --path "agents/a1/spend/s2" --data '{"amount": 60}'
-✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 60+60=120   [full disclosure]
+✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(agents/$agentId/spend/$spendId.amount) <= 100   # 60+60=120   [full disclosure]
   nothing committed
 
 $ bounded data set --path "agents/a1/spend/s3" --data '{"amount": 40}'
 ✓ committed                                  # window sum: 100 / 100
 
 $ bounded data set --path "agents/a1/spend/s4" --data '{"amount": 1}'
-✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(spend/$id.amount) <= 100   # 100+1=101   [full disclosure]
+✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(agents/$agentId/spend/$spendId.amount) <= 100   # 100+1=101   [full disclosure]
 ```
 
 > The full invariant message above (name + formula) is sent only under **full**
@@ -203,6 +203,13 @@ Composition rules:
 - **Distinct paths per entry** — in-batch path collisions reject.
 - Invariants are evaluated against the **whole batch** (that is how the
   balanced transfer above passes `conserve`).
+
+For one-click market settlement, pair this with
+[`transferAuthority`](policy-reference.md#conditional-transfer-authority): the
+good's `holder` update rule can require `getAfter()` wallet postconditions, while
+the wallet collection uses `conserve` so the Ink/payment leg cannot mint or burn.
+The buyer submits the good move plus both wallet updates in one `setMany`; a
+missing or wrong payment rejects the whole batch.
 
 ## Append-only caps
 
