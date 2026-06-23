@@ -13,10 +13,13 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 
 ## Dev identity — the keypair IS your account
 
-There is **no login step** for building. The first `bounded` command generates
-an ed25519 keypair and stores it in `~/.bounded/credentials` — a JSON file
-(mode `0600`) with a base58 `privateKey` field. That keypair is the identity — it
-owns every app you create and signs every write.
+There is **no login step** for building. `bounded init` writes public
+`bounded.json`; the first command that needs auth generates or loads the account
+source selected there. By default that is `~/.bounded/credentials` — a JSON file
+(mode `0600`) with a base58 `privateKey` field. A project can instead select a
+profile (`~/.bounded/accounts/<profile>/credentials`), a project key
+(`<project>/.bounded/credentials`), or `BOUNDED_PRIVATE_KEY`. That keypair is the
+identity — it owns every app you create and signs every write.
 
 ```bash
 bounded whoami        # prints address, environment, key source (creates the credentials if absent)
@@ -29,11 +32,11 @@ bounded whoami        # prints address, environment, key source (creates the cre
 > it up, and run **`bounded link`** on day one as your anti-loss mechanism. Full
 > guidance: [key-and-account-safety.md](key-and-account-safety.md).
 
-- Override the on-disk credentials with **`BOUNDED_PRIVATE_KEY`** (a **base58**
-  secret string), or point `HOME` elsewhere so the CLI reads/creates a separate
-  `~/.bounded/credentials` — this is how you run a **distinct identity per
-  agent**. A temp `HOME` (`HOME=$(mktemp -d) bounded whoami`) auto-creates a fresh
-  key cleanly. Never reuse a human's keypair for an autonomous agent.
+- Use `bounded account use <profile>` to run one project under another named
+  account without committing secrets. Override everything with
+  **`BOUNDED_PRIVATE_KEY`** (a **base58** secret string) for CI/automation.
+  Never reuse a human's keypair for an autonomous agent unless that is explicitly
+  intended.
 
 ### Linking & teams
 

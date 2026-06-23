@@ -37,7 +37,8 @@ description: >-
   "syncStripe", "getPage", "aggregate", "search", "pagination",
   "don't lose my key", "back up my key", "account recovery", "lost wallet",
   "wallet safety", "key safety", "credentials", "~/.bounded/credentials",
-  "BOUNDED_PRIVATE_KEY", "who owns the app", "AI NPC", "AI player", "NPC brain",
+  "BOUNDED_PRIVATE_KEY", "bounded.json", "bounded account", "account profile",
+  ".bounded/app.json", "who owns the app", "AI NPC", "AI player", "NPC brain",
   "tick calls a function", "live call", "session.live.calls", "@effect",
   "system principal", "service principal", "acting user", "origin", "@origin",
   "ctx.origin", "onchain", "Solana data", "client transaction",
@@ -221,7 +222,7 @@ for the *next* question.
 | `del`, `delete`, `remove` (no such method — delete = `set(path, null)`) | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
 | `search`, `setFile`, `getFiles`, storage collection | [docs/files-and-search.md](docs/files-and-search.md) |
 | `bounded link`, `bounded share`, `collaborators` | [docs/auth.md](docs/auth.md#linking--teams) |
-| `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY`, `.bounded/app.json` marker, `ownerKeySource`, key backup / account recovery / `bounded whoami` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
+| `bounded.json`, `bounded account use`, account profiles, `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY`, `.bounded/app.json` marker, `ownerKeySource`, key backup / account recovery / `bounded whoami` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | anonymous / guest / `signInAnonymously`, invite link, transfer ownership, upgrade account, ownership-as-data | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | `bounded functions deploy/list/invoke/logs` | [docs/cli-reference.md](docs/cli-reference.md#functions-the-imperative-escape-hatch) |
 | `bounded data get/aggregate/search` `--filter`/`--sort`/`--cursor` | [docs/cli-reference.md](docs/cli-reference.md#data-plane) |
@@ -392,24 +393,27 @@ The installer also starts the loopback-only dashboard daemon on
 `http://127.0.0.1:8011` by default; set `BOUNDED_DASHBOARD=0` only when a
 background local daemon is unwanted.
 
-**No login step.** The first `bounded` command generates an ed25519 keypair in
-`~/.bounded/credentials` (base58 `privateKey`; or supply `BOUNDED_PRIVATE_KEY`) —
-the keypair *is* the identity, so agents go from zero to deployed without a human
-auth step. **This key OWNS every app you create — back it up or `bounded link` it
-on day one (lose it unlinked → apps are unrecoverable).** For headless/agent
-flows, use `bounded link --email you@example.com` and enter the emailed OTP in
-the terminal; it approves the same fingerprint-checked device flow without a
-browser.
+**No login step.** `bounded init` writes `policy.json` plus public `bounded.json`.
+The first command that needs auth generates or loads the account selected by
+that config: `global` (`~/.bounded/credentials`), `project`
+(`<project>/.bounded/credentials`), `profile`
+(`~/.bounded/accounts/<profile>/credentials`), or `env`
+(`BOUNDED_PRIVATE_KEY`). The keypair *is* the identity, so agents go from zero to
+deployed without a human auth step. **This key OWNS every app you create — back
+it up or `bounded link` it on day one (lose it unlinked → apps are unrecoverable).**
+For headless/agent flows, use `bounded link --email you@example.com` and enter the
+emailed OTP in the terminal; it approves the same fingerprint-checked device flow
+without a browser.
 Details: [docs/auth.md](docs/auth.md) · [docs/key-and-account-safety.md](docs/key-and-account-safety.md).
 
 ```bash
-bounded init                            # scaffold policy.json (an append-only capped spend ledger)
+bounded init                            # scaffold policy.json + bounded.json
 # edit policy.json — see docs/policy-generation-guide.md
-bounded deploy ./policy.json --create --name my-app   # creates app, prints <appId>
-bounded verify ./policy.json --app-id <appId>         # PROVED / DISPROVED + counterexamples
-bounded dashboard                                      # open the full dashboard web UI while you build
-bounded data set --app-id <appId> --path agents/<your-id>/spend/s1 --data '{"amountUsd":60}'
-bounded data get --app-id <appId> --path agents/<your-id>/spend
+bounded deploy --create --name my-app   # creates app, records appId in bounded.json
+bounded verify                          # PROVED / DISPROVED + counterexamples
+bounded dashboard                       # open the full dashboard web UI while you build
+bounded data set --path agents/<your-id>/spend/s1 --data '{"amountUsd":60}'
+bounded data get --path agents/<your-id>/spend
 ```
 
 ## Core mental model
@@ -470,6 +474,12 @@ Failure semantics are in the **(c) By error / status** table above and in full i
   `bounded link --email you@example.com` for headless OTP approval) or
   `bounded share` a backup owner, and gitignore every secret-bearing path (the CLI
   manages this; the public `.bounded/app.json` marker is safe to commit). Never
-  echo or commit a private key. — [docs/key-and-account-safety.md](docs/key-and-account-safety.md)
+- **Safety: your key IS your account — back it up.** Read `bounded.json` first:
+  it tells agents which app/env/account source this project uses. The private
+  key itself lives in the selected source (`global`, `project`, `profile`, or
+  `env`) and must never be committed. Run `bounded link` on day one (use
+  `bounded link --email you@example.com` for headless OTP approval) or
+  `bounded share` a backup owner; the public `bounded.json` and `.bounded/app.json`
+  markers are safe to commit. Never echo or commit a private key. — [docs/key-and-account-safety.md](docs/key-and-account-safety.md)
 - **Machine docs:** `https://bounded.sh/llms.txt` and
   `https://bounded.sh/llms-full.txt` stay in sync with this skill.
