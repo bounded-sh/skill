@@ -39,14 +39,15 @@ overrides the file). See [auth.md](auth.md).
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
 | `whoami` | Show address, environment, key source, linked email (if any), and this folder's app marker if present (creates the key on first run) | `bounded whoami` |
-| `link` | **The anti-loss move.** Bind the keypair to your human (email) account via an **OAuth device flow** (with an anti-phishing fingerprint); keypair + email-account wallet become admin-collaborators on each other's apps, so your apps survive local key loss. The keypair keeps signing — linking only ADDS the association, it never rolls or replaces the key. | `bounded link` |
+| `link` | **The anti-loss move.** Bind the keypair to your human (email) account via an **OAuth device flow** (with an anti-phishing fingerprint), or use `--email` for headless OTP approval; keypair + email-account wallet become admin-collaborators on each other's apps, so your apps survive local key loss. The keypair keeps signing — linking only ADDS the association, it never rolls or replaces the key. | `bounded link --email you@example.com` |
 | `share <wallet\|email> --app-id <id>` | Add a collaborator (a backup owner). **Wallet** → direct (default role `policy`). **Email** → resolved to its auto-provisioned embedded wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. | `bounded share teammate@example.com --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 
-`link` flags: `--no-browser` (just print the URL), `--timeout <dur>` (default
-`10m`). Collaboration grants **control-plane** authority (manage the app), not a
-data-plane bypass — give data powers explicitly via policy rules
+`link` flags: `--no-browser` (just print the URL), `--email <addr>` (headless
+approval: email an OTP, read it from stdin, approve this device), `--timeout
+<dur>` (default `10m`). Collaboration grants **control-plane** authority (manage
+the app), not a data-plane bypass — give data powers explicitly via policy rules
 ([admin-and-ownership.md](admin-and-ownership.md)).
 
 ### The per-app marker — `.bounded/app.json`

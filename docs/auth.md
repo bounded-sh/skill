@@ -43,10 +43,13 @@ teammates — without anyone juggling raw wallet keys:
 
 - **`bounded link`** runs an OAuth-style **device flow**: the CLI prints a verify
   URL + code, you approve in a browser with your email account, and the CLI
-  records the linkage. After linking, your keypair address **and** your email's
-  wallet become admin-collaborators on each other's apps. **Your keypair keeps
-  signing for everything** — linking adds an account association, it never
-  replaces or rolls your key.
+  records the linkage. For headless/agent workflows, use
+  `bounded link --email you@example.com`: the CLI sends the OTP, reads the code
+  from stdin, approves the same fingerprint-checked device flow, and records the
+  linkage without opening a browser. After linking, your keypair address **and**
+  your email's wallet become admin-collaborators on each other's apps. **Your
+  keypair keeps signing for everything** — linking adds an account association,
+  it never replaces or rolls your key.
 - **`bounded share <wallet|email> --app-id <id>`** adds a collaborator. Pass a
   **wallet** to add it directly (default role `policy` — may update the policy
   only). Pass an **email** and Bounded resolves it to that person's canonical

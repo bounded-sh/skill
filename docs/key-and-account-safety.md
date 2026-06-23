@@ -121,7 +121,10 @@ raw secret and **keeps the public marker committable**:
 
 `bounded link` attaches your keypair to your **email account** via an OAuth-style
 **device flow** (it opens a verify URL + code, with a device-fingerprint
-anti-phishing confirmation). On approval:
+anti-phishing confirmation). For headless/agent workflows, run
+`bounded link --email you@example.com`; the CLI emails an OTP, reads the code
+from stdin, approves the same fingerprint-checked device flow, and records the
+linkage locally. On approval:
 
 - Your keypair and your email account's wallet become **mutual admin
   collaborators** on each other's apps.

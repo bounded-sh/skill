@@ -396,7 +396,10 @@ background local daemon is unwanted.
 `~/.bounded/credentials` (base58 `privateKey`; or supply `BOUNDED_PRIVATE_KEY`) —
 the keypair *is* the identity, so agents go from zero to deployed without a human
 auth step. **This key OWNS every app you create — back it up or `bounded link` it
-on day one (lose it unlinked → apps are unrecoverable).**
+on day one (lose it unlinked → apps are unrecoverable).** For headless/agent
+flows, use `bounded link --email you@example.com` and enter the emailed OTP in
+the terminal; it approves the same fingerprint-checked device flow without a
+browser.
 Details: [docs/auth.md](docs/auth.md) · [docs/key-and-account-safety.md](docs/key-and-account-safety.md).
 
 ```bash
@@ -463,7 +466,8 @@ Failure semantics are in the **(c) By error / status** table above and in full i
   so. → [Build the real thing](#build-the-real-thing--not-a-stub)
 - **Safety: your key IS your account — back it up.** `~/.bounded/credentials` owns
   every app you create; lose it without linking and the apps are unrecoverable. Run
-  `bounded link` on day one (attaches the key to your email account) or
+  `bounded link` on day one (attaches the key to your email account; use
+  `bounded link --email you@example.com` for headless OTP approval) or
   `bounded share` a backup owner, and gitignore every secret-bearing path (the CLI
   manages this; the public `.bounded/app.json` marker is safe to commit). Never
   echo or commit a private key. — [docs/key-and-account-safety.md](docs/key-and-account-safety.md)
