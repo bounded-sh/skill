@@ -72,11 +72,13 @@ admin can seed itself — see the bootstrap section below for why.
       "delete": "@user.id != null && get(/admins/@user.id) != null"
     }
   },
-  "attestations": [
-    { "claim": "the admin set only grows through existing admins, seeded only by the founder",
-      "kind": "authorityClosure", "roleScope": "admins/$userId",
-      "initialMember": "@const.FOUNDER" }
-  ]
+  "proofs": {
+    "attestations": [
+      { "claim": "the admin set only grows through existing admins, seeded only by the founder",
+        "kind": "authorityClosure", "roleScope": "admins/$userId",
+        "initialMember": "@const.FOUNDER" }
+    ]
+  }
 }
 ```
 

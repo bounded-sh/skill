@@ -8,10 +8,10 @@ key, etc.), the two ways a secret can be used, and the CLI. For the runtime itse
 
 A secret has **two halves, kept apart on purpose**:
 
-1. **DECLARE the name** in your `bounded.manifest` (`secrets` block). This is policy — it ships
-   in your code artifact. **Never put the value here.**
-2. **SET the value** with the CLI: `bounded secret put NAME VALUE --app-id <id>`. Values live
-   encrypted per-app in the runtime and are **never returned by any API** (`list` shows names only).
+1. **DECLARE the name** in your `bounded.manifest` (`secrets` block). This is part
+   of your deployed backend configuration. **Never put the value here.**
+2. **SET the value** with the CLI: `bounded secret put NAME VALUE --app-id <id>`.
+   Values are stored per app and are **never returned by any API** (`list` shows names only).
 
 Then your code reads it. That's it.
 
@@ -57,7 +57,7 @@ Your code just calls the API normally — the `Authorization: Bearer <STRIPE_KEY
 by the runtime on the way out:
 ```ts
 const res = await ctx.fetch("https://api.stripe.com/v1/charges", { method: "POST", body });
-// no key in your code — the host injected it
+// no key in your code — Bounded injected it
 ```
 - Default injection is `Authorization: Bearer <value>`. Override with `header` / `scheme`
   (use `"scheme": ""` for a raw value), or send it as a query param with `"in": "query", "param": "api_key"`.
@@ -105,7 +105,7 @@ Here `GH_TOKEN` is injected on calls to api.github.com **and** readable via `ctx
 
 | You need… | Declare | Read in code? |
 |---|---|---|
-| An API key for an HTTP service (Stripe, OpenAI over HTTP, GitHub) | `{ name, egress: "<host>" }` | No — host injects it (safest) |
+| An API key for an HTTP service (Stripe, OpenAI over HTTP, GitHub) | `{ name, egress: "<host>" }` | No — Bounded injects it on matching outbound requests (safest) |
 | To use the value yourself (sign a JWT, a non-HTTP SDK, custom logic) | `"NAME"` (bare) or `{ name, in: true }` | Yes — `ctx.secrets.get("NAME")` |
 | Both | `{ name, uses: [ {egress:"<host>"}, "in" ] }` | Yes, and injected on egress |
 
@@ -126,16 +126,18 @@ Values are write-only over the API: there is no command that prints a secret val
 - Names: `[A-Za-z_][A-Za-z0-9_]{0,63}` (env-var style). Value ≤ 8 KB. ≤ 100 secrets per app.
 - Secrets are **per-app and isolated** — one app can only ever read/inject its own.
 - **A value is set ONCE per app**, not per handler. `bounded secret put STRIPE_KEY … --app-id X`
-  is read by every agent / `onInvoke` / `onSchedule` / queue handler in app X — no copying. The
-  manifest declares the *name* once. (Today the backend runtime and Functions use separate value
-  stores; a single central per-app store + central declaration referenced by name is in progress —
-  ask if you hit the seam.)
+  is read by every declared backend component and every Function in app X — no
+  copying. The manifest (or a function's `secrets` block) declares the *name* once.
+  A Function resolves the value from the SAME per-app store at invoke time, so
+  `ctx.secrets.get("STRIPE_KEY")` returns what you `secret put`. (A deploy-time
+  `bounded functions deploy --secret STRIPE_KEY=…` still works and OVERRIDES the app-store value
+  for that one function — useful for a per-function override; otherwise just `secret put` once.)
 - Declaring a `secrets` block makes it the allow-list: with a block present, only **declared**
   in-process names are readable. With **no** block, any value you `secret put` is readable
   in-process (the simplest path "just works").
-- The declaration is part of your immutable code artifact (it's in the `codeId`); changing it is
-  a new deploy. The **values** are set separately and can be rotated anytime with `secret put`
-  (no redeploy).
+- The declaration is part of the deployed backend configuration; changing it is a
+  new deploy. The **values** are set separately and can be rotated anytime with
+  `secret put` (no redeploy).
 
 ## Related
 - [backend-runtime.md](backend-runtime.md) — the `ctx` your code runs with (store/ai/schedule/fetch/secrets)

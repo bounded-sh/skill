@@ -13,6 +13,42 @@ Authorization stays in the policy, so the service identity can only do exactly
 what the policy grants its address. **A service identity is the app developer's
 own backend actor — Bounded never custodies *user* funds.**
 
+Because `actAs` changes who `ctx.bounded` writes as, it is the privileged
+Functions mode. Deploy requires every `actAs` function's `auth` rule to imply
+the app's admin predicate (`get(/admins/@user.id) != null` when an admins scope
+exists, otherwise `hasRole("admin")`). Public user-invoked functions should
+usually omit `actAs` and write as the caller.
+
+### Who can act as a service identity? (by caller — read this before wiring a grant)
+
+The mode you use depends on **who invokes the function**, and they are not
+interchangeable:
+
+| Caller | Service-identity path | Notes |
+|---|---|---|
+| **A live tick** (`session.live` room) | **`session.live.runAs`** — declared once on the `live` block; all of this game's live `call`s run as it. Gate the called function with `auth: "@origin.kind == 'live' && @origin.module == '<game>'"`. | The ONLY way for a non-admin-triggered flow to act as a funded service identity. This is how `grantInk`-style conserved minting works. |
+| **A direct end-user** (SDK `invoke`, `@origin.kind == 'user'`) | **`actAs` — but it is ADMIN-GATED.** A user-invoked function can act as a service identity *only* if its `auth` provably implies admin. `auth: "@user.id != null"` + `actAs: MINT` → **verify FAIL**. | So a *non-admin* user-invoked function **cannot** be the service identity. Don't try to "mirror the live tick" inside a user-invoked function — there is no user-`runAs`. |
+| **A scheduled hook** (`@origin.kind == 'scheduled'`) | No `runAs` equivalent; it's the anonymous SYSTEM principal. Gating a privileged write on `@origin` alone trips the *"update requires auth / auth-consistency"* proof. | Route privileged scheduled writes through the live `runAs` too, or make the function admin. |
+
+**The pattern for a USER-triggered privileged/conserved write (the one people get
+wrong): split CLAIM from SETTLE.**
+
+1. **Claim** — the user-invoked function (writes as the player) does only what the
+   *player* is allowed to do: verify something (e.g. re-check a payment with the
+   provider via `fetch` + a secret), then record an **idempotent intent** doc
+   (create-only — `update: "false"` on that collection, keyed by a provider id so a
+   replay is denied). It does **not** touch the service-owned ledger/mint.
+2. **Settle** — the **live tick** (running with `runAs = <serviceIdentity>`)
+   `call`s a settle function gated `@origin.kind == 'live'`, which reads the
+   unsettled intents via `ctx.bounded`, does the privileged/conserved
+   `setMany([...])`, and flips the intent to settled. The live `runAs` is the only
+   thing that can authorize the service-owned leg.
+
+Because the claim record is **user-authored, it is untrusted** — the settle step
+must **re-derive every value from the trusted source** (re-verify, and take the
+amount/owner/product from the provider, never from the claim record). See the
+end-user-payments recipe in [billing.md](billing.md#charging-your-own-end-users).
+
 ## Fund an AI NPC / a live game call
 
 A live tick (`live.tick`) is pure and egress-disabled; to reach the outside
@@ -168,7 +204,7 @@ There is no single global service key; mint one identity per role.
   "functions": {
     "runPayouts": { "auth": "get(/admins/@user.id) != null",
                     "entry": "functions/runPayouts.ts", "actAs": "9aZ…address" },
-    "postQuotes": { "auth": "true",
+    "postQuotes": { "auth": "get(/admins/@user.id) != null",
                     "entry": "functions/postQuotes.ts", "actAs": "4kT…address" }
   }
 }

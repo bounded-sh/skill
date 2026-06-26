@@ -83,9 +83,8 @@ policy.json ──► (deploy / verify) ──► resolvePolicyMacros ──► 
                                        @const / @def inlined          literals only
 ```
 
-- Runs **before** validation, bytecode compilation, and proof — so the prover and
-  the realtime worker only ever see literals. Macros add **no runtime cost** and
-  nothing new for the worker to understand.
+- Runs **before** validation, bytecode compilation, and proof — so runtime
+  enforcement only sees literals. Macros add **no runtime cost**.
 - The `constants`/`defs` blocks are kept on the stored policy for transparency
   (they are reserved keys; they are never treated as collections).
 - **Errors** (surfaced at `bounded deploy` / `bounded verify`):

@@ -5,7 +5,7 @@ server-authoritative loop for **any** realtime app (multiplayer games,
 Figma-style collaborative editors, whiteboards, live dashboards, trading
 screens). Upload a module exporting three pure functions (`init`/`tick`/`views`),
 declare a `session.live` block, run `bounded live deploy`, and drive it from the
-SDK. Bounded loads your code into an isolated facet, runs the tick ~30Hz
+SDK. Bounded runs your code in an isolated room runtime, runs the tick ~30Hz
 server-authoritatively, snapshots + checkpoints state, and fans per-client views
 out live. You write the room logic — nothing else.
 
@@ -26,9 +26,8 @@ shape, not the whole of it.
 > cursor presence, layout state) you'd rather write in TypeScript.
 
 This is the imperative sibling of [functions.md](functions.md): code you upload
-(not deploy), loaded into an isolate, with an honest proof boundary. The
-difference is *where* the code runs — a function runs once per call; a live room
-runs continuously inside the room.
+with an honest proof boundary. The difference is *where* the code runs — a
+function runs once per call; a live room runs continuously for the room.
 
 ## The four-artifact DX
 
@@ -36,14 +35,14 @@ A complete native live room is **four artifacts** and no infrastructure:
 
 | Artifact | Where it lives | Who runs it |
 |---|---|---|
-| 1. The live module (3 pure fns) | `pong.live.ts` (your repo) | Bounded, inside the room's isolated facet, ~30Hz |
-| 2. The `session.live` policy block | `policy.json` on a `rooms/$roomId` template | the prover (deploy) + the room DO (runtime) |
-| 3. `bounded live deploy <module>.live.ts` | the R2 code registry | you, once per code change (no worker redeploy) |
+| 1. The live module (3 pure fns) | `pong.live.ts` (your repo) | Bounded, inside the room runtime, ~30Hz |
+| 2. The `session.live` policy block | `policy.json` on a `rooms/$roomId` template | verify/deploy + runtime enforcement |
+| 3. `bounded live deploy <module>.live.ts` | deployed live module | you, once per code change |
 | 4. The SDK client (subscribe + intents) | your web/RN/server app | each client's device |
 
 **Artifact 1 — the module.** It exports **exactly three** pure functions and
-nothing else (no DOs, no `setTimeout`, no WebSocket, no snapshot code, no
-deploy). Quoting the contract from the top of `pong.live.ts`:
+nothing else (no timers, sockets, snapshot code, or deploy logic). Quoting the
+contract from the top of `pong.live.ts`:
 
 ```ts
 //   1. init(seed)               -> initial state           (optional)
@@ -56,13 +55,13 @@ deploy). Quoting the contract from the top of `pong.live.ts`:
 ```
 
 - `init(seed): State` — **optional.** The initial state when the room starts.
-  `seed.room` is the room's OWN creation document — whatever the host set when
-  they created `rooms/<roomId>` (e.g. `set("rooms/r1", { createdBy, name, mode:
-  "ranked", mapSeed: 42 })`). So `init` can read the host's match config
+  `seed.room` is the room's OWN creation document — whatever the room creator set
+  when they created `rooms/<roomId>` (e.g. `set("rooms/r1", { createdBy, name, mode:
+  "ranked", mapSeed: 42 })`). So `init` can read the room's match config
   deterministically at boot: `init(seed) { return { mode: seed?.room?.mode, ... } }`.
   This runs ONCE at cold start (replays use the snapshot, never re-run `init`), so
-  it never affects tick determinism. The facet itself has no data-plane access —
-  the supervisor injects this seed, keeping `tick`/`views` pure.
+  it never affects tick determinism. The live module itself has no direct data
+  access; Bounded provides the seed, keeping `tick`/`views` pure.
 - `tick(state, intents, dtMs, ctx): State` — **required, server-authoritative.**
   `intents` is `[{ userId, intent }, ...]` ordered by Bounded; return the next
   state. This is the only thing that advances the room. (`userId` is the sender's
@@ -76,7 +75,7 @@ deploy). Quoting the contract from the top of `pong.live.ts`:
 
 > **TypeScript is fine — types are stripped at upload.** `bounded live deploy`
 > transpiles the `.ts` source (strips annotations like `intents: any[]`, `x as Foo`,
-> `: State`) before storing it, so the facet loads clean JS. Write the three
+> `: State`) before storing it, so the room runtime loads clean JS. Write the three
 > functions in TS or JS; both work. (Keep it to type-stripping syntax — no path
 > imports of other files; the module is a single self-contained file.)
 >
@@ -91,10 +90,10 @@ canonical document + each editor's cursor/selection projection; for a dashboard
 they are the ingest reducer + each viewer's permitted slice. Same three
 functions, any realtime app.
 
-Bounded loads this into a Cloudflare **Worker-Loader facet** inside the per-room
-Durable Object, drives `tick` on a pinned timer, snapshots to the facet's SQLite
-(eviction survival), and checkpoints the authoritative state through your
-declared invariants. You never write any of that.
+Bounded runs the module for each room, drives `tick` on the declared cadence,
+keeps the room state alive across normal runtime churn, and checkpoints
+authoritative state through your declared invariants. You write the room logic,
+not the hosting plumbing.
 
 **Artifact 2 — the policy block** (see the full field table below):
 
@@ -106,8 +105,8 @@ declared invariants. You never write any of that.
 }
 ```
 
-**Artifact 3 — deploy** uploads the *source* to the code registry; the etag is
-the version. No worker is redeployed:
+**Artifact 3 — deploy** uploads the module source and makes it available to
+rooms that reference its module name:
 
 ```sh
 bounded live deploy pong.live.ts --app-id <id>
@@ -118,16 +117,15 @@ intents (worked example at the end).
 
 ## The `session.live` policy block
 
-`session.live` is a sibling of `session.tick` under a session block. Fields
-(validated **exactly** as in the worker's `sessions.ts`):
+`session.live` is a sibling of `session.tick` under a session block. Fields:
 
 | Field | Type / rule | Meaning |
 |---|---|---|
-| `module` | **Required.** Bare identifier `/^[a-zA-Z][a-zA-Z0-9_]*$/` | Name that resolves to your uploaded source in the code registry. Not the source itself — the policy only declares the binding. |
+| `module` | **Required.** Bare identifier `/^[a-zA-Z][a-zA-Z0-9_]*$/` | Name that resolves to the live module you uploaded. Not the source itself — the policy only declares the binding. |
 | `everyMs` | **Required.** Integer, `20`–`60000` | Native tick cadence (ms). ~33 ≈ 30Hz. |
 | `maxLifetimeSec` | **Required.** Integer, `1`–`86400` | Hard lifetime cap; the room is torn down at this age regardless of state. |
-| `snapshotEveryTicks` | Optional. Integer, `1`–`600` | Snapshot the facet's in-memory state to its own SQLite every N ticks. Bounds post-eviction reconcile loss. Default: derived from `checkpointSeconds / everyMs` (≈ one checkpoint window). |
-| `secrets` | **Not supported yet — do not use.** | Reserved for future Mode-B (live/game) secret injection; **not wired** (declaring it is rejected at deploy — it would otherwise be `undefined` at runtime). Need an API key in live/game code today? Call out via a [function](functions.md) or a backend-runtime [agent](secrets.md), where secrets work. |
+| `snapshotEveryTicks` | Optional. Integer, `1`–`600` | Snapshot room state every N ticks. Default: derived from the checkpoint cadence. |
+| `secrets` | Not supported for live modules. | Need an API key in live/game code? Call a [function](functions.md) or [backend-runtime](backend-runtime.md) component where secrets are supported. |
 
 **Two hard placement rules:**
 
@@ -164,15 +162,15 @@ The room template's `tier` decides what survives:
 
 | Layer | Tier | Durability | Who writes |
 |---|---|---|---|
-| Room state | `ephemeral` | in-memory; gone on eviction except for facet-SQLite snapshots | native `tick` only |
+| Room state | `ephemeral` | live runtime state; not persisted as a provable data record | native `tick` only |
 | Room state | `checkpointed` | folded **through invariants** into the provable store on the checkpoint cadence — survives + is provable/replayable | native `tick`, then the checkpoint |
 | `view/$userId` | **always `ephemeral`** | a live projection, never source of truth | `views(state)` fan-out |
 
 Two **distinct** persistence mechanisms, do not conflate them:
 
-- **Snapshot** = the facet writes its in-memory state to its own SQLite every
-  `snapshotEveryTicks` ticks. Purpose: survive **eviction** and reconcile with
-  bounded loss (a few seconds of activity). Not provable, not in the data store.
+- **Snapshot** = the live runtime saves room state every `snapshotEveryTicks`
+  ticks. Purpose: survive routine runtime churn and limit replay loss. Not a
+  proof artifact and not a normal collection document.
 - **Checkpoint** = on the checkpoint cadence, the **authoritative** state is
   folded **through your declared invariants** into the **provable data store**.
   Purpose: durability + replayability + proof. Only happens on `checkpointed`.
@@ -251,7 +249,7 @@ What this structurally cures (same boundary as
 - **State manipulation** (teleport, set score; or in an editor, overwrite a doc
   field you don't own) — no client write path; `tick`-only.
 - **Maphacks / wallhacks / private-layer leaks** — per-client views; hidden data never sent.
-- **Forged ticks** — only the facet's native `tick` advances state.
+- **Forged ticks** — only the live runtime's native `tick` advances state.
 - **Macro / turbo-fire / write floods** — pair the room with a `rollingSum`-capped
   intent collection (the rate-cap pattern in
   [realtime-and-games.md](realtime-and-games.md#intents--proven-rate-caps)).
@@ -273,14 +271,15 @@ A game reaches durable data **three** ways — know which is which:
   `ctx.bounded`, and the result re-enters a later tick as an `@effect` intent. Give it a
   funded identity with `session.live.runAs` and gate it with `@origin.kind == 'live'` (see
   [ai-npcs.md](ai-npcs.md), [principals-and-origins.md](principals-and-origins.md)). This is
-  the value that *can't* be forged — it comes from facet memory, not a client.
+  the value that *can't* be forged — it comes from server-authoritative room
+  state, not a client.
 - **(b) the player's client → normal SDK `get`/`set`/`subscribe`.** The ordinary data
   plane, rule-enforced per `@user`. Use it for everything the player owns/reads directly
   (profile, lobby, inventory).
 - **(c) the tick CANNOT read durable state synchronously.** `tick` is pure and
   egress-disabled — no `get`, no `fetch`. To read durable data, round-trip via
   **`call` → a function → `@effect`** on a *later* tick. For data the room needs at boot,
-  **seed it statically** through `init(seed)` (the host's `rooms/<id>` doc) instead.
+  **seed it statically** through `init(seed)` (the room's `rooms/<id>` doc) instead.
 
 ## Calling out from a tick (the `call` primitive)
 
@@ -291,35 +290,26 @@ alongside the next state instead of a bare `return state`:
 ```ts
 // inside tick(state, intents, dt):
 return { state, call: { fn: "npcBrain", args: { board: state.board } } };
-//                                ^ optional `as: state.currentPlayer` only gates the same-tick check — it does NOT make the call act as that player (no-op on identity today)
+//                                ^ optional `as: state.currentPlayer` is a validation hint, not an identity override.
 // or several at once:
 return { state, calls: [ { fn: "npcBrain", args: {...} }, { fn: "settleMatch", args: {...} } ] };
 ```
 
-A bare `return state` is unchanged and fully back-compatible — adding a `call` is the
-only opt-in. The optional field is **`as`** (a player id) — never `onBehalfOf`. **Today
-`as` is NOT wired to identity:** it only gates the facet's same-tick check (a tick can't
-name a player who didn't act this tick). A permitted `as` is a **no-op on identity** —
-the call still acts as the session `runAs` / function `actAs` / anonymous system, never
-as that player. Per-player acting is roadmap (cheap, non-breaking to add later). Omit
-`as` for a call with no acting user.
+A bare `return state` is unchanged — adding a `call` is the only opt-in. The
+optional field is **`as`** (a player id), and it is a validation hint rather than
+an identity override. The called function still runs under the identity configured
+for the session or function. Omit `as` for a call with no player-specific check.
 
 **What `call` runs.** `fn` must be a function name in the owner-declared whitelist
 **`session.live.calls`**, and the called function's own `auth` rule **is** evaluated for
 the call. The called function is an ordinary Bounded [function](functions.md): it has an
 `entry`, can use `ctx.bounded`, `ctx.ai`, secrets, `actAs`, and now `ctx.origin`.
 
-**Authorization (`@origin`) and identity (`runAs`/`actAs`) are orthogonal — both are now
-wired:**
+**Authorization (`@origin`) and identity (`runAs`/`actAs`) are separate:**
 
-- **`@origin` — who may call (authorization, now REAL).** Every dispatch carries an
-  unforgeable, host-set `@origin` in scope of the function's `auth` rule. It is the same
-  trust class as `@user` from a verified token — derived from the internal-secret-gated
-  dispatch, never from a client. Fields: `@origin.kind` (always set: `'live'` for a game
-  tick, `'user'` for a direct end-user/SDK call, plus `'scheduled'`/`'function'`/`'webhook'`),
-  and `@origin.path` / `@origin.module` / `@origin.room` / `@origin.tick` (null when not
-  applicable — e.g. all null for `kind:'user'`). A function gates "**only my game's live
-  tick may call me**" with its own `auth` rule:
+- **`@origin` — where the call came from.** Live calls carry a platform-set
+  `@origin` that client code cannot spoof. A function gates "**only my game's
+  live tick may call me**" with its own `auth` rule:
 
   ```json
   "functions": {
@@ -353,10 +343,10 @@ wired:**
 }
 ```
 
-**How the result comes back — the `@effect` address.** The call runs *off the tick loop*:
-the facet writes it into a durable outbox atomically with the state advance, the room
-supervisor drains it **after the checkpoint alarm**, POSTs the function, and the result
-re-enters a **later** tick as a recorded intent on the reserved **`@effect`** address.
+**How the result comes back — the `@effect` address.** The call runs outside the
+tick loop. Bounded records the requested call with the state advance, runs the
+function, and feeds the result into a **later** tick as a recorded intent on the
+reserved **`@effect`** address.
 Your tick reads it by matching `address === "@effect"` and the `effectId` it emitted:
 
 ```ts
@@ -380,15 +370,12 @@ function tick(state, intents, dt) {
 }
 ```
 
-**Security guarantee — effect results are host-only, forgery is foreclosed (ENFORCED).** A
-client live intent may **never** carry the reserved **`@effect`** address **or** the
-**`__effect`** discriminator — either is rejected (`403`) before it reaches the tick. Only
-the host feeds effect results back in (the supervisor drains the outbox and re-injects on
-`@effect` after the checkpoint). So a client cannot inject a fake result or impersonate the
-effect channel; the only `@effect`/`__effect` intents your tick ever sees came from the
-host, never from a player.
+**Security guarantee — effect results are platform-generated.** A client live
+intent may **never** carry the reserved **`@effect`** address **or** the
+**`__effect`** discriminator; either is rejected before it reaches the tick. So a
+client cannot inject a fake result or impersonate the effect channel.
 
-**SHIPPED truth — read this before you build on it:**
+**Effect behavior to build around:**
 
 - **The acting identity follows precedence: function `actAs` > session `runAs` > anonymous
   system.** With neither declared, the call runs as the anonymous SYSTEM principal — inside
@@ -397,7 +384,7 @@ host, never from a player.
   per-function `actAs`) to give the call a funded identity. See
   [principals-and-origins.md](principals-and-origins.md).
 - **To fund an AI NPC, declare `session.live.runAs`.** Point it at a service wallet the
-  owner funds with AI credit, then `ctx.ai` in any whitelisted live-call function Just
+  owner funds with AI/external-services credit, then `ctx.ai` in any whitelisted live-call function Just
   Works (capped at the app account). Gate that function with
   `auth: "@origin.kind == 'live' && @origin.module == '<yourGame>'"` so only your game's
   tick can call it. (A per-function `actAs` still works for a one-off and wins over
@@ -406,21 +393,20 @@ host, never from a player.
 - **Effects run on the checkpoint cadence, not per-tick.** Replies land after a short
   delay (the next checkpoint window), not on the very next frame. Don't block the loop on
   an effect; keep ticking and consume the reply when it arrives.
-- **No platform dedup yet.** The runtime does not dedup on the `effectId` / idempotency
-  ref — this is **not** exactly-once. The function author (and the tick, as above) should
-  dedup on `effectId`.
+- **Dedup in your app logic.** Treat effect replies as at-least-once and dedup on
+  `effectId` in the tick and in any side-effecting function.
 
 ## Recording the result (per-room: authoritative today, read it through the view)
 
 The native runtime is server-authoritative for everything *inside* a room. A
-native facet (`init`/`tick`/`views` + snapshot) cannot **directly** write a durable
-collection or trigger settlement — but it **can `call` a function that does** (see
+native tick cannot **directly** write a durable collection or trigger settlement
+— but it **can `call` a function that does** (see
 [the `call` primitive](#calling-out-from-a-tick-the-call-primitive) below): a tick
 returns `{ state, call: { fn, args, as } }`, the called function does the durable
 write / settlement / onchain submit, and the result re-enters a later tick as an
-`@effect` intent. So "the facet can't persist the outcome itself" is true; "the game
-can't persist the outcome" is not. That shapes how you persist the outcome, and there
-is one forgeable trap to avoid.
+`@effect` intent. So the live room does not persist the outcome directly; it
+persists by calling an authorized function. That shapes how you persist the
+outcome, and there is one forgeable trap to avoid.
 
 **The forgeable trap — do NOT record results with a client-written collection:**
 
@@ -432,7 +418,7 @@ is one forgeable trap to avoid.
 ```
 
 This is **forgeable**. The rule only checks that the caller *names themselves* the
-winner — it has no link to the server-authoritative outcome the facet computed. So
+winner — it has no link to the server-authoritative outcome. So
 any authenticated user (the player who just lost, or someone who never joined) can
 write a record claiming they won. (Verified by dogfooding: a fresh keypair that
 joined no room wrote a winning `matches` record for a non-existent room — the rule
@@ -447,42 +433,32 @@ view stream delivers it. (Validated by dogfooding: a server-decided winner — t
 joiner — arrived in both players' views as `winner=<P1> phase=over`; the player who
 *wanted* to win saw the real winner, not themselves.)
 
-> ⚠️ **Do NOT read live room state with `get()`/`subscribe()` on the room doc.** Those
-> route to the **project DO**, while live session state lives in the **room DO** — so
-> `get("rooms/<id>")` on a running/finished live room returns `{ data: null }` (no
-> error, just empty), and a plain `subscribe("rooms/<id>")` delivers only an initial
-> `null` snapshot and then **no live room state**. This is the same routing boundary as
-> views (a plain subscribe lands on the project DO and never sees room writes). The
-> **only** room-DO-routed client read is `subscribeView`. Read the result there.
-> (Verified: across a whole match on a checkpointed live room, `get` stayed `null` and
-> `subscribe` got one `null` snapshot + zero updates while the facet ticked and decided a
-> winner — the same state was live in the view.)
+> **Do not read live room state with plain `get()`/`subscribe()` on the room doc.**
+> Live room state is exposed through `live.subscribeView`. A plain data
+> subscription is for normal collection data and will not stream the live room's
+> per-client view.
 
 Use `checkpointed` (not `ephemeral`) when you want that authoritative state **fold-gated
 by your invariants** every checkpoint (the anti-cheat proof boundary) and surviving
-eviction provably — but note `checkpointed` changes *durability/provability of the
+runtime churn — but note `checkpointed` changes *durability/provability of the
 state*, **not** how you read it: still the view, never `get()`.
 
-**Cross-room leaderboard — two paths.** Folding each room's result into a *shared*
-durable leaderboard/`matches` collection is **settlement**. Built-in `settleTo` +
-`settleFrom` is **not facet-authoritative yet** for a native room:
-- `settleFrom` aggregates a per-player field from a **room sub-collection**, but a
-  native facet can't write that sub-collection *directly*, so it can't carry the
-  facet's in-memory winner.
-- `POST /settle` with client-provided data is gated by `settleRule`, but the value
-  is **client-asserted** — `settleRule` can't verify it against facet memory.
+**Cross-room leaderboard — two paths.** Folding each room's result into a shared
+durable leaderboard or `matches` collection is **settlement**. For native live
+rooms, prefer a tick-called settle function; do not rely on client-provided
+settlement data.
 
 The path that **does** work today: have the tick **`call` a settle function** with the
 server-decided result (`return { state, call: { fn: "settleMatch", args: { winner } } }`).
-The function runs server-side and writes the shared durable collection — the value comes
-from facet memory, not a client. Give that function a funded, attributable identity with
+The function runs server-side and writes the shared durable collection — the
+value comes from server-authoritative room state, not a client. Give that
+function a funded, attributable identity with
 `session.live.runAs` (or a per-function `actAs`), then write the settle collection's rules
 to trust that service write, not a client `winner == @user.address`; gate the function's own
 `auth` with `@origin.kind == 'live' && @origin.module == '<yourGame>'` so only your tick can
 call it (see [principals-and-origins.md](principals-and-origins.md)). For onchain settlement
 the same function holds the signing capability via `actAs` / a key ([onchain.md](onchain.md)).
-(Built-in facet-triggered `settleFrom` under a dedicated system principal is still roadmap —
-the `call`-a-function path supersedes the need to wait for it.)
+The `call`-a-function path is the native-live settlement path to use.
 
 So today: authoritative **per-room** result → project it in `views(state)` and read it
 via `subscribeView` (`checkpointed` if you want it invariant-gated + eviction-durable).
@@ -493,11 +469,9 @@ Authoritative **cross-room** settlement → either the declarative `session.tick
 
 ## Listing rooms (the lobby / discovery)
 
-Same routing boundary, read side: a session room (`rooms/$roomId` with `session.live`)
-is **not listable**. `get`/`subscribe` on the session collection route to the project DO
-and never see room-DO state, so you **cannot build a lobby by querying `rooms`** — it
-comes back empty. (This is why invite-link games just share the room id directly and skip
-discovery.)
+Live session rooms are not a listable lobby by themselves. Do not build a lobby
+by querying the live room collection; use a separate durable index collection for
+discovery. Invite-link games can skip discovery and share the room id directly.
 
 For a browsable lobby, use a **separate durable index collection** that clients can list
 and subscribe normally:
@@ -520,14 +494,10 @@ When the host creates a room, it also writes `lobby/<id>`. Clients browse with
 `subscribe("lobby", { onData })`. Both validated by dogfooding: a new `status:"open"`
 room reached a subscriber in ~200ms, and an `open → playing` update streamed through.
 
-> **Honest limitation — lobby status is client-maintained, not facet-authoritative.** A
-> native facet can't write durable collections (same boundary as settlement), so it can't
-> flip a room to `playing`/`full`/`ended`. The **host client** updates the entry
-> best-effort — e.g. mirror its own view's `phase` into the lobby `status`. If the host
-> drops, the entry can go stale (`open` forever). Mitigate with a **scheduled hook**
-> (hooks *can* write durable) or a `dueRows` one-shot that expires entries older than N
-> seconds. Treat lobby `status` as a discovery *hint*, not ground truth — the room's own
-> view is ground truth.
+> **Lobby status is a discovery hint.** The host client can mirror its own view's
+> `phase` into the lobby `status`, but if the host drops, the entry can go stale.
+> Mitigate with a scheduled hook or one-shot expiry that removes old entries.
+> Treat the room's own live view as ground truth.
 
 Two rule gotchas the verifier will (correctly) flag if you omit them: pin **both**
 `host` and `createdAt` immutable on `update` (`@newData.x == @data.x`) — otherwise the
@@ -563,7 +533,7 @@ if (intent.type === "join") {
 Without the `if (!state.players[playerId])` guard, a re-join grabs a second slot
 (or clobbers live state) — a self-inflicted bug, not a runtime one.
 
-**The tick gets a live presence set — drop ghosts with it.** `tick` receives an
+**The tick gets a live presence set — drop inactive players with it.** `tick` receives an
 optional **4th argument** `ctx` carrying the principals currently connected to the
 room:
 
@@ -583,65 +553,59 @@ export function tick(state, intents, dtMs, ctx) {
 }
 ```
 
-This is **event-driven and free**: the runtime pushes the updated set to the facet
-**only** when a connection opens or closes (no polling, no alarm, no per-tick cost).
+This is event-driven: the runtime updates the set when a connection opens or
+closes, so your tick does not need to poll for presence.
 A player who closes their tab drops out of `ctx.presence` and your reducer evicts
 them on the **next tick** (~instantly). The 4th arg is additive — existing 3-arg
 reducers are unchanged.
 
 > **`ctx.presence` is "has an open socket," not "is actively playing."** For a clean
 > tab-close it's instant. A hard crash / network partition where no close frame is
-> sent clears within the platform's socket-keepalive window (seconds). If you want a
+> sent clears within Bounded's connection keepalive window (seconds). If you want a
 > *tighter* idle/zombie timeout than that, layer your own `lastSeen` on top (stamp it
 > on each intent or a `ping`) — but you no longer need it just to handle disconnects.
 
 ## Deploy + run lifecycle
 
 ```sh
-bounded live deploy pong.live.ts --app-id <id>   # upload source; prints the version (etag)
+bounded live deploy pong.live.ts --app-id <id>   # upload source; prints a version
 
 # Drive (or cold-start) a room from the CLI — queues an intent for the next tick
 # AND arms the loop if it isn't running. The CLI equivalent of bounded.live.intent.
 bounded live intent rooms/r1 --app-id <id> --intent '{"type":"join","name":"alice"}'
 ```
 
-Deploy uploads (transpiled) source to the R2 code registry
-at key `<appId>/<module>.js`. The **R2 etag is
-the version** — a new upload produces a new etag and a fresh facet on the next
-room start. **No worker is redeployed.** If a room references a module that hasn't
-been uploaded yet, the room stays live but dormant (`/live/status` reports
-`started: false`) rather than failing.
+Deploy uploads the module source and prints a version identifier. If a room
+references a module that has not been uploaded yet, status reports that the room
+has not started rather than silently running missing code.
 
-The worker routes are **already live** on the room DO (do not modify them).
-Clients address a room **by path** — the worker derives the room id internally and
-sets `X-Room-Id` itself. **Clients never set `X-Room-Id`.**
+Clients address a room **by path** through the SDK. Do not invent routing
+headers or routing details.
 
 | Route | Addressed by | Auth | Returns |
 |---|---|---|---|
-| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | `{ available, started, running, tick, module, etag, stopReason, generation, connections, lastTickAt, nextAlarmAt }` |
+| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | live-room status |
 | `POST /live/intent` | `body.path` | **required** | `{ ok: true }` |
 
 Drive intents from anywhere: the browser SDK (`bounded.live.intent(roomPath, intent)`),
 a server with `@bounded-sh/server`, or the **CLI** — `bounded live intent <roomPath>
 --app-id <id> --intent '<json>'` (great for cold-starting a room, scripts, and tests).
 Use `bounded live status <roomPath> --app-id <id>` or `live.status(roomPath)` when
-debugging liveness: parked rooms report `running:false` plus `stopReason`,
-`generation`, loaded `etag`, open `connections`, and alarm/tick timestamps.
+debugging liveness: parked rooms report `running:false`, stop reason, generation,
+open connections, and tick timing.
 `live.intent` and `live.subscribeView` re-arm a parked room; a terminal stopped
 room (`lifetime`/`manual`) cold-starts a fresh generation on the next intent.
 
 ### Cold starts and keep-warm
 
-A dormant live room has to route to the room DO, load the live facet, start the
-module, and deliver the first view. That first view can take a couple of seconds;
-show a real "starting arena" / "joining room" state instead of treating it as a
-broken subscription. Once warm, the view stream is paced at the live tick cadence.
+A dormant live room has to start the module and deliver the first view. That
+first view can take a couple of seconds; show a real "starting arena" /
+"joining room" state instead of treating it as a broken subscription. Once warm,
+the view stream is paced at the live tick cadence.
 
-There is not yet a first-class `session.live.keepWarm` or scheduled-hook-to-live
-bridge. If you need public arenas to stay hot, run an external pinger that sends an
-idempotent low-cost live intent (for example `{ "type": "ping" }`) before the room
-goes idle. Do not use a client as the only warmer for shared public rooms; make the
-ping non-player/system-owned so it cannot create a sticky player-specific view.
+If you need public arenas to stay warm, send an idempotent low-cost live intent
+such as `{ "type": "ping" }` before the room goes idle. Do not rely on one
+player's client as the only warmer for shared public rooms.
 
 ## SDK client — worked example
 
@@ -656,42 +620,36 @@ import { live } from "@bounded-sh/client";
 const roomPath = `rooms/r1`;                 // the session collection + room id
 
 // 1. Live state — subscribe to YOUR view. `live.subscribeView` builds the
-//    `<roomPath>/view/<myUserId>` path AND routes the connection to the room's
-//    Durable Object (where the live view fan-out runs), so you never pass any
-//    routing yourself. The read rule `$userId == @user.id` means this only
-//    ever resolves to your projection (no hidden state).
+  //    `<roomPath>/view/<myUserId>` path and handles routing for you. The read
+  //    rule `$userId == @user.id` means this only ever resolves to your
+  //    projection (no hidden state).
 const stop = await live.subscribeView(roomPath, {
   onData: (view) => render(view),            // your per-player view object
   onError: (e) => console.error(e),
 });
 
-// 2. Send an intent. Address the room BY PATH; the worker derives the room id
-//    and takes your universal user id (`@user.id`) from the session token (auth
-//    required, handled by the SDK). Returns { ok: true }.
+// 2. Send an intent. Address the room BY PATH; the SDK/session supplies your
+//    universal user id (`@user.id`). Returns { ok: true }.
 await live.intent(roomPath, { type: "join" });
 await live.intent(roomPath, { type: "move", dir: -1 });
 
 // later: await stop();
 ```
 
-> **Routing is the SDK's job, not yours.** `live.subscribeView` opens a
-> connection routed to the per-room DO; a plain `subscribe('rooms/r1/view/<userId>')`
-> over the default app-level connection lands on the *project* DO and never sees
-> the room's ephemeral view writes (it stays `null`). Always subscribe to live
-> views through `live.subscribeView` (or `subscribeLiveView`). You never specify
-> the destination DO — the worker is the authority on routing.
+> **Routing is the SDK's job, not yours.** Always subscribe to live views through
+> `live.subscribeView` (or `subscribeLiveView`). Do not manually construct
+> routing details.
 >
 > **`init` with a network preset** — no endpoint URLs in app code:
-> `await init({ appId })` (production is the default; the network is
-> `'bounded-production'`).
+> `await init({ appId })`.
 > For a zero-friction guest identity (great for invite links), pass
 > `authMethod: 'guest'` and call `login()` — a device-local keypair signs in with
 > no wallet and no signup.
 
 Status/liveness is first-class in the SDK and CLI:
 `await live.status(roomPath)` or `bounded live status <roomPath> --app-id <id>`
-returns `{ available, started, running, tick, module, etag, stopReason,
-generation, connections, lastTickAt, nextAlarmAt }`.
+returns live-room status, including whether it is available, started, running,
+and connected.
 
 The per-client view read rule is what makes the subscribe line safe by
 construction: it can only ever resolve to *your* view, so you cannot subscribe
@@ -710,4 +668,4 @@ example above; no raw `subscribe` + `fetch` needed.)
 - [functions.md](functions.md) — the sibling code-upload model (secrets + proof boundary)
 - [principals-and-origins.md](principals-and-origins.md) — `@origin` (who may call) + the three principals & precedence (`actAs` > `runAs` > system)
 - [ai-npcs.md](ai-npcs.md) — the tick `call`s a function = an NPC; funding an LLM NPC with `session.live.runAs`
-- [onchain.md](onchain.md) — server-signed (today) + client-signed (roadmap) settlement from a live room
+- [onchain.md](onchain.md) — onchain settlement from a live room

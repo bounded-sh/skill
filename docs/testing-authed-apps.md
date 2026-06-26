@@ -88,7 +88,7 @@ await page.goto(`https://${APP}.bounded.page`);          // loads already logged
 
 The page now restores the keypair session: `getCurrentUser()` returns the user,
 `onAuthStateChanged` fires, and policy-enforced `set` / `setMany` succeed as that
-identity. The stored `issuer` keeps silent refresh working for long runs.
+identity. Keep the stored auth fields together so silent refresh works for long runs.
 
 ## Caveats
 

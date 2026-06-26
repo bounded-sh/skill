@@ -17,7 +17,7 @@ adapted to Bounded.
 `subscribeView` already opened (the per-room socket), not a fresh HTTP request per
 call. So high-frequency input is cheap — one persistent connection. (Before a room
 socket exists, e.g. the very first `join`, it falls back to one HTTP POST.) You do
-**not** manage this — there is no routePath/transport knob; the worker is the room
+**not** manage this — there is no routePath/transport knob; Bounded is the room
 authority and the client names no destination.
 
 > Do **not** hand-roll per-action HTTP for inputs. Sending an HTTP request per input
@@ -63,8 +63,7 @@ Discrete actions (attack, ability) are events — send them on the keypress, alw
 > whitelisted function — an AI NPC's brain, a settlement step, an external check.
 > The result arrives on a later tick as an `@effect` intent (checkpoint cadence, so
 > a short delay — not instant). The optional field is **`as`** (a player id), never
-> `onBehalfOf` — but `as` only gates the same-tick check today; it does **not** make
-> the call act as that player (per-player acting is roadmap). See
+> `onBehalfOf`; it is a validation hint rather than an identity override. See
 > [live-runtime.md](live-runtime.md) for the primitive
 > and [ai-npcs.md](ai-npcs.md) for NPC/settlement patterns.
 
@@ -74,7 +73,7 @@ If you render the latest snapshot directly, a late snapshot freezes the entity t
 rubber-bands when it arrives (a visible snap). Instead, buffer timestamped snapshots
 and render roughly **100-180ms in the past**, lerping between the two surrounding
 ones. Use ~100ms for same-region/light rooms; use ~150-180ms when you measure p95
-delivery gaps near 100ms or users are far from the room's Durable Object. The buffer
+delivery gaps near 100ms or users are far from the room runtime. The buffer
 absorbs jitter and delivery gaps.
 
 ```ts
@@ -158,10 +157,9 @@ for a public-read room (anyone logged in could inject intents). Declare
 
 ## Scaling to many players (the climb past 1v1)
 
-A room is one Durable Object (single thread, single location) with its sim in one
-facet. That's plenty for a few players; the ceiling you hit *first* as you add
-players is **fan-out**, not input. At N players × tickrate the server must compute
-and send N views per tick — output, from one object. The climb, in order:
+A room has one authoritative sim. That's plenty for a few players; the ceiling
+you hit *first* as you add players is **fan-out**, not input. At N players ×
+tickrate the server must compute and send N views per tick. The climb, in order:
 
 1. **Area-of-interest views (you already have this).** `views(state)` projects a
    *per-player* view — send each client only the entities near them, not the whole
@@ -170,20 +168,18 @@ and send N views per tick — output, from one object. The climb, in order:
 2. **Delta encoding.** Past a handful of players, stop sending full per-tick
    snapshots — send only the fields that changed since that client's last view.
    Bandwidth, not CPU, is usually what caps player count.
-3. **Relay-tier fan-out.** When one DO can't push to everyone, keep the
-   authoritative sim on the room DO but have it push state to a few *relay* DOs
-   that each fan out to a subset of players. Shards the *outbound* load across
-   objects (the "authoritative server + edge relays" shape) without splitting the
-   sim.
+3. **Relay-tier fan-out.** When one room runtime can't push to everyone, keep
+   one authoritative sim and fan out through relays. This shards outbound load
+   without splitting the sim.
 4. **Transport (only at twitch scale).** At 1v1/30Hz, TCP head-of-line blocking is
    noise. At 64-player *twitch*, more entities = more packets = a dropped packet
    stalls more — this is the scale where a UDP-style transport (WebTransport
    datagrams / a WebRTC relay) finally earns its keep. Until you *measure* that,
    WebSocket is correct.
-5. **Single-DO budget.** One match = one DO = one thread. Light sims (hitscan) at
-   64 are feasible; heavy physics or 128+ means sharding the world by region. Prove
-   8–16 players on the single-DO path first — that measures your real per-DO budget
-   empirically, and 16→64 becomes a fan-out-sharding problem, not a redesign.
+5. **Single-room budget.** One match has one authoritative room loop. Light sims
+   (hitscan) at 64 are feasible; heavy physics or 128+ means sharding the world by
+   region. Prove 8–16 players in one room first — that measures your real room
+   budget empirically, and 16→64 becomes a fan-out-sharding problem, not a redesign.
 
 ## Related
 - [realtime-and-games.md](realtime-and-games.md) — sessions, tick, fog-of-war, tiers

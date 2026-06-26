@@ -188,12 +188,10 @@ loser (or anyone who never joined) can forge a win. (Verified by dogfooding a
 native game: a fresh keypair wrote a winning record for a non-existent room.) The
 fix is the same — keep the result on the **server-authoritative side**: have the tick
 decide the winner and project it in `views(state)`, then read it from the player's
-**view** (`subscribeView`). Do *not* `get()`/`subscribe()` the live room doc — those
-route to the project DO and return null for live session state; only `subscribeView`
-is room-DO-routed. For a *durably queryable* leaderboard, fold results through
-`session.tick` settlement (`settleFrom` is server-computed); a **native** `session.live`
-facet can't write durable collections or trigger settlement yet, so its result is
-read live from the view until facet-triggered settlement lands — see
+**view** (`subscribeView`). Do *not* `get()`/`subscribe()` the live room doc for
+live state; use `subscribeView`. For a durably queryable leaderboard, fold
+results through `session.tick` settlement or call a settle function from native
+live; do not let the client self-report the result — see
 [live-runtime.md](live-runtime.md#recording-the-result-per-room-authoritative-today-read-it-through-the-view).
 
 ## Onchain-update signing note
@@ -204,7 +202,7 @@ authority before accepting a new policy. That is real friction for an
 agent-first workflow.
 
 - **Deferred.** Frictionless agent signing of the authority permit is on the
-  roadmap, not shipped. For now a mainnet policy update is a deliberately
+  not currently available. For now a mainnet policy update is a deliberately
   human-gated step.
 - **The default path never hits it.** Realtime / offchain apps — the default
   protocol, and what nearly every app starts as — update their policy with no

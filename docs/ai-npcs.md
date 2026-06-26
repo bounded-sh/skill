@@ -4,8 +4,8 @@
 reply comes back as an `@effect` result on a *later* tick. There is no NPC
 primitive, no bot runtime, no special "AI player" type — "NPC", "a player action
 routed through a function", and "in-game settlement" are all the **same** one
-primitive: a live `tick` returns a `call`, the host runs the function after the
-checkpoint alarm, and the result re-enters the loop as a recorded intent on the
+primitive: a live `tick` returns a `call`, Bounded invokes the function after the
+tick is recorded, and the result re-enters the loop as a recorded intent on the
 reserved `@effect` address.
 
 This is the live sibling of [functions.md](functions.md): the tick can't reach
@@ -20,15 +20,15 @@ runs as and *where* the call came from (`@origin`).
 A live tick has **no human** behind it. By default a call runs as the anonymous
 **system principal** (`@user.*` all null) — which can't bill AI. To fund an NPC,
 declare **`session.live.runAs`** once on the room's `live` block, pointing at a
-**service wallet the owner funds with AI credit**. Every live call from that game
+**service wallet the owner funds with AI/external-services credit**. Every live call from that game
 then acts as that wallet, and `ctx.ai` **Just Works** (capped at the app
 account). That's the whole story:
 
 1. **Fund it:** set `session.live.runAs: "<serviceAddress>"`; fund that account
-   with AI credit.
+   with AI/external-services credit.
 2. **Gate it:** give the NPC function
    `auth: "@origin.kind == 'live' && @origin.module == '<yourGame>'"` so **only
-   your game's tick** can reach it (`@origin` is host-set and unforgeable).
+   your game's tick** can reach it (`@origin` is platform-set and unforgeable).
 3. **Call it:** the tick returns `{ state, call: { fn, args } }`; the reply lands
    as an `@effect` intent on a later tick.
 
@@ -49,13 +49,13 @@ account). That's the whole story:
    you emitted.
 
 ```
-tick N      → return { state, call: { fn: "npcBrain", args: {...}, ref } }
-   (host drains the call after the checkpoint alarm → POSTs the function as runAs → runs ctx.ai)
-tick N+k    → intents include { address: "@effect", intent: { effectId: ref, ok, result } }
+tick N      -> return { state, call: { fn: "npcBrain", args: {...}, ref } }
+   (Bounded invokes the function under the configured live-call identity; the function runs ctx.ai)
+tick N+k    -> intents include { address: "@effect", intent: { effectId: ref, ok, result } }
 ```
 
-The reply is **not** instant — effects run on the **checkpoint-alarm cadence**,
-not per tick, so an NPC turn lands after a short delay (see Caveats).
+The reply is **not** instant — it lands after a short delay, not necessarily on
+the next tick (see Caveats).
 
 ## Worked example — a Claude/LLM NPC
 
@@ -103,8 +103,7 @@ pins it to your game's tick via `@origin`.
 > The `auth` rule is the gate: `@origin.kind == 'live'` admits only a live tick
 > (a direct end-user/SDK call has `@origin.kind == 'user'`), and
 > `@origin.module == 'arena'` pins it to **this** game's module. `@origin` is
-> host-set and unforgeable (derived from the internal-secret-gated dispatch,
-> never from a client), so no client and no other module can satisfy it. Always
+> platform-set and unforgeable, so no client and no other module can satisfy it. Always
 > pair the `module` check with `@origin.kind == 'live'` — `module` is null for a
 > `user` call. `bounded verify` understands `@origin`, so this rule both runs and
 > proves.
@@ -142,16 +141,14 @@ export function tick(state, intents, dt) {
 }
 ```
 
-- `i.address === "@effect"` is **host-only**: an intent carrying an effect result
+- `i.address === "@effect"` is **platform-only**: an intent carrying an effect result
   on any other address is rejected as forged, so a client cannot inject a fake
   NPC reply (see [live-runtime.md](live-runtime.md) and
   [principals-and-origins.md](principals-and-origins.md)).
-- The optional `as` field on a `call` names a player, but **`as` is NOT wired to
-  identity today** — it only gates the facet's same-tick check (a tick can't name a
-  player who didn't act this tick). A permitted `as` is a **no-op on identity**: the
-  call still acts as the session `runAs` / function `actAs` / anonymous system, never
-  as that player. Per-player acting is roadmap (cheap, non-breaking to add later). An
-  NPC brain doesn't need `as` anyway — it speaks as the `runAs` service identity. See
+- The optional `as` field on a `call` names a player as a validation hint, not
+  an identity override. The call still acts as the session `runAs` / function
+  `actAs` / anonymous system, never as that player. An NPC brain usually doesn't
+  need `as`; it speaks as the `runAs` service identity. See
   [principals-and-origins.md](principals-and-origins.md).
 
 ### 3. The function — `ctx.ai.run`, funded by `runAs`
@@ -161,11 +158,16 @@ export function tick(state, intents, dt) {
 const seen = new Set<string>();
 
 export default async function npcBrain(args, ctx) {
-  // Belt-and-braces: only this game's live tick should ever reach here.
-  if (ctx.origin?.kind !== "live" || ctx.origin?.module !== "arena") {
+  // The policy `auth` rule is the REAL gate — it already proved this call came
+  // from this game's live tick (@origin.kind == 'live' && @origin.module ==
+  // 'arena') before your code ran; a direct client invoke was 403'd. The check
+  // below is pure defense-in-depth, so write it to deny ONLY a positively-wrong
+  // origin and PROCEED when origin is absent (never silently mute on a missing
+  // origin): `ctx.origin && ctx.origin.kind !== 'live'`.
+  if (ctx.origin && (ctx.origin.kind !== "live" || ctx.origin.module !== "arena")) {
     return { text: "" };
   }
-  // Dedup on YOUR effectId — the platform does NOT dedup the ref.
+  // Dedup on YOUR effectId.
   if (args.effectId && seen.has(args.effectId)) return { text: "" };
   if (args.effectId) seen.add(args.effectId);
 
@@ -183,24 +185,31 @@ export default async function npcBrain(args, ctx) {
 
 `ctx.ai.run` bills the call's principal — here the `runAs` service account — and
 spend is **capped at the app account** regardless of principal, so a depleted
-account fails closed (no runaway bill). `ctx.origin` is `{kind,path,module,room,tick}`
-inside the body (or `null`); the `auth` rule already gated the call, so the
-in-body check above is just defense-in-depth.
+account fails closed (no runaway bill).
+
+**`ctx.origin` in the body.** For a live-tick call `ctx.origin` is the same
+platform-set, unforgeable provenance the `auth` rule saw as `@origin` —
+`{ kind: "live", path, module, room, tick }` — and it is `null` for any non-live
+call. The policy `auth` rule is the **real gate** (it already proved the origin
+before your code ran); the in-body check is only defense-in-depth, so guard
+**narrowly**: deny only on a *positively-wrong* origin and proceed when it is
+absent — `if (ctx.origin && ctx.origin.kind !== 'live') return { text: "" }`.
+Do **not** write `if (ctx.origin?.kind !== 'live') return …` as a hard gate.
+Let the proven `auth` rule do the gating; the in-body check is only extra
+defense-in-depth.
 
 ## Caveats — state them to the user
 
-- **Delayed, not instant.** Effects drain on the **checkpoint-alarm cadence**
-  (not per tick), so an NPC reply lands a short delay after the tick that emitted
+- **Delayed, not instant.** An NPC reply lands a short delay after the tick that emitted
   the call. Design the loop to tolerate it (e.g. show "…thinking" until the
   `@effect` result arrives) — don't block the tick on it.
-- **No platform dedup yet.** The platform does **not** dedup on the idempotency
-  `ref`, so a call can in principle run more than once. **Dedup on `effectId`
+- **Dedup idempotently.** A call can in principle run more than once. **Dedup on `effectId`
   inside the function** (as the example does). Do **not** assume exactly-once.
-- **Cap NPC spend / rate.** `ctx.ai` is capped per the app account's AI credit (a
+- **Cap NPC spend / rate.** `ctx.ai` is capped per the app account's AI/external-services credit (a
   depleted account fails closed — no runaway bill), but also bound the *rate*:
   gate `npcShouldSpeak` (e.g. once every N ticks, or only on a player action) and
   keep `pendingRef` so at most one call is in flight. For a hard ceiling, fund the
-  `runAs` service account with a small AI-credit budget — see
+  `runAs` service account with a small AI/external-services budget — see
   [billing.md](billing.md).
 - **Gate by `@origin`, keep `calls` tight.** The `@origin` `auth` rule is what
   stops a direct client call from reaching the NPC brain; the `session.live.calls`
@@ -250,5 +259,6 @@ human's key (see [key-and-account-safety.md](key-and-account-safety.md)).
 - [functions.md](functions.md) — the function the tick calls (the `@origin` auth gate, the live-call principal)
 - [service-keys.md](service-keys.md) — `runAs` (session-wide) + `actAs` (per-function override) funded identities
 - [backend-runtime.md](backend-runtime.md) — a long-running external agent through Bounded
+- [agents-flue.md](agents-flue.md) — the Flue agent framework: a multi-step tool-use loop (vs an in-game NPC tick)
 - [guides/building-for-agents.md](../guides/building-for-agents.md) — a `@bounded-sh/server` keypair agent, per-agent key isolation
-- [billing.md](billing.md) — AI credit + per-account caps
+- [billing.md](billing.md) — AI/external-services credit + per-account caps

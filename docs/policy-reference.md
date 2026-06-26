@@ -105,23 +105,31 @@ invariant does **not** need `!` — the invariant rebinds it on every write.
 
 Ownership-like fields (`owner`, `ownerAddress`, `holder`, or a field detected
 from rules) are protected by a deploy proof: the field may stay unchanged, or it
-may be reassigned only by its current holder. Use `transferAuthority` when a
-different atomic condition is intentionally safe, such as a listed good moving
-to a buyer only when the paired payment lands in the same `setMany`.
+may be reassigned only by its current holder. Use `proofs.transferAuthority`
+when a different atomic condition is intentionally safe, such as a listed good
+moving to a buyer only when the paired payment lands in the same `setMany`.
 
 ```json
-"goods/$goodId": {
-  "fields": { "holder": "String", "forSale": "Bool", "price": "UInt" },
-  "transferAuthority": [{
-    "field": "holder",
-    "name": "settledSale",
-    "allow": "@data.forSale == true && @newData.holder == @user.id && getAfter(/wallets/@data.holder).ink == get(/wallets/@data.holder).ink + @data.price && getAfter(/wallets/@user.id).ink == get(/wallets/@user.id).ink - @data.price"
-  }],
-  "rules": {
-    "read": "true",
-    "create": "@user.id != null && @newData.holder == @user.id",
-    "update": "@user.id != null && (@data.holder == @user.id || (@data.forSale == true && @newData.holder == @user.id && getAfter(/wallets/@data.holder).ink == get(/wallets/@data.holder).ink + @data.price && getAfter(/wallets/@user.id).ink == get(/wallets/@user.id).ink - @data.price))",
-    "delete": "false"
+{
+  "defs": {
+    "settledSale": "@data.forSale == true && @newData.holder == @user.id && getAfter(/wallets/@data.holder).ink == get(/wallets/@data.holder).ink + @data.price && getAfter(/wallets/@user.id).ink == get(/wallets/@user.id).ink - @data.price"
+  },
+  "proofs": {
+    "transferAuthority": [{
+      "scope": "goods/$goodId",
+      "field": "holder",
+      "name": "settledSale",
+      "allow": "@def.settledSale"
+    }]
+  },
+  "goods/$goodId": {
+    "fields": { "holder": "String", "forSale": "Bool", "price": "UInt" },
+    "rules": {
+      "read": "true",
+      "create": "@user.id != null && @newData.holder == @user.id",
+      "update": "@user.id != null && (@data.holder == @user.id || @def.settledSale)",
+      "delete": "false"
+    }
   }
 }
 ```
@@ -133,6 +141,8 @@ declared `allow` predicate, and separately proves that the declared predicate ca
 only assign the ownership field to the caller (`@newData.holder == @user.id` or
 the equivalent recognized caller principal). Put money/points under `conserve`
 and submit the good move plus wallet debit/credit in one atomic `setMany`.
+The older collection-local `transferAuthority` array is still accepted for
+backward compatibility, but `proofs.transferAuthority` is the preferred shape.
 
 ## Rules & the expression language
 
@@ -157,7 +167,7 @@ expressions at deploy. **An omitted rule defaults to deny.**
 | `@user.address` | A **real wallet**, only. **`null` for email/social logins** (email tokens omit the wallet claim). Use only for onchain/wallet semantics. | — |
 | `@user.email` | Verified, lowercased email; `null` for wallet/guest logins. | offchain only |
 | `@user.isAnonymous` | Strict boolean; `true` only for guest tokens. Gate with `== false` (no unary `!` on special vars). | offchain only |
-| `@origin.kind` | **Host-set live/dispatch provenance**, unforgeable (derived from internal-secret-gated dispatch, never a client). **Always set.** Produced today: `'live'` (a live game tick), `'user'` (a direct end-user/SDK call). `'scheduled'`/`'function'`/`'webhook'` are reserved/roadmap (not stamped yet — gating on them verifies but never matches). | offchain only |
+| `@origin.kind` | **Platform-set call provenance**, unforgeable and never supplied by the client. **Always set.** Common values include `'live'` for a live tick and `'user'` for a direct end-user/SDK call. | offchain only |
 | `@origin.path` / `@origin.module` / `@origin.room` / `@origin.tick` | The live/dispatch source detail; **`null` when not applicable** (e.g. all null for `kind:'user'`). Gate `@origin.module` together with `@origin.kind == 'live'`. | offchain only |
 | `@data.field` | Existing document | **not** in `create` rules |
 | `@newData.field` | Incoming document | **not** in `delete` rules |
@@ -182,7 +192,7 @@ expressions at deploy. **An omitted rule defaults to deny.**
 > `get()`-read role field or a literal address — not a constant.
 
 > **`@origin.*` is offchain-only — forbidden in `onchain:true` rules**, same as
-> `@user.id`. It's host-set provenance for live ticks and dispatch, so a function
+> `@user.id`. It's platform-set provenance for live ticks and dispatch, so a function
 > can gate to *only its own game's tick*:
 > `"auth": "@origin.kind == 'live' && @origin.module == 'arena'"`. See
 > [principals-and-origins.md](principals-and-origins.md) and
@@ -297,11 +307,13 @@ never treated as path templates:
 | Block | Shape | Doc |
 |---|---|---|
 | `links` | array of link definitions | [queries.md](queries.md) |
+| `auth` | `{ anonymous: bool }` — app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. | [auth.md](auth.md), [anonymous-accounts.md](anonymous-accounts.md) |
 | `functions` | `{ name: { auth, entry, timeout, secrets } }` | [functions.md](functions.md) |
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
-| `attestations` | `[{ claim, kind, ... }]` — GLOBAL, policy-wide proven claims (see notes below) | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
+| `proofs` | `{ transferAuthority?, attestations? }` — proof-only declarations; preferred home for conditional transfer authority and global attestations | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
+| `attestations` | legacy alias for `proofs.attestations` | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
 | `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
 | `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](environments.md) |
 

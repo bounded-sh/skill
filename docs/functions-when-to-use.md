@@ -41,6 +41,7 @@ If it only *reacts to a write* and stays inside the DB, it's a hook. If it must
 |---|---|---|
 | "Only an admin may hide a post" | **rule** — `get(/admins/@user.id) != null` on `update` | Pure access control. A function here would be un-proven where a *proven* rule fits exactly. |
 | "Balances are never minted or destroyed" | **invariant** — `conserve` on the balance field | A cross-write guarantee. Only an invariant *proves* it; a function can't (and its own writes still answer to it anyway). |
+| "A buyer should one-click buy a listed good from another user" | **rule + invariant + proof declaration** — `proofs.transferAuthority` for the good's `holder`, `conserve` on the wallet balance, one `setMany` | No external call needed. The buyer can invoke the atomic batch directly, or through a caller-scoped function, without `actAs`. Put the sale predicate in `defs` and reference it from both the update rule and the proof. |
 | "An agent spends at most $5000/day" | **invariant** — `rollingSum` window cap | Provable quota. Never enforce a cap in function code — put it where it's proven, then even a function's writes obey it. |
 | "When a message is posted, bump the room's `lastMessageAt`" | **hook** — `hooks.offchain.create` → `updateField` | In-boundary cascade, reacts to a write, no external call. |
 | "Charge a card via Stripe, then mark the order paid" | **function** | Must call an external API with a secret. Declarative policy can't `fetch`. |
@@ -62,25 +63,17 @@ write path. Push authorization into the function's `auth` rule and the constrain
 into an invariant; keep the function body to the part that genuinely needs to
 leave the boundary.
 
-## Roadmap — toward formally-bounded functions
+## Current proof boundary
 
-Today a function is **un-proven logic, contained by proven walls**: its writes go
-through your invariants (it can't break one) and its invocation is gated by the
-proven rule engine (`auth`). What is *not* bounded yet is its **reach** — which
-paths it may write and which hosts it may call are matters of code review, not
-proof.
-
-The planned next step is a **capability contract**: a function declares its
-`writeScopes` (the path templates it may write) and `allowedHosts` (the domains it
-may `fetch`), and the prover discharges containment — proving the function's
-blast radius is exactly what it declared. That moves functions from "contained by
-proven walls" toward **formally-bounded functions**. It is not shipped; don't
-claim containment proofs for function reach today — only for invariants (writes)
-and the `auth` gate (invocation).
+A function is **un-proven logic, contained by proven walls**: its writes go
+through your invariants and its invocation is gated by the proven rule engine
+(`auth`). Normal functions write as the caller; `actAs` functions write as a
+service identity and must be admin-gated. Keep guaranteed properties in policy
+rules and invariants, not inside function code.
 
 ## Related
 
-- [functions-graduation.md](functions-graduation.md) — **start simple, graduate to Cloudflare as you grow**: the tier rule (Bounded function → eject to a CF Worker → Cloudflare Agents SDK) and what carries over
+- [functions-graduation.md](functions-graduation.md) — start simple, then graduate from Bounded functions to the Bounded runtime or your own server when needed
 - [functions.md](functions.md) — declare, write, deploy, invoke, secrets, limits
 - [invariants.md](invariants.md) — the proven tier a function's writes still obey
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — rung 2 (in-boundary hooks) vs notify-out webhooks

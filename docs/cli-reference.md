@@ -182,9 +182,9 @@ Full treatment: [environments.md](environments.md).
 | Command | Does | Example |
 |---|---|---|
 | `runtime init [dir]` | Scaffold a backend project (`bounded.manifest` + `index.ts` agent) | `bounded runtime init my-agent` |
-| `runtime deploy [dir]` | Bundle source + custom npm deps (cooldown-resolved, server-side) into an immutable artifact + run it through the host | `bounded runtime deploy --app-id <id>` |
-| `runtime info` | Show the deployed artifact (codeId, profile, kind, manifest, lockset) | `bounded runtime info --app-id <id>` |
-| `runtime invoke <agent>` | Invoke a deployed agent/backend through the host (attaches your session token) | `bounded runtime invoke my-agent --app-id <id> --data '{}'` |
+| `runtime deploy [dir]` | Bundle source + custom npm deps and deploy backend code through Bounded | `bounded runtime deploy --app-id <id>` |
+| `runtime info` | Show deployed backend runtime details | `bounded runtime info --app-id <id>` |
+| `runtime invoke <agent>` | Invoke a deployed agent/backend through Bounded (attaches your session token) | `bounded runtime invoke my-agent --app-id <id> --data '{}'` |
 | `secret put <NAME> <VALUE>` | Set/update a backend secret VALUE for an app (declare the name in `bounded.manifest`; read via `ctx.secrets.get` or auto-inject on egress — see [secrets.md](secrets.md)) | `bounded secret put STRIPE_KEY sk_live_xxx --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |
@@ -197,8 +197,8 @@ The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) 
 ## Data plane
 
 All `data` subcommands take `--app-id <id>` (required) and optional
-`--chain realtime` (default; `mainnet` arrives later). Writes go through the
-realtime worker, which enforces the deployed policy atomically. Full semantics:
+`--chain realtime` (default; `mainnet` arrives later). Writes go through
+Bounded, which enforces the deployed policy atomically. Full semantics:
 [data-plane.md](data-plane.md); reads: [queries.md](queries.md).
 
 | Command | Does | Example |
@@ -344,8 +344,8 @@ bounded functions logs   <name> --app-id <id>
 `deploy` uploads the function's code and merges its entry (the invocation `auth`
 rule, `entry`, `timeout`, `secrets`) into the policy — owner/admin only. `invoke`
 attaches your session token automatically (same token as `data`) so the
-dispatcher gates the call on the `auth` rule, then prints the function's JSON (or
-the dispatcher error — `403` if the rule denies you). Caller-scoped functions may
+Bounded gates the call on the `auth` rule, then prints the function's JSON (or
+the platform error — `403` if the rule denies you). Caller-scoped functions may
 be invoked by any caller their `auth` rule admits; functions that declare
 `actAs` in policy are service-identity functions and must be admin-gated at
 verify/deploy. Full guide:

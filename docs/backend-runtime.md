@@ -1,138 +1,158 @@
-# Backend code runtime — deploy functions & agents THROUGH Bounded
+# Backend Runtime
 
-When a Bounded **function** (short, stateless, `fetch`-only) isn't enough — you
-need **custom npm packages**, **persistent state between calls**, **an agent that
-runs on a schedule**, or general backend HTTP — deploy a **backend project** to the
-Bounded runtime. Your code runs on Cloudflare's edge **through us**: loaded into an
-isolated Durable Object facet, with every capability handed to it as a **sealed,
-metered, app-scoped** object. Your code never holds a raw credential or binding.
+What's in here: when to use Bounded's hosted backend runtime instead of a short
+function, the public project shape, and the `ctx` capabilities app code can rely
+on.
 
-You still get what Bounded adds over raw Cloudflare: **one auth identity, a
-fail-closed AI spend cap, an egress allowlist, version pinning, and billing** —
-without a Cloudflare account, `wrangler`, or bindings of your own.
+Use backend runtime when an app needs:
 
-> This is the tier ABOVE `bounded functions`. See
-> [functions-graduation.md](functions-graduation.md) for when to use which.
+- long-running or multi-step work,
+- persistent agent state,
+- schedules that coordinate repeated work,
+- custom npm dependencies,
+- AI calls through `ctx.ai`,
+- access to app data through `ctx.bounded`,
+- secrets through `ctx.secrets`, or
+- controlled outbound HTTP through declared hosts.
 
-> Want an agent that **plays a game** — an AI NPC the live tick drives, or an
-> agent that joins a room as a player? See [ai-npcs.md](ai-npcs.md).
+Use a normal Bounded function for short request/response tasks.
 
-> An agent runs under its **own keypair**, and that key owns the agent's apps.
-> Keep each agent's key isolated and backed up — see
-> [key-and-account-safety.md](key-and-account-safety.md).
+## Project Shape
 
-## The shape of a backend project
+Create a directory with a manifest and a TypeScript entry:
 
-A directory with a `bounded.manifest` and a TypeScript entry:
-
-```
+```text
 my-agent/
   bounded.manifest
   index.ts
 ```
 
 `bounded.manifest`:
+
 ```json
 {
   "name": "my-agent",
   "kind": "agent",
   "entry": "index.ts",
-  "runtime": "bounded-runtime@2026.06",
   "dependencies": { "ms": "^2.1.3" },
   "allowedHosts": ["api.example.com"],
-  "aiCapUSD": 1.0
+  "aiCapUSD": 1,
+  "secrets": ["EXAMPLE_API_KEY"]
 }
 ```
-- `kind`: `"agent"` (has `onInvoke`/`onSchedule`) or `"backend"` (serves HTTP via `fetch`).
-- `dependencies`: any npm packages. **Bundled server-side under a 7-day cooldown** —
-  a version is only used if it was published ≥7 days ago (supply-chain protection;
-  fail-closed). Pin loosely (`^`/`~`); we resolve + freeze the exact, transitive set.
-- `allowedHosts`: the ONLY hosts your code may `fetch` (egress allowlist; everything
-  else is denied 403, fail-closed). Subdomains of a listed host are allowed.
-- `aiCapUSD`: the rolling spend cap (per day) for `ctx.ai`. Over it → calls are
-  denied, never an unbounded bill.
-- `runtime`: the immutable **profile** you're pinned to. Old projects stay on their
-  profile when new ones ship; upgrades are opt-in.
 
-`index.ts` — your code sees ONLY `ctx` (no raw bindings):
+- `kind`: `"agent"` for `onInvoke`/`onSchedule`, or `"backend"` for a `fetch`
+  handler served at the app's backend URL.
+- `dependencies`: npm packages bundled for the backend runtime.
+- `allowedHosts`: outbound `ctx.fetch` allowlist. Other hosts are denied.
+- `aiCapUSD`: app-level spend cap for `ctx.ai`.
+- `secrets`: names declared in the manifest. Set values with
+  `bounded secret put`.
+
+Use `bounded runtime init` to scaffold the current manifest format.
+
+## Public `ctx` Surface
+
+| Capability | Use |
+|---|---|
+| `ctx.bounded` | read/write the app's Bounded data under policy checks |
+| `ctx.store.get/put` | store small app-scoped runtime state |
+| `ctx.ai.run` | call AI models against the app/account spend controls |
+| `ctx.secrets.get` | read declared app secrets |
+| `ctx.fetch` | call allowed outbound hosts |
+| `ctx.schedule` | schedule follow-up work |
+| `ctx.identity` | read the acting user/service context |
+| `ctx.log` | write tagged runtime logs |
+
+Provider keys belong in Bounded secrets, not frontend code.
+
+## Agent Entry
+
 ```ts
 export default {
-  // agent: a request -> response turn
   async onInvoke(input, ctx) {
-    await ctx.store.put("last", JSON.stringify(input));          // per-app KV (namespaced)
-    const who = ctx.identity;                                    // { user, address, email } (host-verified JWT)
-    const ai = await ctx.ai.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", { prompt: "hi" }); // spend-capped
-    const res = await ctx.fetch("https://api.example.com/x");    // egress: allowlist + metered
-    await ctx.schedule.every("poll", 60);                        // host-owned alarm -> onSchedule
-    return { ok: true, last: (await ctx.store.get("last")).value };
+    await ctx.store.put("last-input", JSON.stringify(input));
+
+    const apiKey = await ctx.secrets.get("EXAMPLE_API_KEY");
+    const ai = await ctx.ai.run("model-id", {
+      messages: [{ role: "user", content: "Summarize the latest job state." }]
+    });
+    const summary = ai.response ?? ai.choices?.[0]?.message?.content ?? "";
+
+    const response = await ctx.fetch("https://api.example.com/jobs", {
+      headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
+    });
+
+    await ctx.bounded.set("jobs/last", {
+      ok: response.ok,
+      summary
+    });
+    await ctx.schedule.every("poll", 60);
+
+    return { ok: true };
   },
-  // fires when a schedule you set comes due (the host owns the timer)
-  async onSchedule(name, ctx) { /* ... */ },
+
+  async onSchedule(name, ctx) {
+    ctx.log("schedule fired", { name });
+  }
 };
 ```
-For `kind: "backend"`, export `{ async fetch(req, ctx) { return new Response(...) } }`
-to serve arbitrary HTTP at `https://<app>-api.bounded.page/...`.
 
-### The `ctx` surface (all app-scoped + sealed)
-| `ctx.x` | what it is |
-|---|---|
-| `ctx.appId` | your app id (sealed; you can't address another app) |
-| `ctx.store.get/put` | per-app namespaced key/value |
-| `ctx.ai.run(model, input)` | Workers AI, **fail-closed** spend cap (`aiCapUSD`) |
-| `ctx.schedule.every(name, sec)` / `.at(name, epochMs)` / `.cancel(name)` | host-owned scheduling → `onSchedule` (facets can't `setAlarm`) |
-| `ctx.fetch(url, init)` | outbound HTTP, **allowlist-gated + metered**; a secret bound to the host is auto-injected on the way out |
-| `ctx.secrets.get(name)` | read a tenant secret (declare `secrets` in the manifest; returns `null` for an egress-only secret) — see [secrets.md](secrets.md) |
-| `ctx.identity` | `{ user, address, email }` — the verified caller |
-| `ctx.log(...)` | tagged logging |
+For `kind: "backend"`, export a `fetch` handler:
 
-### How the gateways enforce (the sealed capabilities)
+```ts
+export default {
+  async fetch(req, ctx) {
+    return Response.json({ ok: true });
+  }
+};
+```
 
-Every capability is a host-owned gateway that seals your `appId` server-side, so
-the limits aren't advisory — your code physically cannot exceed them:
+## Boundaries
 
-- **AI gateway** (`ctx.ai.run`) — the host holds the provider key (you never see
-  it) and **reserves the per-call cost against your rolling `aiCapUSD` BEFORE
-  running inference**, atomically (one DO RPC), so concurrent calls can't race
-  past the cap. Over the cap → `ai_spend_cap_exceeded` (no inference, no charge).
-  A **failed** inference is **refunded** — you're never billed for an error. Each
-  charge is also recorded against your **account's monthly AI bucket** (the plan
-  gift; see [billing.md](billing.md)).
-- **Schedule gateway** (`ctx.schedule`) — facets can't `setAlarm`, so the host
-  owns a single durable alarm and RPCs `onSchedule` back into your facet. Interval
-  is **clamped to a 15s minimum** (a too-frequent schedule would hammer the shared
-  per-app DO), and concurrent schedules are capped per app by your plan
-  (`maxSchedules`). A schedule that keeps crashing **self-disables** after repeated
-  failures so it can't loop forever.
-- **Egress gateway** (`ctx.fetch`) — only the hosts in your manifest
-  `allowedHosts` are reachable (subdomains of a listed host count); **everything
-  else is denied `egress_denied`, fail-closed**, and every request is metered.
+- Backend runtime code is ordinary imperative code, not formally proven.
+- Writes through `ctx.bounded` still pass the app's policy rules and invariants.
+- `allowedHosts` and `ctx.secrets` keep provider credentials out of frontend
+  code.
+- `ctx.ai` spends against the AI/external-services bucket and app-level caps.
+  When a cap or bucket is exhausted, calls fail closed.
+- For AI NPCs or agents that act in realtime rooms, also read
+  [ai-npcs.md](ai-npcs.md) and [service-keys.md](service-keys.md).
 
-## Deploy + run (CLI)
+## Long-Running Work
+
+Do not run multi-minute jobs in a short function. Split long work into resumable
+steps and schedule the next step after each successful checkpoint. Make each step
+idempotent so retries are safe.
+
+Recommended pattern:
+
+1. Store job state in a Bounded collection or `ctx.store`.
+2. Process a bounded amount of work per step.
+3. Write progress before scheduling the next step.
+4. Stop when complete or when the user's cap/bucket is exhausted.
+
+## Deploy
+
+Deploy backend runtime code with the Bounded CLI for an app you own:
 
 ```bash
-bounded runtime init my-agent           # scaffold bounded.manifest + index.ts
+bounded runtime init my-agent
 cd my-agent
-bounded runtime deploy --app-id <id>    # bundle (server-side, cooldown) + upload an immutable artifact
-bounded runtime info   --app-id <id>    # show codeId, profile, manifest, resolved lockset
+bounded runtime deploy --app-id <id>
+bounded runtime info --app-id <id>
 bounded runtime invoke my-agent --app-id <id> --data '{"name":"Amit"}'
 ```
 
-Every deploy produces a new **immutable, content-addressed artifact** (`codeId` =
-hash of the bundled content). A new upload = a fresh isolate; re-uploading identical
-code is a no-op. You can't deploy under an app you don't own (owner/admin only).
+Use the current CLI help for exact flags:
 
-## What's guaranteed (and what isn't)
-- **Isolation** (a hard boundary): your code can't reach another tenant's data, the
-  host, or a raw binding — only the sealed `ctx`. Egress is allowlisted; AI is capped;
-  a runaway can't run an unbounded bill or wedge the host. Each app is a separate
-  sharded Durable Object; the capability gateways seal your appId server-side.
-- **Supply chain** (the 7-day cooldown): your declared `dependencies` are resolved to
-  versions ≥7 days old and frozen into the artifact by the **Bounded bundler** (the
-  trusted control plane) — that's where the cooldown is enforced. The edge additionally
-  pins the runtime profile + its frozen entry wrapper, and rejects any upload whose
-  lockset doesn't cover every declared dependency. Practically: deploy through
-  `bounded runtime deploy` (which routes to our bundler) and your deps are cooldown-clean.
-- **NOT proven**: unlike policy rules/invariants, your imperative code is **not
-  formally proven**. Its *writes* to Bounded data still go through the proven boundary
-  (invariants hold), but its own logic — and any code you bundle — is ordinary code
-  running in *your own* sandbox. Keep money-safety in **invariants**, not backend code.
+```bash
+bounded runtime --help
+```
+
+## Related
+
+- [functions.md](functions.md) — short functions
+- [secrets.md](secrets.md) — provider keys
+- [billing.md](billing.md) — buckets and caps
+- [agents-flue.md](agents-flue.md) — multi-step agent loop

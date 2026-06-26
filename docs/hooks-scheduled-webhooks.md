@@ -43,14 +43,11 @@ plugins; in practice that is `@DocumentPlugin`:
 
 Chain effects with `&&`; a falsy result short-circuits later calls.
 
-> **Values that work as `value` (verified 2026-06-16):** String/Number/Bool
-> literals, and field refs from the triggering write (`@newData.<field>`,
-> `@data.<field>`). Numbers, strings, and bools all persist — `updateField("c",
-> "v", 5)` stores `5`, `putDocument("receipts/x", { total: 99 })` writes the doc,
-> and `@newData.author` → `rooms/lobby.lastAuthor` propagates. (Numeric values
-> were silently dropped before a 2026-06-16 fix — they are `BigInt` in the hook VM
-> and the worker's doc serializer threw on them; it now converts BigInt to a
-> stored Number, matching client-supplied numbers.)
+> **Values that work as `value`:** String/Number/Bool literals, and field refs
+> from the triggering write (`@newData.<field>`, `@data.<field>`). Numbers,
+> strings, and bools all persist — `updateField("c", "v", 5)` stores `5`,
+> `putDocument("receipts/x", { total: 99 })` writes the doc, and
+> `@newData.author` → `rooms/lobby.lastAuthor` propagates.
 >
 > Two real limitations remain (both have a client-side answer):
 > - **`updateField` is a SET, not an increment** — `updateField("c","n",1)` stores
@@ -68,8 +65,7 @@ Chain effects with `&&`; a falsy result short-circuits later calls.
 >
 > For `putDocument`, pass the data as an **object literal**
 > (`putDocument("p", { total: 99 })`) — a JSON-**string** data arg
-> (`putDocument("p", "{ total: 99 }")`) is unreliable in the realtime worker and
-> may not write.
+> (`putDocument("p", "{ total: 99 }")`) is not supported and may not write.
 
 > **An onchain plugin (`@TokenPlugin.transfer`, …) in an offchain hook is
 > rejected by the validator.** Onchain plugins belong in `hooks.onchain` on a
@@ -161,13 +157,16 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
 > in-boundary write (still checked by your invariants). This is the recurring-job
 > primitive — use it to reset a quota, roll a counter, advance a clock.
 >
-> **Running a Bounded *function* on a schedule is not available yet** (roadmap).
-> The validator accepts a `schedule.run` that names a `functions.<name>`, but the
-> heartbeat does **not** invoke it — it never fires. Until it lands, if the
-> scheduled work must leave the boundary (pull FX rates, call an LLM), have a
-> scheduled **hook** flip a marker row and react to that change from your own
-> trigger (e.g. a webhook target or your own cron calling `functions.invoke`), or
-> invoke the function from your own scheduler.
+> **Running a Bounded *function* on a schedule is available now.** A `schedule.run`
+> (or `dueRows.run`) that names a `functions.<name>` **fires on the cadence** — and unlike an in-boundary hook,
+> a function can leave the boundary (pull FX rates, call an LLM via `ctx.ai.run`) and
+> write through your rules + invariants with `ctx.bounded`. Add `"actAs": "<addr>"`
+> to the function so it runs as a real identity. **Deploy-ordering:** the function
+> must be deployed for its schedule to register — deploy the function before (or with)
+> the policy that schedules it; a later `functions deploy` re-registers, so the order
+> self-heals. Use a scheduled **hook** when the work is a pure in-boundary write (reset
+> a quota, roll a counter) or when you need the due row's id (functions don't yet
+> receive it — see [functions.md](functions.md)).
 
 ## dueRows — one-shot timers
 
@@ -206,8 +205,8 @@ Also offchain-only.
 > because the hook write is privileged. Note the hook's *sink* must be a real,
 > declared collection+field it can write to (the example writes to a separate
 > `firelog/global` doc, not back into the timer's own required-field schema).
-> `dueRows` running a **hook** rides the row DO's `alarm()`, the same mechanism
-> scheduled hooks use.
+> `dueRows` running a **hook** uses Bounded scheduling, the same public scheduling
+> behavior as scheduled hooks.
 
 ## webhooks — outbound notifications
 
@@ -256,7 +255,7 @@ shared secret to leak). Three headers carry the proof:
   reject deliveries outside your skew window to bound replay.
 
 The public keys are served at
-`GET <your realtime host>/.well-known/bounded-webhook-keys.json` →
+`GET <app base URL>/.well-known/bounded-webhook-keys.json` →
 `{ "keys": [ { "id", "alg": "ed25519", "publicKey": "<base64 raw 32-byte key>" } ] }`.
 
 ### Verifying a webhook on your server
@@ -285,8 +284,8 @@ app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
 
 > **The keys URL follows your `init({ network })`.** The receiver verifies against
 > the network's signing keys automatically; with no `init` (a pure receiver) it
-> falls back to the production endpoint (fail-closed). Pass
-> `verifyWebhook(body, headers, { keysUrl })` only for a custom worker.
+> uses the production key set. Pass `verifyWebhook(body, headers, { keysUrl })`
+> only when you intentionally verify against a custom key source.
 
 Webhooks are **read-only fan-out** — never act on an unauthenticated body, and
 treat the event as a *signal*: if you need to mutate Bounded state in response, do

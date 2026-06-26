@@ -60,7 +60,7 @@ only for the next question.
 | Functions and external API calls | [docs/functions.md](docs/functions.md) |
 | Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | Give backend code user-owned API keys | [docs/secrets.md](docs/secrets.md) |
-| Bounded Auth, email/text OTP, OAuth, guest users | [docs/auth.md](docs/auth.md) |
+| Bounded Auth, email OTP, OAuth, guest users, optional text OTP | [docs/auth.md](docs/auth.md) |
 | Roles, owners, collaborators, scoped admins | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
 | Top-level roles and read/write scopes | [docs/roles.md](docs/roles.md) |
 | Manager/owner/collaborator identity sets or function log access | [docs/identity-and-logs.md](docs/identity-and-logs.md) |

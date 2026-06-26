@@ -34,9 +34,9 @@ onchain program. Nothing is ported between runtimes, so nothing can drift.
 
 This is the distinction that decides whether a proof is a *local* statement or a *system-wide* guarantee:
 
-- **Rules (Layer A) govern DIRECT writes + authorization.** Authorization has deliberate escape hatches: a **hook** (`updateField`/`put`) bypasses a collection's create/update/delete rules unless the collection sets `enforceRules: true`, and onchain **`ghost_mode`** (`set_documents_no_user`) is a permissionless write. So a rule proof ("only the owner can write X") guarantees the property for *direct client writes* — **not** necessarily for hook/system/permissionless writes. `bounded verify` flags this with a non-blocking **"rule authorization is direct-write-only"** advisory on any scope that declares hooks without `enforceRules`. Set `enforceRules: true` to make the rule apply to hook writes too.
+- **Rules (Layer A) govern DIRECT writes + authorization.** Authorization has deliberate escape hatches: a **hook** (`updateField`/`put`) bypasses a collection's create/update/delete rules unless the collection sets `enforceRules: true`, and some onchain permissionless writes are not attributed to an end user. So a rule proof ("only the owner can write X") guarantees the property for *direct client writes* — **not** necessarily for hook/system/permissionless writes. `bounded verify` flags this with a non-blocking **"rule authorization is direct-write-only"** advisory on any scope that declares hooks without `enforceRules`. Set `enforceRules: true` to make the rule apply to hook writes too.
 
-- **Invariants (Layer B) govern EVERY write surface, on BOTH planes — unskippable.** Every mutation path — direct client (HTTP/WS), Bounded Function `ctx.bounded`, hooks, ticks, schedules, file finalize — runs the declared transaction invariants before committing, and they hold *regardless of `enforceRules`* and *regardless of `ghost_mode`* (the onchain enforcement is intentionally ghost-mode-independent). An invariant holds "across all instances," whatever code path produced the write.
+- **Invariants (Layer B) govern EVERY write surface, on BOTH planes — unskippable.** Every mutation path — direct client (HTTP/WS), Bounded Function `ctx.bounded`, hooks, ticks, schedules, file finalize, and onchain permissionless writes — runs the declared transaction invariants before committing. An invariant holds "across all instances," whatever code path produced the write.
 
 **Rule of thumb:** if a property must hold *no matter what* — including hook/system/permissionless writes — express it as an **invariant**, not a rule. Rules answer *who may directly do what*; invariants answer *what must never break*.
 
@@ -84,7 +84,12 @@ Keep these scope edges in mind when describing guarantees to a user:
   every valid write shape is not.
 - Rolling caps account exactly the events written to the declared
   append-only scope. Spending that bypasses the collection is outside the
-  statement.
+  statement. **To make a `rollingSum` loss cap bind a *real onchain* outcome
+  rather than only the rows your code remembers to write, reserve the
+  worst-case loss at OPEN (= committed isolated margin) so the proven cap
+  rejects the open before the trade exists, then reconcile to realized
+  (≤ reserved) at CLOSE** — the reserve-at-open pattern in
+  [onchain-trading.md](onchain-trading.md#reserve-at-open-loss-cap--making-the-proven-cap-bind-the-real-onchain-loss).
 - Tenant isolation claims are about the declared relationship graph; the
   opt-in coverage/depth/induction gates exist precisely to force every real
   edge into the declared set before an isolation claim is made.

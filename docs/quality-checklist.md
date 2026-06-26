@@ -105,6 +105,30 @@ the eval rubrics that grade generated policies; it catches the difference betwee
    `requires authentication` obligation catches the first; your own review catches
    the second.
 
+## Is the product real? (don't ship a stub)
+
+A proven backend under a faked product is **not done** — and it's a worse outcome
+than no app, because it *looks* finished. The policy can be flawless while the thing
+the user actually wanted is hollow. Before you call it done:
+
+- [ ] **The core value is real, not simulated.** No `Math.random()` or hard-coded
+  placeholder standing in for the product's actual job (real prices, real matches,
+  real analysis, real results) — unless the user explicitly asked for a mock.
+- [ ] **AI / LLM features call `ctx.ai.run`** — real inference, no API key needed —
+  not templated strings pretending to reason. See
+  [functions.md](functions.md#ctxai--real-ai-no-api-keys).
+- [ ] **External integrations are wired** (broker, payments, data feed, third-party
+  API) via a function `fetch` — or explicitly deferred *with the user told plainly*
+  which parts are stubbed and why.
+- [ ] **Money flows through real rails.** Selling credit or charging users → route
+  through **Bounded billing** (`/billing/checkout`, x402) or the owner's
+  `bounded link` + top-up — not a hand-rolled fake checkout.
+- [ ] **You stated the honest scope.** If something is a placeholder, say so up
+  front; never present a demo as a finished product.
+
+> The proofs are the *guarantee* layer: they make a real app unbreakable, but they
+> do not make a stub real. Build the product, then let the invariants bound it.
+
 ## Related
 
 - [policy-generation-guide.md](policy-generation-guide.md) — the method that produces this by construction

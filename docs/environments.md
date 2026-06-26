@@ -2,8 +2,8 @@
 
 **What's in here:** the `environments` block — a **client-side** (CLI-only)
 construct that lets one `policy.json` drive several apps (preview, production, …),
-each with its own `appId` and its own constant values. The dev-api never sees it;
-the CLI resolves it and ships a normal policy. Builds on
+each with its own `appId` and its own constant values. The CLI resolves it and
+deploys a normal policy. Builds on
 [constants-and-defs.md](constants-and-defs.md).
 
 ## Shape
@@ -55,9 +55,9 @@ cleanly separated.
 ## Notes
 
 - `--environment` selects an *entry in your policy* (a per-env `appId` +
-  constants). Deploys target Bounded production by default; you don't need any
-  other flag to pick an endpoint.
-- The `environments` block is **never** sent to the dev-api — it's a CLI
+  constants). Deploys target the normal Bounded API by default; you don't need
+  any other flag to pick an endpoint.
+- The `environments` block is a CLI
   authoring convenience. Deploying without `--environment` strips it too.
 - Combine with `--constants NAME=value` for one-off CI overrides on top of the
   selected environment.

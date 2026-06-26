@@ -1,9 +1,9 @@
 # Frontend hosting — publish a static site to `<app>.bounded.page`
 
-Ship a built **static** frontend (Vite/CRA/any `dist/`) to Bounded's edge —
+Ship a built **static** frontend (Vite/CRA/any `dist/`) to Bounded hosting —
 no separate host, no DNS. Your app gets two free subdomains on the same SSL:
 
-- **`<app>.bounded.page`** — your static site (served from R2, SPA fallback;
+- **`<app>.bounded.page`** — your static site (SPA fallback;
   content-hashed assets cached immutably, HTML + un-fingerprinted assets always
   revalidated so a redeploy goes live instantly without a hard-refresh).
 - **`<app>-api.bounded.page`** — your backend runtime (see [backend-runtime.md](backend-runtime.md)),
@@ -11,7 +11,7 @@ no separate host, no DNS. Your app gets two free subdomains on the same SSL:
 
 ## What it CAN and CANNOT host
 
-Bounded serves your files from R2 **exactly as uploaded — it never executes them**.
+Bounded serves your static files **exactly as uploaded — it never executes them**.
 There is no Node/SSR server for your frontend. So:
 
 **✅ Can host** — anything that builds to a static, client-rendered bundle:
@@ -56,5 +56,69 @@ bounded site deploy ./dist --app-id <id>   # → https://<app>.bounded.page
 # frontend calls its backend at https://<app>-api.bounded.page/agents/<name>/<session>
 ```
 
-That's the whole product surface: **`bounded deploy` (policy) + `bounded runtime deploy`
-(backend code) + `bounded site deploy` (frontend)** — all through us, all on one app id.
+That's the product surface: **`bounded deploy` (policy) + `bounded runtime deploy`
+(backend code) + `bounded site deploy` (frontend)** on one app id.
+
+## Per-route social cards (`ogRoutes`) — make shared links unfurl per resource
+
+A static SPA serves the SAME `index.html` for every route, so by default *every*
+shared link (Slack/iMessage/X/Discord/Facebook) unfurls with the one generic Open
+Graph card baked into `index.html`. For an app with shareable user pages (a snapshot
+`/s/:id`, a room `/r/:id`, a profile `/u/:handle`), that's the difference between a
+viral surface and a wall of identical cards.
+
+Declare an **`ogRoutes`** block in your `policy.json` and Bounded hosting will,
+on every request to a matching path, fetch the target document **as an anonymous reader**
+(so your collection's `read` rule is the authority) and stamp `og:title/description/image`
++ Twitter card tags + `<title>` into the served `<head>` — before any crawler or browser
+sees it. No SSR server, no extra infra.
+
+```jsonc
+{
+  // ... your collections / rules / invariants ...
+  "snapshots/$id": {
+    "fields": { "title": "String!", "caption": "String?", "imageUrl": "String?" },
+    "rules": { "read": "true", /* create/update/delete ... */ }
+  },
+
+  "ogRoutes": [
+    {
+      "path": "/s/:id",            // the client route people share (a real PATH, not a #hash)
+      "collection": "snapshots/:id", // doc path; :params are substituted from the path
+      "title": "$.title",          // field selector into the resolved doc ("$.a.b" for nested)
+      "description": "$.caption",
+      "image": "$.imageUrl",
+      // optional fallbacks if a field is empty (so a half-filled doc still cards):
+      "defaultTitle": "My App",
+      "defaultDescription": "Check this out",
+      "defaultImage": "https://<app>.bounded.page/og.png"
+    }
+  ]
+}
+```
+
+Then `bounded deploy` as usual — the `ogRoutes` map ships with the policy; no
+extra command is needed.
+
+**Rules & guarantees**
+- **Only public data ever surfaces.** The doc is read with `@user = null`, so a field
+  only appears in a card if your collection's `read` rule authorizes an anonymous read
+  (`"read": "true"`, or a rule that passes for a null user). If the rule denies, the link
+  falls back to the generic `index.html` card — **non-public fields can never leak into meta**.
+  This is the same SMT-proven read rule that gates your data; there is no separate
+  "make this public for cards" toggle to get wrong.
+- **Path-based, not hash-based.** Use a real path route (`/s/:id`), not a hash fragment
+  (`/#/s/:id`) — the server never sees the `#fragment`, so hash routes can't be unfurled.
+  If you're on hash routing and want per-link cards, switch the shared route to a path.
+  (Your SPA still works: an extensionless path falls back to `index.html` as before.)
+- **Always-on, fail-open.** Injection runs for crawlers AND humans (one cached read on a
+  matching path; non-matching paths like `/` or assets do zero extra work). Any miss,
+  denied read, or error serves your original `index.html` unchanged — never a broken card.
+- **`og:image`** can point at any public URL — e.g. a Bounded public file
+  (`/storage/object?...`) or a static asset you shipped in `dist/`.
+
+**Verify a link unfurls (crawler UA):**
+```bash
+curl -A "Twitterbot/1.0" https://<app>.bounded.page/s/<id> | grep -iE 'og:|twitter:|<title>'
+# → expect per-resource og:title / og:description / og:image + a per-resource <title>
+```

@@ -4,8 +4,8 @@
 changes when a write is a real chain transaction your wallet signs, the
 `--protocol` choices, the rules that are legal onchain, the eventual-consistency
 mirror (don't read-after-write), the `0xbc4` deploy gotcha + `--skip-preflight`,
-the mainnet human-signed policy permit, and the two ways a game settles a
-transaction — server-signed (today) vs client-signed (ROADMAP).
+the mainnet human-signed policy permit, and game settlement with server-signed
+transactions. Client-signed game handoff is not currently supported.
 
 This is the home for everything onchain. [data-plane.md](data-plane.md) and
 [proof-coverage.md](proof-coverage.md) summarize and point here.
@@ -99,8 +99,8 @@ cache — it self-corrects.
 ## Gotcha: `0xbc4` AccountNotInitialized
 
 > **On an onchain-protocol app, forgetting `"onchain": true` on a collection is a
-> hard failure, not a silent off-chain fallback.** The worker routes **every**
-> collection's write on-chain (it keys on the *protocol*), but deploy only
+> hard failure, not a silent off-chain fallback.** Bounded routes the app's
+> collection writes on-chain for this protocol, but deploy only
 > **registers** the collections you marked `onchain: true`. A collection left
 > without the flag is written on-chain yet was never registered — so every write
 > to it fails `AccountNotInitialized` (Solana custom error **`0xbc4`**) with no
@@ -127,7 +127,7 @@ authority before accepting a new policy.
 - **The default path never hits it.** Off-chain / devnet apps update their policy
   with no onchain signature. You only encounter the permit on a `realtime_mainnet`
   program.
-- **Frictionless agent signing of the permit is ROADMAP**, not shipped. For now a
+- **Frictionless agent signing of the permit is not currently supported.** For now a
   mainnet policy update is a deliberately human-gated step. When advising an
   agent, assume the default off-chain path. See
   [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md#onchain-update-signing-note).
@@ -153,9 +153,10 @@ key**.
 The deterministic tick can `call` a function (see
 [live-runtime.md](live-runtime.md) and
 [principals-and-origins.md](principals-and-origins.md)). For settlement, the tick
-`call`s a `settle`-type function that **holds the signing capability** — via
-`actAs` plus a function secret holding the service keypair — and submits the
-Solana transaction itself, then writes the authoritative result.
+`call`s a `settle`-type function that **holds the signing capability** — via a
+live `session.live.runAs` service identity plus a declared function secret
+holding the service keypair — and submits the Solana transaction itself, then
+writes the authoritative result.
 
 ```ts
 // live.tick — the game decides a winner and asks the settle function to pay out
@@ -168,10 +169,20 @@ return {
 ```json
 {
   "functions": {
-    "settle": { "auth": "true", "entry": "functions/settle.ts", "actAs": "9aZ…serviceAddress" }
+    "settle": {
+      "auth": "@origin.kind == 'live' && @origin.module == 'arena'",
+      "entry": "functions/settle.ts",
+      "secrets": ["SETTLE_KEYPAIR"]
+    }
   }
 }
 ```
+
+For a live tick, put the funded service identity on `session.live.runAs` and gate
+the function with `@origin`. Function-local `actAs` is still the right tool for
+admin/scheduled service actions, but deploy requires every `actAs` function's
+`auth` rule to imply the app admin predicate; don't pair `actAs` with
+`auth: "true"`.
 
 The settle function signs with its own service keypair (a function secret, never
 the user's key) and submits the tx. Good for **"the game settles"** — the house
@@ -180,12 +191,12 @@ today. The signing key is a function secret; see
 [service-keys.md](service-keys.md) for `actAs` + the on-chain signing key, and
 [ai-npcs.md](ai-npcs.md) for the same `call` primitive driving an NPC.
 
-> The `as` field is the player the call acts for (the field a developer writes is
-> always **`as`**). Acting-user billing is ROADMAP; a live call runs as the
-> SYSTEM principal today. See
+> The `as` field is a validation hint, not an identity or billing override (the
+> field a developer writes is always **`as`**). A live call runs under the
+> configured live-call principal. See
 > [principals-and-origins.md](principals-and-origins.md).
 
-### 2. Client-signed — ROADMAP (crypto-native, not built)
+### 2. Client-signed handoff — not currently supported
 
 The server **never holds the user's key**. The intended pattern:
 
@@ -198,7 +209,7 @@ The server **never holds the user's key**. The intended pattern:
    before changing authoritative state.
 
 ```ts
-// ROADMAP — illustration only; pendingAction surfacing + verify-on-confirm is not built
+// Illustration only; pendingAction surfacing + verify-on-confirm is not currently supported
 function views(state) {
   const out = {};
   for (const p of state.players) {
@@ -215,10 +226,9 @@ function views(state) {
 
 This keeps the user's key with the user (the chain authorizes the move, not the
 server) while the game stays the authority on **outcome** (it only advances state
-after confirming the tx). **This is the intended pattern and is clearly
-ROADMAP** — `pendingAction` surfacing and the trust-nothing verify-on-confirm
-loop are not wired today. For settlement you can ship now, use server-signed
-above.
+after confirming the tx). Do not build against this pattern today:
+`pendingAction` surfacing and the trust-nothing verify-on-confirm loop are not
+currently supported. For settlement you can ship now, use server-signed above.
 
 ## Related
 

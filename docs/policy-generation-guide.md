@@ -62,14 +62,29 @@ field: members are `orgs/$orgId/members/$memberId`, never a `members` array.
 | Will an invariant conserve this total? | Use `Int` or `UInt`. |
 | Is it a tenant tag the policy will bind? | Use `String` (tenantTag/tenantEdge require String). |
 | A timestamp? | `UInt` Unix seconds. There is no Timestamp type. |
-| Set once and never changed (owner, author)? | Mark `!` so immutability becomes a proof obligation. |
+| Set once and never changed (owner, author)? | Mark `!` to *declare* an immutability obligation — then your `update` rule must satisfy it (assert `@newData.f == @data.f`, or `update: "false"`). |
 | Genuinely optional? | Mark `?` — but then **null-guard it in rules** (see step 8). |
 | An onchain collection? | No `Float` (use Int/UInt). |
 
-Prefer `!` aggressively. An `owner: "String!"` field (holding `@user.id`, the
-universal identity) proves no payload can ever reassign ownership — a free,
-strong guarantee. Use `Address` only for fields that hold a real onchain wallet
-address.
+Prefer `!` aggressively, but know what it does: `!` *declares* an obligation your
+`update` rule must satisfy — it is **not** auto-enforced. Marking `createdAt:
+"UInt!"` on its own makes `bounded verify` **FAIL** ("Update rule allows
+`@data.createdAt` to change") until you either assert the field is preserved in
+the update rule or forbid updates entirely:
+
+```jsonc
+"createdAt": "UInt!",
+"rules": {
+  // satisfy the ! obligation: the field can never change on update …
+  "update": "@user.id == @data.owner && @newData.createdAt == @data.createdAt"
+  // … or, if the doc is never updated at all: "update": "false"
+}
+```
+
+Done right, an `owner: "String!"` field (holding `@user.id`, the universal
+identity) plus `@newData.owner == @data.owner` in the update rule *proves* no
+payload can ever reassign ownership — a strong guarantee, but one your rule has
+to honor. Use `Address` only for fields that hold a real onchain wallet address.
 
 ### Step 3 — Auth rules
 
@@ -99,9 +114,32 @@ The expression language (full reference in
   email-gating.
 - `@data.field` — the existing document (not in `create`).
 - `@newData.field` — the incoming document (not in `delete`).
-- `@time.now` — server time, seconds.
+- `@time.now` — server time, **Unix seconds** (NOT milliseconds — see the trap below).
 - `$pathVariable` — any variable from the path.
 - `get(/path).field` — read another document's pre-transaction state.
+
+> **⏱ TIME UNITS — seconds (policy) vs milliseconds (client). A silent timestamp
+> bug.** The policy/proof layer is **Unix SECONDS**: `@time.now`, `rollingSum`
+> `windowSeconds`, `scheduledAt`, and any timestamp *field you compare against
+> `@time.now`* must be seconds. But the SDK/client side is **MILLISECONDS**: JS
+> `Date.now()`, and the auto-stamped system fields `_createdAt` / `_updatedAt`, are
+> ms. **Never compare across units** — a seconds value vs `Date.now()` is 1000×
+> off, so a freshness/TTL check sees every row as ancient (or far-future) and
+> silently drops it (looks like "the data isn't arriving" when it is).
+>
+> **Use the SDK helpers instead of hand-rolling — they keep you in seconds:**
+> - **Writing a timestamp a policy reads → `serverTimestamp()`** (from
+>   `@bounded-sh/client`/`server`): the *server* stamps it in seconds, so it matches
+>   `@time.now` **and can't be forged by the client** — the right choice for TTLs,
+>   rate windows, anti-cheat. `set("posts/p1", { createdAt: serverTimestamp() })`.
+> - **Comparing in client/render code → `now()`** (seconds), not `Date.now()` (ms);
+>   and **`toSeconds(x)`** to convert any ms value (`Date.now()`, or a doc's
+>   `_createdAt`/`_updatedAt`) first. **`toMillis(s)`** goes back to ms for
+>   `new Date(...)`. e.g. `if (now() - toSeconds(doc._updatedAt) > 15) …`.
+>
+> Pick ONE unit per field (seconds, to match the policy) and convert only at the
+> JS edge. To use a ms system field inside a *rule* against `@time.now`, divide by
+> 1000.
 - `getAfter(/path).field` — read staged (in-batch) state.
 - Operators: `&&` `||` `==` `!=` `<` `<=` `>` `>=` `+` `-` `*` `//` `**`.
   **`//` is integer division; plain `/` is reserved for paths and is rejected.**

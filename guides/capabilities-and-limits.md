@@ -8,7 +8,7 @@ promising a user something Bounded can't deliver.
 
 | Strength | Why |
 |---|---|
-| **Provable realtime backend** | One `policy.json` → collections, auth rules, and invariants proven by Z3 at deploy and enforced atomically over a realtime Durable Object. Constraint-breaking writes are `409`s, never partial. |
+| **Provable realtime backend** | One `policy.json` → collections, auth rules, and invariants proven by Z3 at deploy and enforced atomically by Bounded. Constraint-breaking writes are `409`s, never partial. |
 | **Money / value safety** | `conserve` proves a total can't be minted or destroyed; `rollingSum` proves spend/rate caps per window and per actor. These are proofs, not prompt instructions. |
 | **Multi-tenant isolation** | `tenantTag` / `tenantEdge` prove documents and references stay inside their tenant — "nothing leaks across orgs" discharged at deploy. |
 | **Agent backends** | Zero-ceremony keypair identity; an agent goes from description to deployed without a human auth step ([building-for-agents.md](building-for-agents.md)). |
@@ -21,20 +21,20 @@ promising a user something Bounded can't deliver.
 | Limit | Use instead |
 |---|---|
 | **No native iOS/Android SDK** | Ship to phones with **React Native** + `@bounded-sh/client` ([building-for-react-native.md](building-for-react-native.md)). |
-| **No heavy/long-running or native-binding compute** | Functions run on Cloudflare Workers (V8 isolates): great for API calls + transforms + SDK writes, not for multi-minute jobs or native-binding npm. For in-boundary logic prefer policy **hooks**; for outbound integration use **Functions** ([functions.md](../docs/functions.md)) or **webhooks** + your own `@bounded-sh/server` ([../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md), [building-a-backend.md](building-a-backend.md)). |
+| **No native-binding compute** | Functions and the backend runtime are best for API calls, transforms, SDK writes, and JavaScript/TypeScript code. Use your own server as a `@bounded-sh/server` client for native-binding workloads. |
+| **Long-running / batch / background work** | The **300s wall is Functions-only.** Don't run multi-minute work in a Function; use a backend-runtime project with resumable scheduled steps, or a Flue agent for a multi-step tool-use loop. |
 | **No `@constants` or built-in roles in rules** | Express "admin" via a `get()`-read role or an address literal; pass deploy-time values with the CLI `--constants` flag. |
 | **No array/object fields; no ternary; `/` reserved** | Model lists as sub-collections; branch with `(c && A) \|\| (!c && B)`; use `//` for integer division ([../docs/policy-reference.md](../docs/policy-reference.md)). |
 
-## Scale ceilings (single-DO model)
+## Scale Ceilings
 
-Each app runs on a single realtime Durable Object with a single-writer cell —
-that's what makes atomic invariant enforcement possible. The trade-offs:
+Each app has a single-writer consistency boundary for atomic invariant
+enforcement. The trade-offs:
 
-- **Storage**: ~10GB SQLite per DO. Beyond that, opt into **Hyperdrive overflow**
-  for cold/large data.
+- **Storage**: design large/cold data explicitly instead of treating one app as
+  unlimited storage.
 - **Throughput**: bounded by the single writer. Scale horizontally by
-  **tenant-sharding** (one DO per tenant via the path's tenant variable) or, for
-  games, **per-room** DOs — each room/tenant is its own writer.
+  **tenant-sharding** via path design or, for games, separate rooms.
 - **Hot aggregates**: a write-hot `conserve` total can use `materialization:
   "sharded"` to spread the aggregate across shard rows
   ([../docs/invariants.md](../docs/invariants.md)).
@@ -75,17 +75,17 @@ The proof boundary is precise — don't overclaim it:
   [../docs/proof-coverage.md](../docs/proof-coverage.md).
 - **Functions are the only un-proven tier.** A function's *logic* is not proven —
   only that its writes go through your invariants and its invocation is gated by
-  the `auth` rule. They are *un-proven logic, contained by proven walls.*
+  the `auth` rule. Normal functions write as the verified caller; `actAs`
+  service-identity functions are privileged and must be admin-gated. They are
+  *un-proven logic, contained by proven walls.*
 
-## Roadmap — formally-bounded functions (not shipped)
+## Function proof boundary
 
-Functions today are contained by proven walls but their **reach** (which paths
-they write, which hosts they call) is not proven — it's code review. The planned
-next step is a **capability contract**: a function declares its `writeScopes` +
-`allowedHosts`, and the prover discharges containment (its blast radius is exactly
-what it declared). Be honest: that is **not shipped**; don't claim containment
-proofs for function reach today. Detail:
-[../docs/functions-when-to-use.md](../docs/functions-when-to-use.md#roadmap--toward-formally-bounded-functions).
+Functions today are contained by proven walls: their writes must pass policy
+rules and invariants, and their invocation must pass the function `auth` rule.
+The function body's imperative logic is not itself proven, so keep hard
+guarantees in policy. Detail:
+[../docs/functions-when-to-use.md](../docs/functions-when-to-use.md#current-proof-boundary).
 
 ## Related
 

@@ -1,6 +1,6 @@
 # Realtime & Games
 
-Bounded runs every app on a realtime Durable Object, so subscriptions and live
+Bounded runs every app on a realtime, policy-enforced runtime, so subscriptions and live
 queries come for free. For multiplayer and games it adds a **server-authoritative
 loop**: rooms with a fixed `tick`, fog-of-war via per-player view collections,
 proven per-player rate caps, and automatic settlement into durable storage. The
@@ -11,7 +11,7 @@ honest limit on what anti-cheat can prove is in
 > `hooks.tick.<name>` reducer expressed in policy plus `settleFrom`/`settleTo`
 > settlement. There is a second, native runtime — `session.live`, where you upload
 > a TypeScript module of three pure functions (`init`/`tick`/`views`) that Bounded
-> runs in an isolated facet (no deploy). The two are **mutually exclusive** on one
+> runs in an isolated live runtime. The two are **mutually exclusive** on one
 > session. For real server-authoritative loops (game collisions/scoring, a
 > Figma-style editor's canonical doc + cursors, a live dashboard's reducer — any
 > realtime room with logic in code), use the native runtime:
@@ -19,9 +19,43 @@ honest limit on what anti-cheat can prove is in
 
 ## Subscriptions & live queries
 
-Every collection is live. `subscribe(path, { onData })` streams a single document
-or a filtered collection, delivering sub-millisecond deltas, not polls, and
-returns an unsubscribe function.
+Every collection is live. There are two ways to consume a live feed; **in React,
+reach for the hook first.**
+
+### React: `useQuery` (recommended — no callback to get wrong)
+
+`useQuery(path, options?)` subscribes for you and returns an **auto-updating
+value** — `{ data, loading, error }`. `data` always holds the **full, current,
+read-rule-filtered** result the server last delivered (an array for a collection,
+the doc or `null` for a single doc) and the component re-renders whenever ANY
+writer changes the set. There is no `onData` callback, so the classic trap of
+"treating the first callback as the final state" cannot happen — a doc another
+client writes a moment later just appears in `data` on the next render. (Same
+shape as Convex's `useQuery`.)
+
+```tsx
+import { useQuery } from "@bounded-sh/client";
+
+function Roster({ roomId }: { roomId: string }) {
+  const { data: peers, loading, error } = useQuery<Presence[]>(
+    `rooms/${roomId}/presence`,
+    { filter: { online: true } },
+  );
+  if (loading) return <Spinner/>;
+  if (error)   return <Error e={error}/>;
+  return <>{peers!.map(p => <Peer key={p._id} p={p}/>)}</>;   // shows EVERYONE, always
+}
+```
+
+Pass `path = null` to skip subscribing until an id is ready. `useQuery` takes the
+same `filter`/`shape`/`sort`/`limit`/`prompt` options as `get`/`subscribe`.
+
+### Imperative: `subscribe`
+
+Outside React (or for non-render side-effects), `subscribe(path, { onData })`
+streams a single document or a filtered collection — delivering the full current
+set on every change (not polls) — and returns an unsubscribe function. `useQuery`
+is a thin wrapper over it.
 
 ```ts
 import { subscribe } from "@bounded-sh/client";
@@ -54,6 +88,21 @@ not `get`'s paged envelope:
   → a **plain array** of the matching documents (`[]` when none match). The whole
   current matching set is re-delivered on each change; `onData` is *not* a
   per-row delta callback.
+
+> **`onData` fires REPEATEDLY — never treat the first call as the complete/final
+> set** (this is the #1 way a working subscription is misread as broken). The
+> first delivery is the snapshot of what exists *right now*; every later write by
+> **any** writer (another client, `bounded data set`, a function, a tick) fires
+> `onData` again with the new full array. A doc a *different* identity creates a
+> moment after you subscribe arrives in a **later** `onData`, not the first — so a
+> one-shot `if (logged) return` / log-the-first-payload-only guard makes a healthy
+> feed look like it "never delivers peer B". **Render/merge on every call, not
+> once** (or just use `useQuery`, which does this for you). To see what the server
+> actually sent, log on every call:
+> `onData: d => console.log(d.length, d.map(x => x._createdBy))`. (If a row *is*
+> delivered but your UI drops it, the bug is your render/merge — e.g. a staleness
+> gate comparing a **seconds** timestamp to a **millisecond** `Date.now()`, or
+> keying on the wrong id — not the realtime layer.)
 
 > **Differs from `get()` on purpose.** A *paged* `get("messages", { limit })`
 > returns `{ data, nextCursor, status }`. `subscribe("messages", { limit })`
@@ -121,9 +170,9 @@ client writes.
 > pure/egress-disabled, but it can `return { state, call: { fn, args, as } }` to
 > invoke a whitelisted Bounded function — the result re-enters a later tick as an
 > `@effect` intent. That is how a tick reaches AI NPCs, settlement, and external
-> calls. The optional field is **`as`** (a player id), never `onBehalfOf` — but
-> `as` only gates the facet's same-tick check today; it does **not** make the call
-> act as that player (per-player acting is roadmap). The primitive lives in
+> calls. The optional field is **`as`** (a player id), never `onBehalfOf`; it is
+> a validation hint, not an identity override. The called function still runs
+> under the identity configured for the session or function. The primitive lives in
 > [live-runtime.md](live-runtime.md);
 > NPC/settlement patterns are in [ai-npcs.md](ai-npcs.md).
 

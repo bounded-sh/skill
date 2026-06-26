@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **Dev identity** | you / your agent | an ed25519 keypair the CLI and `@bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
-| **End-user auth** | your app's users | Bounded Better Auth (email — the default) or a connected Solana wallet (Phantom) | `@user.id` / `@user.address` / `@user.email` in policy rules |
+| **End-user auth** | your app's users | Bounded Auth for normal apps (email OTP + OAuth/social + optional text OTP), or a connected Solana wallet (Phantom) for crypto apps | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
 ## Dev identity — the keypair IS your account
 
@@ -50,6 +50,9 @@ teammates — without anyone juggling raw wallet keys:
   your email's wallet become admin-collaborators on each other's apps. **Your
   keypair keeps signing for everything** — linking adds an account association,
   it never replaces or rolls your key.
+  A linked email account is unique: Bounded will not intentionally attach the
+  same wallet/user identity to two different email accounts. Once linked, that
+  email is also the owner notification surface for plan/usage alerts.
 - **`bounded share <wallet|email> --app-id <id>`** adds a collaborator. Pass a
   **wallet** to add it directly (default role `policy` — may update the policy
   only). Pass an **email** and Bounded resolves it to that person's canonical
@@ -81,10 +84,11 @@ array). The keypair is read lazily — only the first signed write needs it.
 
 ## End-user auth — the `user` object
 
-Your app's users authenticate through `@bounded-sh/client`. **Email is the default.**
-`init({ appId })` with **no** `authMethod` selects email (Bounded Better Auth
-inline OTP) — nothing extra to pass. A returning user's stored method still wins;
-an explicit `authMethod` still wins.
+Your app's users authenticate through `@bounded-sh/client`. For a normal,
+non-crypto app, use **Bounded Auth**: email OTP, OAuth/social login, and optional
+anonymous guest accounts. `init({ appId })` with **no** `authMethod` selects the
+email OTP provider, so the zero-config `login()` path still works. A returning
+user's stored method still wins; an explicit `authMethod` still wins.
 
 ```ts
 import { init, login, getCurrentUser } from "@bounded-sh/client";
@@ -98,49 +102,104 @@ const user = getCurrentUser();       // { id, address, email } | null
 > principal** (all fields null unless you declare an acting identity). See
 > [principals-and-origins.md](principals-and-origins.md).
 
-The inline modal is **email-only** (a 6-digit code, no popup, no full-page redirect).
-It's the quickest drop-in, but it can't do social login (Google needs a redirect).
-The inline `/email` + `/verify` routes read your `appId` from the **request body** —
-they're credential-free, open-CORS, and work from **any** origin (so inline login is
-not origin-bound). Origin→`appId` binding only exists in the hosted **OIDC redirect
-flow**, via the `redirect_uri` you register (below).
+The inline modal is **email-only** (a 6-digit code, no popup, no full-page
+redirect). It's the quickest drop-in, but it cannot do OAuth/social login because
+Google/Apple/GitHub require a browser redirect. Text OTP is off by default and
+is available through the headless SDK helpers and hosted login only when Bounded
+explicitly enables it for the issuer/app.
 
-### Hosted login (email + Google) — the secure redirect flow ← use this for Google / production
+### Hosted login — OAuth/social is first-class
 
-For **Google** (or any social provider) and the strongest multi-tenant security, use the
-hosted OAuth2 + PKCE redirect flow. The token's `appId` is bound to a `redirect_uri` you
-**register** for your app, so it can only be minted-through and delivered-to your own
-origin — never spoofed by another app.
+For **Google, Apple, GitHub, or any social provider**, use the hosted OAuth2 +
+PKCE redirect flow. The token's `appId` is bound to a `redirect_uri` registered
+for your app, so it can only be minted through and delivered to your own origin.
 
 ```ts
 import { init, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
 
-// On your "Sign in" button:
+// Hosted chooser: shows the methods enabled for the app.
 await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
-//  → redirects to the hosted Bounded login (email + Google), then back to redirectUri?code=
+
+// App-owned buttons: jump directly to one provider.
+await loginWithRedirect({
+  redirectUri: "https://yourapp.com/auth/callback",
+  provider: "google",      // "apple" and "github" also work when configured; "text" only when text OTP is enabled
+});
+
+// App-owned hosted chooser: expose only the choices you want for this service.
+await loginWithRedirect({
+  redirectUri: "https://yourapp.com/auth/callback",
+  methods: ["email", "google", "apple"], // add "text" only when text OTP is explicitly enabled
+});
 
 // On your callback page (e.g. /auth/callback), on load:
 const user = await completeLoginFromRedirect();   // exchanges the code (PKCE) → signs in
 ```
 
-There's also `loginWithPopup({ redirectUri })` + `completeLoginInPopup(openerOrigin)` for a
-popup instead of a full-page redirect. **Register your redirect URIs** for the app first
-(exact match, https) — an unregistered `redirect_uri` is rejected, by design.
+There's also `loginWithPopup({ redirectUri, provider })` +
+`completeLoginInPopup(openerOrigin)` for a popup instead of a full-page redirect.
+Prefer full-page redirect for production reliability; popup is acceptable when
+the host UI really needs to stay open, but browsers can block or close popups.
+**Register redirect URIs** for the app first (exact match, https; localhost for
+dev) — an unregistered `redirect_uri` is rejected by design.
 
-The inline email modal (`login()` above) and this redirect flow can coexist; pick inline for
-a fast email-only drop-in, the redirect flow for Google + production-grade app isolation.
+The inline email modal (`login()` above) and the hosted redirect flow can coexist.
+Use inline only for a fast email-only drop-in. Use hosted redirect for OAuth,
+provider selection, and production-grade app isolation. Text OTP belongs in the
+hosted/headless path only when it is explicitly enabled. When both email and text
+are enabled, the hosted page shows one OTP form with an Email/Text switcher. If
+`methods` is ordered, the first enabled OTP method in that list is selected by
+default; use `provider: "text"` to jump straight to text only when enabled.
 
-**Headless / custom UI / React Native** — build your own email + code inputs
-(this is the only path on React Native, which has no DOM modal):
+### OAuth provider availability
+
+Use the provider ids Bounded exposes for the app (`google`, `apple`, `github`,
+and optional `text` when enabled). Your app still owns its OIDC `redirectUri`, and
+unregistered redirect URIs are rejected. If a provider you need is not available
+for the app, use a direct provider integration outside Bounded Auth or wait until
+Bounded exposes that provider publicly.
+
+### SMS / text OTP
+
+Text-message OTP is opt-in and off by default. It is not exposed by hosted login,
+SDK config, or headless routes unless Bounded explicitly enables it for the
+issuer/app and SMS delivery is configured. When enabled, it uses the same
+authentication posture as email OTP: expiring codes, attempt limits, and rate
+limits.
+
+For app builders:
+
+- Phone numbers must be E.164, e.g. `+14155550132`.
+- Do not assume phone auth is available because SMS provider credentials exist;
+  public availability is controlled by the Bounded Auth app/issuer config.
+- Text OTP is for authentication only. Do not treat it as consent for arbitrary
+  app-originated SMS or WhatsApp messages.
+- For non-auth messaging, integrate a real provider with your own API keys or use
+  a public Bounded-managed messaging surface if one is available. Follow sender
+  registration, opt-in, opt-out, and template rules for the channel.
+
+Do not route OTP codes to tenant app webhooks.
+
+Phone-only users get a normal `@user.id`, but `@user.email` is `null`. Do not
+email-gate phone-only users. Extend the policy/user model separately only if
+phone-number claims should become rule-visible.
+
+**Headless / custom UI / React Native** — build your own email + code inputs;
+add text + code only when text OTP is explicitly enabled. This is the only path
+on React Native, which has no DOM modal:
 
 ```ts
-import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "@bounded-sh/client";
+import { init, sendEmailOtp, verifyEmailOtp, sendTextOtp, verifyTextOtp } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
 await sendEmailOtp("user@example.com");          // step 1: emails a code
 const user = await verifyEmailOtp("user@example.com", "123456");  // step 2: signs in
+
+// Only when text OTP is explicitly enabled for the issuer/app:
+await sendTextOtp("+14155550132");               // step 1: texts a code
+const byText = await verifyTextOtp("+14155550132", "123456");     // step 2: signs in
 ```
 
 **Anonymous accounts coexist** — offer email login AND zero-friction guest
@@ -160,19 +219,23 @@ upgraded.isAnonymous;  // false — same @user.id as the guest (its data carries
 `user.isAnonymous` (Firebase parity) tells you guest vs real for the upgrade prompt;
 in policy, `@user.isAnonymous == false` gates guests out of a rule (Supabase parity).
 
-> **Browser / React-Native only.** `signInAnonymously`, `sendEmailOtp`, and
-> `verifyEmailOtp` persist their session through `localStorage`, so they only work
+> **Browser / React-Native only.** `signInAnonymously`, `sendEmailOtp`,
+> `verifyEmailOtp`, `sendTextOtp`, and `verifyTextOtp` persist their session through `localStorage`, so they only work
 > where there's a `window`. Calling them in Node throws a clear error (the session
 > would otherwise be silently dropped and every request would 403). For Node /
 > server code use **`@bounded-sh/server`** with a keypair
 > (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
 
-`authMethod` options: **`'email'` is THE default** (Bounded Better Auth inline
-OTP) — `init({ appId })` with no `authMethod` selects it. **Guest** via
+`authMethod` options: **`'email'` is THE default** (Bounded Auth inline OTP) —
+`init({ appId })` with no `authMethod` selects it. **OAuth/social hosted login**
+uses `loginWithRedirect` / `loginWithPopup`, not `authMethod`; text OTP uses
+hosted login or `sendTextOtp` / `verifyTextOtp` only when explicitly enabled.
+**Guest** via
 `signInAnonymously()` is the natural frictionless second choice (not an
-`authMethod`; see below). **`'phantom'`** (connect a Solana wallet) is the
-explicit opt-in — reach for it only when your app is onchain / money / wallet-
-oriented. `'none'` disables end-user auth.
+`authMethod`; see below). **`'phantom'`** (connect a Solana wallet) is a
+crypto/onchain opt-in — use it only when the app is crypto-enabled and needs a
+real user wallet for signing, onchain ownership, or wallet-native UX.
+`'none'` disables end-user auth.
 (`'wallet'` is not implemented — use `'phantom'` for Solana wallets.)
 
 The authenticated `user` object — mirrored into policy as `@user.*` — has **three
@@ -180,19 +243,22 @@ fields**:
 
 | Field | Type | Meaning |
 |---|---|---|
-| `user.id` | `string` | the **universal stable identity**, **always present** for an authenticated user. For wallet logins it equals the wallet address; for email/social (Bounded Better Auth) logins it is the account identity. **Use this for ownership / membership / identity / auth guards.** |
-| `user.address` | `string \| null` | a **real onchain wallet address**. Present for wallet logins, **`null` for email-only logins**. **Use this only for onchain operations / wallet semantics.** |
-| `user.email` | `string \| null` | the verified, lowercased email (email logins only; `null` for wallet). Use it for email-gating. |
+| `user.id` | `string` | the **universal stable identity**, **always present** for an authenticated user. For wallet logins it equals the wallet address; for Bounded Auth logins (email, text, OAuth/social) it is the account identity. **Use this for ownership / membership / identity / auth guards.** |
+| `user.address` | `string \| null` | a **real onchain wallet address**. Present for wallet logins, **`null` for Bounded Auth logins** unless a wallet is linked. **Use this only for onchain operations / wallet semantics.** |
+| `user.email` | `string \| null` | the verified, lowercased email for email/OAuth accounts. It is `null` for wallet and phone-only text users. Use it only when email-gating is genuinely intended. |
 | `user.isAnonymous` | `boolean` | `true` for a zero-friction **guest** (`signInAnonymously()`); `false` after upgrade (`linkEmail`) or for any real login. Drives the "save your account" prompt. Mirrored in policy as `@user.isAnonymous` (offchain; write `== false` to gate guests out). |
 
-- **Email (Bounded Better Auth)** supports email (inline modal) and, via the hosted
-  redirect flow (`loginWithRedirect`), social login (Google). Social requires the redirect
-  flow — the inline modal is email-only.
-  Email/social users authenticate as an **account identity** — they have a stable
+- **Bounded Auth** supports email OTP (inline modal or headless), optional text
+  OTP (headless or hosted only when enabled), and, via the hosted redirect flow
+  (`loginWithRedirect`), OAuth/social login (Google, Apple, GitHub today).
+  Social and hosted text require the redirect flow — the inline modal is
+  email-only.
+  Bounded Auth users authenticate as an **account identity** — they have a stable
   `@user.id` but **no** `@user.address` (it is `null`) unless a wallet is
-  connected.
-- **Phantom (wallet)** connects an existing Solana wallet directly; here
-  `@user.id` equals the wallet address and `@user.address` is that same address.
+  connected. Phone-only text users also have `@user.email == null`.
+- **Phantom (wallet)** connects an existing Solana wallet directly. This is for
+  crypto-enabled apps. Here `@user.id` equals the wallet address and
+  `@user.address` is that same address.
 - Whatever the method, **`@user.id` is the stable thing every authenticated
   request carries** — reach for it for identity. Reach for `@user.address` only
   when you genuinely need a wallet.
@@ -216,9 +282,9 @@ Imperative equivalents: `onAuthStateChanged(cb)`, `onAuthLoadingChanged(cb)`,
 
 ## How `@user.*` reaches your rules
 
-Every authenticated request carries a session token. The realtime worker resolves
-it and exposes the identity to the policy as `@user.id` (always present when
-authenticated), plus `@user.address` (the wallet, or `null` for email-only
+Every authenticated request carries a session token. Bounded resolves it and
+exposes the identity to the policy as `@user.id` (always present when
+authenticated), plus `@user.address` (the wallet, or `null` for non-wallet
 logins) and `@user.email` (or `null`). `@user.id` is the hinge of every **auth /
 ownership** rule:
 

@@ -471,12 +471,15 @@ beyond the subset is **rejected at verify time**; an onchain runtime receiving
 unknown metadata rejects the write rather than skipping the check. Details:
 [proof-coverage.md](proof-coverage.md).
 
-## `attestations` — GLOBAL, policy-wide claims
+<a id="attestations--global-policy-wide-claims"></a>
+
+## `proofs.attestations` — GLOBAL, policy-wide claims
 
 Invariants (above) attach to **one** collection. Some guarantees are **global** —
 they span every collection and every read/write surface in the policy. Declare
-those in a top-level **`attestations`** array (a sibling of your collections, not
-nested inside one):
+those in **`proofs.attestations`**. This is proof-only metadata: it adds
+`bounded verify` obligations but does not change runtime authorization or
+invariant enforcement.
 
 ```json
 {
@@ -487,15 +490,20 @@ nested inside one):
   "agents/$agentId/spend/$spendId": { "fields": { "amount": "UInt" }, "tier": "durable",
     "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" } },
 
-  "attestations": [
-    { "claim": "admins cannot read projects they are not a member of",
-      "kind": "roleGatedRead", "scope": "projects/$projectId", "role": "members/$memberId" },
-    { "claim": "no agent can exceed its daily spend cap",
-      "kind": "rollingSum", "scope": "agents/$agentId/spend/$spendId",
-      "field": "amount", "windowSeconds": 86400, "limit": 1000, "scopeVariable": "$agentId" }
-  ]
+  "proofs": {
+    "attestations": [
+      { "claim": "admins cannot read projects they are not a member of",
+        "kind": "roleGatedRead", "scope": "projects/$projectId", "role": "members/$memberId" },
+      { "claim": "no agent can exceed its daily spend cap",
+        "kind": "rollingSum", "scope": "agents/$agentId/spend/$spendId",
+        "field": "amount", "windowSeconds": 86400, "limit": 1000, "scopeVariable": "$agentId" }
+    ]
+  }
 }
 ```
+
+The older top-level `attestations` array is still accepted for backward
+compatibility, but new policies should use `proofs.attestations`.
 
 ### Human text vs. machine obligation
 
@@ -565,11 +573,13 @@ tenant data:
       "delete": "@user.id != null && get(/admins/@user.id) != null"
     }
   },
-  "attestations": [
-    { "claim": "the admin set only grows through existing admins",
-      "kind": "authorityClosure", "roleScope": "admins/$userId",
-      "initialMember": "@const.FOUNDER" }
-  ]
+  "proofs": {
+    "attestations": [
+      { "claim": "the admin set only grows through existing admins",
+        "kind": "authorityClosure", "roleScope": "admins/$userId",
+        "initialMember": "@const.FOUNDER" }
+    ]
+  }
 }
 ```
 
@@ -582,7 +592,9 @@ rules; the *closure* proof rides the flat `admins/$userId` scope. Use a nested
 You may write a bare sentence:
 
 ```json
-"attestations": ["no agent can exceed its daily spend cap"]
+"proofs": {
+  "attestations": ["no agent can exceed its daily spend cap"]
+}
 ```
 
 But a sentence on its own proves **nothing**. The verifier surfaces it as a

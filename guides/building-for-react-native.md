@@ -19,17 +19,20 @@ auth modal, the Phantom browser SDK) are excluded from that build.
 ## What's different: auth
 
 Email is the default auth everywhere, including RN — but RN has **no DOM**, so the
-web's inline email-code modal isn't available. On RN you drive the same email-OTP
-flow yourself with the SDK's **headless** primitives (`sendEmailOtp` /
-`verifyEmailOtp`). Phantom (a Solana wallet, opening via the Phantom mobile app)
-is the opt-in path when you specifically need an onchain `@user.address`.
+web's inline email-code modal isn't available. On RN you drive OTP flows yourself
+with the SDK's **headless** email primitives (`sendEmailOtp` /
+`verifyEmailOtp`). Text OTP (`sendTextOtp` / `verifyTextOtp`) is off by default
+and works only when Bounded explicitly enables it for the issuer/app. Phantom
+(a Solana wallet, opening via the Phantom mobile app) is the opt-in path when you
+specifically need an onchain `@user.address`.
 
 The SDK `user` object is `{ id, address, email }` and means the same thing in RN
 as on web: `@user.id` is the universal stable identity (always present — use it
 for ownership/membership/identity), `@user.address` is the real onchain wallet
-address (present for wallet logins, **`null` for email-only logins** — use it only
-for onchain/wallet operations), and `@user.email` is the verified, lowercased
-email (email logins only, `null` otherwise). Full model:
+address (present for wallet logins, **`null` for Bounded Auth logins** unless a
+wallet is linked — use it only for onchain/wallet operations), and `@user.email` is the verified, lowercased
+email (email/OAuth accounts only; `null` for phone-only text users and wallets).
+Full model:
 [../docs/auth.md](../docs/auth.md).
 
 ### Email OTP (default, headless — works on any device)
@@ -39,7 +42,7 @@ the path that "just works" on a phone. Build your own email + code inputs and
 call the two-step flow:
 
 ```tsx
-import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "@bounded-sh/client";
+import { init, sendEmailOtp, verifyEmailOtp, sendTextOtp, verifyTextOtp, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>", authMethod: "email" }); // 'email' is the default
 
@@ -48,6 +51,10 @@ await sendEmailOtp("user@example.com");                  // emails a 6-digit cod
 
 // step 2 — collect the code from your own <TextInput>, then:
 const user = await verifyEmailOtp("user@example.com", "123456"); // signs in
+
+// Optional: only when text OTP is explicitly enabled for the issuer/app.
+await sendTextOtp("+14155550132");                               // texts a 6-digit code
+const byText = await verifyTextOtp("+14155550132", "123456");     // signs in
 getCurrentUser();                                        // { id, address, email } | null
 ```
 
@@ -101,14 +108,14 @@ useEffect(() => {
 - **Metro entry**: ensure your bundler honors the `react-native` condition so the
   RN-safe entry is picked. Don't import web provider modules directly.
 - **No DOM auth modal in RN** — the web's inline email-code modal needs a DOM, so
-  on RN drive email login yourself with the headless `sendEmailOtp` /
-  `verifyEmailOtp` primitives (above).
+  on RN drive email OTP yourself with the headless primitives above; add text
+  only when Bounded explicitly enables text OTP.
 - **Polyfills**: RN needs the same Buffer/crypto shims the Solana libs require;
   add them in your Metro/babel config.
 
 ## Related
 
 - [building-a-webapp.md](building-a-webapp.md) — the shared client flow (reads/writes/subscribe)
-- [../docs/auth.md](../docs/auth.md) — email (default) / Phantom wallet auth and the `@user.id` / `@user.address` / `@user.email` identity model
+- [../docs/auth.md](../docs/auth.md) — email/OAuth auth, optional text OTP, Phantom wallet auth, and the `@user.id` / `@user.address` / `@user.email` identity model
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — the client method surface
 - [capabilities-and-limits.md](capabilities-and-limits.md) — why RN, not a native SDK

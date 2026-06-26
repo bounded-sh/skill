@@ -3,13 +3,13 @@
 **What's in here / when to read this:** `type: "storage"` file collections
 (`setFile`/`getFiles`) and `search: { fields }` full-text indexing.
 
-Two collection features for content-heavy apps: **storage** collections back files
-in R2 with the same path-scoped auth as data, and **search** declares full-text
+Two collection features for content-heavy apps: **storage** collections store files
+with the same path-scoped auth as data, and **search** declares full-text
 indexing on chosen fields.
 
 ## Files — `type: "storage"`
 
-A collection declared `"type": "storage"` is R2-backed: each document is a file
+A collection declared `"type": "storage"` stores each document as a file
 (blob) addressed by its path, with metadata fields you declare. Auth is exactly the
 same `rules` model as any collection — so file access is scoped by path just like
 data.
@@ -71,7 +71,7 @@ must allow it). To replace just the bytes, `setFile(path, file)` again.
 
 `getFiles(path)` lists readable files with their metadata and a signed download URL:
 `{ data: [{ path, url, metadata }] }`, where `metadata` carries both system fields
-and your declared fields, and `url` is a short-lived signed R2 link. For a single
+and your declared fields, and `url` is a short-lived signed download link. For a single
 file you can also `get(path)` / subscribe the storage document like any other doc.
 
 ```ts

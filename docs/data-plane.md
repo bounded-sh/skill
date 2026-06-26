@@ -53,7 +53,7 @@ rejected), and forgetting the flag on an on-chain-protocol app is a hard
 |---|---|---|---|
 | Invariant violated | `409` `postcondition failed: invariant "<name>" ...` | the invariant's **declared name** (e.g. `spend_cap`), its type, and the arithmetic that failed | nothing |
 | **Write** rule denied (create/update/delete) | `403` | the failed action plus a **trace** of the predicate that evaluated false | nothing |
-| Function `invoke` auth rule denied | `403` `Forbidden: auth rule denied` | denied at the dispatcher before the body runs | nothing |
+| Function `invoke` auth rule denied | `403` `Forbidden: auth rule denied` | denied before the body runs | nothing |
 | **Read** rule denied | **`200`** with `{"data": null}` (single) or `{"data": []}` (list) | **no `403`** — denied reads are *hidden*, not errored (see below) | n/a |
 | Update/delete on a capped collection | `409 append_only` | rolling-cap collections reject history rewrites by design | nothing |
 | Policy fails verification at deploy | deploy fails | the proof report with counterexamples | previous-good policy stays active |
@@ -205,11 +205,12 @@ Composition rules:
   balanced transfer above passes `conserve`).
 
 For one-click market settlement, pair this with
-[`transferAuthority`](policy-reference.md#conditional-transfer-authority): the
-good's `holder` update rule can require `getAfter()` wallet postconditions, while
-the wallet collection uses `conserve` so the Ink/payment leg cannot mint or burn.
-The buyer submits the good move plus both wallet updates in one `setMany`; a
-missing or wrong payment rejects the whole batch.
+[`proofs.transferAuthority`](policy-reference.md#conditional-transfer-authority):
+put the shared sale predicate in `defs`, use it in the good's `holder` update
+rule, and reference the same def from the proof declaration. The wallet
+collection uses `conserve` so the Ink/payment leg cannot mint or burn. The buyer
+submits the good move plus both wallet updates in one `setMany`; a missing or
+wrong payment rejects the whole batch.
 
 ## Append-only caps
 

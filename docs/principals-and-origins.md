@@ -10,7 +10,7 @@ live-call principals, the **`@origin`** authorization model, and the
 > **The line.** A live tick calls a function as an actor chosen by precedence
 > (function `actAs` > session `runAs` > anonymous system), and the function's own
 > `auth` rule **IS** evaluated for that call — with `@user` = the system principal
-> and **`@origin`** populated. `@origin` is host-set and unforgeable; `runAs`
+> and **`@origin`** populated. `@origin` is platform-set and unforgeable; `runAs`
 > declares the acting identity. Authorization (`@origin`) and identity (`runAs`)
 > are orthogonal and both BUILT.
 
@@ -50,7 +50,7 @@ actor, declare `runAs` (session-wide) or `actAs` (per-function).
 
 Declare a service identity **once** on the session's `live` block and **every**
 live call from this game runs as it. This is the simple, mature way to fund AI
-NPCs: the owner funds that service account's AI credit, and `ctx.ai` Just Works
+NPCs: the owner funds that service account's AI/external-services credit, and `ctx.ai` Just Works
 (capped at the app account).
 
 ```json
@@ -95,15 +95,14 @@ the NPC pattern end-to-end is in [ai-npcs.md](ai-npcs.md).
 
 ## `@origin` — where the call came from (WIRED)
 
-`@origin` is a structured, **host-set and UNFORGEABLE** description of where a
-call originated. It is derived from the internal-secret-gated dispatch — never
-from a client — so it is the same trust class as `@user` from a verified token. A
-client cannot assert or spoof it.
+`@origin` is a structured, **platform-set and unforgeable** description of where
+a call originated. It is never supplied by the client, so a client cannot assert
+or spoof it.
 
 ```ts
-// @origin — host-populated for every call
+// @origin — platform-populated for every call
 @origin = {
-  kind,   // ALWAYS set. Produced today: 'live' | 'user'. Reserved (roadmap): 'scheduled' | 'function' | 'webhook'
+  kind,   // ALWAYS set, e.g. 'live' for a live tick or 'user' for a direct user call
   path,   // the rooms/$roomId or function path; null when N/A
   module, // the live module name; null when N/A
   room,   // the room id (live calls); null when N/A
@@ -163,22 +162,19 @@ tight too — it is the first gate before the `auth` rule runs.
 
 The identity plumbing is not forgeable:
 
-- `@origin` is **dispatcher-derived**, never a client-asserted header — a forged
-  `X-Bounded-Origin` is ignored. `@origin.kind == 'live'` can only be true for a
-  real tick dispatch.
+- `@origin` is platform-derived, never client-asserted. `@origin.kind == 'live'`
+  can only be true for a real live tick.
 - **Forgery foreclosure (reserved-address):** a client live intent may **never**
-  carry the reserved `@effect` address or an `__effect` discriminator — the
-  facet rejects it (**403**). **Only the host feeds effect results** back onto
+  carry the reserved `@effect` address or an `__effect` discriminator — Bounded
+  rejects it (**403**). **Only Bounded delivers effect results** back onto
   the `@effect` address; a client cannot inject or replay a fake function
   result. `@effect` is also excluded from the per-tick principal set.
-- **`as` only gates the same-tick check today — it does NOT change identity.**
-  A tick may name `as` for a player who acted this tick (the same-tick check
-  runs in the facet), but a permitted `as` is a **no-op on identity**: the call
-  still acts as the session `runAs` / function `actAs` / anonymous system, NOT
-  as the player. **Per-player acting is ROADMAP** (cheap, non-breaking to add).
-  Do not assume `as` makes a call act on a player's behalf.
-- The acting identity is **never** a caller-asserted header — the dispatcher
-  refuses an `X-Bounded-Acting` impersonation header. Identity comes only from a
+- **`as` is a validation hint, not an identity override.**
+  A tick may name `as` for a player only when the live runtime can validate that
+  player for the current tick. The call still acts as the session `runAs` /
+  function `actAs` / anonymous system, not as the player. Do not assume `as`
+  makes a call act on a player's behalf.
+- The acting identity is **never** caller-asserted. Identity comes only from a
   verified token, `runAs`, or the function's owner-declared `actAs`.
 
 ## The act-vs-see-vs-state triad

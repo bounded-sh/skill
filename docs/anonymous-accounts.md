@@ -37,9 +37,9 @@ Most apps don't want guests, so you **must enable it** in `policy.json` — a to
 }
 ```
 
-Without `auth.anonymous: true`, `signInAnonymously()` is **refused by the issuer**
-(403). The flag travels in your deployed policy, so it's version-locked and per-env
-(deploy a different policy per environment to vary it).
+Without `auth.anonymous: true`, `signInAnonymously()` is refused with `403`. The
+flag travels in your deployed policy, so it's version-locked and per-env (deploy
+a different policy per environment to vary it).
 
 ## 1. Anonymous sign-in (the guest)
 
@@ -92,11 +92,10 @@ user.isAnonymous   // false — now a real account
 user.id            // UNCHANGED — same id the guest had → all its data is still theirs
 ```
 
-What happens under the hood: the issuer verifies the guest token, and **if the email
-is brand-new** the new account *adopts the guest's id* — so `@user.id` (and every row
-owned by it) carries over with zero migration. **If the email already exists**, the
-user just signs into that existing account (no merge — it stays its own identity),
-exactly like Firebase/Supabase. Show the upgrade prompt with `getCurrentUser()?.isAnonymous`.
+When the email is brand-new, the upgraded account keeps the guest's id — so
+`@user.id` and every row owned by it carry over with zero migration. If the email
+already exists, the user signs into that existing account instead (no merge).
+Show the upgrade prompt with `getCurrentUser()?.isAnonymous`.
 
 > **Google / social upgrade** — `linkWithRedirect({ redirectUri })` does the same
 > seamless, id-preserving upgrade via a Google (OIDC) redirect: stash the guest,
