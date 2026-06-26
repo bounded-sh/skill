@@ -10,8 +10,8 @@ server-side reset.
 > **TL;DR.** `~/.bounded/credentials` is a Solana private key, auto-generated the
 > first time you run an authenticated command, never shown to you, never backed up.
 > It owns your apps. Treat it like an SSH private key: **back it up, and run
-> `bounded link` on day one.** The public `.bounded/app.json` marker is safe to
-> commit; the credentials file is not.
+> `bounded link` on day one.** Public `bounded.json` and `.bounded/app.json` are
+> safe to commit; credentials files are not.
 
 ## 1. The credentials file IS your account
 
@@ -50,26 +50,50 @@ When present it **overrides the file** entirely.
 
 ## 3. Key resolution precedence
 
-The CLI picks the private key in this exact order — **first match wins**:
+The CLI picks the private key in this exact order — **first match wins**. The
+public `bounded.json` can select `global`, `project`, `profile`, or `env`; it
+never stores the private key itself.
 
 | Order | Source | Use |
 |---|---|---|
 | 1 | `BOUNDED_PRIVATE_KEY` (env) | CI / automation |
-| 2 | `<project>/.bounded/credentials` | project-scoped key (opt-in; one app = one isolated key) |
-| 3 | `~/.bounded/credentials` | global default (auto-created, zero ceremony) |
+| 2 | `bounded.json` `account.keySource:"profile"` | named account at `~/.bounded/accounts/<profile>/credentials` |
+| 3 | `bounded.json` `account.keySource:"project"` or existing `<project>/.bounded/credentials` | project-scoped key (one app/project = one isolated key) |
+| 4 | `~/.bounded/credentials` | global default (auto-created, zero ceremony) |
 
-The global key (3) is the default and auto-works. A **project key** (2) is opt-in —
-drop a `credentials` file in the project's `.bounded/` directory if you want this one
-app on its own isolated key (and gitignore it — see §5). The marker always records
-*which* source was used (§4).
+The global key is the default and auto-works. For one project under another
+account, run `bounded account use client-a`; the next auth command creates/uses
+`~/.bounded/accounts/client-a/credentials`. For a repo-local isolated key, run
+`bounded account use --project`; the key lives at `<project>/.bounded/credentials`
+and is gitignored. The public config and marker always record *which* source was
+used (§4).
 
-## 4. The per-app marker — `.bounded/app.json` (PUBLIC, committable)
+## 4. Public project markers — `bounded.json` and `.bounded/app.json`
 
-Every project gets a marker written by `bounded deploy --create` (and refreshed by
-later deploys / `bounded link`). It is **PUBLIC** — it records the owner *public*
-key and *where* the private key lives, but **never the private key itself**. Commit
-it: it tells your teammate (or future you) which app this folder is, who owns it,
-and which key to use.
+`bounded init` writes public `bounded.json`; `bounded deploy --create` records the
+app id there and also writes legacy-compatible `.bounded/app.json`. Both are
+**PUBLIC** — they record the app, env, owner public key, and where the private key
+lives, but **never the private key itself**. Commit them: they tell teammates and
+agents which app/account this folder maps to.
+
+`bounded.json` is the first file agents should read:
+
+```json
+{
+  "$schema": "https://bounded.sh/schemas/bounded.schema.json",
+  "appId": "6a37ecc89def2f10f13aa922",
+  "name": "my-app",
+  "environment": "production",
+  "protocol": "realtime_offchain",
+  "policy": "policy.json",
+  "account": {
+    "keySource": "profile",
+    "profile": "client-a"
+  }
+}
+```
+
+`.bounded/app.json` records the public owner address and resolved key source:
 
 ```json
 {
@@ -87,12 +111,12 @@ and which key to use.
 | Field | Meaning |
 |---|---|
 | `owner` | the **public key** that owns the app (so the owner pubkey is always visible) |
-| `ownerKeySource` | **WHERE** the private key lives — `global (~/.bounded/credentials)`, `project (.bounded/credentials)`, or `env (BOUNDED_PRIVATE_KEY)`. Never the key, just its home. |
+| `ownerKeySource` | **WHERE** the private key lives — `global (~/.bounded/credentials)`, `project (.bounded/credentials)`, `profile "<name>" (~/.bounded/accounts/<name>/credentials)`, or `env (BOUNDED_PRIVATE_KEY)`. Never the key, just its home. |
 | `linkedAccount` | the email/human account this owner is linked to (the recovery path), blank if not linked |
 
-`ownerKeySource` answers "where did the key for this app come from?" without ever
-embedding a secret. If it says `global`, the key is in `~/.bounded/credentials` on
-the machine that created the app.
+`account.keySource` / `ownerKeySource` answer "where did the key for this app come
+from?" without ever embedding a secret. If it says `global`, the key is in
+`~/.bounded/credentials` on the machine that created the app.
 
 ## 5. The managed `.gitignore` block
 
@@ -102,7 +126,7 @@ raw secret and **keeps the public marker committable**:
 
 ```gitignore
 # Bounded (managed) — never commit private keys or secrets.
-# The public marker .bounded/app.json IS safe to commit; everything below is not.
+# Public markers bounded.json and .bounded/app.json ARE safe to commit; everything below is not.
 .bounded/credentials
 .bounded/*.key
 *.key
@@ -112,7 +136,8 @@ raw secret and **keeps the public marker committable**:
 !.env.example
 ```
 
-- `.bounded/app.json` (the public marker) is **deliberately NOT ignored** — commit it.
+- `bounded.json` and `.bounded/app.json` (the public markers) are **deliberately
+  NOT ignored** — commit them.
 - A project key, any dropped keypair file, and a `.env` holding `BOUNDED_PRIVATE_KEY`
   are all ignored so you can't accidentally commit a secret.
 - `!.env.example` keeps a checked-in example env file allowed.
@@ -177,13 +202,17 @@ When you (an AI agent) operate Bounded on a human's behalf:
 1. **On the first `deploy --create` in a project, SUGGEST `bounded link`** to the
    human, so their work isn't tied to a throwaway key. Confirm with them where the
    key lives.
-2. **Always tell the human WHERE the app's private key lives** (the marker's
-   `ownerKeySource`) **and what the public owner address is** (`owner`). They need to
-   know which key to back up.
-3. **Never echo, print, or commit the private key.** Rely on the public
-   `.bounded/app.json` for provenance. The credentials file and
+2. **Read `bounded.json` first.** It is the public project source of truth for
+   `appId`, environment, policy path, and account source. If absent, fall back to
+   `.bounded/app.json`.
+3. **Always tell the human WHERE the app's private key lives** (`bounded.json`
+   `account.keySource` / marker `ownerKeySource`) **and what the public owner
+   address is** (`owner`). They need to know which key to back up.
+4. **Never echo, print, or commit the private key.** Rely on public
+   `bounded.json` / `.bounded/app.json` for provenance. The credentials file and
    `BOUNDED_PRIVATE_KEY` are secrets — keep them out of logs, chat, and the repo.
-4. **On a new machine, reuse the SAME key** (copy `~/.bounded/credentials` securely)
+5. **On a new machine, reuse the SAME key** (copy `~/.bounded/credentials` or the
+   selected profile/project credentials securely)
    **or `bounded link` both machines to one account.** Do **not** silently let the
    CLI auto-generate a *second* identity — that new key is a different account that
    **can't see the first machine's apps**.
@@ -191,11 +220,12 @@ When you (an AI agent) operate Bounded on a human's behalf:
 ## First-time setup (do this once)
 
 ```bash
-bounded whoami        # auto-creates ~/.bounded/credentials; note the address
+bounded init          # writes policy.json + public bounded.json
+bounded whoami        # auto-creates selected credentials; note the address
 bounded link          # attach the key to your email account — your safety net
 # ... back up ~/.bounded/credentials somewhere safe (treat it like an SSH key)
-bounded deploy ./policy.json --create --name my-app   # writes .bounded/app.json + .gitignore block
-git add .bounded/app.json .gitignore        # commit the PUBLIC marker, not the key
+bounded deploy --create --name my-app       # records appId in bounded.json + .bounded/app.json
+git add bounded.json .bounded/app.json .gitignore      # commit PUBLIC markers, not keys
 ```
 
 ## Returning / new machine (don't spawn a second identity)
@@ -218,7 +248,8 @@ bounded whoami        # should show your existing owner address
 ```
 
 After either A or B, `bounded whoami` should show the owner address that matches
-`owner` in your projects' `.bounded/app.json`.
+`owner` in your project's `.bounded/app.json`; for configured projects it should
+also show the `bounded.json` app/account context.
 
 ## Related
 

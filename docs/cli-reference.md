@@ -28,18 +28,18 @@ overrides the file). See [auth.md](auth.md).
 > `.gitignore` secrets block for you (see below), but you are still responsible
 > for keys you drop in a repo by hand.
 
-> **Running a second identity:** point `HOME` at a temp dir
-> (`HOME=$(mktemp -d) bounded whoami`) — the CLI auto-creates a fresh
-> `~/.bounded/credentials` there, giving you a clean separate account. (Or set
-> `BOUNDED_PRIVATE_KEY` to another base58 key.) This is how you run a distinct
-> agent identity without touching your main credentials. Don't do this by accident
-> — a second identity can't see the first machine's apps.
+> **Running another identity:** use `bounded account use <profile>` in the
+> project, then `bounded whoami` or `bounded link --email you@example.com`.
+> Profile keys live at `~/.bounded/accounts/<profile>/credentials`, so one
+> project can use your default account and another can use a client/team account
+> without committing secrets. You can still use `BOUNDED_PRIVATE_KEY` for CI.
 
 | Command | Does | Example |
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
 | `whoami` | Show address, environment, key source, linked email (if any), and this folder's app marker if present (creates the key on first run) | `bounded whoami` |
 | `link` | **The anti-loss move.** Bind the keypair to your human (email) account via an **OAuth device flow** (with an anti-phishing fingerprint), or use `--email` for headless OTP approval; keypair + email-account wallet become admin-collaborators on each other's apps, so your apps survive local key loss. The keypair keeps signing — linking only ADDS the association, it never rolls or replaces the key. | `bounded link --email you@example.com` |
+| `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, or env. | `bounded account use client-a` |
 | `share <wallet\|email> --app-id <id>` | Add a collaborator (a backup owner). **Wallet** → direct (default role `policy`). **Email** → resolved to its auto-provisioned embedded wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. | `bounded share teammate@example.com --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
@@ -49,6 +49,50 @@ approval: email an OTP, read it from stdin, approve this device), `--timeout
 <dur>` (default `10m`). Collaboration grants **control-plane** authority (manage
 the app), not a data-plane bypass — give data powers explicitly via policy rules
 ([admin-and-ownership.md](admin-and-ownership.md)).
+
+### Project config — `bounded.json`
+
+`bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
+Agents should read this file first. It is safe to commit and contains no private
+key material:
+
+```json
+{
+  "$schema": "https://bounded.sh/schemas/bounded.schema.json",
+  "appId": "6a37ecc89def2f10f13aa922",
+  "name": "my-app",
+  "environment": "production",
+  "protocol": "realtime_offchain",
+  "policy": "policy.json",
+  "account": {
+    "keySource": "profile",
+    "profile": "client-a"
+  }
+}
+```
+
+Resolution rules:
+
+| Config | Private key location |
+|---|---|
+| `{"keySource":"global"}` | `~/.bounded/credentials` |
+| `{"keySource":"project","keyPath":".bounded/credentials"}` | `<project>/.bounded/credentials` |
+| `{"keySource":"profile","profile":"client-a"}` | `~/.bounded/accounts/client-a/credentials` |
+| `{"keySource":"env"}` | `BOUNDED_PRIVATE_KEY` |
+
+Useful commands:
+
+```bash
+bounded account                 # show this project's account source
+bounded account use personal    # use ~/.bounded/accounts/personal/credentials
+bounded account use --project   # use <project>/.bounded/credentials
+bounded account use --global    # use ~/.bounded/credentials
+bounded account use --env       # require BOUNDED_PRIVATE_KEY
+```
+
+Explicit flags still win: `--app-id`, `--env`, and `BOUNDED_PRIVATE_KEY` override
+project defaults. Older projects with only `.bounded/app.json` still work; the
+CLI falls back to that marker when `bounded.json` is absent.
 
 ### The per-app marker — `.bounded/app.json`
 
@@ -72,7 +116,8 @@ owner, and env this folder maps to, and which key a teammate needs:
 
 - `owner` — the **public key** that owns the app.
 - `ownerKeySource` — WHERE the private key lives (never the key itself): one of
-  `global (~/.bounded/credentials)`, `project (.bounded/credentials)`, or
+  `global (~/.bounded/credentials)`, `project (.bounded/credentials)`,
+  `profile "<name>" (~/.bounded/accounts/<name>/credentials)`, or
   `env (BOUNDED_PRIVATE_KEY)`. Answers "which key do I need for this app?"
 - `linkedAccount` — the email account this owner is linked to (the recovery path),
   blank if you haven't run `bounded link`.
@@ -86,16 +131,16 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 
 | Command | Does | Key flags |
 |---|---|---|
-| `init` | Write a starter `policy.json` (spend ledger + `spend_cap`) | `--force` overwrite |
-| `verify <policy.json>` | Run the proof engine, print the report + counterexamples | `--app-id` (or `--environment`), `--operation`, `--constants`, `--environment` |
-| `deploy <policy.json>` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` or `--create --name` or `--environment`, `--protocol`, `--constants`, `--environment` |
+| `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
+| `verify [policy.json]` | Run the proof engine, print the report + counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--constants`, `--environment` |
+| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--constants`, `--environment` |
 | `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
 
 ```bash
-bounded init                                            # scaffold policy.json
-bounded deploy ./policy.json --create --name my-app     # create app + deploy (prints appId)
-bounded verify ./policy.json --app-id <appId>           # re-prove after edits
-bounded deploy ./policy.json --app-id <appId>           # redeploy
+bounded init                                            # scaffold policy.json + bounded.json
+bounded deploy --create --name my-app                   # create app + record appId
+bounded verify                                          # re-prove after edits
+bounded deploy                                          # redeploy using bounded.json
 ```
 
 ## Local dashboard

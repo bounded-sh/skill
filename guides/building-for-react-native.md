@@ -22,7 +22,7 @@ Email is the default auth everywhere, including RN — but RN has **no DOM**, so
 web's inline email-code modal isn't available. On RN you drive OTP flows yourself
 with the SDK's **headless** email primitives (`sendEmailOtp` /
 `verifyEmailOtp`). Text OTP (`sendTextOtp` / `verifyTextOtp`) is off by default
-and works only when Bounded explicitly enables it for the issuer/app. Phantom
+and works only when Bounded explicitly enables it for the app. Phantom
 (a Solana wallet, opening via the Phantom mobile app) is the opt-in path when you
 specifically need an onchain `@user.address`.
 
@@ -52,7 +52,7 @@ await sendEmailOtp("user@example.com");                  // emails a 6-digit cod
 // step 2 — collect the code from your own <TextInput>, then:
 const user = await verifyEmailOtp("user@example.com", "123456"); // signs in
 
-// Optional: only when text OTP is explicitly enabled for the issuer/app.
+// Optional: only when text OTP is explicitly enabled for the app.
 await sendTextOtp("+14155550132");                               // texts a 6-digit code
 const byText = await verifyTextOtp("+14155550132", "123456");     // signs in
 getCurrentUser();                                        // { id, address, email } | null

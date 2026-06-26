@@ -5,9 +5,10 @@ description: >-
   Use when working with Bounded CLI, policy.json, bounded verify/deploy,
   auth, functions, live/realtime rooms, hosted frontends, Bounded billing,
   usage limits, AI via ctx.ai, secrets, SDKs, files, search, roles, ownership,
-  invariants such as rollingSum/conserve/tenantTag, proof reports, or
-  counterexamples. This public skill is a router: load the one linked doc for
-  the user's task and avoid unrelated context.
+  project config such as bounded.json and account profiles, invariants such as
+  rollingSum/conserve/tenantTag, proof reports, or counterexamples. This public
+  skill is a router: load the one linked doc for the user's task and avoid
+  unrelated context.
 ---
 
 # Bounded
@@ -69,13 +70,14 @@ only for the next question.
 | Hosted frontend and app URLs | [docs/frontend-hosting.md](docs/frontend-hosting.md) · [docs/domains.md](docs/domains.md) |
 | SDK calls and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | CLI commands | [docs/cli-reference.md](docs/cli-reference.md) |
+| Project config, `bounded.json`, account profiles, key safety | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | Data-plane read/write semantics and atomic batches | [docs/data-plane.md](docs/data-plane.md) |
 | Queries, pagination, aggregates | [docs/queries.md](docs/queries.md) |
 | Files and search | [docs/files-and-search.md](docs/files-and-search.md) |
 | Hooks, schedules, webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | What anti-cheat can and cannot prove | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | Realtime rooms and games | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| Native live modules | [docs/live-runtime.md](docs/live-runtime.md) |
+| Native live modules and live status | [docs/live-runtime.md](docs/live-runtime.md) |
 | Realtime game feel: input cadence, interpolation, prediction | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
 | AI NPCs / AI players | [docs/ai-npcs.md](docs/ai-npcs.md) |
 | Long-running backend runtime | [docs/backend-runtime.md](docs/backend-runtime.md) |
@@ -95,7 +97,7 @@ only for the next question.
 
 | If you see | Read |
 |---|---|
-| `rollingSum`, `conserve`, `bound`, `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md) |
+| `rollingSum`, `windowSeconds`, `scopeVariable`, `conserve`, `bound`, `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md) |
 | `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
 | `transferAuthority`, one-click market trade, holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
 | `roles`, `members`, `read:"*"`, scoped admin | [docs/roles.md](docs/roles.md) |
@@ -106,15 +108,16 @@ only for the next question.
 | `actAs`, `runAs`, service key, payout bot, backend identity | [docs/service-keys.md](docs/service-keys.md) · [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `@origin`, `ctx.origin`, live call provenance | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `session.live`, `init`, `tick`, `views`, `@effect`, `live.intent` | [docs/live-runtime.md](docs/live-runtime.md) |
+| `bounded live status`, `GET /live/status`, `live.status`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
 | `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `schedule`, `dueRows`, `hooks.scheduled`, `webhooks`, `verifyWebhook` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `getPage`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) · [docs/sdk-reference.md](docs/sdk-reference.md) |
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) · [docs/data-plane.md](docs/data-plane.md) |
 | `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
 | `bounded link`, `bounded share`, collaborators | [docs/auth.md](docs/auth.md#linking--teams) |
-| `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY`, lost key | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
+| `bounded.json`, `bounded account use`, account profiles, `.bounded/app.json`, `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
-| `429`, `dimension`, `projectedUsage`, `alerts[]` | [docs/billing.md](docs/billing.md#handling-limit-errors) |
+| `project_limit_exceeded`, `maxProjects`, `429`, `dimension`, `projectedUsage`, `alerts[]` | [docs/billing.md](docs/billing.md#handling-limit-errors) |
 
 ## Error Router
 
@@ -152,17 +155,20 @@ cap must have room before cost-bearing work runs.
 ```bash
 curl -fsSL https://get.bounded.sh/install.sh | sh
 bounded init
-bounded verify ./policy.json
-bounded deploy ./policy.json --create --name my-app
+bounded deploy --create --name my-app
+bounded verify
 bounded dashboard
 ```
 
-The first CLI command creates a local keypair in `~/.bounded/credentials`. That
-key owns apps created with it. Link it early with `bounded link --email
+`bounded init` writes `policy.json` and public project config. The first CLI
+command that needs auth creates or loads the configured local keypair. That key
+owns apps created with it. Link it early with `bounded link --email
 you@example.com` and do not commit private keys or secrets.
 
 ## Rules Of Thumb
 
+- Read project config first when entering an existing app; it tells agents which
+  app/environment/account source to use.
 - Use `@user.id` for normal ownership and membership checks.
 - Use `@user.address` only for wallet/onchain semantics.
 - Use `conserve` for money-like values.

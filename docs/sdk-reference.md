@@ -53,7 +53,7 @@ accounts are via `signInAnonymously()` and coexist with Bounded Auth. For a
 custom/RN OTP UI use the headless `sendEmailOtp` / `verifyEmailOtp` helpers.
 Text OTP (`provider: "text"`, `methods: ["text"]`, or `sendTextOtp` /
 `verifyTextOtp`) is off by default and works only when Bounded explicitly enables
-it for the issuer/app. Full flow in [auth.md](auth.md).
+it for the app. Full flow in [auth.md](auth.md).
 
 > Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
 > can override individual endpoints, but you should normally use `network`, which
@@ -341,7 +341,7 @@ const { user, login, logout, loading } = useAuth();
 await sendEmailOtp("user@example.com");
 await verifyEmailOtp("user@example.com", "123456");
 
-// Headless text OTP, only when explicitly enabled for the issuer/app:
+// Headless text OTP, only when explicitly enabled for the app:
 await sendTextOtp("+14155550132");
 await verifyTextOtp("+14155550132", "123456");
 

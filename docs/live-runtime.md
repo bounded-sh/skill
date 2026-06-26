@@ -584,15 +584,15 @@ headers or routing details.
 
 | Route | Addressed by | Auth | Returns |
 |---|---|---|---|
-| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | live-room status |
+| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | `{ available, started, running, tick, module, etag, stopReason, generation, connections, lastTickAt, nextAlarmAt }` |
 | `POST /live/intent` | `body.path` | **required** | `{ ok: true }` |
 
 Drive intents from anywhere: the browser SDK (`bounded.live.intent(roomPath, intent)`),
 a server with `@bounded-sh/server`, or the **CLI** — `bounded live intent <roomPath>
 --app-id <id> --intent '<json>'` (great for cold-starting a room, scripts, and tests).
 Use `bounded live status <roomPath> --app-id <id>` or `live.status(roomPath)` when
-debugging liveness: parked rooms report `running:false`, stop reason, generation,
-open connections, and tick timing.
+debugging liveness: parked rooms report `running:false` plus `stopReason`,
+`generation`, loaded `etag`, open `connections`, and alarm/tick timestamps.
 `live.intent` and `live.subscribeView` re-arm a parked room; a terminal stopped
 room (`lifetime`/`manual`) cold-starts a fresh generation on the next intent.
 
@@ -648,8 +648,8 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 
 Status/liveness is first-class in the SDK and CLI:
 `await live.status(roomPath)` or `bounded live status <roomPath> --app-id <id>`
-returns live-room status, including whether it is available, started, running,
-and connected.
+returns `{ available, started, running, tick, module, etag, stopReason,
+generation, connections, lastTickAt, nextAlarmAt }`.
 
 The per-client view read rule is what makes the subscribe line safe by
 construction: it can only ever resolve to *your* view, so you cannot subscribe

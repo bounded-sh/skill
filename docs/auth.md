@@ -13,10 +13,13 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 
 ## Dev identity — the keypair IS your account
 
-There is **no login step** for building. The first `bounded` command generates
-an ed25519 keypair and stores it in `~/.bounded/credentials` — a JSON file
-(mode `0600`) with a base58 `privateKey` field. That keypair is the identity — it
-owns every app you create and signs every write.
+There is **no login step** for building. `bounded init` writes public
+`bounded.json`; the first command that needs auth generates or loads the account
+source selected there. By default that is `~/.bounded/credentials` — a JSON file
+(mode `0600`) with a base58 `privateKey` field. A project can instead select a
+profile (`~/.bounded/accounts/<profile>/credentials`), a project key
+(`<project>/.bounded/credentials`), or `BOUNDED_PRIVATE_KEY`. That keypair is the
+identity — it owns every app you create and signs every write.
 
 ```bash
 bounded whoami        # prints address, environment, key source (creates the credentials if absent)
@@ -29,11 +32,11 @@ bounded whoami        # prints address, environment, key source (creates the cre
 > it up, and run **`bounded link`** on day one as your anti-loss mechanism. Full
 > guidance: [key-and-account-safety.md](key-and-account-safety.md).
 
-- Override the on-disk credentials with **`BOUNDED_PRIVATE_KEY`** (a **base58**
-  secret string), or point `HOME` elsewhere so the CLI reads/creates a separate
-  `~/.bounded/credentials` — this is how you run a **distinct identity per
-  agent**. A temp `HOME` (`HOME=$(mktemp -d) bounded whoami`) auto-creates a fresh
-  key cleanly. Never reuse a human's keypair for an autonomous agent.
+- Use `bounded account use <profile>` to run one project under another named
+  account without committing secrets. Override everything with
+  **`BOUNDED_PRIVATE_KEY`** (a **base58** secret string) for CI/automation.
+  Never reuse a human's keypair for an autonomous agent unless that is explicitly
+  intended.
 
 ### Linking & teams
 
@@ -106,7 +109,7 @@ The inline modal is **email-only** (a 6-digit code, no popup, no full-page
 redirect). It's the quickest drop-in, but it cannot do OAuth/social login because
 Google/Apple/GitHub require a browser redirect. Text OTP is off by default and
 is available through the headless SDK helpers and hosted login only when Bounded
-explicitly enables it for the issuer/app.
+explicitly enables it for the app.
 
 ### Hosted login — OAuth/social is first-class
 
@@ -165,7 +168,7 @@ Bounded exposes that provider publicly.
 
 Text-message OTP is opt-in and off by default. It is not exposed by hosted login,
 SDK config, or headless routes unless Bounded explicitly enables it for the
-issuer/app and SMS delivery is configured. When enabled, it uses the same
+app and SMS delivery is configured. When enabled, it uses the same
 authentication posture as email OTP: expiring codes, attempt limits, and rate
 limits.
 
@@ -173,7 +176,7 @@ For app builders:
 
 - Phone numbers must be E.164, e.g. `+14155550132`.
 - Do not assume phone auth is available because SMS provider credentials exist;
-  public availability is controlled by the Bounded Auth app/issuer config.
+  public availability is controlled by the app's Bounded Auth configuration.
 - Text OTP is for authentication only. Do not treat it as consent for arbitrary
   app-originated SMS or WhatsApp messages.
 - For non-auth messaging, integrate a real provider with your own API keys or use
@@ -197,7 +200,7 @@ await init({ appId: "<appId>" });
 await sendEmailOtp("user@example.com");          // step 1: emails a code
 const user = await verifyEmailOtp("user@example.com", "123456");  // step 2: signs in
 
-// Only when text OTP is explicitly enabled for the issuer/app:
+// Only when text OTP is explicitly enabled for the app:
 await sendTextOtp("+14155550132");               // step 1: texts a code
 const byText = await verifyTextOtp("+14155550132", "123456");     // step 2: signs in
 ```
