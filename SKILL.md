@@ -111,6 +111,7 @@ only for the next question.
 | `bounded live status`, `GET /live/status`, `live.status`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
 | `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `schedule`, `dueRows`, `hooks.scheduled`, `webhooks`, `verifyWebhook` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| `payment`, `checkout`, `seller`, `merchant`, `subscription`, `Stripe`, `/connect/onboard`, `/connect/status`, `/connect/checkout`, `/connect/session` | [docs/bounded-pay.md](docs/bounded-pay.md) |
 | `getPage`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) · [docs/sdk-reference.md](docs/sdk-reference.md) |
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) · [docs/data-plane.md](docs/data-plane.md) |
 | `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
@@ -134,6 +135,8 @@ only for the next question.
 - Do not ship fake integrations as done work.
 - Use `ctx.ai.run` for AI through Bounded's public AI route, funded by the
   AI/external-services bucket.
+- For app payments, seller onboarding, checkout, subscriptions, or paid
+  entitlements, read `docs/bounded-pay.md` before generating policy or app code.
 - For email, SMS, WhatsApp, payments, brokers, or feeds, use a real provider or a
   public Bounded-managed surface when one exists.
 - If a placeholder is unavoidable, say it plainly to the user.
