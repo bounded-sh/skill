@@ -1,475 +1,173 @@
 ---
 name: bounded
 description: >-
-  Use to BUILD AND USE Bounded (bounded.sh) — a provable Convex/Supabase-class
-  realtime backend an agent builds from a description. Covers: generating a
-  policy.json (collections, field types, auth rules, and provable invariants —
-  spending caps, conservation, tenant isolation), running `bounded verify` for
-  SMT proof reports with counterexamples, deploying through the validation/compile
-  gate after proof review, and reading/writing data via `bounded data` or the
-  `@bounded-sh` SDK packages (`@bounded-sh/client` for web/React Native,
-  `@bounded-sh/server` for server). This SKILL.md is a ROUTER:
-  it maps your intent to the one doc that answers it. Triggers: "bounded",
-  "bounded.sh", "bounded CLI", "bounded verify", "bounded deploy", "policy.json",
-  "provable backend", "formally verified database", "Convex alternative",
-  "Supabase alternative", "realtime backend", "invariant", "spending cap",
-  "rollingSum", "conserve", "tenantTag", "tenantEdge", "proof report",
-  "counterexample", "agent spend cap", "multiplayer game backend", "fog-of-war",
-  "server-authoritative", "tick", "anti-cheat", "live runtime", "session.live",
-  "bounded live", "live module", "realtime room", "Figma clone", "collaborative editor",
-  "whiteboard", "live dashboard", "per-client view", "provable replay",
-  "native game",
-  "service key", "server wallet", "backend identity", "payout bot", "actAs",
-  "__managers__", "__owners__", "__collaborators__", "logsAuth",
-  "who can view logs", "function log access", "linked accounts",
-  "hooks", "scheduled", "webhooks",
-  "@bounded-sh", "@bounded-sh/client", "@bounded-sh/server", "collaborator", "bounded share",
-  "bounded link", "share by email", "admin", "admins collection", "no god-mode",
-  "roles", "roles block", "provably-scoped admin", "read everything",
-  "admin dashboard", "constants block", "@const", "defs", "@def",
-  "reusable rule fragment", "environments", "preview and production",
-  "multi-environment", "per-environment", "--environment",
-  "verifyAuthorityClosure", "functions", "bounded functions", "function",
-  "invoke", "escape hatch", "when to use a function", "scheduled function",
-  "call Stripe", "call an API", "third-party API", "ctx.bounded", "ctx.env",
-  "transferAuthority", "conditional transfer", "one-click market trade",
-  "market settle", "buyer invoked settlement", "public settler",
-  "syncStripe", "getPage", "aggregate", "search", "pagination",
-  "don't lose my key", "back up my key", "account recovery", "lost wallet",
-  "wallet safety", "key safety", "credentials", "~/.bounded/credentials",
-  "BOUNDED_PRIVATE_KEY", "who owns the app", "AI NPC", "AI player", "NPC brain",
-  "tick calls a function", "live call", "session.live.calls", "@effect",
-  "system principal", "service principal", "acting user", "origin", "@origin",
-  "ctx.origin", "onchain", "Solana data", "client transaction",
-  "client-signed transaction", "sign onchain", "mainnet", "devnet",
-  "--protocol", "realtime_devnet", "graduate a function", "eject to Cloudflare".
-  Also covers plan/usage status, near-limit alerts, usage-limit 429s, upgrading,
-  top-ups, and plan caps.
+  Build and use Bounded (bounded.sh), a provable realtime backend for apps.
+  Use when working with Bounded CLI, policy.json, bounded verify/deploy,
+  auth, functions, live/realtime rooms, hosted frontends, Bounded billing,
+  usage limits, AI via ctx.ai, secrets, SDKs, files, search, roles, ownership,
+  invariants such as rollingSum/conserve/tenantTag, proof reports, or
+  counterexamples. This public skill is a router: load the one linked doc for
+  the user's task and avoid unrelated context.
 ---
 
 # Bounded
 
-Bounded (bounded.sh) is a **provable realtime backend an agent builds from a
-description**. You write one JSON policy — collections, field types, auth rules,
-and **invariants** (the non-negotiables: spending caps, conserved totals, tenant
-isolation) — then run `bounded verify` to have a Z3-based prover check declared
-constraints and return concrete counterexamples on failure. `bounded deploy`
-validates, compiles, and pushes the policy; it does **not** rerun the prover, so
-run `bounded verify` before deploying and treat DISPROVED findings as work to fix
-or explicitly accept. At runtime a single-writer cell per app enforces rules and
-invariants atomically over a realtime Durable Object. Everything on the data
-plane is fail-closed: a constraint-breaking write is a `409`, invalid policies do
-not deploy, and nothing partial is ever applied.
+Bounded is a provable realtime backend for apps. The public workflow is:
 
-## The loop
-
-```
-describe app → generate policy.json → bounded verify → read counterexamples →
-fix → bounded verify (clean) → bounded deploy → use via SDK / CLI
+```text
+describe app -> generate policy.json -> bounded verify -> fix/accept proof results -> bounded deploy -> use via SDK/CLI
 ```
 
-`bounded verify` does not say "tests passed" — it proves a property over *all*
-inputs and, on failure, hands you the exact assignment that breaks your policy.
-That is the heart of Bounded. `bounded deploy` is intentionally separate:
-validation/compile/push, not a second proof run.
+`bounded verify` is the proof loop. `bounded deploy` validates, compiles, and
+pushes the policy. Runtime rule and invariant checks fail closed.
 
-## Build the real thing — not a stub
+## Public Boundary
 
-The proven policy is the **backend**, not the whole app. The #1 failure mode is
-shipping a bulletproof policy under a **hollow product**: real auth + real proofs,
-but the actual value faked with `Math.random()`, placeholder data, or a stubbed
-integration. Don't. Wire the real thing — Bounded gives you what you'd otherwise
-reach for a key/account to get:
+This skill is for Bounded users and app builders. Keep guidance user-facing:
 
-- **Need AI / an LLM? You don't need an API key.** Bounded is your AI router: call
-  **`ctx.ai.run(model, input)`** in a function — any model, billed to the app
-  owner's AI credit, capped fail-closed. The owner funds it: tell them to run
-  **`bounded link`** and **top up AI credit through Bounded** (Stripe/x402). And if
-  your app charges *its own* users, route that through Bounded billing too — don't
-  hand-roll a checkout. → [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/billing.md](docs/billing.md)
-- **Money/balances/P&L?** Model as a **`conserve`d** field, not a plain mutable
-  `Int` "stat" a write can invent.
-- **A broker / feed / third-party API?** Wire the real one in a function via
-  `fetch`. Don't simulate it.
+- Explain product behavior, public CLI/SDK commands, public pricing, usage limits,
+  app design patterns, and compliance responsibilities.
+- Stay within the public product surface. Do not invent non-public details,
+  unpublished pricing, or future capabilities.
+- For Bounded-managed third-party service proxies, state the public rule:
+  provider cost plus 5%, itemized. Users can opt out by asking their AI/agent to
+  integrate the provider directly with their own API keys; then they pay that
+  provider directly and Bounded's proxy markup does not apply.
+- For Bounded Pay, state that Bounded's 1% platform fee is in addition to
+  Stripe's own processing fees.
+- For SMS, WhatsApp, and email, remind users that Bounded Auth authenticates the
+  user; it is not recipient consent. Use real provider integrations and comply
+  with sender, opt-in, opt-out, and template rules for the channel.
 
-If a piece *must* be a placeholder, **say so plainly to the user** — never present a
-mock as finished. Last gate before "done":
-[quality-checklist.md](docs/quality-checklist.md#is-the-product-real-dont-ship-a-stub).
+## Use The Router
 
-## Plan and usage awareness
+Open one doc for the current task. If a doc has a "Related" footer, follow it
+only for the next question.
 
-When usage status is available, keep the user informed of the app's **plan**,
-finite **limits**, and any non-empty **`alerts[]`** from the usage snapshot. Do not
-hide quota pressure behind generic "try again" advice.
-
-- On a `429` usage error, look for `dimension`, `usage`, `limit`, and
-  `projectedUsage`. Explain the exact exhausted axis: request operations,
-  datastore writes, datastore reads, R2 Class A/B operations, storage, resident
-  compute, infra spend, or AI credit.
-- A batch write is one request operation but **N datastore write units**. If a
-  large `setMany`/batch fails, only suggest splitting when the smaller batch
-  would fit the remaining quota; otherwise tell the user to reduce volume,
-  delete/export data, upgrade, raise the Pro spend cap, or top up AI credit.
-- Treat `alerts[]` levels as notification severity: `warn` = approaching limit,
-  `critical` = urgent, `exceeded` = blocked until usage drops or the plan/cap
-  changes.
-
-For the exact plan table, data-plane usage axes, and notification guidance, open
-[docs/billing.md](docs/billing.md#checking-usage-and-near-limit-status).
-
-## Lookup — find THE one file in one hop
-
-**This SKILL.md is an index, not a textbook.** Look your need up in *one* of the
-three tables below — by **task**, by **symbol**, or by **error** — open the single
-file it points to (jump to the `#section` when given), and stop. Each doc opens
-with a one-line "what's in here" so you can confirm relevance instantly. Don't
-load multiple files to answer one question; follow a doc's "Related" footer only
-for the *next* question.
-
-### (a) By task → exact file (and section)
-
-| I want to… | Go to |
+| User task | Read |
 |---|---|
-| Write a correct policy from a description (the method) | [docs/policy-generation-guide.md](docs/policy-generation-guide.md) **(start here for any backend)** |
-| See full, validated example policies | [docs/policy-examples.md](docs/policy-examples.md) |
-| **Add a spending / rate cap** | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) · example below |
-| **Conserve a total / model money / build a transfer** (balances, P&L, supply, points — if a value is money, `conserve` it; no minting) | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) · example below |
-| **Let a buyer atomically take a listed good after payment** (conditional ownership/holder transfer, one-click market trade, no service settler) | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) · [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
-| **Isolate tenants** (data/refs can't cross orgs) | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
-| **Cap a field / anti-cheat a game score** (hard ceiling/floor) | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
-| **Make an admin who reads/writes everything** (dashboard, support) | [docs/roles.md](docs/roles.md) · example below |
-| **Make a per-doc admin / moderator** (no creator god-mode) | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) · example below |
-| **DRY up a policy** (named values `@const`, reusable rule fragments `@def`) | [docs/constants-and-defs.md](docs/constants-and-defs.md) · example below |
-| **Deploy one policy to multiple environments** (per-env appId + constants) | [docs/environments.md](docs/environments.md) · example below |
-| **Decide: rule vs invariant vs hook vs function** | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
-| **Outgrow a Bounded function** (move heavy/long-running code to your own Cloudflare Worker) | [docs/functions-graduation.md](docs/functions-graduation.md) |
-| **Add real AI / an LLM to your app** (NO API key — Bounded is your AI router; `ctx.ai.run`; owner funds via `bounded link` + AI credit) | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/billing.md](docs/billing.md) |
-| **Call an external API (Stripe, a broker, any third-party) then write** | [docs/functions.md](docs/functions.md) · example below |
-| **Deploy backend code / an agent with custom npm deps, persistent state, or its own schedule** (run full Cloudflare power THROUGH Bounded — sealed/metered/capped) | [docs/backend-runtime.md](docs/backend-runtime.md) |
-| **Host a static frontend** (`bounded site deploy ./dist` → `<app>.bounded.page`, with `<app>-api.bounded.page` for the backend) — **static bundles only** (Vite/CRA/static export); **not** SSR Next.js / request-time servers | [docs/frontend-hosting.md](docs/frontend-hosting.md#what-it-can-and-cannot-host) |
-| **Give an app a nice URL** (a vanity `<slug>.bounded.page`, or your own custom domain on Pro) | [docs/domains.md](docs/domains.md) |
-| **Plans, pricing & paying** (free/pro/enterprise, the $5 Pro AI bucket + top-ups, upgrade via Stripe or x402, admin adjust plan/credit/overrides) | [docs/billing.md](docs/billing.md) |
-| **Check usage / explain a limit warning or 429** (plan, request ops, datastore reads/writes, R2 ops, storage, resident compute, spend cap, `alerts[]`) | [docs/billing.md](docs/billing.md#checking-usage-and-near-limit-status) |
-| **Give backend code an API key** (Stripe/OpenAI secret — declare in manifest, `bounded secret put`, read via `ctx.secrets.get` or auto-inject on egress) | [docs/secrets.md](docs/secrets.md) |
-| **Gate access on app managers / owner / collaborators** (incl. linked accounts) or **control who views function logs** (`logsAuth`) | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
-| **Have a function act as its own backend identity** (payout bot, market-maker, settler — mint a key, policy authorizes its address) | [docs/service-keys.md](docs/service-keys.md) |
-| **Run a recurring job on a schedule** (use a scheduled **hook**; running a *function* on a schedule is roadmap — not firing yet) | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs) |
-| Add hooks / one-shot timers / webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
-| **What anti-cheat can / can't provably guarantee** (hooks bypass rules but never invariants; on-chain signing) | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
-| **Build a game with a server tick + settlement** (bytecode `session.tick` model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| **Build an AI NPC / AI player** (the tick `call`s a function; `session.live.runAs`-funded LLM, `actAs` per-function override; an agent joining a room as a player) | [docs/ai-npcs.md](docs/ai-npcs.md) |
-| **Who is the actor / system vs service principal / origin auth** (what `@user` is when a tick calls a function; `@origin` host-set + unforgeable; the function's `auth` rule IS evaluated for live; `session.live.runAs` funds it) | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
-| **Store data on Solana / sign onchain or client transactions / go to mainnet** (`onchain` collections, `--protocol`, `@user.address`-only, client-signed tx is ROADMAP) | [docs/onchain.md](docs/onchain.md) |
-| Full rule / field-type / `get()`/`getAfter()` **syntax reference** | [docs/policy-reference.md](docs/policy-reference.md) |
-| **Let users log in** (email is the default — inline OTP; guest = `signInAnonymously()`; Phantom = `authMethod:'phantom'`, opt-in for onchain/money apps) | [docs/auth.md](docs/auth.md#end-user-auth--the-user-object) · example below |
-| **Log an agent / Playwright into a deployed authed app to e2e-test** (inject a real keypair session into the browser — no login UI; mint via CLI, seed `localStorage`) | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |
-| **Don't lose my key / back up / recover my account** (the credentials file IS your account; `bounded link` it; gitignore secrets) | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
-| **Anonymous / guest users, invite links, try-before-signup; transfer or upgrade an account** | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
-| **Share an app by email / link my account** | [docs/auth.md](docs/auth.md#linking--teams) · example below |
-| **Paginate / filter / sort** a collection | [docs/queries.md](docs/queries.md#sort-limit-cursor-pagination) · example below |
-| **Aggregate** (count/sum/avg/min/max/group) | [docs/queries.md](docs/queries.md#aggregations) · example below |
-| **Full-text search** | [docs/files-and-search.md](docs/files-and-search.md) · example below |
-| **Subscribe to live data** | [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe) · example below |
-| **Delete / remove a doc** (SDK: no `del`/`remove` — `set(path, null)` is the delete; CLI: `bounded data delete --path …`; both run the `delete` rule) | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) · [docs/cli-reference.md](docs/cli-reference.md#data-delete) |
-| Upload / read files | [docs/files-and-search.md](docs/files-and-search.md) |
-| Build for an **agent** / **web** / **mobile** / **server** / **realtime room** | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) · [docs/live-runtime.md](docs/live-runtime.md) |
-| **Build a server-authoritative realtime app** (game, Figma-style editor, whiteboard, dashboard — 3 pure fns, no deploy) | [docs/live-runtime.md](docs/live-runtime.md) |
-| Run `bounded verify` / read counterexamples | [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
-| **Run the local dashboard beside the CLI** (multi-project daemon + web UI for data, proofs, functions, logs) | [docs/cli-reference.md](docs/cli-reference.md#local-dashboard) |
-| Know what's proven on which runtime | [docs/proof-coverage.md](docs/proof-coverage.md) |
-| Every CLI command + flag | [docs/cli-reference.md](docs/cli-reference.md) |
-| Every SDK method | [docs/sdk-reference.md](docs/sdk-reference.md) |
-| Read/write semantics, atomic batches | [docs/data-plane.md](docs/data-plane.md) |
-| Self-check before deploy | [docs/quality-checklist.md](docs/quality-checklist.md) |
-| What Bounded is **NOT** good for | [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md) |
+| Generate or repair a policy from an app description | [docs/policy-generation-guide.md](docs/policy-generation-guide.md) |
+| See complete policy examples | [docs/policy-examples.md](docs/policy-examples.md) |
+| Add spending/rate caps | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) |
+| Model balances, points, P&L, or supply | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) |
+| Tenant isolation | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
+| Hard field ceilings/floors, anti-cheat bounds | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
+| Conditional ownership or holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
+| Rules, field types, expressions, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
+| Constants, reusable rule fragments, `@const`, `@def` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
+| Multi-environment policy files | [docs/environments.md](docs/environments.md) |
+| Decide rule vs invariant vs hook vs function | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
+| Functions and external API calls | [docs/functions.md](docs/functions.md) |
+| Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| Give backend code user-owned API keys | [docs/secrets.md](docs/secrets.md) |
+| Bounded Auth, email/text OTP, OAuth, guest users | [docs/auth.md](docs/auth.md) |
+| Roles, owners, collaborators, scoped admins | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
+| Top-level roles and read/write scopes | [docs/roles.md](docs/roles.md) |
+| Manager/owner/collaborator identity sets or function log access | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
+| Service keys / backend identities | [docs/service-keys.md](docs/service-keys.md) |
+| Billing, buckets, plan limits, top-ups, upgrade | [docs/billing.md](docs/billing.md) |
+| Hosted frontend and app URLs | [docs/frontend-hosting.md](docs/frontend-hosting.md) · [docs/domains.md](docs/domains.md) |
+| SDK calls and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
+| CLI commands | [docs/cli-reference.md](docs/cli-reference.md) |
+| Data-plane read/write semantics and atomic batches | [docs/data-plane.md](docs/data-plane.md) |
+| Queries, pagination, aggregates | [docs/queries.md](docs/queries.md) |
+| Files and search | [docs/files-and-search.md](docs/files-and-search.md) |
+| Hooks, schedules, webhooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| What anti-cheat can and cannot prove | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
+| Realtime rooms and games | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| Native live modules | [docs/live-runtime.md](docs/live-runtime.md) |
+| Realtime game feel: input cadence, interpolation, prediction | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
+| AI NPCs / AI players | [docs/ai-npcs.md](docs/ai-npcs.md) |
+| Long-running backend runtime | [docs/backend-runtime.md](docs/backend-runtime.md) |
+| Multi-step Flue agents | [docs/agents-flue.md](docs/agents-flue.md) |
+| Onchain data / Solana | [docs/onchain.md](docs/onchain.md) |
+| Trading patterns | [docs/onchain-trading.md](docs/onchain-trading.md) |
+| Bounded Pay | [docs/bounded-pay.md](docs/bounded-pay.md) |
+| Proof coverage and counterexamples | [docs/proof-coverage.md](docs/proof-coverage.md) · [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
+| Key safety and account recovery | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
+| End-to-end tests for authed apps | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |
+| Anonymous users, invite links, account upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
+| Build for agents, web, mobile, or server | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) |
+| Quality checklist before calling the app done | [docs/quality-checklist.md](docs/quality-checklist.md) |
+| Capability boundaries | [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md) |
 
-### (b) By symbol / keyword → file
+## Term Router
 
-| Symbol | File |
+| If you see | Read |
 |---|---|
-| `rollingSum`, `windowSeconds`, `scopeVariable`, `limit` | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) |
-| `bound`, `op` (`<=`/`>=`/`==`), `field.values`, anti-cheat ceiling | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
-| `conserve`, `materialization: "sharded"` | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) |
-| `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
-| `rules` (`read`/`create`/`update`/`delete`), `@user`, `@data`, `@newData`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
-| `transferAuthority`, conditional holder/owner transfer, market settlement | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
-| `roles`, `members`, `read:"*"`, `write:["posts"]`, provably-scoped admin | [docs/roles.md](docs/roles.md) |
-| `admins/$userId`, `verifyAuthorityClosure` | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
-| `constants`, `@const.NAME`, `defs`, `@def.name` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
-| `environments`, `--environment`, per-env appId/constants | [docs/environments.md](docs/environments.md) |
-| `functions`, `auth`, `entry`, `secrets`, `ctx.env`, `ctx.bounded`, `ctx.user` | [docs/functions.md](docs/functions.md) |
-| `ctx.ai`, `ctx.ai.run(model, input)` — built-in AI router (no API key; per-account credit, capped fail-closed) | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/ai-npcs.md](docs/ai-npcs.md) |
-| `__managers__` / `__owners__` / `__collaborators__`, reserved identity sets, `logsAuth`, who can view logs, linked accounts, manager-gated | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
-| service key / server wallet, `actAs` (policy `functions` field), backend identity, payout bot, `@constants.PAYOUT_BOT` | [docs/service-keys.md](docs/service-keys.md) |
-| hook bypasses rules but never invariants, anti-cheat boundary (provable vs not), on-chain signature | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
-| `schedule` (`every`/`run`), `dueRows`, `hooks.scheduled`, `hooks.offchain`, `webhooks`, `enforceRules` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
-| `session.tick`, `hooks.tick`, `settleTo`, fog-of-war (bytecode session model) | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| `session.live`, `module`, `everyMs`, `snapshotEveryTicks`, `secrets` (live), facet, Worker Loader | [docs/live-runtime.md](docs/live-runtime.md) |
-| `session.live.calls`, `@effect`, the `call` primitive (`{state,call:{fn,args,as}}`), `as` (optional; gates same-tick check only — NOT wired to identity today) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/ai-npcs.md](docs/ai-npcs.md) |
-| `@origin`, `@origin.kind` (`'live'`/`'user'`/`'scheduled'`/`'function'`/`'webhook'`, always set), `@origin.module`/`.path`/`.room`/`.tick`, `ctx.origin` (host-set, unforgeable; offchain-only — forbidden onchain) | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/policy-reference.md](docs/policy-reference.md) |
-| `session.live.runAs` (session-wide live-call identity; funds AI NPCs), `actAs` as a **system / service principal** (what `@user` is on a live call); precedence `actAs > runAs > anonymous system` | [docs/principals-and-origins.md](docs/principals-and-origins.md) · [docs/service-keys.md](docs/service-keys.md) |
-| AI NPC / AI player, `npcBrain`, tick-calls-a-function, `ctx.ai.run` billing on a live call | [docs/ai-npcs.md](docs/ai-npcs.md) |
-| `onchain: true`, `--protocol` (`realtime_devnet`/`realtime_mainnet`), `--skip-preflight`, client-signed tx, `0xbc4`, devnet/mainnet | [docs/onchain.md](docs/onchain.md) |
-| live game *feel*: input cadence, interpolation, prediction, `session.intentRule` | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
-| `init`/`tick`/`views` (native live functions) | [docs/live-runtime.md](docs/live-runtime.md) |
-| `bounded live deploy`, `bounded live intent` (drive/arm a room from the CLI), `GET /live/status`, `POST /live/intent`, `live.intent`, `subscribeLiveView` | [docs/live-runtime.md](docs/live-runtime.md) |
-| plans (`free`/`pro`/`enterprise`), `aiBucketUsdCents`, AI credit bucket, `aiCreditGrantedUsd`, overrides, Stripe `/billing/checkout`/`/billing/portal`, x402 `/billing/x402/intent`/`/billing/x402/settle`, `admin.bounded.page` / `/admin/account` | [docs/billing.md](docs/billing.md) |
-| usage snapshot, `alerts[]`, `dimension`, `projectedUsage`, `datastoreWriteUnits`, `datastoreReadUnits`, `r2ClassAOps`, `r2ClassBOps`, `computeSeconds`, infra spend cap | [docs/billing.md](docs/billing.md#checking-usage-and-near-limit-status) |
-| `tier` (`durable`/`checkpointed`/`ephemeral`) | [docs/policy-reference.md](docs/policy-reference.md) · [docs/invariants.md](docs/invariants.md) |
-| `links`, `relationships`, `queries`, `$regex`/`$gte`/`$in` | [docs/queries.md](docs/queries.md) |
-| `getPage`, `queryAggregate`, `count`, `setMany`, `subscribe`, `getIdToken` | [docs/sdk-reference.md](docs/sdk-reference.md) |
-| `del`, `delete`, `remove` (no such method — delete = `set(path, null)`) | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
-| `search`, `setFile`, `getFiles`, storage collection | [docs/files-and-search.md](docs/files-and-search.md) |
-| `bounded link`, `bounded share`, `collaborators` | [docs/auth.md](docs/auth.md#linking--teams) |
-| `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY`, `.bounded/app.json` marker, `ownerKeySource`, key backup / account recovery / `bounded whoami` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
-| anonymous / guest / `signInAnonymously`, invite link, transfer ownership, upgrade account, ownership-as-data | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
-| `bounded functions deploy/list/invoke/logs` | [docs/cli-reference.md](docs/cli-reference.md#functions-the-imperative-escape-hatch) |
-| `bounded data get/aggregate/search` `--filter`/`--sort`/`--cursor` | [docs/cli-reference.md](docs/cli-reference.md#data-plane) |
-| `verifyWebhook`, `createWalletClient`, `@bounded-sh/server` | [docs/sdk-reference.md](docs/sdk-reference.md) |
+| `rollingSum`, `conserve`, `bound`, `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md) |
+| `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
+| `transferAuthority`, one-click market trade, holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
+| `roles`, `members`, `read:"*"`, scoped admin | [docs/roles.md](docs/roles.md) |
+| `admins/$userId`, founder bootstrap, no god-mode | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
+| `@const`, `@def`, deploy constants | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
+| `functions`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets` | [docs/functions.md](docs/functions.md) |
+| `ctx.ai.run`, AI NPC, AI/external-services bucket | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/ai-npcs.md](docs/ai-npcs.md) · [docs/billing.md](docs/billing.md) |
+| `actAs`, `runAs`, service key, payout bot, backend identity | [docs/service-keys.md](docs/service-keys.md) · [docs/principals-and-origins.md](docs/principals-and-origins.md) |
+| `@origin`, `ctx.origin`, live call provenance | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
+| `session.live`, `init`, `tick`, `views`, `@effect`, `live.intent` | [docs/live-runtime.md](docs/live-runtime.md) |
+| `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
+| `schedule`, `dueRows`, `hooks.scheduled`, `webhooks`, `verifyWebhook` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| `getPage`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) · [docs/sdk-reference.md](docs/sdk-reference.md) |
+| `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) · [docs/data-plane.md](docs/data-plane.md) |
+| `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
+| `bounded link`, `bounded share`, collaborators | [docs/auth.md](docs/auth.md#linking--teams) |
+| `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY`, lost key | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
+| `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
+| `429`, `dimension`, `projectedUsage`, `alerts[]` | [docs/billing.md](docs/billing.md#handling-limit-errors) |
 
-### (c) By error / status → file
+## Error Router
 
-| You hit… | Meaning · file |
+| Error/status | Meaning |
 |---|---|
-| `409` + an invariant name (e.g. `spend_cap`, `no_minting`) | state forbids the write; back off — [docs/data-plane.md](docs/data-plane.md) · [docs/invariants.md](docs/invariants.md) |
-| `403` | rule denied the caller/payload — fix the request — [docs/data-plane.md](docs/data-plane.md) · [docs/auth.md](docs/auth.md) |
-| `409 append_only` | capped collections are append-only logs — [docs/data-plane.md](docs/data-plane.md) |
-| `429` + `dimension`/`projectedUsage` | plan or spend cap would be exceeded; explain the exact axis and upgrade/top-up/reduce usage — [docs/billing.md](docs/billing.md#checking-usage-and-near-limit-status) |
-| `DISPROVED` + counterexample | proof found a breaking assignment; fix the policy or explicitly accept the risk before deploy — [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
-| Validator rejects (`@constants`, `/` division, `@data` in create…) | static errors + fixes — [docs/policy-generation-guide.md](docs/policy-generation-guide.md#common-mistakes-caught-by-the-validator-or-the-prover) |
-| `503` from a function invoke | Functions not configured on the platform — [docs/functions.md](docs/functions.md) |
-| `403`/`404` from a function invoke | `auth` rule denied / unknown function — [docs/functions.md](docs/functions.md) |
+| `403` | The caller failed a rule. Check auth, ownership, roles, or function `auth`. |
+| `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
+| `429` + `dimension`/`projectedUsage` | A plan limit or spend cap would be exceeded. Explain the exact axis and suggest upgrade, top-up, cap adjustment, or reduced volume. |
+| `DISPROVED` + counterexample | The proof found a breaking assignment. Read it, strengthen the policy, and verify again unless the user explicitly accepts the risk. |
+| Static validation error | Fix policy syntax, field types, tier/invariant pairing, constants, or expression use. |
 
-## Minimal validated examples
+## Build Real Apps
 
-Each snippet is the smallest thing that works for one capability and validates
-against the real PolicyValidator (policies) or is a real SDK/CLI call (code).
-Open the linked doc for the full treatment.
+- Do not ship fake integrations as done work.
+- Use `ctx.ai.run` for AI through Bounded's public AI route, funded by the
+  AI/external-services bucket.
+- For email, SMS, WhatsApp, payments, brokers, or feeds, use a real provider or a
+  public Bounded-managed surface when one exists.
+- If a placeholder is unavoidable, say it plainly to the user.
 
-### Spend cap — [docs/invariants.md](docs/invariants.md)
+## Billing Basics
 
-```json
-{ "agents/$agentId/spend/$spendId": {
-  "rules": { "read": "@user.id != null && $agentId == @user.id",
-             "create": "@user.id != null && $agentId == @user.id",
-             "update": "false", "delete": "false" },
-  "fields": { "amountUsd": "UInt" },
-  "tier": "durable",
-  "invariants": [ { "type": "rollingSum", "name": "daily_spend_cap",
-    "field": "amountUsd", "windowSeconds": 86400, "limit": 5000, "scopeVariable": "$agentId" } ] } }
-```
+There are two user-visible buckets:
 
-### Conserve + transfer — [docs/invariants.md](docs/invariants.md) · [docs/data-plane.md](docs/data-plane.md)
+- **AI/external-services bucket**: AI and managed third-party service proxies.
+- **Bounded infra bucket**: metered Bounded platform usage at public Bounded
+  rates.
 
-```json
-{ "accounts/$accountId": {
-  "rules": { "read": "@user.id != null",
-             "create": "@user.id != null && @newData.owner == @user.id",
-             "update": "@user.id != null && @data.owner == @user.id", "delete": "false" },
-  "fields": { "owner": "String!", "balance": "UInt" },
-  "tier": "durable",
-  "invariants": [ { "type": "conserve", "name": "no_minting", "field": "balance" } ] } }
-```
+Free accounts cannot top up buckets. Pro-or-better accounts can top up eligible
+buckets with the public checkout flow. Both the relevant bucket and any app-level
+cap must have room before cost-bearing work runs.
 
-A transfer is one atomic `setMany` of both accounts (see data-plane.md).
-
-### Admin model — [docs/admin-and-ownership.md](docs/admin-and-ownership.md)
-
-```json
-{ "admins/$userId": {
-    "fields": { "active": "Bool" }, "tier": "durable",
-    "rules": { "read": "@user.id != null",
-      "create": "@user.id != null && get(/admins/@user.id) != null",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null" } },
-  "posts/$postId": {
-    "fields": { "author": "String!", "body": "String", "hidden": "Bool?" }, "tier": "durable",
-    "rules": { "read": "true",
-      "create": "@user.id != null && @newData.author == @user.id",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null" } } }
-```
-
-### Roles — admin reads everything — [docs/roles.md](docs/roles.md)
-
-```json
-{ "constants": { "ADMIN": "<your-user-id>" },
-  "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
-  "orders/$id": { "fields": { "buyer": "String", "total": "UInt" },
-    "rules": { "read": "@user.id != null && @user.id == @data.buyer", "create": "@user.id != null && @user.id == @newData.buyer", "update": "false", "delete": "false" } } }
-```
-Normal users read only their own orders; the `admin` member reads every row. `bounded verify` lists the grant and flags `read:*` as over-broad.
-
-### Constants + defs (DRY) — [docs/constants-and-defs.md](docs/constants-and-defs.md)
-
-```json
-{ "constants": { "CAP": 5000 },
-  "defs": { "isOwner": "@user.id == @data.owner" },
-  "posts/$id": { "fields": { "owner": "String", "body": "String" },
-    "rules": { "read": "true", "create": "@user.id == @newData.owner", "update": "@def.isOwner", "delete": "@def.isOwner" } } }
-```
-`@const`/`@def` resolve at compile time (deploy + verify); the worker sees only literals.
-
-### Environments — one file, two apps — [docs/environments.md](docs/environments.md)
-
-```sh
-bounded deploy ./policy.json --environment preview      # → preview appId + preview constants
-bounded deploy ./policy.json --environment production   # → production appId + production constants
-```
-The `environments` block (per-env `appId` + `constants`) is resolved client-side; a normal policy ships.
-
-### Function (fetch third-party → write) — [docs/functions.md](docs/functions.md)
-
-```json
-{ "functions": { "syncStripe": {
-  "auth": "get(/admins/@user.id) != null",
-  "entry": "functions/syncStripe.ts", "timeout": 30, "secrets": ["STRIPE_KEY"] } } }
-```
-```ts
-export default async function (args, ctx) {
-  const r = await fetch("https://api.stripe.com/v1/...", {
-    headers: { Authorization: `Bearer ${ctx.env.STRIPE_KEY}` } });
-  await ctx.bounded.set(`subs/${ctx.user.id}`, { active: (await r.json()).active });
-  return { ok: true };
-}
-```
-
-### Scheduled job (a recurring **hook**) — [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs)
-
-```json
-{ "quotas/$quotaId": {
-    "fields": { "used": "UInt", "owner": "Address!" }, "tier": "durable",
-    "rules": { "read": "@user.id != null", "create": "@user.id != null && @newData.owner == @user.id", "update": "@user.id != null && @newData.owner == @data.owner", "delete": "false" },
-    "hooks": { "scheduled": { "resetQuota": "@DocumentPlugin.updateField(\"quotas/global\", \"used\", \"0\")" } },
-    "schedule": { "every": "1d", "run": "resetQuota" } } }
-```
-> Naming a `functions.<name>` in `schedule.run` is roadmap — it won't fire yet; use a hook.
-
-### Live subscription — [docs/sdk-reference.md](docs/sdk-reference.md#subscribe-live--subscribe)
-
-```ts
-import { subscribe } from "@bounded-sh/client";
-const stop = await subscribe("rooms/r1/view/" + myId, { onData: render });
-```
-
-### Native live runtime (3 pure fns, no deploy) — [docs/live-runtime.md](docs/live-runtime.md)
-
-Server-authoritative loop for any realtime room (multiplayer game, Figma-style
-editor, whiteboard, live dashboard). Pong below is one example.
-
-```json
-{ "rooms/$roomId": { "tier": "checkpointed",
-    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
-    "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800 } } },
-  "rooms/$roomId/view/$userId": { "tier": "ephemeral",
-    "rules": { "read": "$userId == @user.id", "create": "false", "update": "false", "delete": "false" } } }
-```
-Upload + drive: `bounded live deploy pong.live.ts --app-id <id>`, then drive a room
-with `bounded live intent rooms/r1 --app-id <id> --intent '{...}'` (CLI) — or in-app
-`subscribe("rooms/r1/view/"+userId,{onData:render})` + `POST /live/intent {path,intent}`.
-
-### Email share — [docs/auth.md](docs/auth.md#linking--teams)
-
-```sh
-bounded share teammate@example.com --app-id <id>   # auto-provisions their embedded wallet; added as admin
-```
-
-### Pagination / aggregation / search — [docs/queries.md](docs/queries.md) · [docs/files-and-search.md](docs/files-and-search.md)
-
-```sh
-bounded data get       --app-id <id> --path orders --filter '{"total":{"$gte":100}}' --sort createdAt:desc --limit 20
-bounded data aggregate --app-id <id> --path spend  --group category --count --sum amount
-bounded data search    --app-id <id> --path notes  --query "shipping"
-```
-
-## Setup (60 seconds)
+## Setup
 
 ```bash
-# Install the CLI (Bounded is in beta):
-curl -fsSL https://get.bounded.sh/install.sh | sh   # installs `bounded` to your PATH
-```
-The installer also starts the loopback-only dashboard daemon on
-`http://127.0.0.1:8011` by default; set `BOUNDED_DASHBOARD=0` only when a
-background local daemon is unwanted.
-
-**No login step.** The first `bounded` command generates an ed25519 keypair in
-`~/.bounded/credentials` (base58 `privateKey`; or supply `BOUNDED_PRIVATE_KEY`) —
-the keypair *is* the identity, so agents go from zero to deployed without a human
-auth step. **This key OWNS every app you create — back it up or `bounded link` it
-on day one (lose it unlinked → apps are unrecoverable).** For headless/agent
-flows, use `bounded link --email you@example.com` and enter the emailed OTP in
-the terminal; it approves the same fingerprint-checked device flow without a
-browser.
-Details: [docs/auth.md](docs/auth.md) · [docs/key-and-account-safety.md](docs/key-and-account-safety.md).
-
-```bash
-bounded init                            # scaffold policy.json (an append-only capped spend ledger)
-# edit policy.json — see docs/policy-generation-guide.md
-bounded deploy ./policy.json --create --name my-app   # creates app, prints <appId>
-bounded verify ./policy.json --app-id <appId>         # PROVED / DISPROVED + counterexamples
-bounded dashboard                                      # open the full dashboard web UI while you build
-bounded data set --app-id <appId> --path agents/<your-id>/spend/s1 --data '{"amountUsd":60}'
-bounded data get --app-id <appId> --path agents/<your-id>/spend
+curl -fsSL https://get.bounded.sh/install.sh | sh
+bounded init
+bounded verify ./policy.json
+bounded deploy ./policy.json --create --name my-app
+bounded dashboard
 ```
 
-## Core mental model
+The first CLI command creates a local keypair in `~/.bounded/credentials`. That
+key owns apps created with it. Link it early with `bounded link --email
+you@example.com` and do not commit private keys or secrets.
 
-- **Rules answer *who may act*.** Each action (`read`/`create`/`update`/`delete`)
-  is a boolean expression; a denied action is a `403`. Omitted actions default to
-  deny.
-- **Identity is `@user` = `{ id, address, email, isAnonymous }`** (SDK `user`
-  object is the same shape).
-  - **`@user.id`** — the **universal, stable identity, always present** for an
-    authenticated user. For wallet logins it equals the wallet address; for
-    email/social (Bounded Better Auth) logins it is the account identity. **Use it
-    for ownership / membership / identity / auth guards** (`owner == @user.id`,
-    `get(/admins/@user.id)`, doc ids keyed on the user, `@user.id != null`).
-  - **`@user.address`** — a **real onchain wallet address; present for wallet
-    logins, `null` for email-only logins.** Use it **only** for onchain / wallet
-    semantics. **Hard rule: inside `onchain: true` collections/rules, only
-    `@user.address` is allowed — `@user.id`, `@user.email`, and
-    `@user.isAnonymous` are forbidden.**
-  - **`@user.email`** — the verified, lowercased email (email logins only; `null`
-    for wallet). Use it for email-gating.
-  - **`@user.isAnonymous`** — strict boolean; `true` only for guest/anonymous
-    tokens. Gate with `== false` (no unary `!` on special vars). Also offchain-only.
-- **Invariants answer *what must hold across every transaction*** — caps,
-  conservation, tenancy. Proven with `bounded verify`, enforced atomically at runtime
-  (`409` + the invariant's declared name). They bind **every** write path:
-  hooks, ticks, schedules, batches, your own migrations.
-- **Proofs are over all inputs.** `PROVED` ≠ "tests passed"; `DISPROVED` hands
-  you the breaking assignment.
-- **Runtime checks fail closed.** `bounded deploy` rejects schema/compile errors;
-  `bounded verify` surfaces proof failures before deploy; runtime rule/invariant
-  checks reject rather than skip.
+## Rules Of Thumb
 
-Failure semantics are in the **(c) By error / status** table above and in full in
-[docs/data-plane.md](docs/data-plane.md).
-
-## Best practices
-
-- **Name invariants like error codes** (`spend_cap`, `no_minting`) — the name is
-  the `409` your error handling branches on.
-- **Verify locally before every deploy** — reading counterexamples is the fast loop.
-- **Treat a DISPROVED as information**, not an obstacle: strengthen the rule
-  (add `@user.id != null`, null-check optionals), never weaken the property.
-- **Use `set-many` whenever correctness spans writes** (transfers, guard + gated
-  write) — one atomic batch is not a TOCTOU race; a sequence of `set`s is.
-- **Don't update capped documents** — `rollingSum` collections are append-only;
-  write each event with a fresh id.
-- **If a value is money, `conserve` it.** Capital, balances, P&L, points, supply —
-  model as a `conserve`d `Int`/`UInt`, never a plain mutable field a write can
-  invent. "It's just a stat" is how money silently leaks.
-- **Ship the real thing, not a stub.** A proven policy under a faked product (random
-  data, no real AI/integration) isn't done. Need AI? `ctx.ai.run` — no key. Need the
-  user to pay? Route through Bounded billing. If something must be a placeholder, say
-  so. → [Build the real thing](#build-the-real-thing--not-a-stub)
-- **Safety: your key IS your account — back it up.** `~/.bounded/credentials` owns
-  every app you create; lose it without linking and the apps are unrecoverable. Run
-  `bounded link` on day one (attaches the key to your email account; use
-  `bounded link --email you@example.com` for headless OTP approval) or
-  `bounded share` a backup owner, and gitignore every secret-bearing path (the CLI
-  manages this; the public `.bounded/app.json` marker is safe to commit). Never
-  echo or commit a private key. — [docs/key-and-account-safety.md](docs/key-and-account-safety.md)
-- **Machine docs:** `https://bounded.sh/llms.txt` and
-  `https://bounded.sh/llms-full.txt` stay in sync with this skill.
+- Use `@user.id` for normal ownership and membership checks.
+- Use `@user.address` only for wallet/onchain semantics.
+- Use `conserve` for money-like values.
+- Use `rollingSum` for caps over time.
+- Use one atomic `set-many` when correctness spans multiple writes.
+- Put provider API keys in Bounded secrets, not frontend code.
+- Give users the clearest public command or URL; do not route them to non-public
+  Bounded service surfaces.
