@@ -10,7 +10,8 @@ A secret has **two halves, kept apart on purpose**:
 
 1. **DECLARE the name** in your `bounded.manifest` (`secrets` block). This is part
    of your deployed backend configuration. **Never put the value here.**
-2. **SET the value** with the CLI: `bounded secret put NAME VALUE --app-id <id>`.
+2. **SET the value** with the CLI without putting the value in argv:
+   `printf '%s' "$VALUE" | bounded secret put NAME --value-stdin --app-id <id>`.
    Values are stored per app and are **never returned by any API** (`list` shows names only).
 
 Then your code reads it. That's it.
@@ -28,7 +29,7 @@ Then your code reads it. That's it.
 Set the value, deploy:
 ```bash
 bounded runtime deploy ./ --app-id <id>
-bounded secret put OPENAI_KEY sk-... --app-id <id>
+printf '%s' "$OPENAI_KEY" | bounded secret put OPENAI_KEY --value-stdin --app-id <id>
 ```
 Read it in your code via `ctx.secrets.get`:
 ```ts
@@ -115,17 +116,21 @@ raw value.
 ## CLI
 
 ```bash
-bounded secret put STRIPE_KEY sk_live_xxx --app-id <id>   # set / update a value
-bounded secret list --app-id <id>                          # names only — never values
-bounded secret rm STRIPE_KEY --app-id <id>                 # remove
+printf '%s' "$STRIPE_KEY" | bounded secret put STRIPE_KEY --value-stdin --app-id <id>
+bounded secret put STRIPE_KEY --value-env STRIPE_KEY --app-id <id>
+bounded secret put STRIPE_KEY --app-id <id>       # interactive hidden prompt
+bounded secret list --app-id <id>                 # names only — never values
+bounded secret rm STRIPE_KEY --app-id <id>        # remove
 ```
 Values are write-only over the API: there is no command that prints a secret value back.
+The older `bounded secret put NAME VALUE` form still works for compatibility, but it warns because
+argv values can appear in shell history and process listings.
 
 ## Rules & limits (so nothing surprises you)
 
 - Names: `[A-Za-z_][A-Za-z0-9_]{0,63}` (env-var style). Value ≤ 8 KB. ≤ 100 secrets per app.
 - Secrets are **per-app and isolated** — one app can only ever read/inject its own.
-- **A value is set ONCE per app**, not per handler. `bounded secret put STRIPE_KEY … --app-id X`
+- **A value is set ONCE per app**, not per handler. `bounded secret put STRIPE_KEY --value-stdin --app-id X`
   is read by every declared backend component and every Function in app X — no
   copying. The manifest (or a function's `secrets` block) declares the *name* once.
   A Function resolves the value from the SAME per-app store at invoke time, so

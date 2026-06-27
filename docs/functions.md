@@ -514,7 +514,7 @@ principal matrix.
 ## Secrets
 
 Declare secret **names** in the policy `functions.<name>.secrets`; supply their
-**values** with `bounded secret put NAME VALUE --app-id <id>` (the per-app secret
+**values** with `bounded secret put NAME --value-stdin --app-id <id>` (the per-app secret
 store — set once, read by every function/agent in the app). The function reads
 them as `ctx.env.K` **or** `await ctx.secrets.get("K")`. Only declared names are
 exposed — an undeclared key never reaches the function (with no `secrets` block,

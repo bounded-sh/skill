@@ -48,6 +48,12 @@ bounded site deploy ./dist --app-id <id>
   — the files are never executed, only served — subject to caps: 25 MB/file, 100 MB total,
   5000 files, path-safety.
 - Live in seconds at `https://<app>.bounded.page`.
+- New apps created by the CLI default to a **private hosted-site gate**. Owners,
+  managers, and collaborators can pass with normal Bounded login; the gate also
+  tries the local daemon at `http://127.0.0.1:8011` so a creator with
+  `bounded dashboard` or `bounded dev` running can unlock as the CLI user and
+  receive a longer-lived site cookie. Use `--public` during app creation when
+  the site should be public from the start. Existing apps stay as they were.
 
 ## Typical flow
 ```bash
@@ -55,6 +61,10 @@ npm run build                              # produces ./dist
 bounded site deploy ./dist --app-id <id>   # → https://<app>.bounded.page
 # frontend calls its backend at https://<app>-api.bounded.page/agents/<name>/<session>
 ```
+
+Agents should keep `bounded dashboard --no-web` or `bounded dev --app-id <id>`
+running while testing a private hosted site, otherwise the gate falls back to
+manual Bounded login instead of auto-unlocking from the CLI identity.
 
 That's the product surface: **`bounded deploy` (policy) + `bounded runtime deploy`
 (backend code) + `bounded site deploy` (frontend)** on one app id.

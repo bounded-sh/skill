@@ -13,6 +13,12 @@ http://127.0.0.1:8011
 Every request is scoped to an app id. Never infer "the current app" from a
 global daemon.
 
+For private hosted sites, keep this daemon running while testing. The gate page
+on `https://<appId>.bounded.page` calls
+`GET /api/apps/<appId>/site-gate-session` to mint an app-pinned session as the
+local CLI user, then exchanges it for the site gate cookie when that user is an
+owner, manager, or collaborator.
+
 ## Register An App
 
 From the app repo:
@@ -135,10 +141,16 @@ The widget:
 - mints a short-lived widget session with
   `POST /apps/<appId>/widget/session`;
 - renders the animated Bounded mark as the launcher;
-- saves launcher corner placement in `localStorage`;
-- can hide itself until the current daemon boot id changes;
+- saves launcher corner placement and the one-hour hide window in
+  `localStorage`;
+- shows whether it is connected to localhost and tells the user to run
+  `bounded dashboard` if not;
+- exposes the localhost source selector and, for localhost, a runner selector
+  populated from the daemon's `codex`, `claude`, `opencode`, `pi`, and `other`
+  probes;
 - writes feedback with `POST /apps/<appId>/feedback`;
-- starts a job with `POST /apps/<appId>/propose`;
+- starts a job with `POST /apps/<appId>/propose` and sends the selected
+  `agent`;
 - polls `GET /apps/<appId>/jobs/<jobId>`;
 - deploys validated daemon-agent jobs with `POST /apps/<appId>/deploy/<jobId>`;
 - opens the app dashboard at `dashboardUrl`, usually
@@ -157,8 +169,12 @@ If the app cannot load from `127.0.0.1`, use the same script with
 ```
 
 The local daemon accepts browser CORS only from localhost, its configured
-dashboard URL, and registered live-edit app origins. If the widget cannot reach
-the daemon, first confirm the app origin is registered correctly.
+dashboard URL, registered live-edit app origins, and the matching hosted
+`https://<appId>.bounded.page` origin for `/apps/<appId>/...` routes and the
+raw-app private-site gate route `/api/apps/<appId>/site-gate-session`. If the
+widget or gate cannot reach the daemon, first confirm the app origin is
+registered correctly or use the raw `<appId>.bounded.page` URL for daemon
+auto-unlock.
 Browser-origin widget actions include `X-Bounded-Live-Edit-Token`; local
 no-Origin agent/curl calls do not need that token.
 
