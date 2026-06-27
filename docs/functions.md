@@ -106,6 +106,8 @@ export default async function (args, ctx) {
   // ctx.bounded — pre-authed @bounded-sh/client client; writes go THROUGH invariants
   // ctx.env    — the resolved secrets (declared names): app-store + deploy-time
   // ctx.secrets — await ctx.secrets.get("NAME"); the documented secret accessor
+  // ctx.ai     — built-in AI router, no provider key in app code
+  // ctx.services — managed third-party API discovery/invoke
   // fetch      — standard outbound HTTP
   return { ok: true };
 }
@@ -119,7 +121,8 @@ export default async function (args, ctx) {
 | `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets` (no block ⇒ every value you `secret put` is readable). Values come from the app secret store (`bounded secret put`) **and** any deploy-time `--secret` (which overrides). Nothing undeclared leaks in. |
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — `ctx.ai.run(model, input)`. No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM to your app — see [§ctx.ai](#ctxai--real-ai-no-api-keys) below. |
-| `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** |
+| `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at provider cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
+| `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
 
 ```ts
@@ -196,6 +199,7 @@ AI/external-services credit is **per-account** (the app owner). Two things to wi
 2. **Top up through Bounded** — never a custom checkout:
    - Stripe: `POST /billing/checkout { kind: "services_topup" }` -> redirect the user to the returned `url`.
    - Crypto (USDC on Solana): `POST /billing/x402/intent` -> pay -> `POST /billing/x402/settle`.
+   - Free includes $0.50/mo of AI/external-services trial credit and cannot top up.
    - Pro ($25/mo) gifts $5/mo of AI/external-services credit and $30/mo of Bounded infra credit; top-ups require Pro-or-better.
 
    Full rails, amounts, and webhooks: [billing.md](billing.md). **If your app
@@ -205,6 +209,50 @@ AI/external-services credit is **per-account** (the app owner). Two things to wi
 > The same `ctx.ai` powers AI NPCs / AI players in live rooms (funded via
 > `session.live.runAs`); that live-tick path is in [ai-npcs.md](ai-npcs.md). The
 > function path above is the **general case for any app**.
+
+## ctx.services — managed API discovery and invoke
+
+Use `ctx.services` when a function or agent needs a third-party API that Bounded
+can proxy for the app. This is the managed path for "find the right API, inspect
+its schema, then call it" without putting provider credentials in app code.
+
+```ts
+export default async function sports(args, ctx) {
+  const catalog = await ctx.services.search("sports odds", { limit: 5 });
+  const docs = await ctx.services.describe("the_odds_api");
+
+  const games = await ctx.services.invoke("THE_ODDS_API_GET_ODDS", {
+    sport: args.sport ?? "basketball_nba",
+    regions: "us",
+    markets: "h2h"
+  });
+
+  await ctx.bounded.set(`sportsSnapshots/${args.id}`, {
+    at: Date.now(),
+    games: games.result
+  });
+  return { ok: true, catalog, docs };
+}
+```
+
+- **Contract:** `ctx.services.search(query, { limit? })`,
+  `ctx.services.describe(toolkitOrToolSlug, { limit? })`, and
+  `ctx.services.invoke(toolSlug, args, { entityId? })`.
+- **Two use cases:** search/describe are for build-time and agent planning;
+  invoke is the runtime tool call. A Flue agent can expose a small wrapper around
+  `ctx.services.invoke` as one of its tools.
+- **Billing:** search/describe are catalog reads. Invoke is cost-bearing and
+  bills the app owner's AI/external-services bucket at the underlying service
+  call cost plus 5%. Composio standard and pro-tool calls are itemized
+  separately; the 5% Bounded markup is applied to whichever tier the tool uses.
+  The same fail-closed bucket/cap rules as `ctx.ai` apply.
+- **Provider key UX:** if Bounded has not configured an upstream provider key for
+  a selected provider, discovery still works but `invoke` throws
+  `provider_key_not_configured` with a hint. Choose an enabled managed provider,
+  ask Bounded to enable that provider, or integrate the provider directly with
+  `fetch` and your own key in `ctx.secrets`.
+- **Opt-out:** if you integrate a provider directly, you pay that provider
+  directly and Bounded's managed proxy markup does not apply.
 
 For transactional email, SMS, or WhatsApp, use a real provider integration and
 keep provider keys in secrets. Do not expose a shared provider key or treat

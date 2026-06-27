@@ -20,11 +20,22 @@ There are two user-visible buckets:
 
 Pro is $25/month and includes monthly starter credit in both buckets:
 
+- Free includes $0.50/month of AI/external-services trial credit. Free accounts
+  cannot top up this bucket; upgrade to Pro when it is exhausted.
 - $5/month for the AI/external-services bucket.
 - $30/month for the Bounded infra bucket.
 
-Free accounts cannot top up buckets; upgrade first. Pro-or-better accounts can
-top up eligible buckets from the public billing checkout flow.
+Pro-or-better accounts can top up eligible buckets from the public billing
+checkout flow.
+
+Custom domains are also a Pro feature. Creating a custom domain link is blocked
+unless the app owner has Pro-or-better billing, and existing custom domain links
+may be removed or disabled if that account loses Pro.
+
+Free AI/external-services usage also has a platform-wide rolling abuse cap. If
+that global free pool is paused or exhausted, free accounts see a clear
+"free usage paused" / "upgrade to Pro" error. Paid accounts continue through the
+normal bucket ledger.
 
 Do not explain pricing with unpublished provider costs, margin targets, private
 payment details, or non-public service details. Use the public plan, usage
@@ -35,7 +46,8 @@ snapshot, and checkout/top-up flows.
 Use these exact public rules:
 
 - Bounded-managed third-party service proxies are itemized at provider cost plus
-  5%.
+  5%. When the managed platform distinguishes standard and pro tool calls,
+  Bounded uses the applicable upstream tier first, then applies the 5% markup.
 - Users can opt out of Bounded-managed third-party proxies by integrating the
   provider directly with their own API keys. In that path, they pay the provider
   directly and Bounded's proxy markup does not apply.
@@ -133,6 +145,7 @@ Common axes:
 | storage | delete/export data or upgrade; reads may still work while new writes are blocked |
 | resident compute | reduce live/runtime duration or upgrade |
 | AI/external-services bucket | top up the bucket, reduce calls, or lower app caps |
+| free AI/external-services pool | free trial usage is paused or exhausted; upgrade to Pro to continue |
 | Bounded infra bucket | top up the bucket, reduce usage, or adjust allowed caps |
 
 ## App Payments
