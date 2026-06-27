@@ -238,6 +238,10 @@ export default async function sports(args, ctx) {
 - **Contract:** `ctx.services.search(query, { limit? })`,
   `ctx.services.describe(toolkitOrToolSlug, { limit? })`, and
   `ctx.services.invoke(toolSlug, args, { entityId? })`.
+- **CLI discovery:** during build, agents can run
+  `bounded services search "<query>" --json` and
+  `bounded services describe <toolkit-or-tool-slug> --json` to inspect the same
+  managed catalog before writing function or agent code.
 - **Two use cases:** search/describe are for build-time and agent planning;
   invoke is the runtime tool call. A Flue agent can expose a small wrapper around
   `ctx.services.invoke` as one of its tools.

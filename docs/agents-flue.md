@@ -18,8 +18,8 @@ Use a Flue agent when the backend needs an AI loop that can:
 1. Model durable app state in Bounded collections.
 2. Give the agent only the tools it needs.
 3. Use `ctx.ai.run` for model calls so spend is capped.
-4. Use `ctx.services.search/describe` while building to find managed API tools,
-   then wrap `ctx.services.invoke` as a narrow runtime tool.
+4. Use `bounded services search/describe --json` while building to find managed
+   API tools, then wrap `ctx.services.invoke` as a narrow runtime tool.
 5. Store external provider keys in secrets when a provider is not available
    through Bounded's managed proxy.
 6. Make each tool action idempotent where possible.

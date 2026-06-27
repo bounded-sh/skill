@@ -66,13 +66,15 @@ Use `bounded runtime init` to scaffold the current manifest format.
 | `ctx.identity` | read the acting user/service context |
 | `ctx.log` | write tagged runtime logs |
 
-Use `ctx.services.search` and `ctx.services.describe` to find the right managed
-API/tool shape while building an agent. Use `ctx.services.invoke` at runtime when
-Bounded manages that provider. Invoke is cost-bearing, billed at the applicable
-upstream service cost plus 5%, and fails closed when the app owner's
-AI/external-services bucket is exhausted. If a provider is not enabled in the
-managed proxy, integrate it directly with `ctx.fetch` and store the provider key
-in Bounded secrets.
+Use `bounded services search "<query>" --json` and
+`bounded services describe <toolkit-or-tool-slug> --json` while building to find
+the right managed API/tool shape. Runtime code can also use
+`ctx.services.search` and `ctx.services.describe` for agent planning. Use
+`ctx.services.invoke` at runtime when Bounded manages that provider. Invoke is
+cost-bearing, billed at the applicable upstream service cost plus 5%, and fails
+closed when the app owner's AI/external-services bucket is exhausted. If a
+provider is not enabled in the managed proxy, integrate it directly with
+`ctx.fetch` and store the provider key in Bounded secrets.
 
 Provider keys belong in Bounded secrets, not frontend code.
 
