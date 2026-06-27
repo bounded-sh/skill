@@ -58,6 +58,9 @@ Notes:
   `<slug>.bounded.page` URL available as the fallback.
 - **Frontend only for now** — custom domains serve your app's static site. Use
   the app's Bounded API hostname for API calls.
+- **Root/apex domains** — if your DNS host rejects a CNAME at `@`, use an
+  ALIAS/ANAME or CNAME-flattening provider (Cloudflare and Namecheap work), or
+  use a subdomain like `www`.
 - Each custom hostname maps to exactly one app; nothing is shared.
 
 ## How it routes (mental model)
