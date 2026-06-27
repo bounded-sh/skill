@@ -33,11 +33,12 @@ async function sportsSearch(input, ctx) {
 }
 ```
 
-`ctx.services.invoke` bills the app owner's AI/external-services bucket at
-provider cost plus 5% and fails closed when the bucket or free-trial pool is
-exhausted. If it throws `provider_key_not_configured`, discovery still works but
-that provider is not enabled for managed invocation; choose another managed API
-or integrate the provider directly with `ctx.fetch` and `ctx.secrets`.
+`ctx.services.invoke` bills the app owner's AI/external-services bucket at the
+applicable upstream service cost plus 5% and fails closed when the bucket or
+free-trial pool is exhausted. If it throws `provider_key_not_configured`,
+discovery still works but that provider is not enabled for managed invocation;
+choose another managed API or integrate the provider directly with `ctx.fetch`
+and `ctx.secrets`.
 
 ## Deploy
 

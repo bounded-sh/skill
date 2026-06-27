@@ -68,10 +68,11 @@ Use `bounded runtime init` to scaffold the current manifest format.
 
 Use `ctx.services.search` and `ctx.services.describe` to find the right managed
 API/tool shape while building an agent. Use `ctx.services.invoke` at runtime when
-Bounded manages that provider. Invoke is cost-bearing, billed at provider cost
-plus 5%, and fails closed when the app owner's AI/external-services bucket is
-exhausted. If a provider is not enabled in the managed proxy, integrate it
-directly with `ctx.fetch` and store the provider key in Bounded secrets.
+Bounded manages that provider. Invoke is cost-bearing, billed at the applicable
+upstream service cost plus 5%, and fails closed when the app owner's
+AI/external-services bucket is exhausted. If a provider is not enabled in the
+managed proxy, integrate it directly with `ctx.fetch` and store the provider key
+in Bounded secrets.
 
 Provider keys belong in Bounded secrets, not frontend code.
 
@@ -131,7 +132,8 @@ export default {
 - `ctx.ai` spends against the AI/external-services bucket and app-level caps.
   When a cap or bucket is exhausted, calls fail closed.
 - `ctx.services.invoke` spends against the same AI/external-services bucket and
-  uses provider cost plus 5%. Search/describe are catalog reads.
+  uses the applicable upstream service cost plus 5%. Search/describe are catalog
+  reads.
 - For AI NPCs or agents that act in realtime rooms, also read
   [ai-npcs.md](ai-npcs.md) and [service-keys.md](service-keys.md).
 
