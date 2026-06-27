@@ -13,6 +13,17 @@ http://127.0.0.1:8011
 Every request is scoped to an app id. Never infer "the current app" from a
 global daemon.
 
+**Keep this daemon running for basically all local Bounded development.** It is
+the one localhost backend the dashboard, the in-app widget, and the private-site
+gate all call — it lists apps, mints app-pinned sessions, proxies owner-gated
+reads, runs live-edit jobs, and flips site privacy, all without the browser ever
+holding a key. If it is not running: the dashboard shows "daemon not reachable",
+the widget renders but cannot connect, and a private site falls back to manual
+login instead of one-tap CLI unlock. The installer starts it as a background
+service (`bounded dashboard --no-web`); if you ever see those degraded states,
+the fix is almost always "start/keep `bounded dashboard` running". Prefer leaving
+it on over starting it per-task.
+
 For private hosted sites, keep this daemon running while testing. The gate page
 on `https://<appId>.bounded.page` calls
 `GET /api/apps/<appId>/site-gate-session` to mint an app-pinned session as the
@@ -135,26 +146,35 @@ For a creator-local v1 app, embed the local widget script in the app frontend:
 <script async src="http://127.0.0.1:8011/apps/<appId>/widget.js"></script>
 ```
 
-The widget:
+The widget renders the animated Bounded mark as the launcher; clicking it opens a
+panel (the launcher mark doubles as the minimize control) with three tabs —
+**Prompt**, **Dashboard**, and **Non-negotiables** — and a persistent
+**privacy toggle** above them. It:
 
-- reads `GET /apps/<appId>/widget/config`;
-- mints a short-lived widget session with
-  `POST /apps/<appId>/widget/session`;
-- renders the animated Bounded mark as the launcher;
-- saves launcher corner placement and the one-hour hide window in
-  `localStorage`;
+- reads `GET /apps/<appId>/widget/config` (which now also carries a
+  `policySummary` of collections + invariants for the Non-negotiables tab);
+- mints a short-lived widget session with `POST /apps/<appId>/widget/session`;
+- saves launcher corner placement, last tab, and the one-hour hide window in
+  `localStorage`; the move control cycles the launcher through the four corners;
+- stops widget keyboard/input events from bubbling into the host app while the
+  user is typing;
 - shows whether it is connected to localhost and tells the user to run
   `bounded dashboard` if not;
-- exposes the localhost source selector and, for localhost, a runner selector
-  populated from the daemon's `codex`, `claude`, `opencode`, `pi`, and `other`
-  probes;
-- writes feedback with `POST /apps/<appId>/feedback`;
-- starts a job with `POST /apps/<appId>/propose` and sends the selected
-  `agent`;
-- polls `GET /apps/<appId>/jobs/<jobId>`;
-- deploys validated daemon-agent jobs with `POST /apps/<appId>/deploy/<jobId>`;
-- opens the app dashboard at `dashboardUrl`, usually
-  `http://localhost:8008/apps/<appId>`, in an iframe.
+- **Privacy toggle** (always visible when connected): reads
+  `GET /apps/<appId>/site-privacy` and flips it with
+  `POST /apps/<appId>/site-privacy {private}` (capability `privacy`, owner-gated).
+  This is the in-app way to make a private app public (or vice-versa) without the
+  CLI; the daemon proxies the owner-gated dev-api and syncs the edge gate;
+- **Prompt** tab: a runner selector (the daemon's `codex`, `claude`, `opencode`,
+  `pi`, `other` probes) plus a composer that writes feedback with
+  `POST /apps/<appId>/feedback`, starts a job with `POST /apps/<appId>/propose`,
+  polls `GET /apps/<appId>/jobs/<jobId>`, and deploys validated jobs with
+  `POST /apps/<appId>/deploy/<jobId>`;
+- **Dashboard** tab: embeds the app dashboard at `dashboardUrl` (usually
+  `http://localhost:8008/apps/<appId>`) in an iframe, with an expand-to-fullscreen
+  view that minimizes back;
+- **Non-negotiables** tab: the policy's proven invariants plus the guardrails
+  applied to every prompt (policy lock, secret protection, staged validation).
 
 If the app cannot load from `127.0.0.1`, use the same script with
 `data-api-base` pointed at the reachable daemon or cloud server:
@@ -171,7 +191,9 @@ If the app cannot load from `127.0.0.1`, use the same script with
 The local daemon accepts browser CORS only from localhost, its configured
 dashboard URL, registered live-edit app origins, and the matching hosted
 `https://<appId>.bounded.page` origin for `/apps/<appId>/...` routes and the
-raw-app private-site gate route `/api/apps/<appId>/site-gate-session`. If the
+raw-app private-site gate route `/api/apps/<appId>/site-gate-session`.
+Registered custom origins are app-specific: a custom domain registered on one
+app must not be accepted for another app's `/apps/:appId/...` route. If the
 widget or gate cannot reach the daemon, first confirm the app origin is
 registered correctly or use the raw `<appId>.bounded.page` URL for daemon
 auto-unlock.

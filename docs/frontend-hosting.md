@@ -54,6 +54,13 @@ bounded site deploy ./dist --app-id <id>
   `bounded dashboard` or `bounded dev` running can unlock as the CLI user and
   receive a longer-lived site cookie. Use `--public` during app creation when
   the site should be public from the start. Existing apps stay as they were.
+  After creation, flip or inspect the gate with
+  `bounded site privacy private|public|status --app-id <id>`, **or** flip it from
+  the in-app Bounded widget's always-visible privacy toggle (it calls the local
+  daemon, which is why the daemon should stay running). The setting
+  applies to every static host that resolves to the app: raw app id, vanity
+  slug, and active custom domains. API hosts are not gated. The private-site gate
+  page itself tells owners and visitors how to make the app public.
 
 ## Typical flow
 ```bash
