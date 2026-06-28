@@ -65,8 +65,8 @@ key material:
   "protocol": "realtime_offchain",
   "policy": "policy.json",
   "liveEdit": {
-    "artifacts": false,
-    "artifactPush": false,
+    "artifacts": true,
+    "artifactPush": true,
     "defaultEditMode": "canonical"
   },
   "account": {
@@ -98,6 +98,11 @@ bounded account use --env       # require BOUNDED_PRIVATE_KEY
 Explicit flags still win: `--app-id`, `--env`, and `BOUNDED_PRIVATE_KEY` override
 project defaults. Older projects with only `.bounded/app.json` still work; the
 CLI falls back to that marker when `bounded.json` is absent.
+
+New live-edit registrations default `liveEdit.artifacts` and
+`liveEdit.artifactPush` to `true`. Set either value to `false` in `bounded.json`
+or pass `--artifacts off` / `--artifact-push off` when a repo should opt out of
+Bounded cloud source tracking.
 
 ### The per-app marker — `.bounded/app.json`
 
@@ -171,12 +176,12 @@ keypair and mints app-pinned sessions on demand; the browser never receives the
 private key. Use it as the default companion surface while building: inspect all
 local apps, read data through the daemon, view deployed policy/proof reports,
 invoke functions, and check dashboard-brokered invocation logs.
-Private hosted-site gates also use this daemon: a first visit to
-`https://<appId>.bounded.page` calls
-`GET /api/apps/<appId>/site-gate-session` and unlocks as the local CLI user when
-that user is an owner, manager, or collaborator. Agents should keep
-`bounded dashboard --no-web` or `bounded dev --app-id <id>` running during
-private-site testing.
+Deployed HTTPS pages should not depend on background requests to the loopback
+daemon. Private hosted-site gates use normal Bounded sign-in in the deployed
+browser; local Claude/Codex workflows use the daemon through top-level
+localhost navigation, local widgets, or agent API calls. Keep
+`bounded dashboard --no-web` or `bounded dev --app-id <id>` running during local
+live-edit work.
 
 Useful flags:
 
@@ -201,7 +206,8 @@ with the local checkout and deployed origin the daemon should operate on:
 
 ```bash
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page
-bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --artifacts on --edit-mode variant
+bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --edit-mode variant
+bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --artifacts off --artifact-push off
 bounded live-edit list
 ```
 
@@ -224,6 +230,13 @@ Use `--scope app` for guarded app-code edits and `--scope app+policy` only for
 trusted full-development surfaces. Full agent workflow: [live-edit.md](live-edit.md).
 Configured daemon `agentCommand` jobs run in a staged workspace first; only a
 validated diff is applied back to the real checkout.
+
+Artifacts/source tracking are on by default for new registrations and can be
+disabled with `--artifacts off`, `--artifact-push off`, or the matching
+`bounded.json` values. When source tracking is enabled, a successful local
+live-edit deploy attempts a filtered source sync for cloud/review flows. If
+Bounded reports that cloud source sync is unavailable, the local deploy should
+remain successful and report the warning.
 
 The local daemon accepts browser CORS only from localhost, the dashboard web
 origin, app-specific registered live-edit origins, and the matching

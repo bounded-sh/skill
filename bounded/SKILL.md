@@ -183,7 +183,9 @@ you@example.com` and do not commit private keys or secrets.
 - Read project config first when entering an existing app; it tells agents which
   app/environment/account source to use.
 - Keep `bounded dashboard --no-web` or `bounded dev --app-id <id>` running while
-  testing private hosted sites so the gate can auto-unlock as the CLI user.
+  testing local live-edit, the privacy toggle, or local dashboard flows.
+  Deployed private-site gates use normal Bounded sign-in rather than requiring
+  background localhost access.
 - Use `@user.id` for normal ownership and membership checks.
 - Use `@user.address` only for wallet/onchain semantics.
 - Use `conserve` for money-like values.

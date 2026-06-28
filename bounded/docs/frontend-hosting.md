@@ -49,12 +49,11 @@ bounded site deploy ./dist --app-id <id>
   5000 files, path-safety.
 - Live in seconds at `https://<app>.bounded.page`.
 - New apps created by the CLI default to a **private hosted-site gate**. Owners,
-  managers, and collaborators can pass with normal Bounded login; the gate also
-  tries the local daemon at `http://127.0.0.1:8085` so a creator with
-  `bounded dashboard` or `bounded dev` running can unlock as the CLI user and
-  receive a longer-lived site cookie. Use `--public` during app creation when
-  the site should be public from the start. Existing apps stay as they were.
-  After creation, flip or inspect the gate with
+  managers, and collaborators can pass with normal Bounded login. Deployed HTTPS
+  pages do not need background localhost access, which keeps the gate compatible
+  with strict Chrome and Safari. Use `--public` during app creation when the
+  site should be public from the start. Existing apps stay as they were. After
+  creation, flip or inspect the gate with
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it from
   the in-app Bounded widget's always-visible privacy toggle (it calls the local
   daemon, which is why the daemon should stay running). The setting
@@ -90,8 +89,9 @@ bounded site deploy ./dist --app-id <id>   # → https://<app>.bounded.page
 ```
 
 Agents should keep `bounded dashboard --no-web` or `bounded dev --app-id <id>`
-running while testing a private hosted site, otherwise the gate falls back to
-manual Bounded login instead of auto-unlocking from the CLI identity.
+running while testing local live-edit, the privacy toggle, or local dashboard
+flows. For deployed private-site testing, expect normal Bounded login rather
+than localhost auto-unlock.
 
 That's the product surface: **`bounded deploy` (policy) + `bounded runtime deploy`
 (backend code) + `bounded site deploy` (frontend)** on one app id.

@@ -26,10 +26,10 @@ Deployed HTTPS pages must not depend on background requests to `127.0.0.1`.
 Strict Chrome and Safari can block public-site-to-localhost subresource fetches.
 The deployed widget is cloud-backed and may offer:
 
-- a top-level link to `http://127.0.0.1:8008/apps/<appId>` for local
+- a top-level link to `http://127.0.0.1:8085/apps/<appId>` for local
   Claude/Codex edits; and
-- cloud live-edit, when the app has opted into Bounded cloud artifacts and the
-  Bounded sandbox worker is configured.
+- cloud live-edit, when Bounded reports that it is available for the current
+  app and signed-in user.
 
 Private hosted sites use cloud sign-in to unlock the deployed page. The local
 dashboard remains the local edit entry point.
@@ -61,24 +61,25 @@ Scopes:
 
 Default to `app` unless the creator explicitly asks for full development.
 
-Artifact-backed variants:
+Cloud source tracking and variants:
 
-- Ask the creator before enabling artifacts for a new project.
-- `--artifacts on` or `bounded.json` `liveEdit.artifacts: true` lets the widget
-  create hosted frontend branches that run on the normal Bounded app URL after
-  activation.
+- New registrations default to `--artifacts on`, `--artifact-push on`, and
+  `--edit-mode canonical`.
+- Respect repo opt-outs. `--artifacts off` or `bounded.json`
+  `liveEdit.artifacts: false` disables Bounded cloud source tracking for the
+  project. `--artifact-push off` or `bounded.json`
+  `liveEdit.artifactPush: false` keeps local live-edit working but disables
+  automatic source sync after deploys.
+- With artifact push enabled, successful local live-edit deploys attempt to sync
+  a filtered source copy so cloud/review flows can use the same workspace.
+  If Bounded reports cloud source sync is unavailable, keep the local deploy as
+  successful, report the warning, and do not upload the source anywhere else.
 - `--edit-mode variant` makes the widget default to **My version**. Use
   `canonical` to keep the existing main-app edit flow. `bounded.json`
   `liveEdit.defaultEditMode` can set the repo default.
-- `--artifact-push off` keeps artifact-backed serving enabled but tells agents
-  not to push Bounded-managed source commits automatically. `bounded.json`
-  `liveEdit.artifactPush: false` is the durable repo-level opt-out. With push
-  enabled, successful live-edit deploys must push a filtered source commit to
-  Cloudflare Artifacts so a remote agent/review flow can pull the same workspace.
-- Cloud live-edit is offered in the deployed widget only when artifacts are
-  enabled and a current Cloudflare Artifacts source commit exists for the app. If
-  artifacts are off, do not offer remote code-improvement from the widget; use
-  local live-edit or ask the owner to register with `--artifacts on`.
+- Cloud live-edit is offered in the deployed widget only when Bounded reports it
+  available for the app. If artifacts are off or the cloud source is not ready,
+  use local live-edit from the daemon instead.
 - Variant mode requires the default Bounded hosted frontend deploy path. If the
   app uses a custom `--deploy-command`, use canonical mode unless the owner has
   provided a custom variant-aware deploy command.
@@ -86,28 +87,27 @@ Artifact-backed variants:
 ## Cloud Live-Edit
 
 Cloud live-edit is the in-page deployed-app experience. The browser talks only
-to `https://<app>.bounded.page/__bounded/widget/...`; Bounded runs Flue in a
-server-side sandbox against the app's artifact-backed source, bills the
-owner/collaborator's AI/external-services bucket, then publishes the resulting
+to `https://<app>.bounded.page/__bounded/widget/...`; Bounded runs the edit
+server-side against the app's synchronized source, bills the owner or
+collaborator's AI/external-services bucket, then publishes the resulting
 frontend variant or backend runtime artifact.
 
 Required gates:
 
 - the caller signs in with a Bounded app-scoped session and is authorized for the
   app;
-- the app has opted into artifacts (`--artifacts on`);
-- the Cloudflare Artifacts source commit is current enough for the requested
-  edit;
-- the Bounded sandbox worker and Cloudflare Artifacts namespace are configured;
+- the app has not opted out of Bounded cloud artifacts/source tracking;
+- Bounded has a current synchronized source copy for the app;
+- Bounded reports cloud live-edit available for the app;
 - AI model selection is from the Bounded allowlist; and
 - billing/top-up gates have room in the AI/external-services bucket.
 
 Agents working locally must keep the artifact current when artifact push is
-enabled. After a successful local live-edit deploy, push the filtered source tree
-as a Cloudflare Artifacts commit. If a project opts out, do not upload source and
-do not offer cloud code-improvement from the deployed widget. If a cloud edit
-lands while a local checkout is open, pull/reconcile before continuing local
-edits instead of assuming the checkout is authoritative.
+enabled. After a successful local live-edit deploy, attempt the filtered source
+sync. If a project opts out, do not upload source and do not offer cloud
+code-improvement from the deployed widget. If a cloud edit lands while a local
+checkout is open, pull/reconcile before continuing local edits instead of
+assuming the checkout is authoritative.
 
 ## Agent Loop
 
@@ -250,13 +250,12 @@ If the app cannot load from `127.0.0.1`, use the same script with
 
 The local daemon accepts browser CORS only from localhost, its configured
 dashboard URL, registered live-edit app origins, and the matching hosted
-`https://<appId>.bounded.page` origin for `/apps/<appId>/...` routes and the
-raw-app private-site gate route `/api/apps/<appId>/site-gate-session`.
+`https://<appId>.bounded.page` origin for `/apps/<appId>/...` routes.
 Registered custom origins are app-specific: a custom domain registered on one
-app must not be accepted for another app's `/apps/:appId/...` route. If the
-widget or gate cannot reach the daemon, first confirm the app origin is
-registered correctly or use the raw `<appId>.bounded.page` URL for daemon
-auto-unlock.
+app must not be accepted for another app's `/apps/:appId/...` route. Deployed
+HTTPS pages should not rely on background localhost requests to unlock a private
+site; use normal Bounded sign-in for the deployed gate, or open the top-level
+local dashboard link for local editing.
 Browser-origin widget actions include `X-Bounded-Live-Edit-Token`; local
 no-Origin agent/curl calls do not need that token.
 
