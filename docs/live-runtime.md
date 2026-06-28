@@ -223,7 +223,7 @@ score (game) or an out-of-bounds value (any app).
 
 | Surface | Rule | Governs |
 |---|---|---|
-| Who may **ACT** | `session.intentRule` | which clients may send intents (falls back to the read rule if absent) |
+| Who may **ACT** | `session.intentRule` | which clients may send intents; absent means intents are denied |
 | Who may **SEE** | the per-collection **read rule** | reading a doc + subscribing to the per-player view (`$userId == @user.id`) |
 | What the **STATE** may be | **invariants** | postconditions on the **authoritative** state — enforced on every durable write **and at the checkpoint** |
 
@@ -573,6 +573,7 @@ bounded live deploy pong.live.ts --app-id <id>   # upload source; prints a versi
 # Drive (or cold-start) a room from the CLI — queues an intent for the next tick
 # AND arms the loop if it isn't running. The CLI equivalent of bounded.live.intent.
 bounded live intent rooms/r1 --app-id <id> --intent '{"type":"join","name":"alice"}'
+bounded live status rooms/r1                     # uses bounded.json appId by default
 ```
 
 Deploy uploads the module source and prints a version identifier. If a room
@@ -590,7 +591,8 @@ headers or routing details.
 Drive intents from anywhere: the browser SDK (`bounded.live.intent(roomPath, intent)`),
 a server with `@bounded-sh/server`, or the **CLI** — `bounded live intent <roomPath>
 --app-id <id> --intent '<json>'` (great for cold-starting a room, scripts, and tests).
-Use `bounded live status <roomPath> --app-id <id>` or `live.status(roomPath)` when
+Use `bounded live status <roomPath>` (or pass `--app-id <id>` to override
+`bounded.json`) or `live.status(roomPath)` when
 debugging liveness: parked rooms report `running:false` plus `stopReason`,
 `generation`, loaded `etag`, open `connections`, and alarm/tick timestamps.
 `live.intent` and `live.subscribeView` re-arm a parked room; a terminal stopped
@@ -647,7 +649,7 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 > no wallet and no signup.
 
 Status/liveness is first-class in the SDK and CLI:
-`await live.status(roomPath)` or `bounded live status <roomPath> --app-id <id>`
+`await live.status(roomPath)` or `bounded live status <roomPath>`
 returns `{ available, started, running, tick, module, etag, stopReason,
 generation, connections, lastTickAt, nextAlarmAt }`.
 

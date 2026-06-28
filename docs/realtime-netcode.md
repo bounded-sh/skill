@@ -114,25 +114,25 @@ the one you need to predict. (You can't, and shouldn't, predict a hidden opponen
 
 ## 5. Authorize who may ACT — `session.intentRule`
 
-By default, sending an intent is gated by the room collection's **read** rule (if you
-can see the room, you can act). That's a proxy — fine when read == participant, loose
-for a public-read room (anyone logged in could inject intents). Declare
-`session.intentRule` to gate **acting** separately from **seeing**:
+Sending an intent is gated by `session.intentRule`. Declare it explicitly to gate
+**acting** separately from **seeing**; a room read rule only controls visibility.
+This is intentionally fail-closed because "can see the room" is not the same as
+"can act in the room."
 
 ```json
 "rooms/$roomId": {
   "tier": "ephemeral",
-  "fields": { "createdBy": "Address!", "players": "Json" },
+  "fields": { "createdBy": "Address!", "playerA": "String", "playerB": "String" },
   "session": {
     "live": { "module": "game", "everyMs": 33, "maxLifetimeSec": 1800 },
-    "intentRule": "@user.id != null && @user.id in @data.players"
+    "intentRule": "@user.id != null && (@user.id == @data.playerA || @user.id == @data.playerB)"
   },
   "rules": { "read": "@user.id != null", "create": "...", "update": "false", "delete": "false" }
 }
 ```
 
 - Evaluated room-side against the room doc (`@data`) + caller (`@user`), like any rule.
-- Absent → falls back to the read rule (back-compat). Both fail closed.
+- Absent → live intents are denied. There is no read-rule fallback.
 - The live `tick()` is still your fine-grained gate (it decides what each intent *does*);
   `intentRule` is the coarse "may this principal act here at all."
 - **Gate on identity, not wallet.** The caller is `@user = { id, address, email }`:
@@ -141,7 +141,7 @@ for a public-read room (anyone logged in could inject intents). Declare
   `@user.address` is a real onchain wallet (null for email-only logins), and
   `@user.email` is the verified email (null for wallet logins). A live room is an
   offchain (`ephemeral`) collection, so membership/auth gates use `@user.id` —
-  store `@user.id` in `players` and gate with `@user.id in @data.players`. Reserve
+  store `@user.id` in membership fields and gate on those fields. Reserve
   `@user.address` for genuinely onchain/wallet semantics (it is forbidden in
   `onchain:true` collections' rules to use `@user.id`, `@user.email`, or
   `@user.isAnonymous`).
@@ -153,7 +153,7 @@ for a public-read room (anyone logged in could inject intents). Declare
 - [ ] Remote entities interpolated from a snapshot buffer (~100-180ms delay).
 - [ ] Local player predicted from input, reconciled to the server.
 - [ ] Continuous fields interpolated; discrete fields stepped.
-- [ ] `intentRule` set if "can see" ≠ "can act" for your room.
+- [ ] `intentRule` set on every live room.
 
 ## Scaling to many players (the climb past 1v1)
 

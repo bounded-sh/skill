@@ -50,7 +50,7 @@ bounded site deploy ./dist --app-id <id>
 - Live in seconds at `https://<app>.bounded.page`.
 - New apps created by the CLI default to a **private hosted-site gate**. Owners,
   managers, and collaborators can pass with normal Bounded login; the gate also
-  tries the local daemon at `http://127.0.0.1:8011` so a creator with
+  tries the local daemon at `http://127.0.0.1:8085` so a creator with
   `bounded dashboard` or `bounded dev` running can unlock as the CLI user and
   receive a longer-lived site cookie. Use `--public` during app creation when
   the site should be public from the start. Existing apps stay as they were.
@@ -61,6 +61,26 @@ bounded site deploy ./dist --app-id <id>
   applies to every static host that resolves to the app: raw app id, vanity
   slug, and active custom domains. API hosts are not gated. The private-site gate
   page itself tells owners and visitors how to make the app public.
+
+Frontend variants are optional preview branches:
+
+```bash
+bounded site deploy ./dist --app-id <id> --variant var_alice_dashboard --variant-label "Alice dashboard"
+```
+
+Open `https://<app>.bounded.page/__bounded/preview?variant=var_alice_dashboard`
+to activate that branch for the current browser session. The app then returns to
+the normal URL while the router serves that variant for the session. Owners can
+review, roll back, and merge frontend branches with:
+
+```bash
+bounded site variants --app-id <id>
+bounded site rollback --variant var_alice_dashboard --app-id <id>
+bounded site promote var_alice_dashboard --app-id <id>
+```
+
+Variants are frontend-only. They cannot bypass backend permissions, functions,
+data rules, or invariants.
 
 ## Typical flow
 ```bash

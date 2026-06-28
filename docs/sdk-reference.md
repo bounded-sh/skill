@@ -315,14 +315,14 @@ Collaborators (who may deploy/update an app's policy) are a **control-plane**
 concern, managed with the **CLI**, not the data-plane `@bounded-sh` SDK. Use:
 
 ```bash
-bounded share <walletAddress|email> --app-id <id>   # add (role: --role policy|admin)
+bounded share <walletAddress|email> --role policy|admin --app-id <id>   # add
 bounded collaborators --app-id <id>                 # list
 bounded unshare <walletAddress|email> --app-id <id> # remove
 ```
 
-Only the owner may modify the list (enforced server-side). Email shares default
-to `admin`, wallet shares to `policy`. The full `share → list → unshare`
-round-trip is supported.
+Only the owner may modify the list (enforced server-side). Email shares resolve
+to the invitee's Bounded wallet and send an invite email when outbound email is
+configured. The full `share → list → unshare` round-trip is supported.
 
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 

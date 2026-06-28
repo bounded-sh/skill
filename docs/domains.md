@@ -58,6 +58,9 @@ Notes:
   `<slug>.bounded.page` URL available as the fallback.
 - **Frontend only for now** — custom domains serve your app's static site. Use
   the app's Bounded API hostname for API calls.
+- **Same privacy gate** — custom domains inherit the app's hosted-site privacy
+  setting. `bounded site privacy private|public --app-id <id>` changes the raw
+  app id, vanity slug, and active custom-domain static hosts together.
 - **Root/apex domains** — the CLI may ask for a CNAME at `@`; if your DNS host
   rejects apex CNAMEs, use a subdomain like `www` or move the zone's nameservers
   to Cloudflare for CNAME flattening (Cloudflare and Namecheap handle this case).
@@ -67,4 +70,6 @@ Notes:
 
 All app assets live keyed by `appId`. Bounded resolves the request host to that
 app, so `<slug>.bounded.page` and `app.yourdomain.com` serve the same published
-frontend. Unmapped hosts 404 (fail-closed) — a domain never serves the wrong app.
+frontend. The private-site gate is also keyed by `appId`, so it applies after
+host resolution to every static host for the app. Unmapped hosts 404
+(fail-closed) — a domain never serves the wrong app.

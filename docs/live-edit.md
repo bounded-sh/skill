@@ -7,28 +7,32 @@ The local reference server is the daemon started by `bounded dev` or
 `bounded dashboard`. By default it serves the live-edit API at:
 
 ```text
-http://127.0.0.1:8011
+http://127.0.0.1:8085
 ```
 
 Every request is scoped to an app id. Never infer "the current app" from a
 global daemon.
 
-**Keep this daemon running for basically all local Bounded development.** It is
-the one localhost backend the dashboard, the in-app widget, and the private-site
-gate all call — it lists apps, mints app-pinned sessions, proxies owner-gated
-reads, runs live-edit jobs, and flips site privacy, all without the browser ever
-holding a key. If it is not running: the dashboard shows "daemon not reachable",
-the widget renders but cannot connect, and a private site falls back to manual
-login instead of one-tap CLI unlock. The installer starts it as a background
-service (`bounded dashboard --no-web`); if you ever see those degraded states,
-the fix is almost always "start/keep `bounded dashboard` running". Prefer leaving
-it on over starting it per-task.
+**Keep this daemon running for local Bounded development.** It is the localhost
+backend behind the dashboard and local live-edit API: it lists apps, proxies
+owner-gated reads, runs local live-edit jobs, flips site privacy, builds, and
+deploys without the browser holding a private key. If it is not running, the
+local dashboard shows "daemon not reachable" and local live-edit cannot run.
+The installer starts it as a background service (`bounded dashboard --no-web`);
+if you see local degraded states, the fix is almost always "start/keep
+`bounded dashboard` running".
 
-For private hosted sites, keep this daemon running while testing. The gate page
-on `https://<appId>.bounded.page` calls
-`GET /api/apps/<appId>/site-gate-session` to mint an app-pinned session as the
-local CLI user, then exchanges it for the site gate cookie when that user is an
-owner, manager, or collaborator.
+Deployed HTTPS pages must not depend on background requests to `127.0.0.1`.
+Strict Chrome and Safari can block public-site-to-localhost subresource fetches.
+The deployed widget is cloud-backed and may offer:
+
+- a top-level link to `http://127.0.0.1:8008/apps/<appId>` for local
+  Claude/Codex edits; and
+- cloud live-edit, when the app has opted into Bounded cloud artifacts and the
+  Bounded sandbox worker is configured.
+
+Private hosted sites use cloud sign-in to unlock the deployed page. The local
+dashboard remains the local edit entry point.
 
 ## Register An App
 
@@ -43,9 +47,11 @@ Useful options:
 ```sh
 bounded live-edit register \
   --scope app \
+  --artifacts on \
+  --edit-mode variant \
   --feedback-path boundedfeedback \
   --build-command "npm run build" \
-  --deploy-command "bounded site deploy dist --app-id {app_id}"
+  --artifact-push on
 ```
 
 Scopes:
@@ -55,34 +61,82 @@ Scopes:
 
 Default to `app` unless the creator explicitly asks for full development.
 
+Artifact-backed variants:
+
+- Ask the creator before enabling artifacts for a new project.
+- `--artifacts on` or `bounded.json` `liveEdit.artifacts: true` lets the widget
+  create hosted frontend branches that run on the normal Bounded app URL after
+  activation.
+- `--edit-mode variant` makes the widget default to **My version**. Use
+  `canonical` to keep the existing main-app edit flow. `bounded.json`
+  `liveEdit.defaultEditMode` can set the repo default.
+- `--artifact-push off` keeps artifact-backed serving enabled but tells agents
+  not to push Bounded-managed source commits automatically. `bounded.json`
+  `liveEdit.artifactPush: false` is the durable repo-level opt-out. With push
+  enabled, successful live-edit deploys must push a filtered source commit to
+  Cloudflare Artifacts so a remote agent/review flow can pull the same workspace.
+- Cloud live-edit is offered in the deployed widget only when artifacts are
+  enabled and a current Cloudflare Artifacts source commit exists for the app. If
+  artifacts are off, do not offer remote code-improvement from the widget; use
+  local live-edit or ask the owner to register with `--artifacts on`.
+- Variant mode requires the default Bounded hosted frontend deploy path. If the
+  app uses a custom `--deploy-command`, use canonical mode unless the owner has
+  provided a custom variant-aware deploy command.
+
+## Cloud Live-Edit
+
+Cloud live-edit is the in-page deployed-app experience. The browser talks only
+to `https://<app>.bounded.page/__bounded/widget/...`; Bounded runs Flue in a
+server-side sandbox against the app's artifact-backed source, bills the
+owner/collaborator's AI/external-services bucket, then publishes the resulting
+frontend variant or backend runtime artifact.
+
+Required gates:
+
+- the caller signs in with a Bounded app-scoped session and is authorized for the
+  app;
+- the app has opted into artifacts (`--artifacts on`);
+- the Cloudflare Artifacts source commit is current enough for the requested
+  edit;
+- the Bounded sandbox worker and Cloudflare Artifacts namespace are configured;
+- AI model selection is from the Bounded allowlist; and
+- billing/top-up gates have room in the AI/external-services bucket.
+
+Agents working locally must keep the artifact current when artifact push is
+enabled. After a successful local live-edit deploy, push the filtered source tree
+as a Cloudflare Artifacts commit. If a project opts out, do not upload source and
+do not offer cloud code-improvement from the deployed widget. If a cloud edit
+lands while a local checkout is open, pull/reconcile before continuing local
+edits instead of assuming the checkout is authoritative.
+
 ## Agent Loop
 
 1. Read registered apps:
 
 ```sh
-curl -s http://127.0.0.1:8011/apps
+curl -s http://127.0.0.1:8085/apps
 ```
 
 2. Read metadata, access, and policy:
 
 ```sh
-curl -s http://127.0.0.1:8011/apps/<appId>
-curl -s http://127.0.0.1:8011/apps/<appId>/access
-curl -s http://127.0.0.1:8011/apps/<appId>/policy
+curl -s http://127.0.0.1:8085/apps/<appId>
+curl -s http://127.0.0.1:8085/apps/<appId>/access
+curl -s http://127.0.0.1:8085/apps/<appId>/policy
 ```
 
 3. Read feedback:
 
 ```sh
-curl -s http://127.0.0.1:8011/apps/<appId>/feedback
+curl -s http://127.0.0.1:8085/apps/<appId>/feedback
 ```
 
 4. Create a job:
 
 ```sh
-curl -s -X POST http://127.0.0.1:8011/apps/<appId>/propose \
+curl -s -X POST http://127.0.0.1:8085/apps/<appId>/propose \
   -H 'content-type: application/json' \
-  -d '{"instruction":"make the inventory grid denser"}'
+  -d '{"instruction":"make the inventory grid denser","editMode":"variant"}'
 ```
 
 If no daemon-side `agentCommand` is configured, the job returns in
@@ -93,6 +147,11 @@ If `agentCommand` is configured, the local daemon runs it in a staged workspace,
 not in the real checkout. `{repo}` points at that staged workspace and
 `{source_repo}` points at the real checkout. The daemon validates the staged
 diff and applies only a passing diff back to the real checkout.
+
+Use `editMode:"canonical"` for the original full app edit/deploy flow. Use
+`editMode:"variant"` when artifacts are enabled and the user wants their own
+frontend branch. Variant jobs deploy a frontend-only branch; backend functions,
+data, policies, permissions, and invariants remain shared and enforced.
 
 5. Edit only within the granted scope.
 
@@ -112,7 +171,7 @@ root constraints still are not.
 6. Validate before deploy:
 
 ```sh
-curl -s -X POST http://127.0.0.1:8011/apps/<appId>/validate \
+curl -s -X POST http://127.0.0.1:8085/apps/<appId>/validate \
   -H 'content-type: application/json' \
   -d '{"jobId":"<jobId>"}'
 ```
@@ -123,19 +182,19 @@ If validation fails, stop and report a refusal. Name the rule or invariant from
 7. Deploy:
 
 ```sh
-curl -s -X POST http://127.0.0.1:8011/apps/<appId>/deploy/<jobId>
+curl -s -X POST http://127.0.0.1:8085/apps/<appId>/deploy/<jobId>
 ```
 
 8. Poll job status:
 
 ```sh
-curl -s http://127.0.0.1:8011/apps/<appId>/jobs/<jobId>
+curl -s http://127.0.0.1:8085/apps/<appId>/jobs/<jobId>
 ```
 
 The dashboard and agents can also read recent daemon-memory jobs:
 
 ```sh
-curl -s http://127.0.0.1:8011/apps/<appId>/jobs
+curl -s http://127.0.0.1:8085/apps/<appId>/jobs
 ```
 
 ## Widget Embed
@@ -143,7 +202,7 @@ curl -s http://127.0.0.1:8011/apps/<appId>/jobs
 For a creator-local v1 app, embed the local widget script in the app frontend:
 
 ```html
-<script async src="http://127.0.0.1:8011/apps/<appId>/widget.js"></script>
+<script async src="http://127.0.0.1:8085/apps/<appId>/widget.js"></script>
 ```
 
 The widget renders the animated Bounded mark as the launcher; clicking it opens a
@@ -166,7 +225,8 @@ panel (the launcher mark doubles as the minimize control) with three tabs —
   This is the in-app way to make a private app public (or vice-versa) without the
   CLI; the daemon proxies the owner-gated dev-api and syncs the edge gate;
 - **Prompt** tab: a runner selector (the daemon's `codex`, `claude`, `opencode`,
-  `pi`, `other` probes) plus a composer that writes feedback with
+  `pi`, `other` probes), an edit-mode selector when artifacts are enabled, plus
+  a composer that writes feedback with
   `POST /apps/<appId>/feedback`, starts a job with `POST /apps/<appId>/propose`,
   polls `GET /apps/<appId>/jobs/<jobId>`, and deploys validated jobs with
   `POST /apps/<appId>/deploy/<jobId>`;
@@ -200,10 +260,20 @@ auto-unlock.
 Browser-origin widget actions include `X-Bounded-Live-Edit-Token`; local
 no-Origin agent/curl calls do not need that token.
 
+When a variant deploy succeeds, the hosted router activates it with a session
+cookie and redirects back to the normal app path. The URL stays like
+`https://<app>.bounded.page`; the widget may show "Using my version" from
+session storage and offers an Original switch-back. Preview/share links may use
+`/__bounded/preview?variant=<variantId>` or `?bounded_preview=<variantId>` to
+activate someone else's shared branch, then return to the normal URL.
+
 ## Rollback
 
 For Bounded static-hosted apps (`https://<appId>.bounded.page`), site deploys are
 versioned by the router and `/rollback` restores the previous static artifact.
+For frontend variants, owners can review current branches with
+`bounded site variants --app-id <id>` and roll back a branch with
+`bounded site rollback --variant <variantId> --app-id <id>` before promoting it.
 For custom deploy targets, register a `--rollback-command`; otherwise the daemon
 must refuse rollback instead of guessing.
 
@@ -213,6 +283,8 @@ Be precise:
 
 - Tier-1 state invariants are enforced by Bounded below the app code.
 - App-code edits at `app` scope cannot remove those invariants.
+- Frontend variants can change workflow and UI, but cannot grant backend
+  permissions or bypass policy.
 - `app+policy` can change invariants, so the guarantee changes: invariants hold
   only after the new policy itself verifies and deploys.
 - Rendered behavior, copy, layout, and gameplay are not formally proven.

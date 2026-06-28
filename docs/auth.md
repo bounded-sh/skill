@@ -56,14 +56,14 @@ teammates — without anyone juggling raw wallet keys:
   A linked email account is unique: Bounded will not intentionally attach the
   same wallet/user identity to two different email accounts. Once linked, that
   email is also the owner notification surface for plan/usage alerts.
-- **`bounded share <wallet|email> --app-id <id>`** adds a collaborator. Pass a
-  **wallet** to add it directly (default role `policy` — may update the policy
-  only). Pass an **email** and Bounded resolves it to that person's canonical
-  wallet — an **auto-provisioned embedded wallet**, so the invitee needs no
-  wallet of their own — added as an **`admin`** collaborator (may also act/sign on
-  the app's data the way the owner can). `--role policy|admin` overrides the
-  default. Only the owner can add collaborators; the server enforces it against
-  the wallet derived from your keypair. List with `bounded collaborators`.
+- **`bounded share <wallet|email> --role policy|admin --app-id <id>`** adds a
+  collaborator. Pass a **wallet** to add it directly. Pass an **email** and
+  Bounded resolves it to that person's canonical wallet — an **auto-provisioned
+  embedded wallet**, so the invitee needs no wallet of their own — then sends an
+  invite email when outbound email is configured. `policy` may update the
+  policy; `admin` may also act/sign on the app's data the way the owner can.
+  Only the owner can add collaborators; the server enforces it against the
+  wallet derived from your keypair. List with `bounded collaborators`.
 
 Collaboration is **control-plane** authority (manage the app). It is **not** a
 data-plane bypass — see [admin-and-ownership.md](admin-and-ownership.md). Command

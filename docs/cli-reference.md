@@ -40,7 +40,7 @@ overrides the file). See [auth.md](auth.md).
 | `whoami` | Show address, environment, key source, linked email (if any), and this folder's app marker if present (creates the key on first run) | `bounded whoami` |
 | `link` | **The anti-loss move.** Bind the keypair to your human (email) account via an **OAuth device flow** (with an anti-phishing fingerprint), or use `--email` for headless OTP approval; keypair + email-account wallet become admin-collaborators on each other's apps, so your apps survive local key loss. The keypair keeps signing — linking only ADDS the association, it never rolls or replaces the key. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, or env. | `bounded account use client-a` |
-| `share <wallet\|email> --app-id <id>` | Add a collaborator (a backup owner). **Wallet** → direct (default role `policy`). **Email** → resolved to its auto-provisioned embedded wallet, added as `admin` (no wallet needed on their end). `--role policy\|admin` overrides. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. | `bounded share teammate@example.com --app-id <id>` |
+| `share <wallet\|email> --role policy\|admin --app-id <id>` | Add a collaborator (a backup owner). **Wallet** → direct. **Email** → resolved to its auto-provisioned embedded wallet, added with the role you chose, and sent an invite email when outbound email is configured. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. | `bounded share teammate@example.com --role admin --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 
@@ -64,6 +64,11 @@ key material:
   "environment": "production",
   "protocol": "realtime_offchain",
   "policy": "policy.json",
+  "liveEdit": {
+    "artifacts": false,
+    "artifactPush": false,
+    "defaultEditMode": "canonical"
+  },
   "account": {
     "keySource": "profile",
     "profile": "client-a"
@@ -139,7 +144,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment` |
 | `dev` | Run the focused app dashboard, auto-register that app for live-edit, and start the loopback API daemon | `--app-id`, `--port`, `--api-port`, `--policy`, `--force` |
 | `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
-| `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--build-command`, `--deploy-command`, `--rollback-command` |
+| `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--artifacts on\|off`, `--artifact-push on\|off`, `--edit-mode canonical\|variant`, `--build-command`, `--deploy-command`, `--rollback-command` |
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json
@@ -151,7 +156,7 @@ bounded deploy                                          # redeploy using bounded
 
 ## Local dashboard
 
-The installer starts the dashboard daemon on `http://127.0.0.1:8011` by
+The installer starts the dashboard daemon on `http://127.0.0.1:8085` by
 default. Set `BOUNDED_DASHBOARD=0` during install only when you do not want a
 background local daemon.
 
@@ -176,7 +181,7 @@ private-site testing.
 Useful flags:
 
 ```bash
-bounded dashboard --port 8008 --api-port 8011
+bounded dashboard --port 8008 --api-port 8085
 bounded dashboard --no-web   # daemon API only, for a separate SPA dev server
 ```
 
@@ -196,22 +201,23 @@ with the local checkout and deployed origin the daemon should operate on:
 
 ```bash
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page
+bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --artifacts on --edit-mode variant
 bounded live-edit list
 ```
 
 The dashboard daemon then serves:
 
 ```text
-GET  http://127.0.0.1:8011/apps
-GET  http://127.0.0.1:8011/api/apps/<appId>/site-gate-session
-GET  http://127.0.0.1:8011/apps/<appId>
-GET  http://127.0.0.1:8011/apps/<appId>/widget.js
-POST http://127.0.0.1:8011/apps/<appId>/widget/session
-POST http://127.0.0.1:8011/apps/<appId>/propose
-POST http://127.0.0.1:8011/apps/<appId>/validate
-GET  http://127.0.0.1:8011/apps/<appId>/jobs
-POST http://127.0.0.1:8011/apps/<appId>/deploy/<jobId>
-POST http://127.0.0.1:8011/apps/<appId>/rollback
+GET  http://127.0.0.1:8085/apps
+GET  http://127.0.0.1:8085/api/apps/<appId>/site-gate-session
+GET  http://127.0.0.1:8085/apps/<appId>
+GET  http://127.0.0.1:8085/apps/<appId>/widget.js
+POST http://127.0.0.1:8085/apps/<appId>/widget/session
+POST http://127.0.0.1:8085/apps/<appId>/propose
+POST http://127.0.0.1:8085/apps/<appId>/validate
+GET  http://127.0.0.1:8085/apps/<appId>/jobs
+POST http://127.0.0.1:8085/apps/<appId>/deploy/<jobId>
+POST http://127.0.0.1:8085/apps/<appId>/rollback
 ```
 
 Use `--scope app` for guarded app-code edits and `--scope app+policy` only for
@@ -220,12 +226,13 @@ Configured daemon `agentCommand` jobs run in a staged workspace first; only a
 validated diff is applied back to the real checkout.
 
 The local daemon accepts browser CORS only from localhost, the dashboard web
-origin, registered live-edit app origins, and the matching
+origin, app-specific registered live-edit origins, and the matching
 `https://<appId>.bounded.page` origin for `/apps/<appId>/...` routes. The widget
 uses the animated Bounded mark as the launcher, saves its corner placement and
-one-hour hide window in localStorage, shows localhost connection state, and
-sends the selected local runner (`codex`, `claude`, `opencode`, `pi`, or
-`other`) with each prompt. Browser widget actions use a short-lived
+one-hour hide window in localStorage, uses a four-quadrant mark picker, isolates
+widget keyboard/input events from the host app, shows localhost connection
+state, and sends the selected local runner (`codex`, `claude`, `opencode`,
+`pi`, or `other`) with each prompt. Browser widget actions use a short-lived
 `X-Bounded-Live-Edit-Token`; no-Origin local agent/curl calls do not.
 
 > **`verify` / `verify-formal` is rate-limited** — about **5 requests per minute
@@ -338,10 +345,17 @@ Full treatment: [environments.md](environments.md).
 | `runtime deploy [dir]` | Bundle source + custom npm deps and deploy backend code through Bounded | `bounded runtime deploy --app-id <id>` |
 | `runtime info` | Show deployed backend runtime details | `bounded runtime info --app-id <id>` |
 | `runtime invoke <agent>` | Invoke a deployed agent/backend through Bounded (attaches your session token) | `bounded runtime invoke my-agent --app-id <id> --data '{}'` |
+| `live deploy <file>` | Upload a native `session.live` module (`init`/`tick`/`views`) to the code registry; the policy still declares the room binding | `bounded live deploy pong.live.ts --app-id <id>` |
+| `live intent <room-path>` | Send one authenticated live intent to a room and arm/cold-start the live loop | `bounded live intent rooms/r1 --app-id <id> --intent '{"type":"join"}'` |
+| `live status <room-path>` | Show live room diagnostics (`available`, `running`, `stopReason`, `etag`, `generation`, tick/alarm times). `--app-id` defaults to `bounded.json`. | `bounded live status rooms/r1` |
 | `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |
-| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to `<app>.bounded.page`; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback | `bounded site deploy ./dist --app-id <id>` |
+| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to `<app>.bounded.page`; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. | `bounded site deploy ./dist --app-id <id>` |
+| `site variants` | List current frontend variants for owner/admin review: status, deploy id, preview/switch paths, and affected files. | `bounded site variants --app-id <id>` |
+| `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
+| `site promote <variantId>` | Promote a frontend variant into the canonical hosted site after owner/admin authorization. Backend rules, data, functions, and policies stay unchanged. | `bounded site promote var_amit_refunds --app-id <id>` |
+| `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to raw app-id, vanity slug, and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](backend-runtime.md). Frontend hosting: [frontend-hosting.md](frontend-hosting.md).
@@ -362,9 +376,11 @@ Vanity slugs are free. Custom domains are Pro-gated on the app owner's account.
 If the owner later loses Pro, Bounded may remove or disable custom domain links;
 the raw `<appId>.bounded.page` URL and any vanity `<slug>.bounded.page` fallback
 keep working. Custom domains serve the static frontend only; API calls should use
-the app's Bounded API hostname. For root/apex domains, the DNS record may be a
-CNAME at `@`; if your DNS host rejects that, use a subdomain like `www` or move
-the zone's nameservers to Cloudflare for CNAME flattening.
+the app's Bounded API hostname. Custom domains inherit the app's hosted-site
+privacy gate; use `bounded site privacy private|public --app-id <id>` to change
+the raw, vanity, and custom static hosts together. For root/apex domains, the
+DNS record may be a CNAME at `@`; if your DNS host rejects that, use a subdomain
+like `www` or move the zone's nameservers to Cloudflare for CNAME flattening.
 
 ## Data plane
 
