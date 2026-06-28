@@ -67,7 +67,10 @@ key material:
   "liveEdit": {
     "artifacts": true,
     "artifactPush": true,
-    "defaultEditMode": "canonical"
+    "defaultEditMode": "canonical",
+    "frontendDir": "web",
+    "distDir": "web/dist",
+    "buildCommand": "npm run build"
   },
   "account": {
     "keySource": "profile",
@@ -103,6 +106,11 @@ New live-edit registrations default `liveEdit.artifacts` and
 `liveEdit.artifactPush` to `true`. Set either value to `false` in `bounded.json`
 or pass `--artifacts off` / `--artifact-push off` when a repo should opt out of
 Bounded cloud source tracking.
+
+Optional `liveEdit.frontendDir`, `liveEdit.distDir`, and
+`liveEdit.buildCommand` are public, secret-free build hints for agents and cloud
+live-edit. They are repo-relative except for `buildCommand`, which runs in
+`frontendDir` when set and otherwise at the repo root.
 
 ### The per-app marker — `.bounded/app.json`
 
@@ -149,7 +157,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment` |
 | `dev` | Run the focused app dashboard, auto-register that app for live-edit, and start the loopback API daemon | `--app-id`, `--port`, `--api-port`, `--policy`, `--force` |
 | `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
-| `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--artifacts on\|off`, `--artifact-push on\|off`, `--edit-mode canonical\|variant`, `--build-command`, `--deploy-command`, `--rollback-command` |
+| `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--artifacts on\|off`, `--artifact-push on\|off`, `--edit-mode canonical\|variant`, `--build-command`, `--frontend-dir`, `--dist-dir`, `--backend-runtime-dir`, `--deploy-command`, `--rollback-command` |
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json
@@ -207,6 +215,7 @@ with the local checkout and deployed origin the daemon should operate on:
 ```bash
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --edit-mode variant
+bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --frontend-dir web --dist-dir web/dist
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --artifacts off --artifact-push off
 bounded live-edit list
 ```
@@ -237,6 +246,10 @@ disabled with `--artifacts off`, `--artifact-push off`, or the matching
 live-edit deploy attempts a filtered source sync for cloud/review flows. If
 Bounded reports that cloud source sync is unavailable, the local deploy should
 remain successful and report the warning.
+
+Default local deploy checks `liveEdit.distDir`, then `liveEdit.frontendDir/dist`,
+then `dist`, then `web/dist`. Cloud live-edit uses the same public hints and can
+also auto-detect root or `web/` package build scripts.
 
 The local daemon accepts browser CORS only from localhost, the dashboard web
 origin, app-specific registered live-edit origins, and the matching

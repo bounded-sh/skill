@@ -51,6 +51,8 @@ bounded live-edit register \
   --edit-mode variant \
   --feedback-path boundedfeedback \
   --build-command "npm run build" \
+  --frontend-dir web \
+  --dist-dir web/dist \
   --artifact-push on
 ```
 
@@ -74,6 +76,11 @@ Cloud source tracking and variants:
   a filtered source copy so cloud/review flows can use the same workspace.
   If Bounded reports cloud source sync is unavailable, keep the local deploy as
   successful, report the warning, and do not upload the source anywhere else.
+- Use `bounded.json` `liveEdit.frontendDir`, `liveEdit.distDir`, and
+  `liveEdit.buildCommand` for non-root frontend layouts. These are public,
+  secret-free build hints. Default deploy checks `liveEdit.distDir`,
+  `liveEdit.frontendDir/dist`, `dist`, then `web/dist`; cloud live-edit also
+  auto-detects root and `web/` package build scripts.
 - `--edit-mode variant` makes the widget default to **My version**. Use
   `canonical` to keep the existing main-app edit flow. `bounded.json`
   `liveEdit.defaultEditMode` can set the repo default.
@@ -90,7 +97,7 @@ Cloud live-edit is the in-page deployed-app experience. The browser talks only
 to `https://<app>.bounded.page/__bounded/widget/...`; Bounded runs the edit
 server-side against the app's synchronized source, bills the owner or
 collaborator's AI/external-services bucket, then publishes the resulting
-frontend variant or backend runtime artifact.
+frontend variant.
 
 Required gates:
 
