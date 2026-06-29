@@ -144,12 +144,14 @@ the host UI really needs to stay open, but browsers can block or close popups.
 **Register redirect URIs** for the app first (exact match, https; localhost for
 dev) — an unregistered `redirect_uri` is rejected by design.
 
-The inline email modal (`login()` above) and the hosted redirect flow can coexist.
-Use inline only for a fast email-only drop-in. Use hosted redirect for OAuth,
-provider selection, and production-grade app isolation. Text OTP belongs in the
-hosted/headless path only when it is explicitly enabled. When both email and text
-are enabled, the hosted page shows one OTP form with an Email/Text switcher. If
-`methods` is ordered, the first enabled OTP method in that list is selected by
+There is **one human-login path**: the hosted redirect flow. The bare chooser, a
+`provider`-specific button, and a `methods` subset are all the same
+`loginWithRedirect` call. There is **no** inline email modal to fall back to —
+`login()` and `authMethod: 'email'` are removed, and any OTP request POSTed from
+your own origin is rejected with `hosted login must be started from the issuer
+origin` (the credential is only ever entered on `auth.bounded.sh`). When both email
+and text are enabled, the hosted page shows one OTP form with an Email/Text switcher.
+If `methods` is ordered, the first enabled OTP method in that list is selected by
 default; use `provider: "text"` to jump straight to text only when enabled.
 
 ### OAuth provider availability
@@ -185,21 +187,30 @@ Phone-only users get a normal `@user.id`, but `@user.email` is `null`. Do not
 email-gate phone-only users. Extend the policy/user model separately only if
 phone-number claims should become rule-visible.
 
-**Headless / custom UI / React Native** — build your own email + code inputs;
-add text + code only when text OTP is explicitly enabled. This is the only path
-on React Native, which has no DOM modal:
+**Custom UI / React Native** — still use the hosted redirect flow. You own the
+button, but the credential is entered on `auth.bounded.sh`.
+
+> ⛔ **Do not call `sendEmailOtp` / `verifyEmailOtp` / `sendTextOtp` /
+> `verifyTextOtp` from your app.** These inline-OTP endpoints are **issuer-origin
+> gated** — a request from any app origin (web *or* React Native) is rejected with
+> `hosted login must be started from the issuer origin`. They exist only for the
+> Bounded-hosted login page itself. If your app is hitting that error, this is the
+> cause: migrate the call site to `loginWithRedirect`.
 
 ```ts
-import { init, sendEmailOtp, verifyEmailOtp, sendTextOtp, verifyTextOtp } from "@bounded-sh/client";
+import { init, loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
-await sendEmailOtp("user@example.com");          // step 1: emails a code
-const user = await verifyEmailOtp("user@example.com", "123456");  // step 2: signs in
-
-// Only when text OTP is explicitly enabled for the app:
-await sendTextOtp("+14155550132");               // step 1: texts a code
-const byText = await verifyTextOtp("+14155550132", "123456");     // step 2: signs in
+// Your own button → hosted chooser (or pass provider / methods to scope it):
+await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
+// On the callback route, on load:
+const user = await completeLoginFromRedirect();   // exchanges the code (PKCE) → signs in
 ```
+
+On **React Native** `loginWithRedirect` opens the system/in-app browser to the
+issuer and returns through your registered deep-link `redirectUri`; see
+[../guides/building-for-react-native.md](../guides/building-for-react-native.md)
+for the deep-link callback wiring.
 
 **Anonymous accounts coexist** — offer email login AND zero-friction guest
 accounts side by side (opt-in: set `"auth": { "anonymous": true }` in policy; see
@@ -225,17 +236,15 @@ in policy, `@user.isAnonymous == false` gates guests out of a rule (Supabase par
 > server code use **`@bounded-sh/server`** with a keypair
 > (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
 
-`authMethod` options: **`'email'` is THE default** (Bounded Auth inline OTP) —
-`init({ appId })` with no `authMethod` selects it. **OAuth/social hosted login**
-uses `loginWithRedirect` / `loginWithPopup`, not `authMethod`; text OTP uses
-hosted login or `sendTextOtp` / `verifyTextOtp` only when explicitly enabled.
-**Guest** via
-`signInAnonymously()` is the natural frictionless second choice (not an
-`authMethod`; see below). **`'phantom'`** (connect a Solana wallet) is a
-crypto/onchain opt-in — use it only when the app is crypto-enabled and needs a
-real user wallet for signing, onchain ownership, or wallet-native UX.
-`'none'` disables end-user auth.
-(`'wallet'` is not implemented — use `'phantom'` for Solana wallets.)
+`authMethod` selects the **identity system**, not a login UI. **Bounded Auth is
+the default** — email + OAuth/social + optional text, and every one of those human
+logins runs through the **hosted redirect flow** (`loginWithRedirect` /
+`loginWithPopup`). There is no inline-OTP `authMethod` and no app-origin modal.
+**Guest** via `signInAnonymously()` is the natural frictionless second choice (not
+an `authMethod`; see below). **`'phantom'`** (connect a Solana wallet) is a
+crypto/onchain opt-in — use it only when the app is crypto-enabled and needs a real
+user wallet for signing, onchain ownership, or wallet-native UX. `'none'` disables
+end-user auth. (`'wallet'` is not implemented — use `'phantom'` for Solana wallets.)
 
 The authenticated `user` object — mirrored into policy as `@user.*` — has **three
 fields**:
@@ -247,11 +256,10 @@ fields**:
 | `user.email` | `string \| null` | the verified, lowercased email for email/OAuth accounts. It is `null` for wallet and phone-only text users. Use it only when email-gating is genuinely intended. |
 | `user.isAnonymous` | `boolean` | `true` for a zero-friction **guest** (`signInAnonymously()`); `false` after upgrade (`linkEmail`) or for any real login. Drives the "save your account" prompt. Mirrored in policy as `@user.isAnonymous` (offchain; write `== false` to gate guests out). |
 
-- **Bounded Auth** supports email OTP (inline modal or headless), optional text
-  OTP (headless or hosted only when enabled), and, via the hosted redirect flow
-  (`loginWithRedirect`), OAuth/social login (Google, Apple, GitHub today).
-  Social and hosted text require the redirect flow — the inline modal is
-  email-only.
+- **Bounded Auth** supports email OTP, optional text OTP (when enabled), and
+  OAuth/social login (Google, Apple, GitHub today) — **all through the hosted
+  redirect flow** (`loginWithRedirect` / `loginWithPopup`). There is no inline
+  app-origin OTP path.
   Bounded Auth users authenticate as an **account identity** — they have a stable
   `@user.id` but **no** `@user.address` (it is `null`) unless a wallet is
   connected. Phone-only text users also have `@user.email == null`.
