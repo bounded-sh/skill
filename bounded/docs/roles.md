@@ -117,6 +117,7 @@ values keep working. Pairs with the local dashboard template (`bounded dev`).
   tighten the per-collection rule.
 
 ## Related
+- [access-control.md](access-control.md) — the `access` block, control roles, custom capabilities, external contributors & **platform super-admins**
 - [admin-and-ownership.md](admin-and-ownership.md) — per-doc, rule-based admin + `verifyAuthorityClosure`
 - [constants-and-defs.md](constants-and-defs.md) — `@const.NAME` in members
 - [environments.md](environments.md) — per-environment admin addresses

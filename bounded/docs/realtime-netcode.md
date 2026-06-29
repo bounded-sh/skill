@@ -36,6 +36,13 @@ live.intent(roomPath, { type: "input", mv, aim }, { fireAndForget: true }); // f
 (Both ride the same WebSocket; `fireAndForget` just skips waiting for the ack. Don't
 use it for intents whose rejection matters — the denial is silently dropped.)
 
+**Hibernation reconnects.** Bounded's realtime worker uses Cloudflare's WebSocket
+Hibernation API. If the edge cannot deserialize a hibernated socket attachment
+(for example after a runtime/storage-format transition), the worker treats that
+socket as stale, closes it with a reconnect reason, and the SDK should reopen and
+resubscribe. This is a transport reconnect condition, not a room-policy denial
+and not an app-level live intent error.
+
 ## 2. Send input only when it CHANGES (event-driven, not every frame)
 
 Your live module persists each player's input (e.g. `p.mvx = mv[0]`) and keeps

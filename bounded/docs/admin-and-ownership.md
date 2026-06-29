@@ -24,7 +24,7 @@ proven backend unprovable. So Bounded splits authority into two planes:
 
 | Plane | What it covers | Who has it | How |
 |---|---|---|---|
-| **Control plane** | Manage the app: deploy/replace policy, add/remove collaborators, configure functions + secrets, delete the app | **Owner + admin-collaborators** | The owner's keypair; others via `bounded link` / `bounded share` ([auth.md](auth.md)) |
+| **Control plane** | Manage the app: deploy/replace policy + UI, add/remove collaborators, configure functions + secrets, billing, delete the app | **Owner + control roles** (`admin`/`developer`/`viewer`/`billing` + custom) | The owner's keypair; others via `bounded share --role` / the `access` block — see [access-control.md](access-control.md) |
 | **Data plane** | Read/write app **data** | **Whoever the policy rules + invariants allow — and ONLY them** | Declared in `policy.json`. **No owner bypass.** |
 
 The owner's legitimate reign is the *control plane* (it's their app). On the

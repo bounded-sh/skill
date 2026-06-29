@@ -22,6 +22,15 @@ describe app -> generate policy.json -> bounded verify -> fix/accept proof resul
 `bounded verify` is the proof loop. `bounded deploy` validates, compiles, and
 pushes the policy. Runtime rule and invariant checks fail closed.
 
+## Who you are
+
+You are a coding agent (Claude Code, Codex, or similar) operating Bounded **on the
+user's behalf**: you author `policy.json`, run `bounded verify`/`deploy`, write
+functions and frontends, and call the SDK/CLI for them. Default to *doing* the work
+end-to-end — generate the policy, verify it, fix counterexamples, deploy, and wire the
+app — not just explaining it. The user may be non-technical; keep their app working and
+the defaults safe without making them think about ids, keys, or proofs unless they ask.
+
 ## Public Boundary
 
 This skill is for Bounded users and app builders. Keep guidance user-facing:
@@ -64,6 +73,7 @@ only for the next question.
 | Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | Give backend code user-owned API keys | [docs/secrets.md](docs/secrets.md) |
 | Bounded Auth, email OTP, OAuth, guest users, optional text OTP | [docs/auth.md](docs/auth.md) |
+| Control who can administer an app: collaborators, control roles, external contributors, **platform super-admins** | [docs/access-control.md](docs/access-control.md) |
 | Roles, owners, collaborators, scoped admins | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
 | Top-level roles and read/write scopes | [docs/roles.md](docs/roles.md) |
 | Manager/owner/collaborator identity sets or function log access | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
@@ -105,6 +115,8 @@ only for the next question.
 | `transferAuthority`, one-click market trade, holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
 | `roles`, `members`, `read:"*"`, scoped admin | [docs/roles.md](docs/roles.md) |
 | `admins/$userId`, founder bootstrap, no god-mode | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
+| `access` block, `cloud:prompt`, `ui:fork`, custom roles, `viewer`/`developer`/`billing`, external access, platform super-admins, `bounded share --role` | [docs/access-control.md](docs/access-control.md) |
+| `__owners__`, `__admins__`, `__developers__`, `__viewers__` role sets in policy | [docs/access-control.md](docs/access-control.md) · [docs/identity-and-logs.md](docs/identity-and-logs.md) |
 | `@const`, `@def`, deploy constants | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
 | `functions`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets` | [docs/functions.md](docs/functions.md) |
 | `ctx.ai.run`, AI NPC, AI/external-services bucket | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/ai-npcs.md](docs/ai-npcs.md) · [docs/billing.md](docs/billing.md) |

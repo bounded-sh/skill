@@ -185,6 +185,14 @@ at bootstrap; default end-users to least privilege; admins stay bound by every
 invariant. Full model + the validated `admins` collection:
 [admin-and-ownership.md](admin-and-ownership.md).
 
+Distinguish two questions. The above is the **data plane** ("who may moderate the
+data"). The separate **control plane** — who may deploy policy/UI, manage billing,
+share access, run cloud edits, or act as a **platform super-admin** across tenants —
+is the `access` block + `bounded share --role`. If the app has collaborators, external
+contributors, or is a multi-tenant platform, read
+[access-control.md](access-control.md) and add an `access` block; for a plain B2C app
+the creator is `owner` and you need none of it.
+
 ### Step 4 — Identify the non-negotiables
 
 Stop and ask: **what must be true no matter what any caller, agent, hook, or bug

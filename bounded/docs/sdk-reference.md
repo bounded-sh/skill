@@ -31,9 +31,11 @@ npm i @bounded-sh/server      # Node / server (keypair client)
 
 ```ts
 // client (browser / RN)
-import { init, login, get, set, subscribe } from "@bounded-sh/client";
-await init({ appId: "<appId>" });    // defaults to email login; see auth.md
-await login();                       // inline email-code modal (no popup, no redirect)
+import { init, loginWithRedirect, completeLoginFromRedirect, get, set, subscribe } from "@bounded-sh/client";
+await init({ appId: "<appId>" });
+// All human login goes through the HOSTED page (email + social + text):
+await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback", methods: ["email"] });
+// …and on your callback page:  const user = await completeLoginFromRedirect();
 
 // server
 import { createWalletClient } from "@bounded-sh/server";
@@ -42,15 +44,16 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 
 `init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
 production by default** — `init({ appId })` just works, no endpoints to set (the
-network is `'bounded-production'`). `authMethod` defaults to
-`'email'` (Bounded Auth inline OTP). OAuth/social uses
-`loginWithRedirect` / `loginWithPopup` rather than `authMethod`; pass
-`provider: "google" | "apple" | "github"` to jump directly from your own button,
-or `methods: ["email", "google", "apple"]` to control the
-hosted chooser. The wallet option is `'phantom'`, reserved for crypto/onchain
-apps that need a real Solana wallet; use `'none'` to disable auth. Anonymous
-accounts are via `signInAnonymously()` and coexist with Bounded Auth. For a
-custom/RN OTP UI use the headless `sendEmailOtp` / `verifyEmailOtp` helpers.
+network is `'bounded-production'`). **Email + OAuth/social + text all use the
+hosted flow** `loginWithRedirect` / `loginWithPopup` (the credential is entered on
+`auth.bounded.sh`, never your origin); pass `methods: ["email", "google"]` for a
+chooser, or `provider: "google"` to jump straight to one from your own button.
+There is **no** inline OTP modal — `authMethod: 'email'` + `login()` and the
+app-origin `sendEmailOtp` / `verifyEmailOtp` helpers are removed (the issuer
+rejects app-origin OTP: `hosted login must be started from the issuer origin`).
+The wallet option is `'phantom'`, reserved for crypto/onchain apps that need a
+real Solana wallet; use `'none'` to disable auth. Anonymous accounts are via
+`signInAnonymously()` and coexist with Bounded Auth.
 Text OTP (`provider: "text"`, `methods: ["text"]`, or `sendTextOtp` /
 `verifyTextOtp`) is off by default and works only when Bounded explicitly enables
 it for the app. Full flow in [auth.md](auth.md).
@@ -315,7 +318,7 @@ Collaborators (who may deploy/update an app's policy) are a **control-plane**
 concern, managed with the **CLI**, not the data-plane `@bounded-sh` SDK. Use:
 
 ```bash
-bounded share <walletAddress|email> --role policy|admin --app-id <id>   # add
+bounded share <walletAddress|email> --role developer|admin|viewer|billing --app-id <id>  # add
 bounded collaborators --app-id <id>                 # list
 bounded unshare <walletAddress|email> --app-id <id> # remove
 ```

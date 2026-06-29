@@ -166,7 +166,7 @@ losing.
 ## 7. `bounded share` — add a backup owner BEFORE loss
 
 ```bash
-bounded share <wallet|email> --app-id <id> [--role policy|admin]
+bounded share <wallet|email> --app-id <id> [--role developer|admin|viewer|billing]
 ```
 
 Adds a collaborator to one app (owner-gated):

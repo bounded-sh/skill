@@ -26,7 +26,8 @@ Deployed HTTPS pages must not depend on background requests to `127.0.0.1`.
 Strict Chrome and Safari can block public-site-to-localhost subresource fetches.
 The deployed widget is cloud-backed and may offer:
 
-- a top-level link to `http://127.0.0.1:8085/apps/<appId>` for local
+- a top-level link to `http://127.0.0.1:8008/apps/<appId>` for the local
+  dashboard, which then talks to the `http://127.0.0.1:8085` daemon for
   Claude/Codex edits; and
 - cloud live-edit, when Bounded reports that it is available for the current
   app and signed-in user.
@@ -48,6 +49,7 @@ Useful options:
 bounded live-edit register \
   --scope app \
   --artifacts on \
+  --source-provider auto \
   --edit-mode variant \
   --feedback-path boundedfeedback \
   --build-command "npm run build" \
@@ -66,16 +68,22 @@ Default to `app` unless the creator explicitly asks for full development.
 Cloud source tracking and variants:
 
 - New registrations default to `--artifacts on`, `--artifact-push on`, and
-  `--edit-mode canonical`.
+  `--source-provider auto`, and `--edit-mode canonical`.
+- `liveEdit.sourceProvider` / `--source-provider` selects the cloud source Git
+  backend: `auto`, `github`, `artifacts`, or `none`. `auto` lets Bounded choose
+  the configured backend for the environment. `none` opts out of cloud source
+  tracking and remote code-improvement.
 - Respect repo opt-outs. `--artifacts off` or `bounded.json`
   `liveEdit.artifacts: false` disables Bounded cloud source tracking for the
-  project. `--artifact-push off` or `bounded.json`
+  project. `--source-provider none` is the explicit provider-level opt-out.
+  `--artifact-push off` or `bounded.json`
   `liveEdit.artifactPush: false` keeps local live-edit working but disables
   automatic source sync after deploys.
-- With artifact push enabled, successful local live-edit deploys attempt to sync
-  a filtered source copy so cloud/review flows can use the same workspace.
-  If Bounded reports cloud source sync is unavailable, keep the local deploy as
-  successful, report the warning, and do not upload the source anywhere else.
+- With cloud source push enabled, successful local live-edit deploys attempt to
+  sync a filtered source copy to Bounded's configured source provider so
+  cloud/review flows can use the same workspace. If Bounded reports cloud source
+  sync is unavailable, keep the local deploy as successful, report the warning,
+  and do not upload the source anywhere else.
 - Use `bounded.json` `liveEdit.frontendDir`, `liveEdit.distDir`, and
   `liveEdit.buildCommand` for non-root frontend layouts. These are public,
   secret-free build hints. Default deploy checks `liveEdit.distDir`,
@@ -85,8 +93,8 @@ Cloud source tracking and variants:
   `canonical` to keep the existing main-app edit flow. `bounded.json`
   `liveEdit.defaultEditMode` can set the repo default.
 - Cloud live-edit is offered in the deployed widget only when Bounded reports it
-  available for the app. If artifacts are off or the cloud source is not ready,
-  use local live-edit from the daemon instead.
+  available for the app. If cloud source tracking is off or the cloud source is
+  not ready, use local live-edit from the daemon instead.
 - Variant mode requires the default Bounded hosted frontend deploy path. If the
   app uses a custom `--deploy-command`, use canonical mode unless the owner has
   provided a custom variant-aware deploy command.
@@ -103,15 +111,15 @@ Required gates:
 
 - the caller signs in with a Bounded app-scoped session and is authorized for the
   app;
-- the app has not opted out of Bounded cloud artifacts/source tracking;
+- the app has not opted out of Bounded cloud source tracking;
 - Bounded has a current synchronized source copy for the app;
 - Bounded reports cloud live-edit available for the app;
 - AI model selection is from the Bounded allowlist; and
 - billing/top-up gates have room in the AI/external-services bucket.
 
-Agents working locally must keep the artifact current when artifact push is
-enabled. After a successful local live-edit deploy, attempt the filtered source
-sync. If a project opts out, do not upload source and do not offer cloud
+Agents working locally must keep the configured cloud source current when source
+push is enabled. After a successful local live-edit deploy, attempt the filtered
+source sync. If a project opts out, do not upload source and do not offer cloud
 code-improvement from the deployed widget. If a cloud edit lands while a local
 checkout is open, pull/reconcile before continuing local edits instead of
 assuming the checkout is authoritative.

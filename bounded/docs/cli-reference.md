@@ -40,9 +40,10 @@ overrides the file). See [auth.md](auth.md).
 | `whoami` | Show address, environment, key source, linked email (if any), and this folder's app marker if present (creates the key on first run) | `bounded whoami` |
 | `link` | **The anti-loss move.** Bind the keypair to your human (email) account via an **OAuth device flow** (with an anti-phishing fingerprint), or use `--email` for headless OTP approval; keypair + email-account wallet become admin-collaborators on each other's apps, so your apps survive local key loss. The keypair keeps signing — linking only ADDS the association, it never rolls or replaces the key. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, or env. | `bounded account use client-a` |
-| `share <wallet\|email> --role policy\|admin --app-id <id>` | Add a collaborator (a backup owner). **Wallet** → direct. **Email** → resolved to its auto-provisioned embedded wallet, added with the role you chose, and sent an invite email when outbound email is configured. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. | `bounded share teammate@example.com --role admin --app-id <id>` |
+| `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. See [access-control.md](access-control.md) for what each role can do. | `bounded share teammate@example.com --role admin --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
+| `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
 
 `link` flags: `--no-browser` (just print the URL), `--email <addr>` (headless
 approval: email an OTP, read it from stdin, approve this device), `--timeout
@@ -66,6 +67,7 @@ key material:
   "policy": "policy.json",
   "liveEdit": {
     "artifacts": true,
+    "sourceProvider": "auto",
     "artifactPush": true,
     "defaultEditMode": "canonical",
     "frontendDir": "web",
@@ -103,9 +105,11 @@ project defaults. Older projects with only `.bounded/app.json` still work; the
 CLI falls back to that marker when `bounded.json` is absent.
 
 New live-edit registrations default `liveEdit.artifacts` and
-`liveEdit.artifactPush` to `true`. Set either value to `false` in `bounded.json`
-or pass `--artifacts off` / `--artifact-push off` when a repo should opt out of
-Bounded cloud source tracking.
+`liveEdit.artifactPush` to `true`, with `liveEdit.sourceProvider: "auto"`.
+Set `liveEdit.sourceProvider` to `github`, `artifacts`, or `none` when a repo
+needs an explicit cloud source backend or opt-out. Set either legacy value to
+`false` in `bounded.json`, or pass `--artifacts off` / `--artifact-push off`,
+when a repo should opt out of Bounded cloud source tracking or automatic sync.
 
 Optional `liveEdit.frontendDir`, `liveEdit.distDir`, and
 `liveEdit.buildCommand` are public, secret-free build hints for agents and cloud
@@ -157,7 +161,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment` |
 | `dev` | Run the focused app dashboard, auto-register that app for live-edit, and start the loopback API daemon | `--app-id`, `--port`, `--api-port`, `--policy`, `--force` |
 | `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
-| `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--artifacts on\|off`, `--artifact-push on\|off`, `--edit-mode canonical\|variant`, `--build-command`, `--frontend-dir`, `--dist-dir`, `--backend-runtime-dir`, `--deploy-command`, `--rollback-command` |
+| `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--artifacts on\|off`, `--source-provider auto\|github\|artifacts\|none`, `--artifact-push on\|off`, `--edit-mode canonical\|variant`, `--build-command`, `--frontend-dir`, `--dist-dir`, `--backend-runtime-dir`, `--deploy-command`, `--rollback-command` |
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json
@@ -169,9 +173,10 @@ bounded deploy                                          # redeploy using bounded
 
 ## Local dashboard
 
-The installer starts the dashboard daemon on `http://127.0.0.1:8085` by
-default. Set `BOUNDED_DASHBOARD=0` during install only when you do not want a
-background local daemon.
+The installer starts the dashboard daemon API on `http://127.0.0.1:8085` by
+default. The full dashboard web UI runs on `http://127.0.0.1:8008` when started
+with `bounded dashboard`. Set `BOUNDED_DASHBOARD=0` during install only when you
+do not want a background local daemon.
 
 Open the full web UI beside the normal CLI loop:
 
@@ -179,7 +184,7 @@ Open the full web UI beside the normal CLI loop:
 bounded dashboard
 ```
 
-It starts a loopback-only daemon and the local web UI. The daemon holds the
+It starts a loopback-only daemon API and the local web UI. The daemon holds the
 keypair and mints app-pinned sessions on demand; the browser never receives the
 private key. Use it as the default companion surface while building: inspect all
 local apps, read data through the daemon, view deployed policy/proof reports,
@@ -216,7 +221,7 @@ with the local checkout and deployed origin the daemon should operate on:
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --edit-mode variant
 bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --frontend-dir web --dist-dir web/dist
-bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --artifacts off --artifact-push off
+bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --source-provider none --artifacts off --artifact-push off
 bounded live-edit list
 ```
 
@@ -240,12 +245,13 @@ trusted full-development surfaces. Full agent workflow: [live-edit.md](live-edit
 Configured daemon `agentCommand` jobs run in a staged workspace first; only a
 validated diff is applied back to the real checkout.
 
-Artifacts/source tracking are on by default for new registrations and can be
-disabled with `--artifacts off`, `--artifact-push off`, or the matching
-`bounded.json` values. When source tracking is enabled, a successful local
-live-edit deploy attempts a filtered source sync for cloud/review flows. If
-Bounded reports that cloud source sync is unavailable, the local deploy should
-remain successful and report the warning.
+Cloud source tracking is on by default for new registrations and uses
+`sourceProvider: "auto"` unless the repo selects `github`, `artifacts`, or
+`none`. It can be disabled with `--source-provider none`, `--artifacts off`,
+`--artifact-push off`, or the matching `bounded.json` values. When source
+tracking is enabled, a successful local live-edit deploy attempts a filtered
+source sync for cloud/review flows. If Bounded reports that cloud source sync is
+unavailable, the local deploy should remain successful and report the warning.
 
 Default local deploy checks `liveEdit.distDir`, then `liveEdit.frontendDir/dist`,
 then `dist`, then `web/dist`. Cloud live-edit uses the same public hints and can
@@ -571,4 +577,5 @@ verify/deploy. Full guide:
 - [queries.md](queries.md) — filters, sort, paging, aggregations, search in depth
 - [sdk-reference.md](sdk-reference.md) — the same operations from TypeScript
 - [auth.md](auth.md) — the keypair identity the CLI acts as
+- [access-control.md](access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — reading `verify` output

@@ -1,15 +1,27 @@
 # Reserved identity sets + function log access
 
-Bounded maintains three **reserved, platform-managed identity sets** for every
-app, resolved from the real identity graph and kept current automatically. A
-policy can read them in any rule; they can't be written, edited, or defined away,
-so access expressed against them never goes stale.
+Bounded maintains **reserved, platform-managed identity sets** for every app,
+resolved from the real identity graph and kept current automatically. A policy can
+read them in any rule; they are **read-only projections** — they can't be written,
+edited, or defined away (the `__`-prefixed paths are write-blocked), so access
+expressed against them never goes stale and nobody can self-promote into one.
 
 | Read in a rule | True when the caller is… |
 | --- | --- |
 | `get(/__managers__/@user.id) != null` | the owner, a collaborator, OR any identity linked to those humans' accounts |
 | `get(/__owners__/@user.id) != null` | the owner, or an identity linked to the owner's account |
 | `get(/__collaborators__/@user.id) != null` | a collaborator, or an identity linked to a collaborator's account |
+| `get(/__admins__/@user.id) != null` | a collaborator granted the `admin` control role |
+| `get(/__developers__/@user.id) != null` | a collaborator granted the `developer` role (deploy policy/functions/UI) |
+| `get(/__viewers__/@user.id) != null` | a collaborator granted the read-only `viewer` role |
+| `get(/__billing__/@user.id) != null` | a collaborator granted the `billing` role |
+
+The four **role sets** (`__admins__`/`__developers__`/`__viewers__`/`__billing__`)
+are the *control-plane → data-plane bridge*: they project the control roster (set via
+`bounded share --role` or the policy `access` block) so a rule can opt into giving a
+control role data powers — **without any hidden owner/admin bypass**. See
+[access-control.md](access-control.md) for the `access` block, custom roles, and the
+platform super-admin pattern.
 
 These sets are keyed by `@user.id` — the **universal, stable identity** that is
 always present for an authenticated caller (it equals the wallet address for

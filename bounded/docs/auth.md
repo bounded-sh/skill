@@ -56,8 +56,8 @@ teammates — without anyone juggling raw wallet keys:
   A linked email account is unique: Bounded will not intentionally attach the
   same wallet/user identity to two different email accounts. Once linked, that
   email is also the owner notification surface for plan/usage alerts.
-- **`bounded share <wallet|email> --role policy|admin --app-id <id>`** adds a
-  collaborator. Pass a **wallet** to add it directly. Pass an **email** and
+- **`bounded share <wallet|email> --role developer|admin|viewer|billing --app-id <id>`** adds a
+  collaborator (`policy` is a legacy alias for `developer`). Pass a **wallet** to add it directly. Pass an **email** and
   Bounded resolves it to that person's canonical wallet — an **auto-provisioned
   embedded wallet**, so the invitee needs no wallet of their own — then sends an
   invite email when outbound email is configured. `policy` may update the
@@ -89,33 +89,29 @@ array). The keypair is read lazily — only the first signed write needs it.
 
 Your app's users authenticate through `@bounded-sh/client`. For a normal,
 non-crypto app, use **Bounded Auth**: email OTP, OAuth/social login, and optional
-anonymous guest accounts. `init({ appId })` with **no** `authMethod` selects the
-email OTP provider, so the zero-config `login()` path still works. A returning
-user's stored method still wins; an explicit `authMethod` still wins.
+anonymous guest accounts. **Every human login goes through the hosted login**
+(OAuth2 + PKCE) — `loginWithRedirect` / `loginWithPopup`. The credential (email
+code, Google/Apple/GitHub, text) is only ever entered on the Bounded issuer
+origin (`auth.bounded.sh`); the token's `appId` is bound to a `redirect_uri`
+registered for your app, so it can only be minted through and delivered to your
+own origin.
 
-```ts
-import { init, login, getCurrentUser } from "@bounded-sh/client";
-
-await init({ appId: "<appId>" });    // email is the default — no authMethod needed
-await login();                       // opens an INLINE email-code modal — no popup, no redirect
-const user = getCurrentUser();       // { id, address, email } | null
-```
+> ⚠️ There is **no inline email-code modal** and no app-origin OTP. Posting a code
+> from your own origin is rejected with `hosted login must be started from the
+> issuer origin`. Email, social, and text all use the one hosted flow below.
+> (`authMethod: 'email'` + the zero-config `login()` modal is removed — use
+> `loginWithRedirect({ methods: ['email'] })` instead.)
 
 > For a **live game**, the tick's calls have no human — `@user` is the **system
 > principal** (all fields null unless you declare an acting identity). See
 > [principals-and-origins.md](principals-and-origins.md).
 
-The inline modal is **email-only** (a 6-digit code, no popup, no full-page
-redirect). It's the quickest drop-in, but it cannot do OAuth/social login because
-Google/Apple/GitHub require a browser redirect. Text OTP is off by default and
-is available through the headless SDK helpers and hosted login only when Bounded
-explicitly enables it for the app.
+### Hosted login — email, social, and text in one flow
 
-### Hosted login — OAuth/social is first-class
-
-For **Google, Apple, GitHub, or any social provider**, use the hosted OAuth2 +
-PKCE redirect flow. The token's `appId` is bound to a `redirect_uri` registered
-for your app, so it can only be minted through and delivered to your own origin.
+The hosted OAuth2 + PKCE redirect flow covers **email OTP, Google/Apple/GitHub,
+and text** through a single chooser. The token's `appId` is bound to a
+`redirect_uri` registered for your app, so it can only be minted through and
+delivered to your own origin.
 
 ```ts
 import { init, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from "@bounded-sh/client";
@@ -329,5 +325,6 @@ its rules require, no more.
 - [../guides/building-for-agents.md](../guides/building-for-agents.md) — the zero-ceremony keypair flow
 - [sdk-reference.md](sdk-reference.md) — `login` / `useAuth` / `createWalletClient`
 - [admin-and-ownership.md](admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)
+- [access-control.md](access-control.md) — control roles, sharing by email (registered or brand-new), external contributors & platform super-admins
 - [cli-reference.md](cli-reference.md) — `link`, `share`/`unshare`/`collaborators` flags
 - [policy-reference.md](policy-reference.md) — `@user.id` / `@user.address` / `@user.email` in the rule language
