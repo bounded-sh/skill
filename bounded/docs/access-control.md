@@ -55,7 +55,7 @@ with end-user roles (moderators, etc.) uses an `admins`/`roles` collection and m
 |---|---|
 | `owner` | everything (one per app, transferable) |
 | `admin` | manage the app + act on data — *not* delete/transfer/manage-the-roster |
-| `developer` | deploy/update policy, functions, and the UI (renames the legacy `policy` role) |
+| `developer` | **read the source** + deploy/update policy, functions, and the UI — this IS the **bounded-agent** role (renames the legacy `policy` role) |
 | `viewer` | read-only management surfaces + proofs (the "external people" tier) |
 | `billing` | view + manage billing |
 
@@ -72,7 +72,7 @@ bounded share newperson@x.com   --role viewer --app-id <id>   # works before the
 Roles are *bundles of capabilities*. The atomic capabilities (`surface:action`):
 `app:view` · `app:settings` · `app:delete` · `app:transfer` · `access:manage` ·
 `billing:manage` · `policy:deploy` · `functions:deploy` · `ui:deploy` · `ui:fork` ·
-`cloud:prompt` · `cloud:apply` · `data:act`.
+`code:read` · `cloud:prompt` · `cloud:apply` · `data:act`.
 
 Author custom roles + grants in the **`access` block of `policy.json`** (agents edit this
 directly; it deploys with the policy and `bounded verify` reports who-can-do-what):
@@ -81,29 +81,51 @@ directly; it deploys with the policy and `bounded verify` reports who-can-do-wha
 {
   "access": {
     "roles": { "ui-contributor": ["ui:fork", "cloud:prompt"] },
+    // grants are always to a SPECIFIC, named subject (so the roster is a real list):
     "grants": [
       { "subject": "alice@example.com", "role": "admin" },
-      { "subject": "team:design",       "role": "ui-contributor" },
-      // open UI prompting to anyone signed in, as PROPOSALS the owner promotes (a wiki):
-      { "audience": "signed-in", "capabilities": ["cloud:prompt"], "workflow": "propose" }
+      { "subject": "team:design",       "role": "ui-contributor" }
     ],
-    "external": { "widget": "viewer" }   // let non-owners see read-only proofs in the widget
+    // `external` opens the app to NON-collaborators (a whole class, not named people):
+    "external": {
+      "widget":  "viewer",      // non-owners see this role's read-only surfaces in the widget
+      "propose": "signed-in"    // anyone signed-in may SUGGEST cloud edits (proposals you approve)
+    }
   }
 }
 ```
 
-- **subject** = `email` | `wallet` | `team:<name>` | account id (a **specific** person/team).
-- **audience** = a **whole class** instead of a named person: `signed-in` (anyone
-  authenticated) | `public` (anyone, incl. anonymous). Use it only for **open contribution**
-  — e.g. "anyone signed in may *suggest* a UI edit, as a proposal." It is **control-plane
-  only** (granting capabilities like `cloud:prompt`/`ui:fork`). NOTE: "any signed-in user can
-  create a post" is **not** an audience grant — that's a plain **data rule**
-  (`"create": "@user.id != null"`). If you're tempted to use `audience` for data access, you
-  want a policy rule instead.
-- **workflow** = `direct` (applies now) or `propose` (creates a fork/variant the owner
-  promotes — the wiki/PR flow; reuses the [variant system](frontend-hosting.md)).
-- **external** opens the cloud widget to non-owners: an external signed-in person with
-  `cloud:prompt` gets a "Suggest an edit" box; submissions go in as proposals.
+- **grants → `subject`** = `email` | `wallet` | `team:<name>` | account id — always a
+  **specific** person/team. (There is **no** `audience` in grants — "open to a whole class"
+  lives in `external`, below. Grants are the enumerable roster.)
+- **`role`** pulls in a preset or a custom role; or skip it and list raw `capabilities`.
+- **workflow** = `direct` (applies now) or `propose` (creates a fork/variant you promote —
+  the wiki/PR flow; reuses the [variant system](frontend-hosting.md)).
+- **`external.widget`** = the read-only role non-owners see in the widget (e.g. `viewer`).
+- **`external.propose`** = `signed-in` | `public` — who may **suggest** cloud edits as
+  proposals (the open-contribution / wiki flow). It only ever grants `cloud:prompt` as a
+  *proposal*, never a direct change. This is the ONLY "whole class" knob — and it belongs to
+  `external` because it's about opening the app to outsiders. **NOTE:** "any signed-in user
+  can create a post" is **not** this — that's a plain **data rule** (`"create": "@user.id != null"`).
+
+### The `developer` role IS the "bounded-agent" role
+
+To let an **AI agent** build an app end-to-end — read the source, then deploy policy,
+functions, and UI — share its key (or grant) as **`developer`**. That preset is exactly
+`app:view + code:read + policy:deploy + functions:deploy + ui:deploy` — everything an agent
+needs and nothing it doesn't (no delete/transfer/billing/roster):
+
+```bash
+bounded share <agent-wallet-or-email> --role developer --app-id <id>
+```
+
+`code:read` is the capability to **retrieve the project's source** (clone/read the managed
+repo, the base for a cloud edit). Want a tighter or differently-named agent role? Define a
+custom one — e.g. a read-only reviewer:
+
+```jsonc
+"access": { "roles": { "reviewer": ["app:view", "code:read"] } }   // sees + reads source, deploys nothing
+```
 
 ## Share by email — registered OR brand-new (important)
 
