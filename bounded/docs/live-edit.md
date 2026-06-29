@@ -40,7 +40,7 @@ dashboard remains the local edit entry point.
 From the app repo:
 
 ```sh
-bounded live-edit register --app-id <appId> --repo . --origin https://<appId>.bounded.page
+bounded live-edit register --app-id <appId> --repo . --origin https://<slug>.bounded.page
 ```
 
 Useful options:
@@ -102,7 +102,8 @@ Cloud source tracking and variants:
 ## Cloud Live-Edit
 
 Cloud live-edit is the in-page deployed-app experience. The browser talks only
-to `https://<app>.bounded.page/__bounded/widget/...`; Bounded runs the edit
+to the app's mapped hosted origin, for example
+`https://<slug>.bounded.page/__bounded/widget/...`; Bounded runs the edit
 server-side against the app's synchronized source, bills the owner or
 collaborator's AI/external-services bucket, then publishes the resulting
 frontend variant.
@@ -264,8 +265,9 @@ If the app cannot load from `127.0.0.1`, use the same script with
 ```
 
 The local daemon accepts browser CORS only from localhost, its configured
-dashboard URL, registered live-edit app origins, and the matching hosted
-`https://<appId>.bounded.page` origin for `/apps/<appId>/...` routes.
+dashboard URL, and registered live-edit app origins for `/apps/<appId>/...`
+routes. Register the app's claimed slug or custom domain; do not depend on raw
+app-id hosts for deployed origins.
 Registered custom origins are app-specific: a custom domain registered on one
 app must not be accepted for another app's `/apps/:appId/...` route. Deployed
 HTTPS pages should not rely on background localhost requests to unlock a private
@@ -276,14 +278,14 @@ no-Origin agent/curl calls do not need that token.
 
 When a variant deploy succeeds, the hosted router activates it with a session
 cookie and redirects back to the normal app path. The URL stays like
-`https://<app>.bounded.page`; the widget may show "Using my version" from
+`https://<slug>.bounded.page`; the widget may show "Using my version" from
 session storage and offers an Original switch-back. Preview/share links may use
 `/__bounded/preview?variant=<variantId>` or `?bounded_preview=<variantId>` to
 activate someone else's shared branch, then return to the normal URL.
 
 ## Rollback
 
-For Bounded static-hosted apps (`https://<appId>.bounded.page`), site deploys are
+For Bounded static-hosted apps on a mapped slug/custom host, site deploys are
 versioned by the router and `/rollback` restores the previous static artifact.
 For frontend variants, owners can review current branches with
 `bounded site variants --app-id <id>` and roll back a branch with

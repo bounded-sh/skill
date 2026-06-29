@@ -107,7 +107,9 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
 - **`409` means back off, not retry-harder.** The state forbids the write; the
   same capped write will keep failing until the window ages out. Read the
   collection and sum the window before retrying. `403` means fix the
-  caller/payload. ([../docs/data-plane.md](../docs/data-plane.md))
+  caller/payload for writes or invokes. Denied reads return `200` with empty data;
+  verify read-denial cases with an identity you know is permitted instead of
+  waiting for a read `403`. ([../docs/data-plane.md](../docs/data-plane.md))
 - **Capped collections are append-only.** Write each event with a fresh id;
   don't update or delete a `rollingSum` doc.
 - **Propose invariants from schema shape.** Money-like fields → cap/conserve

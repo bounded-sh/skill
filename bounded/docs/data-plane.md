@@ -69,9 +69,10 @@ rejected), and forgetting the flag on an on-chain-protocol app is a hard
 
 > **Error envelope.** Every rejection returns
 > `{ "error", "code", "status", "requestId" }`. `code` is a stable category you
-> can branch on even in minimal mode: **`policy_denied`** (`403` — a read/write
-> rule returned false) and **`invariant_violation`** (`409` — a postcondition
-> like `rollingSum`/`conserve` was violated).
+> can branch on even in minimal mode: **`policy_denied`** (`403` for writes and
+> function invokes; read denial is hidden as an empty `200`) and
+> **`invariant_violation`** (`409` — a postcondition like `rollingSum`/`conserve`
+> was violated).
 
 > **Read denials never return `403`.** A read your `read` rule denies comes back
 > with HTTP `200` and an **empty payload** — `{"data": null}` for a single

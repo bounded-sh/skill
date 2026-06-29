@@ -134,12 +134,15 @@ argv values can appear in shell history and process listings.
   is read by every declared backend component and every Function in app X — no
   copying. The manifest (or a function's `secrets` block) declares the *name* once.
   A Function resolves the value from the SAME per-app store at invoke time, so
-  `ctx.secrets.get("STRIPE_KEY")` returns what you `secret put`. (A deploy-time
-  `bounded functions deploy --secret STRIPE_KEY=…` still works and OVERRIDES the app-store value
-  for that one function — useful for a per-function override; otherwise just `secret put` once.)
-- Declaring a `secrets` block makes it the allow-list: with a block present, only **declared**
-  in-process names are readable. With **no** block, any value you `secret put` is readable
-  in-process (the simplest path "just works").
+  `ctx.secrets.get("STRIPE_KEY")` returns what you `secret put`. A legacy
+  deploy-time function-secret override still exists for one-off per-function
+  overrides, but prefer `secret put` with `--value-stdin` so values do not appear
+  in argv, process listings, or shell history.
+- Declaring a `secrets` block is the allow-list: only **declared** in-process
+  names are readable. For new manifests and functions, always declare the names
+  explicitly. If code asks for a name that is not declared for that backend
+  component, `ctx.secrets.get("NAME")` returns `null` and the value is not placed
+  in `ctx.env`.
 - The declaration is part of the deployed backend configuration; changing it is a
   new deploy. The **values** are set separately and can be rotated anytime with
   `secret put` (no redeploy).

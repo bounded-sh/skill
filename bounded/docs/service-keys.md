@@ -240,10 +240,11 @@ just a data-plane write). In that case:
   that one function as `ctx.env.NAME` — stored server-side alongside the function
   (never in your repo, never returned, only the *name* is ever shown). `actAs`
   itself is a policy `functions`-block field (set via `bounded deploy
-  ./policy.json`), NOT a CLI flag — the CLI only carries the code + secrets:
+  ./policy.json`), NOT a CLI flag. Set the secret value through stdin so it does
+  not appear in argv or shell history:
   ```bash
-  bounded functions deploy runPayouts --entry functions/runPayouts.ts \
-    --app-id <id> --secret PAYOUT_BOT_KEY=<base58-private-key>
+  printf '%s' "$PAYOUT_BOT_KEY" | bounded secret put PAYOUT_BOT_KEY --value-stdin --app-id <id>
+  bounded functions deploy runPayouts --entry functions/runPayouts.ts --app-id <id>
   ```
 - If you mint the keypair locally, keep the private key in
   `~/.bounded/keys/<name>.json` with `0600` perms (machine-local, never

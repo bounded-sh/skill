@@ -64,10 +64,8 @@ it for the app. Full flow in [auth.md](auth.md).
 
 `appId` is your project's **public** app id — it is **not a secret API key**.
 Authentication is done with the user's wallet/session id-token bearer (see
-[auth.md](auth.md)), so the `appId` is safe to ship in client code. The legacy
-`apiKey` field is a **deprecated alias** for `appId`: `init()` accepts either
-one and normalizes them to the same value, so `init({ apiKey: "<appId>" })`
-still works but new code should use `appId`.
+[auth.md](auth.md)), so the `appId` is safe to ship in client code. New code
+must use `appId`; do not teach `apiKey` as app identity or query auth.
 
 ## Read — `get` / `getMany`
 

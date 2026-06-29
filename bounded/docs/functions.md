@@ -118,7 +118,7 @@ export default async function (args, ctx) {
 | `ctx.user` | `{ id, address, email, claims, system? }` — the verified caller. `ctx.user.id` is the **universal stable identity** (always present; equals `@user.id` in policy) — use it for ownership/membership. `ctx.user.address` is a **real onchain wallet** (equals `@user.address`; null for email-only logins) — use it only for onchain/wallet semantics. `ctx.user.email` is the verified, lowercased email (null for wallet logins). Bounded already verified the token **and** evaluated the `auth` rule, so this is trustworthy and the call is authorized. |
 | `ctx.auth` | `{ enforced, rule, system }` — **authorization the platform ALREADY did for you.** `rule` is the exact policy `auth` expression that passed before your code ran (null for system/scheduled runs). Read this instead of re-implementing authz: if you declared an `auth` gate, it has already passed. |
 | `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.setMany([{ path, document }, ...])`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by rules + invariants** — a `409` throws. `setMany` is one atomic batch, so use it for transfers/settlement. `runQuery` runs one of your policy-declared `queries` (the proven query engine, caller's read authority) so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). |
-| `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets` (no block ⇒ every value you `secret put` is readable). Values come from the app secret store (`bounded secret put`) **and** any deploy-time `--secret` (which overrides). Nothing undeclared leaks in. |
+| `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets`. Values come from the app secret store (`bounded secret put`) **and** any deploy-time `--secret` (which overrides). Nothing undeclared leaks in. |
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — `ctx.ai.run(model, input)`. No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM to your app — see [§ctx.ai](#ctxai--real-ai-no-api-keys) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
@@ -314,9 +314,9 @@ bounded functions deploy syncStripe \
   --entry functions/syncStripe.ts \
   --app-id <id> \
   --auth 'get(/admins/@user.id) != null' \
-  --secret STRIPE_KEY=sk_live_... \
   --timeout 30
 
+printf '%s' "$STRIPE_KEY" | bounded secret put STRIPE_KEY --value-stdin --app-id <id>
 bounded functions list   --app-id <id>
 bounded functions logs   syncStripe --app-id <id>
 ```
@@ -517,13 +517,13 @@ Declare secret **names** in the policy `functions.<name>.secrets`; supply their
 **values** with `bounded secret put NAME --value-stdin --app-id <id>` (the per-app secret
 store — set once, read by every function/agent in the app). The function reads
 them as `ctx.env.K` **or** `await ctx.secrets.get("K")`. Only declared names are
-exposed — an undeclared key never reaches the function (with no `secrets` block,
-every value you `secret put` is readable). Secret values are never written into
+exposed — an undeclared key never reaches the function. Secret values are never written into
 the policy and never returned by `functions list` / `secret list`.
 
-You can also supply a value at deploy with `--secret K=V` — a per-function
-**override** that takes precedence over the app-store value for that one function.
-Most apps just `secret put` once and skip `--secret`.
+A legacy deploy-time secret override exists for per-function overrides and takes
+precedence over the app-store value for that one function. Prefer `secret put`
+with `--value-stdin` so values do not appear in argv, process listings, or shell
+history.
 
 Secret **values** are stored by Bounded and are never written into policy files.
 At invocation, the function receives only the names it declared. Use

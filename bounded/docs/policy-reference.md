@@ -360,7 +360,7 @@ category clients can branch on **even in minimal mode**:
 
 | `code` | `status` | Meaning |
 |---|---|---|
-| `policy_denied` | `403` | a read/write rule returned false |
+| `policy_denied` | `403` for writes/invokes; reads hide denial as `200` with empty data | a policy rule returned false |
 | `invariant_violation` | `409` | a postcondition/invariant (`rollingSum`, `conserve`, …) was violated |
 
 ```json

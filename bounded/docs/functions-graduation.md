@@ -35,7 +35,8 @@ Deploy a backend project (`bounded.manifest` + TS) with capabilities handed in a
 a sealed, metered, spend-capped `ctx`:
 - You need **arbitrary npm deps** (cooldown-resolved + bundled for you), a real build, or **persistent state**.
 - You need **scheduling** (`ctx.schedule`), **AI** (`ctx.ai`, spend-capped), or **outbound `fetch`** to an allowlist.
-- You want an **agent** (`onInvoke`/`onSchedule`) or a backend HTTP handler at `<app>-api.bounded.page`.
+- You want an **agent** (`onInvoke`/`onSchedule`) or a backend HTTP handler at
+  the app's mapped API host, for example `<slug>-api.bounded.page`.
 - You want a **multi-step agentic loop** (LLM drives tool calls toward a goal) → the **Flue agent runtime** (`bounded-flue@2026.07`), [agents-flue.md](agents-flue.md).
 - You need **long-running / batch / background** work — use resumable scheduled steps instead of one long function call.
 

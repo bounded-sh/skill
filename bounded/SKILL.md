@@ -141,7 +141,7 @@ only for the next question.
 
 | Error/status | Meaning |
 |---|---|
-| `403` | The caller failed a rule. Check auth, ownership, roles, or function `auth`. |
+| `403` | A write or function invoke failed a rule. Check auth, ownership, roles, or function `auth`. Denied reads are hidden as `200` with empty data, not `403`. |
 | `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
 | `429` + `dimension`/`projectedUsage` | A plan limit or spend cap would be exceeded. Explain the exact axis and suggest upgrade, top-up, cap adjustment, or reduced volume. |
 | `DISPROVED` + counterexample | The proof found a breaking assignment. Read it, strengthen the policy, and verify again unless the user explicitly accepts the risk. |
@@ -198,11 +198,18 @@ you@example.com` and do not commit private keys or secrets.
   testing local live-edit, the privacy toggle, or local dashboard flows.
   Deployed private-site gates use normal Bounded sign-in rather than requiring
   background localhost access.
+- For hosted frontend URLs, claim a vanity slug with `bounded domains slug ...`
+  and share the slug/custom-domain host. Do not route users or agents to raw
+  app-id hosts as the public URL contract.
 - Use `@user.id` for normal ownership and membership checks.
 - Use `@user.address` only for wallet/onchain semantics.
+- Denied reads return empty `200` responses. Test read denial by comparing with a
+  permitted identity, not by waiting for a read `403`.
 - Use `conserve` for money-like values.
 - Use `rollingSum` for caps over time.
 - Use one atomic `set-many` when correctness spans multiple writes.
 - Put provider API keys in Bounded secrets, not frontend code.
+- For onchain writes, use explicit network/RPC configuration and devnet by
+  default; do not treat immediate read-after-write as confirmation.
 - Give users the clearest public command or URL; do not route them to non-public
   Bounded service surfaces.

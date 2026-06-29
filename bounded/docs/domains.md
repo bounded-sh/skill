@@ -1,15 +1,15 @@
-# Domains — a nicer URL for your app
+# Domains — mapped public URLs for your app
 
-Every app is reachable at `https://<appId>.bounded.page` the moment you `bounded site deploy`.
-That's ugly. Two ways to fix it.
+Bounded hosted frontends are served through mapped hosts, not raw app-id labels.
+Use a vanity slug or a custom domain for the public URL you give users.
 
 > **Agents: claim a vanity slug by default.** Don't leave new apps on the raw
-> `<appId>.bounded.page`. Immediately after `bounded deploy --create`, run
+> app id. Immediately after `bounded deploy --create`, run
 > `bounded domains slug <name-kebab-cased> --app-id <id>`. If the name is taken the CLI
 > prints a suggested alternative — claim that instead. Then surface the
 > `https://<slug>.bounded.page` URL to the user (and deploy the site to it). It's free,
 > reversible (`--release`), reserves the name, and wires `allowedOrigins` so auth/CORS work.
-> No need to ask first — the raw `<appId>` URL always keeps working as a fallback.
+> No need to ask first.
 
 ## 1. Vanity subdomain — `<slug>.bounded.page` (free)
 
@@ -17,17 +17,18 @@ Claim one canonical vanity subdomain for your app:
 
 ```bash
 bounded domains slug myapp --app-id <id>     # → https://myapp.bounded.page
-bounded domains slug --release --app-id <id> # free it (raw <appId>.bounded.page still works)
+bounded domains slug --release --app-id <id> # free it
 ```
 
 - **Globally unique** (it's a subdomain). If the name is taken, the CLI prints a suggested
   alternative — pick another.
-- **One canonical slug per app.** Changing it frees the old one. The raw
-  `<appId>.bounded.page` URL *always* keeps working, so nothing breaks.
+- **One canonical slug per app.** Changing it frees the old one. Do not publish
+  raw app-id labels as compatibility URLs; use the current slug or a custom
+  domain as the app's shareable address.
 - Reserved labels (`www`, `api`, `auth`, `admin`, …) and raw-appId-shaped names are rejected.
 - The slug is added to your app's `allowedOrigins` automatically, so auth + CORS work on the
   vanity domain with no extra setup.
-- The API also serves at `<slug>-api.bounded.page` (mirrors `<appId>-api.bounded.page`).
+- The API also serves at `<slug>-api.bounded.page`.
 
 Owner-only (your session token); registers the slug for the app atomically.
 
@@ -54,13 +55,13 @@ Flow:
 Notes:
 - **Pro feature** — `add` is gated on the app owner's account plan (see
   [billing.md](billing.md)). If the owner later loses Pro, Bounded may remove or
-  disable custom domain links; keep the raw `<appId>.bounded.page` or vanity
-  `<slug>.bounded.page` URL available as the fallback.
+  disable custom domain links; keep a vanity `<slug>.bounded.page` URL available
+  as the fallback.
 - **Frontend only for now** — custom domains serve your app's static site. Use
   the app's Bounded API hostname for API calls.
 - **Same privacy gate** — custom domains inherit the app's hosted-site privacy
-  setting. `bounded site privacy private|public --app-id <id>` changes the raw
-  app id, vanity slug, and active custom-domain static hosts together.
+  setting. `bounded site privacy private|public --app-id <id>` changes the
+  vanity slug and active custom-domain static hosts together.
 - **Root/apex domains** — the CLI may ask for a CNAME at `@`; if your DNS host
   rejects apex CNAMEs, use a subdomain like `www` or move the zone's nameservers
   to Cloudflare for CNAME flattening (Cloudflare and Namecheap handle this case).

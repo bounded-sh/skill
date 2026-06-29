@@ -1,12 +1,13 @@
-# Frontend hosting — publish a static site to `<app>.bounded.page`
+# Frontend hosting — publish a static site to a mapped Bounded host
 
 Ship a built **static** frontend (Vite/CRA/any `dist/`) to Bounded hosting —
-no separate host, no DNS. Your app gets two free subdomains on the same SSL:
+no separate host, no DNS. Claim a vanity slug and your app gets two mapped
+subdomains on the same SSL:
 
-- **`<app>.bounded.page`** — your static site (SPA fallback;
+- **`<slug>.bounded.page`** — your static site (SPA fallback;
   content-hashed assets cached immutably, HTML + un-fingerprinted assets always
   revalidated so a redeploy goes live instantly without a hard-refresh).
-- **`<app>-api.bounded.page`** — your backend runtime (see [backend-runtime.md](backend-runtime.md)),
+- **`<slug>-api.bounded.page`** — your backend runtime (see [backend-runtime.md](backend-runtime.md)),
   so the frontend can call its own agent/backend at a sibling URL with no CORS dance.
 
 ## What it CAN and CANNOT host
@@ -31,7 +32,7 @@ There is no Node/SSR server for your frontend. So:
 **The Bounded way to get "server" behavior:** ship the UI as a static bundle here,
 and move every server concern to Bounded — data + rules to your **policy**, secrets
 + server logic + external API calls to a **function** or **backend runtime** at
-`<app>-api.bounded.page` ([functions.md](functions.md), [backend-runtime.md](backend-runtime.md)).
+`<slug>-api.bounded.page` ([functions.md](functions.md), [backend-runtime.md](backend-runtime.md)).
 If you truly need framework SSR, host that app elsewhere and still use Bounded as
 its backend. Rule of thumb: **if serving a page would require running your code,
 `bounded site deploy` won't do it — prerender it, or move that code into Bounded.**
@@ -47,7 +48,8 @@ bounded site deploy ./dist --app-id <id>
 - Auth is your per-app session token (owner/admin only). Any valid static dist is accepted
   — the files are never executed, only served — subject to caps: 25 MB/file, 100 MB total,
   5000 files, path-safety.
-- Live in seconds at `https://<app>.bounded.page`.
+- Live in seconds at the app's mapped slug or custom-domain host, e.g.
+  `https://<slug>.bounded.page`.
 - New apps created by the CLI default to a **private hosted-site gate**. Owners,
   managers, and collaborators can pass with normal Bounded login. Deployed HTTPS
   pages do not need background localhost access, which keeps the gate compatible
@@ -57,8 +59,8 @@ bounded site deploy ./dist --app-id <id>
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it from
   the in-app Bounded widget's always-visible privacy toggle (it calls the local
   daemon, which is why the daemon should stay running). The setting
-  applies to every static host that resolves to the app: raw app id, vanity
-  slug, and active custom domains. API hosts are not gated. The private-site gate
+  applies to every mapped static host that resolves to the app: vanity slug and
+  active custom domains. API hosts are not gated. The private-site gate
   page itself tells owners and visitors how to make the app public.
 
 Frontend variants are optional preview branches:
@@ -67,7 +69,7 @@ Frontend variants are optional preview branches:
 bounded site deploy ./dist --app-id <id> --variant var_alice_dashboard --variant-label "Alice dashboard"
 ```
 
-Open `https://<app>.bounded.page/__bounded/preview?variant=var_alice_dashboard`
+Open `https://<slug>.bounded.page/__bounded/preview?variant=var_alice_dashboard`
 to activate that branch for the current browser session. The app then returns to
 the normal URL while the router serves that variant for the session. Owners can
 review, roll back, and merge frontend branches with:
@@ -84,8 +86,8 @@ data rules, or invariants.
 ## Typical flow
 ```bash
 npm run build                              # produces ./dist
-bounded site deploy ./dist --app-id <id>   # → https://<app>.bounded.page
-# frontend calls its backend at https://<app>-api.bounded.page/agents/<name>/<session>
+bounded site deploy ./dist --app-id <id>   # → https://<slug>.bounded.page after you claim a slug
+# frontend calls its backend at https://<slug>-api.bounded.page/agents/<name>/<session>
 ```
 
 Agents should keep `bounded dashboard --no-web` or `bounded dev --app-id <id>`
@@ -128,7 +130,7 @@ sees it. No SSR server, no extra infra.
       // optional fallbacks if a field is empty (so a half-filled doc still cards):
       "defaultTitle": "My App",
       "defaultDescription": "Check this out",
-      "defaultImage": "https://<app>.bounded.page/og.png"
+      "defaultImage": "https://<slug>.bounded.page/og.png"
     }
   ]
 }
@@ -156,6 +158,6 @@ extra command is needed.
 
 **Verify a link unfurls (crawler UA):**
 ```bash
-curl -A "Twitterbot/1.0" https://<app>.bounded.page/s/<id> | grep -iE 'og:|twitter:|<title>'
+curl -A "Twitterbot/1.0" https://<slug>.bounded.page/s/<id> | grep -iE 'og:|twitter:|<title>'
 # → expect per-resource og:title / og:description / og:image + a per-resource <title>
 ```

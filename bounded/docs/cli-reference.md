@@ -218,10 +218,10 @@ Live-edit is a local daemon API, not a new proof primitive. Register each app id
 with the local checkout and deployed origin the daemon should operate on:
 
 ```bash
-bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page
-bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --edit-mode variant
-bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --frontend-dir web --dist-dir web/dist
-bounded live-edit register --app-id <id> --repo . --origin https://<id>.bounded.page --source-provider none --artifacts off --artifact-push off
+bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page
+bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page --edit-mode variant
+bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page --frontend-dir web --dist-dir web/dist
+bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page --source-provider none --artifacts off --artifact-push off
 bounded live-edit list
 ```
 
@@ -258,8 +258,9 @@ then `dist`, then `web/dist`. Cloud live-edit uses the same public hints and can
 also auto-detect root or `web/` package build scripts.
 
 The local daemon accepts browser CORS only from localhost, the dashboard web
-origin, app-specific registered live-edit origins, and the matching
-`https://<appId>.bounded.page` origin for `/apps/<appId>/...` routes. The widget
+origin, and app-specific registered live-edit origins for `/apps/<appId>/...`
+routes. Register the app's claimed slug or custom domain, not a raw app-id host.
+The widget
 uses the animated Bounded mark as the launcher, saves its corner placement and
 one-hour hide window in localStorage, uses a four-quadrant mark picker, isolates
 widget keyboard/input events from the host app, shows localhost connection
@@ -383,15 +384,15 @@ Full treatment: [environments.md](environments.md).
 | `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |
-| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to `<app>.bounded.page`; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. | `bounded site deploy ./dist --app-id <id>` |
+| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to the app's mapped slug/custom host; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. | `bounded site deploy ./dist --app-id <id>` |
 | `site variants` | List current frontend variants for owner/admin review: status, deploy id, preview/switch paths, and affected files. | `bounded site variants --app-id <id>` |
 | `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
 | `site promote <variantId>` | Promote a frontend variant into the canonical hosted site after owner/admin authorization. Backend rules, data, functions, and policies stay unchanged. | `bounded site promote var_amit_refunds --app-id <id>` |
-| `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to raw app-id, vanity slug, and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
+| `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to vanity slug and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](backend-runtime.md). Frontend hosting: [frontend-hosting.md](frontend-hosting.md).
-`<app>-api.bounded.page` routes to your backend; `<app>.bounded.page` serves the site.
+`<slug>-api.bounded.page` routes to your backend; `<slug>.bounded.page` serves the site.
 For Bounded-hosted static apps, live-edit rollback restores the previous router
 artifact. Custom hosts need an explicit `--rollback-command`.
 
@@ -406,11 +407,10 @@ artifact. Custom hosts need an explicit `--rollback-command`.
 
 Vanity slugs are free. Custom domains are Pro-gated on the app owner's account.
 If the owner later loses Pro, Bounded may remove or disable custom domain links;
-the raw `<appId>.bounded.page` URL and any vanity `<slug>.bounded.page` fallback
-keep working. Custom domains serve the static frontend only; API calls should use
+keep a vanity `<slug>.bounded.page` fallback available. Custom domains serve the static frontend only; API calls should use
 the app's Bounded API hostname. Custom domains inherit the app's hosted-site
 privacy gate; use `bounded site privacy private|public --app-id <id>` to change
-the raw, vanity, and custom static hosts together. For root/apex domains, the
+the vanity and custom static hosts together. For root/apex domains, the
 DNS record may be a CNAME at `@`; if your DNS host rejects that, use a subdomain
 like `www` or move the zone's nameservers to Cloudflare for CNAME flattening.
 
@@ -555,7 +555,8 @@ fix the policy or the calling identity.
 
 ```sh
 bounded functions deploy <name> --entry <file> --app-id <id> \
-  [--auth '<rule>'] [--secret K=V] [--timeout <sec>]
+  [--auth '<rule>'] [--timeout <sec>]
+printf '%s' "$VALUE" | bounded secret put NAME --value-stdin --app-id <id>
 bounded functions list   --app-id <id>
 bounded functions invoke <name> --app-id <id> [--data '<json>']
 bounded functions logs   <name> --app-id <id>

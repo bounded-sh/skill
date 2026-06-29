@@ -42,7 +42,7 @@ debugging.
    This is the app's user-facing payment entrypoint. Use the returned `url` to
    redirect the buyer to Stripe Checkout, and store the returned `sessionId` as a
    pending purchase before redirecting when you need reconciliation.
-4. After payment, the success URL receives `?session_id=cs_...`. Invoke an app
+4. After payment, the success URL receives `?sessionId=cs_...`. Invoke an app
    function such as `claimPurchase({ sessionId })`.
 5. The app function calls `GET /connect/session?id=cs_...` server-side, verifies
    `paid`, buyer, merchant, amount, and currency, then writes an idempotent claim
@@ -101,7 +101,7 @@ const r = await fetch(`${HOST}/connect/checkout`, {
     amount: 1000, // minor units, e.g. cents
     currency: "usd",
     productName: "Creator sale",
-    successUrl: `${location.origin}/paid?session_id={CHECKOUT_SESSION_ID}`,
+    successUrl: `${location.origin}/paid?sessionId={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${location.origin}/checkout/canceled`,
   }),
 });
