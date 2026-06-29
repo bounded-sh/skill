@@ -22,6 +22,33 @@ Two planes, one identity, one source of truth:
 - **Data plane**: `policy.json` rules + invariants. **No owner god-mode** — the owner is
   governed too. The control roster is exposed to policy as *opt-in* primitives (the bridge).
 
+## ⚠️ Read this first: control roles vs an `admins/$userId` collection
+
+The single most common confusion (for humans AND agents): **the `access` block does NOT
+replace a data-plane `admins` collection.** They answer different questions — pick by
+*who* the "admin" is.
+
+| If the "admin" is… | …it's the | Use |
+|---|---|---|
+| someone who **operates the app** (deploys, billing, settings) — your **team** | **control plane** | `bounded share --role` or the `access` block (this doc) |
+| one of your **app's end-users** with elevated **in-app** powers (forum moderator, game admin) — **changes at runtime** | **data plane** | a normal `admins/$userId` collection + rules gating on `get(/admins/@user.id)` — see [admin-and-ownership.md](admin-and-ownership.md) |
+
+Rule of thumb: *"helps run the app" → control plane (access block). "is a special kind of
+my app's user" → data plane (a collection you write at runtime).*
+
+The two look identical but are NOT the same — mind the underscores:
+
+- `get(/__admins__/@user.id)` — **double underscore, RESERVED.** The control-plane admin
+  set (your collaborators with the admin role), exposed **read-only**. You can't write it.
+- `get(/admins/@user.id)` — **your own collection.** A data-plane collection you define
+  and `set(...)` at runtime (moderators, etc.). Governed by your rules + the founder-genesis
+  pattern.
+
+They only meet at the optional **bridge**: a rule *may* read `get(/__admins__/@user.id)` if
+you want your operators to also have data powers. Otherwise the two never touch. **A B2C app
+with end-user roles (moderators, etc.) uses an `admins`/`roles` collection and may need no
+`access` block at all.**
+
 ## Control roles (preset bundles of capabilities)
 
 | Role | Can |
@@ -65,8 +92,14 @@ directly; it deploys with the policy and `bounded verify` reports who-can-do-wha
 }
 ```
 
-- **subject** = `email` | `wallet` | `team:<name>` | account id. **audience** = `signed-in`
-  (any authenticated) | `public` (incl. anonymous).
+- **subject** = `email` | `wallet` | `team:<name>` | account id (a **specific** person/team).
+- **audience** = a **whole class** instead of a named person: `signed-in` (anyone
+  authenticated) | `public` (anyone, incl. anonymous). Use it only for **open contribution**
+  — e.g. "anyone signed in may *suggest* a UI edit, as a proposal." It is **control-plane
+  only** (granting capabilities like `cloud:prompt`/`ui:fork`). NOTE: "any signed-in user can
+  create a post" is **not** an audience grant — that's a plain **data rule**
+  (`"create": "@user.id != null"`). If you're tempted to use `audience` for data access, you
+  want a policy rule instead.
 - **workflow** = `direct` (applies now) or `propose` (creates a fork/variant the owner
   promotes — the wiki/PR flow; reuses the [variant system](frontend-hosting.md)).
 - **external** opens the cloud widget to non-owners: an external signed-in person with

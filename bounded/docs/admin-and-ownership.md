@@ -4,6 +4,15 @@
 there is **no implicit creator bypass**. Read this whenever an app needs an
 admin/moderator/owner with data powers (moderation, config, refunds).
 
+> **Which "admin" do you mean?** If the admin is one of your **app's end-users** with
+> elevated in-app powers (a forum **moderator**, a game admin) that changes at runtime →
+> you're in the right place: make a data-plane `admins/$userId` collection (below). If the
+> admin **operates the app** (deploys policy/UI, manages billing/settings) — your team —
+> that's the **control plane**: use `bounded share --role` or the `access` block, see
+> [access-control.md](access-control.md). They're different; the `access` block does NOT
+> replace an `admins` collection. (`get(/admins/...)` = your collection; `get(/__admins__/...)`
+> = the reserved control-plane bridge.)
+
 > **Want "admins read/write everything"?** The cleanest path is the top-level
 > `roles` block — a provably-scoped grant the verifier surfaces. See
 > [roles.md](roles.md). This doc covers the complementary, *per-document*
