@@ -80,6 +80,7 @@ only for the next question.
 | Service keys / backend identities | [docs/service-keys.md](docs/service-keys.md) |
 | Billing, buckets, plan limits, top-ups, upgrade | [docs/billing.md](docs/billing.md) |
 | Hosted frontend and app URLs | [docs/frontend-hosting.md](docs/frontend-hosting.md) · [docs/domains.md](docs/domains.md) |
+| Per-app product analytics (traffic, web vitals, errors) | [docs/analytics.md](docs/analytics.md) |
 | SDK calls and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | CLI commands | [docs/cli-reference.md](docs/cli-reference.md) |
 | Project config, `bounded.json`, account profiles, key safety | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
