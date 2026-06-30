@@ -39,8 +39,9 @@ opens the hosted Bounded login (`auth.bounded.sh`) in the system browser via
 resolves **inline with the signed-in `user`** (no `completeLoginFromRedirect()`
 call needed on native — that's a web-only redirect-page step). One hosted page
 covers Google, Apple, email, and (when the issuer enables it) phone. Guest
-(`signInAnonymously()`), **Privy** (`loginWithPrivy`), and **Phantom** also remain
-available.
+(`signInAnonymously()`) and **Privy** (`loginWithPrivy`) are also available.
+Browser wallet providers such as Phantom are not loaded from the default RN
+entry; use an explicit wallet-provider entry only once your app opts into one.
 
 > ✅ **Hosted RN login is wired in the SDK.** It requires an **https universal
 > link** as `redirectUri` (e.g. `https://yourapp.com/auth/callback`) whose origin
@@ -64,13 +65,13 @@ are the same one-time RN setup you already do for sessions:
 import { setPlatform, ReactNativeSessionManager } from "@bounded-sh/client";
 import * as Crypto from "expo-crypto";
 import { decode as atob } from "base-64";
-import { MMKV } from "react-native-mmkv";
+import { createMMKV } from "react-native-mmkv";
 
-const store = new MMKV();
+const store = createMMKV();
 const storage = {
   getItem: (k: string) => store.getString(k) ?? null,
   setItem: (k: string, v: string) => store.set(k, v),
-  removeItem: (k: string) => store.delete(k),
+  removeItem: (k: string) => store.remove(k),
 };
 
 ReactNativeSessionManager.configure({ storage, atob });
@@ -153,22 +154,13 @@ Privy across your stack, `loginWithPrivy` is exported from the RN entry: wire it
 your Privy RN setup (a bridged `PrivyExpoProvider` passed to `init`), and the SDK
 adopts the resulting identity.
 
-### Phantom wallet (opt-in, for onchain `@user.address`)
+### Wallet providers
 
-When your app needs a real Solana wallet, use Phantom with
-`authMethod: "phantom"`. On mobile the connection hands off to the Phantom app
-(deeplink) rather than a browser extension. Conceptually:
-
-```ts
-await init({ appId: "<appId>", authMethod: "phantom" });
-// then login() / useAuth() as on web; @user.address is the connected wallet
-```
-
-The exact RN wiring for the Phantom mobile hand-off (deeplink redirect/return URL
-setup, and whether extra Phantom mobile config is required) is **not yet pinned
-down in these docs** — treat the snippet above as conceptual and verify the
-mobile connect flow before relying on it. The web flow is the detailed reference:
-[building-a-webapp.md](building-a-webapp.md).
+The default RN client entry intentionally avoids importing browser wallet
+providers such as Phantom and web Privy. Hosted login, guest login, and bridged
+Privy Expo are the supported RN auth paths today. If an app needs a native wallet
+provider, add the provider-specific package and entry explicitly; do not expect
+`authMethod: "phantom"` from the default client entry to bundle on RN.
 
 ## Reads, writes, subscriptions
 
