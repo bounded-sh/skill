@@ -43,9 +43,11 @@ Most apps don't want guests, so you **must enable it** in `policy.json` — a to
 }
 ```
 
-Without `auth.anonymous: true`, `signInAnonymously()` is refused with `403`. The
-flag travels in your deployed policy, so it's version-locked and per-env (deploy
-a different policy per environment to vary it).
+Without `auth.anonymous: true`, `signInAnonymously()` is refused — the issuer
+returns a clear error the SDK surfaces verbatim: *"Anonymous auth is not enabled for
+this app. Add `"auth": { "anonymous": true }` to policy.json and redeploy."* (a
+`403 anonymous_auth_disabled`). The flag travels in your deployed policy, so it's
+version-locked and per-env (deploy a different policy per environment to vary it).
 
 ## 1. Anonymous sign-in (the guest)
 
@@ -105,9 +107,9 @@ user.id            // UNCHANGED — the guest's id is preserved
 Under the hood this POSTs `/link/email` with the guest's token. The issuer **preserves
 the guest's id only when the email is brand-new**; it refuses (the wallet is already
 linked to another account) if you try to attach an email that already belongs to
-someone, so two accounts never collide. `linkWithRedirect({ redirectUri })` is the
+someone, so two accounts never collide. `linkWithRedirect()` is the
 hosted equivalent (same id-preserving semantics, credential entered on the hosted
-page). Inline `linkEmail` is for real (ObjectId) app ids; browser callers must come
+page; `redirectUri` is optional on web, required on RN). Inline `linkEmail` is for real (ObjectId) app ids; browser callers must come
 from a registered origin (RN / CLI / server no-Origin callers are allowed).
 
 ### 3b. Fresh real account — hosted login (distinct id)
@@ -122,8 +124,8 @@ await signInAnonymously()                 // user.isAnonymous === true
 // ...user does stuff, owns data keyed by @user.id...
 
 // Show the "create a real account" prompt with getCurrentUser()?.isAnonymous, then:
-await loginWithRedirect({ redirectUri: 'https://yourapp.com/auth/callback' })
-// (on the callback route, on load)
+await loginWithRedirect({ methods: ['email', 'google'] })   // web: no redirectUri needed
+// (once on app load)
 const user = await completeLoginFromRedirect()
 user.isAnonymous   // false — a real account
 user.id            // their REAL account id — DISTINCT from the guest's id

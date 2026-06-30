@@ -66,20 +66,21 @@ Whatever the method, an authenticated `user` is `{ id, address, email }`:
 Full auth model: [../docs/auth.md](../docs/auth.md).
 
 ```tsx
-import { useAuth, loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
+import { useAuth, loginWithRedirect, loginWithPopup, completeLoginFromRedirect } from "@bounded-sh/client";
 import { useEffect } from "react";
 
-// On your callback route (the registered redirectUri), finish the exchange on load:
-function AuthCallback() {
+// Once, on app load — finishes a redirect OR popup login; no-op otherwise.
+// No separate callback route needed: on web redirectUri defaults to the current page.
+function App() {
   useEffect(() => { completeLoginFromRedirect(); }, []);
-  return null;
+  // ...your routes...
 }
 
 function SignIn() {
   const { user, logout, loading } = useAuth();
   if (loading) return null;
   // Your own button → hosted login; pass methods/provider to scope it.
-  const signIn = () => loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
+  const signIn = () => loginWithRedirect({ methods: ["email", "google"] }); // or loginWithPopup({ methods: ["email", "google"] })
   return user
     ? <button onClick={logout}>Sign out ({user.id.slice(0, 6)}…)</button>
     : <button onClick={signIn}>Sign in</button>;

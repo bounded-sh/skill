@@ -33,9 +33,9 @@ npm i @bounded-sh/server      # Node / server (keypair client)
 // client (browser / RN)
 import { init, loginWithRedirect, completeLoginFromRedirect, get, set, subscribe } from "@bounded-sh/client";
 await init({ appId: "<appId>" });
-// Human login — hosted page (most secure) OR inline (your own UI). Hosted:
-await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback", methods: ["email"] });
-// …and on your callback page:  const user = await completeLoginFromRedirect();
+// Human login — hosted page (most secure) OR inline (your own UI). Hosted (web):
+await loginWithRedirect({ methods: ["email", "google"] });   // redirectUri optional on web (defaults to current page)
+// …once on app load, finish a redirect OR popup login:  const user = await completeLoginFromRedirect();
 // Inline alternative: await sendEmailOtp(email); await verifyEmailOtp(email, code);
 
 // server
@@ -344,11 +344,10 @@ const { user, login, logout, loading } = useAuth();
 // Human login — pick a UX. HOSTED (most secure; web AND React Native), app-owned
 // button + callback page:
 await loginWithRedirect({
-  redirectUri: "https://yourapp.com/auth/callback",
-  provider: "apple",                 // optional: "google" / "github" when configured;
-                                     // omit to show the hosted chooser (email + all)
-});
-await completeLoginFromRedirect();   // on /auth/callback, on load → signs in
+  methods: ["email", "google"],      // or provider: "apple"/"github" to jump to one;
+                                     // omit both to show the full hosted chooser.
+});                                  // web: redirectUri optional (defaults to current page); RN: required (https universal link)
+await completeLoginFromRedirect();   // once on app load → finishes a redirect OR popup login; no-op otherwise
 
 // INLINE (your own email/code form, web or RN): send then verify.
 await sendEmailOtp("user@example.com");
@@ -358,8 +357,9 @@ const inlineUser = await verifyEmailOtp("user@example.com", code);
 await signInAnonymously();
 ```
 
-> **Two UXes, same issuer.** Hosted (`loginWithRedirect` + `completeLoginFromRedirect`,
-> most secure) and inline (`sendEmailOtp` / `verifyEmailOtp`, your own form; plus the
+> **Two UXes, same issuer.** Hosted (`loginWithRedirect` or `loginWithPopup`, then one
+> `completeLoginFromRedirect()` on app load that finishes **either** — most secure) and
+> inline (`sendEmailOtp` / `verifyEmailOtp`, your own form; plus the
 > built-in `login()` modal and `sendTextOtp` / `verifyTextOtp` when text is on) both
 > sign in human users — restored in `@bounded-sh/client` 0.0.29. Inline minting is for
 > real (ObjectId) app ids only, and inline browser callers must come from a registered

@@ -94,11 +94,11 @@ anonymous guest accounts. There are **two issuers**: wallet/guest auth
 (email / phone / social, `auth.bounded.sh`). For human auth **your app chooses its
 UX** — a hosted page *and* your own inline UI both work, against the same issuer:
 
-- **Hosted** (most secure): `loginWithRedirect({ redirectUri, methods })` or
+- **Hosted** (most secure): `loginWithRedirect({ methods })` or
   `loginWithPopup({ methods })`. The credential (email code, Google/Apple/GitHub,
-  text) is entered on the Bounded issuer origin (`auth.bounded.sh`); the token's
-  `appId` is bound to a `redirect_uri` registered for your app. Works web and
-  React Native (deep links).
+  text) is entered on the Bounded issuer origin (`auth.bounded.sh`). On **web** no
+  `redirectUri` is needed — it defaults to the current page; only **React Native**
+  must pass one (an https universal link). Works web and React Native (deep links).
 - **Inline** (your own UI): `sendEmailOtp(email)` then `verifyEmailOtp(email, code)`
   render your own email/code form (and `sendTextOtp` / `verifyTextOtp` when the
   issuer has text OTP enabled). There's also a built-in `login()` modal (web; behind
@@ -134,8 +134,9 @@ your app's vibe:
    - **Inline custom UI** — your own email/code form via `sendEmailOtp` /
      `verifyEmailOtp` (and `sendTextOtp` / `verifyTextOtp` when text is on). Most
      control over look-and-feel; works web (registered origin) + RN / CLI / server.
-   - **Hosted redirect** — `loginWithRedirect({ redirectUri, methods })`. Most
-     secure; the credential never touches your origin. Works web + React Native.
+   - **Hosted redirect** — `loginWithRedirect({ methods })`. Most
+     secure; the credential never touches your origin. Works web + React Native
+     (web needs no `redirectUri`; RN passes an https universal link).
    - **Hosted popup** — `loginWithPopup({ methods })`, when the host UI must stay open.
    - **Built-in modal** — the zero-config `login()` modal (web; behind a `hasDOM`
      guard) or `authMethod: 'email'`, when you want inline with no UI to build.
@@ -154,36 +155,44 @@ and text** through a single chooser. The token's `appId` is bound to a
 `redirect_uri` registered for your app, so it can only be minted through and
 delivered to your own origin.
 
+**Minimal web login (copy this).** As of `@bounded-sh/client` 0.0.30 web needs no
+`redirectUri`, and one `completeLoginFromRedirect()` finishes **both** redirect and
+popup:
+
 ```ts
-import { init, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from "@bounded-sh/client";
+import { init, loginWithRedirect, loginWithPopup, completeLoginFromRedirect, onAuthStateChanged } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
+await completeLoginFromRedirect();          // finishes a redirect OR popup login; no-op otherwise
+onAuthStateChanged((user) => { /* render signed-in UI */ });
 
-// Hosted chooser: shows the methods enabled for the app.
-await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
-
-// App-owned buttons: jump directly to one provider.
-await loginWithRedirect({
-  redirectUri: "https://yourapp.com/auth/callback",
-  provider: "google",      // "apple" and "github" also work when configured; "text" only when text OTP is enabled
-});
-
-// App-owned hosted chooser: expose only the choices you want for this service.
-await loginWithRedirect({
-  redirectUri: "https://yourapp.com/auth/callback",
-  methods: ["email", "google", "apple"], // add "text" only when text OTP is explicitly enabled
-});
-
-// On your callback page (e.g. /auth/callback), on load:
-const user = await completeLoginFromRedirect();   // exchanges the code (PKCE) → signs in
+// a button → hosted chooser (shows the methods enabled for the app):
+loginWithRedirect({ methods: ["email", "google"] });   // or loginWithPopup({ methods: ["email", "google"] })
 ```
 
-There's also `loginWithPopup({ redirectUri, provider })` +
-`completeLoginInPopup(openerOrigin)` for a popup instead of a full-page redirect.
-Prefer full-page redirect for production reliability; popup is acceptable when
-the host UI really needs to stay open, but browsers can block or close popups.
-**Register redirect URIs** for the app first (exact match, https; localhost for
-dev) — an unregistered `redirect_uri` is rejected by design.
+On **web** `redirectUri` is **optional** — it defaults to the current page
+(`window.location.origin + pathname`), so the minimal flow needs no dedicated
+callback route. Pass `redirectUri` only when you intentionally want the issuer to
+return to a *different* URL than the one the user logged in from (it must be a
+registered origin). On **React Native** `redirectUri` is **required** (an https
+universal link) — see [building-for-react-native.md](../guides/building-for-react-native.md).
+
+```ts
+// Jump straight to one provider from your own button:
+loginWithRedirect({ provider: "google" });   // "apple" / "github" when configured; "text" only when text OTP is enabled
+
+// Or expose only the choices you want for this service:
+loginWithRedirect({ methods: ["email", "google", "apple"] }); // add "text" only when text OTP is explicitly enabled
+```
+
+**One completion call covers both UXes.** Call `completeLoginFromRedirect()` once on
+app load (or page mount): it finishes a full-page redirect *or* a popup login (it
+auto-detects the popup internally) and is a no-op when there's nothing to finish.
+There is **no** separate popup callback to wire. `loginWithPopup({ methods })` is the
+popup variant for when the host UI must stay open; prefer full-page redirect for
+production reliability, since browsers can block or close popups. **Register the
+app's origins** first (https; localhost for dev) — an unregistered origin/redirect
+is rejected by design.
 
 The hosted redirect flow is the **most secure** human-login UX: the bare chooser, a
 `provider`-specific button, and a `methods` subset are all the same
@@ -198,8 +207,8 @@ instead (`sendEmailOtp` / `verifyEmailOtp`) — see
 ### OAuth provider availability
 
 Use the provider ids Bounded exposes for the app (`google`, `apple`, `github`,
-and optional `text` when enabled). Your app still owns its OIDC `redirectUri`, and
-unregistered redirect URIs are rejected. If a provider you need is not available
+and optional `text` when enabled). Your app's origins (and any custom `redirectUri`
+you pass) must be registered; unregistered redirect URIs are rejected. If a provider you need is not available
 for the app, use a direct provider integration outside Bounded Auth or wait until
 Bounded exposes that provider publicly.
 
@@ -262,8 +271,8 @@ import { init, loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/
 
 await init({ appId: "<appId>" });
 // Your own button → hosted chooser (or pass provider / methods to scope it):
-await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
-// On the callback route, on load:
+await loginWithRedirect({ methods: ["email", "google"] });   // web: no redirectUri (defaults to current page)
+// On app load: finishes the redirect (or a popup) and signs in; no-op otherwise.
 const user = await completeLoginFromRedirect();   // exchanges the code (PKCE) → signs in
 ```
 
@@ -282,15 +291,16 @@ import { signInAnonymously, loginWithRedirect, getCurrentUser } from "@bounded-s
 const guest = await signInAnonymously();    // guest.isAnonymous === true
 // ...later, when the guest wants a durable real account, send them through the
 // SAME hosted redirect flow as any login — they come back as their real account:
-await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
-// (on the callback route) const user = await completeLoginFromRedirect();
+await loginWithRedirect({ methods: ["email", "google"] });   // web: no redirectUri needed
+// (on app load) const user = await completeLoginFromRedirect();
 ```
 
 > **Id-preserving guest upgrade.** To turn a guest into an email account **keeping
 > the same `@user.id`**, send a code with `sendEmailOtp(email)` then call
 > `linkEmail(email, code)` (inline) — the issuer preserves the guest's id when the
 > email is brand-new, and refuses if the wallet is already linked to another account.
-> `linkWithRedirect({ redirectUri })` is the hosted equivalent. Alternatively, a guest
+> `linkWithRedirect()` is the hosted equivalent (web needs no `redirectUri`; RN passes
+> an https universal link). Alternatively, a guest
 > who simply logs in via `loginWithRedirect` comes back as a **distinct** real account
 > (a new `@user.id`); to carry their data across that boundary, model ownership as
 > **transferable data** (see [anonymous-accounts.md](anonymous-accounts.md) §
