@@ -155,6 +155,12 @@ and text** through a single chooser. The token's `appId` is bound to a
 `redirect_uri` registered for your app, so it can only be minted through and
 delivered to your own origin.
 
+> **What users see:** the hosted page and the OTP email say **"Continue to
+> `<your-domain>`"** using the *validated* `redirect_uri` host (e.g.
+> `myapp.bounded.page`), not your app's display name. This is deliberate — a
+> self-chosen name is spoofable (an app could call itself "Google"), the
+> registered domain is not. So make your app reachable on a clear domain.
+
 **Minimal web login (copy this).** As of `@bounded-sh/client` 0.0.30 web needs no
 `redirectUri`, and one `completeLoginFromRedirect()` finishes **both** redirect and
 popup:
