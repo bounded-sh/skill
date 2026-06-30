@@ -33,14 +33,100 @@ Full model:
 [../docs/auth.md](../docs/auth.md).
 
 Email/social human login uses the **hosted redirect** flow
-(`loginWithRedirect` / `completeLoginFromRedirect`). **On RN this flow is not yet
-wired in the SDK** — `loginWithRedirect` drives a full-page browser redirect
-(`window.location` + `sessionStorage` PKCE) that needs a DOM. So for **RN today**,
-the working end-user identities are **guest** (`signInAnonymously()`) and
-**Privy** (`loginWithPrivy`), plus **Phantom** when you need an onchain wallet.
-Hosted email/social on RN (open the system browser to `auth.bounded.sh`, return via
-a deep-link `redirectUri`) is on the roadmap; don't ship an RN email-login screen
-against the old headless primitives.
+(`loginWithRedirect`). **This now works natively on RN** — `loginWithRedirect`
+opens the hosted Bounded login (`auth.bounded.sh`) in the system browser via
+`expo-web-browser`, returns through an **https universal-link** `redirectUri`, and
+resolves **inline with the signed-in `user`** (no `completeLoginFromRedirect()`
+call needed on native — that's a web-only redirect-page step). One hosted page
+covers Google, Apple, email, and (when the issuer enables it) phone. Guest
+(`signInAnonymously()`), **Privy** (`loginWithPrivy`), and **Phantom** also remain
+available.
+
+> ✅ **Hosted RN login is wired in the SDK.** It requires an **https universal
+> link** as `redirectUri` (e.g. `https://yourapp.com/auth/callback`) whose origin
+> the app owner has registered in the app's **allowedOrigins** — exactly like a web
+> origin. The issuer rejects custom `myapp://` schemes, so a bare deep-link scheme
+> will not work; you must use a verified universal/app link.
+
+#### Hosted email / social login (Google, Apple, email, phone)
+
+**1. Install the optional peer deps** (only RN apps that use hosted login need them):
+
+```sh
+npx expo install expo-web-browser expo-crypto
+```
+
+**2. Provide PKCE randomness + the RN session store at startup**, before `init()`.
+`getRandomBytes` powers PKCE; `setPlatform`/`ReactNativeSessionManager.configure`
+are the same one-time RN setup you already do for sessions:
+
+```ts
+import { setPlatform, ReactNativeSessionManager } from "@bounded-sh/client";
+import * as Crypto from "expo-crypto";
+import { decode as atob } from "base-64";
+import { MMKV } from "react-native-mmkv";
+
+const store = new MMKV();
+const storage = {
+  getItem: (k: string) => store.getString(k) ?? null,
+  setItem: (k: string, v: string) => store.set(k, v),
+  removeItem: (k: string) => store.delete(k),
+};
+
+ReactNativeSessionManager.configure({ storage, atob });
+setPlatform({
+  storage, sessionStorage: storage, atob, hasDOM: false,
+  getRandomBytes: (n) => Crypto.getRandomBytes(n),
+});
+// Alternatively, `import 'react-native-get-random-values'` once at app entry and
+// you can omit getRandomBytes (it polyfills the global crypto.getRandomValues).
+```
+
+**3. Register the https callback origin** in your app's `allowedOrigins` (owner
+setting, same place web origins go) — e.g. `https://yourapp.com`.
+
+**4. Configure the universal / associated link** in `app.json` so the OS routes the
+callback URL back into your app:
+
+```jsonc
+{
+  "expo": {
+    "scheme": "yourapp",
+    "ios":     { "associatedDomains": ["applinks:yourapp.com"] },
+    "android": { "intentFilters": [{
+      "action": "VIEW",
+      "autoVerify": true,
+      "data": [{ "scheme": "https", "host": "yourapp.com", "pathPrefix": "/auth/callback" }],
+      "category": ["BROWSABLE", "DEFAULT"]
+    }]}
+  }
+}
+```
+
+You must also publish the standard `apple-app-site-association` and
+`assetlinks.json` files on `https://yourapp.com` so iOS/Android verify the link.
+
+**5. Call `loginWithRedirect`** — it resolves with the user on native:
+
+```tsx
+import { init, loginWithRedirect, getCurrentUser } from "@bounded-sh/client";
+
+await init({ appId: "<appId>" });
+
+const user = await loginWithRedirect({
+  redirectUri: "https://yourapp.com/auth/callback", // https universal link, in allowedOrigins
+  // optional: choose which hosted buttons show, or jump straight into one provider
+  // methods: ["email", "google", "apple"],
+  // provider: "google",
+});
+// `user` is the signed-in { id, address, email }. On web this returns void and you
+// finish via completeLoginFromRedirect() on the redirect page; on RN it's inline.
+getCurrentUser();
+```
+
+To **upgrade a guest** to a real account, `linkWithRedirect({ redirectUri })` works
+the same way on RN (call `signInAnonymously()` first); it carries the guest hint
+through the same native browser flow and resolves with the upgraded user.
 
 ### Anonymous (zero-friction guest) — the RN default
 
@@ -106,10 +192,15 @@ useEffect(() => {
 
 - **Metro entry**: ensure your bundler honors the `react-native` condition so the
   RN-safe entry is picked. Don't import web provider modules directly.
-- **No hosted-redirect login on RN yet** — `loginWithRedirect` needs a DOM
-  (`window.location` + `sessionStorage`). On RN use guest (`signInAnonymously`) or
-  Privy (`loginWithPrivy`) today; do not call the retired `sendEmailOtp`/`verifyEmailOtp`
-  headless primitives (they 403).
+- **Hosted-redirect login on RN** works via `expo-web-browser` + an **https
+  universal-link** `redirectUri` registered in `allowedOrigins` (see above). It
+  resolves inline with the user — do **not** call `completeLoginFromRedirect()` on
+  RN (that's the web redirect-page step; it's a harmless no-op on native). Custom
+  `myapp://` schemes are rejected by the issuer — use a verified universal link.
+  Never call the retired `sendEmailOtp`/`verifyEmailOtp` headless primitives (403).
+- **Optional peer deps for hosted login**: `expo-web-browser` (system auth session)
+  and `expo-crypto` *or* `react-native-get-random-values` (PKCE randomness). They're
+  imported lazily, so apps that don't use hosted login never need them.
 - **Polyfills**: RN needs the same Buffer/crypto shims the Solana libs require;
   add them in your Metro/babel config.
 
