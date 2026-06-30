@@ -1,26 +1,31 @@
-# Anonymous (guest) accounts + seamless upgrade
+# Anonymous (guest) accounts
 
 The smoothest onboarding Bounded offers: a **guest** signs in with **zero friction**
-— no email, no wallet extension, no popup — gets a real, durable identity that owns
-data, and **later upgrades to a real account (email) while keeping the exact same
-identity and all its data**. This is the Firebase/Supabase "anonymous auth" model,
-enforced by Bounded's proven boundary.
+— no email, no wallet extension, no popup — and gets a real, durable identity that
+owns data. This is the Firebase/Supabase "anonymous auth" model, enforced by
+Bounded's proven boundary.
 
 In Bounded **a keypair *is* an account**: a guest is an ed25519 keypair generated in
-the browser that signs the same auth challenge a wallet would. The upgrade preserves
-that identity at the **auth layer** (the email account *adopts* the guest's id), so
-your policies and data never change — `@user.id` is stable across the upgrade.
+the browser that signs the same auth challenge a wallet would. It is durable across
+reloads and owns data keyed by its stable `@user.id`.
+
+> ⛔ **No inline auth-layer "upgrade".** There is **no** `sendEmailOtp` + `linkEmail`
+> id-adopting upgrade anymore — those endpoints are retired (`403 inline appId token
+> minting is disabled` on every origin). A guest who signs in for real goes through
+> the **hosted redirect flow** (`loginWithRedirect`) like any login and comes back as
+> their **real account**, which is a **distinct `@user.id`** from the guest. To carry
+> a guest's data across to the real account, model ownership as **transferable data**
+> and hand it over — see [§4 below](#4-carry-data-across-with-transferable-ownership).
 
 > **The `user` object** — `{ id, address, email, isAnonymous }`:
 > - `user.id` / `@user.id` — the **universal, stable identity**, always present.
 >   For a guest it's the keypair's address; for an email login it's the account id.
->   **After an upgrade it is UNCHANGED** (the email account adopts the guest's id).
 >   Use this for ownership.
 > - `user.address` / `@user.address` — a real onchain wallet address (guest/wallet
 >   logins); `null` for email-only logins.
 > - `user.email` / `@user.email` — verified lowercased email (email logins only).
-> - `user.isAnonymous` — **`true` for a guest, `false` after upgrade** (Firebase
->   parity). Use it to decide whether to show a "save your account" prompt. Also
+> - `user.isAnonymous` — **`true` for a guest, `false` for any real login** (Firebase
+>   parity). Use it to decide whether to show a "create a real account" prompt. Also
 >   available in policy as `@user.isAnonymous` (Supabase parity).
 
 ---
@@ -76,36 +81,36 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 `!@user.isAnonymous` — the unary `!` isn't supported on special vars.) It's
 **offchain-only** — onchain rules must use `@user.address`.
 
-## 3. Upgrade the guest (keep the SAME identity + data)
+## 3. Convert a guest to a real account (hosted login)
 
-Send a code, then `linkEmail` — Firebase `linkWithCredential` parity:
+When a guest wants a durable real account, send them through the **same hosted
+redirect flow as any login** — there is no inline OTP upgrade (see the ⛔ note at the
+top):
 
 ```ts
-import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from '@bounded-sh/client'
+import { signInAnonymously, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from '@bounded-sh/client'
 
 await signInAnonymously()                 // user.isAnonymous === true
 // ...user does stuff, owns data keyed by @user.id...
 
-await sendEmailOtp('user@example.com')    // emails a 6-digit code
-const user = await linkEmail('user@example.com', '123456')
-user.isAnonymous   // false — now a real account
-user.id            // UNCHANGED — same id the guest had → all its data is still theirs
+// Show the "create a real account" prompt with getCurrentUser()?.isAnonymous, then:
+await loginWithRedirect({ redirectUri: 'https://yourapp.com/auth/callback' })
+// (on the callback route, on load)
+const user = await completeLoginFromRedirect()
+user.isAnonymous   // false — a real account
+user.id            // their REAL account id — DISTINCT from the guest's id
 ```
 
-When the email is brand-new, the upgraded account keeps the guest's id — so
-`@user.id` and every row owned by it carry over with zero migration. If the email
-already exists, the user signs into that existing account instead (no merge).
-Show the upgrade prompt with `getCurrentUser()?.isAnonymous`.
+The real account has its **own** `@user.id` — the guest id is **not** auto-adopted
+(the auth-layer id-adoption upgrade is retired). So any data the guest created is
+still owned by the *guest* id. To make it follow the user into their real account,
+model that data as **transferable ownership** (next section) and transfer it to the
+real `@user.id` right after `completeLoginFromRedirect()`.
 
-> **Google / social upgrade** — `linkWithRedirect({ redirectUri })` does the same
-> seamless, id-preserving upgrade via a Google (OIDC) redirect: stash the guest,
-> redirect to sign in with Google, and `completeLoginFromRedirect()` finishes the
-> link automatically. Same rule applies — brand-new social account = id preserved,
-> existing = stays separate.
+## 4. Carry data across with transferable ownership (ownership-as-data)
 
-## 4. Alternative: transferable ownership (ownership-as-data)
-
-Independent of the upgrade, Bounded lets you model ownership as **data** so it can be
+This is also the proven way to move a guest's data to their real account. Bounded
+lets you model ownership as **data** so it can be
 **transferred** between identities under a proven rule — useful for invite links,
 handing an account between agents, or moving data to a different key without sharing
 a private key. Scope data by an **account id** and store the owner:
@@ -143,7 +148,8 @@ to B ✅ · A writes again ❌403 · B writes ✅.
 
 ## When to use this
 
-- **Try-before-signup** — use the app instantly as a guest; `linkEmail` later, keep everything.
+- **Try-before-signup** — use the app instantly as a guest; create a real account
+  later via `loginWithRedirect`, and transfer any data over (§3 + §4).
 - **Invite links / shareable sessions** — recipient lands as a guest, optionally receives a transferred account.
 - **Agent identities** — each agent is a guest keypair; hand an account between agents via the transfer pattern.
 
@@ -151,8 +157,9 @@ to B ✅ · A writes again ❌403 · B writes ✅.
 
 - Anonymous is **opt-in** — set `"auth": { "anonymous": true }` in policy or guest sign-in is 403'd.
 - `@user.isAnonymous == false` (not `!@user.isAnonymous`); offchain-only.
-- Upgrade preserves `@user.id` only for a **brand-new** email; linking an existing
-  email signs into it (separate identity, no merge). Prompt to upgrade before users
-  care about not losing the account (guest keys live on the device).
+- **No inline id-preserving upgrade** — `sendEmailOtp`/`linkEmail`/`linkWithRedirect`
+  upgrade is retired (403). Going real = `loginWithRedirect` → a **distinct** real
+  `@user.id`. Use transferable ownership (§4) to carry the guest's data over. Prompt
+  before users care about not losing data (guest keys live on the device).
 - For transferable ownership, scope by **accountId**, never raw `@user.id`; `create`
   checks `@newData.owner`, `update`/transfer checks `@data.owner`.

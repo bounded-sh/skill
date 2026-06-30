@@ -212,29 +212,39 @@ issuer and returns through your registered deep-link `redirectUri`; see
 [../guides/building-for-react-native.md](../guides/building-for-react-native.md)
 for the deep-link callback wiring.
 
-**Anonymous accounts coexist** — offer email login AND zero-friction guest
+**Anonymous accounts coexist** — offer hosted login AND zero-friction guest
 accounts side by side (opt-in: set `"auth": { "anonymous": true }` in policy; see
 [anonymous-accounts.md](anonymous-accounts.md)):
 
 ```ts
-import { signInAnonymously, sendEmailOtp, linkEmail, getCurrentUser } from "@bounded-sh/client";
+import { signInAnonymously, loginWithRedirect, getCurrentUser } from "@bounded-sh/client";
 
 const guest = await signInAnonymously();    // guest.isAnonymous === true
-// ...later, upgrade WITHOUT losing the identity or data (Firebase linkWithCredential parity):
-await sendEmailOtp("user@example.com");
-const upgraded = await linkEmail("user@example.com", "123456");
-upgraded.isAnonymous;  // false — same @user.id as the guest (its data carries over)
+// ...later, when the guest wants a durable real account, send them through the
+// SAME hosted redirect flow as any login — they come back as their real account:
+await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
+// (on the callback route) const user = await completeLoginFromRedirect();
 ```
 
-`user.isAnonymous` (Firebase parity) tells you guest vs real for the upgrade prompt;
-in policy, `@user.isAnonymous == false` gates guests out of a rule (Supabase parity).
+> ⛔ **There is no inline guest-upgrade.** The old `sendEmailOtp` + `linkEmail`
+> (and `linkWithRedirect`) **id-preserving** upgrade is **retired** — the link
+> endpoints now answer `403 inline appId token minting is disabled` on every
+> origin. A guest who logs in via `loginWithRedirect` becomes their **real
+> account**, which is a **distinct `@user.id`** from the guest; the guest id is
+> not auto-adopted. For data continuity across that boundary, model ownership as
+> **transferable data** (see [anonymous-accounts.md](anonymous-accounts.md) §
+> "transferable ownership") and hand the data to the real id — that path is proven
+> and works today.
 
-> **Browser / React-Native only.** `signInAnonymously`, `sendEmailOtp`,
-> `verifyEmailOtp`, `sendTextOtp`, and `verifyTextOtp` persist their session through `localStorage`, so they only work
-> where there's a `window`. Calling them in Node throws a clear error (the session
-> would otherwise be silently dropped and every request would 403). For Node /
-> server code use **`@bounded-sh/server`** with a keypair
-> (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
+`user.isAnonymous` (Firebase parity) tells you guest vs real, e.g. to show a
+"create a real account" prompt; in policy, `@user.isAnonymous == false` gates guests
+out of a rule (Supabase parity).
+
+> **Browser / React-Native only.** `signInAnonymously` persists its session through
+> `localStorage`, so it only works where there's a `window`. Calling it in Node
+> throws a clear error (the session would otherwise be silently dropped and every
+> request would 403). For Node / server code use **`@bounded-sh/server`** with a
+> keypair (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
 
 `authMethod` selects the **identity system**, not a login UI. **Bounded Auth is
 the default** — email + OAuth/social + optional text, and every one of those human
@@ -254,7 +264,7 @@ fields**:
 | `user.id` | `string` | the **universal stable identity**, **always present** for an authenticated user. For wallet logins it equals the wallet address; for Bounded Auth logins (email, text, OAuth/social) it is the account identity. **Use this for ownership / membership / identity / auth guards.** |
 | `user.address` | `string \| null` | a **real onchain wallet address**. Present for wallet logins, **`null` for Bounded Auth logins** unless a wallet is linked. **Use this only for onchain operations / wallet semantics.** |
 | `user.email` | `string \| null` | the verified, lowercased email for email/OAuth accounts. It is `null` for wallet and phone-only text users. Use it only when email-gating is genuinely intended. |
-| `user.isAnonymous` | `boolean` | `true` for a zero-friction **guest** (`signInAnonymously()`); `false` after upgrade (`linkEmail`) or for any real login. Drives the "save your account" prompt. Mirrored in policy as `@user.isAnonymous` (offchain; write `== false` to gate guests out). |
+| `user.isAnonymous` | `boolean` | `true` for a zero-friction **guest** (`signInAnonymously()`); `false` for any real (email/social/text/wallet) login. Drives the "create a real account" prompt. Mirrored in policy as `@user.isAnonymous` (offchain; write `== false` to gate guests out). |
 
 - **Bounded Auth** supports email OTP, optional text OTP (when enabled), and
   OAuth/social login (Google, Apple, GitHub today) — **all through the hosted

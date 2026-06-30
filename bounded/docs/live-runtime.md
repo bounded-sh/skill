@@ -644,9 +644,9 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 >
 > **`init` with a network preset** — no endpoint URLs in app code:
 > `await init({ appId })`.
-> For a zero-friction guest identity (great for invite links), pass
-> `authMethod: 'guest'` and call `login()` — a device-local keypair signs in with
-> no wallet and no signup.
+> For a zero-friction guest identity (great for invite links), call
+> `signInAnonymously()` — a device-local keypair signs in with no wallet and no
+> signup (requires `"auth": { "anonymous": true }` in policy).
 
 Status/liveness is first-class in the SDK and CLI:
 `await live.status(roomPath)` or `bounded live status <roomPath>`

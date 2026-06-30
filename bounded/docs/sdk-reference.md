@@ -54,9 +54,10 @@ rejects app-origin OTP: `hosted login must be started from the issuer origin`).
 The wallet option is `'phantom'`, reserved for crypto/onchain apps that need a
 real Solana wallet; use `'none'` to disable auth. Anonymous accounts are via
 `signInAnonymously()` and coexist with Bounded Auth.
-Text OTP (`provider: "text"`, `methods: ["text"]`, or `sendTextOtp` /
-`verifyTextOtp`) is off by default and works only when Bounded explicitly enables
-it for the app. Full flow in [auth.md](auth.md).
+Text OTP (hosted: `provider: "text"` or `methods: ["text"]`) is off by default and
+works only when Bounded explicitly enables it for the app. The app-origin
+`sendTextOtp` / `verifyTextOtp` helpers are retired (403) — use the hosted flow.
+Full flow in [auth.md](auth.md).
 
 > Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
 > can override individual endpoints, but you should normally use `network`, which
@@ -328,34 +329,31 @@ configured. The full `share → list → unshare` round-trip is supported.
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 
 ```ts
-import { login, logout, getCurrentUser, useAuth,
-         sendEmailOtp, verifyEmailOtp, sendTextOtp, verifyTextOtp, signInAnonymously,
+import { logout, getCurrentUser, useAuth, signInAnonymously,
          loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
 
-await login();                       // default: inline email-code modal (no popup/redirect)
 const user = getCurrentUser();       // { id, address: string | null, email: string | null } | null
 
 // React:
 const { user, login, logout, loading } = useAuth();
 
-// Headless email (custom UI / React Native) — no modal:
-await sendEmailOtp("user@example.com");
-await verifyEmailOtp("user@example.com", "123456");
-
-// Headless text OTP, only when explicitly enabled for the app:
-await sendTextOtp("+14155550132");
-await verifyTextOtp("+14155550132", "123456");
-
-// OAuth/social (web): app-owned button + callback page:
+// THE login path — email, OAuth/social, AND text all run through the hosted
+// redirect flow (web AND React Native). App-owned button + callback page:
 await loginWithRedirect({
   redirectUri: "https://yourapp.com/auth/callback",
-  provider: "apple",                 // also "google" / "github" when configured
+  provider: "apple",                 // optional: "google" / "github" when configured;
+                                     // omit to show the hosted chooser (email + all)
 });
-await completeLoginFromRedirect();   // on /auth/callback
+await completeLoginFromRedirect();   // on /auth/callback, on load → signs in
 
-// Anonymous (coexists with email): device-keypair identity, upgradeable later
+// Anonymous (coexists with hosted login): device-keypair guest identity
 await signInAnonymously();
 ```
+
+> ⛔ **`login()`, `sendEmailOtp`, `verifyEmailOtp`, `sendTextOtp`, `verifyTextOtp`
+> are retired for apps** — they were inline/app-origin OTP and now return
+> `403 hosted login must be started from the issuer origin`. Use `loginWithRedirect`
+> + `completeLoginFromRedirect` for every human login. See [auth.md](auth.md).
 
 The `user` object has three fields:
 

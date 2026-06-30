@@ -18,13 +18,10 @@ auth modal, the Phantom browser SDK) are excluded from that build.
 
 ## What's different: auth
 
-Email is the default auth everywhere, including RN — but RN has **no DOM**, so the
-web's inline email-code modal isn't available. On RN you drive OTP flows yourself
-with the SDK's **headless** email primitives (`sendEmailOtp` /
-`verifyEmailOtp`). Text OTP (`sendTextOtp` / `verifyTextOtp`) is off by default
-and works only when Bounded explicitly enables it for the app. Phantom
-(a Solana wallet, opening via the Phantom mobile app) is the opt-in path when you
-specifically need an onchain `@user.address`.
+> ⛔ **The headless OTP primitives (`sendEmailOtp` / `verifyEmailOtp` /
+> `sendTextOtp` / `verifyTextOtp`) are retired** — they return
+> `403 hosted login must be started from the issuer origin` on every app origin.
+> Do not use them on RN (or web).
 
 The SDK `user` object is `{ id, address, email }` and means the same thing in RN
 as on web: `@user.id` is the universal stable identity (always present — use it
@@ -35,31 +32,39 @@ email (email/OAuth accounts only; `null` for phone-only text users and wallets).
 Full model:
 [../docs/auth.md](../docs/auth.md).
 
-### Email OTP (default, headless — works on any device)
+Email/social human login uses the **hosted redirect** flow
+(`loginWithRedirect` / `completeLoginFromRedirect`). **On RN this flow is not yet
+wired in the SDK** — `loginWithRedirect` drives a full-page browser redirect
+(`window.location` + `sessionStorage` PKCE) that needs a DOM. So for **RN today**,
+the working end-user identities are **guest** (`signInAnonymously()`) and
+**Privy** (`loginWithPrivy`), plus **Phantom** when you need an onchain wallet.
+Hosted email/social on RN (open the system browser to `auth.bounded.sh`, return via
+a deep-link `redirectUri`) is on the roadmap; don't ship an RN email-login screen
+against the old headless primitives.
 
-No wallet extension or app is needed; email OTP runs entirely headless, so it's
-the path that "just works" on a phone. Build your own email + code inputs and
-call the two-step flow:
+### Anonymous (zero-friction guest) — the RN default
+
+`signInAnonymously()` is the frictionless path that "just works" on a phone — a
+device keypair identity, no browser hand-off, durable across reloads:
 
 ```tsx
-import { init, sendEmailOtp, verifyEmailOtp, sendTextOtp, verifyTextOtp, getCurrentUser } from "@bounded-sh/client";
+import { init, signInAnonymously, getCurrentUser, useAuth, logout } from "@bounded-sh/client";
 
-await init({ appId: "<appId>", authMethod: "email" }); // 'email' is the default
-
-// step 1 — collect the email from your own <TextInput>, then:
-await sendEmailOtp("user@example.com");                  // emails a 6-digit code
-
-// step 2 — collect the code from your own <TextInput>, then:
-const user = await verifyEmailOtp("user@example.com", "123456"); // signs in
-
-// Optional: only when text OTP is explicitly enabled for the app.
-await sendTextOtp("+14155550132");                               // texts a 6-digit code
-const byText = await verifyTextOtp("+14155550132", "123456");     // signs in
-getCurrentUser();                                        // { id, address, email } | null
+await init({ appId: "<appId>" });        // points at bounded-production by default
+const me = await signInAnonymously();     // me.isAnonymous === true; owns data by @user.id
+getCurrentUser();                         // { id, address, email } | null
 ```
 
-`useAuth()`, `logout()`, and every data operation behave exactly as on web once
-a user is signed in.
+`useAuth()`, `logout()`, and every data operation behave exactly as on web once a
+user is signed in. To convert a guest to a durable real account, see
+[../docs/anonymous-accounts.md](../docs/anonymous-accounts.md) (there is no inline
+id-preserving upgrade; carry data over via transferable ownership).
+
+### Privy (email/social on RN, if you need a real account today)
+
+`loginWithPrivy` is exported from the RN entry and is the supported way to get a
+real (email/social) RN login while hosted-redirect-on-RN lands. Wire it per your
+Privy RN setup, then the SDK adopts the resulting identity.
 
 ### Phantom wallet (opt-in, for onchain `@user.address`)
 
@@ -77,12 +82,6 @@ setup, and whether extra Phantom mobile config is required) is **not yet pinned
 down in these docs** — treat the snippet above as conceptual and verify the
 mobile connect flow before relying on it. The web flow is the detailed reference:
 [building-a-webapp.md](building-a-webapp.md).
-
-### Anonymous (zero-friction guest)
-
-`signInAnonymously()` works on RN too and can coexist with email — a device
-keypair identity, upgradeable later (see
-[../docs/anonymous-accounts.md](../docs/anonymous-accounts.md)).
 
 ## Reads, writes, subscriptions
 
@@ -107,9 +106,10 @@ useEffect(() => {
 
 - **Metro entry**: ensure your bundler honors the `react-native` condition so the
   RN-safe entry is picked. Don't import web provider modules directly.
-- **No DOM auth modal in RN** — the web's inline email-code modal needs a DOM, so
-  on RN drive email OTP yourself with the headless primitives above; add text
-  only when Bounded explicitly enables text OTP.
+- **No hosted-redirect login on RN yet** — `loginWithRedirect` needs a DOM
+  (`window.location` + `sessionStorage`). On RN use guest (`signInAnonymously`) or
+  Privy (`loginWithPrivy`) today; do not call the retired `sendEmailOtp`/`verifyEmailOtp`
+  headless primitives (they 403).
 - **Polyfills**: RN needs the same Buffer/crypto shims the Solana libs require;
   add them in your Metro/babel config.
 

@@ -35,8 +35,9 @@ interop resolves.
 import { init } from "@bounded-sh/client";
 
 await init({
-  appId: "<appId>",          // from `bounded deploy --create`
-  authMethod: "email",       // 'email' (default) | 'phantom' | 'none'
+  appId: "<appId>",          // from `bounded deploy --create`; points at bounded-production
+  // Email + OAuth/social + text all run through the hosted redirect flow
+  // (loginWithRedirect). 'phantom' opts into a Solana wallet; 'none' disables auth.
 });
 ```
 
@@ -44,7 +45,9 @@ Mount your UI first and `init()` asynchronously — don't block first paint on i
 
 ## Authenticate users
 
-Email OTP is the default (inline 6-digit code, no wallet needed); Phantom is the
+Email + OAuth/social login run through the **hosted redirect** flow — the
+credential is entered on `auth.bounded.sh`, never your origin (there is **no**
+inline OTP modal; `login()` / `sendEmailOtp` are retired and 403). Phantom is the
 opt-in path when you want a Solana wallet (`@user.address`). Whatever the method,
 an authenticated `user` is `{ id, address, email }`:
 
@@ -59,14 +62,23 @@ an authenticated `user` is `{ id, address, email }`:
 Full auth model: [../docs/auth.md](../docs/auth.md).
 
 ```tsx
-import { useAuth } from "@bounded-sh/client";
+import { useAuth, loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
+import { useEffect } from "react";
+
+// On your callback route (the registered redirectUri), finish the exchange on load:
+function AuthCallback() {
+  useEffect(() => { completeLoginFromRedirect(); }, []);
+  return null;
+}
 
 function SignIn() {
-  const { user, login, logout, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   if (loading) return null;
+  // Your own button → hosted login; pass methods/provider to scope it.
+  const signIn = () => loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback" });
   return user
     ? <button onClick={logout}>Sign out ({user.id.slice(0, 6)}…)</button>
-    : <button onClick={login}>Sign in</button>;
+    : <button onClick={signIn}>Sign in</button>;
 }
 ```
 
