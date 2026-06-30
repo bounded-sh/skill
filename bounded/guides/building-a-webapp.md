@@ -36,8 +36,9 @@ import { init } from "@bounded-sh/client";
 
 await init({
   appId: "<appId>",          // from `bounded deploy --create`; points at bounded-production
-  // Email + OAuth/social + text all run through the hosted redirect flow
-  // (loginWithRedirect). 'phantom' opts into a Solana wallet; 'none' disables auth.
+  // Email + OAuth/social + text: your choice of UX — inline (sendEmailOtp/verifyEmailOtp,
+  // your own form) OR hosted (loginWithRedirect). 'phantom' opts into a Solana wallet;
+  // 'none' disables auth.
 });
 ```
 
@@ -45,11 +46,14 @@ Mount your UI first and `init()` asynchronously — don't block first paint on i
 
 ## Authenticate users
 
-Email + OAuth/social login run through the **hosted redirect** flow — the
-credential is entered on `auth.bounded.sh`, never your origin (there is **no**
-inline OTP modal; `login()` / `sendEmailOtp` are retired and 403). Phantom is the
-opt-in path when you want a Solana wallet (`@user.address`). Whatever the method,
-an authenticated `user` is `{ id, address, email }`:
+Email + OAuth/social login can run **either** inline — render your own email/code
+form with `sendEmailOtp(email)` + `verifyEmailOtp(email, code)` — **or** through the
+**hosted redirect** flow (`loginWithRedirect`), where the credential is entered on
+`auth.bounded.sh` and never touches your origin (the most secure UX). The built-in
+`login()` modal is a zero-config inline option too. Phantom is the opt-in path when
+you want a Solana wallet (`@user.address`). Pick the methods and UX that fit your app
+— see [Choosing your login methods & UX](../docs/auth.md#choosing-your-login-methods--ux).
+Whatever the method, an authenticated `user` is `{ id, address, email }`:
 
 - `user.id` — the universal stable identity, **always present**. For wallet
   logins it equals the wallet address; for email/social logins it is the account

@@ -18,10 +18,12 @@ auth modal, the Phantom browser SDK) are excluded from that build.
 
 ## What's different: auth
 
-> ⛔ **The headless OTP primitives (`sendEmailOtp` / `verifyEmailOtp` /
-> `sendTextOtp` / `verifyTextOtp`) are retired** — they return
-> `403 hosted login must be started from the issuer origin` on every app origin.
-> Do not use them on RN (or web).
+> **RN is a no-Origin caller, so inline OTP works.** The headless primitives
+> (`sendEmailOtp` / `verifyEmailOtp`, plus `sendTextOtp` / `verifyTextOtp` when the
+> issuer has text enabled) let you render your **own** email/code UI on RN — restored
+> in `@bounded-sh/client` 0.0.29. `loginWithRedirect` (below) is the recommended
+> default; inline is the option when you want full control over the login screen. See
+> [Choosing your login methods & UX](../docs/auth.md#choosing-your-login-methods--ux).
 
 The SDK `user` object is `{ id, address, email }` and means the same thing in RN
 as on web: `@user.id` is the universal stable identity (always present — use it
@@ -144,8 +146,9 @@ getCurrentUser();                         // { id, address, email } | null
 
 `useAuth()`, `logout()`, and every data operation behave exactly as on web once a
 user is signed in. To convert a guest to a durable real account, see
-[../docs/anonymous-accounts.md](../docs/anonymous-accounts.md) (there is no inline
-id-preserving upgrade; carry data over via transferable ownership).
+[../docs/anonymous-accounts.md](../docs/anonymous-accounts.md) — `linkEmail` (inline)
+or `linkWithRedirect` (hosted) keeps the guest's id; a plain `loginWithRedirect` gives
+a distinct id, so carry data over via transferable ownership.
 
 ### Privy (alternative real-account path)
 
@@ -190,7 +193,8 @@ useEffect(() => {
   resolves inline with the user — do **not** call `completeLoginFromRedirect()` on
   RN (that's the web redirect-page step; it's a harmless no-op on native). Custom
   `myapp://` schemes are rejected by the issuer — use a verified universal link.
-  Never call the retired `sendEmailOtp`/`verifyEmailOtp` headless primitives (403).
+  Prefer hosted as the default; the inline `sendEmailOtp` / `verifyEmailOtp` primitives
+  also work on RN (a no-Origin caller) when you want to render your own login UI.
 - **Optional peer deps for hosted login**: `expo-web-browser` (system auth session)
   and `expo-crypto` *or* `react-native-get-random-values` (PKCE randomness). They're
   imported lazily, so apps that don't use hosted login never need them.

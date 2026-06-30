@@ -9,13 +9,14 @@ In Bounded **a keypair *is* an account**: a guest is an ed25519 keypair generate
 the browser that signs the same auth challenge a wallet would. It is durable across
 reloads and owns data keyed by its stable `@user.id`.
 
-> ⛔ **No inline auth-layer "upgrade".** There is **no** `sendEmailOtp` + `linkEmail`
-> id-adopting upgrade anymore — those endpoints are retired (`403 inline appId token
-> minting is disabled` on every origin). A guest who signs in for real goes through
-> the **hosted redirect flow** (`loginWithRedirect`) like any login and comes back as
-> their **real account**, which is a **distinct `@user.id`** from the guest. To carry
-> a guest's data across to the real account, model ownership as **transferable data**
-> and hand it over — see [§4 below](#4-carry-data-across-with-transferable-ownership).
+> **Two ways to go real.** (1) **Id-preserving upgrade** — send a code with
+> `sendEmailOtp(email)` then call `linkEmail(email, code)` (inline; `linkWithRedirect()`
+> is the hosted equivalent). The issuer keeps the guest's **same `@user.id`** when the
+> email is brand-new, and refuses if the wallet is already linked to another account.
+> (2) **Fresh real account** — a guest who just signs in via `loginWithRedirect` comes
+> back as a **distinct `@user.id`**; to carry their data over, model ownership as
+> **transferable data** and hand it over — see
+> [§4 below](#4-carry-data-across-with-transferable-ownership).
 
 > **The `user` object** — `{ id, address, email, isAnonymous }`:
 > - `user.id` / `@user.id` — the **universal, stable identity**, always present.
@@ -81,11 +82,38 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 `!@user.isAnonymous` — the unary `!` isn't supported on special vars.) It's
 **offchain-only** — onchain rules must use `@user.address`.
 
-## 3. Convert a guest to a real account (hosted login)
+## 3. Convert a guest to a real account
 
-When a guest wants a durable real account, send them through the **same hosted
-redirect flow as any login** — there is no inline OTP upgrade (see the ⛔ note at the
-top):
+Two supported paths — pick by whether you need to **keep the guest's id**.
+
+### 3a. Id-preserving upgrade — `linkEmail` (keeps `@user.id`)
+
+Send a code, then link the email to the **existing** guest identity. The guest keeps
+its `@user.id`, so everything it already owns stays owned — no transfer needed:
+
+```ts
+import { signInAnonymously, sendEmailOtp, linkEmail } from '@bounded-sh/client'
+
+await signInAnonymously()                       // user.isAnonymous === true; owns data by @user.id
+// ...later, render your own "add your email" form...
+await sendEmailOtp('user@example.com')          // issuer emails a code
+const user = await linkEmail('user@example.com', code)   // your form collects `code`
+user.isAnonymous   // false — same id, now a real email account
+user.id            // UNCHANGED — the guest's id is preserved
+```
+
+Under the hood this POSTs `/link/email` with the guest's token. The issuer **preserves
+the guest's id only when the email is brand-new**; it refuses (the wallet is already
+linked to another account) if you try to attach an email that already belongs to
+someone, so two accounts never collide. `linkWithRedirect({ redirectUri })` is the
+hosted equivalent (same id-preserving semantics, credential entered on the hosted
+page). Inline `linkEmail` is for real (ObjectId) app ids; browser callers must come
+from a registered origin (RN / CLI / server no-Origin callers are allowed).
+
+### 3b. Fresh real account — hosted login (distinct id)
+
+If you'd rather just send the guest through a normal login, `loginWithRedirect` signs
+them in as a **new** real account:
 
 ```ts
 import { signInAnonymously, loginWithRedirect, completeLoginFromRedirect, getCurrentUser } from '@bounded-sh/client'
@@ -101,9 +129,8 @@ user.isAnonymous   // false — a real account
 user.id            // their REAL account id — DISTINCT from the guest's id
 ```
 
-The real account has its **own** `@user.id` — the guest id is **not** auto-adopted
-(the auth-layer id-adoption upgrade is retired). So any data the guest created is
-still owned by the *guest* id. To make it follow the user into their real account,
+Here the real account has its **own** `@user.id` — the guest id is **not** adopted, so
+any data the guest created is still owned by the *guest* id. To make it follow the user,
 model that data as **transferable ownership** (next section) and transfer it to the
 real `@user.id` right after `completeLoginFromRedirect()`.
 
@@ -157,9 +184,10 @@ to B ✅ · A writes again ❌403 · B writes ✅.
 
 - Anonymous is **opt-in** — set `"auth": { "anonymous": true }` in policy or guest sign-in is 403'd.
 - `@user.isAnonymous == false` (not `!@user.isAnonymous`); offchain-only.
-- **No inline id-preserving upgrade** — `sendEmailOtp`/`linkEmail`/`linkWithRedirect`
-  upgrade is retired (403). Going real = `loginWithRedirect` → a **distinct** real
-  `@user.id`. Use transferable ownership (§4) to carry the guest's data over. Prompt
-  before users care about not losing data (guest keys live on the device).
+- **Two upgrade paths** — `sendEmailOtp` + `linkEmail` (inline; `linkWithRedirect`
+  hosted) **preserves** the guest's `@user.id` when the email is brand-new (refused if
+  the wallet is already linked). Plain `loginWithRedirect` instead yields a **distinct**
+  real `@user.id` — use transferable ownership (§4) to carry the guest's data over.
+  Prompt before users care about not losing data (guest keys live on the device).
 - For transferable ownership, scope by **accountId**, never raw `@user.id`; `create`
   checks `@newData.owner`, `update`/transfer checks `@data.owner`.

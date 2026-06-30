@@ -33,9 +33,10 @@ npm i @bounded-sh/server      # Node / server (keypair client)
 // client (browser / RN)
 import { init, loginWithRedirect, completeLoginFromRedirect, get, set, subscribe } from "@bounded-sh/client";
 await init({ appId: "<appId>" });
-// All human login goes through the HOSTED page (email + social + text):
+// Human login — hosted page (most secure) OR inline (your own UI). Hosted:
 await loginWithRedirect({ redirectUri: "https://yourapp.com/auth/callback", methods: ["email"] });
 // …and on your callback page:  const user = await completeLoginFromRedirect();
+// Inline alternative: await sendEmailOtp(email); await verifyEmailOtp(email, code);
 
 // server
 import { createWalletClient } from "@bounded-sh/server";
@@ -44,19 +45,21 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 
 `init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
 production by default** — `init({ appId })` just works, no endpoints to set (the
-network is `'bounded-production'`). **Email + OAuth/social + text all use the
-hosted flow** `loginWithRedirect` / `loginWithPopup` (the credential is entered on
-`auth.bounded.sh`, never your origin); pass `methods: ["email", "google"]` for a
-chooser, or `provider: "google"` to jump straight to one from your own button.
-There is **no** inline OTP modal — `authMethod: 'email'` + `login()` and the
-app-origin `sendEmailOtp` / `verifyEmailOtp` helpers are removed (the issuer
-rejects app-origin OTP: `hosted login must be started from the issuer origin`).
+network is `'bounded-production'`). **Email + OAuth/social + text** work through
+**either** the hosted flow `loginWithRedirect` / `loginWithPopup` (the credential is
+entered on `auth.bounded.sh`, never your origin) **or** inline from your own UI — your
+choice of UX. For hosted, pass `methods: ["email", "google"]` for a chooser, or
+`provider: "google"` to jump straight to one from your own button. The **inline** path
+renders your own form with `sendEmailOtp(email)` + `verifyEmailOtp(email, code)` (plus
+the built-in `login()` modal and `authMethod: 'email'`) — restored in 0.0.29. Inline
+minting is for real (ObjectId) app ids only and inline browser callers must come from a
+registered origin; no-Origin callers (RN / CLI / server) are allowed.
 The wallet option is `'phantom'`, reserved for crypto/onchain apps that need a
 real Solana wallet; use `'none'` to disable auth. Anonymous accounts are via
 `signInAnonymously()` and coexist with Bounded Auth.
-Text OTP (hosted: `provider: "text"` or `methods: ["text"]`) is off by default and
-works only when Bounded explicitly enables it for the app. The app-origin
-`sendTextOtp` / `verifyTextOtp` helpers are retired (403) — use the hosted flow.
+Text OTP (hosted: `provider: "text"` or `methods: ["text"]`; inline:
+`sendTextOtp` / `verifyTextOtp`) is off by default and works only when Bounded
+explicitly enables it for the app.
 Full flow in [auth.md](auth.md).
 
 > Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
@@ -330,15 +333,16 @@ configured. The full `share → list → unshare` round-trip is supported.
 
 ```ts
 import { logout, getCurrentUser, useAuth, signInAnonymously,
-         loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
+         loginWithRedirect, completeLoginFromRedirect,
+         sendEmailOtp, verifyEmailOtp } from "@bounded-sh/client";
 
 const user = getCurrentUser();       // { id, address: string | null, email: string | null } | null
 
 // React:
 const { user, login, logout, loading } = useAuth();
 
-// THE login path — email, OAuth/social, AND text all run through the hosted
-// redirect flow (web AND React Native). App-owned button + callback page:
+// Human login — pick a UX. HOSTED (most secure; web AND React Native), app-owned
+// button + callback page:
 await loginWithRedirect({
   redirectUri: "https://yourapp.com/auth/callback",
   provider: "apple",                 // optional: "google" / "github" when configured;
@@ -346,14 +350,20 @@ await loginWithRedirect({
 });
 await completeLoginFromRedirect();   // on /auth/callback, on load → signs in
 
-// Anonymous (coexists with hosted login): device-keypair guest identity
+// INLINE (your own email/code form, web or RN): send then verify.
+await sendEmailOtp("user@example.com");
+const inlineUser = await verifyEmailOtp("user@example.com", code);
+
+// Anonymous (coexists with either UX): device-keypair guest identity
 await signInAnonymously();
 ```
 
-> ⛔ **`login()`, `sendEmailOtp`, `verifyEmailOtp`, `sendTextOtp`, `verifyTextOtp`
-> are retired for apps** — they were inline/app-origin OTP and now return
-> `403 hosted login must be started from the issuer origin`. Use `loginWithRedirect`
-> + `completeLoginFromRedirect` for every human login. See [auth.md](auth.md).
+> **Two UXes, same issuer.** Hosted (`loginWithRedirect` + `completeLoginFromRedirect`,
+> most secure) and inline (`sendEmailOtp` / `verifyEmailOtp`, your own form; plus the
+> built-in `login()` modal and `sendTextOtp` / `verifyTextOtp` when text is on) both
+> sign in human users — restored in `@bounded-sh/client` 0.0.29. Inline minting is for
+> real (ObjectId) app ids only, and inline browser callers must come from a registered
+> origin (no-Origin RN / CLI / server callers are allowed). See [auth.md](auth.md).
 
 The `user` object has three fields:
 

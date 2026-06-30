@@ -122,6 +122,7 @@ export default async function (args, ctx) {
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — `ctx.ai.run(model, input)`. No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM to your app — see [§ctx.ai](#ctxai--real-ai-no-api-keys) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
+| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. Returns immediately; the queued run executes as the **system** principal with `payload` as its `args`, and meters compute usage to billing exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
 
@@ -261,6 +262,50 @@ export default async function sports(args, ctx) {
 For transactional email, SMS, or WhatsApp, use a real provider integration and
 keep provider keys in secrets. Do not expose a shared provider key or treat
 Bounded Auth OTP as recipient consent for app-originated messages.
+
+## ctx.enqueue — background jobs
+
+When a function should kick off work that shouldn't block the caller — fan-out,
+a slow follow-up step, a ret-on-failure pipeline — use `ctx.enqueue`. It schedules
+a **separate, later** invocation of a deployed function and returns immediately:
+
+```ts
+export default async function placeOrder(args, ctx) {
+  await ctx.bounded.set(`orders/${args.id}`, { status: "pending", buyer: ctx.user.id });
+
+  // Hand the slow work off to a background job — returns right away.
+  const { jobId } = await ctx.enqueue("fulfillOrder", { orderId: args.id });
+
+  // Optionally schedule a delayed retry/reminder (up to 24h out).
+  await ctx.enqueue("checkOrderStuck", { orderId: args.id }, { delaySeconds: 3600 });
+
+  return { ok: true, jobId };
+}
+
+// Runs LATER as the system principal; `payload` arrives as `args`.
+export default async function fulfillOrder(args, ctx) {
+  // ctx.auth -> { enforced: true, rule: null, system: true }
+  const order = await ctx.bounded.get(`orders/${args.orderId}`);
+  // ... do the slow work, write results through ctx.bounded ...
+  await ctx.bounded.set(`orders/${args.orderId}`, { ...order, status: "fulfilled" });
+}
+```
+
+- **Contract:** `ctx.enqueue(functionName: string, payload?: unknown, opts?: { delaySeconds?: number }): Promise<{ jobId }>`.
+- **What it runs:** `functionName` must be a **deployed function in this app** (a
+  function may enqueue another function or itself; validated at enqueue time).
+- **How it runs:** the queued job executes **server-authoritatively as the system
+  principal** (`ctx.user` is null, `ctx.auth.system === true`) — exactly like a
+  scheduled run. The function's user-facing `auth` rule is the gate for *direct*
+  invocation; the enqueue itself is the authorization for the background run.
+  Writes still pass your `rules` + invariants through `ctx.bounded`.
+- **Delivery:** at-least-once, with Cloudflare-managed retries and a dead-letter
+  queue. **Make enqueued functions idempotent** so a retry is safe.
+- **Limits:** `payload` must be JSON-serializable and ≤ 128 KB; `delaySeconds`
+  is 0..86400 (24h).
+- **Billing:** each queued run is driven back through the normal `/invoke` path,
+  so it **meters compute usage to the app's request ledger identically to an HTTP
+  invocation** — background work is billed like foreground work.
 
 ## Invoke a function
 
