@@ -364,15 +364,28 @@ import { useAuth } from "@bounded-sh/client";
 
 function AuthButton() {
   const { user, login, logout, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <Spinner />;                 // see "loading" below — drive your busy UI off this
   return user
     ? <button onClick={logout}>{user.id.slice(0, 6)}… ↩</button>   // user.id always present; user.address may be null
     : <button onClick={login}>Sign in</button>;
 }
 ```
 
-Imperative equivalents: `onAuthStateChanged(cb)`, `onAuthLoadingChanged(cb)`,
-`logout()`.
+**`loading` reflects ANY auth in progress** — session restore on load AND every login method
+(`loginWithRedirect`, `loginWithPopup`, `signInAnonymously`, inline `verifyEmailOtp`/
+`verifyTextOtp`, `linkEmail`). Render your "signing in…" state off it (e.g. a spinner/overlay
++ disabled buttons) so a popup or guest login isn't a dead-looking page. It flips back to
+`false` when the user resolves or the attempt fails — you don't manage it yourself.
+
+Imperative (non-React) equivalents: `onAuthStateChanged(cb)` and `onAuthLoadingChanged(cb)`
+(both fire immediately with the current value and return an unsubscribe fn), `getAuthLoading()`,
+`logout()`. Minimal busy UI without the hook:
+
+```ts
+import { onAuthLoadingChanged } from "@bounded-sh/client";
+onAuthLoadingChanged((busy) => { overlay.style.display = busy ? "block" : "none"; });
+loginWithPopup({ methods: ["google"] });   // overlay shows while the popup is open, hides on resolve
+```
 
 ## How `@user.*` reaches your rules
 
