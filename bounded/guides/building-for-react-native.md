@@ -146,11 +146,12 @@ user is signed in. To convert a guest to a durable real account, see
 [../docs/anonymous-accounts.md](../docs/anonymous-accounts.md) (there is no inline
 id-preserving upgrade; carry data over via transferable ownership).
 
-### Privy (email/social on RN, if you need a real account today)
+### Privy (alternative real-account path)
 
-`loginWithPrivy` is exported from the RN entry and is the supported way to get a
-real (email/social) RN login while hosted-redirect-on-RN lands. Wire it per your
-Privy RN setup, then the SDK adopts the resulting identity.
+Hosted redirect (above) is the recommended RN login. If you instead standardize on
+Privy across your stack, `loginWithPrivy` is exported from the RN entry: wire it per
+your Privy RN setup (a bridged `PrivyExpoProvider` passed to `init`), and the SDK
+adopts the resulting identity.
 
 ### Phantom wallet (opt-in, for onchain `@user.address`)
 
