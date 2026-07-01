@@ -79,6 +79,13 @@ function sendInput(roomId, mv, aim) {
 
 Discrete actions (attack, ability) are events — send them on the keypress, always.
 
+> **Which send model?** Send-on-change (above) fits the simple model where the
+> server free-runs your last held input — fine for cursors, presence, casual
+> co-op. For prediction-grade games (anything where rubber-banding matters),
+> use §4b's COMMAND-DRIVEN model instead, which sends one command per fixed
+> tick. Do not mix the two: ack-seq replay on top of a free-running reducer is
+> the rubber-band trap described in §4b.
+
 > **The tick itself can reach the outside world.** Beyond reading client intents, a
 > `session.live` tick can `return { state, call: { fn, args, as } }` to call a
 > whitelisted function — an AI NPC's brain, a settlement step, an external check.
