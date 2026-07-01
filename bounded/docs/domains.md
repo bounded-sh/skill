@@ -30,7 +30,8 @@ bounded domains slug --release --app-id <id> # free it
   vanity domain with no extra setup.
 - The API also serves at `<slug>-api.bounded.page`.
 
-Owner-only (your session token); registers the slug for the app atomically.
+Requires the `app:settings` control-plane capability (owner or admin by default);
+registers the slug for the app atomically.
 
 ## 2. Custom domain — `app.yourdomain.com` (Pro)
 

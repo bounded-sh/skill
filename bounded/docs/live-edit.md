@@ -67,8 +67,16 @@ Default to `app` unless the creator explicitly asks for full development.
 
 Cloud source tracking and variants:
 
-- New registrations default to `--artifacts on`, `--artifact-push on`, and
-  `--source-provider auto`, and `--edit-mode canonical`.
+- Cloud source sync is OPT-IN. New registrations default to `--artifacts off`.
+  Strongly recommend enabling it (`--artifacts on`) so the owner can prompt edits
+  from the deployed site's widget; enabling grants Bounded permission to store and
+  sync the app's source. When on, defaults are `--artifact-push on`,
+  `--source-provider artifacts` (managed by Bounded; use `github` to bring your own
+  repo), and `--edit-mode canonical`.
+- Keeping the live build in sync: with sync on, each successful cloud deploy pushes
+  the current source to Bounded automatically (a git commit + push under the hood).
+  Local commits that are never deployed won't reach the live build — deploy to sync.
+  Prompt-driven cloud edits are committed and pushed back for you.
 - `liveEdit.sourceProvider` / `--source-provider` selects the cloud source Git
   backend: `auto`, `github`, `artifacts`, or `none`. `auto` lets Bounded choose
   the configured backend for the environment. `none` opts out of cloud source

@@ -626,7 +626,7 @@ const roomPath = `rooms/r1`;                 // the session collection + room id
   //    rule `$userId == @user.id` means this only ever resolves to your
   //    projection (no hidden state).
 const stop = await live.subscribeView(roomPath, {
-  onData: (view) => render(view),            // your per-player view object
+  onData: (view) => buffer.push(view),       // buffer — do NOT render directly
   onError: (e) => console.error(e),
 });
 
@@ -637,6 +637,19 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 
 // later: await stop();
 ```
+
+> **Game feel: never render straight from `onData`.** Views arrive at the tick
+> cadence with network jitter; rendering each message as it lands looks jerky
+> and rubber-bands the local player. Buffer views and render on your own
+> `requestAnimationFrame` loop: interpolate REMOTE entities ~100-180ms in the
+> past, and predict the LOCAL player from input with input-replay
+> reconciliation (echo an `ackInputSeq` from your `views()`). The full playbook
+> with code is [realtime-netcode.md](realtime-netcode.md); a complete reference
+> client is the Bounded Arena demo (`arena.bounded.page`).
+
+> **Agent players from Node:** `WalletClient.live.subscribeView(roomPath, { onData })`
+> (in `@bounded-sh/server`) streams the wallet's own view under its keypair
+> session — pair with `WalletClient.live.intent` for a fully headless player.
 
 > **Routing is the SDK's job, not yours.** Always subscribe to live views through
 > `live.subscribeView` (or `subscribeLiveView`). Do not manually construct

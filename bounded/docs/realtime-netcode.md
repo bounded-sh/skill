@@ -51,15 +51,29 @@ not every frame. A held key moving in a straight line sends nothing after the in
 press; standing still sends nothing.
 
 ```ts
-let lastMv = [0, 0], lastAim = [0, 0], lastSent = 0;
+let lastMv = [0, 0], lastAim = [0, 0], lastSent = 0, trailing = null;
+function sendNow(roomId, mv, aim) {
+  lastSent = performance.now(); lastMv = mv.slice(); lastAim = aim.slice();
+  live.intent(roomId, { type: "input", mv, aim }, { fireAndForget: true });
+}
 function sendInput(roomId, mv, aim) {
   const moved = Math.abs(mv[0]-lastMv[0]) + Math.abs(mv[1]-lastMv[1]) > 0.02;
   const aimed = Math.abs(aim[0]-lastAim[0]) + Math.abs(aim[1]-lastAim[1]) > 0.03;
   if (!moved && !aimed) return;                 // server keeps applying last input
   const now = performance.now();
-  if (now - lastSent < 50) return;              // throttle rapid aim to ~20Hz
-  lastSent = now; lastMv = mv.slice(); lastAim = aim.slice();
-  live.intent(roomId, { type: "input", mv, aim }, { fireAndForget: true });
+  if (now - lastSent < 50) {                    // throttle rapid aim to ~20Hz…
+    // …but NEVER DROP the newest state. A change landing inside the throttle
+    // window must be sent when the window closes (a trailing send), or a quick
+    // key RELEASE / steer reversal stays stale on the server until your next
+    // change — the server keeps applying the old input, felt as 100-250ms of
+    // steering/brake latency. This trailing send is the most common missing
+    // piece in "why does it feel mushy" bug reports.
+    clearTimeout(trailing);
+    trailing = setTimeout(() => sendNow(roomId, mv, aim), 50 - (now - lastSent));
+    return;
+  }
+  clearTimeout(trailing);
+  sendNow(roomId, mv, aim);
 }
 ```
 
@@ -115,9 +129,60 @@ render(px, pz);
 Because of fog-of-war you only get *your own* authoritative state — which is exactly
 the one you need to predict. (You can't, and shouldn't, predict a hidden opponent.)
 
-> **Roadmap:** since your `tick()` is a pure function, the same module can run
-> client-side for prediction + reconciliation — write the sim once, get prediction for
-> free. Not automatic today; replicate the movement subset as above.
+**Keep the client and server movement models IDENTICAL — including collision.**
+Prediction quality is bounded by model divergence. If the server resolves walls
+with a radial push and the client uses AABB boxes (or different margins), every
+wall scrape diverges and triggers a visible correction. Share one constants
+table, and implement collision once in a shared function both sides import (or
+copy verbatim). Divergent collision code is the #1 source of "rubber-banding
+near buildings."
+
+### 4b. Input-replay reconciliation (the fix for rubber-banding at speed)
+
+The soft-lerp above blends your predicted position toward the server position —
+but the server position is *always* RTT/2 + a tick behind you. At high speed
+that stale target constantly drags the predicted player backward ("mushy",
+"rubber-band") even when your prediction was perfect. The real fix is the
+classic client-side-prediction loop:
+
+1. Tag every input intent with a monotonically increasing `seq`, and keep a
+   ring buffer of `{seq, input, dtMs}` you've sent but not yet seen acknowledged.
+2. In the live module, store the last applied `seq` per player and echo it in
+   that player's view (e.g. `view.ackInputSeq`).
+3. When a view arrives: **rewind** the local player to the server's
+   authoritative state, drop all inputs with `seq <= ackInputSeq`, then
+   **re-simulate** the remaining (unacked) inputs on top with the shared
+   movement model. The result is where you *should* be — your prediction —
+   corrected only by what the server actually disagreed about.
+
+```ts
+const pending = [];                       // {seq, input, dtMs}
+function onLocalInput(input, dtMs) {
+  const seq = ++inputSeq;
+  pending.push({ seq, input, dtMs });
+  sim.applyInput(me, input, dtMs);        // predict immediately
+  sendInput(roomId, { type: "input", seq, ...input });
+}
+function onView(view) {                   // authoritative state + ackInputSeq
+  me.setState(view.you);                  // rewind to server truth
+  while (pending.length && pending[0].seq <= view.ackInputSeq) pending.shift();
+  for (const p of pending) sim.applyInput(me, p.input, p.dtMs);  // replay
+}
+```
+
+With replay, "soft correction" becomes unnecessary for movement — the replayed
+state IS the corrected prediction. Keep a snap for teleports/knockback/respawn
+(server state changes your inputs didn't cause). If you only track
+`ackInputSeq` for a latency metric and still lerp toward raw server state,
+you've done the bookkeeping and skipped the payoff.
+
+### 4c. Interpolate on the SERVER clock, not arrival time
+
+Buffering remote snapshots by client receipt time couples your interpolation to
+network jitter. The view already carries a monotonic tick (`serverTick` or the
+`ctx.tick` you echo): timestamp buffer entries as `tick * everyMs` and render at
+`latestTick*everyMs - interpDelay`. Delivery jitter then only affects how much
+buffer you need, not the smoothness of the playback clock.
 
 ## 5. Authorize who may ACT — `session.intentRule`
 
@@ -187,6 +252,17 @@ tickrate the server must compute and send N views per tick. The climb, in order:
    (hitscan) at 64 are feasible; heavy physics or 128+ means sharding the world by
    region. Prove 8–16 players in one room first — that measures your real room
    budget empirically, and 16→64 becomes a fan-out-sharding problem, not a redesign.
+
+## Reference implementation
+
+**Bounded Arena** (`https://arena.bounded.page`) is the living reference for this
+whole doc: a server-authoritative 30Hz `session.live` arena whose client implements
+trailing-send throttling (§2), server-clock interpolation of remotes (§3/§4c), and
+prediction with input-replay reconciliation via an echoed `ackInputSeq` (§4b) — with
+an on-screen HUD showing view-gap percentiles and input→ack latency. Spectators read
+the `"_all"` view. Measured on production: p50 view gap 33ms at 64 concurrent
+connections per room. Agent players use `WalletClient.live.subscribeView` +
+`WalletClient.live.intent` from `@bounded-sh/server` (>= 0.0.34).
 
 ## Related
 - [realtime-and-games.md](realtime-and-games.md) — sessions, tick, fog-of-war, tiers
