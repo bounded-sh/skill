@@ -67,6 +67,48 @@ bounded share <wallet>          --role developer --app-id <id>
 bounded share newperson@x.com   --role viewer --app-id <id>   # works before they sign up
 ```
 
+### What each preset actually contains (the capability matrix)
+
+The prose above is a summary — this is the ground truth. `admin` is **owner minus the
+three keys-to-the-kingdom** (`app:delete`, `app:transfer`, `access:manage`), so **`admin`
+is a strict superset of `developer`** (and of `viewer`/`billing`). It already includes
+`code:read` + `policy:deploy` + `functions:deploy` + `ui:deploy`.
+
+| Capability | owner | admin | developer | viewer | billing |
+|---|:--:|:--:|:--:|:--:|:--:|
+| `app:view` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `code:read` (read source) | ✓ | ✓ | ✓ | — | — |
+| `policy:deploy` | ✓ | ✓ | ✓ | — | — |
+| `functions:deploy` | ✓ | ✓ | ✓ | — | — |
+| `ui:deploy` | ✓ | ✓ | ✓ | — | — |
+| `ui:fork` | ✓ | ✓ | — | — | — |
+| `cloud:prompt` / `cloud:apply` | ✓ | ✓ | — | — | — |
+| `data:act` | ✓ | ✓ | — | — | — |
+| `app:settings` | ✓ | ✓ | — | — | — |
+| `billing:manage` | ✓ | ✓ | — | — | ✓ |
+| `access:manage` (roster) | ✓ | — | — | — | — |
+| `app:delete` | ✓ | — | — | — | — |
+| `app:transfer` | ✓ | — | — | — | — |
+
+**⇒ To let someone edit AND redeploy an app AND manage its data/settings — but not delete
+it, transfer ownership, or add collaborators — grant `admin` alone.** You do **not** also
+need `developer`; `admin` already covers deploy. Reach for `developer` when you want *only*
+build/deploy powers (e.g. an AI agent) with no settings/billing/data access.
+
+### `bounded share` sets ONE role per collaborator (last-write-wins)
+
+The CLI stores a **single** role per subject — re-sharing with a new role **replaces** the
+old one, it does not stack. (The `access`-block `grants` array below is the only place
+capabilities compose — via *custom roles*, not by listing a person twice.) Since the presets
+nest (`viewer`/`billing`/`developer` ⊂ `admin` ⊂ `owner`), pick the **one** preset that
+covers everything the person needs; if no single preset fits, define a custom role.
+
+Verify the effective result any time with:
+
+```bash
+bounded access --app-id <id> --json   # per-member capability arrays — the source of truth
+```
+
 ## Custom roles + capabilities (the flexible layer)
 
 Roles are *bundles of capabilities*. The atomic capabilities (`surface:action`):

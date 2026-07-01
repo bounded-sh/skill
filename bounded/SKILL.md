@@ -73,7 +73,7 @@ only for the next question.
 | Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | Give backend code user-owned API keys | [docs/secrets.md](docs/secrets.md) |
 | Bounded Auth, email OTP, OAuth, guest users, optional text OTP | [docs/auth.md](docs/auth.md) |
-| Control who can administer an app: collaborators, control roles, external contributors, **platform super-admins** | [docs/access-control.md](docs/access-control.md) |
+| **Share an app / give someone access / add a collaborator or teammate / grant admin, deploy, or billing rights / let another person or agent change an app** → the answer is **`bounded share <email-or-wallet> --role admin\|developer\|viewer\|billing --app-id <id>`** (owner-only; `admin` = everything but delete/transfer/roster and already includes deploy). Do NOT hunt for an allowlist in app code — the Bounded control plane governs who can administer an app. Details, the capability matrix, external contributors & **platform super-admins** → | [docs/access-control.md](docs/access-control.md) |
 | Roles, owners, collaborators, scoped admins | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
 | Top-level roles and read/write scopes | [docs/roles.md](docs/roles.md) |
 | Manager/owner/collaborator identity sets or function log access | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
@@ -202,6 +202,10 @@ you@example.com` and do not commit private keys or secrets.
 - For hosted frontend URLs, claim a vanity slug with `bounded domains slug ...`
   and share the slug/custom-domain host. Do not route users or agents to raw
   app-id hosts as the public URL contract.
+- To give a **person or agent** access to an existing app, reach straight for
+  `bounded share ... --role ...` — never search app code for an email allowlist or admin
+  list. Who can *administer* an app lives in the control plane, not the codebase. Confirm
+  the result with `bounded access --app-id <id> --json`.
 - Use `@user.id` for normal ownership and membership checks.
 - Use `@user.address` only for wallet/onchain semantics.
 - Denied reads return empty `200` responses. Test read denial by comparing with a
