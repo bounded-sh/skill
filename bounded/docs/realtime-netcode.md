@@ -137,44 +137,78 @@ table, and implement collision once in a shared function both sides import (or
 copy verbatim). Divergent collision code is the #1 source of "rubber-banding
 near buildings."
 
-### 4b. Input-replay reconciliation (the fix for rubber-banding at speed)
+### 4b. Input-replay reconciliation — REQUIRES command-driven movement
 
 The soft-lerp above blends your predicted position toward the server position —
 but the server position is *always* RTT/2 + a tick behind you. At high speed
 that stale target constantly drags the predicted player backward ("mushy",
 "rubber-band") even when your prediction was perfect. The real fix is the
-classic client-side-prediction loop:
+classic client-side-prediction loop — **but it only works if you also change
+how the server moves the player.**
 
-1. Tag every input intent with a monotonically increasing `seq`, and keep a
-   ring buffer of `{seq, input, dtMs}` you've sent but not yet seen acknowledged.
-2. In the live module, store the last applied `seq` per player and echo it in
-   that player's view (e.g. `view.ackInputSeq`).
-3. When a view arrives: **rewind** the local player to the server's
-   authoritative state, drop all inputs with `seq <= ackInputSeq`, then
-   **re-simulate** the remaining (unacked) inputs on top with the shared
-   movement model. The result is where you *should* be — your prediction —
-   corrected only by what the server actually disagreed about.
+**The trap (do not skip this).** If your `tick()` free-runs the player every
+tick with the "last held input" (the natural way to write a reducer), ack-seq
+replay is mathematically broken: during the round-trip window the server
+integrates your *stale* input while the client replays its *fresh* inputs over
+the same wall-clock window on top of the server state. That window gets
+integrated twice — the predicted player overshoots, and every view yanks it
+back. **Constant rubber-banding, worst while simply driving straight.** We
+shipped this bug ourselves before deriving the correct model below; the fixed
+reference (Bounded Arena) measures corrections of **0.00px** where the naive
+model showed constant multi-pixel snapping.
+
+**The correct model (Source-engine style): the player's OWN movement is
+command-driven.** The server advances a player's physics exactly one fixed step
+per *received input command* — never on the free-running tick. World logic
+(pickups, timers, NPC/AI entities, scoring) stays per-tick.
+
+Module side:
 
 ```ts
-const pending = [];                       // {seq, input, dtMs}
-function onLocalInput(input, dtMs) {
-  const seq = ++inputSeq;
-  pending.push({ seq, input, dtMs });
-  sim.applyInput(me, input, dtMs);        // predict immediately
-  sendInput(roomId, { type: "input", seq, ...input });
+// per player: { lastSeq, budget } — budget accrues 1/tick, cap ~6.
+// Anti-speed-hack: commands beyond budget are DROPPED, never acked.
+for (const { address, intent } of intents) {
+  if (intent.type !== "input") continue;
+  const p = players[address];
+  if (intent.seq <= p.lastSeq) continue;   // stale/duplicate
+  if (p.budget < 1) continue;              // over real-time rate — drop
+  p.budget -= 1;
+  applyInputFields(p, intent);
+  stepPlayer(p, STEP_MS);                  // EXACTLY one fixed step per command
+  p.lastSeq = intent.seq;                  // ack only what was stepped
 }
-function onView(view) {                   // authoritative state + ackInputSeq
-  me.setState(view.you);                  // rewind to server truth
-  while (pending.length && pending[0].seq <= view.ackInputSeq) pending.shift();
-  for (const p of pending) sim.applyInput(me, p.input, p.dtMs);  // replay
-}
+// views(): echo p.lastSeq as ackInputSeq; the player's OWN state at FULL
+// precision (no rounding) — exact replay depends on it.
 ```
 
-With replay, "soft correction" becomes unnecessary for movement — the replayed
-state IS the corrected prediction. Keep a snap for teleports/knockback/respawn
-(server state changes your inputs didn't cause). If you only track
-`ackInputSeq` for a latency metric and still lerp toward raw server state,
-you've done the bookkeeping and skipped the payoff.
+Client side — fixed-timestep command loop (send every tick, ~30Hz, even when
+the input is unchanged; the command stream IS the simulation timeline):
+
+```ts
+// each 33ms tick (accumulator off requestAnimationFrame):
+seq++; history.push({ seq, input });                    // ring, cap ~240
+live.intent(room, { type: "input", seq, ...input }, { fireAndForget: true });
+stepPlayer(me, STEP_MS, input);                         // predict
+
+// on each view:
+me.setState(view.you);                                  // rewind to server truth
+while (history.length && history[0].seq <= view.ackInputSeq) history.shift();
+for (const c of history) stepPlayer(me, STEP_MS, c.input);  // exact replay
+```
+
+Because both sides run the same `stepPlayer` over the same command stream with
+the same fixed dt, the replayed state **equals** the prediction — corrections
+are ~0 unless the server genuinely disagreed (a collision with another player,
+a knockback). Keep a hard snap for teleports/respawn (and clear the history).
+Determinism notes: fixed dt only; `Math.sqrt(x*x+y*y)` instead of `Math.hypot`
+(hypot is not ULP-identical across engines); render the 30Hz sim smoothly by
+lerping between the last two tick states at `accumulator/STEP_MS`.
+
+**Measure it — the correction meter.** On every reconcile, record
+`dist(predictedBefore, afterRewindAndReplay)` and show a rolling avg/max on
+screen. This number IS the rubber-band: ~0px = smooth; multi-pixel average =
+you have the trap above. Never judge game feel by eye alone when a 5-line
+metric can prove it.
 
 ### 4c. Interpolate on the SERVER clock, not arrival time
 
@@ -256,13 +290,14 @@ tickrate the server must compute and send N views per tick. The climb, in order:
 ## Reference implementation
 
 **Bounded Arena** (`https://arena.bounded.page`) is the living reference for this
-whole doc: a server-authoritative 30Hz `session.live` arena whose client implements
-trailing-send throttling (§2), server-clock interpolation of remotes (§3/§4c), and
-prediction with input-replay reconciliation via an echoed `ackInputSeq` (§4b) — with
-an on-screen HUD showing view-gap percentiles and input→ack latency. Spectators read
-the `"_all"` view. Measured on production: p50 view gap 33ms at 64 concurrent
-connections per room. Agent players use `WalletClient.live.subscribeView` +
-`WalletClient.live.intent` from `@bounded-sh/server` (>= 0.0.34).
+whole doc: a server-authoritative 30Hz `session.live` arena with COMMAND-DRIVEN
+player movement (§4b), exact input-replay reconciliation, server-clock
+interpolation of remotes (§3/§4c), and an on-screen HUD showing view-gap
+percentiles, input→ack latency, and the correction meter. Spectators read the
+`"_all"` view. Measured on production: p50 view gap 33ms at 64 concurrent
+connections per room; correction avg 0.00px over 4,000 commands. Agent players
+use `WalletClient.live.subscribeView` + `WalletClient.live.intent` from
+`@bounded-sh/server` (>= 0.0.34).
 
 ## Related
 - [realtime-and-games.md](realtime-and-games.md) — sessions, tick, fog-of-war, tiers
