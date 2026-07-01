@@ -148,6 +148,14 @@ fits. Two guardrails: inline minting is for **real (ObjectId) app ids** only
 and inline **browser** callers must come from an origin the app owner registered
 (no-Origin callers — React Native, CLI, server — are allowed for real apps).
 
+**Hitting an origin error?** A browser inline-OTP call from an *unregistered* origin
+fails with `403 origin is not registered for this appId`; the hosted-redirect equivalent
+is `redirect_uri origin is not a registered origin for this app`. Fix it by registering
+the app's web origin — claim a vanity slug (`bounded domains slug <name> --app-id <id>`
+→ `<slug>.bounded.page`) or add a custom domain (`bounded domains add <host> --app-id
+<id>`); both wire `allowedOrigins` automatically. `localhost` (for dev) and Bounded's own
+first-party `*.bounded.sh` origins are always allowed without registration.
+
 ### Hosted login — email, social, and text in one flow
 
 The hosted OAuth2 + PKCE redirect flow covers **email OTP, Google/Apple/GitHub,
