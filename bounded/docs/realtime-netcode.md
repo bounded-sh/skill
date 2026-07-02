@@ -275,6 +275,47 @@ This is intentionally fail-closed because "can see the room" is not the same as
   `onchain:true` collections' rules to use `@user.id`, `@user.email`, or
   `@user.isAnonymous`).
 
+## 6. Lobby & match lifecycle — durable docs + persistent identity
+
+Bounded's durable collections and persistent (guest or authed) identity mean
+**your lobby/session/match docs are still there on the user's next visit** —
+tomorrow, or 10 seconds later on a page refresh. Client lobby code written as if
+state starts empty produces two field-verified failure modes:
+
+- **Stale auto-resume**: a `subscribe`/sync callback sees the old `session.matchId`
+  and helpfully joins it — the player is dropped into a match that ended (or that
+  the other player is still in) instead of the menu.
+- **Crossed match prepare**: the stale auto-join RACES the player's new "start
+  game" flow. Two prepare paths run; inputs bind to one room while views render
+  from another. Combined with command streams (§4b) this presents as violent
+  "flinging" — the client's fresh seq 1 is stale-dropped against the room's old
+  high seq, the server car freezes, and reconciliation yanks the predicted car
+  every view. (Diagnostic tell: incognito "fixes" it, because a fresh identity
+  has no old docs.)
+
+Rules that make the class impossible — all client-side discipline, cheap to
+build in from day one and expensive to retrofit:
+
+1. **Never auto-join a match just because a doc points at it.** Gate any
+   subscription-driven "resume/begin match" on ALL of: no match currently
+   active/preparing locally, the match doc is FRESH (e.g. `updatedAt` within
+   ~20s), and the players' explicit readiness state says a match should be
+   starting. A durable doc is a record, not a command.
+2. **One prepare path, mutexed.** Guard match-prepare with a boolean so a
+   subscription event and a user action can't both run it. Pin every view
+   subscription to the matchId it was created for and ignore (or unsubscribe)
+   callbacks when the active matchId no longer matches.
+3. **Reset on every mode start.** Entering any mode (including singleplayer)
+   first leaves the old lobby, unsubscribes, tears down the old live room, and
+   clears `matchId`/ready flags. Singleplayer must never consume a lobby matchId.
+4. **Clear on match end.** When a match finishes, clear `matchId` from the
+   durable session doc (in a `finally`) so a later sync can't re-begin it.
+
+Pair these with §4b's rejoin discipline (join resets the server-side command
+stream; client resets its seq on rejoin; seq fast-forward self-heal) — the
+lifecycle rules prevent the crossed-room state, the stream rules make any
+residual mismatch recover in one view.
+
 ## Checklist for a smooth live game
 
 - [ ] Inputs go through `live.intent` (rides the WS) — no per-action HTTP.
@@ -283,6 +324,8 @@ This is intentionally fail-closed because "can see the room" is not the same as
 - [ ] Local player predicted from input, reconciled to the server.
 - [ ] Continuous fields interpolated; discrete fields stepped.
 - [ ] `intentRule` set on every live room.
+- [ ] Lobby lifecycle: no auto-join from stale docs, mutexed prepare, reset on
+      mode start, matchId cleared on match end (§6).
 
 ## Scaling to many players (the climb past 1v1)
 
