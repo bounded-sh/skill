@@ -211,6 +211,22 @@ Determinism notes: fixed dt only; `Math.sqrt(x*x+y*y)` instead of `Math.hypot`
 (hypot is not ULP-identical across engines); render the 30Hz sim smoothly by
 lerping between the last two tick states at `accumulator/STEP_MS`.
 
+**Rejoin/resume discipline (do not skip).** Command streams are per-principal
+state on BOTH sides, and they desync on every rejoin path: a page reload
+restarts the client at seq 1 while the room remembers the old high seq — so
+every new command is dropped as stale and the player is frozen server-side
+(reconciliation then yanks the predicted player back every view: violent
+"flinging"). Three rules make this impossible:
+1. The module's `join` handler resets that principal's command stream
+   (`lastSeq = 0`, budget re-init) — every join, not just match start.
+2. The client resets its own seq + history when it (re)joins a room.
+3. Self-heal belt: on any view where `ackInputSeq > localSeq`, adopt the
+   server's stream position (`localSeq = ackInputSeq`, clear the history) —
+   this converts any residual stream mismatch into a one-view recovery.
+Also treat room identity as pinned: a client must ignore views from a room it
+has torn down (stale subscriptions racing a new match = inputs bound to one
+room, views from another).
+
 **Measure it — the correction meter.** On every reconcile, record
 `dist(predictedBefore, afterRewindAndReplay)` and show a rolling avg/max on
 screen. This number IS the rubber-band: ~0px = smooth; multi-pixel average =
