@@ -58,7 +58,7 @@ bounded data get --app-id <appId> --path agents/<agent-id>/spend
 ## Designing the policy for an agent
 
 The one step agents (and the humans prompting them) skip is **the
-non-negotiables**. If the agent spends, model the cap as a `rollingSum`; if it
+boundaries**. If the agent spends, model the cap as a `rollingSum`; if it
 moves value, model `conserve`; if it serves multiple tenants, model `tenantTag`.
 A policy that compiles but declares no invariant is *green but unprotected* —
 the agent can then do anything its rules allow. Full method:

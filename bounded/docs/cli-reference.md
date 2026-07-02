@@ -162,6 +162,8 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `dev` | Run the focused app dashboard, auto-register that app for live-edit, and start the loopback API daemon | `--app-id`, `--port`, `--api-port`, `--policy`, `--force` |
 | `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
 | `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--artifacts on\|off`, `--source-provider auto\|github\|artifacts\|none`, `--artifact-push on\|off`, `--edit-mode canonical\|variant`, `--build-command`, `--frontend-dir`, `--dist-dir`, `--backend-runtime-dir`, `--deploy-command`, `--rollback-command` |
+| `live-edit validate` | Run the live-edit proof/scope gate on the app repo's current git working-tree diff, no daemon needed; exits non-zero on failure | `--app-id` (defaults to the app whose registered repo is the current directory), `--json` |
+| `live-edit deploy` | Validate the working-tree diff, then run the same build → deploy → cloud source-sync pipeline as the daemon and print the deployed URL | `--app-id` (same default), `--skip-validate`, `--json` |
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json

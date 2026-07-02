@@ -374,6 +374,6 @@ category clients can branch on **even in minimal mode**:
 ## Related
 
 - [policy-generation-guide.md](policy-generation-guide.md) — turning a description into a policy
-- [invariants.md](invariants.md) — declaring the non-negotiables
+- [invariants.md](invariants.md) — declaring the boundaries
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — proving the policy
 - [data-plane.md](data-plane.md) — writing against the deployed policy

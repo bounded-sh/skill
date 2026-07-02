@@ -107,6 +107,48 @@ Cloud source tracking and variants:
   app uses a custom `--deploy-command`, use canonical mode unless the owner has
   provided a custom variant-aware deploy command.
 
+## Standalone Local-Agent Flow (no daemon)
+
+`bounded live-edit validate` and `bounded live-edit deploy` run the same
+proof/scope gate and build → deploy → cloud source-sync pipeline as the daemon,
+directly from the CLI. Use them when a local agent (Claude Code, Codex) edits
+the app's repo in place and no `bounded dashboard` daemon is running. No agent
+is spawned for you — you (or your local agent) do the editing.
+
+The loop:
+
+```sh
+# once, from the app repo:
+bounded live-edit register --app-id <appId> --repo . --origin https://<slug>.bounded.page
+
+# edit files in the repo with any tool, then:
+bounded live-edit validate   # proof/scope gate on the git working-tree diff
+bounded live-edit deploy     # validate + build -> deploy -> cloud source-sync
+```
+
+Behavior and flags:
+
+- Both verbs target the registered app whose repo is the current directory;
+  pass `--app-id <id>` to pick one explicitly (required when the directory is
+  unregistered or ambiguous — the error lists the registered apps). The app
+  must have a repo registered.
+- `validate` runs the same SMT/invariant and scope checks the daemon runs
+  before a live-edit deploy, against the current git working-tree diff. It
+  prints a PASS/FAIL report — changed files, the `violatedInvariant` name, and
+  the proof counterexamples on a policy failure — and exits non-zero on
+  failure. `--json` emits the validation object instead.
+- `deploy` validates first (skip the gate with `--skip-validate`), then runs
+  build → deploy → cloud source-sync and prints the deployed URL, deploy id,
+  and the cloud source push result. `--json` emits `{appId, url, deployId,
+  previousDeployId, logs}`. Deploying requires a signed-in identity.
+- Same guarantees as the daemon path: one shared validation code path, edits
+  outside the granted scope or touching secret paths are refused, and a
+  refused change must not be deployed.
+
+The daemon's external-agent (push) mode is this same pipeline: a widget job
+with no `agentCommand` expects the local agent to edit the repo and then
+validate + deploy.
+
 ## Cloud Live-Edit
 
 Cloud live-edit is the in-page deployed-app experience. The browser talks only
@@ -231,11 +273,11 @@ For a creator-local v1 app, embed the local widget script in the app frontend:
 
 The widget renders the animated Bounded mark as the launcher; clicking it opens a
 panel (the launcher mark doubles as the minimize control) with three tabs —
-**Prompt**, **Dashboard**, and **Non-negotiables** — and a persistent
+**Prompt**, **Dashboard**, and **Boundaries** — and a persistent
 **privacy toggle** above them. It:
 
 - reads `GET /apps/<appId>/widget/config` (which now also carries a
-  `policySummary` of collections + invariants for the Non-negotiables tab);
+  `policySummary` of collections + invariants for the Boundaries tab);
 - mints a short-lived widget session with `POST /apps/<appId>/widget/session`;
 - saves launcher corner placement, last tab, and the one-hour hide window in
   `localStorage`; the move control cycles the launcher through the four corners;
@@ -257,7 +299,7 @@ panel (the launcher mark doubles as the minimize control) with three tabs —
 - **Dashboard** tab: embeds the app dashboard at `dashboardUrl` (usually
   `http://localhost:8008/apps/<appId>`) in an iframe, with an expand-to-fullscreen
   view that minimizes back;
-- **Non-negotiables** tab: the policy's proven invariants plus the guardrails
+- **Boundaries** tab: the policy's proven invariants plus the guardrails
   applied to every prompt (policy lock, secret protection, staged validation).
 
 If the app cannot load from `127.0.0.1`, use the same script with
@@ -323,6 +365,8 @@ bounded dev --app-id <appId>
 bounded dashboard
 bounded live-edit list
 bounded live-edit register --help
+bounded live-edit validate --app-id <appId>
+bounded live-edit deploy --app-id <appId>
 ```
 
 The server contract lives in the CLI repo at

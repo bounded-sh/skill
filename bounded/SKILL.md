@@ -91,7 +91,7 @@ only for the next question.
 | What anti-cheat can and cannot prove | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | Realtime rooms and games | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | Native live modules and live status | [docs/live-runtime.md](docs/live-runtime.md) |
-| Live-edit a running app through the local daemon, widget feedback, agent jobs, scope gates, or `/apps/:appId/...` API | [docs/live-edit.md](docs/live-edit.md) |
+| Live-edit a running app — deploy local edits with `bounded live-edit validate`/`deploy` (no daemon), or through the local daemon, widget feedback, agent jobs, scope gates, or `/apps/:appId/...` API | [docs/live-edit.md](docs/live-edit.md) |
 | Realtime game feel: input cadence, interpolation, prediction | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
 | AI NPCs / AI players | [docs/ai-npcs.md](docs/ai-npcs.md) |
 | Long-running backend runtime | [docs/backend-runtime.md](docs/backend-runtime.md) |
@@ -133,7 +133,7 @@ only for the next question.
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) · [docs/data-plane.md](docs/data-plane.md) |
 | `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
 | `bounded link`, `bounded share`, collaborators | [docs/auth.md](docs/auth.md#linking--teams) |
-| `bounded live-edit`, `/apps/:appId/propose`, `/apps/:appId/validate`, `/apps/:appId/deploy`, widget feedback | [docs/live-edit.md](docs/live-edit.md) |
+| `bounded live-edit validate`, `bounded live-edit deploy`, deploying local edits, `/apps/:appId/propose`, `/apps/:appId/validate`, `/apps/:appId/deploy`, widget feedback | [docs/live-edit.md](docs/live-edit.md) |
 | `bounded.json`, `bounded account use`, account profiles, `.bounded/app.json`, `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
 | `project_limit_exceeded`, `maxProjects`, `429`, `dimension`, `projectedUsage`, `alerts[]` | [docs/billing.md](docs/billing.md#handling-limit-errors) |

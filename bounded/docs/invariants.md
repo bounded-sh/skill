@@ -1,4 +1,4 @@
-# Invariants — Declaring the Non-Negotiables
+# Invariants — Declaring the Boundaries
 
 **What's in here / when to read this:** the five invariant types — `conserve`,
 `rollingSum`, `bound`, `tenantTag`, `tenantEdge` — and the rule-vs-invariant decision.

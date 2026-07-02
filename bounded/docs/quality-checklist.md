@@ -39,7 +39,7 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **No always-false `update`/`delete` you actually need.** `"false"` is correct
   for immutable/append-only data — make sure you meant it.
 
-### Non-negotiables covered by invariants
+### Boundaries covered by invariants
 
 - [ ] **Every money / balance / supply field is under a `conserve`** if its total
   must be preserved. A balance field with no conservation invariant means any write

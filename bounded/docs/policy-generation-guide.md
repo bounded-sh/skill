@@ -15,9 +15,9 @@ Work in this order. Each step narrows the next.
 1. **Collections & path keys** — what objects exist, and how ownership nests.
 2. **Field types** — the shape of each document; mark `!` readonly and `?` optional.
 3. **Auth rules** — who may read/create/update/delete each collection.
-4. **Identify the non-negotiables** — the properties that must hold *forever, across
+4. **Identify the boundaries** — the properties that must hold *forever, across
    every write*, or money/tenancy/quotas break. This is the step everyone skips.
-5. **Express non-negotiables as invariants** — `conserve` / `rollingSum` /
+5. **Express boundaries as invariants** — `conserve` / `rollingSum` /
    `tenantTag` / `tenantEdge`.
 6. **Choose tiers** — `durable` for anything an invariant protects; `ephemeral` /
    `checkpointed` only when justified.
@@ -193,7 +193,7 @@ contributors, or is a multi-tenant platform, read
 [access-control.md](access-control.md) and add an `access` block; for a plain B2C app
 the creator is `owner` and you need none of it.
 
-### Step 4 — Identify the non-negotiables
+### Step 4 — Identify the boundaries
 
 Stop and ask: **what must be true no matter what any caller, agent, hook, or bug
 does?** These are the properties a rule alone cannot guarantee, because a rule
@@ -207,7 +207,7 @@ only sees one write in isolation. Look for:
   belongs to its org." "An order's items never reference another seller.")
 
 If the description involves spending, balances, multi-tenant data, or per-actor
-limits, there is a non-negotiable hiding in it. Name each one as a sentence
+limits, there is a boundary hiding in it. Name each one as a sentence
 ("each buyer spends at most $5000/day"); step 5 turns the sentence into an
 invariant.
 
@@ -220,12 +220,12 @@ you write the invariant. A per-agent spend cap should look like
 If you skip this step, the policy still compiles — it just doesn't protect
 anything. This is the #1 way a generated policy is *wrong but green*.
 
-### Step 5 — Express non-negotiables as invariants
+### Step 5 — Express boundaries as invariants
 
-Each non-negotiable maps to one invariant type. Full detail and every key in
+Each boundary maps to one invariant type. Full detail and every key in
 [invariants.md](invariants.md); the mapping:
 
-| Non-negotiable sentence | Invariant |
+| Boundary sentence | Invariant |
 |---|---|
 | "The total of X never changes" | `conserve` on a UInt/Int field |
 | "At most N of X per window (per actor)" | `rollingSum` (+ `scopeVariable` for per-actor) |

@@ -35,7 +35,7 @@ role. Any member can read and write the org's documents; only admins can delete
 them. Documents are searchable, and a document's author must be a member of the
 same org. Nothing leaks across orgs."
 
-Non-negotiables identified in step 4:
+Boundaries identified in step 4:
 
 - Members and docs **always belong to their org** → `tenantTag` on each.
 - A doc's `authorRef` **must point at a member of the same org** → `tenantEdge`.
@@ -108,7 +108,7 @@ buyer can spend at most $5,000 per day across all orders. Listings are
 searchable, and a listing always belongs to its seller; an order always belongs
 to its buyer."
 
-Non-negotiables:
+Boundaries:
 
 - A listing belongs to its seller, an order to its buyer → `tenantTag` on each.
 - Per-buyer daily spend ceiling → `rollingSum` with `scopeVariable: "$buyerId"`.
