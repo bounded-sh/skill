@@ -236,6 +236,15 @@ bound on a view doc would not be enforced; the view is a projection, not a sourc
 truth). The intent rule decides who acts, the read rule decides who sees, invariants
 decide what the persisted state may be.
 
+**Auditing intents durably is a separate, manual pattern.** `session.intentRule`
+gates live intents but does not write a durable log — live intents are ephemeral
+by design. If you need a durable audit/rate trail (e.g. an
+`inputAudits/$userId/events/$eventId` collection with a rolling cap), your tick
+code must write those rows explicitly; nothing ties every `live.intent` to a
+durable record automatically. Reserve it for the intents that matter (financial
+actions, anti-cheat evidence) — logging every 30Hz input would drown the write
+path.
+
 The three runtime roles stay clean:
 
 - **intents** are the only client write path, and they are **server-ordered** by
@@ -493,6 +502,16 @@ When the host creates a room, it also writes `lobby/<id>`. Clients browse with
 `get("lobby", { sort: { createdAt: "desc" } })` and get **live** updates via
 `subscribe("lobby", { onData })`. Both validated by dogfooding: a new `status:"open"`
 room reached a subscriber in ~200ms, and an `open → playing` update streamed through.
+
+**Two players racing to create the same room is normal — make creation
+idempotent.** When both sides of a matched lobby try to create `rooms/<roomId>`
+(or invoke a `createRoomFromLobby` function) at the same time, exactly one
+create wins; the loser gets a rule/exists rejection. That is the intended
+shape: derive the room id deterministically from the lobby id, attempt the
+create, and on rejection just proceed to join — "create if missing, else
+continue". Don't pre-elect a creator client (the elected client may have
+disconnected); dual-attempt + idempotent-continue is simpler and has no
+coordinator.
 
 > **Lobby status is a discovery hint.** The host client can mirror its own view's
 > `phase` into the lobby `status`, but if the host drops, the entry can go stale.

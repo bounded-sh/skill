@@ -93,6 +93,52 @@ policy.json ──► (deploy / verify) ──► resolvePolicyMacros ──► 
   - `cyclic @def reference involving "x"`
   - `constants.X must be a string, number, or boolean`
 
+## `ctx.constants` — policy constants at runtime
+
+Backend code gets the policy's `constants` block at runtime as a read-only,
+deep-frozen object — no more hardcoding values that already live in policy:
+
+```js
+// functions (every path: invoked, scheduled, queued, live-call effects)
+export default async function settleMatch(args, ctx) {
+  if (ctx.user.id !== ctx.constants.SETTLER) throw new Error("not the settler");
+  // ...
+}
+```
+
+- Available in **Bounded Functions** (`ctx.constants`) and **live modules**
+  (tick `ctx.constants`, refreshed when the policy redeploys and preserved
+  across room eviction).
+- `{}` when the policy has no `constants` block. Values are the exact scalars
+  `@const.NAME` resolves to in rules — one source of truth for rules AND code.
+- **Not yet available in agent (flue) runtimes** — agents get their config at
+  artifact-deploy time today; pass needed values via agent env/args until the
+  policy channel is wired.
+
+## `@const` in standalone `bounded functions deploy --auth`
+
+`@const.NAME` works in a function's `auth` rule when deploying the function
+standalone too — the server resolves macros against the app's **deployed
+policy** `constants` block before validating, exactly like a full policy
+deploy. (Older server builds rejected this with "not a valid special
+variable"; if you hit that, redeploy the policy with the function block
+instead, or upgrade.)
+
+The canonical service-identity pattern lines all three identities up from ONE
+constant:
+
+```jsonc
+"constants": { "SETTLER": "5jEJ..." },
+"session":   { "live": { "runAs": "@const.SETTLER" } },
+"functions": { "settleMatch": { "auth": "@user.id == @const.SETTLER" } },
+"matchResults": { "$roomId": { "create": "@user.id == @const.SETTLER" } }
+```
+
+The live room acts as `@const.SETTLER`, only that identity may invoke
+`settleMatch`, and only it may write settlement rows — change the wallet in
+one place. See [live-runtime.md](live-runtime.md) §"Authorization and identity"
+for `runAs`/`actAs` precedence.
+
 ## `@const` vs `@constants` vs `--constants` (don't confuse them)
 
 | Token / flag | Source | Resolved | Use for |

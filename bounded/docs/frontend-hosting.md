@@ -50,18 +50,20 @@ bounded site deploy ./dist --app-id <id>
   5000 files, path-safety.
 - Live in seconds at the app's mapped slug or custom-domain host, e.g.
   `https://<slug>.bounded.page`.
-- New apps created by the CLI default to a **private hosted-site gate**. Owners,
-  managers, and collaborators can pass with normal Bounded login. Deployed HTTPS
-  pages do not need background localhost access, which keeps the gate compatible
-  with strict Chrome and Safari. Use `--public` during app creation when the
-  site should be public from the start. Existing apps stay as they were. After
-  creation, flip or inspect the gate with
-  `bounded site privacy private|public|status --app-id <id>`, **or** flip it from
-  the in-app Bounded widget's always-visible privacy toggle (it calls the local
-  daemon, which is why the daemon should stay running). The setting
-  applies to every mapped static host that resolves to the app: vanity slug and
-  active custom domains. API hosts are not gated. The private-site gate
-  page itself tells owners and visitors how to make the app public.
+- New apps created by the CLI default to a **private hosted-site gate**. The
+  gate is deliberately simple and **web-login only**: a public app is reachable
+  by anyone; a private app is reachable only after signing in with a Bounded
+  web account that is the owner, a collaborator, or invited (identities linked
+  to that account — e.g. a linked CLI key's apps — resolve server-side). There
+  is no local-key/daemon auto-pass through the gate. Use `--public` during app
+  creation when the site should be public from the start. Existing apps stay as
+  they were. After creation, flip or inspect the gate with
+  `bounded site privacy private|public|status --app-id <id>`, **or** flip it
+  from the in-app Bounded widget's always-visible privacy toggle (cloud-backed;
+  no local daemon required). The setting applies to every mapped static host
+  that resolves to the app: vanity slug and active custom domains. API hosts
+  are not gated. The private-site gate page itself tells owners and visitors
+  how to make the app public.
 
 Frontend variants are optional preview branches:
 
