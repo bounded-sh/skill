@@ -83,7 +83,7 @@ only for the next question.
 | Per-app product analytics (traffic, web vitals, errors) | [docs/analytics.md](docs/analytics.md) |
 | SDK calls and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | CLI commands | [docs/cli-reference.md](docs/cli-reference.md) |
-| Project config, `bounded.json`, account profiles, key safety | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
+| Project config, `bounded.json`, account profiles, web login, key safety | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | Data-plane read/write semantics and atomic batches | [docs/data-plane.md](docs/data-plane.md) |
 | Queries, pagination, aggregates | [docs/queries.md](docs/queries.md) |
 | Files and search | [docs/files-and-search.md](docs/files-and-search.md) |
@@ -100,7 +100,7 @@ only for the next question.
 | Trading patterns | [docs/onchain-trading.md](docs/onchain-trading.md) |
 | Bounded Pay | [docs/bounded-pay.md](docs/bounded-pay.md) |
 | Proof coverage and counterexamples | [docs/proof-coverage.md](docs/proof-coverage.md) · [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
-| Key safety and account recovery | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
+| CLI auth source, key safety, and account recovery | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 | End-to-end tests for authed apps | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |
 | Anonymous users, invite links, account upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | Build for agents, web, mobile, or server | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) |
@@ -132,9 +132,9 @@ only for the next question.
 | `getPage`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) · [docs/sdk-reference.md](docs/sdk-reference.md) |
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) · [docs/data-plane.md](docs/data-plane.md) |
 | `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
-| `bounded link`, `bounded share`, collaborators | [docs/auth.md](docs/auth.md#linking--teams) |
+| `bounded link`, `bounded login`, `bounded share`, collaborators, web account, wallet account | [docs/auth.md](docs/auth.md) |
 | `bounded live-edit validate`, `bounded live-edit deploy`, deploying local edits, `/apps/:appId/propose`, `/apps/:appId/validate`, `/apps/:appId/deploy`, widget feedback | [docs/live-edit.md](docs/live-edit.md) |
-| `bounded.json`, `bounded account use`, account profiles, `.bounded/app.json`, `~/.bounded/credentials`, `BOUNDED_PRIVATE_KEY` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
+| `bounded.json`, `bounded account use --web`, account profiles, `.bounded/app.json`, `~/.bounded/credentials`, `~/.bounded/web-session.json`, `BOUNDED_PRIVATE_KEY` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
 | `project_limit_exceeded`, `maxProjects`, `429`, `dimension`, `projectedUsage`, `alerts[]` | [docs/billing.md](docs/billing.md#handling-limit-errors) |
 
@@ -186,10 +186,16 @@ bounded verify
 bounded dashboard
 ```
 
-`bounded init` writes `policy.json` and public project config. The first CLI
-command that needs auth creates or loads the configured local keypair. That key
-owns apps created with it. Link it early with `bounded link --email
-you@example.com` and do not commit private keys or secrets.
+`bounded init` writes `policy.json` and public project config. The CLI then uses
+the account source selected by that config:
+
+- **Wallet/keypair mode**: `global`, `project`, `profile`, or `env`. The selected
+  keypair owns apps created with it and signs data-plane writes. Back it up or
+  link it early with `bounded link --email you@example.com`; do not commit private
+  keys or secrets.
+- **Web account mode**: run `bounded account use --web`, then
+  `bounded login --email you@example.com`. The CLI uses
+  `~/.bounded/web-session.json` and does not create or link a local key.
 
 ## Rules Of Thumb
 

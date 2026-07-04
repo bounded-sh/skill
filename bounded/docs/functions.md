@@ -196,8 +196,10 @@ export default async function (args, ctx) {
 
 AI/external-services credit is **per-account** (the app owner). Two things to wire and to tell the user:
 
-1. **`bounded link`** — attach the owner key to an email account (also the day-one
-   key-safety step). Billing and buckets live on that account.
+1. **Use the owner's Bounded account.** Wallet/keypair owners should run
+   `bounded link` to attach the owner key to a web account (also the day-one
+   key-safety step). Web-account owners should run `bounded account use --web`
+   and `bounded login --email ...`. Billing and buckets live on that account.
 2. **Top up through Bounded** — never a custom checkout:
    - Stripe: `POST /billing/checkout { kind: "services_topup" }` -> redirect the user to the returned `url`.
    - Crypto (USDC on Solana): `POST /billing/x402/intent` -> pay -> `POST /billing/x402/settle`.

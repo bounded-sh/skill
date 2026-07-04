@@ -1,75 +1,87 @@
-# Auth — dev identity vs end-user auth
+# Auth — CLI/admin auth vs end-user auth
 
-**What's in here / when to read this:** the two identity systems — your dev
-keypair vs your app's end-users — plus account **linking** and **sharing** an app
-with teammates by email.
+**What's in here / when to read this:** the two identity systems — CLI/admin auth
+for builders vs your app's end-users — plus account **linking**, CLI web login,
+and **sharing** an app with teammates by email.
 
 Bounded has **two distinct identity systems**. Don't conflate them:
 
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
-| **Dev identity** | you / your agent | an ed25519 keypair the CLI and `@bounded-sh/server` sign with | owns apps; the actor `bounded deploy` / `data` run as |
+| **CLI/admin auth** | you / your agent | either a wallet/keypair account source or a Bounded web account session | owns/administers apps; wallet mode signs data-plane writes, web mode authenticates control-plane commands |
 | **End-user auth** | your app's users | Bounded Auth for normal apps (email OTP + OAuth/social + optional text OTP), or a connected Solana wallet (Phantom) for crypto apps | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
-## Dev identity — the keypair IS your account
+## CLI auth — wallet/keypair vs web account
 
-There is **no login step** for building. `bounded init` writes public
-`bounded.json`; the first command that needs auth generates or loads the account
-source selected there. By default that is `~/.bounded/credentials` — a JSON file
-(mode `0600`) with a base58 `privateKey` field. A project can instead select a
-profile (`~/.bounded/accounts/<profile>/credentials`), a project key
-(`<project>/.bounded/credentials`), or `BOUNDED_PRIVATE_KEY`. That keypair is the
-identity — it owns every app you create and signs every write.
+`bounded init` writes public `bounded.json`; account selection lives there. The
+CLI has two account-source families:
+
+- **Wallet/keypair mode** (default): `global` (`~/.bounded/credentials`),
+  `project` (`<project>/.bounded/credentials`), `profile`
+  (`~/.bounded/accounts/<profile>/credentials`), or `env`
+  (`BOUNDED_PRIVATE_KEY`). The keypair is the signing identity; it owns apps
+  created with it and signs data-plane writes.
+- **Web account mode**: `bounded account use --web`, then
+  `bounded login --email you@example.com`. This stores refreshable Bounded Auth
+  credentials in `~/.bounded/web-session.json` and uses the web account directly.
+  It does **not** create, link, or reuse a local wallet key. Email OTP is the
+  current CLI web-login method; hosted/social web login uses the same account
+  model when available.
 
 ```bash
-bounded whoami        # prints address, environment, key source (creates the credentials if absent)
+bounded whoami                    # shows wallet address or web identity, environment, and source
+bounded account use --web
+bounded login --email you@example.com
 ```
 
-> **Don't lose this key.** `~/.bounded/credentials` is auto-generated, never shown,
-> and never backed up — and it **owns every app you create**. Lose it without having
-> linked or shared first and those apps are **unrecoverable** (there is no
-> transfer-ownership or key-recovery command). Treat it like an SSH private key: back
-> it up, and run **`bounded link`** on day one as your anti-loss mechanism. Full
+> **Wallet mode key warning.** A wallet credentials file is auto-generated, never
+> shown, and never backed up. Lose it without having linked, shared, or backed it
+> up first and its apps are unrecoverable. Treat it like an SSH private key and
+> run **`bounded link`** on day one if you choose wallet/keypair mode. Full
 > guidance: [key-and-account-safety.md](key-and-account-safety.md).
 
 - Use `bounded account use <profile>` to run one project under another named
-  account without committing secrets. Override everything with
-  **`BOUNDED_PRIVATE_KEY`** (a **base58** secret string) for CI/automation.
-  Never reuse a human's keypair for an autonomous agent unless that is explicitly
-  intended.
+  wallet account without committing secrets. Use `bounded account use --project`
+  for an isolated repo-local wallet key, `bounded account use --env` plus
+  **`BOUNDED_PRIVATE_KEY`** for CI/automation, or `bounded account use --web` for
+  a human web account. Never reuse a human's wallet keypair for an autonomous
+  agent unless that is explicitly intended.
 
 ### Linking & teams
 
-The keypair never needs a human account to build, verify, deploy, or read/write.
-But you can **link** it to a human (email) account, and **share** apps with
-teammates — without anyone juggling raw wallet keys:
+Wallet/keypair mode does not need a web account to build, verify, deploy, or
+read/write. But you can **link** a wallet key to a web account, and **share** apps
+with teammates — without anyone juggling raw wallet keys:
 
-- **`bounded link`** runs an OAuth-style **device flow**: the CLI prints a verify
-  URL + code, you approve in a browser with your email account, and the CLI
-  records the linkage. For headless/agent workflows, use
+- **`bounded link`** is wallet-only. It runs an OAuth-style **device flow**: the
+  CLI prints a verify URL + code, you approve in a browser with your web account,
+  and the CLI records the linkage. For headless/agent workflows, use
   `bounded link --email you@example.com`: the CLI sends the OTP, reads the code
   from stdin, approves the same fingerprint-checked device flow, and records the
-  linkage without opening a browser. After linking, your keypair address **and**
-  your email's wallet become admin-collaborators on each other's apps. **Your
-  keypair keeps signing for everything** — linking adds an account association,
-  it never replaces or rolls your key.
-  A linked email account is unique: Bounded will not intentionally attach the
-  same wallet/user identity to two different email accounts. Once linked, that
-  email is also the owner notification surface for plan/usage alerts.
+  linkage without opening a browser. After linking, your keypair address and the
+  web account become admin-collaborators on each other's apps. **Your keypair
+  keeps signing for everything** — linking adds an account association, it never
+  replaces or rolls your key. In web account mode, use `bounded login`; there is
+  no local key to link.
+  A linked web account is unique: Bounded will not intentionally attach the same
+  wallet/user identity to two different web accounts. When the current web login
+  method is email, that email is also the owner notification surface for
+  plan/usage alerts.
 - **`bounded share <wallet|email> --role developer|admin|viewer|billing --app-id <id>`** adds a
   collaborator (`policy` is a legacy alias for `developer`). Pass a **wallet** to add it directly. Pass an **email** and
   Bounded resolves it to that person's canonical wallet — an **auto-provisioned
   embedded wallet**, so the invitee needs no wallet of their own — then sends an
   invite email when outbound email is configured. `policy` may update the
   policy; `admin` may also act/sign on the app's data the way the owner can.
-  Only the owner can add collaborators; the server enforces it against the
-  wallet derived from your keypair. List with `bounded collaborators`.
+  Only the owner can add collaborators; the server enforces it against the active
+  CLI identity. List with `bounded collaborators`.
 
 Collaboration is **control-plane** authority (manage the app). It is **not** a
 data-plane bypass — see [admin-and-ownership.md](admin-and-ownership.md). Command
 detail: [cli-reference.md](cli-reference.md).
 
-On the server, the same kind of keypair drives `@bounded-sh/server`:
+On the server, `@bounded-sh/server` still uses explicit keypairs for
+server-signed writes:
 
 ```ts
 import { init, createWalletClient } from "@bounded-sh/server";

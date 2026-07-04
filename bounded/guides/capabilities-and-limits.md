@@ -11,7 +11,7 @@ promising a user something Bounded can't deliver.
 | **Provable realtime backend** | One `policy.json` → collections, auth rules, and invariants proven by Z3 at deploy and enforced atomically by Bounded. Constraint-breaking writes are `409`s, never partial. |
 | **Money / value safety** | `conserve` proves a total can't be minted or destroyed; `rollingSum` proves spend/rate caps per window and per actor. These are proofs, not prompt instructions. |
 | **Multi-tenant isolation** | `tenantTag` / `tenantEdge` prove documents and references stay inside their tenant — "nothing leaks across orgs" discharged at deploy. |
-| **Agent backends** | Zero-ceremony keypair identity; an agent goes from description to deployed without a human auth step ([building-for-agents.md](building-for-agents.md)). |
+| **Agent backends** | Zero-ceremony wallet/keypair identity; an agent can go from description to deployed without a human auth step ([building-for-agents.md](building-for-agents.md)). |
 | **Realtime games** | Server-authoritative tick loop, fog-of-war views, proven per-player rate caps, automatic settlement ([../docs/realtime-and-games.md](../docs/realtime-and-games.md)). |
 | **Onchain power-ups** | A verified subset of invariants enforces on Solana too ([../docs/proof-coverage.md](../docs/proof-coverage.md)). |
 | **Imperative escape hatch (Functions)** | When declarative policy can't express it — *fetch a third-party API, transform, then write* — a **Bounded Function** runs your code. We don't prove its logic, but its writes still go through invariants and only policy-authorized callers can invoke it ([functions.md](../docs/functions.md)). |

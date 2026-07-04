@@ -132,5 +132,5 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
 - [../docs/cli-reference.md](../docs/cli-reference.md) — every `bounded data` command
 - [building-a-backend.md](building-a-backend.md) — the `@bounded-sh/server` path
 - [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do
-- [../docs/auth.md](../docs/auth.md) — the keypair identity model
-- [../docs/key-and-account-safety.md](../docs/key-and-account-safety.md) — per-agent key isolation; the key owns the agent's apps, so link or back it up
+- [../docs/auth.md](../docs/auth.md) — CLI/admin auth sources, including wallet/keypair mode
+- [../docs/key-and-account-safety.md](../docs/key-and-account-safety.md) — per-agent wallet isolation; wallet keys own their apps, so link or back them up

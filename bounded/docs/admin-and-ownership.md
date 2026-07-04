@@ -33,7 +33,7 @@ proven backend unprovable. So Bounded splits authority into two planes:
 
 | Plane | What it covers | Who has it | How |
 |---|---|---|---|
-| **Control plane** | Manage the app: deploy/replace policy + UI, add/remove collaborators, configure functions + secrets, billing, delete the app | **Owner + control roles** (`admin`/`developer`/`viewer`/`billing` + custom) | The owner's keypair; others via `bounded share --role` / the `access` block — see [access-control.md](access-control.md) |
+| **Control plane** | Manage the app: deploy/replace policy + UI, add/remove collaborators, configure functions + secrets, billing, delete the app | **Owner + control roles** (`admin`/`developer`/`viewer`/`billing` + custom) | The owner's CLI account source: wallet/keypair or web account. Wallet keys can be attached with `bounded link`; others use `bounded share --role` / the `access` block — see [access-control.md](access-control.md) and [auth.md](auth.md) |
 | **Data plane** | Read/write app **data** | **Whoever the policy rules + invariants allow — and ONLY them** | Declared in `policy.json`. **No owner bypass.** |
 
 The owner's legitimate reign is the *control plane* (it's their app). On the
@@ -106,14 +106,15 @@ admin can seed itself — see the bootstrap section below for why.
   Note the gate keys on `@user.id` (stable identity), so an email-login admin
   (no wallet) and a wallet-login admin are gated identically.
 
-## Linked accounts: one stable identity across logins
+## Linked and web accounts: one stable identity across logins
 
-`bounded link` / email `bounded share` bind a human's **CLI keypair** and their
-**auto-provisioned embedded wallet** together as admin-collaborators ([auth.md](auth.md)).
-Because you gate on `@user.id` — the **universal stable identity** that is the
-same regardless of which login the human used — you seed the admins collection
-**once** at the account's `@user.id`, and the gate matches every authenticated
-request from that account.
+Web-account login and `bounded share` use the human's Bounded account identity.
+`bounded link` is only for wallet/keypair CLI sources: it attaches that signing
+key to the same web account so the wallet key and web account become
+admin-collaborators ([auth.md](auth.md)). Because you gate on `@user.id` — the
+**universal stable identity** that is the same regardless of which web login the
+human used — you seed the admins collection **once** at the account's `@user.id`,
+and the gate matches every authenticated request from that account.
 
 This is exactly why ownership/membership should key on `@user.id` rather than
 `@user.address`: `@user.address` is the *specific acting wallet* (and is **null**
@@ -199,7 +200,7 @@ that says *which* X and *to whom*, and let the prover keep everyone honest.
 
 ## Related
 
-- [auth.md](auth.md) — keypair identity, `bounded link`, email `bounded share`, collaborators
+- [auth.md](auth.md) — CLI auth sources, `bounded login`, `bounded link`, email `bounded share`, collaborators
 - [policy-generation-guide.md](policy-generation-guide.md) — the "who is the admin?" step
 - [invariants.md](invariants.md) — the constraints that bind admins too
 - [functions.md](functions.md) — functions are gated by an `auth` rule, same admin pattern

@@ -486,7 +486,7 @@ proof boundary): [functions.md](functions.md).
 
 - [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — client setup + auth + live reads
 - [../guides/building-a-backend.md](../guides/building-a-backend.md) — server-signed writes
-- [auth.md](auth.md) — dev keypair identity vs end-user email/wallet auth
+- [auth.md](auth.md) — CLI/admin auth sources and end-user email/wallet auth
 - [queries.md](queries.md) — filters, sort, paging, aggregations, search
 - [data-plane.md](data-plane.md) — atomic writes and failure semantics
 - [cli-reference.md](cli-reference.md) — the same operations from the CLI

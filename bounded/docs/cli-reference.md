@@ -10,46 +10,55 @@ errors are emitted as JSON too), `--quiet` (minimal output), `--env`
 
 ## Identity & teams
 
-No login step — your ed25519 keypair IS your account, and **owns every app you
-create**. It lives in `~/.bounded/credentials` (a JSON file with a base58
-`privateKey` field, mode `0600` in a `0700` dir, auto-created on first run), or is
-supplied via the `BOUNDED_PRIVATE_KEY` env var (a **base58** secret string, which
-overrides the file). See [auth.md](auth.md).
+The CLI has two account-source families:
 
-> **This file is your account, and it is unrecoverable if lost.** There is no
-> password reset and no server-side master key — ownership *is* the keypair. If
-> you lose `~/.bounded/credentials` without having linked or shared, every app it
-> created is orphaned forever. Treat it like an SSH private key: **back it up.**
-> Then run `bounded link` (below) so the apps survive local key loss. Full safety
-> model: [key-and-account-safety.md](key-and-account-safety.md).
+- **Wallet/keypair sources**: `global`, `project`, `profile`, and `env`. These use
+  a local ed25519 keypair (`~/.bounded/credentials`, a profile/project credentials
+  file, or `BOUNDED_PRIVATE_KEY`). The keypair owns apps created with it and signs
+  data-plane writes. See [auth.md](auth.md).
+- **Web account source**: `web`. Run `bounded account use --web`, then
+  `bounded login --email you@example.com`. This uses
+  `~/.bounded/web-session.json` and does not create or link a local key. Email OTP
+  is the current CLI web-login method; the account model is web-based, not
+  email-only.
+
+> **Wallet keys are unrecoverable if lost.** If you lose a wallet credentials file
+> without having linked, shared, or backed it up, every app it created can be
+> orphaned forever. Treat wallet keys like SSH private keys: back them up, then run
+> `bounded link` so the apps survive local key loss. Full safety model:
+> [key-and-account-safety.md](key-and-account-safety.md).
 
 > **Never commit a key.** `BOUNDED_PRIVATE_KEY` and the raw `privateKey` are
 > secrets — never commit or log them. `deploy --create` writes a managed
 > `.gitignore` secrets block for you (see below), but you are still responsible
-> for keys you drop in a repo by hand.
+> for keys you drop in a repo by hand. `~/.bounded/web-session.json` is also a
+> local secret and should not be copied into a repo.
 
-> **Running another identity:** use `bounded account use <profile>` in the
-> project, then `bounded whoami` or `bounded link --email you@example.com`.
-> Profile keys live at `~/.bounded/accounts/<profile>/credentials`, so one
-> project can use your default account and another can use a client/team account
-> without committing secrets. You can still use `BOUNDED_PRIVATE_KEY` for CI.
+> **Running another identity:** use `bounded account use <profile>`,
+> `bounded account use --project`, `bounded account use --env`, or
+> `bounded account use --web` in the project, then `bounded whoami`. Profile keys
+> live at `~/.bounded/accounts/<profile>/credentials`, so one project can use your
+> default account and another can use a client/team account without committing
+> secrets. Use `bounded login --email ...` for web mode and `BOUNDED_PRIVATE_KEY`
+> for wallet-mode CI.
 
 | Command | Does | Example |
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
-| `whoami` | Show address, environment, key source, linked email (if any), and this folder's app marker if present (creates the key on first run) | `bounded whoami` |
-| `link` | **The anti-loss move.** Bind the keypair to your human (email) account via an **OAuth device flow** (with an anti-phishing fingerprint), or use `--email` for headless OTP approval; keypair + email-account wallet become admin-collaborators on each other's apps, so your apps survive local key loss. The keypair keeps signing — linking only ADDS the association, it never rolls or replaces the key. | `bounded link --email you@example.com` |
-| `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, or env. | `bounded account use client-a` |
+| `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. Wallet mode may create the selected key on first run. | `bounded whoami` |
+| `login` | Log the CLI into a Bounded web account for projects with `account.keySource:"web"`. `--email` is the current CLI web-login method and stores refreshable credentials in `~/.bounded/web-session.json`. | `bounded login --email you@example.com` |
+| `link` | **Wallet-mode anti-loss.** Bind the active wallet keypair to a web account via an **OAuth device flow** (with an anti-phishing fingerprint), or use `--email` for headless OTP approval. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
+| `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. See [access-control.md](access-control.md) for what each role can do. | `bounded share teammate@example.com --role admin --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 | `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
 
 `link` flags: `--no-browser` (just print the URL), `--email <addr>` (headless
-approval: email an OTP, read it from stdin, approve this device), `--timeout
-<dur>` (default `10m`). Collaboration grants **control-plane** authority (manage
-the app), not a data-plane bypass — give data powers explicitly via policy rules
-([admin-and-ownership.md](admin-and-ownership.md)).
+approval: email an OTP, read it from stdin, approve this wallet key), `--timeout
+<dur>` (default `10m`). `login` flags: `--email <addr>`. Collaboration grants
+**control-plane** authority (manage the app), not a data-plane bypass — give data
+powers explicitly via policy rules ([admin-and-ownership.md](admin-and-ownership.md)).
 
 ### Project config — `bounded.json`
 
@@ -83,8 +92,9 @@ key material:
 
 Resolution rules:
 
-| Config | Private key location |
+| Config | Auth material |
 |---|---|
+| `{"keySource":"web"}` | Bounded Auth session at `~/.bounded/web-session.json`; no local private key |
 | `{"keySource":"global"}` | `~/.bounded/credentials` |
 | `{"keySource":"project","keyPath":".bounded/credentials"}` | `<project>/.bounded/credentials` |
 | `{"keySource":"profile","profile":"client-a"}` | `~/.bounded/accounts/client-a/credentials` |
@@ -98,11 +108,28 @@ bounded account use personal    # use ~/.bounded/accounts/personal/credentials
 bounded account use --project   # use <project>/.bounded/credentials
 bounded account use --global    # use ~/.bounded/credentials
 bounded account use --env       # require BOUNDED_PRIVATE_KEY
+bounded account use --web       # use ~/.bounded/web-session.json
+bounded login --email you@example.com
 ```
 
-Explicit flags still win: `--app-id`, `--env`, and `BOUNDED_PRIVATE_KEY` override
-project defaults. Older projects with only `.bounded/app.json` still work; the
-CLI falls back to that marker when `bounded.json` is absent.
+Explicit flags still win for app/environment routing: `--app-id` and `--env`
+override project defaults. `BOUNDED_PRIVATE_KEY` is the wallet-mode CI path, but
+an explicit project `account.keySource:"web"` uses the web session for
+control-plane commands; commands requiring a wallet signer ask you to select a
+wallet source. Older projects with only `.bounded/app.json` still work; the CLI
+falls back to that marker when `bounded.json` is absent.
+
+New live-edit registrations default `liveEdit.artifacts` and
+`liveEdit.artifactPush` to `true`, with `liveEdit.sourceProvider: "auto"`.
+Set `liveEdit.sourceProvider` to `github`, `artifacts`, or `none` when a repo
+needs an explicit cloud source backend or opt-out. Set either legacy value to
+`false` in `bounded.json`, or pass `--artifacts off` / `--artifact-push off`,
+when a repo should opt out of Bounded cloud source tracking or automatic sync.
+
+Optional `liveEdit.frontendDir`, `liveEdit.distDir`, and
+`liveEdit.buildCommand` are public, secret-free build hints for agents and cloud
+live-edit. They are repo-relative except for `buildCommand`, which runs in
+`frontendDir` when set and otherwise at the repo root.
 
 New live-edit registrations default `liveEdit.artifacts` and
 `liveEdit.artifactPush` to `true`, with `liveEdit.sourceProvider: "auto"`.
@@ -120,8 +147,9 @@ live-edit. They are repo-relative except for `buildCommand`, which runs in
 
 On `deploy --create`, the CLI writes a per-app marker at
 `<project>/.bounded/app.json`. It records only **PUBLIC** information (never a
-private key) and is **safe to commit** — it tells anyone with the repo which app,
-owner, and env this folder maps to, and which key a teammate needs:
+private key, web token, or refresh token) and is **safe to commit** — it tells
+anyone with the repo which app, owner identity, env, and account source this
+folder maps to:
 
 ```json
 {
@@ -137,15 +165,17 @@ owner, and env this folder maps to, and which key a teammate needs:
 }
 ```
 
-- `owner` — the **public key** that owns the app.
-- `ownerKeySource` — WHERE the private key lives (never the key itself): one of
+- `owner` — the public owner identity recorded at create time: a wallet address
+  in wallet/keypair mode, or a Bounded Auth user id in web mode.
+- `ownerKeySource` — the account source (never a key or token): one of
   `global (~/.bounded/credentials)`, `project (.bounded/credentials)`,
-  `profile "<name>" (~/.bounded/accounts/<name>/credentials)`, or
-  `env (BOUNDED_PRIVATE_KEY)`. Answers "which key do I need for this app?"
+  `profile "<name>" (~/.bounded/accounts/<name>/credentials)`,
+  `env (BOUNDED_PRIVATE_KEY)`, or `web (Bounded Auth)`. Answers "which account
+  source does this app use?"
 - `sitePrivate` — true when the hosted static site was created behind the
   private site gate. Older/public apps may omit it.
-- `linkedAccount` — the email account this owner is linked to (the recovery path),
-  blank if you haven't run `bounded link`.
+- `linkedAccount` — the linked or logged-in web account hint when known, blank if
+  none.
 
 `deploy --create` also maintains a managed `.gitignore` block that ignores every
 secret-bearing path (`.bounded/credentials`, `*.key`, `*.keypair.json`, `.env`,
@@ -579,6 +609,6 @@ verify/deploy. Full guide:
 - [data-plane.md](data-plane.md) — write semantics, atomic batches, failure codes
 - [queries.md](queries.md) — filters, sort, paging, aggregations, search in depth
 - [sdk-reference.md](sdk-reference.md) — the same operations from TypeScript
-- [auth.md](auth.md) — the keypair identity the CLI acts as
+- [auth.md](auth.md) — CLI/admin auth sources: wallet/keypair vs web account
 - [access-control.md](access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — reading `verify` output
