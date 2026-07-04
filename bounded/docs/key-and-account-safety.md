@@ -172,17 +172,21 @@ raw secret and **keeps the public marker committable**:
 
 ## 6. `bounded link` — wallet-mode anti-loss
 
-`bounded link` attaches a wallet/keypair source to your **web account** via an
-OAuth-style **device flow** (it opens a verify URL + code, with a
-device-fingerprint anti-phishing confirmation). For headless/agent workflows, run
-`bounded link --email you@example.com`; the CLI emails an OTP, reads the code
-from stdin, approves the same fingerprint-checked device flow, and records the
-linkage locally. On approval:
+`bounded link` attaches the active **local wallet key** to a **remote Bounded web
+account** via an OAuth-style **device flow** (it opens a verify URL + code, with a
+device-fingerprint anti-phishing confirmation). The current headless approval
+method is email OTP: run `bounded link --email you@example.com`; the CLI emails
+an OTP, reads the code from stdin, approves the same fingerprint-checked device
+flow, and records the linkage locally. A `bounded login` web session does **not**
+link any local key. On approval:
 
 - Your keypair and your web account become **mutual admin collaborators** on each
   other's apps.
 - Your apps become **reachable and administrable from the web account** — so if the
   local key is lost, you can still get to them.
+- The link is one explicit wallet-key <-> web-account pair. One local key can be
+  linked to one remote account, and that email/wallet combo is the durable
+  association.
 
 This is **the** anti-loss mechanism. Run it on day one, before you have apps worth
 losing.

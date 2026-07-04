@@ -53,20 +53,23 @@ Wallet/keypair mode does not need a web account to build, verify, deploy, or
 read/write. But you can **link** a wallet key to a web account, and **share** apps
 with teammates — without anyone juggling raw wallet keys:
 
-- **`bounded link`** is wallet-only. It runs an OAuth-style **device flow**: the
-  CLI prints a verify URL + code, you approve in a browser with your web account,
-  and the CLI records the linkage. For headless/agent workflows, use
-  `bounded link --email you@example.com`: the CLI sends the OTP, reads the code
-  from stdin, approves the same fingerprint-checked device flow, and records the
-  linkage without opening a browser. After linking, your keypair address and the
-  web account become admin-collaborators on each other's apps. **Your keypair
-  keeps signing for everything** — linking adds an account association, it never
-  replaces or rolls your key. In web account mode, use `bounded login`; there is
-  no local key to link.
-  A linked web account is unique: Bounded will not intentionally attach the same
-  wallet/user identity to two different web accounts. When the current web login
-  method is email, that email is also the owner notification surface for
-  plan/usage alerts.
+- **`bounded link`** is wallet-only. It links the active **local wallet key** to a
+  **remote Bounded web account**; the current headless approval method is email
+  OTP. It runs an OAuth-style **device flow**: the CLI prints a verify URL + code,
+  you approve in a browser with the remote web account, and the CLI records the
+  linkage. For headless/agent workflows, use `bounded link --email
+  you@example.com`: the CLI sends the OTP, reads the code from stdin, approves the
+  same fingerprint-checked device flow, and records the linkage without opening a
+  browser. A `bounded login` web session does **not** link any local key. After
+  linking, your keypair address and the web account become admin-collaborators on
+  each other's apps. **Your keypair keeps signing for everything** — linking adds
+  an account association, it never replaces or rolls your key. In web account
+  mode, use `bounded login`; there is no local key to link.
+  The link is one explicit wallet-key <-> web-account pair. One local key can be
+  linked to one remote account, and that email/wallet combo is the durable
+  association. Bounded will not intentionally attach the same wallet/user identity
+  to two different web accounts. When the current web login method is email, that
+  email is also the owner notification surface for plan/usage alerts.
 - **`bounded share <wallet|email> --role developer|admin|viewer|billing --app-id <id>`** adds a
   collaborator (`policy` is a legacy alias for `developer`). Pass a **wallet** to add it directly. Pass an **email** and
   Bounded resolves it to that person's canonical wallet — an **auto-provisioned

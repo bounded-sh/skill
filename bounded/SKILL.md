@@ -192,7 +192,8 @@ the account source selected by that config:
 - **Wallet/keypair mode**: `global`, `project`, `profile`, or `env`. The selected
   keypair owns apps created with it and signs data-plane writes. Back it up or
   link it early with `bounded link --email you@example.com`; do not commit private
-  keys or secrets.
+  keys or secrets. `bounded link` explicitly creates one local wallet-key <->
+  remote web-account pair; `bounded login` does not link a key.
 - **Web account mode**: run `bounded account use --web`, then
   `bounded login --email you@example.com`. The CLI uses
   `~/.bounded/web-session.json` and does not create or link a local key.
