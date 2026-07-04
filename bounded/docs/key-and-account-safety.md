@@ -172,13 +172,17 @@ raw secret and **keeps the public marker committable**:
 
 ## 6. `bounded link` — wallet-mode anti-loss
 
-`bounded link` attaches the active **local wallet key** to a **remote Bounded web
-account** via an OAuth-style **device flow** (it opens a verify URL + code, with a
-device-fingerprint anti-phishing confirmation). The current headless approval
-method is email OTP: run `bounded link --email you@example.com`; the CLI emails
-an OTP, reads the code from stdin, approves the same fingerprint-checked device
-flow, and records the linkage locally. A `bounded login` web session does **not**
-link any local key. On approval:
+The canonical identity is your **web account's user id** — wallet keys are
+detachable signing credentials, and email is a verified contact/login method.
+`bounded login` is a plain web login and does **not** link any local key.
+`bounded link` explicitly attaches the active **local wallet key** to a **remote
+Bounded web account** via an OAuth-style **device flow** (device code +
+fingerprint approval at **bounded.sh/link** — agents should print that URL for
+their user). The current headless approval method is email OTP: run
+`bounded link --email you@example.com`; the CLI emails an OTP, reads the code
+from stdin, approves the same fingerprint-checked device flow, and records the
+linkage locally. Linking is **refused** if it would merge two unlinked accounts
+that both already own projects. On approval:
 
 - Your keypair and your web account become **mutual admin collaborators** on each
   other's apps.
@@ -187,6 +191,8 @@ link any local key. On approval:
 - The link is one explicit wallet-key <-> web-account pair. One local key can be
   linked to one remote account, and that email/wallet combo is the durable
   association.
+- You can then run **`bounded account transfer-to-web`** (`--yes` to confirm) to
+  make the web account the **owner-of-record**, so the key is fully detachable.
 
 This is **the** anti-loss mechanism. Run it on day one, before you have apps worth
 losing.
@@ -215,10 +221,12 @@ Adds a collaborator to one app (owner-gated):
 A shared **admin** can act on the app, so they survive wallet-key loss *for that
 app*. Add a backup owner **before** anything goes wrong.
 
-> **There is no `transfer-ownership`, no key-rotation, and no recovery command.**
-> In wallet/keypair mode, the only ways an app survives losing its key are: you
-> **linked** the key, you **shared** the app with another identity, or you
-> **backed up** the key file. All three must happen *before* the loss.
+> **There is no key-rotation and no recovery command.** The only ownership move is
+> `bounded account transfer-to-web` (to your own linked web account, after
+> `bounded link`). In wallet/keypair mode, the only ways an app survives losing its
+> key are: you **linked** the key (or transferred ownership to the web account),
+> you **shared** the app with another identity, or you **backed up** the key file.
+> All must happen *before* the loss.
 
 ## 8. Recovery decision table
 

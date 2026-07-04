@@ -10,7 +10,9 @@ errors are emitted as JSON too), `--quiet` (minimal output), `--env`
 
 ## Identity & teams
 
-The CLI has two account-source families:
+The canonical identity is your **web account's user id**; wallet keys are
+detachable signing credentials, and email is a verified contact/login method for
+the web account. The CLI has two account-source families:
 
 - **Wallet/keypair sources**: `global`, `project`, `profile`, and `env`. These use
   a local ed25519 keypair (`~/.bounded/credentials`, a profile/project credentials
@@ -46,10 +48,11 @@ The CLI has two account-source families:
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
 | `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. Wallet mode may create the selected key on first run. | `bounded whoami` |
-| `login` | Log the CLI into a Bounded web account for projects with `account.keySource:"web"`. `--email` is the current CLI web-login method and stores refreshable credentials in `~/.bounded/web-session.json`. | `bounded login --email you@example.com` |
-| `link` | **Wallet-mode anti-loss.** Bind the active local wallet keypair to a remote web account via an **OAuth device flow** (with an anti-phishing fingerprint), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
+| `login` | Web login — log the CLI into your Bounded **web account** (the canonical identity; no key involved). Used for projects with `account.keySource:"web"`. `--email` is the current CLI web-login method and stores refreshable credentials in `~/.bounded/web-session.json`. | `bounded login --email you@example.com` |
+| `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
-| `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. Share BEFORE loss — there is no transfer-ownership and no key-recovery command. See [access-control.md](access-control.md) for what each role can do. | `bounded share teammate@example.com --role admin --app-id <id>` |
+| `account transfer-to-web` | Move ownership of this key's apps to your linked web account (run after `bounded login` + `bounded link`; `--yes` to confirm). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. | `bounded account transfer-to-web --yes` |
+| `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own linked web account). See [access-control.md](access-control.md) for what each role can do. | `bounded share teammate@example.com --role admin --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 | `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
@@ -433,7 +436,7 @@ artifact. Custom hosts need an explicit `--rollback-command`.
 | Command | Does | Example |
 |---|---|---|
 | `domains slug [slug]` | Claim one canonical vanity `<slug>.bounded.page` for an app; `--release` frees it | `bounded domains slug myapp --app-id <id>` |
-| `domains list` | List custom domains and refresh pending SSL/ownership status | `bounded domains list --app-id <id>` |
+| `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + `slugUrl` fields in `--json`) | `bounded domains list --app-id <id>` |
 | `domains add <domain>` | Add a custom frontend domain you own (Pro); prints the DNS records to create | `bounded domains add app.yourdomain.com --app-id <id>` |
 | `domains remove <domain>` | Remove a custom domain and its routing/origin entry | `bounded domains remove app.yourdomain.com --app-id <id>` |
 

@@ -126,6 +126,14 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
   candidates; tenant-ish path vars → tenantTag. `bounded verify` renders these
   as questions; let a human arbitrate when one is available.
 
+## Hand the login link to your user
+
+During `bounded link --no-browser` the CLI prints a verification URL of the form
+`https://bounded.sh/link?user_code=XXXX` **plus a device fingerprint**. Relay
+**both** to your user and tell them to open the URL and approve only if the
+fingerprint shown in the browser matches the one the CLI printed (anti-phishing
+check).
+
 ## Related
 
 - [../docs/policy-generation-guide.md](../docs/policy-generation-guide.md) — turning the task into a provable policy

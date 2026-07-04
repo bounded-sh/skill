@@ -110,11 +110,12 @@ admin can seed itself — see the bootstrap section below for why.
 
 Web-account login and `bounded share` use the human's Bounded account identity.
 `bounded link` is only for wallet/keypair CLI sources: it attaches that signing
-key to the same web account so the wallet key and web account become
-admin-collaborators ([auth.md](auth.md)). Because you gate on `@user.id` — the
-**universal stable identity** that is the same regardless of which web login the
-human used — you seed the admins collection **once** at the account's `@user.id`,
-and the gate matches every authenticated request from that account.
+key (a detachable signing credential) to the same web account so the wallet key
+and web account become admin-collaborators ([auth.md](auth.md)). Because you gate
+on `@user.id` — the **universal stable identity** (the web account's user id)
+that is the same regardless of which login the human used — you seed the admins
+collection **once** at the account's `@user.id`, and the gate matches every
+authenticated request from that account.
 
 This is exactly why ownership/membership should key on `@user.id` rather than
 `@user.address`: `@user.address` is the *specific acting wallet* (and is **null**
