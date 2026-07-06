@@ -78,9 +78,12 @@ keys:
   linked to one remote account, and that email/wallet combo is the durable
   association. Linking is **refused** if it would merge two unlinked accounts
   that both already own projects. When the current web login method is email,
-  that email is also the owner notification surface for plan/usage alerts. After
-  linking you can run **`bounded account transfer-to-web`** to make the web
-  account the owner-of-record, so the key is fully detachable.
+  that email is also the owner notification surface for plan/usage alerts. You can
+  run **`bounded account transfer-to-web`** (after `bounded login`; no link
+  required, `--app <appId>` for a subset) to make the web account the
+  owner-of-record, so the key is fully detachable. This is also the way to
+  consolidate apps built on several machines onto one web account when linking
+  is refused.
 - **`bounded share <wallet|email> --role developer|admin|viewer|billing --app-id <id>`** adds a
   collaborator (`policy` is a legacy alias for `developer`). Pass a **wallet** to add it directly. Pass an **email** and
   Bounded resolves it to that person's canonical wallet — an **auto-provisioned

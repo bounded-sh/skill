@@ -193,6 +193,10 @@ that both already own projects. On approval:
   association.
 - You can then run **`bounded account transfer-to-web`** (`--yes` to confirm) to
   make the web account the **owner-of-record**, so the key is fully detachable.
+  Linking is not required for the transfer itself: after `bounded login`, the CLI
+  proves possession of the local key automatically, so `transfer-to-web` also works
+  when a link is refused (for example when both the key and the web account
+  already own projects). Use `--app <appId>` (repeatable) to move a subset.
 
 This is **the** anti-loss mechanism. Run it on day one, before you have apps worth
 losing.
@@ -222,8 +226,8 @@ A shared **admin** can act on the app, so they survive wallet-key loss *for that
 app*. Add a backup owner **before** anything goes wrong.
 
 > **There is no key-rotation and no recovery command.** The only ownership move is
-> `bounded account transfer-to-web` (to your own linked web account, after
-> `bounded link`). In wallet/keypair mode, the only ways an app survives losing its
+> `bounded account transfer-to-web` (to your own web account, after
+> `bounded login`; no link required). In wallet/keypair mode, the only ways an app survives losing its
 > key are: you **linked** the key (or transferred ownership to the web account),
 > you **shared** the app with another identity, or you **backed up** the key file.
 > All must happen *before* the loss.
