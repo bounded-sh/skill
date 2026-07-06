@@ -96,6 +96,7 @@ only for the next question.
 | AI NPCs / AI players | [docs/ai-npcs.md](docs/ai-npcs.md) |
 | Long-running backend runtime | [docs/backend-runtime.md](docs/backend-runtime.md) |
 | Multi-step Flue agents | [docs/agents-flue.md](docs/agents-flue.md) |
+| Observe/limit an agent's external actions (Action Boundaries) | [docs/observe.md](docs/observe.md) |
 | Onchain data / Solana | [docs/onchain.md](docs/onchain.md) |
 | Trading patterns | [docs/onchain-trading.md](docs/onchain-trading.md) |
 | Bounded Pay | [docs/bounded-pay.md](docs/bounded-pay.md) |
@@ -122,6 +123,7 @@ only for the next question.
 | `functions`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets` | [docs/functions.md](docs/functions.md) |
 | `ctx.ai.run`, AI NPC, AI/external-services bucket | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/ai-npcs.md](docs/ai-npcs.md) · [docs/billing.md](docs/billing.md) |
 | `ctx.services`, managed services, third-party API proxy, API discovery | [docs/functions.md](docs/functions.md#ctxservices--managed-api-discovery-and-invoke) · [docs/backend-runtime.md](docs/backend-runtime.md) · [docs/billing.md](docs/billing.md) |
+| observe, promote, escorted, pending-approval, `@bounded-sh/observe` | [docs/observe.md](docs/observe.md) |
 | `actAs`, `runAs`, service key, payout bot, backend identity | [docs/service-keys.md](docs/service-keys.md) · [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `@origin`, `ctx.origin`, live call provenance | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `session.live`, `init`, `tick`, `views`, `@effect`, `live.intent` | [docs/live-runtime.md](docs/live-runtime.md) |
@@ -144,6 +146,7 @@ only for the next question.
 |---|---|
 | `403` | A write or function invoke failed a rule. Check auth, ownership, roles, or function `auth`. Denied reads are hidden as `200` with empty data, not `403`. |
 | `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
+| `declined` + boundary name | An escorted external action would cross an Enforced action boundary (checked at the platform edge before the call fires). Read the named boundary, then adjust it or the action — do not retry-harder. See [docs/observe.md](docs/observe.md). |
 | `429` + `dimension`/`projectedUsage` | A plan limit or spend cap would be exceeded. Explain the exact axis and suggest upgrade, top-up, cap adjustment, or reduced volume. |
 | `DISPROVED` + counterexample | The proof found a breaking assignment. Read it, strengthen the policy, and verify again unless the user explicitly accepts the risk. |
 | Static validation error | Fix policy syntax, field types, tier/invariant pairing, constants, or expression use. |

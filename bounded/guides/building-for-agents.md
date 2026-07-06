@@ -142,3 +142,4 @@ check).
 - [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do
 - [../docs/auth.md](../docs/auth.md) — CLI/admin auth sources, including wallet/keypair mode
 - [../docs/key-and-account-safety.md](../docs/key-and-account-safety.md) — per-agent wallet isolation; wallet keys own their apps, so link or back them up
+- [../docs/observe.md](../docs/observe.md) — Action Boundaries: watch the agent's external actions (`ctx.ai`, `ctx.services`, egress), then enforce suggested boundaries with one click
