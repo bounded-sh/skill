@@ -186,12 +186,12 @@ export default async function (args, ctx) {
   config (swap models with no code change); `input` is the provider request shape
   (`{ messages: [...] }` for chat). A failed inference is **refunded** — you are
   never charged for an error.
-- **Model ids that work today:** Workers-AI models (`@cf/...`, e.g.
-  `@cf/zai-org/glm-5.2`) route out of the box. Provider-prefixed ids
-  (`anthropic/...`, `openai/...`) are gateway-enablement dependent and return
-  *"provider models not enabled for this gateway"* until enabled for the
-  deployment — prefer an `@cf/*` model unless you know your gateway has
-  provider routing on.
+- **Model ids:** both provider-prefixed ids (`anthropic/claude-sonnet-5`,
+  `openai/...`) and Workers-AI ids (`@cf/zai-org/glm-5.2`) route through the
+  gateway. If a provider-prefixed id returns *"provider models not enabled for
+  this gateway"*, that deployment's provider allowlist is off — fall back to an
+  `@cf/*` model and report it. Avoid dated `@cf` model ids from memory; Workers
+  AI deprecates them (a 5028 "deprecated" error means pick a current one).
 - **Cap it provably.** The per-account AI/external-services bucket is the platform ceiling. For a
   *per-user* / *per-app* AI budget you can prove, write an append-only spend event
   under a `rollingSum` in the same flow (the
