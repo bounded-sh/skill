@@ -104,6 +104,7 @@ only for the next question.
 | CLI auth source, key safety, and account recovery | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 | End-to-end tests for authed apps | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |
 | Anonymous users, invite links, account upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
+| Give every login a wallet (`@user.address` for email users), embedded/non-custodial wallets, Crossmint | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | Build for agents, web, mobile, or server | [guides/building-for-agents.md](guides/building-for-agents.md) · [guides/building-a-webapp.md](guides/building-a-webapp.md) · [guides/building-for-react-native.md](guides/building-for-react-native.md) · [guides/building-a-backend.md](guides/building-a-backend.md) |
 | Quality checklist before calling the app done | [docs/quality-checklist.md](docs/quality-checklist.md) |
 | Capability boundaries | [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md) |

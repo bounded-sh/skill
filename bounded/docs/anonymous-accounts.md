@@ -23,7 +23,9 @@ reloads and owns data keyed by its stable `@user.id`.
 >   For a guest it's the keypair's address; for an email login it's the account id.
 >   Use this for ownership.
 > - `user.address` / `@user.address` — a real onchain wallet address (guest/wallet
->   logins); `null` for email-only logins.
+>   logins); `null` for email-only logins **unless the app opts into embedded wallets**
+>   (`auth.wallets`), which attaches a non-custodial wallet to email logins too — see
+>   [embedded-wallets.md](embedded-wallets.md).
 > - `user.email` / `@user.email` — verified lowercased email (email logins only).
 > - `user.isAnonymous` — **`true` for a guest, `false` for any real login** (Firebase
 >   parity). Use it to decide whether to show a "create a real account" prompt. Also

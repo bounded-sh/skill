@@ -443,6 +443,13 @@ gates, and bare auth guards. `@user.id` is always present, so email/social users
 (who have **no** wallet) are still first-class owners. `@user.address` is `null`
 for those users, so an `owner == @user.address` rule would silently break them.
 
+> **Exception — `auth.wallets`.** If your policy opts into embedded wallets
+> (`{ "auth": { "wallets": true } }`), the issuer attaches a non-custodial Crossmint
+> wallet to **every email-carrying login** and populates `@user.address` for those
+> users too — so `owner == @user.address` becomes safe for email/social users. See
+> [embedded-wallets.md](embedded-wallets.md). Without that opt-in, keep using
+> `@user.id`.
+
 **Onchain-only rule for `@user.address`:** inside an **`onchain: true`**
 collection, `@user.id`, `@user.email`, and `@user.isAnonymous` are all
 **forbidden** — only `@user.address` (a real wallet) is allowed, because onchain
@@ -466,6 +473,7 @@ its rules require, no more.
 - [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — wiring end-user auth into a web app
 - [../guides/building-for-agents.md](../guides/building-for-agents.md) — the zero-ceremony keypair flow
 - [sdk-reference.md](sdk-reference.md) — `login` / `useAuth` / `createWalletClient`
+- [embedded-wallets.md](embedded-wallets.md) — `auth.wallets`: a non-custodial wallet + `@user.address` on every email login
 - [admin-and-ownership.md](admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)
 - [access-control.md](access-control.md) — control roles, sharing by email (registered or brand-new), external contributors & platform super-admins
 - [cli-reference.md](cli-reference.md) — `link`, `share`/`unshare`/`collaborators` flags
