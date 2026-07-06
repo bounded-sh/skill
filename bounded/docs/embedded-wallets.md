@@ -10,10 +10,12 @@ authorizes signatures client-side (email OTP / passkey via Crossmint); Bounded's
 server can create-or-fetch the wallet and read its address but **cannot sign** —
 custody stays with the user.
 
-> **What ships today:** provisioning + `@user.address` population **and** client-side
+> **What ships today:** provisioning + `@user.address` population, client-side
 > **signing** — a logged-in email user can approve transactions with their wallet from
-> your app via `signAndSubmitTransaction` (see [§3 Signing](#3-signing-with-the-wallet)).
-> Signing runs in a Bounded-hosted popup; Bounded still never holds the key.
+> your app via `signAndSubmitTransaction` (see [§3 Signing](#3-signing-with-the-wallet)) —
+> **and** a hosted **wallet page** to view balance / send tokens at
+> `auth.bounded.sh/wallet` (see [§4 The wallet page](#4-the-wallet-page-view-balance--send--cash-out)).
+> Everything runs in a Bounded-hosted surface; Bounded still never holds the key.
 
 ---
 
@@ -142,7 +144,35 @@ matches the signed-in account.
 - Works from **any app origin** — the popup is on Bounded's origin, so your app never ships
   the Crossmint key and no per-app origin setup is needed.
 
-## 4. Non-custody guarantees
+## 4. The wallet page (view balance · send · cash out)
+
+Bounded hosts a ready-made page where a user can **see their embedded-wallet
+balance and send tokens** — no code to write:
+
+```
+https://auth.bounded.sh/wallet                 # Crossmint production wallets (default)
+https://auth.bounded.sh/wallet?env=staging     # Crossmint staging (test) wallets
+```
+
+- **Sign in with your email** (the one your wallet is attached to). If you're already
+  logged into a Bounded app on `auth.bounded.sh`, the page **prefills** that email; you
+  still complete the Crossmint email code, so Bounded never holds the key.
+- **Balance** — shows `USDC` and `SOL` (plus `USDXM`, the Crossmint test stablecoin, on
+  staging). On staging a **Fund test tokens** button drips test USDXM for trying the flow.
+- **Send** — pick a token, paste a recipient Solana address, enter an amount; the page runs
+  the same non-custodial approval as `signAndSubmitTransaction` (an emailed code on first use)
+  and shows the **submitted transaction hash + an explorer link**.
+- The cloud dashboard (`dashboard.bounded.sh`) links to it from the header (**Wallet**).
+
+### Cash out / offramp
+
+There is **no built-in fiat offramp yet**. The honest interim path, shown in the page's
+**Cash out** box: **send USDC to your exchange or on-ramp deposit address** (Coinbase,
+Kraken, etc.) with the Send box, then withdraw to fiat there. A native offramp is a KYC/KYB
+-gated Crossmint server product (not exposed to the client wallet SDK), planned for a later
+slice — until then, "send to your exchange address" is the supported cash-out story.
+
+## 5. Non-custody guarantees
 
 - The wallet's **only** admin signer is the user's **email** — Bounded never
   requests a server/api-key signer and never attaches delegated signers.
