@@ -10,12 +10,10 @@ authorizes signatures client-side (email OTP / passkey via Crossmint); Bounded's
 server can create-or-fetch the wallet and read its address but **cannot sign** —
 custody stays with the user.
 
-> **Slice-1 scope (what ships today):** provisioning + `@user.address` population.
-> A logged-in email user gets a wallet address you can key ownership on and receive
-> funds to. **Client-side signing of onchain writes is not wired yet** — an email
-> user with `@user.address` populated cannot yet sign onchain transactions from the
-> SDK (that's the next slice). Use this for identity, ownership, and receive-address
-> semantics today.
+> **What ships today:** provisioning + `@user.address` population **and** client-side
+> **signing** — a logged-in email user can approve transactions with their wallet from
+> your app via `signAndSubmitTransaction` (see [§3 Signing](#3-signing-with-the-wallet)).
+> Signing runs in a Bounded-hosted popup; Bounded still never holds the key.
 
 ---
 
@@ -101,7 +99,50 @@ satisfying `null == null`.
 > `@user.address` safe to key on for email users. See
 > [auth.md → How `@user.*` reaches your rules](auth.md#how-user-reaches-your-rules).
 
-## 3. Non-custody guarantees
+## 3. Signing with the wallet
+
+An email user with `@user.address` can **approve and submit** a Solana transaction
+with their embedded wallet, from any app on any origin:
+
+```ts
+import { signAndSubmitTransaction } from '@bounded-sh/client'
+import { VersionedTransaction } from '@solana/web3.js'
+
+// Build your Solana transaction (instructions from the smart wallet address).
+// Call from a USER GESTURE (click/tap) — signing opens a popup.
+async function onClick(tx: VersionedTransaction) {
+  const signature = await signAndSubmitTransaction(tx)   // resolves with the tx hash
+  console.log('submitted', signature)
+}
+```
+
+How it works: signing runs in a **Bounded-hosted popup** (`auth.bounded.sh/wallet/signer`)
+that loads Crossmint's client SDK. The user does a one-time email verification (Crossmint
+sign-in code, then a "confirm it's you" code the first time on a new device); after that,
+the session is remembered on that device and later signs need no code. Bounded never holds
+the key — the codes go to the user's email, and the popup refuses to sign unless the wallet
+matches the signed-in account.
+
+**Supported vs not:**
+
+- ✅ `signAndSubmitTransaction(tx)` — signs **and submits** atomically, returns the hash.
+  Crossmint Solana **smart wallets** sign+submit as one step (they're gasless-capable).
+- ❌ `signMessage(msg)` and `signTransaction(tx)` (sign without submit) **throw** a clear
+  "unsupported for embedded smart wallets — use signAndSubmitTransaction" error. Smart
+  wallets cannot produce a raw detached signature, by design.
+- ❌ No `auth.wallets`, or a non-wallet login → signing throws an informative error telling
+  you to enable wallets (or use a wallet provider like Phantom for raw-signature apps).
+
+**Gotchas:**
+
+- **Call from a user gesture.** A blocked popup rejects with a clear "call from a click
+  handler" error.
+- **First sign asks for two codes** (Crossmint sign-in + device confirmation); subsequent
+  signs on the same device/browser ask for none until the session expires.
+- Works from **any app origin** — the popup is on Bounded's origin, so your app never ships
+  the Crossmint key and no per-app origin setup is needed.
+
+## 4. Non-custody guarantees
 
 - The wallet's **only** admin signer is the user's **email** — Bounded never
   requests a server/api-key signer and never attaches delegated signers.
@@ -120,5 +161,7 @@ satisfying `null == null`.
 - **Email-carrying logins only** — phone-only / guest sessions get no embedded wallet.
 - `environment` **staging ≠ production** — switching it gives the user a different
   address (separate Crossmint worlds).
-- **Signing isn't wired yet** (slice-1). `@user.address` is populated and usable for
-  ownership/receive today; client-side onchain signing lands in a later slice.
+- **Signing is `signAndSubmitTransaction` only** — `signMessage` / `signTransaction`
+  throw (smart wallets sign+submit atomically). See [§3 Signing](#3-signing-with-the-wallet).
+- **Signing needs a user gesture** (opens a popup) and a one-time email verification per
+  device.
