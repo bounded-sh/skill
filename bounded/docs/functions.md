@@ -186,6 +186,12 @@ export default async function (args, ctx) {
   config (swap models with no code change); `input` is the provider request shape
   (`{ messages: [...] }` for chat). A failed inference is **refunded** — you are
   never charged for an error.
+- **Model ids that work today:** Workers-AI models (`@cf/...`, e.g.
+  `@cf/zai-org/glm-5.2`) route out of the box. Provider-prefixed ids
+  (`anthropic/...`, `openai/...`) are gateway-enablement dependent and return
+  *"provider models not enabled for this gateway"* until enabled for the
+  deployment — prefer an `@cf/*` model unless you know your gateway has
+  provider routing on.
 - **Cap it provably.** The per-account AI/external-services bucket is the platform ceiling. For a
   *per-user* / *per-app* AI budget you can prove, write an append-only spend event
   under a `rollingSum` in the same flow (the
@@ -371,6 +377,13 @@ bounded functions logs   syncStripe --app-id <id>
 
 The `--entry` may be **TypeScript or JavaScript**. Type annotations are fine.
 Keep it a single self-contained module.
+
+Two deploy-ordering gotchas worth knowing:
+- **A policy deploy clears function code pins.** After any `bounded deploy`,
+  re-run `bounded functions deploy <name> …` — until you do, invokes 404 with
+  *"not deployed with a pinned code version"*.
+- **Pins take ~20–30s to propagate.** A 404 right after a successful
+  `functions deploy` usually just needs a short wait, not a redeploy.
 
 A function's `console.*` output is **captured** and viewable; **who** may view it
 is the per-function `logsAuth` policy rule (defaults to app managers; declared
