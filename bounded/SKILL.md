@@ -99,7 +99,8 @@ only for the next question.
 | Observe/limit an agent's external actions (Action Boundaries) | [docs/observe.md](docs/observe.md) |
 | Onchain data / Solana | [docs/onchain.md](docs/onchain.md) |
 | Trading patterns | [docs/onchain-trading.md](docs/onchain-trading.md) |
-| Bounded Pay | [docs/bounded-pay.md](docs/bounded-pay.md) |
+| Bounded Pay (accept card payments, Stripe Connect, fiat) | [docs/bounded-pay.md](docs/bounded-pay.md) |
+| Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail, card→crypto rail seam | [docs/accept-crypto.md](docs/accept-crypto.md) |
 | Proof coverage and counterexamples | [docs/proof-coverage.md](docs/proof-coverage.md) · [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
 | CLI auth source, key safety, and account recovery | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 | End-to-end tests for authed apps | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |

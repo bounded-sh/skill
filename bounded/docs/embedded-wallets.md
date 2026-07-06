@@ -17,6 +17,10 @@ custody stays with the user.
 > `auth.bounded.sh/wallet` (see [§4 The wallet page](#4-the-wallet-page-view-balance--send--cash-out)).
 > Everything runs in a Bounded-hosted surface; Bounded still never holds the key.
 
+> **Want to get PAID (accept USDC to a wallet you own, non-custodially)?** That's a
+> separate policy block — see **[accept-crypto.md](accept-crypto.md)**
+> (`payments.acceptCrypto`). Receiving funds needs no signing at all.
+
 ---
 
 ## 0. Opt in (wallets are OFF by default)
