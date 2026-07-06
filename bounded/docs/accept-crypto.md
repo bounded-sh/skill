@@ -33,8 +33,11 @@ keys or funds** at any point.
 > **What ships today:** the **direct-transfer rail** — a buyer pays your `settleTo`
 > address directly with USDC, then your app submits the transaction to Bounded,
 > which verifies it on-chain and records a settlement. **Fee is 0** on this rail
-> (a direct transfer can't be split). A **credit-card → USDC** buyer rail is **not
-> yet wired** (see [§5](#5-the-card-rail-not-yet-wired)).
+> (a direct transfer can't be split). A **credit-card → USDC** buyer rail (buyer
+> pays by card / Apple Pay / Google Pay, seller still receives USDC to `settleTo`)
+> also **exists** — it's built and staging-proven behind a platform flag, with
+> production activation pending Crossmint commercial enablement. When it's on,
+> **sellers change nothing** (see [§5](#5-the-card-rail-crossmint-checkout)).
 
 `payments` is a **control-plane** policy block, like `openApps` / `boundaries`. It
 adds **zero prover obligations** and does not change any of your collections or
@@ -131,16 +134,19 @@ Returns `{ status: "pending" | "settled", intent, settlement? }`. The seller's
 
 ## 3. Fee semantics + the rail seam
 
-- **`feeBps` is 0 on the direct-transfer rail.** A buyer→seller transfer can't be
-  split, so Bounded takes nothing. The field exists so a **future card rail** that
-  supports a platform-fee split can populate it (mirrors Bounded Pay's 1% fiat fee).
+- **`feeBps` is 0 on both rails today.** A buyer→seller transfer can't be split, so
+  the direct-transfer rail takes nothing; the card rail (§5) is also non-custodial —
+  Crossmint delivers USDC straight to `settleTo`, so there is no split point — and
+  likewise records **`feeBps 0`**. The field exists so a rail that *does* support a
+  platform-fee split can populate it later (mirrors Bounded Pay's 1% fiat fee).
   Bounded **never takes a fee by touching seller funds** post-settlement.
 - **The rail seam.** Internally, settlement funnels through one function,
   `markSettled(intent, evidence)`. The direct-transfer rail calls it after on-chain
-  verification; **any future rail** (a Crossmint checkout webhook, a partner like
-  "moar") calls the **same** function after **its own** verification, passing its own
-  evidence — **without changing the policy block, the intent shape, or your setup.**
-  Your `payments.acceptCrypto` declaration is rail-agnostic on purpose.
+  verification; the **card rail** (a Crossmint checkout webhook, §5) calls the
+  **same** function after **its own** verification (a signed delivery event),
+  passing its own evidence — **without changing the policy block, the intent shape,
+  or your setup.** Your `payments.acceptCrypto` declaration is rail-agnostic on
+  purpose, so enabling the card rail is a platform flag, not a seller change.
 
 ---
 
@@ -165,13 +171,39 @@ one has **no effect** on the other.
 
 ---
 
-## 5. The card rail (not yet wired)
+## 5. The card rail (Crossmint checkout)
 
-A **credit-card → USDC** buyer flow (buyer pays with a card, seller receives crypto)
-is **not yet built**. When it lands it plugs into the **exact same** intents →
-verify → `markSettled` seam described in §3 — so your `payments.acceptCrypto` block
-and your seller setup **won't change**. Until then, buyers pay in USDC directly
-(from the wallet page or any wallet). For card payments **to fiat** today, use
+A **credit-card → USDC** buyer flow — the buyer pays with a **card, Apple Pay, or
+Google Pay** and the seller still receives **USDC to `settleTo`** — is **built and
+staging-proven**, sitting behind a platform feature flag
+(`CROSSMINT_CARD_RAIL_ENABLED`). It's **on in staging** (end-to-end proven) and
+**off on production**, pending Crossmint **commercial enablement** (Crossmint must
+grant the `orders.create` scope on the production key after a KYB + signed order
+form). When that lands, flipping the flag turns it on — **no code or seller change.**
+
+**For sellers, nothing changes.** You keep the **same `payments.acceptCrypto`
+block** and the same setup. When a buyer chooses the card option, Bounded creates a
+**Crossmint checkout order** that delivers USDC to your `settleTo`, and settlement
+flows through the **exact same verify → `markSettled` seam** (§3) — the seller
+notification email and settled record are **identical** to the direct rail. The rail
+records **`rail: "crossmint-checkout"`, `feeBps: 0`** (non-custodial: Crossmint, a
+licensed processor, charges the card and delivers USDC directly to the seller, so
+there's no platform split point).
+
+**For buyers,** the card flow runs in **Crossmint's embedded checkout** (card / Apple
+Pay / Google Pay), which includes **Crossmint's own KYC** (a Persona identity flow)
+as the regulated card→crypto gate. Bounded is never in the money path — Crossmint
+settles USDC to the seller and signs a delivery webhook that Bounded verifies before
+recording the settlement.
+
+Under the hood (when the flag is on) `bounded-host` exposes
+`POST /crypto/checkout` (create a Crossmint order for an intent),
+`GET /crypto/checkout/:id` (the Bounded-hosted embedded checkout page), and
+`POST /crypto/webhooks/crossmint` (the svix-signed `orders.delivery.completed`
+webhook → `markSettled`). With the flag **off**, these routes are inert (checkout
+`404`, webhook no-ops) and buyers simply pay USDC directly (the direct rail).
+
+For card payments settling to **fiat** (not USDC), use
 [Bounded Pay](bounded-pay.md) instead.
 
 ---
