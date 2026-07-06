@@ -2,16 +2,21 @@
 
 `bounded verify` compiles the policy into proof obligations and discharges
 them with an SMT solver (Z3). It is the proof loop you run before deploy.
-`bounded deploy` is separate: it validates, compiles, and pushes the policy,
-but it does **not** rerun the prover or block on DISPROVED proof findings.
-Treat DISPROVED output as work to fix, or as an explicit human acceptance,
-before shipping.
+`bounded deploy` runs the same gate again server-side: it validates and
+compiles the policy, then **re-runs the prover's deploy gate and fails
+closed** — a policy whose *blocking* proof obligations fail is rejected
+(`dev-api 400: Formal deploy verification failed: N of M obligations failed
+— deploy blocked`) and never ships. So `bounded verify` is where you read
+counterexamples and fix them *before* you hit the gate; an unfixed blocking
+DISPROVED will block the deploy. (Non-blocking advisories — literal `false`
+rules, bare-string attestation TODOs — never block; see below.)
 
 ## Verdicts
 
 - **PROVED** — holds over *all* inputs (every document state, payload,
-  caller). A proof certificate (expression, obligation, solver result,
-  integrity hash) is kept for the audit trail.
+  caller). The report records the discharged obligation (expression, solver
+  result, timing); the same deploy gate re-proves it server-side at deploy.
+  (`bounded verify` does not persist local proof-certificate files.)
 - **DISPROVED** — a concrete counterexample exists, and the report gives it
   to you: the exact variable assignments that break the property.
 - **UNSUPPORTED / NOT PROVEN** — the proof engine cannot prove that obligation.
@@ -35,7 +40,7 @@ policy.json — 1 collection, 1 invariant
   transaction postcondition spend_cap
     append-only rolling limit algebra                       PROVED  (106ms)
 
-4 obligations · 0 failed · proof certificates written to .bounded/proofs/
+4 obligations · 0 failed · every guarantee holds for all inputs — safe to deploy
 ```
 
 ## Reading counterexamples
