@@ -424,6 +424,7 @@ Full treatment: [environments.md](environments.md).
 | `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
 | `site promote <variantId>` | Promote a frontend variant into the canonical hosted site after owner/admin authorization. Backend rules, data, functions, and policies stay unchanged. | `bounded site promote var_amit_refunds --app-id <id>` |
 | `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to vanity slug and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
+| `site proof [status\|on\|off]` | Opt-in public proof surface: the /__bounded/boundaries page (proof stamp, plain-English invariants, decline count) + the site's Boundaries corner badge. OFF by default | `bounded site proof on --app-id <id>` |
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md). Frontend hosting: [frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).

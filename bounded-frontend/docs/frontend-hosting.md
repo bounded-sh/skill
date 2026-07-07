@@ -65,6 +65,26 @@ bounded site deploy ./dist --app-id <id>
   are not gated. The private-site gate page itself tells owners and visitors
   how to make the app public.
 
+## Public proof page (opt-in)
+
+Every hosted app CAN publish a public proof surface: a `/__bounded/boundaries`
+page (the proof stamp, plain-English invariants, and a live count of writes the
+boundaries declined) plus a small "Boundaries" corner badge on the site. It is
+**off by default** — an app carries no Bounded proof chrome unless the owner
+turns it on:
+
+```bash
+bounded site proof on --app-id <id>     # publish the page + badge
+bounded site proof off --app-id <id>    # remove them
+bounded site proof status --app-id <id>
+```
+
+Also toggleable from the dashboard (the "Public proof page" card). Takes effect
+within about a minute; no policy redeploy needed. Related presentation knob: the
+declined-write card the widget shows end users can be turned off in policy with
+`openApps.widget.declineCard: false` (widget `visibility: "hidden"` suppresses
+it too).
+
 Frontend variants are optional preview branches:
 
 ```bash
