@@ -63,6 +63,16 @@ Operational notes for capped onchain collections:
   carry several independent windows (hourly + daily) with separate states.
 - Changing a window cuts over to fresh (cold) bucket state; the always-warm
   offchain enforcement shields stack-mediated writes during the cold start.
+  **Caveat:** writes submitted *directly* onchain (client-signed /
+  permissionless) see only the cold accumulator, so they are under-enforced
+  for up to one window after the change; the old accumulator account is
+  orphaned. The limit is NOT part of the derivation — raising/lowering a
+  limit keeps the accumulated state and binds it immediately. `bounded
+  deploy` warns on both changes; full semantics in
+  [invariants.md](invariants.md#updating-or-removing-an-invariant--what-happens-to-accumulated-state).
+- `resetAtMs` (forgive-history reset) is offchain-only: the onchain
+  accumulator has no reset boundary, so `verify` rejects the combination with
+  `onchainSupported` rather than let the runtimes disagree.
 - Capped collections reject updates and deletes onchain too — the
   append-only contract is the same on both runtimes.
 

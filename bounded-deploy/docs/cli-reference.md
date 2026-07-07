@@ -206,6 +206,16 @@ bounded verify                                          # re-prove after edits
 bounded deploy                                          # redeploy using bounded.json
 ```
 
+**Invariant deploy warnings.** On a redeploy that changes declared invariants,
+`deploy` prints the server's old-vs-new diff after the success line — `⚠`
+(warning) / `•` (info) lines like *"invariant spend_cap
+(agents/$agentId/spend/$spendId): limit lowered 1000 -> 100 …"*. These flag
+changes that interact with already-accumulated state (a lowered rolling cap that
+existing history exceeds, a removed/re-keyed conserve baseline, a tenantEdge
+added over existing data) — which the stateless proof gate cannot see. They
+never block the deploy. Full semantics + reset recipes:
+[invariants.md — updating an invariant](../../bounded-backend/docs/invariants.md#updating-or-removing-an-invariant--what-happens-to-accumulated-state).
+
 ## Local dashboard
 
 The installer starts the dashboard daemon API on `http://127.0.0.1:8085` by

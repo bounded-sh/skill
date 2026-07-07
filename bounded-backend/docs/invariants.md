@@ -114,7 +114,10 @@ the sum can never move off 0, so nothing can ever hold value. That schema is a
   add conserve, `setMany [alice=70, bob=30]` → ✅ conserved at 100, a later
   `set alice=200` → `409`.) This is the normal way to launch a fixed-supply
   system. The seeding window is owner-only by virtue of the create/update rules,
-  not the invariant.
+  not the invariant. The same remove → seed → re-add cycle is also the
+  supported **re-genesis/reset** for a live conserve — the baseline always
+  re-derives from the live documents when the invariant (re)appears (see
+  [Updating an invariant](#updating-or-removing-an-invariant--what-happens-to-accumulated-state)).
 - **Credit/debt (sum stays 0 — validated).** Drop `>= 0` from the update rule so
   balances may go negative. Every account starts at 0; a transfer is a balanced
   `set-many` that debits one and credits another (`[alice: -30, bob: +30]`), and
@@ -190,6 +193,7 @@ cannot be rewritten. Platform creation time is the clock.
 | `windowSeconds` | yes | Positive safe integer window length |
 | `limit` | yes | Nonnegative safe integer cap |
 | `scopeVariable` | no | A `$variable` from the path — partitioned caps below |
+| `resetAtMs` | no | Epoch-ms boundary: events created before it stop counting toward the window — the explicit "forgive history" reset (see [Updating an invariant](#updating-or-removing-an-invariant--what-happens-to-accumulated-state)). Offchain-only: rejected with `onchain: "onchainSupported"`. A boundary still in the future fails closed (appends 409 until it passes). |
 | `name` | no | Stable name surfaced on `409` |
 
 `rollingSum` requires `tier: "durable"` and rejects `materialization` /
@@ -211,8 +215,12 @@ per-agent hourly + global daily).
 ### Multi-window caps
 
 Declare several `rollingSum` invariants on the **same field** with different
-`windowSeconds` — each window is tracked and proven independently. Changing a
-window's length starts that window's tracking fresh.
+`windowSeconds` — each window is tracked and proven independently. Note that
+changing a window's length does **not** forget history offchain: the cap is
+recomputed against the existing events' creation times under the new window
+immediately (onchain it cuts over to a fresh cold accumulator — see
+[proof-coverage.md](proof-coverage.md)). To deliberately start a window fresh,
+set `resetAtMs`.
 
 ### Onchain rolling caps
 
@@ -615,6 +623,70 @@ Mapping intent → kind:
 
 Attestations run in the same `verify` pass as invariants and show up under the
 `__policy__/attestations` scope of the report.
+
+## Updating or removing an invariant — what happens to accumulated state
+
+`bounded verify` is **stateless**: it proves the new policy's per-write algebra
+and knows nothing about state accumulated under the old one. Some invariants DO
+carry state across deploys, so an update can be provably sound and still
+surprising. `bounded deploy` now diffs the old and new declarations and prints
+**invariant deploy warnings** (⚠/•, non-blocking) for every case below — read
+them; they exist so you find out at deploy time, not from an unexplained `409`.
+
+**What state exists.** `rollingSum` stores nothing — the window is recomputed
+from the collection's own (append-only) events on every write, so *the data is
+the state*. `conserve` with `materialization: materialized|sharded` keeps a
+baseline aggregate keyed by `(name, path, field, materialization)`. Everything
+else is a pure per-write check. Onchain, `rollingSum` and non-direct `conserve`
+keep accumulator accounts whose address includes the `windowSeconds` / shard
+layout (but NOT the limit).
+
+Per change:
+
+- **Lowering a `rollingSum` limit** applies immediately against the history
+  already inside the window. A partition already at/over the new cap rejects
+  every append (`409`) until events age out — fail-closed, never a bypass, but
+  it can freeze an append log. To start the new cap clean instead, set
+  **`resetAtMs`** to the deploy moment: events created before it stop counting.
+  (Raising a limit just takes effect on the next write.)
+- **Changing `windowSeconds`** — offchain: recomputed against existing history
+  under the new window immediately (history is NOT forgotten). Onchain: the
+  window is part of the accumulator account's address, so enforcement cuts over
+  to a fresh **cold** accumulator — writes submitted directly onchain are
+  under-enforced for up to one window while it warms (stack-mediated writes
+  stay exactly enforced offchain). Treat an onchain window change as a
+  maintenance event.
+- **Adding a `rollingSum`** counts pre-existing in-window events immediately —
+  a partition can be born at/over the cap. Set `resetAtMs` to count only from a
+  chosen instant.
+- **`resetAtMs` semantics** — the window floor becomes
+  `max(now − window, resetAtMs)`. A boundary still in the **future fails
+  closed**: appends are rejected until it passes (excluding events at-or-after
+  the boundary would exclude the current write itself and disable the cap).
+  The proof is unchanged — forgiving history only shrinks the prior sum, the
+  safe direction. Offchain-only today: the validator rejects it on
+  `onchain: "onchainSupported"` caps so the two runtimes can't disagree about
+  which history counts.
+- **Removing a `conserve`** opens the mint: from the next config load, writes
+  can change the total. Its stored baseline (materialized/sharded) is deleted
+  with the declaration. **Re-adding it later re-derives the baseline from the
+  live documents** — the total freezes at whatever the sum is at that moment.
+  That makes *remove → deploy → write the new genesis → re-add → deploy* the
+  supported **reset/re-genesis** flow (see the Genesis section above).
+- **Renaming a materialized/sharded `conserve`, or changing its
+  `materialization`,** re-keys its aggregate: the baseline re-derives from the
+  live documents and the old rows are dropped. Onchain, a shard-layout change
+  cuts over to fresh aggregate accounts.
+- **Adding a `tenantEdge` over existing data** re-validates ALL existing
+  references at config load and **fails the apply** (writes denied) if any
+  document violates the edge — verify the data first, or add the invariant
+  before the data exists.
+- **Adding a `bound`/`tenantTag`** binds new writes only; existing documents
+  are not retro-validated (a violating document persists until next touched).
+- **Removing any invariant** stops enforcement on the very next write. There is
+  no grace period — treat it like deleting a firewall rule.
+
+Platform reference: `INVARIANT-UPDATE-SEMANTICS.md` in the tarobase repo.
 
 ## When NOT to use an invariant
 

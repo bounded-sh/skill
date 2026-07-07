@@ -36,6 +36,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | Model balances, points, P&L, or supply | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) |
 | Tenant isolation | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
 | Hard field ceilings/floors, anti-cheat bounds | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
+| Change/remove a live invariant, lower a cap, reset (`resetAtMs`), re-genesis a conserve | [docs/invariants.md](docs/invariants.md#updating-or-removing-an-invariant--what-happens-to-accumulated-state) |
 | Conditional ownership or holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
 | Constants, reusable rule fragments, `@const`, `@def` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
 | Decide rule vs invariant vs hook vs function | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
