@@ -88,9 +88,10 @@ Two user-visible buckets:
 - **AI/external-services bucket**: AI (`ctx.ai`) and managed third-party service proxies (`ctx.services`).
 - **Bounded infra bucket**: metered Bounded platform usage at public rates.
 
-Free accounts include $0.50/month of AI/external-services trial credit but cannot
-top up buckets. Pro-or-better accounts can top up eligible buckets. Both the
-relevant bucket and any app-level cap must have room before cost-bearing work runs.
+Free accounts include 3 AI builds per rolling day (fast model) plus a small
+AI/external-services trial allowance for runtime services, but cannot top up
+buckets. Pro-or-better accounts can top up eligible buckets. Both the relevant
+bucket and any app-level cap must have room before cost-bearing work runs.
 
 ## Setup
 

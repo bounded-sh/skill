@@ -18,15 +18,22 @@ There are two user-visible buckets:
 | AI/external-services | `ctx.ai` and Bounded-managed third-party service proxies |
 | Bounded infra | metered Bounded platform usage at public Bounded rates |
 
-Pro is $25/month and includes monthly starter credit in both buckets:
+Plans: Free, Pro ($25/month), Team ($99/month). Enterprise terms are negotiated
+per account.
 
-- Free includes $0.50/month of AI/external-services trial credit. Free accounts
-  cannot top up this bucket; upgrade to Pro when it is exhausted.
-- $5/month for the AI/external-services bucket.
-- $30/month for the Bounded infra bucket.
+- Free includes **3 AI builds per rolling day** (routed to a fast model) plus a
+  small AI/external-services trial allowance ($0.50/month) for runtime services
+  such as `ctx.ai`. Free accounts cannot top up buckets; when a limit is reached,
+  upgrade.
+- Pro includes $5/month for the AI/external-services bucket and $30/month for
+  the Bounded infra bucket, with unmetered (dollar-billed) AI builds.
+- Team includes everything in Pro plus roles (builders, reviewers, admins),
+  Enforced boundary promotion (25 per app), approvals, the audit trail, the
+  weekly action report, $20/month AI/external-services credit, and $100/month
+  Bounded infra credit.
 
 Pro-or-better accounts can top up eligible buckets from the public billing
-checkout flow.
+checkout flow (`kind: "pro" | "team" | "services_topup" | "infra_topup"`).
 
 Custom domains are also a Pro feature. Creating a custom domain link is blocked
 unless the app owner has Pro-or-better billing, and existing custom domain links
