@@ -203,6 +203,30 @@ Under the hood (when the flag is on) `bounded-host` exposes
 webhook → `markSettled`). With the flag **off**, these routes are inert (checkout
 `404`, webhook no-ops) and buyers simply pay USDC directly (the direct rail).
 
+### Platform guardrails — the card rail is approval- and cap-gated
+
+All builder card volume rides Bounded's **one** Crossmint account (there's no
+per-seller isolation like Stripe Connect), so a single bad actor's chargebacks could
+put the shared account at risk for everyone. To contain that, the **card rail** is
+governed at the platform level (enforced by `bounded-host` at `POST /crypto/checkout`):
+
+- **Per-app status** — `default` | `approved` | `blocked`, plus a **global mode**:
+  `open` (any app with the `payments.acceptCrypto` block may use the card rail unless
+  blocked) or `approval` (only explicitly-approved apps may). A blocked app — or an
+  unapproved app while in approval mode — gets a clear **`403 card_rail_not_enabled`**.
+- **Per-app volume caps (USD)** — a **per-order** max plus rolling **daily** and
+  **7-day** totals, with sensible platform defaults ($100 / order, $1,000 / day,
+  $5,000 / 7-day) and per-app overrides. Over a cap → **`429 card_rail_over_cap`** with
+  the specific limit in the error hint. Card-rail volume is counted on settlement.
+
+Bounded operators drive status, mode, and cap overrides from the admin console.
+**None of this touches the direct-transfer rail:** wallet-to-wallet payments
+(`/crypto/intents` + `/crypto/intents/:id/verify`) are **permissionless** — no
+approval, no volume caps, zero Bounded-account risk (the buyer pays your address
+directly on-chain and Bounded only verifies). If you want a fully permissionless
+crypto-accept experience, the direct rail is always available regardless of card-rail
+status.
+
 For card payments settling to **fiat** (not USDC), use
 [Bounded Pay](bounded-pay.md) instead.
 
