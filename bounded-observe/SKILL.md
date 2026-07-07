@@ -72,6 +72,7 @@ Open one doc for the current task.
 |---|---|
 | Opt in and see what the agent calls — hosted opt-in overview, self-hosted shim wiring, what events do and don't contain, the Feed/Actors/Coverage dashboard | [docs/observing-agent-actions.md](docs/observing-agent-actions.md) |
 | Read a suggested boundary card, judge its evidence, understand the states and what Promote will do | [docs/suggested-boundaries.md](docs/suggested-boundaries.md) |
+| Query and FILTER the durable observe + decisions log (every write your rules allowed/blocked, by collection/actor/verdict/invariant/time) — the retained successor of `bounded decisions` | [docs/querying-observe-data.md](docs/querying-observe-data.md) |
 
 ## Term Router
 
@@ -81,6 +82,7 @@ Open one doc for the current task.
 | Feed, Actors, Coverage, `app-<appId>.bounded.sh` | [docs/observing-agent-actions.md](docs/observing-agent-actions.md) |
 | Suggested boundary card, baseline, evidence window, "still learning", Promote, Watching/Suggested/Enforced | [docs/suggested-boundaries.md](docs/suggested-boundaries.md) |
 | `allowed`, `declined` + boundary name, waiting for approval, escorted | [docs/suggested-boundaries.md](docs/suggested-boundaries.md) |
+| `GET /dash-api/query`, `decisions=1`, `declined=1`, filter by collection/verdict/invariant/actor, durable decisions, retained log | [docs/querying-observe-data.md](docs/querying-observe-data.md) |
 
 ## Rules Of Thumb
 
