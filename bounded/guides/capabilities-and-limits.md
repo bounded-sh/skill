@@ -11,20 +11,20 @@ promising a user something Bounded can't deliver.
 | **Provable realtime backend** | One `policy.json` → collections, auth rules, and invariants proven by Z3 at deploy and enforced atomically by Bounded. Constraint-breaking writes are `409`s, never partial. |
 | **Money / value safety** | `conserve` proves a total can't be minted or destroyed; `rollingSum` proves spend/rate caps per window and per actor. These are proofs, not prompt instructions. |
 | **Multi-tenant isolation** | `tenantTag` / `tenantEdge` prove documents and references stay inside their tenant — "nothing leaks across orgs" discharged at deploy. |
-| **Agent backends** | Zero-ceremony wallet/keypair identity; an agent can go from description to deployed without a human auth step ([building-for-agents.md](building-for-agents.md)). |
-| **Realtime games** | Server-authoritative tick loop, fog-of-war views, proven per-player rate caps, automatic settlement ([../docs/realtime-and-games.md](../docs/realtime-and-games.md)). |
-| **Onchain power-ups** | A verified subset of invariants enforces on Solana too ([../docs/proof-coverage.md](../docs/proof-coverage.md)). |
-| **Imperative escape hatch (Functions)** | When declarative policy can't express it — *fetch a third-party API, transform, then write* — a **Bounded Function** runs your code. We don't prove its logic, but its writes still go through invariants and only policy-authorized callers can invoke it ([functions.md](../docs/functions.md)). |
+| **Agent backends** | Zero-ceremony wallet/keypair identity; an agent can go from description to deployed without a human auth step ([building-for-agents.md](../../bounded-backend/docs/building-for-agents.md)). |
+| **Realtime games** | Server-authoritative tick loop, fog-of-war views, proven per-player rate caps, automatic settlement ([../docs/realtime-and-games.md](../../bounded-backend/docs/realtime-and-games.md)). |
+| **Onchain power-ups** | A verified subset of invariants enforces on Solana too ([../docs/proof-coverage.md](../../bounded-backend/docs/proof-coverage.md)). |
+| **Imperative escape hatch (Functions)** | When declarative policy can't express it — *fetch a third-party API, transform, then write* — a **Bounded Function** runs your code. We don't prove its logic, but its writes still go through invariants and only policy-authorized callers can invoke it ([functions.md](../../bounded-backend/docs/functions.md)). |
 
 ## What Bounded does NOT support
 
 | Limit | Use instead |
 |---|---|
-| **No native iOS/Android SDK** | Ship to phones with **React Native** + `@bounded-sh/client` ([building-for-react-native.md](building-for-react-native.md)). |
+| **No native iOS/Android SDK** | Ship to phones with **React Native** + `@bounded-sh/client` ([building-for-react-native.md](../../bounded-frontend/docs/building-for-react-native.md)). |
 | **No native-binding compute** | Functions and the backend runtime are best for API calls, transforms, SDK writes, and JavaScript/TypeScript code. Use your own server as a `@bounded-sh/server` client for native-binding workloads. |
 | **Long-running / batch / background work** | The **300s wall is Functions-only.** Don't run multi-minute work in a Function; use a backend-runtime project with resumable scheduled steps, or a Flue agent for a multi-step tool-use loop. |
 | **No `@constants` or built-in roles in rules** | Express "admin" via a `get()`-read role or an address literal; pass deploy-time values with the CLI `--constants` flag. |
-| **No array/object fields; no ternary; `/` reserved** | Model lists as sub-collections; branch with `(c && A) \|\| (!c && B)`; use `//` for integer division ([../docs/policy-reference.md](../docs/policy-reference.md)). |
+| **No array/object fields; no ternary; `/` reserved** | Model lists as sub-collections; branch with `(c && A) \|\| (!c && B)`; use `//` for integer division ([../docs/policy-reference.md](../../bounded-backend/docs/policy-reference.md)). |
 
 ## Scale Ceilings
 
@@ -37,7 +37,7 @@ enforcement. The trade-offs:
   **tenant-sharding** via path design or, for games, separate rooms.
 - **Hot aggregates**: a write-hot `conserve` total can use `materialization:
   "sharded"` to spread the aggregate across shard rows
-  ([../docs/invariants.md](../docs/invariants.md)).
+  ([../docs/invariants.md](../../bounded-backend/docs/invariants.md)).
 
 If a single logical entity must sustain very high write throughput against one
 invariant, that is the case to design around (shard the tenant, split the room).
@@ -56,7 +56,7 @@ client, and `@bounded-sh/server` for the keypair client + `verifyWebhook` (the
 shared `@bounded-sh/core` comes in transitively). Both are published on npm —
 `npm i @bounded-sh/client` for a frontend, `npm i @bounded-sh/server` for a
 backend. The operation surface in
-[../docs/sdk-reference.md](../docs/sdk-reference.md) is stable in shape; Bounded
+[../docs/sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) is stable in shape; Bounded
 is in beta, so treat versions as pre-release.
 
 ## What is NOT proven
@@ -72,7 +72,7 @@ The proof boundary is precise — don't overclaim it:
   every valid shape is not.
 - A subset of invariants **fails closed** onchain (rejected at verify time rather
   than under-enforced). Full layer-by-layer map:
-  [../docs/proof-coverage.md](../docs/proof-coverage.md).
+  [../docs/proof-coverage.md](../../bounded-backend/docs/proof-coverage.md).
 - **Functions are the only un-proven tier.** A function's *logic* is not proven —
   only that its writes go through your invariants and its invocation is gated by
   the `auth` rule. Normal functions write as the verified caller; `actAs`
@@ -85,12 +85,12 @@ Functions today are contained by proven walls: their writes must pass policy
 rules and invariants, and their invocation must pass the function `auth` rule.
 The function body's imperative logic is not itself proven, so keep hard
 guarantees in policy. Detail:
-[../docs/functions-when-to-use.md](../docs/functions-when-to-use.md#current-proof-boundary).
+[../docs/functions-when-to-use.md](../../bounded-backend/docs/functions-when-to-use.md#current-proof-boundary).
 
 ## Related
 
-- [../docs/proof-coverage.md](../docs/proof-coverage.md) — exactly what is proven on which runtime
-- [building-a-backend.md](building-a-backend.md) — hooks vs your own server code
-- [building-for-react-native.md](building-for-react-native.md) — the mobile story
-- [../docs/invariants.md](../docs/invariants.md) — `conserve`/`rollingSum`/tenant invariants and sharding
-- [../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md) — in-boundary logic and webhooks
+- [../docs/proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) — exactly what is proven on which runtime
+- [building-a-backend.md](../../bounded-backend/docs/building-a-backend.md) — hooks vs your own server code
+- [building-for-react-native.md](../../bounded-frontend/docs/building-for-react-native.md) — the mobile story
+- [../docs/invariants.md](../../bounded-backend/docs/invariants.md) — `conserve`/`rollingSum`/tenant invariants and sharding
+- [../docs/hooks-scheduled-webhooks.md](../../bounded-backend/docs/hooks-scheduled-webhooks.md) — in-boundary logic and webhooks

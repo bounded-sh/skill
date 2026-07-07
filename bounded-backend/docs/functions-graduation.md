@@ -41,7 +41,7 @@ a sealed, metered, spend-capped `ctx`:
 - You need **long-running / batch / background** work — use resumable scheduled steps instead of one long function call.
 
 You keep Bounded auth identity, the AI/external-services bucket, versioning, and billing
-([billing.md](billing.md)). Deploy with `bounded runtime deploy`. This is the normal upgrade
+([billing.md](../../bounded/docs/billing.md)). Deploy with `bounded runtime deploy`. This is the normal upgrade
 from a Bounded function.
 
 ### Tier 3 — eject to your own server (the final off-ramp; only if you must)

@@ -25,7 +25,7 @@ reloads and owns data keyed by its stable `@user.id`.
 > - `user.address` / `@user.address` — a real onchain wallet address (guest/wallet
 >   logins); `null` for email-only logins **unless the app opts into embedded wallets**
 >   (`auth.wallets`), which attaches a non-custodial wallet to email logins too — see
->   [embedded-wallets.md](embedded-wallets.md).
+>   [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 > - `user.email` / `@user.email` — verified lowercased email (email logins only).
 > - `user.isAnonymous` — **`true` for a guest, `false` for any real login** (Firebase
 >   parity). Use it to decide whether to show a "create a real account" prompt. Also
@@ -165,7 +165,7 @@ a private key. Scope data by an **account id** and store the owner:
   Changing `owner` *is* the transfer; the rule checks the *old* owner, so it's
   revocable, auditable, single-owner. `bounded verify`/deploy auto-proves the
   transfer-authority obligation (ownership is transferable but **unseizable**) — see
-  [verify-and-counterexamples.md](verify-and-counterexamples.md).
+  [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md).
 
 ```ts
 // current owner hands off to recipientId (their @user.id) — only the old owner can:

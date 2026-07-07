@@ -271,7 +271,7 @@ statistical part — it does not "solve cheating." Full treatment:
 - [live-runtime.md](live-runtime.md) — the **native** `session.live` runtime (3 pure fns, no deploy) for any realtime room; the tick `call` primitive lives here
 - [ai-npcs.md](ai-npcs.md) — a tick that `call`s a function = an AI NPC / in-game settlement
 - [policy-examples.md](policy-examples.md) — worked example C, end to end
-- [sdk-reference.md](sdk-reference.md) — `subscribe` and `SubscribeOptions`
+- [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — `subscribe` and `SubscribeOptions`
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — `hooks.tick`, `enforceRules`
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — the trust boundary in depth
 - [invariants.md](invariants.md) — `rollingSum` + `scopeVariable` for per-player caps

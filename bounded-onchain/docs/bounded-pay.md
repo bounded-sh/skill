@@ -173,7 +173,7 @@ verify webhooks server-side, and write entitlements/caps through policy.
 
 ## Related
 
-- [billing.md](billing.md) — buckets, top-ups, and pass-through fee language
-- [functions.md](functions.md) — provider verification code
-- [secrets.md](secrets.md) — storing direct provider API keys
-- [invariants.md](invariants.md) — `conserve` and `rollingSum`
+- [billing.md](../../bounded/docs/billing.md) — buckets, top-ups, and pass-through fee language
+- [functions.md](../../bounded-backend/docs/functions.md) — provider verification code
+- [secrets.md](../../bounded-backend/docs/secrets.md) — storing direct provider API keys
+- [invariants.md](../../bounded-backend/docs/invariants.md) — `conserve` and `rollingSum`

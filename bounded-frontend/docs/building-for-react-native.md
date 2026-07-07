@@ -206,4 +206,4 @@ useEffect(() => {
 - [building-a-webapp.md](building-a-webapp.md) — the shared client flow (reads/writes/subscribe)
 - [../docs/auth.md](../docs/auth.md) — email/OAuth auth, optional text OTP, Phantom wallet auth, and the `@user.id` / `@user.address` / `@user.email` identity model
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — the client method surface
-- [capabilities-and-limits.md](capabilities-and-limits.md) — why RN, not a native SDK
+- [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — why RN, not a native SDK

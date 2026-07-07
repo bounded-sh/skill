@@ -466,7 +466,7 @@ function a funded, attributable identity with
 to trust that service write, not a client `winner == @user.address`; gate the function's own
 `auth` with `@origin.kind == 'live' && @origin.module == '<yourGame>'` so only your tick can
 call it (see [principals-and-origins.md](principals-and-origins.md)). For onchain settlement
-the same function holds the signing capability via `actAs` / a key ([onchain.md](onchain.md)).
+the same function holds the signing capability via `actAs` / a key ([onchain.md](../../bounded-onchain/docs/onchain.md)).
 The `call`-a-function path is the native-live settlement path to use.
 
 So today: authoritative **per-room** result → project it in `views(state)` and read it
@@ -698,8 +698,8 @@ example above; no raw `subscribe` + `fetch` needed.)
 - [invariants.md](invariants.md) — the postconditions enforced on every checkpoint
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — the honest trust boundary in depth
 - [policy-reference.md](policy-reference.md) — `tier` + read-rule expression language
-- [sdk-reference.md](sdk-reference.md) — `subscribe`, `getIdToken`
+- [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — `subscribe`, `getIdToken`
 - [functions.md](functions.md) — the sibling code-upload model (secrets + proof boundary)
 - [principals-and-origins.md](principals-and-origins.md) — `@origin` (who may call) + the three principals & precedence (`actAs` > `runAs` > system)
 - [ai-npcs.md](ai-npcs.md) — the tick `call`s a function = an NPC; funding an LLM NPC with `session.live.runAs`
-- [onchain.md](onchain.md) — onchain settlement from a live room
+- [onchain.md](../../bounded-onchain/docs/onchain.md) — onchain settlement from a live room

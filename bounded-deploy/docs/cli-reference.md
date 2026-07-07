@@ -17,7 +17,7 @@ the web account. The CLI has two account-source families:
 - **Wallet/keypair sources**: `global`, `project`, `profile`, and `env`. These use
   a local ed25519 keypair (`~/.bounded/credentials`, a profile/project credentials
   file, or `BOUNDED_PRIVATE_KEY`). The keypair owns apps created with it and signs
-  data-plane writes. See [auth.md](auth.md).
+  data-plane writes. See [auth.md](../../bounded-frontend/docs/auth.md).
 - **Web account source**: `web`. Run `bounded account use --web`, then
   `bounded login --email you@example.com`. This uses
   `~/.bounded/web-session.json` and does not create or link a local key. Email OTP
@@ -52,7 +52,7 @@ the web account. The CLI has two account-source families:
 | `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
-| `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](access-control.md) for what each role can do. | `bounded share teammate@example.com --role admin --app-id <id>` |
+| `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role admin --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 | `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
@@ -61,7 +61,7 @@ the web account. The CLI has two account-source families:
 approval: email an OTP, read it from stdin, approve this wallet key), `--timeout
 <dur>` (default `10m`). `login` flags: `--email <addr>`. Collaboration grants
 **control-plane** authority (manage the app), not a data-plane bypass — give data
-powers explicitly via policy rules ([admin-and-ownership.md](admin-and-ownership.md)).
+powers explicitly via policy rules ([admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md)).
 
 ### Project config — `bounded.json`
 
@@ -389,7 +389,7 @@ bounded deploy ./policy.json --app-id <id> --constants CAP=5000,ADMIN=8xY...
 ```
 
 > Prefer an in-policy `constants` block + `@const.NAME` (resolved server-side) for
-> values that live with the policy — see [constants-and-defs.md](constants-and-defs.md).
+> values that live with the policy — see [constants-and-defs.md](../../bounded-backend/docs/constants-and-defs.md).
 > Use `--constants` for one-off CI overrides.
 
 ### `--environment`
@@ -426,7 +426,7 @@ Full treatment: [environments.md](environments.md).
 | `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to vanity slug and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
-[backend-runtime.md](backend-runtime.md). Frontend hosting: [frontend-hosting.md](frontend-hosting.md).
+[backend-runtime.md](../../bounded-backend/docs/backend-runtime.md). Frontend hosting: [frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).
 `<slug>-api.bounded.page` routes to your backend; `<slug>.bounded.page` serves the site.
 For Bounded-hosted static apps, live-edit rollback restores the previous router
 artifact. Custom hosts need an explicit `--rollback-command`.
@@ -455,7 +455,7 @@ like `www` or move the zone's nameservers to Cloudflare for CNAME flattening.
 All `data` subcommands take `--app-id <id>` (required) and optional
 `--chain realtime` (default; `mainnet` arrives later). Writes go through
 Bounded, which enforces the deployed policy atomically. Full semantics:
-[data-plane.md](data-plane.md); reads: [queries.md](queries.md).
+[data-plane.md](../../bounded-backend/docs/data-plane.md); reads: [queries.md](../../bounded-backend/docs/queries.md).
 
 | Command | Does | Example |
 |---|---|---|
@@ -606,13 +606,13 @@ the platform error — `403` if the rule denies you). Caller-scoped functions ma
 be invoked by any caller their `auth` rule admits; functions that declare
 `actAs` in policy are service-identity functions and must be admin-gated at
 verify/deploy. Full guide:
-[functions.md](functions.md).
+[functions.md](../../bounded-backend/docs/functions.md).
 
 ## Related
 
-- [data-plane.md](data-plane.md) — write semantics, atomic batches, failure codes
-- [queries.md](queries.md) — filters, sort, paging, aggregations, search in depth
-- [sdk-reference.md](sdk-reference.md) — the same operations from TypeScript
-- [auth.md](auth.md) — CLI/admin auth sources: wallet/keypair vs web account
-- [access-control.md](access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
-- [verify-and-counterexamples.md](verify-and-counterexamples.md) — reading `verify` output
+- [data-plane.md](../../bounded-backend/docs/data-plane.md) — write semantics, atomic batches, failure codes
+- [queries.md](../../bounded-backend/docs/queries.md) — filters, sort, paging, aggregations, search in depth
+- [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — the same operations from TypeScript
+- [auth.md](../../bounded-frontend/docs/auth.md) — CLI/admin auth sources: wallet/keypair vs web account
+- [access-control.md](../../bounded-backend/docs/access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
+- [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md) — reading `verify` output

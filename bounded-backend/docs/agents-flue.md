@@ -137,5 +137,5 @@ pool is exhausted. There is no model path that bypasses the cap.
 
 - [backend-runtime.md](backend-runtime.md)
 - [functions.md](functions.md)
-- [billing.md](billing.md)
+- [billing.md](../../bounded/docs/billing.md)
 - [secrets.md](secrets.md)

@@ -210,7 +210,7 @@ defense-in-depth.
   gate `npcShouldSpeak` (e.g. once every N ticks, or only on a player action) and
   keep `pendingRef` so at most one call is in flight. For a hard ceiling, fund the
   `runAs` service account with a small AI/external-services budget — see
-  [billing.md](billing.md).
+  [billing.md](../../bounded/docs/billing.md).
 - **Gate by `@origin`, keep `calls` tight.** The `@origin` `auth` rule is what
   stops a direct client call from reaching the NPC brain; the `session.live.calls`
   whitelist is what the tick may invoke. Whitelist only functions the game should
@@ -224,7 +224,7 @@ an in-tick `call`:
 
 - A **backend-runtime agent** ([backend-runtime.md](backend-runtime.md)) or a
   plain **`@bounded-sh/server` keypair client**
-  ([guides/building-for-agents.md](../guides/building-for-agents.md))
+  ([guides/building-for-agents.md](building-for-agents.md))
   `subscribeView`s the room and sends `live.intent` like any other client.
 - **Its own keypair is its `@user.id`** — the agent is a first-class player, not
   a system principal, so it bills its own AI usage and its writes are governed by
@@ -250,7 +250,7 @@ Use the **in-tick `call`** when the NPC is part of the room's deterministic logi
 (it must replay/checkpoint with the game). Use the **external agent** when the AI
 is an independent participant with its own runtime, memory, and funding. Give
 each agent its **own** keypair (`HOME` or `BOUNDED_PRIVATE_KEY`) — never share a
-human's key (see [key-and-account-safety.md](key-and-account-safety.md)).
+human's key (see [key-and-account-safety.md](../../bounded-deploy/docs/key-and-account-safety.md)).
 
 ## Related
 
@@ -260,5 +260,5 @@ human's key (see [key-and-account-safety.md](key-and-account-safety.md)).
 - [service-keys.md](service-keys.md) — `runAs` (session-wide) + `actAs` (per-function override) funded identities
 - [backend-runtime.md](backend-runtime.md) — a long-running external agent through Bounded
 - [agents-flue.md](agents-flue.md) — the Flue agent framework: a multi-step tool-use loop (vs an in-game NPC tick)
-- [guides/building-for-agents.md](../guides/building-for-agents.md) — a `@bounded-sh/server` keypair agent, per-agent key isolation
-- [billing.md](billing.md) — AI/external-services credit + per-account caps
+- [guides/building-for-agents.md](building-for-agents.md) — a `@bounded-sh/server` keypair agent, per-agent key isolation
+- [billing.md](../../bounded/docs/billing.md) — AI/external-services credit + per-account caps

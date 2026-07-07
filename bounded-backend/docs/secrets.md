@@ -149,4 +149,4 @@ argv values can appear in shell history and process listings.
 
 ## Related
 - [backend-runtime.md](backend-runtime.md) — the `ctx` your code runs with (store/ai/schedule/fetch/secrets)
-- [cli-reference.md](cli-reference.md) — all CLI commands
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — all CLI commands

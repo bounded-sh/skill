@@ -4,7 +4,7 @@ A React frontend on a Bounded backend with `@bounded-sh/client`: install, sign
 users in with email (the default — inline OTP, no wallet needed; Phantom is the
 opt-in Solana wallet), and read / write / subscribe with the deployed policy
 enforcing every operation. The backend is your `policy.json` — deploy it first
-([../docs/policy-generation-guide.md](../docs/policy-generation-guide.md)).
+([../docs/policy-generation-guide.md](../../bounded-backend/docs/policy-generation-guide.md)).
 
 > Beta: Bounded is in beta; the API shape below is stable.
 
@@ -115,7 +115,7 @@ await setMany([
 
 A denied rule throws (403); a violated invariant throws (409 with the
 invariant's name). Branch your UI on those — see
-[../docs/data-plane.md](../docs/data-plane.md).
+[../docs/data-plane.md](../../bounded-backend/docs/data-plane.md).
 
 ## Subscribe (live UI)
 
@@ -154,6 +154,6 @@ the same `@bounded-sh/client` package — see
 
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — full client method surface
 - [../docs/auth.md](../docs/auth.md) — email (default) / Phantom wallet → `@user.id` (universal identity), `@user.address` (wallet-or-null), `@user.email`
-- [../docs/queries.md](../docs/queries.md) — filters, sort, paging, aggregations, search
+- [../docs/queries.md](../../bounded-backend/docs/queries.md) — filters, sort, paging, aggregations, search
 - [building-for-react-native.md](building-for-react-native.md) — shipping to iOS/Android
-- [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do
+- [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — what Bounded does and doesn't do

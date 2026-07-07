@@ -55,7 +55,7 @@ Flow:
 
 Notes:
 - **Pro feature** — `add` is gated on the app owner's account plan (see
-  [billing.md](billing.md)). If the owner later loses Pro, Bounded may remove or
+  [billing.md](../../bounded/docs/billing.md)). If the owner later loses Pro, Bounded may remove or
   disable custom domain links; keep a vanity `<slug>.bounded.page` URL available
   as the fallback.
 - **Frontend only for now** — custom domains serve your app's static site. Use

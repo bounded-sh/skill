@@ -8,7 +8,7 @@ bypasses the deployed policy.
 > Bounded has no arbitrary server-function runtime (no Lambda/PartyServer). Logic
 > that must live *inside* the trust boundary belongs in policy **hooks** (ticks,
 > scheduled jobs); `@bounded-sh/server` is for code in **your** infra acting as an
-> authenticated client. See [capabilities-and-limits.md](capabilities-and-limits.md).
+> authenticated client. See [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md).
 
 ## Install & connect
 
@@ -64,7 +64,7 @@ const hits   = await vault.search("notes", { query: "shipping" });
 The vault exposes `get`, `getPage`, `getMany`, `set`, `setMany`, `setFile`,
 `getFiles`, `search`, `queryAggregate`, `count`, `aggregate`, `runQuery`,
 `runQueryMany`, `runExpression`, `runExpressionMany`, and the collaborator
-methods — same shapes as [../docs/sdk-reference.md](../docs/sdk-reference.md).
+methods — same shapes as [../docs/sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md).
 
 ## Receiving webhooks
 
@@ -106,8 +106,8 @@ invariant.
 
 ## Related
 
-- [../docs/sdk-reference.md](../docs/sdk-reference.md) — `createWalletClient` and the full method surface
+- [../docs/sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — `createWalletClient` and the full method surface
 - [../docs/data-plane.md](../docs/data-plane.md) — atomic writes, failure codes, composition
 - [../docs/hooks-scheduled-webhooks.md](../docs/hooks-scheduled-webhooks.md) — declaring webhooks + in-boundary hooks
-- [../docs/auth.md](../docs/auth.md) — the server keypair as a real wallet (`@user.id` = `@user.address` for a signer)
-- [capabilities-and-limits.md](capabilities-and-limits.md) — hooks vs your own server code
+- [../docs/auth.md](../../bounded-frontend/docs/auth.md) — the server keypair as a real wallet (`@user.id` = `@user.address` for a signer)
+- [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — hooks vs your own server code

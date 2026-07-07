@@ -47,7 +47,7 @@ wrong): split CLAIM from SETTLE.**
 Because the claim record is **user-authored, it is untrusted** — the settle step
 must **re-derive every value from the trusted source** (re-verify, and take the
 amount/owner/product from the provider, never from the claim record). See the
-end-user-payments recipe in [billing.md](billing.md#charging-your-own-end-users).
+end-user-payments recipe in [billing.md](../../bounded/docs/billing.md#charging-your-own-end-users).
 
 ## Fund an AI NPC / a live game call
 

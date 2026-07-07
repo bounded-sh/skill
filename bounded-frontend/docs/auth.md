@@ -40,7 +40,7 @@ bounded login --email you@example.com
 > `bounded account transfer-to-web` requires the key to still exist). Treat it
 > like an SSH private key and
 > run **`bounded link`** on day one if you choose wallet/keypair mode. Full
-> guidance: [key-and-account-safety.md](key-and-account-safety.md).
+> guidance: [key-and-account-safety.md](../../bounded-deploy/docs/key-and-account-safety.md).
 
 - Use `bounded account use <profile>` to run one project under another named
   wallet account without committing secrets. Use `bounded account use --project`
@@ -94,8 +94,8 @@ keys:
   CLI identity. List with `bounded collaborators`.
 
 Collaboration is **control-plane** authority (manage the app). It is **not** a
-data-plane bypass — see [admin-and-ownership.md](admin-and-ownership.md). Command
-detail: [cli-reference.md](cli-reference.md).
+data-plane bypass — see [admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md). Command
+detail: [cli-reference.md](../../bounded-deploy/docs/cli-reference.md).
 
 On the server, `@bounded-sh/server` still uses explicit keypairs for
 server-signed writes:
@@ -148,7 +148,7 @@ UX** — a hosted page *and* your own inline UI both work, against the same issu
 
 > For a **live game**, the tick's calls have no human — `@user` is the **system
 > principal** (all fields null unless you declare an acting identity). See
-> [principals-and-origins.md](principals-and-origins.md).
+> [principals-and-origins.md](../../bounded-backend/docs/principals-and-origins.md).
 
 ### Choosing your login methods & UX
 
@@ -218,7 +218,7 @@ On **web** `redirectUri` is **optional** — it defaults to the current page
 callback route. Pass `redirectUri` only when you intentionally want the issuer to
 return to a *different* URL than the one the user logged in from (it must be a
 registered origin). On **React Native** `redirectUri` is **required** (an https
-universal link) — see [building-for-react-native.md](../guides/building-for-react-native.md).
+universal link) — see [building-for-react-native.md](building-for-react-native.md).
 
 ```ts
 // Jump straight to one provider from your own button:
@@ -321,7 +321,7 @@ const user = await completeLoginFromRedirect();   // exchanges the code (PKCE) �
 
 On **React Native** `loginWithRedirect` opens the system/in-app browser to the
 issuer and returns through your registered deep-link `redirectUri`; see
-[../guides/building-for-react-native.md](../guides/building-for-react-native.md)
+[../guides/building-for-react-native.md](building-for-react-native.md)
 for the deep-link callback wiring.
 
 **Anonymous accounts coexist** — offer hosted login AND zero-friction guest
@@ -439,7 +439,7 @@ ownership** rule:
 The leading `@user.id != null` is mandatory — without it an unauthenticated
 caller writing `owner: null` satisfies `null == null`. The proof engine hands
 you that exact counterexample if you forget it
-([verify-and-counterexamples.md](verify-and-counterexamples.md)).
+([verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md)).
 
 Use `@user.id` — **not** `@user.address` — for ownership, membership, allowlist
 gates, and bare auth guards. `@user.id` is always present, so email/social users
@@ -450,7 +450,7 @@ for those users, so an `owner == @user.address` rule would silently break them.
 > (`{ "auth": { "wallets": true } }`), the issuer attaches a non-custodial Crossmint
 > wallet to **every email-carrying login** and populates `@user.address` for those
 > users too — so `owner == @user.address` becomes safe for email/social users. See
-> [embedded-wallets.md](embedded-wallets.md). Without that opt-in, keep using
+> [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md). Without that opt-in, keep using
 > `@user.id`.
 
 **Onchain-only rule for `@user.address`:** inside an **`onchain: true`**
@@ -473,11 +473,11 @@ its rules require, no more.
 
 ## Related
 
-- [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — wiring end-user auth into a web app
-- [../guides/building-for-agents.md](../guides/building-for-agents.md) — the zero-ceremony keypair flow
+- [../guides/building-a-webapp.md](building-a-webapp.md) — wiring end-user auth into a web app
+- [../guides/building-for-agents.md](../../bounded-backend/docs/building-for-agents.md) — the zero-ceremony keypair flow
 - [sdk-reference.md](sdk-reference.md) — `login` / `useAuth` / `createWalletClient`
-- [embedded-wallets.md](embedded-wallets.md) — `auth.wallets`: a non-custodial wallet + `@user.address` on every email login
-- [admin-and-ownership.md](admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)
-- [access-control.md](access-control.md) — control roles, sharing by email (registered or brand-new), external contributors & platform super-admins
-- [cli-reference.md](cli-reference.md) — `link`, `share`/`unshare`/`collaborators` flags
-- [policy-reference.md](policy-reference.md) — `@user.id` / `@user.address` / `@user.email` in the rule language
+- [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md) — `auth.wallets`: a non-custodial wallet + `@user.address` on every email login
+- [admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)
+- [access-control.md](../../bounded-backend/docs/access-control.md) — control roles, sharing by email (registered or brand-new), external contributors & platform super-admins
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — `link`, `share`/`unshare`/`collaborators` flags
+- [policy-reference.md](../../bounded-backend/docs/policy-reference.md) — `@user.id` / `@user.address` / `@user.email` in the rule language

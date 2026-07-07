@@ -4,7 +4,7 @@
 `constants` for named values (`@const.NAME`) and `defs` for reusable rule
 fragments (`@def.name`). Both are resolved at **compile time** (server-side,
 during deploy and verify), so the stored/proved policy contains only literals.
-For *per-environment* values see [environments.md](environments.md).
+For *per-environment* values see [environments.md](../../bounded-deploy/docs/environments.md).
 
 ## constants — named values
 
@@ -149,10 +149,10 @@ for `runAs`/`actAs` precedence.
 
 For values that differ per environment (preview vs prod admin address, caps),
 keep `@const.NAME` and supply the values from an `environments` block —
-[environments.md](environments.md).
+[environments.md](../../bounded-deploy/docs/environments.md).
 
 ## Related
-- [environments.md](environments.md) — per-environment `@const` values + appId targeting
+- [environments.md](../../bounded-deploy/docs/environments.md) — per-environment `@const` values + appId targeting
 - [roles.md](roles.md) — `@const.ADMIN` in role members
 - [invariants.md](invariants.md) — `@const` for caps/limits
 - [policy-reference.md](policy-reference.md) — all top-level blocks

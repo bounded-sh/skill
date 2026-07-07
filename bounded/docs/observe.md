@@ -27,7 +27,7 @@ An action boundary lives in one of three states:
 Keep the trust levels straight — never blur them:
 
 - A promoted spend or rate cap is a **native invariant, proven in your app's
-  policy** ([invariants.md](invariants.md)).
+  policy** ([invariants.md](../../bounded-backend/docs/invariants.md)).
 - An escorted action boundary is **checked at the platform edge** — a
   deterministic runtime verdict before the call fires. For a self-hosted
   backend that check runs in-process via the `@bounded-sh/observe` shim the
@@ -43,6 +43,6 @@ skill (installed as a sibling of this one): its
 
 ## Related
 
-- [invariants.md](invariants.md) — the native caps Promote writes into policy (`rollingSum`, `conserve`)
-- [../guides/building-for-agents.md](../guides/building-for-agents.md) — the agent-owned backend flow these boundaries watch
+- [invariants.md](../../bounded-backend/docs/invariants.md) — the native caps Promote writes into policy (`rollingSum`, `conserve`)
+- [../guides/building-for-agents.md](../../bounded-backend/docs/building-for-agents.md) — the agent-owned backend flow these boundaries watch
 - [billing.md](billing.md) — plan context: Watching + Suggested are free for every app; Enforced rides the existing Pro tier

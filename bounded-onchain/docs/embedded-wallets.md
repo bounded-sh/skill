@@ -103,7 +103,7 @@ satisfying `null == null`.
 > wallets, email/social users have `@user.address == null`, so ownership rules must
 > use `@user.id` (always present). Enabling `auth.wallets` is exactly what makes
 > `@user.address` safe to key on for email users. See
-> [auth.md → How `@user.*` reaches your rules](auth.md#how-user-reaches-your-rules).
+> [auth.md → How `@user.*` reaches your rules](../../bounded-frontend/docs/auth.md#how-user-reaches-your-rules).
 
 ## 3. Signing with the wallet
 

@@ -112,7 +112,7 @@ values keep working. Pairs with the local dashboard template (`bounded dev`).
   An admin dashboard usually wants `read:"*"` only.
 - **Putting an identity literal in `members` and forgetting preview vs prod.**
   Use `@const.ADMIN` (the admin's `@user.id`) + an `environments` block so each
-  environment injects its own admin — see [environments.md](environments.md).
+  environment injects its own admin — see [environments.md](../../bounded-deploy/docs/environments.md).
 - **Expecting a role to *restrict* access.** Roles only ever *grant*; to restrict,
   tighten the per-collection rule.
 
@@ -120,5 +120,5 @@ values keep working. Pairs with the local dashboard template (`bounded dev`).
 - [access-control.md](access-control.md) — the `access` block, control roles, custom capabilities, external contributors & **platform super-admins**
 - [admin-and-ownership.md](admin-and-ownership.md) — per-doc, rule-based admin + `verifyAuthorityClosure`
 - [constants-and-defs.md](constants-and-defs.md) — `@const.NAME` in members
-- [environments.md](environments.md) — per-environment admin addresses
+- [environments.md](../../bounded-deploy/docs/environments.md) — per-environment admin addresses
 - [policy-reference.md](policy-reference.md) — all top-level blocks

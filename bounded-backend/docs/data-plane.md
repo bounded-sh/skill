@@ -43,7 +43,7 @@ reference **only `@user.address`** (`@user.id`/`@user.email`/`@user.isAnonymous`
 rejected), and forgetting the flag on an on-chain-protocol app is a hard
 `AccountNotInitialized` (`0xbc4`) failure, not a silent off-chain fallback.
 
-> **See [onchain.md](onchain.md)** for the full on-chain story: field-type mapping,
+> **See [onchain.md](../../bounded-onchain/docs/onchain.md)** for the full on-chain story: field-type mapping,
 > client-signed transactions, `--protocol` values, the eventual-consistency mirror,
 > the `0xbc4` gotcha, `--skip-preflight`, and the mainnet human-signed policy permit.
 
@@ -113,7 +113,7 @@ TIME       DECISION  ACTION  PATH      ACTOR         REASON
 The backend keeps a bounded (~200-entry, denies-prioritized) in-memory ring
 buffer of recent WRITE decisions per app. `bounded decisions` reads it
 (owner/collaborator gated); `--json` emits one object per line for agents. See
-[cli-reference.md](cli-reference.md#debugging-denied-writes--bounded-decisions).
+[cli-reference.md](../../bounded-deploy/docs/cli-reference.md#debugging-denied-writes--bounded-decisions).
 
 ## Worked example: the spend cap
 
@@ -238,9 +238,9 @@ await setMany([
 
 ## Related
 
-- [onchain.md](onchain.md) — on-chain collections, client-signed transactions, `--protocol`, the mirror, `0xbc4`
-- [cli-reference.md](cli-reference.md) — `bounded data set/set-many/get` flags
-- [sdk-reference.md](sdk-reference.md) — `set`/`setMany` from TypeScript
+- [onchain.md](../../bounded-onchain/docs/onchain.md) — on-chain collections, client-signed transactions, `--protocol`, the mirror, `0xbc4`
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — `bounded data set/set-many/get` flags
+- [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — `set`/`setMany` from TypeScript
 - [policy-generation-guide.md](policy-generation-guide.md) — designing the policy these writes hit
 - [queries.md](queries.md) — reads: filters, sort, paging, aggregations, joins
 - [invariants.md](invariants.md) — what produces the 409s

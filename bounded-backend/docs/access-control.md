@@ -142,7 +142,7 @@ directly; it deploys with the policy and `bounded verify` reports who-can-do-wha
   lives in `external`, below. Grants are the enumerable roster.)
 - **`role`** pulls in a preset or a custom role; or skip it and list raw `capabilities`.
 - **workflow** = `direct` (applies now) or `propose` (creates a fork/variant you promote —
-  the wiki/PR flow; reuses the [variant system](frontend-hosting.md)).
+  the wiki/PR flow; reuses the [variant system](../../bounded-frontend/docs/frontend-hosting.md)).
 - **`external.widget`** = the read-only role non-owners see in the widget (e.g. `viewer`).
 - **`external.propose`** = `signed-in` | `public` — who may **suggest** cloud edits as
   proposals (the open-contribution / wiki flow). It only ever grants `cloud:prompt` as a
@@ -284,5 +284,5 @@ so one tenant can never touch another's data.
 
 - Data-plane admin/owner patterns + `authorityClosure` → [admin-and-ownership.md](admin-and-ownership.md)
 - Top-level provable `roles` block (cross-collection read/write grants) → [roles.md](roles.md)
-- Sharing, linking, teams, login → [auth.md](auth.md)
+- Sharing, linking, teams, login → [auth.md](../../bounded-frontend/docs/auth.md)
 - Tenant isolation invariants → [invariants.md](invariants.md#tenanttag--documents-carry-their-tenant)

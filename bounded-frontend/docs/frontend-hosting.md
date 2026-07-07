@@ -7,7 +7,7 @@ subdomains on the same SSL:
 - **`<slug>.bounded.page`** — your static site (SPA fallback;
   content-hashed assets cached immutably, HTML + un-fingerprinted assets always
   revalidated so a redeploy goes live instantly without a hard-refresh).
-- **`<slug>-api.bounded.page`** — your backend runtime (see [backend-runtime.md](backend-runtime.md)),
+- **`<slug>-api.bounded.page`** — your backend runtime (see [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)),
   so the frontend can call its own agent/backend at a sibling URL with no CORS dance.
 
 ## What it CAN and CANNOT host
@@ -32,7 +32,7 @@ There is no Node/SSR server for your frontend. So:
 **The Bounded way to get "server" behavior:** ship the UI as a static bundle here,
 and move every server concern to Bounded — data + rules to your **policy**, secrets
 + server logic + external API calls to a **function** or **backend runtime** at
-`<slug>-api.bounded.page` ([functions.md](functions.md), [backend-runtime.md](backend-runtime.md)).
+`<slug>-api.bounded.page` ([functions.md](../../bounded-backend/docs/functions.md), [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)).
 If you truly need framework SSR, host that app elsewhere and still use Bounded as
 its backend. Rule of thumb: **if serving a page would require running your code,
 `bounded site deploy` won't do it — prerender it, or move that code into Bounded.**

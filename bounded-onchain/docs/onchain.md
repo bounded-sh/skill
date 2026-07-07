@@ -7,8 +7,8 @@ mirror (don't read-after-write), the `0xbc4` deploy gotcha + `--skip-preflight`,
 the mainnet human-signed policy permit, and game settlement with server-signed
 transactions. Client-signed game handoff is not currently supported.
 
-This is the home for everything onchain. [data-plane.md](data-plane.md) and
-[proof-coverage.md](proof-coverage.md) summarize and point here.
+This is the home for everything onchain. [data-plane.md](../../bounded-backend/docs/data-plane.md) and
+[proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) summarize and point here.
 
 ## Default is off-chain — opt in deliberately
 
@@ -81,7 +81,7 @@ the chain sees.
 
 This is the opposite of the off-chain default: off-chain, prefer the universal
 `@user.id`; onchain, you have nothing but `@user.address`. See
-[policy-reference.md](policy-reference.md) for the full identity triad.
+[policy-reference.md](../../bounded-backend/docs/policy-reference.md) for the full identity triad.
 
 ## The mirror is eventually-consistent — don't read-after-write
 
@@ -116,7 +116,7 @@ collections are stored off-chain — deploy prints that warning too.)
 On `set` / `set-many`, an **onchain-only** flag: skip RPC preflight simulation so
 failing txs still land on-chain (useful when simulation is flaky or you want the
 on-chain error rather than a client-side preflight reject). No effect on the
-realtime data plane. See [cli-reference.md](cli-reference.md#-skip-preflight).
+realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#-skip-preflight).
 
 ## Mainnet policy updates need a human-signed permit
 
@@ -130,7 +130,7 @@ authority before accepting a new policy.
 - **Frictionless agent signing of the permit is not currently supported.** For now a
   mainnet policy update is a deliberately human-gated step. When advising an
   agent, assume the default off-chain path. See
-  [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md#onchain-update-signing-note).
+  [hooks-and-anti-cheat.md](../../bounded-backend/docs/hooks-and-anti-cheat.md#onchain-update-signing-note).
 
 ## Proof coverage onchain
 
@@ -140,7 +140,7 @@ identically on both. Invariants are a verified subset onchain — `conserve`
 (direct), `rollingSum` (epoch-bucketed, conservative), and `tenantTag` are
 enforced; materialized/sharded `conserve` and `tenantEdge` **fail closed**
 (rejected at verify if declared `onchainSupported`, rejected at runtime if
-metadata arrives). Full table in [proof-coverage.md](proof-coverage.md).
+metadata arrives). Full table in [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md).
 
 ## Game settlement: the two directions
 
@@ -151,8 +151,8 @@ key**.
 ### 1. Server-signed — composable today
 
 The deterministic tick can `call` a function (see
-[live-runtime.md](live-runtime.md) and
-[principals-and-origins.md](principals-and-origins.md)). For settlement, the tick
+[live-runtime.md](../../bounded-backend/docs/live-runtime.md) and
+[principals-and-origins.md](../../bounded-backend/docs/principals-and-origins.md)). For settlement, the tick
 `call`s a `settle`-type function that **holds the signing capability** — via a
 live `session.live.runAs` service identity plus a declared function secret
 holding the service keypair — and submits the Solana transaction itself, then
@@ -188,13 +188,13 @@ The settle function signs with its own service keypair (a function secret, never
 the user's key) and submits the tx. Good for **"the game settles"** — the house
 pays out, mints the reward, records the result. This is the recommended path
 today. The signing key is a function secret; see
-[service-keys.md](service-keys.md) for `actAs` + the on-chain signing key, and
-[ai-npcs.md](ai-npcs.md) for the same `call` primitive driving an NPC.
+[service-keys.md](../../bounded-backend/docs/service-keys.md) for `actAs` + the on-chain signing key, and
+[ai-npcs.md](../../bounded-backend/docs/ai-npcs.md) for the same `call` primitive driving an NPC.
 
 > The `as` field is a validation hint, not an identity or billing override (the
 > field a developer writes is always **`as`**). A live call runs under the
 > configured live-call principal. See
-> [principals-and-origins.md](principals-and-origins.md).
+> [principals-and-origins.md](../../bounded-backend/docs/principals-and-origins.md).
 
 ### 2. Client-signed handoff — not currently supported
 
@@ -232,12 +232,12 @@ currently supported. For settlement you can ship now, use server-signed above.
 
 ## Related
 
-- [data-plane.md](data-plane.md) — write/read semantics; onchain summary points here
-- [proof-coverage.md](proof-coverage.md) — which invariants hold onchain; points here
-- [policy-reference.md](policy-reference.md) — the identity triad; onchain-forbidden vars
-- [service-keys.md](service-keys.md) — `actAs` + the on-chain signing key for server-signed settle
-- [live-runtime.md](live-runtime.md) — the `call` primitive a tick uses to settle
-- [principals-and-origins.md](principals-and-origins.md) — who `@user` is for a live call (`as`, SYSTEM, `actAs`)
-- [ai-npcs.md](ai-npcs.md) — the same `call` primitive driving an NPC
-- [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md#onchain-update-signing-note) — the mainnet permit
-- [cli-reference.md](cli-reference.md#-skip-preflight) — `--protocol`, `--skip-preflight`
+- [data-plane.md](../../bounded-backend/docs/data-plane.md) — write/read semantics; onchain summary points here
+- [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) — which invariants hold onchain; points here
+- [policy-reference.md](../../bounded-backend/docs/policy-reference.md) — the identity triad; onchain-forbidden vars
+- [service-keys.md](../../bounded-backend/docs/service-keys.md) — `actAs` + the on-chain signing key for server-signed settle
+- [live-runtime.md](../../bounded-backend/docs/live-runtime.md) — the `call` primitive a tick uses to settle
+- [principals-and-origins.md](../../bounded-backend/docs/principals-and-origins.md) — who `@user` is for a live call (`as`, SYSTEM, `actAs`)
+- [ai-npcs.md](../../bounded-backend/docs/ai-npcs.md) — the same `call` primitive driving an NPC
+- [hooks-and-anti-cheat.md](../../bounded-backend/docs/hooks-and-anti-cheat.md#onchain-update-signing-note) — the mainnet permit
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#-skip-preflight) — `--protocol`, `--skip-preflight`

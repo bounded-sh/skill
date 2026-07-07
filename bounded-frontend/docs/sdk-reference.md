@@ -115,7 +115,7 @@ const next = await get("orders", { /* same filter/sort */ limit: 20, cursor: ope
 alternative to `filter`), `bypassCache`. Read access always obeys the collection's
 `read` rule — a filter never returns a doc the caller can't read. Filter operators:
 `$ne $gt $gte $lt $lte $in $nin $exists $regex $options $and $or $nor` (bare value
-= equality). See [queries.md](queries.md).
+= equality). See [queries.md](../../bounded-backend/docs/queries.md).
 
 ## Search & aggregate — `search` / `count` / `aggregate` / `queryAggregate`
 
@@ -142,7 +142,7 @@ const rows  = await queryAggregate("orders", { groupBy: ["status"], count: true,
   arrays); each row carries only the requested keys. Deterministic and
   read-rule-enforced (aggregates only rows the caller can read).
 
-Details and CLI equivalents: [queries.md](queries.md).
+Details and CLI equivalents: [queries.md](../../bounded-backend/docs/queries.md).
 
 ## Write — `set` / `setMany`
 
@@ -162,7 +162,7 @@ await setMany([                                            // atomic transfer
 
 A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
-composition, and failure codes: [data-plane.md](data-plane.md).
+composition, and failure codes: [data-plane.md](../../bounded-backend/docs/data-plane.md).
 
 Inside Bounded Functions, the same batch shape is available as
 `ctx.bounded.setMany([{ path, document }, ...])`; it targets the same data-plane
@@ -191,7 +191,7 @@ deletes, set a real `delete` rule in your policy (the default scaffolds
 
 **From the CLI** it's a dedicated command, not `set` with null (the CLI rejects a
 null body): `bounded data delete --app-id <id> --path <collection>/<id>` — same
-`delete`-rule enforcement. See [cli-reference.md](cli-reference.md#data-delete).
+`delete`-rule enforcement. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#data-delete).
 
 ### Server-resolved field values — `increment` / `serverTimestamp`
 
@@ -285,7 +285,7 @@ Note the contrast — `get("c", { limit })` returns `{ data, nextCursor }` but
 `subscribe("c", { limit })` hands `onData` the **bare array** (write
 `onData: (rows) => …`, not `onData: ({ data }) => …`). Each delivered row carries
 the same `_id` (full path) + `id` (bare leaf key) pair as `get` — use `row.id` for
-React keys and child paths. More: [realtime-and-games.md](realtime-and-games.md).
+React keys and child paths. More: [realtime-and-games.md](../../bounded-backend/docs/realtime-and-games.md).
 
 ## Files — `setFile` / `getFiles`
 
@@ -302,7 +302,7 @@ const { data } = await getFiles("users/u1/files"); // [{ path, url, metadata }] 
 fields from `metadata` (validated against the collection's `fields`; lands in
 `@newData` for the CREATE rule). `metadata` is create-only — change an existing
 file's fields with `set()`. `file = null` deletes. Details:
-[files-and-search.md](files-and-search.md).
+[files-and-search.md](../../bounded-backend/docs/files-and-search.md).
 
 ## Policy queries & expressions — `runQuery` / `runExpression`
 
@@ -312,7 +312,7 @@ const ok    = await runExpression("@newData.amount <= 100", { amount: 60 });
 ```
 
 `runQueryMany` / `runExpressionMany` batch these. Policy `queries` are declared
-and proven at deploy — see [queries.md](queries.md).
+and proven at deploy — see [queries.md](../../bounded-backend/docs/queries.md).
 
 ## Collaborators — managed via the CLI (not the SDK)
 
@@ -435,7 +435,7 @@ keypair. `keypair` is a base58 string or JSON array secret key — the **base58*
 form is the same value the CLI stores as the `privateKey` field in
 `~/.bounded/credentials` (and accepts via `BOUNDED_PRIVATE_KEY`), so a server can
 sign as the CLI identity by reading that key. Server tasks:
-[../guides/building-a-backend.md](../guides/building-a-backend.md).
+[../guides/building-a-backend.md](../../bounded-backend/docs/building-a-backend.md).
 
 ### Verifying webhooks — `verifyWebhook`
 
@@ -458,7 +458,7 @@ overrides `keysUrl` / `maxSkewSeconds` / cache TTL. The default keys URL follows
 your `init({ network })` (the receiver verifies against that network's signing
 keys), falling back to production when no network is set. Pass `keysUrl` only
 when you intentionally verify against a custom key source. Declaring webhooks:
-[hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
+[hooks-scheduled-webhooks.md](../../bounded-backend/docs/hooks-scheduled-webhooks.md).
 
 ### Invoking a function — `functions.invoke`
 
@@ -480,13 +480,13 @@ const res = await functions.invoke("syncStripe", { customerId });
 ```
 
 Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the
-proof boundary): [functions.md](functions.md).
+proof boundary): [functions.md](../../bounded-backend/docs/functions.md).
 
 ## Related
 
-- [../guides/building-a-webapp.md](../guides/building-a-webapp.md) — client setup + auth + live reads
-- [../guides/building-a-backend.md](../guides/building-a-backend.md) — server-signed writes
+- [../guides/building-a-webapp.md](building-a-webapp.md) — client setup + auth + live reads
+- [../guides/building-a-backend.md](../../bounded-backend/docs/building-a-backend.md) — server-signed writes
 - [auth.md](auth.md) — CLI/admin auth sources and end-user email/wallet auth
-- [queries.md](queries.md) — filters, sort, paging, aggregations, search
-- [data-plane.md](data-plane.md) — atomic writes and failure semantics
-- [cli-reference.md](cli-reference.md) — the same operations from the CLI
+- [queries.md](../../bounded-backend/docs/queries.md) — filters, sort, paging, aggregations, search
+- [data-plane.md](../../bounded-backend/docs/data-plane.md) — atomic writes and failure semantics
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — the same operations from the CLI

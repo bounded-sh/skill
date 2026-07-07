@@ -69,7 +69,7 @@ Operational notes for capped onchain collections:
 > This page is about which *runtime* enforces which *proof*. For how onchain
 > collections actually behave — Solana transactions, client-signed writes,
 > `--protocol`, the eventually-consistent read mirror, the `0xbc4` gotcha —
-> see [onchain.md](onchain.md).
+> see [onchain.md](../../bounded-onchain/docs/onchain.md).
 
 ## What is NOT claimed
 
@@ -89,7 +89,7 @@ Keep these scope edges in mind when describing guarantees to a user:
   worst-case loss at OPEN (= committed isolated margin) so the proven cap
   rejects the open before the trade exists, then reconcile to realized
   (≤ reserved) at CLOSE** — the reserve-at-open pattern in
-  [onchain-trading.md](onchain-trading.md#reserve-at-open-loss-cap--making-the-proven-cap-bind-the-real-onchain-loss).
+  [onchain-trading.md](../../bounded-onchain/docs/onchain-trading.md#reserve-at-open-loss-cap--making-the-proven-cap-bind-the-real-onchain-loss).
 - Tenant isolation claims are about the declared relationship graph; the
   opt-in coverage/depth/induction gates exist precisely to force every real
   edge into the declared set before an isolation claim is made.
@@ -98,5 +98,5 @@ Keep these scope edges in mind when describing guarantees to a user:
 
 - [verify-and-counterexamples.md](verify-and-counterexamples.md) — the obligations that back this table
 - [invariants.md](invariants.md) — declaring `onchain` coverage per invariant
-- [onchain.md](onchain.md) — onchain runtime behavior: transactions, mirror, `--protocol`, client-signed tx
+- [onchain.md](../../bounded-onchain/docs/onchain.md) — onchain runtime behavior: transactions, mirror, `--protocol`, client-signed tx
 - [policy-generation-guide.md](policy-generation-guide.md) — when to go onchain at all

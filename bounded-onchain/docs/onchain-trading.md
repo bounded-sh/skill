@@ -134,8 +134,8 @@ the trade is provable on the collection — that's where you put the guardrails:
   caps *realized-loss rows the code writes at close* — which only binds losses your
   code chooses to record, not the real onchain outcome. The robust version is the
   **reserve-at-open** pattern below, which makes the proven cap bind the realized
-  onchain loss as an upper bound. See [invariants.md](invariants.md) and
-  [proof-coverage.md](proof-coverage.md) for what the proof boundary reaches once
+  onchain loss as an upper bound. See [invariants.md](../../bounded-backend/docs/invariants.md) and
+  [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) for what the proof boundary reaches once
   execution is on-chain.
 
 ## Reserve-at-open loss cap — making the proven cap bind the *real* onchain loss

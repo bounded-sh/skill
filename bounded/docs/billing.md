@@ -160,7 +160,7 @@ Common axes:
 If an app built on Bounded needs to charge its own end-users, use either:
 
 - Bounded Pay, if it fits the app's payment flow; see
-  [bounded-pay.md](bounded-pay.md), or
+  [bounded-pay.md](../../bounded-onchain/docs/bounded-pay.md), or
 - the app's own payment provider integrated through functions and secrets.
 
 When using your own provider, verify payment server-side, write an idempotent
@@ -170,7 +170,7 @@ against the provider.
 
 ## Related
 
-- [bounded-pay.md](bounded-pay.md) - Bounded Pay fee and app payment pattern
-- [functions.md](functions.md) - provider calls from backend code
-- [secrets.md](secrets.md) - using your own provider API keys
-- [cli-reference.md](cli-reference.md) - billing commands
+- [bounded-pay.md](../../bounded-onchain/docs/bounded-pay.md) - Bounded Pay fee and app payment pattern
+- [functions.md](../../bounded-backend/docs/functions.md) - provider calls from backend code
+- [secrets.md](../../bounded-backend/docs/secrets.md) - using your own provider API keys
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) - billing commands

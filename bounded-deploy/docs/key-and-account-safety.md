@@ -320,6 +320,6 @@ app/account context for configured projects.
 ## Related
 
 - [cli-reference.md](cli-reference.md) — `whoami`, `login`, `link`, `share`, `collaborators`, account source
-- [auth.md](auth.md) — CLI auth, end-user login, and the recovery callout
-- [admin-and-ownership.md](admin-and-ownership.md) — control plane vs data plane; no owner god-mode
-- [secrets.md](secrets.md) — app-level secret values (Stripe/OpenAI keys), kept out of code
+- [auth.md](../../bounded-frontend/docs/auth.md) — CLI auth, end-user login, and the recovery callout
+- [admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md) — control plane vs data plane; no owner god-mode
+- [secrets.md](../../bounded-backend/docs/secrets.md) — app-level secret values (Stripe/OpenAI keys), kept out of code

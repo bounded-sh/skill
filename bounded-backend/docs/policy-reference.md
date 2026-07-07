@@ -307,7 +307,7 @@ never treated as path templates:
 | Block | Shape | Doc |
 |---|---|---|
 | `links` | array of link definitions | [queries.md](queries.md) |
-| `auth` | `{ anonymous: bool }` — app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. | [auth.md](auth.md), [anonymous-accounts.md](anonymous-accounts.md) |
+| `auth` | `{ anonymous: bool }` — app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. | [auth.md](../../bounded-frontend/docs/auth.md), [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md) |
 | `functions` | `{ name: { auth, entry, timeout, secrets } }` | [functions.md](functions.md) |
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
@@ -315,7 +315,7 @@ never treated as path templates:
 | `proofs` | `{ transferAuthority?, attestations? }` — proof-only declarations; preferred home for conditional transfer authority and global attestations | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
 | `attestations` | legacy alias for `proofs.attestations` | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
 | `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
-| `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](environments.md) |
+| `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](../../bounded-deploy/docs/environments.md) |
 
 `constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
 only literals; `environments` is stripped by the CLI before the policy is sent.

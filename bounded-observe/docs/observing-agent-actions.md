@@ -48,6 +48,16 @@ node --require @bounded-sh/observe/register app.js   # CJS
 Both values come from opt-in; `BOUNDED_INGEST_BASE` defaults to the production
 ingest when unset, so usually only the token is required.
 
+**Capture scope (`BOUNDED_CAPTURE_SCOPE`).** For an app you are BUILDING, set
+`BOUNDED_CAPTURE_SCOPE=bounded` — the shim then sends only the calls Bounded
+already recognizes (its builtin fixtures: your Bounded data plane, Stripe, the AI
+gateways, and other known rails) plus explicit counter routes. Nothing about an
+unknown route ever leaves the process — no shape sample, no counter. This is the
+quiet, private, low-volume default for app development, and it keeps you well
+under the metered observe cap. When you WANT to discover and classify new routes
+(the enterprise/action-boundaries flow), set `BOUNDED_CAPTURE_SCOPE=all` (or leave
+it unset) for full capture including unknown-route shape sampling.
+
 | Env | Meaning |
 |---|---|
 | `BOUNDED_SENSOR_TOKEN` | the `obs1.…` token minted at opt-in; authenticates reports for this app only |

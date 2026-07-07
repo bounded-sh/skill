@@ -103,6 +103,6 @@ identity. Keep the stored auth fields together so silent refresh works for long 
   and call the SDK directly. This page is specifically for driving a **browser**
   as a signed-in user.
 
-See also: [auth.md](auth.md) (end-user auth + the `@user` object),
-[building-for-agents.md](../guides/building-for-agents.md),
-[frontend-hosting.md](frontend-hosting.md).
+See also: [auth.md](../../bounded-frontend/docs/auth.md) (end-user auth + the `@user` object),
+[building-for-agents.md](building-for-agents.md),
+[frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).

@@ -48,12 +48,12 @@ bounded data get --app-id <appId> --path agents/<agent-id>/spend
 > get "daemon not reachable" and local workflows silently degrade. Re-running
 > `bounded dashboard` reuses a healthy daemon; if it warns the running daemon is an
 > older version, restart it (`kill $(lsof -ti tcp:8085)` then re-run) so you're not
-> on stale behavior. Full detail: [../docs/live-edit.md](../docs/live-edit.md).
+> on stale behavior. Full detail: [../docs/live-edit.md](../../bounded-deploy/docs/live-edit.md).
 
 > Run each agent under a **distinct** `HOME` or `BOUNDED_PRIVATE_KEY` so
 > identities don't collide. Never hand an autonomous agent a human's keypair.
 > That per-agent key *owns every app the agent creates* — lose it and the apps
-> are unrecoverable. Link or back it up: [../docs/key-and-account-safety.md](../docs/key-and-account-safety.md).
+> are unrecoverable. Link or back it up: [../docs/key-and-account-safety.md](../../bounded-deploy/docs/key-and-account-safety.md).
 
 ## Designing the policy for an agent
 
@@ -103,7 +103,7 @@ read-check-write race for the agent to lose.
 
 - **CLI** (`bounded data ...`) is the simplest path for a shell-driven agent —
   every operation is one command, `--json` makes output machine-parseable, and
-  errors come back as JSON too. See [../docs/cli-reference.md](../docs/cli-reference.md).
+  errors come back as JSON too. See [../docs/cli-reference.md](../../bounded-deploy/docs/cli-reference.md).
 - **SDK** (`@bounded-sh/server`) suits an agent already running in Node: one
   `createWalletClient({ keypair })` gives typed `get` / `set` / `setMany` /
   `subscribe`-free reads, all signed by the agent's key. See
@@ -137,9 +137,9 @@ check).
 ## Related
 
 - [../docs/policy-generation-guide.md](../docs/policy-generation-guide.md) — turning the task into a provable policy
-- [../docs/cli-reference.md](../docs/cli-reference.md) — every `bounded data` command
+- [../docs/cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — every `bounded data` command
 - [building-a-backend.md](building-a-backend.md) — the `@bounded-sh/server` path
-- [capabilities-and-limits.md](capabilities-and-limits.md) — what Bounded does and doesn't do
-- [../docs/auth.md](../docs/auth.md) — CLI/admin auth sources, including wallet/keypair mode
-- [../docs/key-and-account-safety.md](../docs/key-and-account-safety.md) — per-agent wallet isolation; wallet keys own their apps, so link or back them up
-- [../docs/observe.md](../docs/observe.md) — Action Boundaries: watch the agent's external actions (`ctx.ai`, `ctx.services`, egress), then enforce suggested boundaries with one click
+- [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — what Bounded does and doesn't do
+- [../docs/auth.md](../../bounded-frontend/docs/auth.md) — CLI/admin auth sources, including wallet/keypair mode
+- [../docs/key-and-account-safety.md](../../bounded-deploy/docs/key-and-account-safety.md) — per-agent wallet isolation; wallet keys own their apps, so link or back them up
+- [../docs/observe.md](../../bounded/docs/observe.md) — Action Boundaries: watch the agent's external actions (`ctx.ai`, `ctx.services`, egress), then enforce suggested boundaries with one click

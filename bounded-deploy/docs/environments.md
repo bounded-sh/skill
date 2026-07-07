@@ -4,7 +4,7 @@
 construct that lets one `policy.json` drive several apps (preview, production, …),
 each with its own `appId` and its own constant values. The CLI resolves it and
 deploys a normal policy. Builds on
-[constants-and-defs.md](constants-and-defs.md).
+[constants-and-defs.md](../../bounded-backend/docs/constants-and-defs.md).
 
 ## Shape
 
@@ -45,7 +45,7 @@ What the CLI does for `--environment <name>`:
    block (env values win).
 2. **Targets** `environments.<name>.appId` (an explicit `--app-id` still wins).
 3. **Strips** the `environments` block, then ships a NORMAL policy — server-side
-   `@const`/`@def` resolution ([constants-and-defs.md](constants-and-defs.md))
+   `@const`/`@def` resolution ([constants-and-defs.md](../../bounded-backend/docs/constants-and-defs.md))
    inlines the now env-specific values.
 
 So one file gives preview and production **different admin members and different
@@ -63,6 +63,6 @@ cleanly separated.
   selected environment.
 
 ## Related
-- [constants-and-defs.md](constants-and-defs.md) — `@const`/`@def` resolution (the server-side half)
-- [roles.md](roles.md) — per-env admin via `@const.ADMIN`
+- [constants-and-defs.md](../../bounded-backend/docs/constants-and-defs.md) — `@const`/`@def` resolution (the server-side half)
+- [roles.md](../../bounded-backend/docs/roles.md) — per-env admin via `@const.ADMIN`
 - [cli-reference.md](cli-reference.md) — every flag on `deploy`/`verify`

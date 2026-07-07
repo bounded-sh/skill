@@ -53,13 +53,13 @@ Chain effects with `&&`; a falsy result short-circuits later calls.
 > - **`updateField` is a SET, not an increment** — `updateField("c","n",1)` stores
 >   `1` every time, not `n+1`; there is no read-modify-write counter primitive in a
 >   hook. For an atomic counter, increment from the **client write** with the
->   `increment(n)` field-value helper ([sdk-reference.md](sdk-reference.md)); for an
+>   `increment(n)` field-value helper ([sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md)); for an
 >   advancing game clock use the native live-runtime `tick` module
 >   ([realtime-and-games.md](realtime-and-games.md)).
 > - **`@time.now` does not resolve as a hook mutation value** (it is a *rule*
 >   builtin) and the literal `"now"` just stores the string `"now"` — so you can't
 >   stamp a server timestamp from a hook. Stamp it from the **client write** with
->   `serverTimestamp()` ([sdk-reference.md](sdk-reference.md)), propagate via
+>   `serverTimestamp()` ([sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md)), propagate via
 >   `@newData.<field>`, or read the `_createdAt` / `_updatedAt`
 >   system fields on read.
 >
@@ -291,7 +291,7 @@ Webhooks are **read-only fan-out** — never act on an unauthenticated body, and
 treat the event as a *signal*: if you need to mutate Bounded state in response, do
 it through a `@bounded-sh/server` client so every rule + invariant is re-checked.
 Full receiver walkthrough:
-[../guides/building-a-backend.md](../guides/building-a-backend.md#receiving-webhooks).
+[../guides/building-a-backend.md](building-a-backend.md#receiving-webhooks).
 
 ## The model in one line
 

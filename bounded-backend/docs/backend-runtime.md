@@ -174,5 +174,5 @@ bounded runtime --help
 
 - [functions.md](functions.md) — short functions
 - [secrets.md](secrets.md) — provider keys
-- [billing.md](billing.md) — buckets and caps
+- [billing.md](../../bounded/docs/billing.md) — buckets and caps
 - [agents-flue.md](agents-flue.md) — multi-step agent loop

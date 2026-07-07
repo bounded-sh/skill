@@ -279,8 +279,8 @@ exceeded" — and it is proven at deploy.
 
 ## Related
 
-- [sdk-reference.md](sdk-reference.md) — `get`/`count`/`aggregate`/`search` signatures
-- [cli-reference.md](cli-reference.md) — `bounded data get/aggregate/search` flags
+- [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — `get`/`count`/`aggregate`/`search` signatures
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — `bounded data get/aggregate/search` flags
 - [policy-reference.md](policy-reference.md) — `queries`, `relationships`, `links`, `get()`
 - [data-plane.md](data-plane.md) — reads, writes, and in-batch composition
 - [files-and-search.md](files-and-search.md) — full-text search queries

@@ -212,7 +212,7 @@ AI/external-services credit is **per-account** (the app owner). Two things to wi
    - Free includes 3 AI builds/day (fast model) plus a small runtime-services trial allowance, and cannot top up.
    - Pro ($25/mo) gifts $5/mo of AI/external-services credit and $30/mo of Bounded infra credit; Team ($99/mo) gifts $20/$100. Top-ups require Pro-or-better.
 
-   Full rails, amounts, and webhooks: [billing.md](billing.md). **If your app
+   Full rails, amounts, and webhooks: [billing.md](../../bounded/docs/billing.md). **If your app
    charges *its own* users for anything, route that through Bounded billing too** —
    don't build a parallel payment page that bypasses the metered, fail-closed ledger.
 
@@ -625,10 +625,10 @@ function code as useful imperative logic, not as a proof boundary.
 - [agents-flue.md](agents-flue.md) — a **multi-step agent** (tool-use loop) when one `ctx.ai.run` isn't enough
 - [backend-runtime.md](backend-runtime.md) — long-running / batch work
 - [live-runtime.md](live-runtime.md) — the deterministic tick and the `call` primitive that reaches functions
-- [../guides/capabilities-and-limits.md](../guides/capabilities-and-limits.md) — where functions fit (now supported)
+- [../guides/capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — where functions fit (now supported)
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — in-boundary hooks vs notify-out webhooks
 - [invariants.md](invariants.md) — the postconditions a function's writes still answer to
 - [policy-reference.md](policy-reference.md) — the rule expression language used by `auth`
 - [identity-and-logs.md](identity-and-logs.md) — `logsAuth` (who views logs) + the `__managers__` identity sets
 - [service-keys.md](service-keys.md) — `actAs`: a function transacting as its own backend identity
-- [sdk-reference.md](sdk-reference.md) — invoking a function from TypeScript today
+- [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — invoking a function from TypeScript today

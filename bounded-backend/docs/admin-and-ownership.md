@@ -33,7 +33,7 @@ proven backend unprovable. So Bounded splits authority into two planes:
 
 | Plane | What it covers | Who has it | How |
 |---|---|---|---|
-| **Control plane** | Manage the app: deploy/replace policy + UI, add/remove collaborators, configure functions + secrets, billing, delete the app | **Owner + control roles** (`admin`/`developer`/`viewer`/`billing` + custom) | The owner's CLI account source: wallet/keypair or web account. Wallet keys can be attached with `bounded link`; others use `bounded share --role` / the `access` block — see [access-control.md](access-control.md) and [auth.md](auth.md) |
+| **Control plane** | Manage the app: deploy/replace policy + UI, add/remove collaborators, configure functions + secrets, billing, delete the app | **Owner + control roles** (`admin`/`developer`/`viewer`/`billing` + custom) | The owner's CLI account source: wallet/keypair or web account. Wallet keys can be attached with `bounded link`; others use `bounded share --role` / the `access` block — see [access-control.md](access-control.md) and [auth.md](../../bounded-frontend/docs/auth.md) |
 | **Data plane** | Read/write app **data** | **Whoever the policy rules + invariants allow — and ONLY them** | Declared in `policy.json`. **No owner bypass.** |
 
 The owner's legitimate reign is the *control plane* (it's their app). On the
@@ -111,7 +111,7 @@ admin can seed itself — see the bootstrap section below for why.
 Web-account login and `bounded share` use the human's Bounded account identity.
 `bounded link` is only for wallet/keypair CLI sources: it attaches that signing
 key (a detachable signing credential) to the same web account so the wallet key
-and web account become admin-collaborators ([auth.md](auth.md)). Because you gate
+and web account become admin-collaborators ([auth.md](../../bounded-frontend/docs/auth.md)). Because you gate
 on `@user.id` — the **universal stable identity** (the web account's user id)
 that is the same regardless of which login the human used — you seed the admins
 collection **once** at the account's `@user.id`, and the gate matches every
@@ -138,7 +138,7 @@ The idiom that actually works, end to end:
 
 1. **Put a constant founder identity in the policy** —
    `"constants": { "FOUNDER": "<user-id>" }` (use an `environments` block for a
-   per-env founder, see [environments.md](environments.md)).
+   per-env founder, see [environments.md](../../bounded-deploy/docs/environments.md)).
 2. **Add the genesis clause to the `admins` create rule** —
    `get(/admins/@user.id) != null || @user.id == @const.FOUNDER`
    (shown in the collection above). This is the *only* sanctioned side door, and
@@ -172,7 +172,7 @@ for the multi-tenant pattern and the nested-scope limitation.)
 > It runs in the verification engine (the same one `bounded verify` drives). The
 > `bounded verify --operation` flag exposes a subset today
 > (`verifyForDeploy`/`checkTautology`/`checkContradiction`/`checkSatisfiability`/`checkImplication`
-> — see [cli-reference.md](cli-reference.md)); `verifyAuthorityClosure` is an
+> — see [cli-reference.md](../../bounded-deploy/docs/cli-reference.md)); `verifyAuthorityClosure` is an
 > engine operation, not yet a CLI `--operation` value. Structure the admins
 > collection as above so the closure property holds, and `verifyForDeploy` proves
 > the per-rule obligations.
@@ -201,8 +201,8 @@ that says *which* X and *to whom*, and let the prover keep everyone honest.
 
 ## Related
 
-- [auth.md](auth.md) — CLI auth sources, `bounded login`, `bounded link`, email `bounded share`, collaborators
+- [auth.md](../../bounded-frontend/docs/auth.md) — CLI auth sources, `bounded login`, `bounded link`, email `bounded share`, collaborators
 - [policy-generation-guide.md](policy-generation-guide.md) — the "who is the admin?" step
 - [invariants.md](invariants.md) — the constraints that bind admins too
 - [functions.md](functions.md) — functions are gated by an `auth` rule, same admin pattern
-- [cli-reference.md](cli-reference.md) — `verify --operation`, `share`/`link`/`collaborators`
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — `verify --operation`, `share`/`link`/`collaborators`
