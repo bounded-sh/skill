@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **CLI/admin auth** | you / your agent | either a wallet/keypair account source or a Bounded web account session | owns/administers apps; wallet mode signs data-plane writes, web mode authenticates control-plane commands |
-| **End-user auth** | your app's users | Bounded Auth for normal apps (email OTP + OAuth/social + optional text OTP), or a connected Solana wallet (Phantom) for crypto apps | `@user.id` / `@user.address` / `@user.email` in policy rules |
+| **End-user auth** | your app's users | Bounded Auth for normal apps (email OTP + OAuth/social + optional text OTP), or — opt-in — a connected Solana wallet (Phantom) for crypto apps | `@user.id` / `@user.address` / `@user.email` in policy rules |
 
 ## CLI auth — wallet/keypair vs web account
 
@@ -184,6 +184,68 @@ the app's web origin — claim a vanity slug (`bounded domains slug <name> --app
 → `<slug>.bounded.page`) or add a custom domain (`bounded domains add <host> --app-id
 <id>`); both wire `allowedOrigins` automatically. `localhost` (for dev) and Bounded's own
 first-party `*.bounded.sh` origins are always allowed without registration.
+
+### Login-method matrix — the whole menu
+
+| Method | How you start it | Identity result | `@user.address` | Notes |
+|---|---|---|---|---|
+| **email OTP** | `loginWithRedirect({methods:["email"]})` / inline `sendEmailOtp`+`verifyEmailOtp` | account id | `null` (unless `auth.wallets` or linked) | the default for normal apps |
+| **social** (Google/Apple/GitHub) | `loginWithRedirect({provider:"google"})` | account id | `null` (unless `auth.wallets` or linked) | hosted only |
+| **text OTP** | `loginWithRedirect({provider:"text"})` / inline `sendTextOtp` | account id | `null` | opt-in, off by default |
+| **guest** | `signInAnonymously()` | durable device id | `null` | zero-friction; `isAnonymous: true`; policy opt-in `auth.anonymous` |
+| **WALLET (Solana)** | `init({authMethod:"phantom", walletLogin:true})` → `login()` | **real wallet** | **the wallet** | **OPT-IN, default OFF** — see below |
+| **CLI/admin** | `bounded login` / keypair | web account or keypair | keypair addr | builder identity, not end-user |
+
+### Solana wallet login (opt-in)
+
+> **OFF BY DEFAULT. Most apps never need it.** Wallet login (the poof/TaroBase-style
+> "connect wallet" choice) is a crypto/onchain feature — it is **not** advertised or
+> usable unless you explicitly turn it on at `init()` with **`walletLogin: true`**.
+> Existing apps that don't opt in see **zero behavior change**, and attempting wallet
+> login without the knob throws a clear error naming `walletLogin`.
+
+When enabled, wallet login lets a user **connect their own Solana browser wallet**
+(Phantom, or any Wallet-Standard `window.solana`) and sign in with it. Their **real
+wallet address becomes `@user.address`** (and `@user.id`) everywhere — SIWS: the SDK
+fetches a nonce, the wallet signs the canonical challenge locally, and the session is
+minted by `wallet-auth.bounded.sh`. It rides the injected wallet provider — **no heavy
+wallet SDK, no React dependency, no popup**.
+
+```ts
+import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
+
+// Enable wallet login (OFF by default). walletLogin: true is the opt-in knob.
+await init({ appId: "<appId>", authMethod: "phantom", walletLogin: true });
+
+// Right next to the login call — connects the injected wallet, signs the SIWS
+// challenge, and mints the session. user.address === the user's real wallet.
+const user = await login();          // throws an actionable error if walletLogin wasn't passed
+console.log(user.address);           // e.g. "H9CAN…jdNCUE" — the REAL wallet, and @user.address in policy
+
+// Full LOCAL signing surface — the wallet's OWN keypair (not a popup):
+await signMessage("hello");                       // base58 ed25519 signature
+await signTransaction(tx);                        // returns the signed tx
+await signAndSubmitTransaction(tx);               // signs + submits, returns the tx hash
+```
+
+Advanced: pass an object instead of `true` to point at a specific wallet or bridge a
+custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
+`authMethod: "wallet"` is an alias for `"phantom"`.
+
+> **Wallet login vs `auth.wallets` (embedded wallets) — don't confuse them.**
+>
+> | | **Wallet login** (`walletLogin: true`) | **Email login + `auth.wallets`** (embedded) |
+> |---|---|---|
+> | Who has the key | the **user** (their Phantom/Wallet-Standard wallet) | a non-custodial **Crossmint embedded smart wallet** |
+> | How they log in | connect wallet + SIWS | email/social OTP; the wallet is attached to the login |
+> | `@user.address` | their **real** wallet | the embedded smart-wallet address |
+> | Signing surface | full **local** `signMessage` / `signTransaction` / `signAndSubmitTransaction` (no popup) | `signAndSubmitTransaction` **only**, via a popup with email-OTP approval; `signMessage`/`signTransaction` throw |
+> | Use it when | your users already have wallets / want wallet-native UX | you want email users to get a wallet without ever leaving email login |
+>
+> The two are independent and can coexist. A wallet-login user's `@user.address` is
+> their real wallet and `auth.wallets` will **not** overwrite it (the embedded-wallet
+> provisioner only runs for email/social logins that don't already carry a wallet).
+> See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 
 ### Hosted login — email, social, and text in one flow
 
@@ -367,8 +429,10 @@ can run **either** through the hosted redirect flow (`loginWithRedirect` /
 **Guest** via `signInAnonymously()` is the natural frictionless second choice (not
 an `authMethod`; see below). **`'phantom'`** (connect a Solana wallet) is a
 crypto/onchain opt-in — use it only when the app is crypto-enabled and needs a real
-user wallet for signing, onchain ownership, or wallet-native UX. `'none'` disables
-end-user auth. (`'wallet'` is not implemented — use `'phantom'` for Solana wallets.)
+user wallet for signing, onchain ownership, or wallet-native UX. **It is OFF by
+default and must be turned on at `init()` with `walletLogin: true`** — see
+[Solana wallet login (opt-in)](#solana-wallet-login-opt-in). `'none'` disables
+end-user auth. (`'wallet'` is an alias for `'phantom'`.)
 
 The authenticated `user` object — mirrored into policy as `@user.*` — has **three
 fields**:
@@ -387,9 +451,13 @@ fields**:
   Bounded Auth users authenticate as an **account identity** — they have a stable
   `@user.id` but **no** `@user.address` (it is `null`) unless a wallet is
   connected. Phone-only text users also have `@user.email == null`.
-- **Phantom (wallet)** connects an existing Solana wallet directly. This is for
-  crypto-enabled apps. Here `@user.id` equals the wallet address and
-  `@user.address` is that same address.
+- **Phantom (wallet login)** connects an existing Solana wallet directly — the
+  poof/TaroBase-style "connect wallet" choice, **opt-in at `init()` with
+  `walletLogin: true`** (OFF by default). This is for crypto-enabled apps. Here
+  `@user.id` equals the real wallet address and `@user.address` is that same
+  address, and the user gets the full LOCAL signing surface
+  (`signMessage`/`signTransaction`/`signAndSubmitTransaction`). See
+  [Solana wallet login (opt-in)](#solana-wallet-login-opt-in).
 - Whatever the method, **`@user.id` is the stable thing every authenticated
   request carries** — reach for it for identity. Reach for `@user.address` only
   when you genuinely need a wallet.

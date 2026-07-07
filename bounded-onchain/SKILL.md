@@ -23,6 +23,7 @@ route across the family, see the root **bounded** skill.
 |---|---|
 | Onchain data / Solana collections | [docs/onchain.md](docs/onchain.md) |
 | Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
+| Let users **connect their own Solana wallet** (Phantom / Wallet-Standard) to log in — "connect wallet", wallet login, `walletLogin`, `authMethod:'phantom'`, real wallet as `@user.address`, local `signMessage`/`signTransaction` — **opt-in, off by default** | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in) |
 | Give every login a wallet (`@user.address` for email users), embedded/non-custodial wallets, Crossmint | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail, card→crypto rail seam | [docs/accept-crypto.md](docs/accept-crypto.md) |
 | Bounded Pay (accept card payments, Stripe Connect, fiat) | [docs/bounded-pay.md](docs/bounded-pay.md) |
@@ -32,6 +33,7 @@ route across the family, see the root **bounded** skill.
 | If you see | Read |
 |---|---|
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
+| `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom login, Wallet-Standard, `window.solana`, SIWS wallet login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in) |
 | `@user.address`, embedded wallet, Crossmint | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | `payments.acceptCrypto`, USDC, seller settlement, direct-transfer rail | [docs/accept-crypto.md](docs/accept-crypto.md) |
 | `payment`, `checkout`, `seller`, `merchant`, `subscription`, `Stripe`, `/connect/onboard`, `/connect/status`, `/connect/checkout`, `/connect/session` | [docs/bounded-pay.md](docs/bounded-pay.md) |

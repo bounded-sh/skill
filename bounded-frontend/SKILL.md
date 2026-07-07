@@ -24,7 +24,7 @@ domains. To route across the family, see the root **bounded** skill.
 | SDK calls, reads, writes, and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | Build a web app frontend | [docs/building-a-webapp.md](docs/building-a-webapp.md) |
 | Build for React Native / mobile | [docs/building-for-react-native.md](docs/building-for-react-native.md) |
-| Bounded Auth, email OTP, OAuth, guest users, optional text OTP | [docs/auth.md](docs/auth.md) |
+| Bounded Auth, email OTP, OAuth, guest users, optional text OTP, **Solana wallet login** (connect wallet, `walletLogin`, `authMethod:'phantom'`) | [docs/auth.md](docs/auth.md) |
 | Anonymous users, invite links, account upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | Hosted frontend and app URLs | [docs/frontend-hosting.md](docs/frontend-hosting.md) |
 
@@ -35,6 +35,7 @@ domains. To route across the family, see the root **bounded** skill.
 | `getPage`, `queryAggregate`, `count`, filters, sort, cursor | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
 | `bounded link`, `bounded login`, email OTP, OAuth, guest sign-in | [docs/auth.md](docs/auth.md) |
+| `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom / Wallet-Standard login | [docs/auth.md](docs/auth.md#solana-wallet-login-opt-in) |
 
 ## Rules Of Thumb
 

@@ -24,6 +24,18 @@ custody stays with the user.
 > separate policy block — see **[accept-crypto.md](accept-crypto.md)**
 > (`payments.acceptCrypto`). Receiving funds needs no signing at all.
 
+> **Want users to bring their OWN wallet instead?** If your users already have a
+> Solana wallet (Phantom / any Wallet-Standard wallet) and you want them to **log in
+> with it** — their real wallet as `@user.address`, a full local signing surface
+> (`signMessage` / `signTransaction` / `signAndSubmitTransaction`, no popup) — that's
+> **wallet login** (`init({ authMethod: 'phantom', walletLogin: true })`), a different
+> feature from this one. `auth.wallets` here gives an **email** user an **embedded**
+> (Crossmint) smart wallet with no wallet of their own; wallet login lets a
+> wallet-holding user sign in with their **real** wallet. They're independent and can
+> coexist — a wallet-login user's real `@user.address` is **not** overwritten by
+> `auth.wallets`. Full comparison + code:
+> [auth.md → Solana wallet login (opt-in)](../../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in).
+
 ---
 
 ## 0. Opt in (wallets are OFF by default)
@@ -180,9 +192,12 @@ wallet's execution. So build your transaction like this:
   **wallet page** (§4) which has a ready-made Send form.
 - ❌ `signMessage(msg)` and `signTransaction(tx)` (sign without submit) **throw** a clear
   "unsupported for embedded smart wallets — use signAndSubmitTransaction" error. Smart
-  wallets cannot produce a raw detached signature, by design.
+  wallets cannot produce a raw detached signature, by design. **If you need raw
+  signatures**, use **wallet login** instead (`authMethod: 'phantom'`, `walletLogin: true`)
+  — a real keypair wallet whose `signMessage` / `signTransaction` work locally
+  ([auth.md → Solana wallet login](../../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in)).
 - ❌ No `auth.wallets`, or a non-wallet login → signing throws an informative error telling
-  you to enable wallets (or use a wallet provider like Phantom for raw-signature apps).
+  you to enable wallets (or use **wallet login** for raw-signature / wallet-native apps).
 
 ### When to use which
 
@@ -192,7 +207,9 @@ wallet's execution. So build your transaction like this:
 - **The hosted wallet page (§4)** — no code: the user views balance and sends tokens
   with a ready-made form. Use it for "let the user manage their wallet" surfaces.
 - **`signMessage`/`signTransaction`** — not available on embedded smart wallets. If
-  you need raw signatures, use a keypair wallet provider (Phantom) instead.
+  you need raw signatures, use **wallet login** (`authMethod: 'phantom'`,
+  `walletLogin: true`) — a real keypair wallet — instead
+  ([auth.md → Solana wallet login](../../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in)).
 
 **Gotchas:**
 
