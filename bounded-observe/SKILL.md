@@ -5,10 +5,13 @@ description: >-
   Use when a user wants to observe external calls their app or agent makes,
   asks about agent boundaries or suggested boundaries, wants to promote/enforce
   a suggested boundary, asks about approvals or an action waiting for approval,
-  wires the @bounded-sh/observe shim, mentions an escorted action or a verdict
-  that was declined naming the boundary, or opens the app-<appId>.bounded.sh
-  Feed/Actors/Coverage dashboard. This skill is a router: load the one linked
-  doc for the user's task and avoid unrelated context.
+  wires the @bounded-sh/observe shim (or the @bounded-sh/observe/edge emitter
+  for Cloudflare Workers / edge runtimes), deploys or configures the
+  bounded-ai-gateway base-URL proxy (OBSERVE_ONLY, FAIL_OPEN, UPSTREAM_CONFIG),
+  mentions an escorted action or a verdict that was declined naming the
+  boundary, or opens the app-<appId>.bounded.sh Feed/Actors/Coverage
+  dashboard. This skill is a router: load the one linked doc for the user's
+  task and avoid unrelated context.
 metadata:
   internal: true
 ---
@@ -79,6 +82,8 @@ Open one doc for the current task.
 | If you see | Read |
 |---|---|
 | `@bounded-sh/observe`, `--require @bounded-sh/observe/register`, `BOUNDED_SENSOR_TOKEN`, `BOUNDED_INGEST_BASE`, `obs1.` token, `runAs`, `middleware()`, `unattributed` | [docs/observing-agent-actions.md](docs/observing-agent-actions.md) |
+| `@bounded-sh/observe/edge`, `buildEvent`/`postEvent`/`emitEvent`, observe from a Cloudflare Worker / edge runtime, per-tenant chokepoint emit | [docs/observing-agent-actions.md](docs/observing-agent-actions.md) |
+| `bounded-ai-gateway`, `ANTHROPIC_BASE_URL`/`OPENAI_BASE_URL` proxy, `OBSERVE_ONLY`, `FAIL_OPEN`, `UPSTREAM_CONFIG` (Vercel AI Gateway / LiteLLM chaining), observe a tool you can't wrap (Claude Code, Cursor), child-process inference invisible to the shim | [docs/observing-agent-actions.md](docs/observing-agent-actions.md) |
 | Feed, Actors, Coverage, `app-<appId>.bounded.sh` | [docs/observing-agent-actions.md](docs/observing-agent-actions.md) |
 | Suggested boundary card, baseline, evidence window, "still learning", Promote, Watching/Suggested/Enforced | [docs/suggested-boundaries.md](docs/suggested-boundaries.md) |
 | `allowed`, `declined` + boundary name, waiting for approval, escorted | [docs/suggested-boundaries.md](docs/suggested-boundaries.md) |
