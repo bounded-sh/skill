@@ -135,9 +135,13 @@ argv values can appear in shell history and process listings.
   copying. The manifest (or a function's `secrets` block) declares the *name* once.
   A Function resolves the value from the SAME per-app store at invoke time, so
   `ctx.secrets.get("STRIPE_KEY")` returns what you `secret put`. A legacy
-  deploy-time function-secret override still exists for one-off per-function
-  overrides, but prefer `secret put` with `--value-stdin` so values do not appear
-  in argv, process listings, or shell history.
+  deploy-time function-secret override still exists (passing values inline in the
+  function-deploy call) for one-off per-function overrides, but **prefer `secret put`**.
+  Those inline values are scoped to that one function **version**: they are wiped on
+  the next redeploy, so you must re-supply them on *every* deploy (and a policy
+  redeploy that replaces the function loses them too) — plus they can leak through
+  argv, process listings, and shell history. `secret put` sets the value **once**,
+  persists it across deploys, and is read back with `ctx.secrets.get`.
 - Declaring a `secrets` block is the allow-list: only **declared** in-process
   names are readable. For new manifests and functions, always declare the names
   explicitly. If code asks for a name that is not declared for that backend
