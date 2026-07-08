@@ -59,12 +59,26 @@ with end-user roles (moderators, etc.) uses an `admins`/`roles` collection and m
 | `viewer` | read-only management surfaces + proofs (the "external people" tier) |
 | `billing` | view + manage billing |
 
+> **⚠️ Plan gating — check the OWNER's plan before suggesting a role.** Collaboration is
+> a paid feature, billed to the **app owner's** plan:
+>
+> | Owner's plan | Seats | Roles you can grant |
+> |---|---|---|
+> | Free | 0 — solo | none |
+> | Pro | 3 | **`developer` only** (full build access: verify, deploy policy/functions/UI) |
+> | Team | 25 | all of them — `developer`, `admin`, `viewer`, `billing` |
+> | Enterprise | unlimited | all |
+>
+> On Pro, `--role admin`/`viewer`/`billing` is rejected with a `402` telling you to re-run
+> with `--role developer` or upgrade to Team. **Default to `--role developer`** unless you
+> know the owner is Team+ — for "help me build/deploy this app" it's the right role anyway.
+
 Grant with the CLI:
 
 ```bash
-bounded share alice@example.com --role admin --app-id <id>
-bounded share <wallet>          --role developer --app-id <id>
-bounded share newperson@x.com   --role viewer --app-id <id>   # works before they sign up
+bounded share <wallet>          --role developer --app-id <id>   # any paid plan
+bounded share newperson@x.com   --role developer --app-id <id>   # works before they sign up
+bounded share alice@example.com --role admin --app-id <id>       # Team+ owners only
 ```
 
 ### What each preset actually contains (the capability matrix)
