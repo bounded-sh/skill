@@ -1,0 +1,10 @@
+{
+  "$schema": "https://bounded.sh/schemas/bounded.schema.json",
+  "name": "oapps-tokenomics-reference",
+  "environment": "staging",
+  "protocol": "realtime_mainnet",
+  "policy": "policy.json",
+  "account": {
+    "keySource": "global"
+  }
+}

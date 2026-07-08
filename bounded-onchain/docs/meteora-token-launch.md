@@ -158,12 +158,22 @@ Meteora's config is **2-party**: on the curve, each trade's fee splits between t
 `postMigratedCreatorFeePercentage` slice is permanently locked (earns LP fees
 forever) and the rest is unlocked; fees are claimed with `claimDammV2PoolFees`.
 
-There is **no native 3-way split**. A 3-way split (e.g. the 60/30/10 pump-native
-model) is *composed in Bounded policy*: point `feeAccount` at an escrow
-(`@contract.address`), then split the claimed fees with further onchain writes and
-bind the shares with invariants (`conserve` / `rollingSum`) on the ledger
-collection. That composition is out of scope here — this doc covers the native
-Meteora primitive only. See [invariants.md](../../bounded-backend/docs/invariants.md).
+There is **no native 3-way split**. A multi-party split (e.g. the oApps **55%
+treasury / 25% creator / 20% Poof** model) is *composed in Bounded policy* on top of
+this 2-party primitive. The mapping is direct: point `feeAccount` at the treasury
+PDA — that pays the **55%** partner leg natively — and set
+`preMigratedCreatorFeePercentage` to the **combined creator+platform share (45)** so
+that leg accrues to a shared `feepool` PDA. A permissionless onchain write then
+claims `feepool` and splits it by **fixed bps literals in policy**
+(`5556/4444` of the 45% pool = 25/20 of the whole), with `@MathPlugin.mulDivFloor`
+sizing each `@TokenPlugin.transfer` leg. Post-graduation the native partner leg
+zeroes, so the whole 55/25/20 becomes a 3-way policy split of the `claimDammV2PoolFees`
+claim (`5500/2500/2000`).
+
+For the full worked example — every collection copied from the Z3-verified reference
+policy, the keeper that turns the crank, the fee-funded build allowance, and an
+honest PROVEN-vs-TRUSTED-vs-NEEDS-DEVNET breakdown — see
+[oapps-tokenomics-fee-split.md](oapps-tokenomics-fee-split.md).
 
 ## What is PROVEN vs what is trusted (state it honestly)
 

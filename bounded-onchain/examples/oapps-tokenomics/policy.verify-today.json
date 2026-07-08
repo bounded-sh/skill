@@ -1,0 +1,211 @@
+{
+  "constants": {
+    "CONFIG_ID": "oapp-config",
+    "OAPP_MINT": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "CREATOR": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm",
+    "POOF": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+    "KEEPER": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm",
+    "BUILD_ALLOWANCE": 100000000000
+  },
+
+  "admins/$userId": {
+    "description": "Keeper/admin identities allowed to run the scheduled keeper function.",
+    "fields": { "since": "UInt" },
+    "tier": "durable",
+    "rules": {
+      "read": "true",
+      "create": "@user.id != null && $userId == @user.id",
+      "update": "false",
+      "delete": "false"
+    }
+  },
+
+  "vaults/$vaultId": {
+    "description": "Create the two policy PDAs: the Treasury PDA (55% partner leg) and the shared split-pool PDA (creator+Poof leg). Idempotent.",
+    "onchain": true,
+    "fields": { "note": "String" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@AccountPlugin.createAccount(\"treasury\") && @AccountPlugin.createAccount(\"feepool\")"
+      }
+    },
+    "queries": {
+      "treasuryAddress": { "returnType": "String", "query": "@AccountPlugin.getAccountAddress(\"treasury\")" },
+      "feepoolAddress": { "returnType": "String", "query": "@AccountPlugin.getAccountAddress(\"feepool\")" }
+    }
+  },
+
+  "launch/$launchId": {
+    "description": "Tier-1 native config. feeAccount = the Treasury PDA (direct 55% partner leg). preMigratedCreatorFeePercentage = 45 routes the creator leg to the pool-creation authority. Anti-snipe decay: open 50% -> 3% over 300 slots.",
+    "onchain": true,
+    "fields": { "name": "String" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DeFiPlugin.createMeteoraConfig(@const.CONFIG_ID, \"treasury\", 300, 45, 200, 50, 30, 85, 1000000000, 6, 0, \"treasury\")"
+      }
+    }
+  },
+
+  "pools/$tokenId": {
+    "description": "Tier-1 mint + open the virtual (bonding-curve) pool against CONFIG_ID. NOTE: createMeteoraVirtualPool takes no source/creator param, so the 45% creator leg follows the server pool-creation signer (see NOTES residual R1).",
+    "onchain": true,
+    "fields": { "name": "String", "symbol": "String", "uri": "String" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DeFiPlugin.createMeteoraVirtualPool(@const.CONFIG_ID, $tokenId, @newData.name, @newData.symbol, @newData.uri)"
+      }
+    },
+    "queries": {
+      "poolAddress": { "returnType": "Address", "query": "@DeFiPlugin.getMeteoraVirtualPoolAddress(@const.OAPP_MINT, @const.CONFIG_ID)" },
+      "dammPoolAddress": { "returnType": "Address", "query": "@DeFiPlugin.getDammV2PoolAddress(@const.OAPP_MINT)" }
+    }
+  },
+
+  "trades/$tradeId": {
+    "description": "Trading passthrough. Buy: mint=SOL. Sell: mint=OAPP_MINT.",
+    "onchain": true,
+    "isPassthrough": true,
+    "fields": { "mint": "Address", "amount": "UInt" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DeFiPlugin.swapInMeteoraVirtualPool(@user.address, @const.OAPP_MINT, @newData.mint, @newData.amount)"
+      }
+    }
+  },
+
+  "claims/$claimId": {
+    "description": "PERMISSIONLESS pre-migration claim of BOTH native legs to their PDAs: treasury PDA (55% partner) and feepool PDA (45% creator authority). Recipients fixed in policy; anyone/keeper may trigger.",
+    "onchain": true,
+    "isPassthrough": true,
+    "fields": { "note": "String" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DeFiPlugin.claimMeteoraPoolFees(\"treasury\", @DeFiPlugin.getMeteoraVirtualPoolAddress(@const.OAPP_MINT, @const.CONFIG_ID)) && @DeFiPlugin.claimMeteoraPoolFees(\"feepool\", @DeFiPlugin.getMeteoraVirtualPoolAddress(@const.OAPP_MINT, @const.CONFIG_ID))"
+      }
+    }
+  },
+
+  "distributions/$distId": {
+    "description": "Tier-2 PRE-migration atomic distribute. Claim the feepool (45%) leg, then split it creator:Poof = 5556:4444 bps of the pool (= 25:20 of the whole). Recipients + bps FIXED in policy; amount is the keeper/caller-asserted claimed lamports.",
+    "onchain": true,
+    "isPassthrough": true,
+    "fields": { "amount": "UInt" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DeFiPlugin.claimMeteoraPoolFees(\"feepool\", @DeFiPlugin.getMeteoraVirtualPoolAddress(@const.OAPP_MINT, @const.CONFIG_ID)) && @TokenPlugin.transfer(\"feepool\", @const.CREATOR, @TokenPlugin.SOL, @MathPlugin.mulDivFloor(@newData.amount, 5556, 10000)) && @TokenPlugin.transfer(\"feepool\", @const.POOF, @TokenPlugin.SOL, @MathPlugin.mulDivFloor(@newData.amount, 4444, 10000))"
+      }
+    }
+  },
+
+  "dammClaims/$claimId": {
+    "description": "PERMISSIONLESS post-migration claim. Native partner leg goes to ZERO post-graduation, so ALL DAMM v2 fees route to the creator-authority (feepool). Also sweeps reserved leftover after migration.",
+    "onchain": true,
+    "isPassthrough": true,
+    "fields": { "note": "String" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DeFiPlugin.claimDammV2PoolFees(\"feepool\", @DeFiPlugin.getDammV2PoolAddress(@const.OAPP_MINT)) && @DeFiPlugin.withdrawLeftover(@DeFiPlugin.getMeteoraVirtualPoolAddress(@const.OAPP_MINT, @const.CONFIG_ID))"
+      }
+    }
+  },
+
+  "distributionsPost/$distId": {
+    "description": "Tier-2 POST-migration atomic distribute (phase asymmetry). Native partner leg is 0 post-graduation, so the whole 55/25/20 is a POLICY split of the DAMM claim: feepool -> treasury 5500 / creator 2500 / Poof 2000 bps. Recipients + bps FIXED in policy.",
+    "onchain": true,
+    "isPassthrough": true,
+    "fields": { "amount": "UInt" },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DeFiPlugin.claimDammV2PoolFees(\"feepool\", @DeFiPlugin.getDammV2PoolAddress(@const.OAPP_MINT)) && @TokenPlugin.transfer(\"feepool\", \"treasury\", @TokenPlugin.SOL, @MathPlugin.mulDivFloor(@newData.amount, 5500, 10000)) && @TokenPlugin.transfer(\"feepool\", @const.CREATOR, @TokenPlugin.SOL, @MathPlugin.mulDivFloor(@newData.amount, 2500, 10000)) && @TokenPlugin.transfer(\"feepool\", @const.POOF, @TokenPlugin.SOL, @MathPlugin.mulDivFloor(@newData.amount, 2000, 10000))"
+      }
+    }
+  },
+
+  "builds/$buildId": {
+    "description": "Fee-funded build allowance: append-only spend log with a proven rolling burn cap. Fees claimed into the treasury credit this budget; the rollingSum invariant caps spend over a rolling window.",
+    "tier": "durable",
+    "fields": { "amount": "UInt" },
+    "rules": {
+      "read": "@user.id != null",
+      "create": "@user.id != null",
+      "update": "false",
+      "delete": "false"
+    },
+    "invariants": [
+      { "type": "rollingSum", "name": "build_allowance_cap", "field": "amount", "windowSeconds": 86400, "limit": "@const.BUILD_ALLOWANCE" }
+    ]
+  },
+
+  "heartbeat/$id": {
+    "description": "OFFCHAIN keeper heartbeat. Schedules are rejected on onchain collections, so the keeper is offchain -> function -> onchain-write: the scheduled function (actAs a signer) writes rows into the permissionless claims/distributions/dammClaims/builds collections.",
+    "fields": { "lastTick": "UInt", "note": "String" },
+    "tier": "durable",
+    "rules": {
+      "read": "true",
+      "create": "@user.id != null",
+      "update": "@user.id != null && get(/admins/@user.id) != null",
+      "delete": "false"
+    },
+    "schedule": { "every": "5m", "run": "keeper" }
+  },
+
+  "functions": {
+    "keeper": {
+      "auth": "get(/admins/@user.id) != null",
+      "entry": "keeper.js",
+      "actAs": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm"
+    }
+  },
+
+  "auth": {
+    "anonymous": true
+  }
+}
