@@ -42,6 +42,45 @@ custody stays with the user.
 
 ---
 
+## The recommended login for an onchain app
+
+For any app that touches wallets, tokens, or onchain state (most onchain apps), this
+is the **prescribed default login** — turn on `auth.wallets` and offer **two** ways
+in, side by side, so every user lands with a usable wallet no matter how they arrive:
+
+1. **Email / social — the primary path.** With `auth.wallets` on, a normal Bounded
+   Auth login auto-provisions a non-custodial **Crossmint** wallet. Most users pick
+   this: no wallet software, no seed phrase. `@user.id` is their account id and
+   `@user.address` is the Crossmint wallet.
+2. **Connect wallet — the companion path.** For users who already hold a Solana
+   wallet, add **wallet login** so they sign in with their **real** wallet (SIWS).
+   `@user.address` is that real wallet, and `auth.wallets` never overwrites it.
+
+The one policy change that turns the primary path on:
+
+```json
+{ "auth": { "wallets": true } }
+```
+
+Client — the primary path is the default `init`; the companion is opt-in via
+`walletLogin`:
+
+```ts
+import { init, loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
+
+await init({ appId: "<APP_ID>" });      // Bounded Auth (email/social); auth.wallets gives each a Crossmint wallet
+await completeLoginFromRedirect();       // finish a hosted return on app load
+loginWithRedirect({ methods: ["email", "google", "apple"] });   // the primary "Sign in" button
+```
+
+For the **Connect wallet** companion (a real Solana wallet, injected + mobile), see
+[auth.md → Solana wallet login (bring your own)](../../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own)
+and enable it with `walletLogin: true`. Whichever way a user signs in, **key
+ownership and identity on `@user.id`** (always present, no first-login lag) and use
+`@user.address` only for wallet / onchain semantics.
+
+---
+
 ## 0. Turn it on (the canonical config)
 
 Add a top-level `auth` block to `policy.json`:
