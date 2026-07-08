@@ -26,6 +26,7 @@ the root **bounded** skill.
 |---|---|
 | Onchain data / Solana collections | [docs/onchain.md](docs/onchain.md) |
 | Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
+| **Launch a token** on Meteora — Dynamic Bonding Curve, anti-snipe fee decay, creator/partner fee split, graduation/migration to DAMM v2, claiming fees (`createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover`) | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
 | **The canonical login: give every login a wallet** (`@user.address` for email/social users), embedded/non-custodial wallets, Crossmint, `auth.wallets` | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | Let users **connect their own Solana wallet** (Phantom / Wallet-Standard) to log in — "connect wallet", wallet login, `walletLogin`, `authMethod:'phantom'`, real wallet as `@user.address`, local `signMessage`/`signTransaction` — the **bring-your-own companion** to the canonical login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
 | Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail, card→crypto rail seam | [docs/accept-crypto.md](docs/accept-crypto.md) |
@@ -36,6 +37,7 @@ the root **bounded** skill.
 | If you see | Read |
 |---|---|
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
+| `createMeteoraConfig`, `createMeteoraVirtualPool`, Dynamic Bonding Curve, DBC, bonding curve, anti-snipe / fee decay, token launch, launchpad, graduation, migrate, DAMM v2, `claimDammV2PoolFees`, `withdrawLeftover`, `getDammV2PoolAddress` | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
 | `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom login, Wallet-Standard, `window.solana`, SIWS wallet login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
 | `@user.address`, embedded wallet, Crossmint | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | `payments.acceptCrypto`, USDC, seller settlement, direct-transfer rail | [docs/accept-crypto.md](docs/accept-crypto.md) |
