@@ -307,7 +307,7 @@ never treated as path templates:
 | Block | Shape | Doc |
 |---|---|---|
 | `links` | array of link definitions | [queries.md](queries.md) |
-| `auth` | `{ anonymous: bool }` — app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. | [auth.md](../../bounded-frontend/docs/auth.md), [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md) |
+| `auth` | `{ anonymous: bool, wallets: bool \| { environment: "staging" \| "production" } }` — app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. `wallets: true` is the **canonical login** flag: it attaches a non-custodial Crossmint wallet (`@user.address`) to every email/social login (see [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md)); omit it only for a purely offchain app. | [auth.md](../../bounded-frontend/docs/auth.md), [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md) |
 | `functions` | `{ name: { auth, entry, timeout, secrets } }` | [functions.md](functions.md) |
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |

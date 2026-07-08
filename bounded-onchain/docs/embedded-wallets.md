@@ -1,9 +1,13 @@
-# Embedded wallets (`auth.wallets`) — a wallet on every login
+# Embedded wallets (`auth.wallets`) — the canonical login: a wallet on every login
 
-Turn on a policy flag and **every email-carrying login also gets a non-custodial
-Solana wallet**, with its address exposed to your rules as `@user.address`. This is
-the "wallets all around" model: a plain email/social/`web_login` user — who normally
-has **no** wallet — gets one automatically, and Bounded **never holds the key**.
+**This is the canonical Bounded login.** Turn on one policy flag and **every
+email-carrying login also gets a non-custodial Solana wallet**, with its address
+exposed to your rules as `@user.address`. This is the "wallets all around" model: a
+plain email/social/`web_login` user gets a real wallet automatically — no seed
+phrase, no extension, no leaving the email flow — while keeping a stable account
+identity (`@user.id`), and Bounded **never holds the key**. Keep it on for any app
+that touches wallets, tokens, or onchain state (most Bounded apps); a purely offchain
+app may leave it off, and its users simply have `@user.address == null`.
 
 Wallets are **Crossmint** smart wallets with an **email admin signer**. The user
 authorizes signatures client-side (email OTP / passkey via Crossmint); Bounded's
@@ -34,11 +38,11 @@ custody stays with the user.
 > wallet-holding user sign in with their **real** wallet. They're independent and can
 > coexist — a wallet-login user's real `@user.address` is **not** overwritten by
 > `auth.wallets`. Full comparison + code:
-> [auth.md → Solana wallet login (opt-in)](../../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in).
+> [auth.md → Solana wallet login (bring your own)](../../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own).
 
 ---
 
-## 0. Opt in (wallets are OFF by default)
+## 0. Turn it on (the canonical config)
 
 Add a top-level `auth` block to `policy.json`:
 
@@ -195,7 +199,7 @@ wallet's execution. So build your transaction like this:
   wallets cannot produce a raw detached signature, by design. **If you need raw
   signatures**, use **wallet login** instead (`authMethod: 'phantom'`, `walletLogin: true`)
   — a real keypair wallet whose `signMessage` / `signTransaction` work locally
-  ([auth.md → Solana wallet login](../../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in)).
+  ([auth.md → Solana wallet login](../../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own)).
 - ❌ No `auth.wallets`, or a non-wallet login → signing throws an informative error telling
   you to enable wallets (or use **wallet login** for raw-signature / wallet-native apps).
 
@@ -209,7 +213,7 @@ wallet's execution. So build your transaction like this:
 - **`signMessage`/`signTransaction`** — not available on embedded smart wallets. If
   you need raw signatures, use **wallet login** (`authMethod: 'phantom'`,
   `walletLogin: true`) — a real keypair wallet — instead
-  ([auth.md → Solana wallet login](../../bounded-frontend/docs/auth.md#solana-wallet-login-opt-in)).
+  ([auth.md → Solana wallet login](../../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own)).
 
 **Gotchas:**
 
@@ -270,8 +274,9 @@ slice — until then, "send to your exchange address" is the supported cash-out 
 
 ## Gotchas
 
-- Wallets are **opt-in** — no `auth.wallets`, no wallet, `@user.address` stays `null`
-  for email logins (unchanged behavior).
+- Wallets ride the **`auth.wallets`** flag — it's the canonical config, but a purely
+  offchain app can leave it off, in which case no wallet is created and
+  `@user.address` stays `null` for email logins.
 - **Solana only** in v1.
 - **Email-carrying logins only** — phone-only / guest sessions get no embedded wallet.
 - `environment` **staging ≠ production** — switching it gives the user a different
