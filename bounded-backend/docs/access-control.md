@@ -296,6 +296,7 @@ so one tenant can never touch another's data.
 
 ## Related
 
+- Hit `requires a keypair`/`401`/`403` or about to conclude "no access / blocked on the owner"? → the [access playbook](../../bounded-deploy/docs/access-playbook.md) (check identity + `bounded access` before surrendering)
 - Data-plane admin/owner patterns + `authorityClosure` → [admin-and-ownership.md](admin-and-ownership.md)
 - Top-level provable `roles` block (cross-collection read/write grants) → [roles.md](roles.md)
 - Sharing, linking, teams, login → [auth.md](../../bounded-frontend/docs/auth.md)
