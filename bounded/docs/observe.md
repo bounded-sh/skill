@@ -35,7 +35,14 @@ Keep the trust levels straight — never blur them:
   agent mistakes, not against someone deliberately taking it out).
 - **Watching is reported** — never imply an observed-only action is protected.
 
+Four ways in, by what you control: hosted runtime (platform emits), your Node
+process (the shim), your Worker/edge chokepoint (`@bounded-sh/observe/edge` —
+one fire-and-forget event per action), or a tool you can't put code inside
+(the `bounded-ai-gateway` base-URL proxy; its `OBSERVE_ONLY=true` mode is the
+watch-first posture — every call forwards, events still land).
+
 For depth — opting in, wiring `node --require @bounded-sh/observe/register`,
+the edge emitter, the gateway (OBSERVE_ONLY / FAIL_OPEN / UPSTREAM_CONFIG),
 reading suggestion cards, what Promote does — load the **`bounded-observe`**
 skill (installed as a sibling of this one): its
 `docs/observing-agent-actions.md` covers observe wiring and the dashboard, and

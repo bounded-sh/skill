@@ -2,9 +2,10 @@
 
 **What's in here / when to read this:** how to opt an app into Action
 Boundaries and reach **Watching** — the hosted opt-in overview, self-hosted
-shim wiring (`node --require @bounded-sh/observe/register`), what an event does
-and does not contain, and the `app-<appId>.bounded.sh` dashboard (Feed /
-Actors / Coverage).
+shim wiring (`node --require @bounded-sh/observe/register`), the Worker/edge
+emitter (`@bounded-sh/observe/edge`), the AI base-URL gateway (including its
+observe-first `OBSERVE_ONLY` mode), what an event does and does not contain,
+and the `app-<appId>.bounded.sh` dashboard (Feed / Actors / Coverage).
 
 Watching is **reported, not protected**. It changes nothing about how the app
 behaves: every recognized external action — `ctx.ai` spend, `ctx.services`
@@ -12,7 +13,14 @@ tool calls, agent egress to hosts like Stripe or OpenAI — lands in your app's
 Feed with per-actor attribution. Do not tell a user a watched action is safe;
 tell them it is visible.
 
-## Two ways in
+## Ways in — pick by what you control
+
+| Your situation | Mechanism |
+|---|---|
+| Backend runs ON Bounded (functions, live rooms) | Hosted opt-in — platform emits, nothing to install |
+| Your own **Node process** | The **shim** (preload or `init()`) — intercepts fetch + http/https |
+| Your own **Worker / edge chokepoint** (a proxy or gateway you wrote) | The **edge emitter** — `@bounded-sh/observe/edge`, one event per call |
+| A tool you **can't put code inside** (Claude Code, Cursor, any SDK honoring `*_BASE_URL`) | The **AI base-URL gateway** — point the tool at it |
 
 **Hosted runtime (overview).** If the app's backend runs on Bounded (functions,
 live rooms), opt in from the app's Boundaries surface as the owner. The
@@ -29,6 +37,13 @@ Node process, opt in as the app owner to get a **sensor token**
 dependency-free at runtime and never breaks the app: every shim code path is
 wrapped, original behavior is always preserved, and Watching is fail-open —
 Bounded being unreachable changes nothing for the app.
+
+**One process-boundary caveat:** the shim sees only the process it runs in. If
+your app spawns child processes that make their own calls (e.g. the Claude
+Agent SDK spawns a `cli.js` child for inference), those calls are invisible to
+an in-parent shim — route them through the AI base-URL gateway instead (the
+child honors `ANTHROPIC_BASE_URL`), and keep the shim for the parent's own
+egress.
 
 ## Wiring the shim (self-hosted)
 
@@ -86,6 +101,62 @@ Actor ids should be **opaque internal ids, never emails** (email-shaped values
 are redacted as suspected PII). Unattributed calls are still captured — they
 roll up under the `unattributed` pseudo-actor, which the Actors tab makes
 visible so you can improve attribution over time.
+
+## Worker & edge chokepoints — `@bounded-sh/observe/edge`
+
+The shim's root entry cannot load in edge runtimes (Cloudflare Workers, Vercel
+Edge, Deno Deploy) — it needs Node builtins. When YOUR code is already the
+chokepoint (a proxy Worker that meters tenant AI calls, an API gateway), use
+the **edge emitter** subpath instead: no interception, no queue, no timers —
+you build one envelope event per action and fire it:
+
+```ts
+import { emitEvent } from "@bounded-sh/observe/edge";
+
+emitEvent(
+  { ingestUrl: env.BOUNDED_INGEST_URL, sensorToken: env.BOUNDED_SENSOR_TOKEN },
+  {
+    class: "action",
+    actor: { id: tenantAppId, kind: "service", grade: "attested" },
+    dest: { host: "api.anthropic.com", pathTemplate: "/v1/messages", method: "POST" },
+    status: 200, dur_ms: 0, bytes: { i: 0, o: 0 },
+    rec: { rail: "llm-gateway", action: "acme.tenant.aiRun", registryVersion: "acme-proxy",
+           fields: { actualCents, "usage.input_tokens": inTok, "usage.output_tokens": outTok } },
+  },
+  ctx, // optional Workers ExecutionContext — the POST rides ctx.waitUntil
+);
+```
+
+Same posture as everything else in Watching: **no-op unless both `ingestUrl`
+and `sensorToken` are present** (deleting the secret is the kill switch),
+`postEvent` never rejects, the POST is bounded by `timeoutMs` (default 2 s),
+and `org`/`sensor` are never sent — the ingest stamps both from the sensor
+key. Metadata only, same denylist rules; per-tenant attribution comes from
+whatever identity your chokepoint already verified (`grade: "attested"`).
+
+## The AI base-URL gateway — for tools you can't wrap
+
+`bounded-ai-gateway` is a self-hostable Worker you deploy in YOUR cloud
+account: point any Anthropic/OpenAI-compatible tool at it via
+`ANTHROPIC_BASE_URL` / `OPENAI_BASE_URL` and every call is attributed, priced,
+and reported — prompts never touch Bounded, only model/tokens/cost/actor/
+verdict metadata. It can chain to a gateway you already bill through
+(`UPSTREAM_CONFIG` — Vercel AI Gateway, LiteLLM, Azure) so provider billing is
+undisturbed.
+
+**Observe-first adoption (`OBSERVE_ONLY=true`).** By default the gateway is an
+*enforcing* proxy — it requests a verdict before forwarding and declines over
+a promoted boundary. For watch-first rollouts set `OBSERVE_ONLY=true`: the
+gateway never requests a verdict, never reserves, never declines, never
+settles — **every call forwards** (even past a `MODEL_ALLOWLIST`), and the
+observe event still lands, including on provider failures. Flip the flag off
+later to move that traffic from Watching to Enforced — same worker, same
+events, one deliberate step.
+
+Do not confuse `OBSERVE_ONLY` with `FAIL_OPEN`: `FAIL_OPEN=true` only bypasses
+*transport errors* reaching the verdict endpoint — explicit policy declines
+still block the caller. `FAIL_OPEN` is an availability posture for an
+enforcing gateway; `OBSERVE_ONLY` is the watching plane.
 
 ## Say it plainly — what the shim does and does not protect
 
