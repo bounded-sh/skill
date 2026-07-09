@@ -191,6 +191,10 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 |---|---|---|
 | `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
 | `verify [policy.json]` | Run the proof engine, print the report + counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--constants`, `--environment` |
+| `tests run [dir\|file]` | Run policy test files against a sandboxed app, print per-file PASS/FAIL | `--app-id`, `--deployed-policy`, `--file` (repeatable), `--json` |
+| `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
+| `tests list` | List test files attached to the app | `--app-id` |
+| `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment` |
 | `dev` | Run the focused app dashboard, auto-register that app for live-edit, and start the loopback API daemon | `--app-id`, `--port`, `--api-port`, `--policy`, `--force` |
 | `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
@@ -203,8 +207,26 @@ bounded init                                            # scaffold policy.json +
 bounded deploy --create --name my-app                   # create app + record appId; hosted site gate defaults private
 bounded deploy --create --name my-app --public          # opt out; hosted site is public from the start
 bounded verify                                          # re-prove after edits
+bounded tests run                                       # policy-tests/*.json against LOCAL policy.json
 bounded deploy                                          # redeploy using bounded.json
 ```
+
+### `tests` — policy tests
+
+Concrete allow/deny examples against a fresh sandbox app, complementary to
+`verify`'s exhaustive proof. Full format and semantics:
+[policy-tests.md](../../bounded-backend/docs/policy-tests.md).
+
+`bounded tests run` defaults to reading `policy-tests/*.json` and sends them
+inline with the **local** `policy.json` as the policy under test — no push
+needed, the pre-deploy loop. `--deployed-policy` tests against the app's
+already-deployed policy instead. `--file` (repeatable) narrows to specific
+files. Exit code is 1 on any failing file; `--json` gives the full
+machine-readable run including per-step traces and denial text.
+
+`tests push`/`list`/`pull` manage the test files attached to the app (used by
+the dashboard's Policy tests tab and CI). `push` merges by fileName unless
+`--replace`; `pull` won't overwrite local files without `--force`.
 
 ## Local dashboard
 
@@ -617,3 +639,4 @@ verify/deploy. Full guide:
 - [auth.md](../../bounded-frontend/docs/auth.md) — CLI/admin auth sources: wallet/keypair vs web account
 - [access-control.md](../../bounded-backend/docs/access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
 - [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md) — reading `verify` output
+- [policy-tests.md](../../bounded-backend/docs/policy-tests.md) — `bounded tests` file format and semantics

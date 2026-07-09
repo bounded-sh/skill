@@ -60,6 +60,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | Service keys / backend identities, payout bots | [docs/service-keys.md](docs/service-keys.md) |
 | Who the actor is on a live call: `runAs`, `actAs`, `@origin` | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | Proof coverage and counterexamples | [docs/proof-coverage.md](docs/proof-coverage.md) · [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
+| Write concrete allow/deny tests for a policy | [docs/policy-tests.md](docs/policy-tests.md) |
 | End-to-end tests for authed apps | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |
 | Quality checklist before calling the app done | [docs/quality-checklist.md](docs/quality-checklist.md) |
 | Build for agents or a backend-only app | [docs/building-for-agents.md](docs/building-for-agents.md) · [docs/building-a-backend.md](docs/building-a-backend.md) |
@@ -83,6 +84,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `schedule`, `dueRows`, `hooks.scheduled`, `webhooks`, `verifyWebhook` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | `getPage`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) |
+| policy tests, `policy-tests/*.json`, `bounded tests run/push/list/pull` | [docs/policy-tests.md](docs/policy-tests.md) |
 | `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
 
 ## Error Router

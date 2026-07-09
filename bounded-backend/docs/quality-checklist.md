@@ -94,6 +94,11 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Every DISPROVED was fixed by strengthening the policy**, never by deleting
   the property or weakening the rule.
 - [ ] **You re-ran verify after the last edit.**
+- [ ] **Policy tests cover each sensitive seam's allow AND deny.** A green
+  `verify` alone doesn't catch a trivially-true rule or a `rollingSum`/`conserve`
+  that never actually fires on the real write path — those hide behind passing
+  proof obligations. `bounded tests run` a concrete scenario to catch both. See
+  [policy-tests.md](policy-tests.md).
 
 ## The two failures that hide in green policies
 

@@ -39,7 +39,7 @@ Pick the sibling skill for the task; load one, do the work, avoid unrelated cont
 
 | The task is about | Skill |
 |---|---|
-| Policy rules, invariants (rollingSum/conserve/tenantTag/bound), functions, data/queries, realtime/live, the actor & identity model (`@user`, runAs/actAs, `@origin`, roles, service keys), proofs & counterexamples | **bounded-backend** |
+| Policy rules, invariants (rollingSum/conserve/tenantTag/bound), functions, data/queries, realtime/live, the actor & identity model (`@user`, runAs/actAs, `@origin`, roles, service keys), proofs & counterexamples, policy tests (`bounded tests run`, concrete allow/deny examples) | **bounded-backend** |
 | The client: `@bounded-sh/client` SDK, hosted frontend, end-user auth UI (email OTP, OAuth, guest) | **bounded-frontend** |
 | Shipping & config: the CLI, environments, live-edit, domains/slugs, `bounded.json`, accounts, sharing access | **bounded-deploy** |
 | Wallets, tokens, on-chain transactions, crypto & card payments (Bounded Pay) | **bounded-onchain** |

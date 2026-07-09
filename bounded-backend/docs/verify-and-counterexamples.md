@@ -11,6 +11,17 @@ counterexamples and fix them *before* you hit the gate; an unfixed blocking
 DISPROVED will block the deploy. (Non-blocking advisories — literal `false`
 rules, bare-string attestation TODOs — never block; see below.)
 
+## Proofs vs policy tests
+
+`bounded verify` proves obligations hold over *every* possible input — a
+universal guarantee, no counterexample exists. **Policy tests**
+(`bounded tests run`, files in `policy-tests/*.json`) check one concrete
+scenario at a time: this actor, this write, this state, allowed or denied.
+A green `verify` can still hide a trivially-true rule or an invariant that
+never fires on the real write path; a policy test that actually runs the
+scenario catches what the proof structurally can't. Use both. See
+[policy-tests.md](policy-tests.md).
+
 ## Verdicts
 
 - **PROVED** — holds over *all* inputs (every document state, payload,
@@ -189,6 +200,7 @@ drafts → engine proves or refutes with counterexamples → human decides.
 ## Related
 
 - [policy-generation-guide.md](policy-generation-guide.md) — generating the policy you verify
+- [policy-tests.md](policy-tests.md) — concrete allow/deny examples, the complementary loop
 - [quality-checklist.md](quality-checklist.md) — the pre-deploy self-check
 - [invariants.md](invariants.md) — the invariants behind the postcondition obligations
 - [data-plane.md](data-plane.md) — the same examples at runtime

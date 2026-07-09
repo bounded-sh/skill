@@ -23,7 +23,7 @@ skill.
 
 | User task | Read |
 |---|---|
-| CLI commands (init, verify, deploy, share, dashboard, data) | [docs/cli-reference.md](docs/cli-reference.md) |
+| CLI commands (init, verify, deploy, tests, share, dashboard, data) | [docs/cli-reference.md](docs/cli-reference.md) |
 | Multi-environment policy files | [docs/environments.md](docs/environments.md) |
 | Live-edit a running app (`bounded live-edit validate`/`deploy`, daemon, widget feedback, agent jobs, `/apps/:appId/...`) | [docs/live-edit.md](docs/live-edit.md) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
@@ -39,6 +39,7 @@ skill.
 | `bounded live-edit validate`, `bounded live-edit deploy`, `/apps/:appId/propose`, `/apps/:appId/validate`, `/apps/:appId/deploy`, widget feedback | [docs/live-edit.md](docs/live-edit.md) |
 | `bounded.json`, `bounded account use --web`, account profiles, `.bounded/app.json`, `~/.bounded/credentials`, `~/.bounded/web-session.json`, `BOUNDED_PRIVATE_KEY` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | `bounded domains slug`, mapped hosts, custom domain | [docs/domains.md](docs/domains.md) |
+| `bounded tests run/push/list/pull`, policy tests | [docs/cli-reference.md](docs/cli-reference.md) · [policy-tests.md](../bounded-backend/docs/policy-tests.md) |
 
 ## Setup
 
