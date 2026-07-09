@@ -85,7 +85,9 @@ keys:
   consolidate apps built on several machines onto one web account when linking
   is refused.
 - **`bounded share <wallet|email> --role developer|admin|viewer|billing --app-id <id>`** adds a
-  collaborator (`policy` is a legacy alias for `developer`). Pass a **wallet** to add it directly. Pass an **email** and
+  collaborator (`policy` is a legacy alias for `developer`). **Roles are plan-gated by the
+  app OWNER's plan** — Free: none; Pro: 3 seats, `developer` only; Team+: 25 seats, every
+  role — so default to `--role developer` unless the owner is Team+. Pass a **wallet** to add it directly. Pass an **email** and
   Bounded resolves it to that person's canonical wallet — an **auto-provisioned
   embedded wallet**, so the invitee needs no wallet of their own — then sends an
   invite email when outbound email is configured. `policy` may update the
