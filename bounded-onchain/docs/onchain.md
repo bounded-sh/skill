@@ -111,6 +111,39 @@ So on `realtime_devnet` / `realtime_mainnet`, mark **every** collection
 the off-chain `realtime_offchain` protocol it's the reverse: `onchain: true`
 collections are stored off-chain — deploy prints that warning too.)
 
+## Poofnet: onchain simulation on `realtime_offchain`
+
+On `realtime_offchain` (the default protocol, aka **poofnet**), `onchain: true`
+collections don't reject or no-op — the platform **simulates onchain execution**
+in the realtime runtime. The full plugin surface works with real state:
+Meteora DBC (config/pool/swap with real constant-product reserves + fee
+schedules, claimable fee splits), pump.fun (create/buy/curve progress),
+SPL tokens (create/transfer/balances), Phoenix perps (register/deposit/
+long/short/positions), VRF addresses, and `@MathPlugin.getRandom`. The same
+policy verifies unchanged for devnet/mainnet — build on poofnet, switch
+protocols to go live.
+
+- **Auto-faucet.** The first mutating action by a wallet grants it a one-time
+  **10 SOL + 1,000 USDC** (simulated). No funding step; the USDC is the on-ramp
+  into perps collateral (`emberDeposit`) and stable-quoted pools.
+- **Onchain-parity result fields.** Every write to an `onchain: true` path is
+  stamped at commit with `_transaction_hash` (signature-shaped) and
+  `_block_number` (sim slot). A **failed** onchain hook persists the doc and
+  stamps `_error_message` with the failure reason — read it back or subscribe
+  to surface trade errors in UI.
+- **Both hooks run.** A collection declaring `hooks.onchain` **and**
+  `hooks.offchain` runs both on poofnet — onchain first (as the chain program
+  would, inside the tx), then offchain (post-commit) — matching real-network
+  semantics.
+- **Offchain-only read functions need an `onchain: false` home.** Read helpers
+  like `@PhoenixPerpsPlugin.getPositionSize` or `@DeFiPlugin.getMeteoraSwapQuote`
+  are rejected by verify inside `onchain: true` collections. Put those queries on
+  a separate `onchain: false` "view" collection (e.g. `market/$tokenId`,
+  `phoenixview/$traderId`).
+- **Query errors are explicit.** A failed or undeclared named query returns a
+  per-row `error` alongside `result: null` — `runQuery` (client ≥0.0.42) throws
+  it; the CLI (≥0.0.56) prints it verbatim.
+
 ### `--skip-preflight`
 
 On `set` / `set-many`, an **onchain-only** flag: skip RPC preflight simulation so
