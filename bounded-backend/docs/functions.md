@@ -378,10 +378,14 @@ bounded functions logs   syncStripe --app-id <id>
 The `--entry` may be **TypeScript or JavaScript**. Type annotations are fine.
 Keep it a single self-contained module.
 
-Two deploy-ordering gotchas worth knowing:
-- **A policy deploy clears function code pins.** After any `bounded deploy`,
-  re-run `bounded functions deploy <name> …` — until you do, invokes 404 with
-  *"not deployed with a pinned code version"*.
+Two deploy-ordering notes worth knowing:
+- **A policy deploy preserves deployed functions.** When your `policy.json` omits
+  the `functions` block, the server carries the already-deployed functions (and
+  their pinned code versions) forward, so a plain `bounded deploy` no longer drops
+  them — no need to re-run `bounded functions deploy` afterward. To remove a
+  function, use `bounded functions delete <name>` (a policy that explicitly
+  declares `functions` is still honored verbatim). *(Older behavior wiped the
+  functions on any policy deploy; fixed in the dev-api 2026-07-09.)*
 - **Pins take ~20–30s to propagate.** A 404 right after a successful
   `functions deploy` usually just needs a short wait, not a redeploy.
 
