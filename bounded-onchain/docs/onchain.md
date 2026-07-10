@@ -197,12 +197,15 @@ The runtime-v2 ingestion path uses network-specific raw Helius webhooks and a
 durable queue. It acknowledges only after enqueue, decodes/rereads in the scoped
 Node helper, and applies slot-fenced upserts or tombstones per decoded app. Treat
 this as available only after that environment has the queue/DLQ, webhook secret,
-RPC, persisted logs/alerts, and end-to-end recovery checks configured. The source
-also exposes internal cursor/queue status and validated repaired-DLQ replay. A
-large snapshot is uploaded as numbered chunks to an app-local staging area and
-becomes visible only after the complete write set passes slot and invariant
-checks. Repeated chunks and completed runs are idempotent. Compiler/runtime source
-support is not proof of an operating mirror.
+RPC, persisted logs/alerts, and end-to-end recovery checks configured. Internal
+cursor/queue status and repaired-DLQ replay require a dedicated recovery-operator
+secret (`X-Onchain-Recovery-Secret`); a broad service secret must be rejected.
+Status covers both the primary queue and DLQ and alerts on unavailable metrics,
+old/large primary backlog, or a non-empty DLQ. Large snapshots use numbered
+chunks in an app-local staging area and become visible only after the complete
+write set passes slot and invariant checks. Repeated chunks and completed runs
+are idempotent. Compiler/runtime source support is not proof of an operating
+mirror.
 
 App builders do **not** create per-app Helius webhooks. Bounded operates one raw
 program webhook per network (`rawDevnet` for devnet) at
@@ -216,9 +219,14 @@ never reuse a broad internal service key. Before calling a mirror live, prove:
    app batch, and advances/registers recovery state.
 3. Replaying the same signature is harmless; a prolonged delivery pause catches
    up oldest-first from finalized history without rerunning app side effects.
-4. Queue failures alert, poison reaches the DLQ, and repaired replay is accepted
-   only through the authenticated validator. Keep provider webhook quota and any
-   legacy registrations in the release checklist; never delete them implicitly.
+4. Queue failures alert, poison reaches the DLQ, and corrected replay is accepted
+   only through the scoped validator. For a drill, start with an empty primary
+   queue, restore the normal retry policy before replaying, verify the repaired
+   event applies once, and remove only the known drill message from the DLQ.
+5. A platform notification destination consumes the structured unhealthy signal;
+   logs or a healthy status response alone are not paging. Keep provider webhook
+   quota and legacy registrations in the release checklist; never delete them
+   implicitly.
 
 An absent Document PDA is a normal `null` read. Wrong owner/discriminator,
 malformed account data, RPC failure, or an integer outside JavaScript's safe
