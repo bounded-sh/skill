@@ -256,7 +256,13 @@ write fails on-chain:
   hook transaction. If it exceeds the limit, deploy is **rejected** with a message
   naming the collection, the hook, the actions in it, the estimated size, and the
   fix — so you learn at deploy time, not at runtime. (Not run for `realtime_offchain`,
-  which simulates the hook.)
+  which simulates the hook.) `bounded deploy --create` infers the protocol from
+  `--protocol`; for an app-less proof pass it explicitly:
+  `bounded verify --protocol realtime_devnet ./policy.json` (otherwise the gate only
+  fires when the protocol is inferred from `--app-id`). The gate blocks only on the
+  **confident, devnet-measured** size — a hook built purely from not-yet-calibrated
+  plugin calls is not false-blocked at deploy; the poofnet runtime guard still
+  catches it against the live estimate.
 - **Runtime (poofnet).** On `realtime_offchain`, the actual write is checked against
   the same model: a write over the hard cap is **rejected 413** ("would fail on
   mainnet"), and one in the 1182–1232 band is **allowed with a warning** (a lookup
