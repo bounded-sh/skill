@@ -17,6 +17,7 @@ This is the home for everything onchain. [data-plane.md](../../bounded-backend/d
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
+- [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
 - [Proof coverage](#proof-coverage-onchain)
 - [Game settlement](#game-settlement-the-two-directions)
@@ -203,6 +204,22 @@ becomes visible only after the complete write set passes slot and invariant
 checks. Repeated chunks and completed runs are idempotent. Compiler/runtime source
 support is not proof of an operating mirror.
 
+App builders do **not** create per-app Helius webhooks. Bounded operates one raw
+program webhook per network (`rawDevnet` for devnet) at
+`/webhook/helius/<network>`, covering every deployed Bounded program id for that
+network. The provider `authHeader` must equal a dedicated environment secret;
+never reuse a broad internal service key. Before calling a mirror live, prove:
+
+1. Wrong auth returns `401`, while a confirmed raw transaction returns `200`
+   only after `queued: 1`.
+2. The queue consumer decodes the authoritative accounts, applies a slot-fenced
+   app batch, and advances/registers recovery state.
+3. Replaying the same signature is harmless; a prolonged delivery pause catches
+   up oldest-first from finalized history without rerunning app side effects.
+4. Queue failures alert, poison reaches the DLQ, and repaired replay is accepted
+   only through the authenticated validator. Keep provider webhook quota and any
+   legacy registrations in the release checklist; never delete them implicitly.
+
 An absent Document PDA is a normal `null` read. Wrong owner/discriminator,
 malformed account data, RPC failure, or an integer outside JavaScript's safe
 range is an unavailable/error result, never a fabricated miss or rounded value.
@@ -213,6 +230,34 @@ On `set` / `set-many`, an **onchain-only** flag: skip RPC preflight simulation s
 failing txs still land on-chain (useful when simulation is flaky or you want the
 on-chain error rather than a client-side preflight reject). No effect on the
 realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#-skip-preflight).
+
+## Transaction-size limit: one hook = one Solana transaction
+
+Each onchain hook builds **one Solana transaction per write**, and a Solana
+transaction has a hard **1232-byte packet limit** (effective ~1182 after
+signatures). A hook that packs too much into one write — a single big instruction
+(e.g. `@DeFiPlugin.createMeteoraConfig` is ~1189B, `@DeFiPlugin.createPool` ~1341B),
+or several actions `&&`-chained, or a large `setMany` bundle — produces a
+transaction that **won't fit and fails with "Transaction too large"**.
+
+Bounded surfaces this at two points so you don't discover it only when a user's
+write fails on-chain:
+
+- **`bounded verify` / `bounded deploy` (compile-time).** On a **devnet/mainnet**
+  deploy, the validator estimates each `onchain: true` collection's single-document
+  hook transaction. If it exceeds the limit, deploy is **rejected** with a message
+  naming the collection, the hook, the actions in it, the estimated size, and the
+  fix — so you learn at deploy time, not at runtime. (Not run for `realtime_offchain`,
+  which simulates the hook.)
+- **Runtime (poofnet).** On `realtime_offchain`, the actual write is checked against
+  the same model: a write over the hard cap is **rejected 413** ("would fail on
+  mainnet"), and one in the 1182–1232 band is **allowed with a warning** (a lookup
+  table makes it fit on a real chain). This is the mainnet-reality guard — poofnet
+  no longer silently accepts writes a real chain would reject.
+
+**Fixes when you hit it:** split the hook across separate collections/writes (each
+its own transaction), reduce the actions per write, or move the fixed accounts into
+an **address lookup table** so the transaction compresses under the limit.
 
 ## Policy upgrade governance (runtime v3)
 
