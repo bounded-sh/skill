@@ -75,6 +75,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | `@const`, `@def`, deploy constants | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
 | `functions`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets` | [docs/functions.md](docs/functions.md) |
 | `ctx.ai.run`, AI NPC | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/ai-npcs.md](docs/ai-npcs.md) |
+| `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, AI image/video, `aiJobs` | [docs/functions.md](docs/functions.md#ctxai-media-generation--images-sync-and-video-async-jobs) |
 | `ctx.services`, managed services, third-party API proxy | [docs/functions.md](docs/functions.md#ctxservices--managed-api-discovery-and-invoke) · [docs/backend-runtime.md](docs/backend-runtime.md) |
 | `actAs`, `runAs`, service key, payout bot, backend identity | [docs/service-keys.md](docs/service-keys.md) · [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `@origin`, `ctx.origin`, live call provenance | [docs/principals-and-origins.md](docs/principals-and-origins.md) |

@@ -121,7 +121,7 @@ export default async function (args, ctx) {
 | `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.setMany([{ path, document }, ...])`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by rules + invariants** — a `409` throws. `setMany` is one atomic batch, so use it for transfers/settlement. `runQuery` runs one of your policy-declared `queries` (the proven query engine, caller's read authority) so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). |
 | `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets`. Values come from the app secret store (`bounded secret put`) **and** any deploy-time `--secret` (which overrides). Nothing undeclared leaks in. |
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
-| `ctx.ai` | **The built-in AI router — `ctx.ai.run(model, input)`. No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM to your app — see [§ctx.ai](#ctxai--real-ai-no-api-keys) below. |
+| `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](#ctxai--real-ai-no-api-keys) and [§media](#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
 | `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. Returns immediately; the queued run executes as the **system** principal with `payload` as its `args`, and meters compute usage to billing exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
@@ -219,6 +219,74 @@ AI/external-services credit is **per-account** (the app owner). Two things to wi
 > The same `ctx.ai` powers AI NPCs / AI players in live rooms (funded via
 > `session.live.runAs`); that live-tick path is in [ai-npcs.md](ai-npcs.md). The
 > function path above is the **general case for any app**.
+
+### ctx.ai media generation — images (sync) and video (async jobs)
+
+`ctx.ai` also generates **images and video natively** — same no-keys posture,
+same fail-closed per-call billing (a per-image / per-second ceiling is reserved
+before generation; the actual is settled and the difference refunded; every
+failure refunds in full). **Never wire an image/video provider with `fetch` +
+your own key — this is built in.**
+
+```ts
+// IMAGE — synchronous (seconds). Default model needs zero config.
+export default async function makeAvatar(args, ctx) {
+  const img = await ctx.ai.generateImage({
+    prompt: args.prompt,                    // required
+    destinationPath: "avatars",             // a policy-declared type:"storage" collection
+    // model?: "@cf/black-forest-labs/flux-2-klein-4b" (the default, FLUX.2, ~1¢)
+    // size?, steps?, seed?, negativePrompt?, metadata? (declared fields)
+    // returnBase64: true  — skip storage, get raw bytes back (≤8MB)
+  });
+  // img: { filePath, url?, contentType, model, costCents }
+  await ctx.bounded.set(`profiles/${ctx.user.id}`, { avatar: img.filePath });
+  return { avatar: img.filePath };
+}
+```
+
+```ts
+// VIDEO — an async JOB (generation takes minutes). Start it, then let the
+// frontend live-subscribe to the mirror doc; or poll ctx.ai.getJob(jobId).
+export default async function makeClip(args, ctx) {
+  const { jobId, jobPath } = await ctx.ai.generateVideo({
+    model: "replicate/wan-video/wan-2.7-t2v",  // always explicit for video
+    prompt: args.prompt,
+    durationSeconds: 8,                        // clamped to the model's max
+    destinationPath: "clips",                  // policy-declared storage collection
+    // jobPath?: "aiJobs" — declare aiJobs/$jobId in policy and the job status
+    // mirrors there as a normal live-subscribable document
+  });
+  return { jobId, jobPath };                   // jobPath null if not declared
+}
+```
+
+The essentials:
+
+- **Images land as normal Bounded files** in the storage collection you name —
+  queryable, read-rule governed. `filePath` is the durable reference; **persist
+  that, not `url`** (a public file's url is a permanent CDN link, but a private
+  file's url is a ~60-second signed link). Resolve fresh URLs via `getFiles`.
+- **Video completes through a job doc**: `status` walks pending → running →
+  succeeded/failed; on success the mp4 is at `filePath`. Declare
+  `aiJobs/$jobId` (any non-storage collection) in policy and the frontend gets
+  completion via ordinary `subscribe` — no polling loop. Jobs that stall are
+  failed + **fully refunded** after a 15-minute timeout; terminal job records
+  prune after ~7 days (the FILE is app data and is never pruned).
+- **Models are config, not code.** Current lineup: images —
+  `@cf/black-forest-labs/flux-2-klein-4b` (default, ~1¢), `flux-2-klein-9b`,
+  Leonardo `lucid-origin`/`phoenix-1.0` (all keyless `@cf`), and
+  `openai/gpt-image-2` (provider-routed); video —
+  `replicate/wan-video/wan-2.7-t2v` (audio, 1080p, 2–15s) and
+  `replicate/minimax/hailuo-02`. Provider-prefixed media models need the
+  deployment's allowlist + media route (like chat's provider models); `@cf/*`
+  image models work everywhere with zero config. An unpriced model is rejected
+  403 (`ai_media_model_unknown`) — fail-closed, never a surprise bill.
+- **Branchable errors:** `ai_content_moderated` (422, provider content policy —
+  refunded), `ai_credit_exhausted` (402), `ai_media_route_missing` (403, the
+  deployment hasn't enabled that provider). Catch `e.code`, don't regex messages.
+- **Note:** media-priced models are rejected on `ctx.ai.run` (400,
+  `ai_media_model_requires_media_api`) — chat's flat per-call billing would
+  massively under-charge a diffusion model. Use `generateImage`/`generateVideo`.
 
 ## ctx.services — managed API discovery and invoke
 
