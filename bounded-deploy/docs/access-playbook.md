@@ -124,16 +124,25 @@ What to do instead:
      the site with the three-step dance: ① deploy a policy with the boundary loosened
      (e.g. posture `"open"`, `ui: []`) via `bounded deploy` → ② `bounded site deploy
      <dist>` → ③ re-apply the locked boundaries block with another `bounded deploy`.
-   - **`amend: "none"`** — the lock is **permanent by design**: gate G2 refuses any
-     change to the `boundaries`/`openApps` sections from anyone, owner included, forever.
-     There is no unlock. The recourse is a NEW app + repointing the slug/custom domain.
+   - **`amend: "none"`** — a one-way renouncement you may ENCOUNTER (the launch flow
+     sets it for apps whose rules were deliberately renounced). Gate G2 refuses any
+     change to the `boundaries`/`openApps` sections from anyone, owner included, and
+     there is no unlock — treat it as operationally permanent. The recourse is a NEW
+     app + repointing the slug/custom domain.
 2. **Know the no-op nuance**: change detection is content-hash based, so a
    **byte-identical redeploy passes** even under a full lock (nothing changed → nothing
    violates). Don't read a passing identical redeploy as "the lock is off", and don't
    read the first failing real change as flaky.
-3. **Authoring guidance**: only use `amend: "none"` for a promise that must outlive the
-   owner (e.g. a launched oApp's renounced rules). For your own sites/apps that you may
-   ever want to update, use `amend: "creator"`.
+3. **Authoring guidance — always write `amend: "creator"`, never `"none"`.** A
+   creator-amendable lock still refuses every change from every author; the only
+   difference is that the owner can deliberately amend it later. `amend: "none"` is a
+   one-way renouncement with no undo — do NOT author it in a policy, an example, or a
+   "lock it down" request (use `"creator"`). If a human genuinely wants an irrevocable
+   renouncement, surface the permanence and let THEM make that call explicitly; it is
+   a launch-ceremony decision, not a default. Boundaries are the app's declared fence,
+   enforced fail-closed by the platform's deploy gates — their strength is how well
+   the boundary is defined times how well the service enforces it, so keep the
+   definition tight rather than reaching for irreversibility.
 
 ## If you genuinely lack access — obtain it (don't wait, ask correctly)
 
