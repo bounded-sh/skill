@@ -187,8 +187,10 @@ app batch applies. Missing history triggers a finalized full-account inventory:
 changed/new Documents are upserted, absent paths are tombstoned, and unchanged
 paths advance their fence without a duplicate update event. Replay rebuilds
 mirror state; it does not run hooks, callbacks, billing, or sponsorship effects.
-Live or historical apps with missing routing metadata or incompatible current
-policies remain explicit reconciliation debt instead of blocking valid apps.
+Live or historical apps with missing routing metadata or typed deterministic
+path/schema incompatibilities in current policies remain explicit reconciliation
+debt instead of blocking valid apps. Convert only recognized app-local `400`
+codes to debt; untyped rejections and transport/RPC/DO failures still retry.
 Recovery commits a conservative partial baseline, continues finalized catch-up
 for routable apps, and retries the unresolved full inventory daily; it never
 replays application side effects. An i64/u64 outside JavaScript's safe integer
@@ -198,8 +200,9 @@ events record debt, apply/register only routable batches, and acknowledge after
 the exact debt set persists; finalized backfill may advance with the same debt.
 Persist exact unresolved IDs separately from the bounded human status summary;
 if migrating a legacy sampled reason, force full inventory instead of treating
-the sample as complete. Transport, RPC, decoder, or sink failures still retry and
-can reach the DLQ.
+the sample as complete. Register recovered app IDs with the cursor in chunks of
+at most 1,000 so a larger inventory persists the complete routing set. Retryable
+decoder or sink failures can still reach the DLQ.
 Full reconciliation replaces the mirrored user-data object, so fields removed
 onchain do not survive through normal offchain patch semantics.
 
@@ -213,10 +216,12 @@ secret (`X-Onchain-Recovery-Secret`); a broad service secret must be rejected.
 Status covers both the primary queue and DLQ and alerts on unavailable metrics,
 old/large primary backlog, or a non-empty DLQ. The scheduled monitor must page a
 configured operations recipient directly through the Worker `EMAIL` binding;
-structured logs alone are not paging. Persist incident state: page the first
-alert in an unhealthy episode, suppress all repeats for six hours even if the
-alert set changes, and clear only after two healthy samples at least ten minutes
-apart. Scheduled recovery controls must also coalesce while the primary queue has
+structured logs alone are not paging. Page a primary backlog of at least 1,000
+or any nonempty DLQ immediately. Require age-only or metrics-unavailable signals
+to persist through a second observation at least ten minutes later. Persist
+incident state: after a page, suppress all repeats for six hours even if the alert
+set changes, and clear only after two healthy samples at least ten minutes apart.
+Scheduled recovery controls must also coalesce while the primary queue has
 backlog; one cursor-based scan can catch up all finalized history after delivery
 resumes. Large snapshots use
 numbered chunks in an app-local staging area and become visible only after the
@@ -244,9 +249,10 @@ Before calling a mirror live, prove:
    only through the scoped validator. For a drill, start with an empty primary
    queue, restore the normal retry policy before replaying, verify the repaired
    event applies once, and remove only the known drill message from the DLQ.
-5. The direct Email alert reaches the configured operations recipient for primary
-   backlog/metrics failures and a non-empty DLQ. Keep provider quota and legacy
-   registrations in the release checklist; never delete them implicitly.
+5. The direct Email alert reaches the configured operations recipient. Prove
+   immediate paging for at least 1,000 primary messages and any DLQ backlog, plus
+   two-observation confirmation for age/metrics-only signals. Keep provider quota
+   and legacy registrations in the release checklist; never delete them implicitly.
 
 For production, keep provider delivery absent/disabled and pause queue delivery
 before changing the stack. Deploy and verify the lossless decoder/developer API,
