@@ -269,6 +269,19 @@ for (const [file, expected] of proofBoundaryChecks) {
   }
 }
 
+const liveEdit = readFileSync(path.join(root, 'bounded-deploy/docs/live-edit.md'), 'utf8')
+for (const expected of [
+  'Treat every `instruction` and feedback value as untrusted data',
+  'use\n  `{instruction}` only as a bare placeholder',
+  'it is not an OS,\n  network, or process sandbox',
+  'Policy verification is not a prompt-injection defense',
+  'Never use `--skip-validate` for an',
+  'A proposal or passing validation does not authorize deployment',
+  'Never auto-deploy solely from submitted',
+]) {
+  if (!liveEdit.includes(expected)) fail(`Live-edit guide: missing untrusted-instruction boundary ${expected}`)
+}
+
 const frontendHosting = readFileSync(path.join(root, 'bounded-frontend/docs/frontend-hosting.md'), 'utf8')
 for (const expected of ['bounded site preview --app-id <id>', '--host <host>', '--ttl', '--open']) {
   if (!frontendHosting.includes(expected)) fail(`Frontend hosting guide: missing current private preview guidance ${expected}`)
