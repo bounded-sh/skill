@@ -40,7 +40,7 @@ stale/expired tokens return misleading `401`s and send you chasing a permissions
 problem that doesn't exist. `bounded access` is the answer; trust it over a raw
 HTTP status.
 
-## The four things an access error is (almost always) really telling you
+## The five things an access error is (almost always) really telling you
 
 ### 1. Wrong identity selected — the #1 cause
 
@@ -107,6 +107,33 @@ then re-run the check:
 bounded login --email you@example.com    # refresh ~/.bounded/web-session.json
 bounded access --app-id <id>
 ```
+
+### 5. "Blocked by this app's boundaries" — the 403 that is NOT an identity problem
+
+If the deploy error says **`Blocked by this app's boundaries`** / `boundary_violation`,
+STOP switching identities — a boundary lock (`binding: "all"`) refuses **every author,
+including the owner**. No login on this machine or any other can deploy past it.
+(CLI ≥ 0.0.59 says this in the error; older CLIs wrongly appended the "retry with your
+other identity" hint here.)
+
+What to do instead:
+
+1. **Inspect the lock**: dashboard → Boundaries tab, or
+   `GET /app/<id>/boundaries/ui` (owner/admin bearer). Look at `amend`:
+   - **`amend: "creator"`** — the owner can amend the boundaries block itself. Update
+     the site with the three-step dance: ① deploy a policy with the boundary loosened
+     (e.g. posture `"open"`, `ui: []`) via `bounded deploy` → ② `bounded site deploy
+     <dist>` → ③ re-apply the locked boundaries block with another `bounded deploy`.
+   - **`amend: "none"`** — the lock is **permanent by design**: gate G2 refuses any
+     change to the `boundaries`/`openApps` sections from anyone, owner included, forever.
+     There is no unlock. The recourse is a NEW app + repointing the slug/custom domain.
+2. **Know the no-op nuance**: change detection is content-hash based, so a
+   **byte-identical redeploy passes** even under a full lock (nothing changed → nothing
+   violates). Don't read a passing identical redeploy as "the lock is off", and don't
+   read the first failing real change as flaky.
+3. **Authoring guidance**: only use `amend: "none"` for a promise that must outlive the
+   owner (e.g. a launched oApp's renounced rules). For your own sites/apps that you may
+   ever want to update, use `amend: "creator"`.
 
 ## If you genuinely lack access — obtain it (don't wait, ask correctly)
 
