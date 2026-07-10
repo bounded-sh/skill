@@ -85,7 +85,7 @@ This skill is for Bounded users and app builders. Keep guidance user-facing:
 
 Two user-visible buckets:
 
-- **AI/external-services bucket**: AI (`ctx.ai`) and managed third-party service proxies (`ctx.services`).
+- **AI/external-services bucket**: AI (`ctx.ai` — chat per call, image generation per image, video per second, all reserved fail-closed and refunded on failure) and managed third-party service proxies (`ctx.services`).
 - **Bounded infra bucket**: metered Bounded platform usage at public rates.
 
 Free accounts include 3 AI builds per rolling day (fast model) plus a small
