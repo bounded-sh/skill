@@ -210,10 +210,16 @@ secret (`X-Onchain-Recovery-Secret`); a broad service secret must be rejected.
 Status covers both the primary queue and DLQ and alerts on unavailable metrics,
 old/large primary backlog, or a non-empty DLQ. The scheduled monitor must page a
 configured operations recipient directly through the Worker `EMAIL` binding;
-structured logs alone are not paging. Large snapshots use numbered chunks in an
-app-local staging area and become visible only after the complete write set
-passes slot and invariant checks. Repeated chunks and completed runs are
-idempotent. Compiler/runtime source support is not proof of an operating mirror.
+structured logs alone are not paging. Persist incident state: page the first
+alert in an unhealthy episode, suppress all repeats for six hours even if the
+alert set changes, and clear only after two healthy samples at least ten minutes
+apart. Scheduled recovery controls must also coalesce while the primary queue has
+backlog; one cursor-based scan can catch up all finalized history after delivery
+resumes. Large snapshots use
+numbered chunks in an app-local staging area and become visible only after the
+complete write set passes slot and invariant checks. Repeated chunks and
+completed runs are idempotent. Compiler/runtime source support is not proof of an
+operating mirror.
 
 App builders do **not** create per-app Helius webhooks. Bounded owns one raw
 program webhook per environment/network (`rawDevnet` for devnet) at
