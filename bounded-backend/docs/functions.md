@@ -10,17 +10,18 @@ accordingly"*: call Stripe / an LLM / any external API, transform the result,
 then write. **Functions** close that gap — without breaking the proof thesis.
 
 > **The honest line.** Functions are your imperative escape hatch. Bounded **does
-> not prove their logic** — but **they can't break your invariants**, and **only
+> not prove their logic** — but **they can't break your declared invariants**, and **only
 > authorized callers can invoke them**.
 
 ## Why functions are still safe (the proof boundary)
 
 Two guarantees hold no matter what a function's code does:
 
-1. **Every write goes back THROUGH the proven boundary.** A function writes via
-   `ctx.bounded` (the data plane), so its writes are re-checked by your `rules`
-   and `invariants`. A function **cannot break an invariant** — a violating
-   write comes back as a `409` and throws inside the function.
+1. **Every write goes back through the policy boundary.** A function writes via
+   `ctx.bounded` (the data plane), so authorization rules are enforced and
+   declared invariants are re-checked. A function **cannot break a declared
+   invariant** — a violating write comes back as a `409` and throws inside the
+   function.
 2. **Invocation is policy-gated.** *Who* may call a function is the `auth`
    expression — a policy rule, evaluated by the **same engine** as your
    read/create rules, **before** the function runs. Authorization stays
@@ -28,21 +29,23 @@ Two guarantees hold no matter what a function's code does:
 
 What is **not** proven: the function's own logic (the third-party call, the
 transform). That's the deliberate trade — imperative power in exchange for
-"Bounded proves the boundary, not the body."
+"Bounded proves declared invariant obligations, enforces authorization rules,
+and does not prove the function body."
 
 **Caller-scoped vs service identity.** A normal function writes as the verified
 caller, so `auth: "true"` means any logged-in caller may invoke it and
 `ctx.bounded` still cannot exceed that caller's data-plane authority. A function
 that declares `actAs` writes as a backend/service identity and is therefore
 privileged: deploy requires its `auth` rule to imply the app's admin predicate
-(`get(/admins/@user.id) != null` when an admins scope exists, otherwise
-`hasRole("admin")`).
+using a runtime-valid expression such as `get(/admins/@user.id) != null`. Declare
+and bootstrap that `admins/$userId` scope before deploying an `actAs` function.
 
 ## When to reach for a function — read this first
 
-A function is the **only un-proven tier** in Bounded. Default to the proven tiers
-(rules + invariants), then hooks; reach for a function **only when the logic must
-leave the boundary** (external API, secrets, complex imperative work). The full
+A Function's **imperative body is not itself proved by `bounded verify`**.
+Default to enforced rules and declared invariant obligations, then hooks; reach
+for a function **only when the logic must leave the boundary** (external API,
+secrets, complex imperative work). The full
 decision guide — the hierarchy, the agent-facing rule, and concrete
 function-vs-not examples — is its own doc:
 
@@ -62,24 +65,50 @@ paths and `links`, declared once at the root of the policy:
 
 ```json
 {
+  "constants": {
+    "FOUNDER": "<founder-user-id>",
+    "SUBS_SYNC_ACTOR": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm"
+  },
   "subs/$userId": {
-    "rules": { "read": "@user.id != null && @user.id == $userId", "create": "false", "update": "false", "delete": "false" },
+    "rules": {
+      "read": "@user.id != null && @user.id == $userId",
+      "create": "@user.id != null && @user.id == @const.SUBS_SYNC_ACTOR",
+      "update": "@user.id != null && @user.id == @const.SUBS_SYNC_ACTOR",
+      "delete": "false"
+    },
     "fields": { "active": "Bool", "renewsAt": "UInt" }
   },
   "admins/$adminId": {
-    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
+    "rules": {
+      "read": "true",
+      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
+      "update": "false",
+      "delete": "false"
+    },
     "fields": { "active": "Bool" }
   },
   "functions": {
     "syncStripe": {
       "auth": "@user.id != null && get(/admins/@user.id) != null",
       "entry": "functions/syncStripe.ts",
+      "actAs": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm",
       "timeout": 30,
       "secrets": ["STRIPE_KEY"]
     }
   }
 }
 ```
+
+Seed `admins/<FOUNDER>` once as the founder after deploy. `bounded data set` does
+not bypass rules; the founder disjunct is what makes the first write possible.
+After that, existing admins may create later admin rows. See
+[admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
+Replace the sample sync address with one dedicated to your app, using the same
+public address for both `SUBS_SYNC_ACTOR` and `syncStripe.actAs`. Admins may
+invoke the Function, but only that service identity may create or update
+subscription rows; an admin cannot bypass the Function with a direct client
+write. For offchain data writes, the owner-declared `actAs` identity does not
+need a private key; cryptographic/onchain signing does.
 
 *(This exact snippet validates clean against the real policy validator.)*
 
@@ -102,8 +131,8 @@ A function is a default-exported async function. It receives the caller-supplied
 
 ```ts
 export default async function (args, ctx) {
-  // ctx.user   — the VERIFIED caller { id, address, email }; auth was already enforced
-  //              ctx.user.id = universal identity (use for ownership); address = wallet-or-null
+  // ctx.user   — the verified caller, or the service identity when actAs is set
+  //              (the invocation auth gate still evaluated the original caller first)
   // ctx.bounded — pre-authed @bounded-sh/client client; writes go THROUGH invariants
   // ctx.env    — the resolved secrets (declared names): app-store + deploy-time
   // ctx.secrets — await ctx.secrets.get("NAME"); the documented secret accessor
@@ -116,10 +145,10 @@ export default async function (args, ctx) {
 
 | `ctx` member | What it is |
 |---|---|
-| `ctx.user` | `{ id, address, email, claims, system? }` — the verified caller. `ctx.user.id` is the **universal stable identity** (always present; equals `@user.id` in policy) — use it for ownership/membership. `ctx.user.address` is a **real onchain wallet** (equals `@user.address`; null for email-only logins) — use it only for onchain/wallet semantics. `ctx.user.email` is the verified, lowercased email (null for wallet logins). Bounded already verified the token **and** evaluated the `auth` rule, so this is trustworthy and the call is authorized. |
+| `ctx.user` | `{ id, address, email, claims, system? }` — the verified caller for a normal function. `ctx.user.id` is the **universal stable identity** (always present; equals `@user.id` in policy) — use it for ownership/membership. `ctx.user.address` is a **real onchain wallet** (equals `@user.address`; null for email-only logins) — use it only for onchain/wallet semantics. For an `actAs` function, Bounded first evaluates `auth` against the original caller and then sets `ctx.user.id == ctx.user.address == actAs`; `ctx.bounded` uses that same service identity. The function body does not receive the original caller as `ctx.user`. |
 | `ctx.auth` | `{ enforced, rule, system }` — **authorization the platform ALREADY did for you.** `rule` is the exact policy `auth` expression that passed before your code ran (null for system/scheduled runs). Read this instead of re-implementing authz: if you declared an `auth` gate, it has already passed. |
-| `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.setMany([{ path, document }, ...])`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by rules + invariants** — a `409` throws. `setMany` is one atomic batch, so use it for transfers/settlement. `runQuery` runs one of your policy-declared `queries` (the proven query engine, caller's read authority) so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). |
-| `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets`. Values come from the app secret store (`bounded secret put`) **and** any deploy-time `--secret` (which overrides). Nothing undeclared leaks in. |
+| `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.setMany([{ path, document }, ...])`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by enforced rules and proved invariant obligations** — a `409` throws. `setMany` is one atomic batch, so use it for transfers/settlement. `runQuery` runs one of your policy-declared, deploy-validated queries under the acting identity's read authority, so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). A query participates in a proof only when a supported proof obligation references it. |
+| `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets`. Values come from the app secret store (`bounded secret put`); bare `--secret NAME` declares exposure on a standalone deploy, while legacy `--secret NAME=VALUE` overrides the store for that function version. Nothing undeclared leaks in. |
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](#ctxai--real-ai-no-api-keys) and [§media](#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
@@ -391,7 +420,7 @@ token automatically — the **same token** `bounded data` uses — so Bounded
 verifies your identity and evaluates the function's `auth` rule before running it:
 
 ```sh
-bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123"}'
+bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123","userId":"acct_123"}'
 ```
 
 It prints the function's JSON result, or fails with a public error such as
@@ -401,14 +430,14 @@ or the error the function threw.
 ### From TypeScript
 
 Use the first-class `functions.invoke(name, args)` helper (exported from both
-`bounded-sh` and `@bounded-sh/server`). It attaches the caller's session token
+`@bounded-sh/client` and `@bounded-sh/server`). It attaches the caller's session token
 automatically — the **same** token the data plane sends — so you never hand-roll
 auth headers:
 
 ```ts
-import { functions } from "@bounded-sh/client"; // or "bounded-sh/server"
+import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 
-const res = await functions.invoke("syncStripe", { customerId });
+const res = await functions.invoke("syncStripe", { customerId, userId });
 // → the function's JSON return value.
 ```
 
@@ -421,7 +450,7 @@ rule + `ctx.user` then reflect it):
 
 ```ts
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
-const res = await vault.invoke("syncStripe", { customerId });
+const res = await vault.invoke("syncStripe", { customerId, userId });
 ```
 
 The platform gates the call on the function's `auth` rule using the verified
@@ -436,6 +465,7 @@ bounded functions deploy syncStripe \
   --entry functions/syncStripe.ts \
   --app-id <id> \
   --auth 'get(/admins/@user.id) != null' \
+  --secret STRIPE_KEY \
   --timeout 30
 
 printf '%s' "$STRIPE_KEY" | bounded secret put STRIPE_KEY --value-stdin --app-id <id>
@@ -444,7 +474,9 @@ bounded functions logs   syncStripe --app-id <id>
 ```
 
 The `--entry` may be **TypeScript or JavaScript**. Type annotations are fine.
-Keep it a single self-contained module.
+Keep it a single self-contained module. Bare `--secret STRIPE_KEY` declares the
+name without putting its value in argv; `secret put` supplies the app-stored
+value separately.
 
 Two deploy-ordering notes worth knowing:
 - **A policy deploy preserves deployed functions.** When your `policy.json` omits
@@ -459,9 +491,11 @@ Two deploy-ordering notes worth knowing:
 
 A function's `console.*` output is **captured** and viewable; **who** may view it
 is the per-function `logsAuth` policy rule (defaults to app managers; declared
-secret values are redacted). Set a fixed backend identity for the function with
-the `actAs` policy field. Both are `functions`-block fields, not CLI flags —
-see [identity-and-logs.md](identity-and-logs.md) and [service-keys.md](service-keys.md).
+secret values are redacted). Set a fixed backend identity with `actAs`. In a
+policy file these are `logsAuth` and `actAs`; on standalone function deploys,
+pass `--logs-auth` and `--act-as` every time so the complete-entry update
+preserves them. See [identity-and-logs.md](identity-and-logs.md) and
+[service-keys.md](service-keys.md).
 
 Remove or replace a function with the Bounded CLI when you no longer want it
 exposed. Deploy validates the function declaration and updates the app's
@@ -474,9 +508,9 @@ deploy.
 
 ```ts
 export default async function (args, ctx) {
-  // Only admins reach here — the `auth` rule already gated invocation.
-  const { customerId } = args;
-  if (!customerId) throw new Error("customerId is required");
+  // Only admins reach here — `auth` gated the original caller before actAs.
+  const { customerId, userId } = args;
+  if (!customerId || !userId) throw new Error("customerId and userId are required");
 
   // 1. Pull from a third-party API using a declared secret.
   const resp = await fetch(
@@ -493,22 +527,22 @@ export default async function (args, ctx) {
 
   // 3. Write THROUGH the boundary. If your policy has, say, an invariant on
   //    `subs`, this write is still checked — the function can't bypass it.
-  //    Key the doc by the caller's universal identity (ctx.user.id), matching
-  //    the `subs/$userId` ownership rule (`@user.id == $userId`).
-  await ctx.bounded.set(`subs/${ctx.user.id}`, { active, renewsAt });
+  //    ctx.user and the data client act as SUBS_SYNC_ACTOR, the only identity the
+  //    collection allows to create/update rows. The original admin is not ctx.user.
+  await ctx.bounded.set(`subs/${userId}`, { active, renewsAt });
 
   return { ok: true, active, renewsAt };
 }
 ```
 
 Invoke it from your admin dashboard with
-`bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123"}'`
+`bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123","userId":"acct_123"}'`
 (or the TypeScript fetch shown above).
 
 Flow: logged-in admin → invoke (attaches token) → Bounded auth gate (verify token →
 resolve `@user` → evaluate `get(/admins/@user.id) != null` → allow) → the
 function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your rules +
-invariants) → returns JSON.
+invariants as the declared sync service identity) → returns JSON.
 
 ## Scheduled functions (run a function on a cadence)
 
@@ -631,9 +665,11 @@ forbidden in `onchain:true` rules, like `@user.id`. Inside the function body the
 same data is available as `ctx.origin` (`{ kind, path, module, room, tick }` or
 null).
 
-The function's `auth` rule is evaluated by the **same proof engine** as your data
-rules — `bounded verify` understands `@origin` (it's a first-class special
-variable), so the `@origin` gate is a proven obligation, not a runtime-only check.
+The function's `auth` rule uses the same policy expression language as data
+rules and is **enforced before the function body runs**. `bounded verify`
+understands `@origin` as a first-class special variable and checks the supported
+generated obligations that reference the gate; that does not make every auth
+expression a blanket proof of product intent.
 
 To ship a **funded** AI NPC, set `session.live.runAs` to a service wallet the owner
 funds with AI/external-services credit — then `ctx.ai` in the called function Just Works (capped at
@@ -646,17 +682,19 @@ principal matrix.
 
 ## Secrets
 
-Declare secret **names** in the policy `functions.<name>.secrets`; supply their
+Declare secret **names** in the policy `functions.<name>.secrets` or with a bare,
+repeatable `bounded functions deploy --secret NAME`; supply their
 **values** with `bounded secret put NAME --value-stdin --app-id <id>` (the per-app secret
 store — set once, read by every function/agent in the app). The function reads
 them as `ctx.env.K` **or** `await ctx.secrets.get("K")`. Only declared names are
 exposed — an undeclared key never reaches the function. Secret values are never written into
 the policy and never returned by `functions list` / `secret list`.
 
-A legacy deploy-time secret override exists for per-function overrides and takes
-precedence over the app-store value for that one function. Prefer `secret put`
-with `--value-stdin` so values do not appear in argv, process listings, or shell
-history.
+On every standalone function redeploy, repeat each bare `--secret NAME` because
+the command writes the complete entry. A legacy `--secret NAME=VALUE` deploy-time
+override exists and takes precedence over the app-store value for that one
+function version. Prefer bare `--secret NAME` plus `secret put --value-stdin` so
+values do not appear in argv, process listings, or shell history.
 
 Secret **values** are stored by Bounded and are never written into policy files.
 At invocation, the function receives only the names it declared. Use
@@ -679,15 +717,18 @@ through client requests.
 
 ## What's proven vs not
 
-The proof boundary (recap of "Why functions are still safe", above): **proven** —
-your `rules` + `invariants`, including every write a function makes through
-`ctx.bounded` (it **cannot** break an invariant); **policy-gated** — invocation,
-via the `auth` rule evaluated by the proven engine before the function runs; **NOT
-proven** — the function's own logic (the fetch, the transform). Keep anything that
-*must* be guaranteed in an invariant, not in function code.
+The proof boundary (recap of "Why functions are still safe", above): **proved** —
+the declared invariant and generated safety obligations reported by
+`bounded verify`; **enforced** — collection authorization rules on every
+`ctx.bounded` write and the function's invocation `auth` gate before code runs;
+**NOT proven** — the function's own logic (the fetch, the transform) or whether
+an authorization rule matches unstated product intent. Keep anything that must
+be a proved state guarantee in a declared invariant, not in function code.
 
-If a property must be guaranteed, model it as a rule or invariant. Treat
-function code as useful imperative logic, not as a proof boundary.
+Use a policy rule for authorization and a supported declared invariant for a
+state guarantee. Treat function code as useful imperative logic, not as a proof
+boundary, and call a property proved only when the verifier reports its concrete
+obligation as proved.
 
 ## Related
 

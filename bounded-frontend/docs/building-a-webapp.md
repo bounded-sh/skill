@@ -1,7 +1,7 @@
 # Building a Web App
 
 A React frontend on a Bounded backend with `@bounded-sh/client`: install, sign
-users in with email (the default — inline OTP, no wallet needed; Phantom is the
+users in with hosted email OTP (the default; Phantom is the
 opt-in Solana wallet), and read / write / subscribe with the deployed policy
 enforcing every operation. The backend is your `policy.json` — deploy it first
 ([../docs/policy-generation-guide.md](../../bounded-backend/docs/policy-generation-guide.md)).
@@ -36,9 +36,9 @@ import { init } from "@bounded-sh/client";
 
 await init({
   appId: "<appId>",          // from `bounded deploy --create`; points at bounded-production
-  // Email + OAuth/social + text: your choice of UX — inline (sendEmailOtp/verifyEmailOtp,
-  // your own form) OR hosted (loginWithRedirect). 'phantom' opts into a Solana wallet;
-  // 'none' disables auth.
+  // Email + OAuth/social + text use hosted loginWithRedirect/loginWithPopup.
+  // 'phantom' (or its 'wallet' alias) selects browser wallet auth when
+  // walletLogin is explicitly enabled.
 });
 ```
 
@@ -46,13 +46,12 @@ Mount your UI first and `init()` asynchronously — don't block first paint on i
 
 ## Authenticate users
 
-Email + OAuth/social login can run **either** inline — render your own email/code
-form with `sendEmailOtp(email)` + `verifyEmailOtp(email, code)` — **or** through the
-**hosted redirect** flow (`loginWithRedirect`), where the credential is entered on
-`auth.bounded.sh` and never touches your origin (the most secure UX). The built-in
-`login()` modal is a zero-config inline option too. Phantom is the opt-in path when
-you want a Solana wallet (`@user.address`). Pick the methods and UX that fit your app
-— see [Choosing your login methods & UX](../docs/auth.md#choosing-your-login-methods--ux).
+Email + OAuth/social login uses the hosted issuer via `loginWithRedirect` or
+`loginWithPopup`, where the credential is entered on `auth.bounded.sh` and never
+touches your origin. App-origin OTP helpers are not exported by the current
+client. Phantom is the opt-in path when you want a bring-your-own Solana wallet
+(`@user.address`). Pick the hosted methods that fit your app — see
+[Choosing your login methods & UX](../docs/auth.md#choosing-your-login-methods--ux).
 Whatever the method, an authenticated `user` is `{ id, address, email }`:
 
 - `user.id` — the universal stable identity, **always present**. For wallet

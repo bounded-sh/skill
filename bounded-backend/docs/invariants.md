@@ -20,7 +20,7 @@ violates it. **Name them like error codes:** `spend_cap`, `no_minting`,
 There are five types: `conserve`, `rollingSum`, `bound`, `tenantTag`, `tenantEdge`.
 
 > **Identity in the rule examples below.** The SDK `user` object is
-> `{ id: string, address: string | null, email: string | null }`. `@user.id` is
+> `{ id: string, address: string | null, email: string | null, isAnonymous: boolean }`. `@user.id` is
 > the **universal stable identity** — always present for an authenticated user
 > (for a wallet login it equals the wallet address; for an email/social login it
 > is the account identity) — so the auth-guard, ownership, and membership rules in

@@ -125,6 +125,8 @@ intents (worked example at the end).
 | `everyMs` | **Required.** Integer, `20`–`60000` | Native tick cadence (ms). ~33 ≈ 30Hz. |
 | `maxLifetimeSec` | **Required.** Integer, `1`–`86400` | Hard lifetime cap; the room is torn down at this age regardless of state. |
 | `snapshotEveryTicks` | Optional. Integer, `1`–`600` | Snapshot room state every N ticks. Default: derived from the checkpoint cadence. |
+| `calls` | Optional. Function-name array. | Owner-declared whitelist of Functions that `tick` may request by returning `call` / `calls`. A name not in this list is rejected. |
+| `runAs` | Optional. Service wallet address. | Acting principal inherited by live-called Functions unless a Function has its own `actAs`. The target collection's rules must authorize this identity. |
 | `secrets` | Not supported for live modules. | Need an API key in live/game code? Call a [function](functions.md) or [backend-runtime](backend-runtime.md) component where secrets are supported. |
 
 **Two hard placement rules:**
@@ -238,12 +240,29 @@ decide what the persisted state may be.
 
 **Auditing intents durably is a separate, manual pattern.** `session.intentRule`
 gates live intents but does not write a durable log — live intents are ephemeral
-by design. If you need a durable audit/rate trail (e.g. an
-`inputAudits/$userId/events/$eventId` collection with a rolling cap), your tick
-code must write those rows explicitly; nothing ties every `live.intent` to a
-durable record automatically. Reserve it for the intents that matter (financial
-actions, anti-cheat evidence) — logging every 30Hz input would drown the write
-path.
+by design, and the pure live module has no `ctx.bounded` or direct durable-write
+capability. If you need a durable audit trail (for example,
+`inputAudits/$userId/events/$eventId`), use the supported capability chain:
+
+1. Add an audit Function name to the owner-declared `session.live.calls`
+   whitelist.
+2. Have `tick` return `call` / `calls` with the server-decided audit payload.
+   Record a deterministic `eventId` in room state before returning so the same
+   material event is not emitted again on every tick.
+3. Gate the Function independently by origin, for example
+   `auth: "@origin.kind == 'live' && @origin.module == 'pong'"`. `@origin` proves
+   which live module requested the call; it does not choose the write identity.
+4. Give the call an acting principal with `session.live.runAs` or per-Function
+   `actAs`, and write the audit collection's rules to authorize that identity.
+   With neither, the Function runs as the all-null system principal and its
+   `ctx.bounded` write may correctly fail `403`.
+5. In the Function, write through `ctx.bounded` at a deterministic path keyed by
+   `eventId`. Make the write idempotent because calls/effects are at-least-once,
+   and consume/deduplicate the later `@effect` result in tick state.
+
+Nothing ties every `live.intent` to a durable record automatically. Reserve this
+Function path for the intents that matter (financial actions, anti-cheat
+evidence); logging every 30Hz input would drown the durable write path.
 
 The three runtime roles stay clean:
 
@@ -266,7 +285,8 @@ What this structurally cures (same boundary as
 What **no backend cures**: a script firing only *legal* intents at *human* timing
 but with superhuman accuracy. Each intent is individually valid, so nothing
 rejects it; the residual is a statistical/ML problem on legal inputs, best fed by
-the tamper-proof, server-ordered intent log via `webhooks`. Be explicit with
+the server-authored audit rows from the origin-gated Function path above (and,
+if needed, webhooks declared on that durable audit collection). Be explicit with
 users: Bounded solves the **structural** part and gives the best substrate for
 the statistical part — it does **not** "solve cheating."
 

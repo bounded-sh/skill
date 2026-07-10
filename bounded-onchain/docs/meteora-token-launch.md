@@ -91,10 +91,11 @@ at 85 SOL market cap:
 
 ```json
 {
+  "constants": { "LAUNCHER": "<launcher-wallet-address>" },
   "launches/$configId": {
     "onchain": true,
     "fields": { "configId": "String" },
-    "rules": { "read": "true", "create": "hasRole('launcher')", "update": "false", "delete": "false" },
+    "rules": { "read": "true", "create": "@user.address != null && @user.address == @const.LAUNCHER", "update": "false", "delete": "false" },
     "hooks": {
       "onchain": { "create":
         "@DeFiPlugin.createMeteoraConfig($configId, @contract.address, 300, 50, 200, 50, 30, 85, 1000000000, 6, 0, @contract.address, 5000, 300, 60, 300)"
@@ -103,6 +104,10 @@ at 85 SOL market cap:
   }
 }
 ```
+
+`@const.LAUNCHER` is a statically bootstrapped wallet address and the rule uses
+the onchain/runtime-supported `@user.address` surface. Rotate the constant with a
+policy update when launcher authority changes.
 
 - `preMigratedFeeAmountBps = 300` (3%) is the settled bonding-curve fee and the decay
   target when `decayEndingFeeBps` is left at its default.

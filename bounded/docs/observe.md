@@ -3,13 +3,12 @@
 **What's in here / when to read this:** the one-page overview of **Action
 Boundaries** — watching what an app or agent does externally (`ctx.ai` spend,
 `ctx.services` tool calls, agent egress) and enforcing suggested boundaries.
-Depth lives in the sibling `bounded-observe` skill.
+Use the public **bounded-teams** skill for organization-level governance.
 
-Your policy already gives your **data** provable boundaries. Action Boundaries
-extend the same idea — a facet of Boundaries, alongside data, backend, and UI —
-to the **external actions** the app takes. *Give your agent's actions the same
-proven boundaries your data already has — watch first, then enforce with one
-click.*
+Your policy gives your **data** enforced authorization rules and proved
+invariants. Action Boundaries apply a related observe-then-enforce workflow to
+the **external actions** the app takes. Do not describe an action boundary or a
+UI state as a policy proof: the trust levels below are intentionally distinct.
 
 An action boundary lives in one of three states:
 
@@ -41,12 +40,11 @@ one fire-and-forget event per action), or a tool you can't put code inside
 (the `bounded-ai-gateway` base-URL proxy; its `OBSERVE_ONLY=true` mode is the
 watch-first posture — every call forwards, events still land).
 
-For depth — opting in, wiring `node --require @bounded-sh/observe/register`,
-the edge emitter, the gateway (OBSERVE_ONLY / FAIL_OPEN / UPSTREAM_CONFIG),
-reading suggestion cards, what Promote does — load the **`bounded-observe`**
-skill (installed as a sibling of this one): its
-`docs/observing-agent-actions.md` covers observe wiring and the dashboard, and
-`docs/suggested-boundaries.md` covers baselines, evidence, and Promote.
+For organization-wide action oversight, custody, and shared invariant evidence,
+load the public **bounded-teams** skill. For one app, use this overview and the
+current dashboard/docs surface; the internal observe implementation guide is not
+part of the public `npx skills add bounded-sh/skill -y` family. Avoid `--all` and
+wildcard installs, which include repository-internal skills.
 
 ## Related
 

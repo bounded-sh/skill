@@ -166,7 +166,7 @@ the admin scope (create rules, hooks, plugin calls) implies the writer is alread
 an admin (no self-promotion, no side doors), and — given `initialMember` — that
 the create path forces the founder in. It's the formal version of "only an admin
 can make an admin." (`authorityClosure` currently supports only a **flat**
-`admins/$userId` role scope — see [invariants.md](invariants.md#attestations--global-policy-wide-claims)
+`admins/$userId` role scope — see [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims)
 for the multi-tenant pattern and the nested-scope limitation.)
 
 > It runs in the verification engine (the same one `bounded verify` drives). The

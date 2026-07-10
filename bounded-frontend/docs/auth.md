@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **CLI/admin auth** | you / your agent | either a wallet/keypair account source or a Bounded web account session | owns/administers apps; wallet mode signs data-plane writes, web mode authenticates control-plane commands |
-| **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP); the canonical setup also provisions a non-custodial **Crossmint wallet on every login** (`auth.wallets`), so users carry both `@user.id` and `@user.address`. A connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` in policy rules |
+| **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP); with `auth.wallets`, supported email/social logins also receive a non-custodial **Crossmint wallet**, so those users carry both `@user.id` and `@user.address`. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
 
 ## CLI auth — wallet/keypair vs web account
 
@@ -118,42 +118,32 @@ array). The keypair is read lazily — only the first signed write needs it.
 
 ## End-user auth — the `user` object
 
-Your app's users authenticate through `@bounded-sh/client`. The canonical login is
-**Bounded Auth** — email OTP, OAuth/social login, optional anonymous guests — with
-**`auth.wallets` turned on** so every email/social login also gets a non-custodial
+Your app's users authenticate through `@bounded-sh/client`. The canonical human login is
+**Bounded Auth** — email OTP and OAuth/social login — with
+**`auth.wallets` turned on** so supported email/social logins also get a non-custodial
 **Crossmint wallet** (`@user.address`) without leaving the email flow. That gives
 you the best of both: a stable account identity (`@user.id`) *and* a real wallet on
-every user. See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
+those accounts. Browser guests are a separate, offchain-only path. See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 A purely offchain app may omit `auth.wallets` and its users simply have
 `@user.address == null`; everything else should keep it on.
 
 There are **two issuers**: wallet/guest auth (Phantom / anonymous,
 `wallet-auth.bounded.sh`) and **human auth** (email / phone / social,
-`auth.bounded.sh`). For human auth **your app chooses its UX** — a hosted page *and*
-your own inline UI both work, against the same issuer:
+`auth.bounded.sh`). Human credentials are entered on the hosted issuer:
 
 - **Hosted** (most secure): `loginWithRedirect({ methods })` or
   `loginWithPopup({ methods })`. The credential (email code, Google/Apple/GitHub,
   text) is entered on the Bounded issuer origin (`auth.bounded.sh`). On **web** no
   `redirectUri` is needed — it defaults to the current page; only **React Native**
   must pass one (an https universal link). Works web and React Native (deep links).
-- **Inline** (your own UI): `sendEmailOtp(email)` then `verifyEmailOtp(email, code)`
-  render your own email/code form (and `sendTextOtp` / `verifyTextOtp` when the
-  issuer has text OTP enabled). There's also a built-in `login()` modal (web; behind
-  a `hasDOM` guard) and `authMethod: 'email'`. These are **restored** in
-  `@bounded-sh/client` 0.0.29. Inline works on web (from an origin the app owner
-  registered) **and** React Native / CLI / server (no-Origin callers are allowed for
-  real apps).
-- **Guest upgrade**: `linkEmail(email, code)` (inline; send the code first with
-  `sendEmailOtp`) preserves the guest's `@user.id` when the email is brand-new and
-  refuses if the wallet is already linked; `linkWithRedirect()` is the hosted equivalent.
 
-> Pick the methods (email / phone / social / wallet / guest) **and** the UX (inline
-> vs hosted) that fit your app — see
+App-origin email/text OTP and guest-link helpers are retired and are not exported
+by `@bounded-sh/client@0.0.42`. A guest who signs in through hosted auth gets a
+distinct real `@user.id`; transfer guest-owned data explicitly when needed.
+
+> Pick the methods (email / phone / social / wallet / guest) and hosted presentation
+> that fit your app — see
 > [Choosing your login methods & UX](#choosing-your-login-methods--ux) below.
-> One guardrail: inline minting is for **real (ObjectId) app ids** only —
-> non-ObjectId superuser/platform clients (e.g. `bounded-admin`) are OIDC/hosted-only,
-> and inline browser callers must come from an origin the app owner registered.
 
 > For a **live game**, the tick's calls have no human — `@user` is the **system
 > principal** (all fields null unless you declare an acting identity). See
@@ -165,30 +155,22 @@ Picking end-user auth is **two independent builder decisions** — make both to 
 your app's vibe:
 
 1. **Which methods** do users authenticate with? Mix and match: **email**, **phone**
-   (text OTP, when enabled), **social** (Google / Apple / GitHub), **wallet**
-   (Phantom / Privy, for crypto apps), and zero-friction **guest**
-   (`signInAnonymously()`). Enable only what your app needs.
-2. **Which UX** renders the human credential step? These all hit the same issuer:
-   - **Inline custom UI** — your own email/code form via `sendEmailOtp` /
-     `verifyEmailOtp` (and `sendTextOtp` / `verifyTextOtp` when text is on). Most
-     control over look-and-feel; works web (registered origin) + RN / CLI / server.
+   (text OTP, when enabled), **social** (Google / Apple / GitHub), browser
+   **wallet** (Phantom / Wallet-Standard), React Native **Privy Expo** with an
+   explicit provider, and zero-friction **guest** (`signInAnonymously()`). Enable
+   only what your app needs.
+2. **Which hosted UX** renders the human credential step?
    - **Hosted redirect** — `loginWithRedirect({ methods })`. Most
      secure; the credential never touches your origin. Works web + React Native
      (web needs no `redirectUri`; RN passes an https universal link).
    - **Hosted popup** — `loginWithPopup({ methods })`, when the host UI must stay open.
-   - **Built-in modal** — the zero-config `login()` modal (web; behind a `hasDOM`
-     guard) or `authMethod: 'email'`, when you want inline with no UI to build.
 
-Wallet and guest are unaffected by this choice (they sign locally). For human auth,
-inline and hosted are equally supported against `auth.bounded.sh` — pick the one that
-fits. Two guardrails: inline minting is for **real (ObjectId) app ids** only
-(non-ObjectId superuser/platform clients such as `bounded-admin` are OIDC/hosted-only),
-and inline **browser** callers must come from an origin the app owner registered
-(no-Origin callers — React Native, CLI, server — are allowed for real apps).
+Wallet and guest are unaffected by this choice (they sign locally). Human auth
+always runs through `auth.bounded.sh`; the app owns the button and method selection,
+but not the credential form.
 
-**Hitting an origin error?** A browser inline-OTP call from an *unregistered* origin
-fails with `403 origin is not registered for this appId`; the hosted-redirect equivalent
-is `redirect_uri origin is not a registered origin for this app`. Fix it by registering
+**Hitting an origin error?** Hosted auth rejects an unregistered redirect with
+`redirect_uri origin is not a registered origin for this app`. Fix it by registering
 the app's web origin — claim a vanity slug (`bounded domains slug <name> --app-id <id>`
 → `<slug>.bounded.page`) or add a custom domain (`bounded domains add <host> --app-id
 <id>`); both wire `allowedOrigins` automatically. `localhost` (for dev) and Bounded's own
@@ -198,17 +180,17 @@ first-party `*.bounded.sh` origins are always allowed without registration.
 
 | Method | How you start it | Identity result | `@user.address` | Notes |
 |---|---|---|---|---|
-| **email OTP** | `loginWithRedirect({methods:["email"]})` / inline `sendEmailOtp`+`verifyEmailOtp` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | **the canonical login** |
+| **email OTP** | `loginWithRedirect({methods:["email"]})` or `loginWithPopup({methods:["email"]})` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | **the canonical login** |
 | **social** (Google/Apple/GitHub) | `loginWithRedirect({provider:"google"})` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | hosted; the canonical login |
-| **text OTP** | `loginWithRedirect({provider:"text"})` / inline `sendTextOtp` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | opt-in, off by default |
-| **guest** | `signInAnonymously()` | durable device id | `null` (guests get no embedded wallet) | zero-friction; `isAnonymous: true`; policy opt-in `auth.anonymous` |
+| **text OTP** | `loginWithRedirect({provider:"text"})` or hosted popup | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | opt-in, off by default |
+| **guest (browser)** | `signInAnonymously()` | durable device id | device keypair address (guest auth remains offchain-only) | zero-friction; `isAnonymous: true`; policy opt-in `auth.anonymous`; requires WebCrypto Ed25519 + IndexedDB |
 | **WALLET (Solana), bring-your-own** | `init({authMethod:"phantom", walletLogin:true})` → `login()` | **real wallet** | **the wallet** | the companion login for users who already have a wallet — see below |
 | **CLI/admin** | `bounded login` / keypair | web account or keypair | keypair addr | builder identity, not end-user |
 
 ### Solana wallet login (bring your own)
 
 > **The companion to the canonical login.** The canonical login (email/social +
-> `auth.wallets`) already gives every user a Crossmint wallet; wallet login is for
+> `auth.wallets`) gives those users a Crossmint wallet; wallet login is for
 > users who **already have** a Solana wallet and want to sign in *with it*. Add it
 > alongside the canonical login by turning it on at `init()` with
 > **`walletLogin: true`** (it's off until you pass the knob — an app that doesn't
@@ -318,9 +300,8 @@ The hosted redirect flow is the **most secure** human-login UX: the bare chooser
 both email and text are enabled, the hosted page shows one OTP form with an Email/Text
 switcher. If `methods` is ordered, the first enabled OTP method in that list is
 selected by default; use `provider: "text"` to jump straight to text only when enabled.
-If you'd rather render your **own** email/code UI, use the inline OTP primitives
-instead (`sendEmailOtp` / `verifyEmailOtp`) — see
-[Custom UI (inline OTP) & React Native](#custom-ui-inline-otp--react-native) below.
+The current SDK deliberately keeps the credential form on the hosted issuer;
+app-origin OTP helpers are not exported.
 
 ### OAuth provider availability
 
@@ -355,34 +336,10 @@ Phone-only users get a normal `@user.id`, but `@user.email` is `null`. Do not
 email-gate phone-only users. Extend the policy/user model separately only if
 phone-number claims should become rule-visible.
 
-### Custom UI (inline OTP) & React Native
+### Hosted auth on web and React Native
 
-Prefer to render your **own** email/code UI instead of bouncing to the hosted page?
-Use the inline OTP primitives — restored in `@bounded-sh/client` 0.0.29:
-
-```ts
-import { init, sendEmailOtp, verifyEmailOtp, getCurrentUser } from "@bounded-sh/client";
-
-await init({ appId: "<appId>" });
-await sendEmailOtp("user@example.com");                       // issuer emails a code
-const user = await verifyEmailOtp("user@example.com", code);  // your own form collects `code`
-getCurrentUser();                                             // signed in
-```
-
-`sendTextOtp` / `verifyTextOtp` are the text-OTP equivalents (only when the issuer has
-text OTP enabled for the app). There's also the built-in `login()` modal (web; behind a
-`hasDOM` guard) and `authMethod: 'email'` if you want a zero-config inline modal rather
-than building your own form.
-
-> **Where inline works.** Inline minting is for **real (ObjectId) app ids** only.
-> Browser callers must come from an **origin the app owner registered**; no-Origin
-> callers (React Native, CLI, server) are allowed for real apps. Non-ObjectId
-> superuser/platform clients (e.g. `bounded-admin`) are **OIDC-only** — they must use
-> the hosted flow.
-
-If you'd rather not build a code form — or want the most secure UX — use
-`loginWithRedirect` instead; you own the button, but the credential is entered on
-`auth.bounded.sh`:
+Use `loginWithRedirect` or `loginWithPopup`; you own the button and method
+selection, but the credential is entered on `auth.bounded.sh`:
 
 ```ts
 import { init, loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
@@ -413,42 +370,40 @@ await loginWithRedirect({ methods: ["email", "google"] });   // web: no redirect
 // (on app load) const user = await completeLoginFromRedirect();
 ```
 
-> **Id-preserving guest upgrade.** To turn a guest into an email account **keeping
-> the same `@user.id`**, send a code with `sendEmailOtp(email)` then call
-> `linkEmail(email, code)` (inline) — the issuer preserves the guest's id when the
-> email is brand-new, and refuses if the wallet is already linked to another account.
-> `linkWithRedirect()` is the hosted equivalent (web needs no `redirectUri`; RN passes
-> an https universal link). Alternatively, a guest
-> who simply logs in via `loginWithRedirect` comes back as a **distinct** real account
-> (a new `@user.id`); to carry their data across that boundary, model ownership as
-> **transferable data** (see [anonymous-accounts.md](anonymous-accounts.md) §
-> "transferable ownership") and hand the data to the real id.
+> A guest who logs in via `loginWithRedirect` comes back as a **distinct** real
+> account (a new `@user.id`). The current client does not export an id-preserving
+> link helper. Because only the old guest identity can transfer guest-owned data,
+> do not attempt that transfer after replacing the session. Use the explicit
+> two-login handoff in [anonymous-accounts.md](anonymous-accounts.md#3-migrate-browser-guest-data-to-a-real-account),
+> or a separately designed one-time claim Function.
 
 `user.isAnonymous` (Firebase parity) tells you guest vs real, e.g. to show a
 "create a real account" prompt; in policy, `@user.isAnonymous == false` gates guests
 out of a rule (Supabase parity).
 
-> **Browser / React-Native only.** `signInAnonymously` persists its session through
-> `localStorage`, so it only works where there's a `window`. Calling it in Node
-> throws a clear error (the session would otherwise be silently dropped and every
-> request would 403). For Node / server code use **`@bounded-sh/server`** with a
+> **Browser only in the current published client.** `signInAnonymously` requires
+> non-extractable WebCrypto Ed25519 keys persisted in IndexedDB. Standard React
+> Native does not provide IndexedDB, and configuring the RN session adapter does
+> not add it, so guest auth fails closed there. Use hosted RN login or the explicit
+> Privy Expo bridge. For Node/server code use **`@bounded-sh/server`** with a
 > keypair (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
 
-`authMethod` selects the **identity system**, not a login UI. **Bounded Auth is
-the default and the canonical login** — email + OAuth/social + optional text, and
-each of those human logins can run **either** through the hosted redirect flow
-(`loginWithRedirect` / `loginWithPopup`) **or** inline against the same issuer
-(`sendEmailOtp` / `verifyEmailOtp`, the `login()` modal, or `authMethod: 'email'`) —
-your choice of UX. Pair it with `auth.wallets` (policy) to give every one of those
-logins a Crossmint wallet. **Guest** via `signInAnonymously()` is the natural
-frictionless second choice (not an `authMethod`; see below). **`'phantom'`** (connect
-a Solana wallet) is the **bring-your-own-wallet companion** — add it when some users
-already have a Solana wallet and want to sign in with it (real keypair, full local
-signing). **It is turned on at `init()` with `walletLogin: true`** — see
-[Solana wallet login (bring your own)](#solana-wallet-login-bring-your-own). `'none'`
-disables end-user auth. (`'wallet'` is an alias for `'phantom'`.)
+`authMethod` selects the **identity system**, not a login UI. The supported
+documented choices are:
 
-The authenticated `user` object — mirrored into policy as `@user.*` — has **three
+| Path | Configuration |
+|---|---|
+| Hosted Bounded Auth (email, OAuth/social, optional text) | omit `authMethod` or use `authMethod: "email"`, then call `loginWithRedirect` / `loginWithPopup` |
+| Browser bring-your-own wallet | `authMethod: "phantom"` or its `"wallet"` alias, plus `walletLogin: true` |
+| React Native Privy | `authMethod: "privy-expo"` plus an explicit bridged `privyExpoProvider` |
+| Guest | call `signInAnonymously()`; guest is not selected through `authMethod` |
+
+Pair hosted Bounded Auth with `auth.wallets` (policy) when email/social users
+also need a Crossmint wallet. Browser wallet login is the bring-your-own-wallet
+companion for users who already have a Solana wallet and need local signing; see
+[Solana wallet login (bring your own)](#solana-wallet-login-bring-your-own).
+
+The authenticated `user` object — mirrored into policy as `@user.*` — has **four
 fields**:
 
 | Field | Type | Meaning |
@@ -459,9 +414,8 @@ fields**:
 | `user.isAnonymous` | `boolean` | `true` for a zero-friction **guest** (`signInAnonymously()`); `false` for any real (email/social/text/wallet) login. Drives the "create a real account" prompt. Mirrored in policy as `@user.isAnonymous` (offchain; write `== false` to gate guests out). |
 
 - **Bounded Auth** (the canonical login) supports email OTP, optional text OTP (when
-  enabled), and OAuth/social login (Google, Apple, GitHub today) — through **either**
-  the hosted redirect flow (`loginWithRedirect` / `loginWithPopup`) **or** inline OTP
-  from your own UI (`sendEmailOtp` / `verifyEmailOtp`), whichever UX you choose.
+  enabled), and OAuth/social login (Google, Apple, GitHub today) through the
+  hosted issuer (`loginWithRedirect` / `loginWithPopup`).
   Bounded Auth users authenticate as an **account identity** — a stable `@user.id` —
   and with **`auth.wallets`** on (the canonical config) they also carry a
   non-custodial **Crossmint `@user.address`**. Without `auth.wallets`, `@user.address`
@@ -481,20 +435,20 @@ fields**:
 ### React
 
 ```tsx
-import { useAuth } from "@bounded-sh/client";
+import { useAuth, loginWithRedirect } from "@bounded-sh/client";
 
 function AuthButton() {
-  const { user, login, logout, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   if (loading) return <Spinner />;                 // see "loading" below — drive your busy UI off this
   return user
     ? <button onClick={logout}>{user.id.slice(0, 6)}… ↩</button>   // user.id always present; user.address may be null
-    : <button onClick={login}>Sign in</button>;
+    : <button onClick={() => loginWithRedirect({ methods: ["email", "google"] })}>Sign in</button>;
 }
 ```
 
-**`loading` reflects ANY auth in progress** — session restore on load AND every login method
-(`loginWithRedirect`, `loginWithPopup`, `signInAnonymously`, inline `verifyEmailOtp`/
-`verifyTextOtp`, `linkEmail`). Render your "signing in…" state off it (e.g. a spinner/overlay
+**`loading` reflects ANY auth in progress** — session restore on load and the
+published login methods (`loginWithRedirect`, `loginWithPopup`,
+`signInAnonymously`). Render your "signing in…" state off it (e.g. a spinner/overlay
 + disabled buttons) so a popup or guest login isn't a dead-looking page. It flips back to
 `false` when the user resolves or the attempt fails — you don't manage it yourself.
 

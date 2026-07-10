@@ -43,7 +43,7 @@ operators:
 ```ts
 // SDK — get(path, { filter, sort, limit, cursor }) on a collection path.
 // Deterministic (no AI). Returns { data, nextCursor } when limited/paged.
-import { get } from "@bounded-sh/client";              // or "bounded-sh/server"
+import { get } from "@bounded-sh/client";              // or "@bounded-sh/server"
 const open = await get("orders", {
   filter: {
     $and: [
@@ -138,13 +138,15 @@ bounded data aggregate --app-id <id> --path orders --group status --sum total --
 
 > The filter / sort / aggregate API is a **runtime** feature of the data plane.
 > It is not part of the policy file and is not what `bounded verify` proves — the
-> proofs cover `rules` and `invariants`. Read access on every query result is
-> still enforced by the collection's `read` rule.
+> blocking proofs cover declared invariants and generated safety obligations.
+> Read access on every query result is still enforced by the collection's
+> `read` rule.
 
 ## Policy `queries` — computed scalar fields
 
-A `queries` block on a collection declares a named, typed expression computed from
-the document. It is proven at deploy (same expression language as rules) and
+A `queries` block on a collection declares a named, typed expression computed
+from the document. It is validated at deploy and participates in proof
+obligations where referenced (same expression language as rules), then is
 exposed as a read.
 
 ```json
@@ -262,7 +264,9 @@ read it inline with `get()`:
 `get()` reads pre-transaction state; `getAfter()` reads staged in-batch state (for
 guard-then-write composition — see [data-plane.md](data-plane.md)). This is the
 right tool for "only an admin may", "only if the parent is active", "capacity not
-exceeded" — and it is proven at deploy.
+exceeded". The runtime enforces the resulting authorization decision; the
+expression participates in a proof only when a supported generated or declared
+obligation references it.
 
 ## Picking the right tool
 
@@ -271,7 +275,7 @@ exceeded" — and it is proven at deploy.
 | List/filter/paginate many documents | `get(path, { filter, sort, limit, cursor })` |
 | Count / sum a single scalar | `count` / `aggregate` → `{ value }` |
 | Group + count/sum/avg/min/max | `queryAggregate(path, spec)` → rows |
-| A derived value proven at deploy | policy `queries` |
+| A deploy-validated derived value, proof-participating where referenced | policy `queries` |
 | Expand a foreign key both ways | `links` |
 | Many-to-many through a join table | `relationships` |
 | Gate one write on another document | `get()` / `getAfter()` in a rule |

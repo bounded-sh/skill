@@ -87,7 +87,7 @@ verify`. Never weaken the property to make the proof pass; the
 counterexample is showing you a write that production would have accepted.
 
 > **Identity vs. wallet in counterexamples.** The SDK `user` object is
-> `{ id: string, address: string | null, email: string | null }`. `@user.id`
+> `{ id: string, address: string | null, email: string | null, isAnonymous: boolean }`. `@user.id`
 > is the universal stable identity — **always present** for an authenticated
 > caller (it equals the wallet address for wallet logins, the account identity
 > for email/social logins) — so ownership, membership, and auth-guard rules
@@ -129,14 +129,18 @@ failing any is a red-line proof finding to fix before deploy):
 | `tenant isolation relationship edge coverage` | (Opt-in) every declared relationship edge is covered by source tag + target tag + matching `tenantEdge` invariants, or verification fails |
 | `tenant isolation relationship depth <= k` / `declared graph induction` | (Opt-in) bounded-depth isolation (acyclic within k ≤ 10 hops) or inductive isolation over any finite declared path, cycles included |
 | `combined declared DSL formal claim` | One policy-level conjunctive check (`__policy__/formalClaims`) composing every generated obligation into a single verdict |
-| `attestation: <claim> — <sub-check>` | A GLOBAL [`proofs.attestations`](invariants.md#attestations--global-policy-wide-claims) entry, under the `__policy__/attestations` report scope. The human `claim` is echoed verbatim, followed by the discharged obligation (a `roleGatedRead` exposure sweep, `authorityClosure` step, or rolling-limit algebra). A **bare-string** claim with no bound `kind` shows as `UNSUPPORTED` (non-blocking advisory, "NOT proven — bind to prove") — never counted as proven, never blocks deploy. Legacy top-level `attestations` still works. |
+| `attestation: <claim> — <sub-check>` | A GLOBAL [`proofs.attestations`](invariants.md#proofsattestations--global-policy-wide-claims) entry, under the `__policy__/attestations` report scope. The human `claim` is echoed verbatim, followed by the discharged obligation (a `roleGatedRead` exposure sweep, `authorityClosure` step, or rolling-limit algebra). A **bare-string** claim with no bound `kind` shows as `UNSUPPORTED` (non-blocking advisory, "NOT proven — bind to prove") — never counted as proven, never blocks deploy. Legacy top-level `attestations` still works. |
 
 **Function-auth obligations** (generated per declared Bounded Function from `functions[<name>].auth` — the imperative escape hatch):
 
 | Obligation | Proves |
 |---|---|
 | `function <name>: caller-scoped invocation` | The function has no `actAs`, so `ctx.bounded` writes as the verified caller. Public/authenticated caller gates are allowed; writes still run through the caller's normal rules and every invariant. This is surfaced as a report entry, not a deploy-blocking admin proof. |
-| `function <name>: actAs service identity is admin-gated` | The function declares `actAs`, so its `auth` rule must **imply** the admin predicate — i.e. every caller who can invoke the service identity is an admin (`get(/admins/@user.id) != null` where the policy declares an `admins/$userId` role scope, else `hasRole("admin")`). An over-permissive hatch (`auth: "true"` or `"@user.id != null"`) is disproved with a non-admin counterexample and fails `bounded verify`. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
+| `function <name>: actAs service identity is admin-gated` | The function declares `actAs`, so its `auth` rule must **imply** the admin predicate — i.e. every caller who can invoke the service identity is an admin. Declare a bootstrap-safe `admins/$userId` scope and use the runtime-valid gate `get(/admins/@user.id) != null`. An over-permissive hatch (`auth: "true"` or `"@user.id != null"`) is disproved with a non-admin counterexample and fails `bounded verify`. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
+
+> **Parser boundary:** `hasRole()` exists in the proof grammar only; the current
+> runtime parser rejects it and fails closed. Do not put it in a collection rule,
+> Function `auth`, open-app gate, or any other executable policy expression.
 
 > **Roadmap — negative/global authority.** Today the function-auth obligation proves who may invoke a privileged `actAs` identity; it does not prove the function body's full write/call reach. A complementary *upper-bound* capability — "this function can write X and **nothing else**" — is planned as a capability contract.
 

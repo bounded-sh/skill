@@ -94,10 +94,10 @@ identity. Keep the stored auth fields together so silent refresh works for long 
 
 - **Wallet / guest apps**: fully headless — the keypair signs, no human step.
   This is the recommended setup for testable apps.
-- **Email login** (inline `login()` / `sendEmailOtp` form, or hosted
-  `loginWithRedirect`): an agent can't read the OTP email or drive the hosted page
-  headlessly. Give the app a wallet/guest auth method for test builds — that's the
-  recommended path.
+- **Email login** uses hosted `loginWithRedirect` / `loginWithPopup`; the current
+  client does not export app-origin OTP helpers. An agent cannot read the OTP
+  email or drive the hosted page headlessly. Give the app a wallet/guest auth
+  method for test builds — that's the recommended path.
 - Agents running **in Node** (not a browser) don't need any of this — use
   `@bounded-sh/server`'s `createWalletClient({ keypair })` (or `BOUNDED_PRIVATE_KEY`)
   and call the SDK directly. This page is specifically for driving a **browser**

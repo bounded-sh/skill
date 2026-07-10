@@ -1,9 +1,9 @@
-# Embedded wallets (`auth.wallets`) — the canonical login: a wallet on every login
+# Embedded wallets (`auth.wallets`) — a wallet for email/social login
 
-**This is the canonical Bounded login.** Turn on one policy flag and **every
-email-carrying login also gets a non-custodial Solana wallet**, with its address
+**This is the canonical Bounded login for an onchain app.** Turn on one policy
+flag and supported **email/social logins get a non-custodial Solana wallet**, with its address
 exposed to your rules as `@user.address`. This is the "wallets all around" model: a
-plain email/social/`web_login` user gets a real wallet automatically — no seed
+plain email/social user gets a real wallet automatically — no seed
 phrase, no extension, no leaving the email flow — while keeping a stable account
 identity (`@user.id`), and Bounded **never holds the key**. Keep it on for any app
 that touches wallets, tokens, or onchain state (most Bounded apps); a purely offchain

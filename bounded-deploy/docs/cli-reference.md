@@ -615,15 +615,19 @@ fix the policy or the calling identity.
 
 ```sh
 bounded functions deploy <name> --entry <file> --app-id <id> \
-  [--auth '<rule>'] [--timeout <sec>]
+  --auth '<rule>' [--timeout <sec>] [--secret NAME] \
+  [--act-as <address>] [--logs-auth '<rule>'] [--sandbox]
 printf '%s' "$VALUE" | bounded secret put NAME --value-stdin --app-id <id>
 bounded functions list   --app-id <id>
 bounded functions invoke <name> --app-id <id> [--data '<json>']
 bounded functions logs   <name> --app-id <id>
 ```
 
-`deploy` uploads the function's code and merges its entry (the invocation `auth`
-rule, `entry`, `timeout`, `secrets`) into the policy — owner/admin only. `invoke`
+`deploy` uploads the function's code and writes its **complete** entry —
+owner/admin only. `--auth` is required. Repeat every optional field the function
+needs on every deploy: bare `--secret NAME` declares a name without exposing its
+value in argv, while `--act-as`, `--logs-auth`, `--sandbox`, and `--timeout`
+preserve those fields. Omitted optional fields are removed. `invoke`
 attaches your session token automatically (same token as `data`) so the
 Bounded gates the call on the `auth` rule, then prints the function's JSON (or
 the platform error — `403` if the rule denies you). Caller-scoped functions may

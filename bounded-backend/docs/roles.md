@@ -72,8 +72,9 @@ Anonymous callers (no authenticated identity — `@user.id == null`) are **never
 ## Why this is "provably-scoped", not god-mode
 
 The grant lives in the compiled policy (`app.roles`), so it is inspectable and
-provable like any other rule — not a hidden bypass flag. `bounded verify`
-**surfaces** every role grant as an advisory and flags the over-broad `*` ones:
+runtime-enforced as an additive authorization grant — not a hidden bypass flag.
+`bounded verify` **surfaces** every role grant as an advisory and flags the
+over-broad `*` ones; that advisory does not by itself prove the grant is safe:
 
 ```
 [PASS] role 'admin': read grant
@@ -85,7 +86,9 @@ provable like any other rule — not a hidden bypass flag. `bounded verify`
 These advisories **PASS** (a governed grant is legitimate) — they exist so you
 can see exactly what each role exposes before you ship it. Prefer the narrowest
 grant that works: `write: ["posts"]` over `write: "*"` when an editor only
-touches posts.
+touches posts. When you need a formal claim about role-gated exposure or who may
+grow a role set, declare the corresponding supported `roleGatedRead` or
+`authorityClosure` attestation and require its named obligation to be `PROVED`.
 
 ## Recipe — an admin dashboard that can read everything
 

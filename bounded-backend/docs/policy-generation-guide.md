@@ -257,12 +257,13 @@ realtime game's per-player rate-cap collection must be `durable`.
 ### Step 7 — Add the extras the description needs
 
 Only what the description asks for. **Use the least-powerful tool that works** —
-prefer a proven tier over an un-proven one:
+prefer declarative, enforced policy surfaces over imperative code:
 
-- access control + provable constraints → **rules + invariants** (steps 3–5);
+- access control + provable constraints → **enforced rules + declared
+  invariants** (steps 3–5; call only the verifier-reported obligations proved);
 - a simple in-boundary side-effect that reacts to a write → a **hook**;
 - logic that must **leave the boundary** (call an external API, use a secret) →
-  a **function** — the only un-proven tier; reach for it last.
+  a **function** — imperative, un-proven logic; reach for it last.
 
 Decide with [functions-when-to-use.md](functions-when-to-use.md). Then add:
 

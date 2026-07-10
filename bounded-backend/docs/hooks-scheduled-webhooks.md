@@ -268,11 +268,19 @@ returning the typed payload or throwing `WebhookVerificationError`:
 
 ```ts
 import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
+import { webhookReplayStore } from "./shared-webhook-replay-store";
+
+const expectedAppId = process.env.BOUNDED_APP_ID;
+if (!expectedAppId) throw new Error("BOUNDED_APP_ID is required");
 
 app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
   let event;
   try {
-    event = await verifyWebhook(req.body, req.headers); // RAW body string + headers
+    // Pass the RAW body string + the request headers.
+    event = await verifyWebhook(req.body, req.headers, {
+      expectedAppId,
+      replayStore: webhookReplayStore,
+    });
   } catch (err) {
     if (err instanceof WebhookVerificationError) return res.status(401).end();
     throw err;
@@ -284,8 +292,15 @@ app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
 
 > **The keys URL follows your `init({ network })`.** The receiver verifies against
 > the network's signing keys automatically; with no `init` (a pure receiver) it
-> uses the production key set. Pass `verifyWebhook(body, headers, { keysUrl })`
-> only when you intentionally verify against a custom key source.
+> uses the production key set. Add `keysUrl` to the same options object only when
+> you intentionally verify against a custom key source; keep `expectedAppId` and
+> `replayStore` in that object.
+
+`webhookReplayStore` must implement `WebhookReplayStore` with an atomic shared
+Redis/KV/DB record and be reused by every receiver replica. The SDK rejects
+replays in a process-local cache by default, but separate instances do not share
+that cache. `expectedAppId` prevents a validly signed event for another Bounded
+app from being accepted by this endpoint.
 
 Webhooks are **read-only fan-out** — never act on an unauthenticated body, and
 treat the event as a *signal*: if you need to mutate Bounded state in response, do

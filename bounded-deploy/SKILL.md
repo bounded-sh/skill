@@ -2,12 +2,12 @@
 name: bounded-deploy
 description: >-
   Ship and configure a Bounded app: the bounded CLI (init, verify, deploy, share,
-  dashboard), multi-environment policy files, local live-edit deploys, custom
-  domains and vanity slugs, and account/project config (bounded.json, account
-  profiles, credentials, key safety). Use when deploying, releasing, sharing
-  access, or configuring the project and its accounts. Part of the Bounded skill
-  family; policy authoring lives in bounded-backend, client work in
-  bounded-frontend.
+  dashboard), hosted web deploy/preview/privacy, multi-environment policy files,
+  local live-edit deploys, custom domains and vanity slugs, and account/project
+  config (bounded.json, account profiles, credentials, key safety). Use when
+  deploying, releasing, sharing access, publishing a frontend, or configuring
+  the project and its accounts. Part of the Bounded skill family; policy
+  authoring lives in bounded-backend, client work in bounded-frontend.
 ---
 
 # Bounded deploy
@@ -24,6 +24,7 @@ skill.
 | User task | Read |
 |---|---|
 | CLI commands (init, verify, deploy, tests, share, dashboard, data) | [docs/cli-reference.md](docs/cli-reference.md) |
+| Publish or preview a web frontend; configure private/public site access | [frontend-hosting.md](../bounded-frontend/docs/frontend-hosting.md) · [docs/cli-reference.md](docs/cli-reference.md#backend-code--hosting-deployed-through-bounded) |
 | Multi-environment policy files | [docs/environments.md](docs/environments.md) |
 | Live-edit a running app (`bounded live-edit validate`/`deploy`, daemon, widget feedback, agent jobs, `/apps/:appId/...`) | [docs/live-edit.md](docs/live-edit.md) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
@@ -47,8 +48,8 @@ skill.
 ```bash
 curl -fsSL https://get.bounded.sh/install.sh | sh
 bounded init
-bounded deploy --create --name my-app
 bounded verify
+bounded deploy --create --name my-app
 bounded dashboard
 ```
 

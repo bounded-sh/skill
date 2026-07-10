@@ -105,8 +105,10 @@ pins it to your game's tick via `@origin`.
 > `@origin.module == 'arena'` pins it to **this** game's module. `@origin` is
 > platform-set and unforgeable, so no client and no other module can satisfy it. Always
 > pair the `module` check with `@origin.kind == 'live'` — `module` is null for a
-> `user` call. `bounded verify` understands `@origin`, so this rule both runs and
-> proves.
+> `user` call. The runtime enforces this gate before the function body runs.
+> `bounded verify` understands `@origin` in supported expressions and checks the
+> named generated obligations that reference the gate; that is not a blanket proof
+> of every product claim someone might infer from the rule.
 
 ### 2. The tick — emit a call, then read its `@effect` result later
 
@@ -158,9 +160,10 @@ export function tick(state, intents, dt) {
 const seen = new Set<string>();
 
 export default async function npcBrain(args, ctx) {
-  // The policy `auth` rule is the REAL gate — it already proved this call came
-  // from this game's live tick (@origin.kind == 'live' && @origin.module ==
-  // 'arena') before your code ran; a direct client invoke was 403'd. The check
+  // The policy `auth` rule is the REAL gate — the runtime already enforced that
+  // this call came from this game's live tick (@origin.kind == 'live' &&
+  // @origin.module == 'arena') before your code ran; a direct client invoke was
+  // 403'd. The check
   // below is pure defense-in-depth, so write it to deny ONLY a positively-wrong
   // origin and PROCEED when origin is absent (never silently mute on a missing
   // origin): `ctx.origin && ctx.origin.kind !== 'live'`.
@@ -190,12 +193,12 @@ account fails closed (no runaway bill).
 **`ctx.origin` in the body.** For a live-tick call `ctx.origin` is the same
 platform-set, unforgeable provenance the `auth` rule saw as `@origin` —
 `{ kind: "live", path, module, room, tick }` — and it is `null` for any non-live
-call. The policy `auth` rule is the **real gate** (it already proved the origin
-before your code ran); the in-body check is only defense-in-depth, so guard
+call. The policy `auth` rule is the **real gate** (the runtime evaluated that
+origin before your code ran); the in-body check is only defense-in-depth, so guard
 **narrowly**: deny only on a *positively-wrong* origin and proceed when it is
 absent — `if (ctx.origin && ctx.origin.kind !== 'live') return { text: "" }`.
 Do **not** write `if (ctx.origin?.kind !== 'live') return …` as a hard gate.
-Let the proven `auth` rule do the gating; the in-body check is only extra
+Let the runtime-enforced `auth` rule do the gating; the in-body check is only extra
 defense-in-depth.
 
 ## Caveats — state them to the user

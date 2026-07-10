@@ -24,7 +24,9 @@ Bounded's guarantees no matter where the compute runs**.
 - Work is **short** (≤300s; default 30s) and **stateless** (state goes through `ctx.bounded`).
 - It's **request→response** or a **cron/scheduled** job (`schedule.run` / `dueRows`).
 - You only need outbound **`fetch`** (Stripe, an LLM, any REST API).
-- You want the caller's identity + auth rule enforced for you (`ctx.user`, `ctx.auth`) and every write proven against invariants.
+- You want the caller's identity + auth rule enforced for you (`ctx.user`,
+  `ctx.auth`), with every write checked against authorization rules and the
+  proved obligations for your declared invariants.
 - No npm deps you can't inline; the result is a single JSON body.
 
 Canonical fit: charge Stripe then mark an order paid; enrich/summarize with an LLM;

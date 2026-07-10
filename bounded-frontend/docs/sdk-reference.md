@@ -33,10 +33,9 @@ npm i @bounded-sh/server      # Node / server (keypair client)
 // client (browser / RN)
 import { init, loginWithRedirect, completeLoginFromRedirect, get, set, subscribe } from "@bounded-sh/client";
 await init({ appId: "<appId>" });
-// Human login — hosted page (most secure) OR inline (your own UI). Hosted (web):
+// Human login uses the hosted issuer (web redirect shown here):
 await loginWithRedirect({ methods: ["email", "google"] });   // redirectUri optional on web (defaults to current page)
 // …once on app load, finish a redirect OR popup login:  const user = await completeLoginFromRedirect();
-// Inline alternative: await sendEmailOtp(email); await verifyEmailOtp(email, code);
 
 // server
 import { createWalletClient } from "@bounded-sh/server";
@@ -46,20 +45,18 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 `init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
 production by default** — `init({ appId })` just works, no endpoints to set (the
 network is `'bounded-production'`). **Email + OAuth/social + text** work through
-**either** the hosted flow `loginWithRedirect` / `loginWithPopup` (the credential is
-entered on `auth.bounded.sh`, never your origin) **or** inline from your own UI — your
-choice of UX. For hosted, pass `methods: ["email", "google"]` for a chooser, or
-`provider: "google"` to jump straight to one from your own button. The **inline** path
-renders your own form with `sendEmailOtp(email)` + `verifyEmailOtp(email, code)` (plus
-the built-in `login()` modal and `authMethod: 'email'`) — restored in 0.0.29. Inline
-minting is for real (ObjectId) app ids only and inline browser callers must come from a
-registered origin; no-Origin callers (RN / CLI / server) are allowed.
+the hosted flow `loginWithRedirect` / `loginWithPopup`; the credential is entered
+on `auth.bounded.sh`, never your origin. Pass `methods: ["email", "google"]` for
+a chooser, or `provider: "google"` to jump straight to one from your own button.
+App-origin OTP helpers are retired and are not exported by
+`@bounded-sh/client@0.0.42`.
 The wallet option is `'phantom'`, reserved for crypto/onchain apps that need a
-real Solana wallet; use `'none'` to disable auth. Anonymous accounts are via
-`signInAnonymously()` and coexist with Bounded Auth.
-Text OTP (hosted: `provider: "text"` or `methods: ["text"]`; inline:
-`sendTextOtp` / `verifyTextOtp`) is off by default and works only when Bounded
-explicitly enables it for the app.
+real Solana wallet. There is no `authMethod: 'none'` provider in 0.0.42; for a
+public-read app, initialize normally and simply do not start a login flow.
+Browser anonymous accounts are via `signInAnonymously()` and coexist with
+Bounded Auth.
+Text OTP (hosted: `provider: "text"` or `methods: ["text"]`) is off by default
+and works only when Bounded explicitly enables it for the app.
 Full flow in [auth.md](auth.md).
 
 > Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
@@ -311,8 +308,9 @@ const total = await runQuery("orgs/o1/docs/d1", "wordCount", { /* args */ });
 const ok    = await runExpression("@newData.amount <= 100", { amount: 60 });
 ```
 
-`runQueryMany` / `runExpressionMany` batch these. Policy `queries` are declared
-and proven at deploy — see [queries.md](../../bounded-backend/docs/queries.md).
+`runQueryMany` / `runExpressionMany` batch these. Policy `queries` are validated
+at deploy and participate in a proof where a supported obligation references
+them — see [queries.md](../../bounded-backend/docs/queries.md).
 
 ## Collaborators — managed via the CLI (not the SDK)
 
@@ -320,26 +318,27 @@ Collaborators (who may deploy/update an app's policy) are a **control-plane**
 concern, managed with the **CLI**, not the data-plane `@bounded-sh` SDK. Use:
 
 ```bash
-bounded share <walletAddress|email> --role developer|admin|viewer|billing --app-id <id>  # add
-bounded collaborators --app-id <id>                 # list
-bounded unshare <walletAddress|email> --app-id <id> # remove
+bounded share <walletAddress|email> --role developer|admin|viewer|billing --app-id <id> # add
+bounded collaborators --app-id <id>                                                    # list and resolve wallet address
+bounded unshare <walletAddress> --app-id <id>                                          # remove by wallet
 ```
 
 Only the owner may modify the list (enforced server-side). Email shares resolve
 to the invitee's Bounded wallet and send an invite email when outbound email is
-configured. The full `share → list → unshare` round-trip is supported.
+configured. `unshare` accepts the resolved wallet address, not the email; obtain
+it from `bounded collaborators` before removing an email-invited collaborator.
 
 ## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
 
 ```ts
 import { logout, getCurrentUser, useAuth, signInAnonymously,
-         loginWithRedirect, completeLoginFromRedirect,
-         sendEmailOtp, verifyEmailOtp } from "@bounded-sh/client";
+         loginWithRedirect, loginWithPopup,
+         completeLoginFromRedirect } from "@bounded-sh/client";
 
-const user = getCurrentUser();       // { id, address: string | null, email: string | null } | null
+const user = getCurrentUser();       // { id, address, email, isAnonymous } | null
 
 // React:
-const { user, login, logout, loading } = useAuth();
+const { user, logout, loading } = useAuth();
 
 // Human login — pick a UX. HOSTED (most secure; web AND React Native), app-owned
 // button + callback page:
@@ -349,34 +348,32 @@ await loginWithRedirect({
 });                                  // web: redirectUri optional (defaults to current page); RN: required (https universal link)
 await completeLoginFromRedirect();   // once on app load → finishes a redirect OR popup login; no-op otherwise
 
-// INLINE (your own email/code form, web or RN): send then verify.
-await sendEmailOtp("user@example.com");
-const inlineUser = await verifyEmailOtp("user@example.com", code);
+// Or keep the host page open while the hosted issuer handles the credential:
+const popupUser = await loginWithPopup({ methods: ["email", "google"] });
 
 // Anonymous (coexists with either UX): device-keypair guest identity
 await signInAnonymously();
 ```
 
-> **Two UXes, same issuer.** Hosted (`loginWithRedirect` or `loginWithPopup`, then one
-> `completeLoginFromRedirect()` on app load that finishes **either** — most secure) and
-> inline (`sendEmailOtp` / `verifyEmailOtp`, your own form; plus the
-> built-in `login()` modal and `sendTextOtp` / `verifyTextOtp` when text is on) both
-> sign in human users — restored in `@bounded-sh/client` 0.0.29. Inline minting is for
-> real (ObjectId) app ids only, and inline browser callers must come from a registered
-> origin (no-Origin RN / CLI / server callers are allowed). See [auth.md](auth.md).
+> **Hosted credentials only.** Use `loginWithRedirect` or `loginWithPopup`, with
+> `completeLoginFromRedirect()` on web app load. The published 0.0.42 client no
+> longer exports app-origin email or text OTP helpers. See [auth.md](auth.md).
 
-The `user` object has three fields:
+The `user` object has four fields:
 
 - `user.id` — the **universal stable identity**, always present for an
   authenticated user. For wallet logins it equals the wallet address; for
   Bounded Auth logins (email, text, OAuth/social) it is the account identity. Use
   this for ownership / membership / identity (e.g. doc keys, owner fields,
   `view/<myId>`).
-- `user.address` — a **real onchain wallet address**. Present for wallet logins,
-  `null` for Bounded Auth logins unless a wallet is linked. Use this only for onchain operations / wallet
-  semantics.
+- `user.address` — a **real onchain wallet address**. Present for wallet logins
+  and browser guests; `null` for Bounded Auth logins unless `auth.wallets`
+  provisions or the user links a wallet. Guest auth itself remains offchain-only.
+  Use this only for onchain operations / wallet semantics.
 - `user.email` — the verified, lowercased email for email/OAuth accounts. It is
   `null` for wallet and phone-only text users. Use for email-gating.
+- `user.isAnonymous` — `true` for a browser guest and `false` for a real login.
+  It is mirrored as the offchain-only `@user.isAnonymous` policy value.
 
 `onAuthStateChanged(cb)` / `onAuthLoadingChanged(cb)` are the imperative
 equivalents. End-user identity surfaces in rules as `@user.id` (the universal
@@ -387,7 +384,7 @@ Full flow, providers, and embedded wallets: [auth.md](auth.md).
 
 ## `@bounded-sh/server` — `createWalletClient`
 
-> **Requires Node ≥ 18** (declared in the package's `engines`). The server SDK
+> **Use Node ≥ 18.** The server SDK
 > pulls in ESM-only transitive deps (e.g. via `@solana/web3.js` →
 > `rpc-websockets`/`uuid`); on Node 16 a `require()` of the package throws
 > `ERR_REQUIRE_ESM`. Node 18+ loads both the CJS (`require`) and ESM (`import`)
@@ -446,37 +443,48 @@ skew — returning the typed payload or throwing `WebhookVerificationError`.
 
 ```ts
 import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
+import { webhookReplayStore } from "./shared-webhook-replay-store";
+
+const expectedAppId = process.env.BOUNDED_APP_ID;
+if (!expectedAppId) throw new Error("BOUNDED_APP_ID is required");
 
 // rawBody is the unparsed request body string; headers is the request headers.
-const event = await verifyWebhook(rawBody, headers);
+const event = await verifyWebhook(rawBody, headers, {
+  expectedAppId,
+  replayStore: webhookReplayStore,
+});
 // event: { id, appId, path, operation, document, previousDocument, timestamp }
 ```
 
 Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
 `DEFAULT_WEBHOOK_KEYS_URL`. `verifyWebhook(rawBody, headers, opts?)` — `opts`
-overrides `keysUrl` / `maxSkewSeconds` / cache TTL. The default keys URL follows
+sets `expectedAppId` / `replayStore` and can override `keysUrl` /
+`maxSkewSeconds` / cache TTL. The default keys URL follows
 your `init({ network })` (the receiver verifies against that network's signing
 keys), falling back to production when no network is set. Pass `keysUrl` only
-when you intentionally verify against a custom key source. Declaring webhooks:
+when you intentionally verify against a custom key source.
+`webhookReplayStore` must implement `WebhookReplayStore` using one atomic,
+shared Redis/KV/DB namespace across all receiver instances. The SDK's default
+in-memory replay protection is suitable only for a single process. Declaring webhooks:
 [hooks-scheduled-webhooks.md](../../bounded-backend/docs/hooks-scheduled-webhooks.md).
 
 ### Invoking a function — `functions.invoke`
 
 Use the first-class `functions.invoke(name, args)` helper — exported from both
-`bounded-sh` and `@bounded-sh/server`. It attaches the caller's session token
+`@bounded-sh/client` and `@bounded-sh/server`. It attaches the caller's session token
 automatically (the same token the data plane sends), so Bounded verifies your
 identity and evaluates the function's `auth` policy rule before it runs:
 
 ```ts
-import { functions } from "@bounded-sh/client"; // or "bounded-sh/server"
+import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 
-const res = await functions.invoke("syncStripe", { customerId });
+const res = await functions.invoke("syncStripe", { customerId, userId });
 // → the function's JSON return value.
-// `invokeFunction("syncStripe", { customerId })` is the same call as a plain fn.
+// `invokeFunction("syncStripe", { customerId, userId })` is the same call as a plain fn.
 // Optional 3rd arg: { timeoutMs, headers }. Throws FunctionInvokeError on
 // 401/403/404/503 (see .statusCode). Top-level uses the ambient session
 // (BOUNDED_PRIVATE_KEY on server). To invoke as a specific keypair with no env
-// var: `await vault.invoke("syncStripe", { customerId })` on a createWalletClient.
+// var: `await vault.invoke("syncStripe", { customerId, userId })` on a createWalletClient.
 ```
 
 Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the

@@ -15,9 +15,11 @@ own backend actor — Bounded never custodies *user* funds.**
 
 Because `actAs` changes who `ctx.bounded` writes as, it is the privileged
 Functions mode. Deploy requires every `actAs` function's `auth` rule to imply
-the app's admin predicate (`get(/admins/@user.id) != null` when an admins scope
-exists, otherwise `hasRole("admin")`). Public user-invoked functions should
-usually omit `actAs` and write as the caller.
+the app's admin predicate through a runtime-valid gate such as
+`get(/admins/@user.id) != null`. Declare a bootstrap-safe `admins/$userId`
+collection with a founder genesis clause before deploying the Function; see
+[admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
+Public user-invoked functions should usually omit `actAs` and write as the caller.
 
 ### Who can act as a service identity? (by caller — read this before wiring a grant)
 
@@ -47,7 +49,7 @@ wrong): split CLAIM from SETTLE.**
 Because the claim record is **user-authored, it is untrusted** — the settle step
 must **re-derive every value from the trusted source** (re-verify, and take the
 amount/owner/product from the provider, never from the claim record). See the
-end-user-payments recipe in [billing.md](../../bounded/docs/billing.md#charging-your-own-end-users).
+end-user-payments recipe in [billing.md](../../bounded/docs/billing.md#app-payments).
 
 ## Fund an AI NPC / a live game call
 
@@ -236,16 +238,26 @@ You only need a **real keypair + private key** when the service identity must
 **cryptographically sign** — i.e. submit an on-chain Solana transaction (not
 just a data-plane write). In that case:
 
-- The **private key is a function secret**, set at deploy and exposed only to
-  that one function as `ctx.env.NAME` — stored server-side alongside the function
-  (never in your repo, never returned, only the *name* is ever shown). `actAs`
-  itself is a policy `functions`-block field (set via `bounded deploy
-  ./policy.json`), NOT a CLI flag. Set the secret value through stdin so it does
-  not appear in argv or shell history:
+- The **private key is a function secret**, declared on each function deploy,
+  stored with `secret put`, and exposed only to that one function as
+  `ctx.env.NAME`. The value stays server-side (never in your repo, never
+  returned; only the *name* is ever shown). `actAs`
+  itself is a policy `functions`-block field and is also passed as `--act-as` on
+  a standalone function deploy. Set the secret value through stdin so it does
+  not appear in argv or shell history, then declare the name again on the
+  complete-entry function deploy:
   ```bash
   printf '%s' "$PAYOUT_BOT_KEY" | bounded secret put PAYOUT_BOT_KEY --value-stdin --app-id <id>
-  bounded functions deploy runPayouts --entry functions/runPayouts.ts --app-id <id>
+  bounded functions deploy runPayouts \
+    --entry functions/runPayouts.ts \
+    --app-id <id> \
+    --auth 'get(/admins/@user.id) != null' \
+    --act-as '9aZ…address' \
+    --secret PAYOUT_BOT_KEY
   ```
+  `functions deploy` writes the complete entry, so omitting `--act-as` or
+  `--secret PAYOUT_BOT_KEY` would remove that field even though the policy or
+  app secret store previously contained it.
 - If you mint the keypair locally, keep the private key in
   `~/.bounded/keys/<name>.json` with `0600` perms (machine-local, never
   committed) until you set it as the secret, then you can delete the local copy.

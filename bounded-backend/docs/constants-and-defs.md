@@ -61,7 +61,7 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
   **cycle is a compile error**.
 
 > **Identity vs. wallet in these fragments.** The runtime `user` object is
-> `{ id: string, address: string | null, email: string | null }`:
+> `{ id: string, address: string | null, email: string | null, isAnonymous: boolean }`:
 > - `@user.id` — the **universal stable identity**, always present for an
 >   authenticated user (equals the wallet address for wallet logins; the account
 >   identity for email/social logins). **Use this for ownership / membership /
@@ -72,6 +72,7 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
 >   forbidden — only `@user.address` is allowed there.
 > - `@user.email` — the verified, lowercased email (email logins only; null for
 >   wallet). Use it for email-gating.
+> - `@user.isAnonymous` — true only for a browser guest; offchain-only.
 >
 > So an offchain `ADMIN` constant holds a `@user.id` value (e.g. `acct_...`),
 > and `owner` fields that store identity should be `String` (not `Address`).

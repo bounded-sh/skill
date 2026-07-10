@@ -8,7 +8,8 @@ description: >-
   rooms, and the proof loop (bounded verify, counterexamples, proof coverage). Use
   when writing or changing server-side Bounded logic, policies, or the rules that
   govern who can do what. Part of the Bounded skill family; see the bounded skill
-  to route across frontend, deploy, onchain, teams, and observe.
+  to route across frontend, deploy, onchain, teams, and cross-cutting Action
+  Boundaries guidance.
 ---
 
 # Bounded backend
@@ -85,7 +86,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | `session.live`, `init`, `tick`, `views`, `@effect`, `live.intent` | [docs/live-runtime.md](docs/live-runtime.md) |
 | `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
 | `schedule`, `dueRows`, `hooks.scheduled`, `webhooks`, `verifyWebhook` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
-| `getPage`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) |
+| collection paging with `get`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) |
 | policy tests, `policy-tests/*.json`, `bounded tests run/push/list/pull` | [docs/policy-tests.md](docs/policy-tests.md) |
 | `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
 
@@ -95,7 +96,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 |---|---|
 | `403` | A write or function invoke failed a rule. Check auth, ownership, roles, or function `auth`. Denied reads are hidden as `200` with empty data, not `403`. |
 | `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
-| `DISPROVED` + counterexample | The proof found a breaking assignment. Read it, strengthen the policy, and verify again unless the user explicitly accepts the risk. |
+| `DISPROVED` + counterexample | The proof found a breaking assignment. Fix every blocking result and verify again; only non-blocking advisories are reviewable. |
 | Static validation error | Fix policy syntax, field types, tier/invariant pairing, constants, or expression use. |
 
 ## Rules Of Thumb

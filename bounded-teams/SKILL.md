@@ -6,8 +6,8 @@ description: >-
   can do, keep custody of secrets and credentials, and surface the policy
   invariants (the proven guarantees) on a shared team view. Use for org-level
   governance, the team/enterprise story, and dashboards that show what apps did
-  and what their invariants blocked. Part of the Bounded skill family; per-app
-  observe wiring lives in the bounded-observe skill, and the invariants themselves
+  and what their invariants blocked. Part of the Bounded skill family; the public
+  per-app observe overview lives in the root skill, and the invariants themselves
   in bounded-backend.
 ---
 
@@ -19,8 +19,7 @@ agents, and services actually do. Three layers sit under one roof:
 - **Observe.** Every policy decision on every write (allowed or blocked, with the
   actor, the collection, and the invariant that fired) and every external action
   an agent takes, as a durable, filterable record. This is the org-scoped view of
-  the same evidence the per-app **bounded-observe** skill turns on for a single
-  app.
+  the same evidence described by the root skill's public per-app observe guide.
 - **Enforce.** Boundaries on what may happen: spend and rate caps, escorted
   external actions checked before they fire, and the app's own proven invariants.
   A blocked action reads the same everywhere: declined, naming the boundary or
@@ -37,7 +36,7 @@ shared page a team or buyer looks at, next to the runtime evidence that they hel
 
 | You want | Go to |
 |---|---|
-| Turn observe on for one app and read its feed / decisions | the **bounded-observe** skill |
+| Understand one app's feed, decisions, and action boundaries | [the root observe guide](../bounded/docs/observe.md) |
 | Write or change the invariants that get surfaced here | the **bounded-backend** skill (invariants, proofs) |
 | The org dashboard and org-scoped observe database | the hosted team dashboard (`dashboard.bounded.sh`) and the per-app observe space it links to |
 | Grant a teammate access to apps | `bounded share ... --role ...` (see the **bounded-deploy** skill) |

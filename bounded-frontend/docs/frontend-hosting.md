@@ -176,8 +176,9 @@ extra command is needed.
   only appears in a card if your collection's `read` rule authorizes an anonymous read
   (`"read": "true"`, or a rule that passes for a null user). If the rule denies, the link
   falls back to the generic `index.html` card — **non-public fields can never leak into meta**.
-  This is the same SMT-proven read rule that gates your data; there is no separate
-  "make this public for cards" toggle to get wrong.
+  This is the same runtime-enforced anonymous read rule that gates your data;
+  there is no separate "make this public for cards" toggle to get wrong. Do not
+  describe the rule itself as a blanket proof of product intent.
 - **Path-based, not hash-based.** Use a real path route (`/s/:id`), not a hash fragment
   (`/#/s/:id`) — the server never sees the `#fragment`, so hash routes can't be unfurled.
   If you're on hash routing and want per-link cards, switch the shared route to a path.

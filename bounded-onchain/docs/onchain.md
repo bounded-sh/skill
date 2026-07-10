@@ -237,7 +237,7 @@ range is an unavailable/error result, never a fabricated miss or rounded value.
 On `set` / `set-many`, an **onchain-only** flag: skip RPC preflight simulation so
 failing txs still land on-chain (useful when simulation is flaky or you want the
 on-chain error rather than a client-side preflight reject). No effect on the
-realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#-skip-preflight).
+realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#--skip-preflight).
 
 ## Transaction-size limit: one hook = one Solana transaction
 
@@ -406,4 +406,4 @@ currently supported. For settlement you can ship now, use server-signed above.
 - [principals-and-origins.md](../../bounded-backend/docs/principals-and-origins.md) — who `@user` is for a live call (`as`, SYSTEM, `actAs`)
 - [ai-npcs.md](../../bounded-backend/docs/ai-npcs.md) — the same `call` primitive driving an NPC
 - [hooks-and-anti-cheat.md](../../bounded-backend/docs/hooks-and-anti-cheat.md#onchain-update-signing-note) — the mainnet permit
-- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#-skip-preflight) — `--protocol`, `--skip-preflight`
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#--skip-preflight) — `--protocol`, `--skip-preflight`

@@ -150,6 +150,11 @@ argv values can appear in shell history and process listings.
 - The declaration is part of the deployed backend configuration; changing it is a
   new deploy. The **values** are set separately and can be rotated anytime with
   `secret put` (no redeploy).
+- A standalone `bounded functions deploy` writes the function's complete entry.
+  Pass bare `--secret NAME` on every function deploy to declare the name without
+  putting its value in argv; omitting it removes the declaration even when the
+  app secret store still has a value. `secret put` supplies or rotates the value,
+  but never declares exposure by itself.
 
 ## Related
 - [backend-runtime.md](backend-runtime.md) — the `ctx` your code runs with (store/ai/schedule/fetch/secrets)

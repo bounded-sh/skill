@@ -6,7 +6,9 @@ config key. (Invariants: [invariants.md](invariants.md).)
 
 One JSON file defines the backend: collections, types, auth rules, side-effect
 hooks, schedules, webhooks, search, and invariants. Everything is validated at
-deploy; the constraints are proven. Invariants get their own doc:
+deploy. The runtime enforces authorization rules, while `bounded verify` proves
+supported declared invariants and generated safety obligations. Only a named
+`PROVED` item in the report carries proof weight. Invariants get their own doc:
 [invariants.md](invariants.md). For the method of *generating* a policy, see
 [policy-generation-guide.md](policy-generation-guide.md).
 
@@ -186,10 +188,11 @@ expressions at deploy. **An omitted rule defaults to deny.**
 > keyed on it silently locks out email users. Always guard auth-required rules
 > with `@user.id != null` (not `@user.address`).
 
-> **There is no `@constants`.** The special variables are `@user.id`,
-> `@user.address`, `@user.email`, `@user.isAnonymous`, `@origin.*`, `@data`,
-> `@newData`, `@time.now`, `@contract.address`. Express "admin" by comparing a
-> `get()`-read role field or a literal address — not a constant.
+> **There is no plural `@constants` variable.** Use a top-level `constants`
+> block and reference one value as `@const.NAME`; reusable rule fragments use
+> `@def.name`. Top-level scoped `roles` and data-driven role collections are both
+> supported. See [constants-and-defs.md](constants-and-defs.md) and
+> [roles.md](roles.md).
 
 > **`@origin.*` is offchain-only — forbidden in `onchain:true` rules**, same as
 > `@user.id`. It's platform-set provenance for live ticks and dispatch, so a function
@@ -312,8 +315,8 @@ never treated as path templates:
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
-| `proofs` | `{ transferAuthority?, attestations? }` — proof-only declarations; preferred home for conditional transfer authority and global attestations | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
-| `attestations` | legacy alias for `proofs.attestations` | [invariants.md](invariants.md#attestations--global-policy-wide-claims) |
+| `proofs` | `{ transferAuthority?, attestations? }` — proof-only declarations; preferred home for conditional transfer authority and global attestations | [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
+| `attestations` | legacy alias for `proofs.attestations` | [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
 | `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
 | `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](../../bounded-deploy/docs/environments.md) |
 

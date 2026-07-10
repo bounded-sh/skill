@@ -9,7 +9,7 @@ identical to web. Only the auth wiring differs.
 
 ## What's the same as web
 
-Everything in the data layer: `init`, `get`, `getPage`, `getMany`, `set`,
+Everything in the data layer: `init`, `get`, `getMany`, `set`,
 `setMany`, `subscribe`, `search`, `queryAggregate`, `count`, `setFile`. Use them
 exactly as in [building-a-webapp.md](building-a-webapp.md) and
 [../docs/sdk-reference.md](../docs/sdk-reference.md). Metro resolves the SDK's
@@ -18,14 +18,12 @@ auth modal, the Phantom browser SDK) are excluded from that build.
 
 ## What's different: auth
 
-> **RN is a no-Origin caller, so inline OTP works.** The headless primitives
-> (`sendEmailOtp` / `verifyEmailOtp`, plus `sendTextOtp` / `verifyTextOtp` when the
-> issuer has text enabled) let you render your **own** email/code UI on RN — restored
-> in `@bounded-sh/client` 0.0.29. `loginWithRedirect` (below) is the recommended
-> default; inline is the option when you want full control over the login screen. See
+> **Human credentials use hosted auth.** The current client does not export
+> app-origin email or text OTP helpers. Use `loginWithRedirect` on React Native;
+> it opens the hosted issuer and returns through an https universal link. See
 > [Choosing your login methods & UX](../docs/auth.md#choosing-your-login-methods--ux).
 
-The SDK `user` object is `{ id, address, email }` and means the same thing in RN
+The SDK `user` object is `{ id, address, email, isAnonymous }` and means the same thing in RN
 as on web: `@user.id` is the universal stable identity (always present — use it
 for ownership/membership/identity), `@user.address` is the real onchain wallet
 address (present for wallet logins, **`null` for Bounded Auth logins** unless a
@@ -40,8 +38,10 @@ opens the hosted Bounded login (`auth.bounded.sh`) in the system browser via
 `expo-web-browser`, returns through an **https universal-link** `redirectUri`, and
 resolves **inline with the signed-in `user`** (no `completeLoginFromRedirect()`
 call needed on native — that's a web-only redirect-page step). One hosted page
-covers Google, Apple, email, and (when the issuer enables it) phone. Guest
-(`signInAnonymously()`) and **Privy** (`loginWithPrivy`) are also available.
+covers Google, Apple, email, and (when the issuer enables it) phone. **Privy**
+(`loginWithPrivy`) is also available through an explicit Expo bridge. The current
+published guest key store requires IndexedDB, so `signInAnonymously()` is not a
+standard React Native path; see the boundary below.
 Browser wallet providers such as Phantom are not loaded from the default RN
 entry; use an explicit wallet-provider entry only once your app opts into one.
 
@@ -53,20 +53,26 @@ entry; use an explicit wallet-provider entry only once your app opts into one.
 
 #### Hosted email / social login (Google, Apple, email, phone)
 
-**1. Install the optional peer deps** (only RN apps that use hosted login need them):
+**1. Install the RN runtime dependencies** used by the setup below:
 
 ```sh
-npx expo install expo-web-browser expo-crypto
+npx expo install expo-web-browser expo-crypto react-native-mmkv react-native-url-polyfill
+npm install base-64
 ```
+
+`react-native-mmkv` requires a native development/production build; it does not
+run in Expo Go. If your app already supplies an equivalent synchronous storage
+adapter, use that instead.
 
 **2. Provide PKCE randomness + the RN session store at startup**, before `init()`.
 `getRandomBytes` powers PKCE; `setPlatform`/`ReactNativeSessionManager.configure`
 are the same one-time RN setup you already do for sessions:
 
 ```ts
+import "react-native-url-polyfill/auto";
 import { setPlatform, ReactNativeSessionManager } from "@bounded-sh/client";
 import * as Crypto from "expo-crypto";
-import { decode as atob } from "base-64";
+import { decode as atob, encode as btoa } from "base-64";
 import { createMMKV } from "react-native-mmkv";
 
 const store = createMMKV();
@@ -78,7 +84,7 @@ const storage = {
 
 ReactNativeSessionManager.configure({ storage, atob });
 setPlatform({
-  storage, sessionStorage: storage, atob, hasDOM: false,
+  storage, sessionStorage: storage, atob, btoa, hasDOM: false,
   getRandomBytes: (n) => Crypto.getRandomBytes(n),
 });
 // Alternatively, `import 'react-native-get-random-values'` once at app entry and
@@ -122,46 +128,167 @@ const user = await loginWithRedirect({
   // methods: ["email", "google", "apple"],
   // provider: "google",
 });
-// `user` is the signed-in { id, address, email }. On web this returns void and you
+// `user` is the signed-in { id, address, email, isAnonymous }. On web this returns void and you
 // finish via completeLoginFromRedirect() on the redirect page; on RN it's inline.
 getCurrentUser();
 ```
 
-To **upgrade a guest** to a real account, `linkWithRedirect({ redirectUri })` works
-the same way on RN (call `signInAnonymously()` first); it carries the guest hint
-through the same native browser flow and resolves with the upgraded user.
+### Guest auth boundary on React Native
 
-### Anonymous (zero-friction guest) — the RN default
-
-`signInAnonymously()` is the frictionless path that "just works" on a phone — a
-device keypair identity, no browser hand-off, durable across reloads:
-
-```tsx
-import { init, signInAnonymously, getCurrentUser, useAuth, logout } from "@bounded-sh/client";
-
-await init({ appId: "<appId>" });        // points at bounded-production by default
-const me = await signInAnonymously();     // me.isAnonymous === true; owns data by @user.id
-getCurrentUser();                         // { id, address, email } | null
-```
-
-`useAuth()`, `logout()`, and every data operation behave exactly as on web once a
-user is signed in. To convert a guest to a durable real account, see
-[../docs/anonymous-accounts.md](../docs/anonymous-accounts.md) — `linkEmail` (inline)
-or `linkWithRedirect` (hosted) keeps the guest's id; a plain `loginWithRedirect` gives
-a distinct id, so carry data over via transferable ownership.
+Do not present `signInAnonymously()` as a standard RN route in the current
+published client. Its secure guest credential requires non-extractable WebCrypto
+Ed25519 plus IndexedDB; React Native does not provide IndexedDB, and the MMKV
+session adapter above does not replace that key store. The call fails closed
+rather than persisting an extractable private key. Use hosted Bounded Auth or the
+explicit Privy Expo bridge. Only enable guest auth in a non-browser runtime if
+you deliberately provide and validate compatible secure WebCrypto and IndexedDB
+implementations.
 
 ### Privy (alternative real-account path)
 
 Hosted redirect (above) is the recommended RN login. If you instead standardize on
-Privy across your stack, `loginWithPrivy` is exported from the RN entry: wire it per
-your Privy RN setup (a bridged `PrivyExpoProvider` passed to `init`), and the SDK
-adopts the resulting identity.
+Privy across your stack, `loginWithPrivy` is exported from the RN entry. Create
+and bridge a `PrivyExpoProvider`, then select it explicitly. The adapter below
+targets the current `@privy-io/expo` 0.70.1 API. Install Privy, its native peers,
+and the UI peers used by `PrivyElements`:
+
+```sh
+npx expo install expo-apple-authentication expo-application expo-crypto expo-linking expo-secure-store expo-web-browser react-native-passkeys react-native-webview @privy-io/expo-native-extensions @privy-io/expo@0.70.1
+npx expo install react-native-svg expo-clipboard react-native-qrcode-styled react-native-safe-area-context viem
+npm install fast-text-encoding react-native-get-random-values @ethersproject/shims
+```
+
+Import the three polyfills at the very start of the app entry, before Privy,
+Bounded, or Solana modules evaluate. This path needs a native development or
+production build; it is not an Expo Go flow.
+
+```tsx
+import "fast-text-encoding";
+import "react-native-get-random-values";
+import "@ethersproject/shims";
+import { type ReactNode, useEffect } from "react";
+import { decode as atob, encode as btoa } from "base-64";
+import {
+  PrivyProvider,
+  useEmbeddedSolanaWallet,
+  useIdentityToken,
+  usePrivy,
+} from "@privy-io/expo";
+import { PrivyElements, useLogin } from "@privy-io/expo/ui";
+import {
+  PrivyExpoProvider,
+  init,
+  loginWithPrivy,
+} from "@bounded-sh/client";
+
+const PRIVY_APP_ID = "<privy-app-id>";
+const PRIVY_CLIENT_ID = "<privy-client-id>";
+const BOUNDED_APP_ID = "<bounded-app-id>";
+const SOLANA_RPC_URL = "<solana-rpc-url>";
+const privyExpoProvider = new PrivyExpoProvider(PRIVY_APP_ID, SOLANA_RPC_URL);
+
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function base64ToBytes(value: string) {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
+function PrivyBridge() {
+  const privy = usePrivy();
+  const walletState = useEmbeddedSolanaWallet();
+  const { getIdentityToken } = useIdentityToken();
+  const { login } = useLogin();
+
+  useEffect(() => {
+    privyExpoProvider.setPrivyMethods({
+      isReady: privy.isReady,
+      isAuthenticated: !!privy.user,
+      user: privy.user,
+      login: async () => (await login({ loginMethods: ["email", "google"] })).user,
+      logout: privy.logout,
+      getAccessToken: privy.getAccessToken,
+      getIdentityToken,
+      getWalletProvider: async () => {
+        if (!("wallets" in walletState) || !walletState.wallets) return null;
+        const solanaWallet = walletState.wallets[0];
+        if (!solanaWallet) return null;
+        const provider = await solanaWallet.getProvider();
+        return {
+          address: solanaWallet.address,
+          signMessage: async (message) => {
+            const { signature } = await provider.request({
+              method: "signMessage",
+              params: { message: bytesToBase64(message) },
+            });
+            return { signature: base64ToBytes(signature) };
+          },
+          signTransaction: async (transaction) => {
+            const { signedTransaction } = await provider.request({
+              method: "signTransaction",
+              params: { transaction },
+            });
+            return { signedTransaction: new Uint8Array(signedTransaction.serialize()) };
+          },
+          signAndSendTransaction: (transaction, connection) =>
+            provider.request({
+              method: "signAndSendTransaction",
+              params: { transaction, connection },
+            }),
+        };
+      },
+    });
+  }, [privy.isReady, privy.user, privy.logout, privy.getAccessToken, walletState, getIdentityToken, login]);
+
+  return null;
+}
+
+export function AuthRoot({ children }: { children: ReactNode }) {
+  return (
+    <PrivyProvider
+      appId={PRIVY_APP_ID}
+      clientId={PRIVY_CLIENT_ID}
+      config={{ embedded: { solana: { createOnLogin: "all-users" } } }}
+    >
+      <PrivyBridge />
+      {children}
+      <PrivyElements />
+    </PrivyProvider>
+  );
+}
+
+export async function initBoundedPrivy() {
+  await init({
+    appId: BOUNDED_APP_ID,
+    authMethod: "privy-expo",
+    privyExpoProvider,
+  });
+}
+
+// Call from a user gesture after AuthRoot has mounted and Privy is ready.
+export async function signIn() {
+  return loginWithPrivy();
+}
+```
+
+`usePrivy()` supplies session state but not a login function in Privy 0.70.1;
+`useLogin()` plus a mounted `PrivyElements` owns the current UI flow. Privy's
+Solana provider exposes `request(...)`, so the bridge converts its base64 message
+signature and serialized transaction results into the shapes Bounded expects.
+The `createOnLogin` setting is required because Bounded mints its session from
+the resulting embedded Solana wallet. The default web entry does not provide a
+built-in Privy auth method, and the RN path does not work without this explicit
+host-app bridge.
 
 ### Wallet providers
 
 The default RN client entry intentionally avoids importing browser wallet
-providers such as Phantom and web Privy. Hosted login, guest login, and bridged
-Privy Expo are the supported RN auth paths today. If an app needs a native wallet
+providers such as Phantom and web Privy. Hosted login and bridged Privy Expo are
+the supported standard RN auth paths today. If an app needs a native wallet
 provider, add the provider-specific package and entry explicitly; do not expect
 `authMethod: "phantom"` from the default client entry to bundle on RN.
 
@@ -193,8 +320,8 @@ useEffect(() => {
   resolves inline with the user — do **not** call `completeLoginFromRedirect()` on
   RN (that's the web redirect-page step; it's a harmless no-op on native). Custom
   `myapp://` schemes are rejected by the issuer — use a verified universal link.
-  Prefer hosted as the default; the inline `sendEmailOtp` / `verifyEmailOtp` primitives
-  also work on RN (a no-Origin caller) when you want to render your own login UI.
+  The current client does not export app-origin OTP primitives; keep the
+  credential step on the hosted issuer.
 - **Optional peer deps for hosted login**: `expo-web-browser` (system auth session)
   and `expo-crypto` *or* `react-native-get-random-values` (PKCE randomness). They're
   imported lazily, so apps that don't use hosted login never need them.
