@@ -83,6 +83,50 @@ and is gitignored. For a web account, run `bounded account use --web`, then
 `bounded login --email you@example.com`. The public config and marker always
 record *which* source was used (§4).
 
+## 3b. Deploy denied? You may be using the wrong identity — try the other one first
+
+A control-plane command that fails with **403 `site_control_denied`** (or a
+boundary-violation on `site deploy` / `deploy` / `functions`) almost never means
+"you can't deploy this." It means **the identity your `bounded.json` account source
+points at is not an owner/admin of that app** — and the CLI uses *only that one
+source*. It does **not** fall back to your other signed-in identities.
+
+This is the trap: you can be logged in to two accounts at once — a wallet key at
+`~/.bounded/credentials` **and** a web login at `~/.bounded/web-session.json` — and
+still get a hard 403, because the deploy only tried the one the config selected.
+One of them may own the app while the other does not. **A 403 is a signal to switch
+identity, not a dead end.** Before you conclude "owner-gated, needs someone else,"
+try the identities you already have:
+
+```bash
+# What's signed in locally:
+ls ~/.bounded/credentials ~/.bounded/web-session.json 2>/dev/null
+bounded account --json                 # which source THIS project uses
+# web session identity (if present): the email that owns it
+python3 -c "import json;d=json.load(open('$HOME/.bounded/web-session.json'));print(d['email'],'exp',d['expiresAt'])"
+```
+
+Then deploy under the other identity. To avoid mutating a **shared/committed**
+`bounded.json` (a co-agent may read it mid-window), deploy from a throwaway dir
+whose config selects the other source — the app is unchanged, only *your* local
+auth differs:
+
+```bash
+mkdir -p /tmp/deploy-as-web && cd /tmp/deploy-as-web
+cat > bounded.json <<JSON
+{ "appId": "<TARGET_APP_ID>", "environment": "production", "account": { "keySource": "web" } }
+JSON
+bounded site deploy /abs/path/to/dist      # uses ~/.bounded/web-session.json (the web login)
+```
+
+Or, for a project you own, just switch in place: `bounded account use --web` (web
+login) or `bounded account use --global` (wallet), then re-deploy. If the web
+session is expired, `bounded login --email you@example.com` first.
+
+**Rule of thumb: never report a deploy as "owner-gated / blocked" until you've
+tried every identity signed in on the machine.** Wallet-owns-it and web-owns-it are
+both common; the CLI picks one, so the fix is usually just switching sources.
+
 ## 4. Public project markers — `bounded.json` and `.bounded/app.json`
 
 `bounded init` writes public `bounded.json`; `bounded deploy --create` records the
