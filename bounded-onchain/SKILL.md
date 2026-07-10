@@ -64,5 +64,6 @@ the root **bounded** skill.
 - Treat compiler support and deployed-program support as separate capabilities. Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
 - Treat runtime-v3 governance the same way: enroll only after the deployed capability registry reports v3, and publish governance from observed chain state rather than policy intent.
 - Keep Poofnet and Solana behavior paired. Pure/read primitives must return the same shape, and mutating primitives must apply a modeled effect or fail closed; validation-only success is a parity bug.
+- Helius mirroring is environment-level Bounded infrastructure, not per-app setup. Do not ask app builders to create webhook URLs or supply provider secrets; follow the operator checklist in [docs/onchain.md](docs/onchain.md#mirror-completeness).
 - Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.
