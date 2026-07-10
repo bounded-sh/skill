@@ -160,7 +160,9 @@ protocols to go live.
   `onchain: false` query may resolve chain-backed plugin reads through the
   read-only onchain query executor. This is the standard home for balances,
   pool quotes, positions, and other values that are illegal in an onchain
-  mutation rule. It is simulation-only and never signs or submits.
+  mutation rule. It never signs or submits. Offchain rules may read mirrored
+  onchain collections too; the reverse direction is forbidden. Preserve the
+  same result/error shape on Poofnet and Solana, subject to mirror finality.
 - **Extended mutation primitives are capability-gated.** Runtime-v2 source adds
   `@CPI`, `@Solana`, `@Bytes`, and `@App`; arbitrary CPI and cross-app mutation
   must have a real Poofnet state model or fail closed. See
@@ -189,7 +191,12 @@ Historical apps with missing routing metadata or incompatible current policies
 remain explicit reconciliation debt instead of blocking valid apps. Recovery
 commits a conservative partial baseline, continues finalized catch-up for
 routable apps, and retries the unresolved full inventory daily; it never replays
-application side effects.
+application side effects. An i64/u64 outside JavaScript's safe integer range
+quarantines the **whole app** from that event/inventory as explicit debt; never
+round, stringify, or partially mirror it. Other apps still reconcile. Live events
+record that debt and acknowledge after routable batches apply; finalized backfill
+may advance its cursor with the same debt recorded. Transport, RPC, decoder, or
+sink failures still retry and can reach the DLQ.
 Full reconciliation replaces the mirrored user-data object, so fields removed
 onchain do not survive through normal offchain patch semantics.
 
@@ -201,17 +208,22 @@ RPC, persisted logs/alerts, and end-to-end recovery checks configured. Internal
 cursor/queue status and repaired-DLQ replay require a dedicated recovery-operator
 secret (`X-Onchain-Recovery-Secret`); a broad service secret must be rejected.
 Status covers both the primary queue and DLQ and alerts on unavailable metrics,
-old/large primary backlog, or a non-empty DLQ. Large snapshots use numbered
-chunks in an app-local staging area and become visible only after the complete
-write set passes slot and invariant checks. Repeated chunks and completed runs
-are idempotent. Compiler/runtime source support is not proof of an operating
-mirror.
+old/large primary backlog, or a non-empty DLQ. The scheduled monitor must page a
+configured operations recipient directly through the Worker `EMAIL` binding;
+structured logs alone are not paging. Large snapshots use numbered chunks in an
+app-local staging area and become visible only after the complete write set
+passes slot and invariant checks. Repeated chunks and completed runs are
+idempotent. Compiler/runtime source support is not proof of an operating mirror.
 
-App builders do **not** create per-app Helius webhooks. Bounded operates one raw
-program webhook per network (`rawDevnet` for devnet) at
-`/webhook/helius/<network>`, covering every deployed Bounded program id for that
-network. The provider `authHeader` must equal a dedicated environment secret;
-never reuse a broad internal service key. Before calling a mirror live, prove:
+App builders do **not** create per-app Helius webhooks. Bounded owns one raw
+program webhook per environment/network (`rawDevnet` for devnet) at
+`/webhook/helius/<network>`, covering the exact program-id allowlist accepted by
+that environment's ingress. Update that registration rather than adding another;
+do not mix an unsupported legacy program into the same batched delivery.
+The provider `authHeader` must equal the dedicated environment
+`HELIUS_WEBHOOK_SECRET`. Operator status/replay uses a separate
+`ONCHAIN_RECOVERY_OPERATOR_SECRET`; never reuse a broad internal service key.
+Before calling a mirror live, prove:
 
 1. Wrong auth returns `401`, while a confirmed raw transaction returns `200`
    only after `queued: 1`.
@@ -223,10 +235,16 @@ never reuse a broad internal service key. Before calling a mirror live, prove:
    only through the scoped validator. For a drill, start with an empty primary
    queue, restore the normal retry policy before replaying, verify the repaired
    event applies once, and remove only the known drill message from the DLQ.
-5. A platform notification destination consumes the structured unhealthy signal;
-   logs or a healthy status response alone are not paging. Keep provider webhook
-   quota and legacy registrations in the release checklist; never delete them
-   implicitly.
+5. The direct Email alert reaches the configured operations recipient for primary
+   backlog/metrics failures and a non-empty DLQ. Keep provider quota and legacy
+   registrations in the release checklist; never delete them implicitly.
+
+For production, keep provider delivery absent/disabled and pause queue delivery
+before changing the stack. Deploy and verify the lossless decoder/developer API,
+then the Worker with queue/DLQ bindings and both dedicated secrets. Reconcile,
+resume under observation, and drain primary/DLQ backlog while reviewing explicit
+debt. Create or update the environment webhook **last**, then prove a real
+provider delivery. Never activate ingress against an unproven or unhealthy sink.
 
 An absent Document PDA is a normal `null` read. Wrong owner/discriminator,
 malformed account data, RPC failure, or an integer outside JavaScript's safe
@@ -267,7 +285,15 @@ write fails on-chain:
   the same model: a write over the hard cap is **rejected 413** ("would fail on
   mainnet"), and one in the 1182–1232 band is **allowed with a warning** (a lookup
   table makes it fit on a real chain). This is the mainnet-reality guard — poofnet
-  no longer silently accepts writes a real chain would reject.
+  no longer silently accepts writes a real chain would reject. The 413 carries the
+  full reason in both `error` and `message` (so `err.message` in the SDK is
+  actionable) and is recorded as a **decision** — `bounded decisions` answers "why
+  did my write fail". A warn-band write succeeds with a `warnings: [...]` array on
+  the response. Bundles repeating the same action (e.g. a `setMany` of several
+  token creates) are estimated with calibrated **repeat costs** — repeated accounts
+  dedupe on-chain, so N calls cost less than N× one call. If the app has a lookup
+  table configured, an over-cap size warns instead of rejecting (the real builder
+  compresses via the LUT).
 
 **Fixes when you hit it:** split the hook across separate collections/writes (each
 its own transaction), reduce the actions per write, or move the fixed accounts into
