@@ -43,10 +43,15 @@ users can't seed it (`@newData.vol10m == null` on user-writable branches): it is
 Like `rollingSum`, a `windowSum` makes the event collection append-only (a mutated event would
 falsify the sum).
 
-windowSum v1 constraints (validated at deploy): the event `field` is `UInt` and the `targetField`
+windowSum constraints (validated at deploy): the event `field` is `UInt` and the `targetField`
 is declared numeric (`UInt?`/`Int?`) on a target template whose path variables all come from the
-event path; both collections are `durable` tier, non-session, offchain. Events written through the
-client SDK / HTTP data plane maintain the aggregate; room-native WebSocket writes don't yet (v1.1).
+event path; both collections are `durable` tier, non-session, offchain. Events maintain the
+aggregate on EVERY write path — client SDK / HTTP, room-native WebSocket writes, and events
+created by policy HOOKS. The hook path is how you compose normalization with windowing: when the
+raw event needs a per-branch transform first (e.g. buys in lamports vs sells in raw tokens), have
+the hook write the NORMALIZED value into a hook-owned event collection and declare the windowSum
+there — poof.fun's trade feed is the canonical example (swap hook → `flow/$slug/ev/$id {size}` →
+windowSum → `launches.vol10m`).
 
 ### 2. Rank with a plain query — auto-indexed, O(k)
 
