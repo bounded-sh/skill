@@ -289,6 +289,64 @@ This is the pattern behind the scaffolder's chat template and any "N per window
 per user" limit. Cap the field that *is* the value (the spend-log shape above)
 only when the action's magnitude is itself the thing being limited.
 
+## `windowSum` — an exact sliding-window aggregate you can READ and SORT BY
+
+Where `rollingSum` *caps* a windowed sum at write time, `windowSum` *maintains* one
+as a readable field: declare it on an **append-only event collection** and the
+runtime keeps `target.targetField` equal to the exact sum of `field` over the last
+`windowSeconds` — adding each event's value on create and subtracting it
+automatically when the event ages out of the window (alarm-driven, no cron, no
+sweep). The result is a plain numeric field: readable, subscribable, **sortable**
+— and the ranked-query engine auto-indexes it, so "top-N by 10-minute volume" is
+an O(k) first-class query. This is the primitive behind trending feeds and
+leaderboards ([trending-feeds.md](trending-feeds.md)).
+
+```json
+{
+  "trades/$marketId/ev/$id": {
+    "fields": { "size": "UInt!" },
+    "tier": "durable",
+    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" },
+    "invariants": [{
+      "type": "windowSum",
+      "name": "vol10m",
+      "field": "size",
+      "windowSeconds": 600,
+      "target": "markets/$marketId",
+      "targetField": "vol10m"
+    }]
+  },
+  "markets/$marketId": {
+    "fields": { "vol10m": "UInt?" },
+    "rules": { "read": "true", "create": "@user.id != null && @newData.vol10m == null", "update": "false", "delete": "false" }
+  }
+}
+```
+
+Semantics and constraints (validated at deploy):
+
+1. **Exact, not approximate.** Every increment enqueues an exact decrement at
+   `createdAt + windowSeconds`; Σ decrements == Σ increments per event, so the
+   field is the true windowed sum at all times (up to alarm latency, typically a
+   few seconds). No EWMA drift, no bucket coarseness.
+2. **The event collection becomes append-only** (like `rollingSum`): an update or
+   delete would falsify the maintained sum, so both are rejected.
+3. **`field` must be `UInt`; `targetField` must be declared numeric**
+   (`UInt?`/`Int?`) on a target template whose path variables all resolve from the
+   event path. Both collections `durable` tier, non-session, offchain (v1).
+4. **`targetField` is runtime-owned.** Pin it null in the target's user-writable
+   rule branches (`@newData.vol10m == null`) so callers can't seed it; the
+   runtime's own writes bypass rules but still honor declared invariants.
+5. **Missing target**: the first event merge-creates it. A target deleted before
+   an event expires drops the pending decrement (never resurrects the doc).
+6. `bounded verify` reports a declared `windowSum` as a **non-blocking advisory**
+   ("structurally validated, runtime-maintained") — it is an aggregate, not a
+   write-gating cap, so it carries no proof obligation and cannot wedge a deploy.
+
+Choose `rollingSum` when you need to **enforce** "no more than X per window";
+choose `windowSum` when you need to **read/rank by** "how much in the last
+window." They compose: the same event log can carry both.
+
 ## `bound` — hard ceilings / floors on a field (anti-cheat)
 
 A numeric field (or every value of a map field) must always satisfy a fixed

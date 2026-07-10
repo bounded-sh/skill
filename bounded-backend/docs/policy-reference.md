@@ -293,6 +293,7 @@ rejected):
 | `schedule` | `{ every, run }` or an array of them | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
 | `dueRows` | `{ run, onComplete?, doneField? }` | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
 | `webhooks` | `[{ url, on: [...] }]` | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
+| `indexes` | `["field", ["f1","f2"], [["score",-1]]]` — pre-build ranked-query indexes at deploy (auto-indexing covers undeclared ones lazily) | [trending-feeds.md](trending-feeds.md) |
 | `search` | `{ fields: [...] }` | [files-and-search.md](files-and-search.md) |
 | `queries` | `{ name: { returnType, query } }` | [queries.md](queries.md) |
 | `session` | `{ settleTo, settleFrom, settleRule, checkpointSeconds, tick }` | [realtime-and-games.md](realtime-and-games.md) |
