@@ -4,11 +4,22 @@
 changes when a write is a real chain transaction your wallet signs, the
 `--protocol` choices, the rules that are legal onchain, the eventual-consistency
 mirror (don't read-after-write), the `0xbc4` deploy gotcha + `--skip-preflight`,
-the mainnet human-signed policy permit, and game settlement with server-signed
+policy upgrade governance, and game settlement with server-signed
 transactions. Client-signed game handoff is not currently supported.
 
 This is the home for everything onchain. [data-plane.md](../../bounded-backend/docs/data-plane.md) and
 [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) summarize and point here.
+
+## Contents
+
+- [Opt in and protocols](#default-is-off-chain--opt-in-deliberately)
+- [Onchain writes and reads](#what-changes-when-a-collection-is-onchain)
+- [Identity rules](#onchain-rules-useraddress-only)
+- [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
+- [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
+- [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
+- [Proof coverage](#proof-coverage-onchain)
+- [Game settlement](#game-settlement-the-two-directions)
 
 ## Default is off-chain — opt in deliberately
 
@@ -90,11 +101,12 @@ the chain. A `get` **immediately** after an onchain `set`/`delete` can still
 return the prior value until the indexer catches up. This is **not** a stale
 cache — it self-corrects.
 
-- **Don't read-after-write to confirm an onchain mutation.** Trust the returned
-  transaction signature, or use `subscribe`, which delivers the change once
-  mirrored.
-- For agents: a write that returns a signature **succeeded**; a follow-up read
-  returning the old value is the mirror lagging, not a failed write.
+- **Don't read-after-write to confirm an onchain mutation.** Use the returned
+  transaction signature to verify the required commitment/finalization, or use
+  `subscribe`, which delivers the change once mirrored.
+- For agents: a returned signature identifies the submitted transaction; confirm
+  its status when finalization matters. A follow-up mirror read returning the old
+  value is not evidence that the transaction failed.
 
 ## Gotcha: `0xbc4` AccountNotInitialized
 
@@ -143,6 +155,57 @@ protocols to go live.
 - **Query errors are explicit.** A failed or undeclared named query returns a
   per-row `error` alongside `result: null` — `runQuery` (client ≥0.0.42) throws
   it; the CLI (≥0.0.56) prints it verbatim.
+- **Readonly onchain functions also belong in offchain view policies.** An
+  `onchain: false` query may resolve chain-backed plugin reads through the
+  read-only onchain query executor. This is the standard home for balances,
+  pool quotes, positions, and other values that are illegal in an onchain
+  mutation rule. It is simulation-only and never signs or submits.
+- **Extended mutation primitives are capability-gated.** Runtime-v2 source adds
+  `@CPI`, `@Solana`, `@Bytes`, and `@App`; arbitrary CPI and cross-app mutation
+  must have a real Poofnet state model or fail closed. See
+  [policy-primitives.md](policy-primitives.md) before using them.
+
+### Mirror completeness
+
+Bounded schedules confirmed read-backs for paths written through its onchain
+write API, so those documents enter the offchain read store and subscriptions.
+Do not assume that every external program transaction or independently-submitted
+write is mirrored until the environment's authenticated Helius indexer has been
+verified end to end. The indexer must decode `set_documents*`, reread authoritative
+Document accounts, handle deletes and cross-app targets, reject stale/replayed
+events, and route by the decoded app id. Synthetic log-only indexing is not enough.
+
+Mirror recovery assumes deliveries can stop for hours or days. Runtime source
+persists a strongly-consistent per-network/program cursor, acknowledges live
+events only after durable enqueue, and applies authoritative account rereads with
+per-path slot fences. A scheduled recovery job scans finalized history from the
+exact predecessor signature and advances with compare-and-swap only after every
+app batch applies. Missing history triggers a finalized full-account inventory:
+changed/new Documents are upserted, absent paths are tombstoned, and unchanged
+paths advance their fence without a duplicate update event. Replay rebuilds
+mirror state; it does not run hooks, callbacks, billing, or sponsorship effects.
+Historical apps with missing routing metadata or incompatible current policies
+remain explicit reconciliation debt instead of blocking valid apps. Recovery
+commits a conservative partial baseline, continues finalized catch-up for
+routable apps, and retries the unresolved full inventory daily; it never replays
+application side effects.
+Full reconciliation replaces the mirrored user-data object, so fields removed
+onchain do not survive through normal offchain patch semantics.
+
+The runtime-v2 ingestion path uses network-specific raw Helius webhooks and a
+durable queue. It acknowledges only after enqueue, decodes/rereads in the scoped
+Node helper, and applies slot-fenced upserts or tombstones per decoded app. Treat
+this as available only after that environment has the queue/DLQ, webhook secret,
+RPC, persisted logs/alerts, and end-to-end recovery checks configured. The source
+also exposes internal cursor/queue status and validated repaired-DLQ replay. A
+large snapshot is uploaded as numbered chunks to an app-local staging area and
+becomes visible only after the complete write set passes slot and invariant
+checks. Repeated chunks and completed runs are idempotent. Compiler/runtime source
+support is not proof of an operating mirror.
+
+An absent Document PDA is a normal `null` read. Wrong owner/discriminator,
+malformed account data, RPC failure, or an integer outside JavaScript's safe
+range is an unavailable/error result, never a fabricated miss or rounded value.
 
 ### `--skip-preflight`
 
@@ -151,29 +214,40 @@ failing txs still land on-chain (useful when simulation is flaky or you want the
 on-chain error rather than a client-side preflight reject). No effect on the
 realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#-skip-preflight).
 
-## Mainnet policy updates need a human-signed permit
+## Policy upgrade governance (runtime v3)
 
-Updating a **mainnet** app's policy requires an onchain **authority-permit
-signature** — the on-chain program must see a signed permit from the app
-authority before accepting a new policy.
+Onchain apps have three upgrade modes. **Wallet** mode is the legacy/default
+mode and uses the app authority's human-signed mainnet permit. **Policy** mode
+lets a stable onchain controller path authorize an exact policy manifest.
+**Immutable** mode permanently rejects policy changes. Policy and immutable
+governance require a deployed runtime-v3 program; never infer that capability
+from local source or compiler support.
 
-- **The default path never hits it.** Off-chain / devnet apps update their policy
-  with no onchain signature. You only encounter the permit on a `realtime_mainnet`
-  program.
-- **Frictionless agent signing of the permit is not currently supported.** For now a
-  mainnet policy update is a deliberately human-gated step. When advising an
-  agent, assume the default off-chain path. See
-  [hooks-and-anti-cheat.md](../../bounded-backend/docs/hooks-and-anti-cheat.md#onchain-update-signing-note).
+Enrollment is an explicit owner-signed second phase after the controller and
+all governed paths exist. It records the exact current path set and state hashes,
+so a policy declaration alone cannot claim chain governance. A governed update
+binds the controller approval to a sorted Merkle manifest of every final upsert
+or deletion. The admin may only stage, seal, finalize, and activate those exact
+operations; legacy permits are rejected after enrollment.
+
+Sessions are replay-safe and recoverable. Repeating a landed stage/write/seal/
+activate does not double-count, a base-state replay resets an interrupted stream,
+and a chain-complete update can be reattached if database publication failed.
+After expiry, an unstaged session may be cancelled; any staged session must be
+extended and resumed without discarding progress. Chain state is authoritative:
+read it before publishing or changing `governance.upgrade`, and never downgrade a
+policy/immutable app through an offchain-only policy edit.
 
 ## Proof coverage onchain
 
 The **same compiled rule bytecode** runs in the realtime runtime and the onchain
 program, so rule properties (auth-required, immutability, implication) hold
-identically on both. Invariants are a verified subset onchain — `conserve`
-(direct), `rollingSum` (epoch-bucketed, conservative), and `tenantTag` are
-enforced; materialized/sharded `conserve` and `tenantEdge` **fail closed**
-(rejected at verify if declared `onchainSupported`, rejected at runtime if
-metadata arrives). Full table in [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md).
+identically on both. The verified onchain invariant subset includes direct,
+materialized, and sharded `conserve`; epoch-bucketed `rollingSum` (including a
+path-variable scope); `tenantTag`; and full-path `tenantEdge`. Materialized and
+sharded conservation use aggregate-state PDAs. `tenantEdge.targetPathVariable`,
+`rollingSum.resetAtMs`, and cross-scope variants fail closed. Full table in
+[proof-coverage.md](../../bounded-backend/docs/proof-coverage.md).
 
 ## Game settlement: the two directions
 

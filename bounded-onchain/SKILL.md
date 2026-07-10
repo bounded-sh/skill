@@ -25,6 +25,10 @@ the root **bounded** skill.
 | User task | Read |
 |---|---|
 | Onchain data / Solana collections | [docs/onchain.md](docs/onchain.md) |
+| Onchain mirror/indexer, Helius webhook, missed transaction, outage catch-up, replay, reconciliation, or DLQ recovery | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
+| Policy upgrade governance, immutable apps, controller policies, manifest signing, stuck update sessions, or governance recovery | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
+| Policy-native bytes, PDAs, account reads, generic CPI, cross-app reads/writes, runtime capability gates, or Poofnet/onchain parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
 | **Launch a token** on Meteora — Dynamic Bonding Curve, anti-snipe fee decay, creator/partner fee split, graduation/migration to DAMM v2, claiming fees (`createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover`) | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
 | **Split fees between 3+ parties** — the oApps 55/25/20 treasury/creator/Poof model, a multi-party split composed in policy over Meteora's 2-party primitive, atomic permissionless distribute, pre-vs-post-migration phase asymmetry | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
@@ -40,6 +44,10 @@ the root **bounded** skill.
 | If you see | Read |
 |---|---|
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
+| Helius, indexer, mirror, reconciliation, missed transaction, replay, cursor, tombstone, DLQ | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
+| `governance.upgrade`, policy controller, immutable, manifest root, governed session, recovery, extend, cancel | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
+| `@CPI`, `@Solana`, `@Bytes`, `@App`, generic CPI, custom program, PDA seeds, account data, cross-app, runtime v2, Poofnet parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| rent, ATA, token account, insufficient SOL, PDA address, passthrough, transaction too large | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | `createMeteoraConfig`, `createMeteoraVirtualPool`, Dynamic Bonding Curve, DBC, bonding curve, anti-snipe / fee decay, token launch, launchpad, graduation, migrate, DAMM v2, `claimDammV2PoolFees`, `withdrawLeftover`, `getDammV2PoolAddress` | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
 | 3-way / multi-party fee split, 55/25/20, treasury/creator/Poof, oApps tokenomics, `feepool` PDA, `mulDivFloor` split, permissionless distribute, phase asymmetry, `distributionsPost` | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
 | keeper, scheduled onchain write, `schedule` + `actAs`, offchain → function → onchain, "schedule rejected on onchain collection", crank, sweep fees, `rollingSum` build allowance, fee-funded build credit | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
@@ -53,5 +61,8 @@ the root **bounded** skill.
 - **Default onchain login = `auth.wallets` + wallet login, side by side.** Turn on `{ "auth": { "wallets": true } }` in policy so email/social users get a Crossmint wallet (the primary path), and add bring-your-own **wallet login** (`walletLogin`) for users who already hold a Solana wallet. See [docs/embedded-wallets.md → recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app). Prescribe this for any onchain app.
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
+- Treat compiler support and deployed-program support as separate capabilities. Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
+- Treat runtime-v3 governance the same way: enroll only after the deployed capability registry reports v3, and publish governance from observed chain state rather than policy intent.
+- Keep Poofnet and Solana behavior paired. Pure/read primitives must return the same shape, and mutating primitives must apply a modeled effect or fail closed; validation-only success is a parity bug.
 - Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.
