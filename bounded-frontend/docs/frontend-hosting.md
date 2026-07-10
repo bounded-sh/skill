@@ -64,6 +64,16 @@ bounded site deploy ./dist --app-id <id>
   that resolves to the app: vanity slug and active custom domains. API hosts
   are not gated. The private-site gate page itself tells owners and visitors
   how to make the app public.
+- **Preview a private site in a browser without making it public:**
+  `bounded site preview --app-id <id>` (add `--open` to launch it). As
+  owner/admin you already pass the gate; this mints a short-lived, shareable
+  one-click link — `https://<host>/__bounded/gate/land?token=…` — that sets the
+  gate cookie and lands on the REAL site, then expires (default 60 min, `--ttl
+  <minutes>`, max 1440) back to the normal sign-in page. Host auto-resolves from
+  the app's mapped slug/custom domain, or pass `--host <host>`. This needs the
+  **owning wallet** identity (the app-scoped SIWS token); a plain web-login
+  session is platform-scoped and can't preview, and the command says so. Treat
+  the link as a bearer secret until it expires — anyone who opens it gets in.
 
 ## Public proof page (opt-in)
 
