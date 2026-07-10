@@ -187,16 +187,19 @@ app batch applies. Missing history triggers a finalized full-account inventory:
 changed/new Documents are upserted, absent paths are tombstoned, and unchanged
 paths advance their fence without a duplicate update event. Replay rebuilds
 mirror state; it does not run hooks, callbacks, billing, or sponsorship effects.
-Historical apps with missing routing metadata or incompatible current policies
-remain explicit reconciliation debt instead of blocking valid apps. Recovery
-commits a conservative partial baseline, continues finalized catch-up for
-routable apps, and retries the unresolved full inventory daily; it never replays
-application side effects. An i64/u64 outside JavaScript's safe integer range
-quarantines the **whole app** from that event/inventory as explicit debt; never
-round, stringify, or partially mirror it. Other apps still reconcile. Live events
-record that debt and acknowledge after routable batches apply; finalized backfill
-may advance its cursor with the same debt recorded. Transport, RPC, decoder, or
-sink failures still retry and can reach the DLQ.
+Live or historical apps with missing routing metadata or incompatible current
+policies remain explicit reconciliation debt instead of blocking valid apps.
+Recovery commits a conservative partial baseline, continues finalized catch-up
+for routable apps, and retries the unresolved full inventory daily; it never
+replays application side effects. An i64/u64 outside JavaScript's safe integer
+range quarantines the **whole app** from that event/inventory as explicit debt;
+never round, stringify, or partially mirror it. Other apps still reconcile. Live
+events record debt, apply/register only routable batches, and acknowledge after
+the exact debt set persists; finalized backfill may advance with the same debt.
+Persist exact unresolved IDs separately from the bounded human status summary;
+if migrating a legacy sampled reason, force full inventory instead of treating
+the sample as complete. Transport, RPC, decoder, or sink failures still retry and
+can reach the DLQ.
 Full reconciliation replaces the mirrored user-data object, so fields removed
 onchain do not survive through normal offchain patch semantics.
 
