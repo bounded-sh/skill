@@ -12,7 +12,7 @@ the policy expressions — and enforced identically everywhere, because the
 **same compiled rule bytecode** executes in the realtime runtime and in the
 onchain program. Nothing is ported between runtimes, so nothing can drift.
 
-## Layer B — invariants: full offchain, verified subset onchain
+## Layer B — invariants: documented offchain coverage, verified subset onchain
 
 | Invariant | Offchain (realtime) | Onchain |
 |---|---|---|
@@ -45,9 +45,17 @@ This is the distinction that decides whether a proof is a *local* statement or a
 
 - **Rules (Layer A) govern DIRECT writes + authorization.** Authorization has deliberate escape hatches: a **hook** (`updateField`/`put`) bypasses a collection's create/update/delete rules unless the collection sets `enforceRules: true`, and some onchain permissionless writes are not attributed to an end user. So a rule proof ("only the owner can write X") guarantees the property for *direct client writes* — **not** necessarily for hook/system/permissionless writes. `bounded verify` flags this with a non-blocking **"rule authorization is direct-write-only"** advisory on any scope that declares hooks without `enforceRules`. Set `enforceRules: true` to make the rule apply to hook writes too.
 
-- **Invariants (Layer B) govern EVERY write surface, on BOTH planes — unskippable.** Every mutation path — direct client (HTTP/WS), Bounded Function `ctx.bounded`, hooks, ticks, schedules, file finalize, and onchain permissionless writes — runs the declared transaction invariants before committing. An invariant holds "across all instances," whatever code path produced the write.
+- **Invariants (Layer B) govern their documented supported mutation surfaces.**
+  For an ingress and runtime plane marked as supported, applicable transaction
+  invariants run before commit. This is not a claim about undocumented raw-storage
+  paths, one-off imports/migrations, inherited rows, or a type/plane combination
+  the matrix marks unsupported. Check the concrete type and ingress instead of
+  extrapolating from another runtime.
 
-**Rule of thumb:** if a property must hold *no matter what* — including hook/system/permissionless writes — express it as an **invariant**, not a rule. Rules answer *who may directly do what*; invariants answer *what must never break*.
+**Rule of thumb:** if a property must hold across the documented mutation
+surfaces that support it, express it as an **invariant**, not only a rule. Rules
+answer *who may directly do what*; invariants constrain accepted state within
+their documented coverage.
 
 ## Onchain rolling caps: epoch-bucketed, conservative by proof
 

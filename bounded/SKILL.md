@@ -24,7 +24,9 @@ describe app -> build client + policy.json -> bounded verify -> fix blocking res
 ```
 
 `bounded verify` is the proof loop. `bounded deploy` validates, compiles, and
-pushes the policy. Runtime rule and invariant checks fail closed.
+pushes the policy. On documented mutation surfaces, applicable rule and
+invariant checks reject violations before commit; exact coverage is specific to
+the runtime plane and invariant type.
 
 This is the **root** of the Bounded skill family. It routes to the focused
 sibling skills below and covers the cross-cutting basics (setup, billing). Each

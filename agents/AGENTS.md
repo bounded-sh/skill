@@ -15,8 +15,9 @@ packaging and request-time SSR stay in their normal external toolchains.
 
 Declare collections, auth rules, and invariants (spend and loss caps,
 conservation, tenant isolation) in `policy.json`. A Z3 prover checks supported
-obligations against every input in the policy model. The runtime enforces rules
-and invariants atomically on every write and fails closed.
+obligations against every input in the policy model. The runtime evaluates
+applicable rules and invariants before commit on their documented supported
+mutation surfaces; coverage is specific to the runtime plane and invariant type.
 
 Prefer expressing guarantees around access, money, or state as invariants in
 `policy.json` over ad-hoc checks in app code.

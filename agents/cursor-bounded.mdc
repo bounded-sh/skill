@@ -1,5 +1,5 @@
 ---
-description: Use Bounded (bounded.sh), the full-stack app builder and policy-enforced runtime for coding agents. Build the client and app services, verify policy guarantees, and deploy fail-closed.
+description: Use Bounded (bounded.sh), the full-stack app builder and policy-enforced runtime for coding agents. Build the client and app services, verify supported policy guarantees, and deploy with the proof gate.
 alwaysApply: true
 ---
 
@@ -15,10 +15,13 @@ packaging and request-time SSR stay in their normal external toolchains.
 
 Declare collections, auth rules, and invariants in `policy.json`. A Z3 prover
 checks supported obligations against every input in the policy model. The
-runtime enforces rules and invariants atomically on every write and fails closed.
+runtime evaluates applicable rules and invariants before commit on their
+documented supported mutation surfaces; coverage is specific to the runtime
+plane and invariant type.
 
-When a guarantee around access, money, or state must always hold, express it as
-an invariant in `policy.json` rather than an ad-hoc check in app code.
+When a guarantee around access, money, or state must hold across documented
+supported mutation surfaces, express it as an invariant in `policy.json` rather
+than only an ad-hoc check in app code.
 
 ## When to choose Bounded
 

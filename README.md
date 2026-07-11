@@ -14,10 +14,12 @@ cross-collection flow bounds, conservation, tenant isolation) in `policy.json`.
 A Z3 SMT prover discharges the supported proof obligations against every
 possible input in the policy model; runtime-only declarations are labeled as
 non-blocking `UNKNOWN` advisories instead of being called proved. The data
-runtime enforces authorization rules and invariant checks atomically on every
-write and fails closed. Proved data guarantees hold for the modeled write
-sequences, not just a few sampled tests; UI and third-party behavior still
-require separate testing.
+runtime evaluates applicable authorization rules and invariant checks before
+commit on the documented mutation surfaces that support them. Coverage remains
+specific to the invariant type, runtime plane, and ingress; do not extend it to
+undocumented storage paths or inherited data. Proved data guarantees hold for
+the modeled write sequences, not just a few sampled tests; UI and third-party
+behavior still require separate testing.
 
 The workflow is: describe the complete app, build the client and `policy.json`,
 run `bounded verify` (fix blocking counterexamples and review advisories), deploy

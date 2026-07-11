@@ -5,11 +5,11 @@
 plus the runtime-maintained `windowSum` aggregate and the rule-vs-invariant
 decision.
 
-Write-gating invariants are **transaction postconditions**. In the offchain
-realtime runtime they are declared once on a collection and enforced atomically
-on every write path — including hooks, ticks, schedules, and `set-many` batches,
-where the whole batch commits or nothing does. Nothing on those offchain write
-surfaces has an exemption; onchain coverage remains type-specific. Four types
+Write-gating invariants are **transaction postconditions**. On documented
+offchain mutation surfaces that route through invariant evaluation, they run
+before commit and `set-many` batches remain atomic. Coverage does not extend to
+undocumented storage paths or inherited rows merely because a declaration was
+enabled; onchain coverage is type-specific. Four types
 (`conserve`, `rollingSum`, `tenantTag`, `tenantEdge`) have general invariant
 encodings **discharged by SMT** during `bounded verify`; `bound` is shape-specific
 (scalar offchain fields are proved, while `.values` maps remain `UNKNOWN`)
@@ -60,14 +60,15 @@ protects what matters; get it wrong and it's green but hollow.
 | "An agent spends at most 100/hr" | invariant (`rollingSum`) | no single write can see the history |
 | "A user's withdrawals never exceed their deposits" | invariant (`flowBound`) | cross-collection, cumulative, and partitioned by user |
 | "Show the exact 10-minute volume" | aggregate (`windowSum`) | maintains a readable sliding-window sum; it is not a cap |
-| "A doc always belongs to its tenant" | invariant (`tenantTag`) | binds the tag on every write path |
+| "A doc always belongs to its tenant" | invariant (`tenantTag`) | binds the tag on supported invariant-evaluated mutation paths |
 | "A reference never crosses tenants" | invariant (`tenantEdge`) | property of cross-document state |
 
 Rule of thumb: **if violating it means an app bug, write a rule. If violating it
 means losing money or leaking a tenant, write an invariant.** Then check its
 reported proof status: `PROVED` and `UNKNOWN` are materially different guarantees.
 Declaring rule-shaped conditions as invariants buys nothing and costs flexibility
-— invariants bind every write path, including your own migrations.
+— invariants bind supported mutation paths once enabled, so plan migrations and
+inherited-state validation explicitly.
 
 Common base keys are `type`, `field`, optional `name`, and optional `onchain`
 (coverage claim — last section). Metadata is type-specific: in particular,
@@ -436,22 +437,53 @@ Semantics and structural requirements:
    delete of either an inflow or outflow record with `409`, even if a collection
    rule accidentally allows it. Keep explicit `update: "false"` and
    `delete: "false"` rules too, so the policy documents the intended API.
-4. **Inflow-only creates cannot violate the inequality.** They raise the bound,
-   so the runtime checks append-only shape and then skips the partition scan.
-   Normal auth rules and schema validation still apply.
-5. **Use nonoptional values.** Declare both summed fields as `UInt` (or readonly
-   `UInt!`), never optional `UInt?`/`UInt!?`. Do not rely on a validator accepting
-   a `UInt` base type: validator versions that normalize field modifiers can also
-   accept an optional form, while the runtime still requires every evaluated leg
-   to contain a present, nonnegative safe integer. Missing, null, negative,
-   fractional, or unsafe values fail closed at runtime.
+4. **Inflow-only creates validate values, then skip the aggregate scan.** Each
+   staged inflow amount is still checked for append-only shape and a present,
+   nonnegative safe integer. Because a valid inflow create only raises the bound,
+   v1 then returns without summing the committed corpus. Normal auth rules and
+   schema validation still apply.
+5. **Use nonoptional values.** Deploy/config validation accepts only `UInt` (or
+   readonly `UInt!`) and rejects optional `UInt?`/`UInt!?`. Config/runtime
+   backstops reject malformed invariant metadata and any evaluated missing, null,
+   negative, fractional, or unsafe amount.
 6. **Both collections are durable, non-session, distinct, and offchain.** The
    same `scopeVariable` token must occur in both templates. `flowBound` v1 does
    not support a `scope` remap and cannot be declared on an onchain collection.
 
+### v1 state and scaling limits
+
+- **Activation is not a corpus migration.** Enabling `flowBound` does not scan,
+  validate, or repair existing inflow/outflow rows. `bounded verify` validates
+  policy structure and reports the runtime advisory; it does not prove that
+  pre-existing stored state satisfies the inequality or value requirements.
+  Audit and, if needed, repair the inherited corpus before enabling append-only
+  enforcement.
+- **Outflow checks use full committed-corpus scans.** v1 reads both relative
+  collections and filters the affected partitions while summing. Keep each
+  collection corpus deliberately bounded; latency and work grow with corpus size.
+- **Individual safe integers do not guarantee a safe aggregate.** All running
+  sums must remain within `Number.MAX_SAFE_INTEGER`. Inflow-only writes validate
+  individual amounts but skip the aggregate scan, so cumulative inflow can
+  overflow even when every record is valid. A later outflow scan can then reject
+  or fail closed until the corpus is repaired; append-only application writes are
+  not a repair mechanism.
+
+### Read and decline privacy
+
+`flowBound` gates writes; it does not grant or restrict reads. Keep explicit read
+rules on both legs. Also treat write permission as a capacity-observation channel:
+with `errorDisclosure: "full"`, a decline exports numeric `cap`, `current`, and
+`attempted` values to the caller even if that caller cannot read the underlying
+rows. Minimal disclosure removes those numbers, but accept-versus-decline still
+reveals the predicate “would this attempted outflow fit?” to any allowed writer.
+Use narrow create authorization and minimal disclosure when balances or remaining
+capacity are sensitive; redaction cannot remove the accept/decline predicate.
+See [Error disclosure](policy-reference.md#error-disclosure).
+
 > **Current verification status: runtime-enforced, not SMT-proven.** Structural
 > validation checks relationship metadata such as the two collection templates,
-> scope variable, tier, and onchain mode, and rejects malformed declarations.
+> scope variable, field types, tier, and onchain mode, and rejects malformed
+> declarations.
 > A well-formed declaration is then emitted by `bounded verify` as a non-blocking
 > `flowBound ... (runtime-enforced advisory)` with proof status `UNKNOWN`. The
 > offchain realtime Worker enforces the inequality at write time, but the
@@ -785,8 +817,9 @@ Attestations run in the same `verify` pass as invariants and show up under the
 See the RULES-vs-INVARIANTS table at the top. In short: if the property is about
 *who* may act, or about a single write in isolation, it is a rule, not an
 invariant. Declaring rule-shaped conditions as invariants buys nothing (the rule
-path is already proven for auth/immutability) and binds every write path — including
-your migrations.
+path is already proven for auth/immutability) and constrains every supported
+invariant-evaluated mutation path once enabled. Validate inherited state and plan
+migrations separately.
 
 ## Related
 

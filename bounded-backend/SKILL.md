@@ -14,14 +14,17 @@ description: >-
 
 # Bounded backend
 
-The server side of a Bounded app: the policy that governs every write, the
-proof-backed and runtime-enforced invariants, the functions that run trusted
-code, and the actor model that decides who is acting. The proof loop is `bounded
+The server side of a Bounded app: the policy that governs documented supported
+mutation surfaces, the proof-backed and runtime-enforced invariants, the
+functions that run trusted code, and the actor model that decides who is acting.
+The proof loop is `bounded
 verify`; treat `PROVED` differently from a non-blocking runtime advisory with
 proof status `UNKNOWN`. `bounded deploy` compiles and pushes; runtime rule and
-invariant checks fail closed. For CLI/deploy see the **bounded-deploy** skill; for
-the client SDK and auth UI see **bounded-frontend**; to route across the family,
-see the root **bounded** skill.
+invariant checks reject violations before commit on their documented supported
+mutation surfaces. Do not generalize that coverage to an unsupported plane,
+undocumented storage path, or inherited corpus. For CLI/deploy see the
+**bounded-deploy** skill; for the client SDK and auth UI see
+**bounded-frontend**; to route across the family, see the root **bounded** skill.
 
 Write the actor model in mind from the start: know who `@user` is, which principal
 a function acts as (`runAs`/`actAs`), and where authorization comes from
