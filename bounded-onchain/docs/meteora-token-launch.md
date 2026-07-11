@@ -126,6 +126,31 @@ Mints one token (`tokenId` is app-unique) against a `configId` and opens its vir
 pool. `uri` is the JSON-metadata URI. `initialSolBuyAmount?` (lamports) does an
 optional dev-buy right after creation.
 
+### The `uri` must be a Metaplex metadata JSON, not an image
+
+Wallets, DEX frontends and Meteora itself resolve the token's display identity
+through `uri`. It must point to a **permanent, public JSON file** following the
+Metaplex fungible-token standard — passing a raw image URL (or an empty string)
+gives you a token with broken name/image everywhere downstream.
+
+```json
+{
+  "name": "My App Token",
+  "symbol": "MYAPP",
+  "description": "one line on what it is",
+  "image": "https://myapp.example.com/icon.png",
+  "external_url": "https://myapp.example.com"
+}
+```
+
+**Hosting it:** Bounded storage collections (`setFile`/`getFiles`) return
+*short-lived signed* download links — never use those as a token `uri`. Host the
+JSON as a static asset instead, e.g. ship `public/token.json` in your frontend and
+`bounded site deploy` it, then pass `https://<your-host>/token.json` as `uri`.
+Any other permanent public host (your domain, IPFS with a stable gateway) works
+too. Set it before mint: the metadata address is derived at creation and the JSON
+is fetched by third parties forever after.
+
 - `@DeFiPlugin.getMeteoraVirtualPoolAddress(tokenMintAddress, configId) -> Address`
   (pure) resolves the pool address for a token.
 - `@DeFiPlugin.getMeteoraSwapQuote(tokenMintAddress, tokenToSwapInMintAddress, tokenAmount) -> Int`
