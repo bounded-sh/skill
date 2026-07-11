@@ -17,7 +17,7 @@ non-blocking `UNKNOWN` advisories instead of being called proved. The data
 runtime evaluates applicable authorization rules and invariant checks before
 commit on the documented mutation surfaces that support them. Coverage remains
 specific to the invariant type, runtime plane, and ingress; do not extend it to
-undocumented storage paths or inherited data. Proved data guarantees hold for
+unsupported type/plane combinations or inherited data. Proved data guarantees hold for
 the modeled write sequences, not just a few sampled tests; UI and third-party
 behavior still require separate testing.
 

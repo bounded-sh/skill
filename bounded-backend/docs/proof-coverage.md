@@ -47,8 +47,9 @@ This is the distinction that decides whether a proof is a *local* statement or a
 
 - **Invariants (Layer B) govern their documented supported mutation surfaces.**
   For an ingress and runtime plane marked as supported, applicable transaction
-  invariants run before commit. This is not a claim about undocumented raw-storage
-  paths, one-off imports/migrations, inherited rows, or a type/plane combination
+invariants run before commit. This is not a claim about undocumented raw-storage
+paths (for example, `flowBound` rejects `type: "storage"`), one-off
+imports/migrations, inherited rows, or a type/plane combination
   the matrix marks unsupported. Check the concrete type and ingress instead of
   extrapolating from another runtime.
 

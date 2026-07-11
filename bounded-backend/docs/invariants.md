@@ -8,7 +8,7 @@ decision.
 Write-gating invariants are **transaction postconditions**. On documented
 offchain mutation surfaces that route through invariant evaluation, they run
 before commit and `set-many` batches remain atomic. Coverage does not extend to
-undocumented storage paths or inherited rows merely because a declaration was
+unsupported type/plane combinations or inherited rows merely because a declaration was
 enabled; onchain coverage is type-specific. Four types
 (`conserve`, `rollingSum`, `tenantTag`, `tenantEdge`) have general invariant
 encodings **discharged by SMT** during `bounded verify`; `bound` is shape-specific
@@ -446,9 +446,11 @@ Semantics and structural requirements:
    readonly `UInt!`) and rejects optional `UInt?`/`UInt!?`. Config/runtime
    backstops reject malformed invariant metadata and any evaluated missing, null,
    negative, fractional, or unsafe amount.
-6. **Both collections are durable, non-session, distinct, and offchain.** The
-   same `scopeVariable` token must occur in both templates. `flowBound` v1 does
-   not support a `scope` remap and cannot be declared on an onchain collection.
+6. **Both collections are ordinary durable, non-session, distinct, offchain
+   document collections.** The same `scopeVariable` token must occur in both
+   templates. `flowBound` v1 does not support a `scope` remap, cannot be declared
+   on an onchain collection, and rejects `type: "storage"` on either leg because
+   the file upload/finalize lifecycle is not a document-transaction surface.
 
 ### v1 state and scaling limits
 
