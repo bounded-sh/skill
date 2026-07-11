@@ -365,6 +365,41 @@ export default async function sports(args, ctx) {
 - **Opt-out:** if you integrate a provider directly, you pay that provider
   directly and Bounded's managed proxy markup does not apply.
 
+### Chain data toolkits: helius, alchemy — read-only, metered like every managed service
+
+Onchain data lives in the same catalog. Two Bounded-local toolkits — `helius`
+(Solana: JSON-RPC reads, DAS asset lookups and search, parsed transaction
+history) and `alchemy` (EVM: JSON-RPC reads, token balances/metadata, transfer
+history) — resolve through the same `search`/`describe`/`invoke` calls:
+
+```ts
+const acct = await ctx.services.invoke("HELIUS_RPC_CALL", {
+  method: "getAccountInfo",       // read-only allowlist — writes are rejected
+  params: [address, { encoding: "base64" }]
+});
+const bal = await ctx.services.invoke("ALCHEMY_TOKEN_BALANCES", {
+  network: "base-mainnet",        // validated against Bounded's EVM network registry
+  address: wallet
+});
+```
+
+- **Read-only, enforced:** the RPC passthrough tools accept only an explicit
+  allowlist of read methods (`getAccountInfo`, `getProgramAccounts` with
+  filters, `eth_call`, `eth_getLogs` with a bounded block range, …).
+  `eth_sendRawTransaction`, `sendTransaction`, and every signing or
+  state-changing method is rejected fail-closed — unknown methods too. Sending
+  transactions is a different plane (onchain collections), never this proxy.
+- **Metered like every managed service:** each tool has a published provider
+  cost (Helius credits / Alchemy compute units) billed to the app owner's
+  AI/external-services bucket at cost + 5%, charged before the call and
+  refunded if the provider errors. Same fail-closed 402
+  (`services_credit_exhausted`) as the rest of `ctx.services`.
+- **Rate-isolated per app:** bursty apps get a 429 `chain_data_rate_limited`
+  instead of exhausting the shared provider plan.
+- `describe("helius")` / `describe("alchemy")` list every tool with its input
+  schema and per-call cost. For when to use these versus onchain collections
+  and chain views, see the bounded-onchain skill's `chain-data.md`.
+
 For transactional email, SMS, or WhatsApp, use a real provider integration and
 keep provider keys in secrets. Do not expose a shared provider key or treat
 Bounded Auth OTP as recipient consent for app-originated messages.
