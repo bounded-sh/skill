@@ -347,6 +347,57 @@ Choose `rollingSum` when you need to **enforce** "no more than X per window";
 choose `windowSum` when you need to **read/rank by** "how much in the last
 window." They compose: the same event log can carry both.
 
+## `flowBound` — per-partition "outflow never exceeds inflow" across two collections
+
+For every value of a scope variable, the sum of an OUTFLOW collection's field must
+stay ≤ the sum of an INFLOW collection's field. The canonical shape: an escrow
+where each user's releases can never exceed that user's deposits. Declared on the
+OUTFLOW collection (the leg being gated):
+
+```json
+{
+  "vault/$user/deposits/$id": {
+    "fields": { "amount": "UInt!" },
+    "tier": "durable",
+    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" }
+  },
+  "vault/$user/releases/$id": {
+    "fields": { "amount": "UInt!" },
+    "tier": "durable",
+    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" },
+    "invariants": [{
+      "type": "flowBound",
+      "name": "released-le-deposited",
+      "field": "amount",
+      "scopeVariable": "$user",
+      "inflow": { "collection": "vault/$user/deposits/$id", "field": "amount" }
+    }]
+  }
+}
+```
+
+Semantics and constraints (validated at deploy):
+
+1. **Per-partition, both legs counted per transaction.** A rejected write reports
+   the boundary exactly: `cap` = the partition's inflow sum, `current` = its
+   committed outflow, `attempted` = this write's amount. A same-transaction
+   deposit + release counts both legs, so releasing exactly what you deposit in
+   one `set-many` passes at equality.
+2. **Both collections become append-only** (updates/deletes on either leg would
+   falsify the history the bound is computed from — same stance as `rollingSum`).
+3. `scopeVariable` is REQUIRED and must be a path variable of BOTH templates;
+   both fields `UInt`; both collections `durable`, non-session, offchain (v1);
+   the two collections must be distinct.
+4. Writes to the INFLOW collection alone never violate (they only raise the
+   bound) — deposits are always accepted (subject to your rules).
+5. `bounded verify` reports a well-formed `flowBound` as a **non-blocking
+   advisory** ("runtime-enforced per-partition flow bound") — malformed metadata
+   blocks the deploy.
+
+Choose `conserve` when a total must stay constant; `rollingSum` to cap a windowed
+sum; `windowSum` to READ a windowed sum; `flowBound` when one flow must never
+outrun another per user/tenant/market.
+
 ## `bound` — hard ceilings / floors on a field (anti-cheat)
 
 A numeric field (or every value of a map field) must always satisfy a fixed

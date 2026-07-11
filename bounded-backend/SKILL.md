@@ -2,7 +2,7 @@
 name: bounded-backend
 description: >-
   Author a Bounded backend: policy.json rules and invariants
-  (rollingSum/windowSum/conserve/tenantTag/bound), functions (ctx.user/ctx.bounded/ctx.ai/
+  (rollingSum/windowSum/flowBound/conserve/tenantTag/bound), functions (ctx.user/ctx.bounded/ctx.ai/
   ctx.services/ctx.secrets), the actor and identity model (@user, runAs/actAs,
   @origin, service keys, reserved identity sets), data and queries, realtime/live
   rooms, and the proof loop (bounded verify, counterexamples, proof coverage). Use
@@ -71,7 +71,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 
 | If you see | Read |
 |---|---|
-| `rollingSum`, `windowSum`, `windowSeconds`, `scopeVariable`, `conserve`, `bound`, `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md) |
+| `rollingSum`, `windowSum`, `flowBound`, `windowSeconds`, `scopeVariable`, `conserve`, `bound`, `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md) |
 | `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
 | `transferAuthority`, one-click market trade, holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
 | `@const`, `@def`, deploy constants | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
