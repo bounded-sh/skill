@@ -39,17 +39,26 @@ debugging.
    Stripe Standard connected account for that Bounded identity; it is not scoped
    to one app.
 3. Buyer checkout UI calls `POST /connect/checkout` with the buyer's Bounded JWT.
-   This is the app's user-facing payment entrypoint. Use the returned `url` to
-   redirect the buyer to Stripe Checkout, and store the returned `sessionId` as a
-   pending purchase before redirecting when you need reconciliation.
-4. After payment, the success URL receives `?sessionId=cs_...`. Invoke an app
-   function such as `claimPurchase({ sessionId })`.
+   This is the app's user-facing payment entrypoint. Send one stable
+   `Idempotency-Key` per logical checkout and reuse it across retries, double
+   clicks, and lost responses. Store the key and returned `sessionId` as pending
+   reconciliation state, then redirect the buyer to the returned `url`.
+4. After payment, the success URL receives `?sessionId=cs_...`. On callback
+   entry, synchronously capture the id and remove it from the browser URL before
+   importing or initializing analytics; then invoke an app function such as
+   `claimPurchase({ sessionId })` with the captured value.
 5. The app function calls `GET /connect/session?id=cs_...` server-side, verifies
    `paid`, buyer, merchant, amount, and currency, then writes an idempotent claim
    or settlement through normal Bounded policy rules/invariants.
 6. A trusted settlement function grants credits, ownership, entitlements, or
    conserved ledger entries. Use `conserve` for money-like balances and
    `rollingSum` for spend or grant caps.
+7. For a monthly or yearly destination subscription, pass
+   `recurring: { interval: "month" | "year" }`. Split checkout remains one-off.
+   After the first invoice is paid, the trusted function gets `subscriptionId`
+   from `/connect/session`, stores it in read-restricted policy state, and polls
+   `/connect/subscription` for lifecycle changes. Polling does not update the app
+   or book later renewal invoices automatically.
 
 In split mode, keep the Bounded seller id (`merchant`) separate from Stripe
 connected account ids (`userAccount`, `platformAccount`).
@@ -95,6 +104,8 @@ const r = await fetch(`${HOST}/connect/checkout`, {
   headers: {
     Authorization: `Bearer ${buyerJwt}`,
     "Content-Type": "application/json",
+    // Persist this with the pending checkout and reuse it for this purchase only.
+    "Idempotency-Key": logicalCheckoutId,
   },
   body: JSON.stringify({
     merchant: sellerBoundedUserId,
@@ -106,9 +117,15 @@ const r = await fetch(`${HOST}/connect/checkout`, {
   }),
 });
 const { url, sessionId } = await r.json();
-// Optional but recommended: write a pending order keyed by sessionId before redirect.
+// Write a pending order keyed by sessionId and retain logicalCheckoutId for retries.
 location.href = url;
 ```
+
+The durable checkout contract applies only when `Idempotency-Key` is present.
+Bounded namespaces the key by authenticated buyer and merchant and rejects reuse
+with different normalized terms. Omitting it uses the legacy non-durable path and
+can create a second Checkout Session or subscription after a retry or double
+click.
 
 Settlement:
 
@@ -119,6 +136,12 @@ const session = await r.json();
 if (!session.paid) throw new Error("not paid");
 // Then write idempotent policy state keyed by session.sessionId.
 ```
+
+`/connect/session` is not JWT-gated. The high-entropy `cs_...` id is a bearer
+capability, and a completed subscription session can return the longer-lived
+`sub_...` capability. Keep the read server-side, redact both ids from logs and
+telemetry, and store subscription ids only in read-restricted policy state. Do
+not treat CORS as authorization.
 
 ## Webhooks
 
@@ -133,10 +156,14 @@ store the returned `sessionId` as a pending purchase before redirecting and run 
 scheduled reconciliation function that calls `/connect/session` for unsettled
 sessions.
 
-For subscriptions or provider-native lifecycle webhooks, integrate Stripe
-Billing or another provider directly with the app's own provider keys/secrets and
-handle webhooks in the app/backend. Bounded Pay's public Connect checkout is
-one-off only.
+For managed seller subscriptions, lifecycle is poll-based: Bounded Pay does not
+fan out renewal, failure, cancellation, refund, or dispute webhooks to the app.
+Poll `/connect/subscription` from a scheduled function and write entitlement
+changes through policy. Each poll performs a Stripe read, so use a bounded
+schedule, cache for app-facing requests, and back off on errors rather than
+polling per browser render. Use a direct Stripe Billing or other provider
+integration when the app needs provider-native webhooks, refunds/disputes,
+split subscriptions, per-renewal ledger entries, or custom lifecycle behavior.
 
 ## Multi-App Services
 
@@ -162,14 +189,43 @@ platform APIs.
 
 ## Subscriptions
 
-Bounded Pay's public Connect checkout is currently one-off checkout
-(`mode=payment`) for app/seller payments. Do not tell users it supports seller
-subscriptions through `/connect/checkout`.
+`POST /connect/checkout` supports simple destination subscriptions with
+`recurring: { interval: "month" | "year" }`. The amount is the per-period price;
+the merchant destination and Bounded application-fee percentage apply on each
+invoice. Checkout with `appId`/`platformId` is registry split mode and remains
+one-off; combining it with `recurring` returns
+`recurring_split_not_supported`.
+
+Always send a stable `Idempotency-Key`. Checkout creation returns
+`{ url, sessionId, recurring }`; it cannot return a `subscriptionId` because
+Stripe creates the subscription only after Checkout completes. A trusted
+function retrieves the completed session, verifies the first invoice is paid,
+and stores its returned `subscriptionId` in private policy state. The ordinary
+session settlement is idempotent for that first Checkout Session only; it does
+not book later invoices.
+
+The app then polls `GET /connect/subscription?id=sub_...`, which returns status,
+active state, period end, cancel-at-period-end, party ids, amount, interval, and
+currency. Each poll performs a Stripe read; use a bounded schedule, cache the
+result for app requests, and back off on errors. This GET and `/connect/session`
+are unauthenticated bearer-capability reads: possession of the high-entropy id is
+the authorization. A session id can reveal the longer-lived subscription id.
+Keep them server-side, remove Checkout ids from callback URLs before analytics
+starts, redact both from telemetry, and store subscription ids only behind a
+narrow read rule.
+
+`POST /connect/subscription/cancel` requires the caller's Bounded JWT, allows the
+recorded buyer or merchant, and sets cancellation at period end. Bounded Pay does
+not currently expose a public refund endpoint. Destination charges are created
+on the platform account, so do not promise that every connected merchant can
+refund one in their own Stripe dashboard. Use an explicit platform workflow or
+a direct provider integration for refunds, disputes, per-renewal accounting,
+provider webhooks, and matching idempotent policy updates.
 
 Bounded's own account billing supports a Pro subscription and bucket top-ups via
 `bounded billing ...`; that bills the Bounded developer account, not an app's end
-users. For app subscriptions, use Stripe Billing or another provider directly,
-verify webhooks server-side, and write entitlements/caps through policy.
+users. Do not confuse those account plans with the app/seller subscriptions
+described above.
 
 ## Related
 
