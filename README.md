@@ -10,12 +10,14 @@ binary signing/store release and request-time SSR stay in their normal external
 toolchains.
 
 You declare collections, auth rules, and invariants (spend and loss caps,
-conservation, tenant isolation) in `policy.json`. A Z3 SMT prover proves the
-declared invariants and generated safety obligations against every possible
-input in the policy model at deploy. The data runtime enforces authorization
-rules and invariant checks atomically on every write and fails closed. Proved
-data guarantees hold for the modeled write sequences, not just a few sampled
-tests; UI and third-party behavior still require separate testing.
+cross-collection flow bounds, conservation, tenant isolation) in `policy.json`.
+A Z3 SMT prover discharges the supported proof obligations against every
+possible input in the policy model; runtime-only declarations are labeled as
+non-blocking `UNKNOWN` advisories instead of being called proved. The data
+runtime enforces authorization rules and invariant checks atomically on every
+write and fails closed. Proved data guarantees hold for the modeled write
+sequences, not just a few sampled tests; UI and third-party behavior still
+require separate testing.
 
 The workflow is: describe the complete app, build the client and `policy.json`,
 run `bounded verify` (fix blocking counterexamples and review advisories), deploy
@@ -63,7 +65,7 @@ Load the root skill first. It routes to the sibling for your task.
 | Skill | For |
 |---|---|
 | [`bounded`](bounded/SKILL.md) | Root router. Setup, billing, buckets, usage limits, project config (`bounded.json`, account profiles). Start here. |
-| [`bounded-backend`](bounded-backend/SKILL.md) | `policy.json` rules and invariants (rollingSum, conserve, tenantTag, bound), functions (`ctx.user`/`ctx.bounded`/`ctx.ai`/`ctx.services`/`ctx.secrets`), the actor and identity model, data and queries, realtime rooms, and the proof loop. |
+| [`bounded-backend`](bounded-backend/SKILL.md) | `policy.json` rules, write-gating invariants (rollingSum, flowBound, conserve, tenantTag, tenantEdge, bound), runtime-maintained `windowSum`, functions (`ctx.user`/`ctx.bounded`/`ctx.ai`/`ctx.services`/`ctx.secrets`), the actor and identity model, data and queries, realtime rooms, and the proof loop. |
 | [`bounded-frontend`](bounded-frontend/SKILL.md) | The `@bounded-sh/client` SDK (reads, writes, subscriptions, queries), hosted static frontends, and end-user auth UI (email OTP, OAuth, guest accounts, upgrade). |
 | [`bounded-deploy`](bounded-deploy/SKILL.md) | The CLI (init, verify, deploy, share, dashboard), multi-environment policy files, live-edit, custom domains and vanity slugs, and account and project config. |
 | [`bounded-onchain`](bounded-onchain/SKILL.md) | Solana and EVM collections, embedded non-custodial wallets (`@user.address`, Crossmint), signed transactions, DEX and perps patterns, and crypto and fiat payments (Bounded Pay). |

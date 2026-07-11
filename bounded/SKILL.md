@@ -63,7 +63,7 @@ only the phase you are working on.
 | The task is about | Skill |
 |---|---|
 | A generic or complete “build this app” request | **bounded-backend** + **bounded-frontend** + **bounded-deploy**; add **bounded-onchain** or **bounded-teams** only when the requirements call for them |
-| Policy rules, invariants (rollingSum/conserve/tenantTag/bound), functions, data/queries, realtime/live, the actor & identity model (`@user`, runAs/actAs, `@origin`, roles, service keys), proofs & counterexamples, policy tests (`bounded tests run`, concrete allow/deny examples) | **bounded-backend** |
+| Policy rules, write-gating invariants (rollingSum/flowBound/conserve/tenantTag/tenantEdge/bound), runtime-maintained `windowSum`, functions, data/queries, realtime/live, the actor & identity model (`@user`, runAs/actAs, `@origin`, roles, service keys), proofs & counterexamples, policy tests (`bounded tests run`, concrete allow/deny examples) | **bounded-backend** |
 | The client: `@bounded-sh/client` SDK, hosted frontend, end-user auth UI (email OTP, OAuth, guest) | **bounded-frontend** |
 | Shipping & config: the CLI, environments, live-edit, domains/slugs, `bounded.json`, accounts, sharing access | **bounded-deploy** |
 | Wallets, tokens, on-chain transactions, crypto & card payments (Bounded Pay) | **bounded-onchain** |

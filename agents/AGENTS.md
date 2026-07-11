@@ -40,10 +40,13 @@ bounded init
 
 ### Flow
 
-1. Build the client UI and write `policy.json`: collections with auth rules plus invariants. The types are
-   `rollingSum` (time-windowed spend and rate caps), `conserve` (balances and
-   supply that must not change), `bound` (hard field ceilings and floors),
-   `tenantTag` and `tenantEdge` (tenant isolation).
+1. Build the client UI and write `policy.json`: collections with auth rules plus
+   invariants. The six boundary types are
+   `rollingSum` (time-windowed spend and rate caps), `flowBound` (per-user or
+   per-tenant cumulative outflow ≤ inflow; runtime-enforced with an `UNKNOWN`
+   verify advisory), `conserve` (balances and supply that must not change),
+   `bound` (hard field ceilings and floors), and `tenantTag`/`tenantEdge`
+   (tenant isolation). `windowSum` is a separate runtime-maintained aggregate.
 2. `bounded verify` runs the prover and returns a proof report with
    counterexamples. Read the counterexample, fix the policy, verify again.
 3. `bounded deploy --create --name <name>` compiles and pushes. The server

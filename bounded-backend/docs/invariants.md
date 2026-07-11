@@ -1,23 +1,34 @@
 # Invariants — Declaring the Boundaries
 
-**What's in here / when to read this:** the five invariant types — `conserve`,
-`rollingSum`, `bound`, `tenantTag`, `tenantEdge` — and the rule-vs-invariant decision.
+**What's in here / when to read this:** the six boundary invariant types —
+`conserve`, `rollingSum`, `flowBound`, `bound`, `tenantTag`, and `tenantEdge` —
+plus the runtime-maintained `windowSum` aggregate and the rule-vs-invariant
+decision.
 
-Invariants are **transaction postconditions**: declared once on a collection
-and enforced atomically on every write path at runtime — including hooks, ticks,
-schedules, and `set-many` batches, where the whole batch commits or nothing does.
-Nothing has an exemption from an invariant. Four of the five types
-(`conserve`, `rollingSum`, `tenantTag`, `tenantEdge`) are additionally **proven
-at deploy** ([verify-and-counterexamples.md](verify-and-counterexamples.md)).
-`bound` is **runtime-enforced** (an over-limit write is rejected `409`) but **not
-proof-backed** — it deploys fine, it just shows as *unproven* in `verify`
-(advisory, non-blocking; see its section).
+Write-gating invariants are **transaction postconditions**. In the offchain
+realtime runtime they are declared once on a collection and enforced atomically
+on every write path — including hooks, ticks, schedules, and `set-many` batches,
+where the whole batch commits or nothing does. Nothing on those offchain write
+surfaces has an exemption; onchain coverage remains type-specific. Four types
+(`conserve`, `rollingSum`, `tenantTag`, `tenantEdge`) have general invariant
+encodings **discharged by SMT** during `bounded verify`; `bound` is shape-specific
+(scalar offchain fields are proved, while `.values` maps remain `UNKNOWN`)
+([verify-and-counterexamples.md](verify-and-counterexamples.md)). `flowBound` is
+runtime-enforced but **not SMT-proven** and produces a non-blocking advisory with
+proof status `UNKNOWN`, not a proof certificate. `windowSum` is structurally
+validated and runtime-maintained. It is primarily a readable aggregate, has no
+SMT aggregate obligation, and still write-gates updates/deletes on its event leg
+to keep that history append-only.
 
 Every invariant accepts an optional `name`, surfaced in the `409` when a write
 violates it. **Name them like error codes:** `spend_cap`, `no_minting`,
 `task_tenancy`.
 
-There are five types: `conserve`, `rollingSum`, `bound`, `tenantTag`, `tenantEdge`.
+There are six boundary types: `conserve`, `rollingSum`, `flowBound`, `bound`,
+`tenantTag`, and `tenantEdge`. `windowSum` is declared in the same `invariants`
+array as a seventh declaration type: it primarily maintains a readable aggregate
+rather than enforcing a cap or integrity inequality, while still making its event
+collection append-only.
 
 > **Identity in the rule examples below.** The SDK `user` object is
 > `{ id: string, address: string | null, email: string | null, isAnonymous: boolean }`. `@user.id` is
@@ -47,16 +58,21 @@ protects what matters; get it wrong and it's green but hollow.
 | "Balance never goes negative" | rule (`@newData.balance >= 0`) | single-write predicate |
 | "The total balance never changes" | invariant (`conserve`) | property of the *batch*, not one write |
 | "An agent spends at most 100/hr" | invariant (`rollingSum`) | no single write can see the history |
+| "A user's withdrawals never exceed their deposits" | invariant (`flowBound`) | cross-collection, cumulative, and partitioned by user |
+| "Show the exact 10-minute volume" | aggregate (`windowSum`) | maintains a readable sliding-window sum; it is not a cap |
 | "A doc always belongs to its tenant" | invariant (`tenantTag`) | binds the tag on every write path |
 | "A reference never crosses tenants" | invariant (`tenantEdge`) | property of cross-document state |
 
 Rule of thumb: **if violating it means an app bug, write a rule. If violating it
-means losing money or leaking a tenant, write an invariant** and let the prover
-carry it. Declaring rule-shaped conditions as invariants buys nothing and costs
-flexibility — invariants bind every write path, including your own migrations.
+means losing money or leaking a tenant, write an invariant.** Then check its
+reported proof status: `PROVED` and `UNKNOWN` are materially different guarantees.
+Declaring rule-shaped conditions as invariants buys nothing and costs flexibility
+— invariants bind every write path, including your own migrations.
 
-Common keys across types: `type`, `field`, `name`, `scope` (an alternate path
-template to bind the invariant to), `onchain` (coverage claim — last section).
+Common base keys are `type`, `field`, optional `name`, and optional `onchain`
+(coverage claim — last section). Metadata is type-specific: in particular,
+`flowBound` and `windowSum` reject `scope` in v1 and must be declared directly on
+their outflow/event collection.
 
 ## `conserve` — sums don't change
 
@@ -349,50 +365,99 @@ window." They compose: the same event log can carry both.
 
 ## `flowBound` — per-partition "outflow never exceeds inflow" across two collections
 
-For every value of a scope variable, the sum of an OUTFLOW collection's field must
-stay ≤ the sum of an INFLOW collection's field. The canonical shape: an escrow
-where each user's releases can never exceed that user's deposits. Declared on the
-OUTFLOW collection (the leg being gated):
+`flowBound` gates a cumulative flow independently for every value of a path
+variable. For each partition `p`, the offchain runtime enforces:
+
+```text
+sum(outflow.field where scopeVariable = p)
+  <= sum(inflow.field where scopeVariable = p)
+```
+
+The canonical shape is an escrow where each user's releases can never exceed
+that same user's deposits. Declare the invariant on the **outflow collection**
+(the leg being gated), and point its `inflow` object at the other collection:
 
 ```json
 {
-  "vault/$user/deposits/$id": {
-    "fields": { "amount": "UInt!" },
+  "vault/$user/deposits/$depositId": {
+    "fields": { "amount": "UInt" },
     "tier": "durable",
-    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" }
+    "rules": {
+      "read": "@user.id != null && $user == @user.id",
+      "create": "@user.id != null && $user == @user.id",
+      "update": "false",
+      "delete": "false"
+    }
   },
-  "vault/$user/releases/$id": {
-    "fields": { "amount": "UInt!" },
+  "vault/$user/releases/$releaseId": {
+    "fields": { "amount": "UInt" },
     "tier": "durable",
-    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" },
-    "invariants": [{
-      "type": "flowBound",
-      "name": "released-le-deposited",
-      "field": "amount",
-      "scopeVariable": "$user",
-      "inflow": { "collection": "vault/$user/deposits/$id", "field": "amount" }
-    }]
+    "rules": {
+      "read": "@user.id != null && $user == @user.id",
+      "create": "@user.id != null && $user == @user.id",
+      "update": "false",
+      "delete": "false"
+    },
+    "invariants": [
+      {
+        "type": "flowBound",
+        "name": "released_le_deposited",
+        "field": "amount",
+        "scopeVariable": "$user",
+        "inflow": {
+          "collection": "vault/$user/deposits/$depositId",
+          "field": "amount"
+        },
+        "onchain": "offchainOnly"
+      }
+    ]
   }
 }
 ```
 
-Semantics and constraints (validated at deploy):
+| Key | Required | Meaning |
+|---|---|---|
+| `field` | yes | Nonoptional `UInt` field summed on the declaring outflow collection |
+| `scopeVariable` | yes | A `$variable` that appears as a complete path segment in both collection templates; each value gets an independent bound |
+| `inflow.collection` | yes | Existing, distinct durable offchain collection template whose sum supplies the bound |
+| `inflow.field` | yes | Nonoptional `UInt` field summed on the inflow collection |
+| `name` | no | Stable name surfaced on a `409` |
+| `onchain` | no | Omit it or set `offchainOnly`; every other value is rejected for `flowBound` v1 |
 
-1. **Per-partition, both legs counted per transaction.** A rejected write reports
-   the boundary exactly: `cap` = the partition's inflow sum, `current` = its
-   committed outflow, `attempted` = this write's amount. A same-transaction
-   deposit + release counts both legs, so releasing exactly what you deposit in
-   one `set-many` passes at equality.
-2. **Both collections become append-only** (updates/deletes on either leg would
-   falsify the history the bound is computed from — same stance as `rollingSum`).
-3. `scopeVariable` is REQUIRED and must be a path variable of BOTH templates;
-   both fields `UInt`; both collections `durable`, non-session, offchain (v1);
-   the two collections must be distinct.
-4. Writes to the INFLOW collection alone never violate (they only raise the
-   bound) — deposits are always accepted (subject to your rules).
-5. `bounded verify` reports a well-formed `flowBound` as a **non-blocking
-   advisory** ("runtime-enforced per-partition flow bound") — malformed metadata
-   blocks the deploy.
+Semantics and structural requirements:
+
+1. **Each partition is isolated.** Deposits under `alice` cannot fund releases
+   under `bob`. Every outflow create is checked against all committed inflow and
+   outflow records for its own `scopeVariable` value.
+2. **Both staged legs count atomically.** A deposit and release in the same
+   `setMany` are evaluated together. Deposit 100 + release 100 passes at
+   equality; deposit 100 + release 101 rejects the entire batch.
+3. **Both legs are append-only.** The invariant itself rejects an update or
+   delete of either an inflow or outflow record with `409`, even if a collection
+   rule accidentally allows it. Keep explicit `update: "false"` and
+   `delete: "false"` rules too, so the policy documents the intended API.
+4. **Inflow-only creates cannot violate the inequality.** They raise the bound,
+   so the runtime checks append-only shape and then skips the partition scan.
+   Normal auth rules and schema validation still apply.
+5. **Use nonoptional values.** Declare both summed fields as `UInt` (or readonly
+   `UInt!`), never optional `UInt?`/`UInt!?`. Do not rely on a validator accepting
+   a `UInt` base type: validator versions that normalize field modifiers can also
+   accept an optional form, while the runtime still requires every evaluated leg
+   to contain a present, nonnegative safe integer. Missing, null, negative,
+   fractional, or unsafe values fail closed at runtime.
+6. **Both collections are durable, non-session, distinct, and offchain.** The
+   same `scopeVariable` token must occur in both templates. `flowBound` v1 does
+   not support a `scope` remap and cannot be declared on an onchain collection.
+
+> **Current verification status: runtime-enforced, not SMT-proven.** Structural
+> validation checks relationship metadata such as the two collection templates,
+> scope variable, tier, and onchain mode, and rejects malformed declarations.
+> A well-formed declaration is then emitted by `bounded verify` as a non-blocking
+> `flowBound ... (runtime-enforced advisory)` with proof status `UNKNOWN`. The
+> offchain realtime Worker enforces the inequality at write time, but the
+> verifier does **not** generate or discharge an SMT obligation for its algebra
+> today. Do not interpret a green overall verify verdict, structural validation,
+> or the advisory's non-blocking `passed` flag as a formal proof or certificate.
 
 Choose `conserve` when a total must stay constant; `rollingSum` to cap a windowed
 sum; `windowSum` to READ a windowed sum; `flowBound` when one flow must never
@@ -406,27 +471,15 @@ comparison against a constant `limit`. Enforced on the **standard** write paths
 checkpoint) — so a server-authoritative game's score, a counter, or a level can't be
 stored out of range, no matter what a client (or a buggy tick) proposes.
 
-> **`bound` is RUNTIME-enforced but NOT yet formally SMT-proven — a non-blocking
-> ADVISORY.** Like every invariant, a `bound` is a postcondition on the
-> **authoritative** state: it is enforced on every durable write **and at the live
-> checkpoint** (a room snapshot whose value violates it is rejected — the last valid
-> checkpoint stays; an over-limit direct write is rejected `409`). `bounded verify`
-> surfaces it as **`[UNPROVEN]` … (runtime-enforced advisory)** — read that as "not
-> discharged by the prover", *not* "counterexample found"; it does **not** block
-> `deploy`, and the overall verdict still reads `✓ … Safe to deploy`. It is not a
-> `[PASS]` only because the prover doesn't yet discharge a `bound` obligation: a
-> **scalar** `bound` is provable at parity with `tenantTag`; the open modeling gap is
-> the `.values` **map** case, where the runtime checks *all* values but the
-> single-value proof obligation doesn't yet quantify over them. (This has nothing to
-> do with the ephemeral **view** layer — invariants are postconditions on the
-> authoritative/checkpointed state; the per-player view is a read-rule-governed
-> *projection*, so declare a `bound` on the **authoritative collection**, never a
-> `.../view/$x` subcollection.) The four types the prover fully discharges today are
-> `conserve`, `rollingSum`, `tenantTag`, and `tenantEdge` (see
-> [proof-coverage.md](proof-coverage.md)). So: use `bound` for a real runtime ceiling
-> you don't need a *proof* of; for a *proven* cap, express it as a `rollingSum`
-> (per-window total) or a single-write rule predicate (`@newData.score <= 11`) — both
-> prover-backed.
+> **`bound` proof status depends on its shape.** A scalar `bound` on an offchain
+> authoritative collection has an SMT-proved field-bound postcondition: every
+> accepted write satisfies `field op limit`. A `.values` map is still a
+> non-blocking runtime-enforced advisory with proof status `UNKNOWN`, because the
+> proof obligation does not yet quantify over every map value even though the
+> runtime checks them all. An onchain `bound` is not enforced by the onchain
+> runtime and must not be used for an onchain guarantee. In every supported
+> offchain shape, enforcement applies to authoritative durable writes and the live
+> checkpoint; ephemeral per-player views remain read-rule-governed projections.
 
 ```json
 {
@@ -449,18 +502,15 @@ stored out of range, no matter what a client (or a buggy tick) proposes.
 | `limit` | yes | The constant compared against (use `@const.NAME` to name it) |
 | `name` | no | Stable name surfaced on the `409` |
 
-**What gets enforced (NOT proven):** at runtime, any write whose post-state has
-the bounded field (or any value of the bounded map) violating `op limit` is
-rejected (`409` + `name`). At a live checkpoint, the room's snapshot is gated by
-this before it reaches the provable store. But this is a **runtime-only** check —
-the proof engine does not discharge a `bound` obligation (see the callout above),
-so it carries no deploy-time *proof*. A policy with a `bound` **does pass
-`verify`/`deploy`** (the `bound` shows as a non-blocking `[UNPROVEN]` advisory, not a
-blocking `[FAIL]`). Declare a `bound` (like any invariant) on the **authoritative
-collection** — the room/durable state, which is what the checkpoint folds through your
-invariants. Not on a `.../view/$x` subcollection: the per-player view is a
-read-rule-governed *projection* of the already-gated state, not a source of truth, so
-invariants don't apply there by design. See [live-runtime.md](live-runtime.md) and
+**What gets enforced and proved:** offchain, any write whose post-state has the
+bounded field (or any value of the bounded map) violating `op limit` is rejected
+(`409` + `name`). At a live checkpoint, the room snapshot is gated before it
+reaches the authoritative store. `bounded verify` proves the scalar offchain
+postcondition; `.values` remains runtime-enforced with an `UNKNOWN` advisory.
+Declare a `bound` on the **authoritative collection** — the room/durable state the
+checkpoint persists — not on a `.../view/$x` subcollection. A per-player view is
+a read-rule-governed projection, not a source of truth, so invariants do not apply
+there by design. See [live-runtime.md](live-runtime.md) and
 [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
 
 ## `tenantTag` — documents carry their tenant
@@ -571,14 +621,19 @@ target-first: create the member, then the task that references it.
 
 ## `onchain` — coverage claims are verified, not trusted
 
-Each invariant may declare `"onchain"`: `"offchainOnly"`, `"onchainUnsupported"`,
-or `"onchainSupported"`. The offchain realtime runtime enforces **all four**
-types. `onchainSupported` is accepted only for the subset the onchain runtime
-actually enforces — direct `conserve`, `tenantTag`, and `rollingSum`
-(epoch-bucketed) — and only on collections declared `"onchain": true`. Anything
-beyond the subset is **rejected at verify time**; an onchain runtime receiving
-unknown metadata rejects the write rather than skipping the check. Details:
-[proof-coverage.md](proof-coverage.md).
+Invariant declarations can generally state an `"onchain"` coverage claim:
+`"offchainOnly"`, `"onchainUnsupported"`, or `"onchainSupported"`. Type-specific
+restrictions still win. In particular, `flowBound` and `windowSum` v1 are
+**offchain-only**: omit `onchain` or use `"offchainOnly"`; an onchain collection
+or any stronger claim is structurally rejected.
+
+The offchain realtime runtime enforces all six boundary invariant types and
+maintains `windowSum`. Do not infer onchain parity from that statement: an
+`"onchainSupported"` claim is valid only where the onchain runtime has the
+corresponding implementation and the collection is declared `"onchain": true`.
+For `flowBound`, structural rejection is the current fail-closed boundary; there
+is no onchain implementation. See [proof-coverage.md](proof-coverage.md) for the
+coverage matrix.
 
 <a id="attestations--global-policy-wide-claims"></a>
 

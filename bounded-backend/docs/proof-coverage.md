@@ -22,6 +22,15 @@ onchain program. Nothing is ported between runtimes, so nothing can drift.
 | `rollingSum` | enforced (exact window) | enforced (epoch-bucketed) |
 | `tenantTag` | enforced | enforced |
 | `tenantEdge` | enforced | **fails closed** |
+| `bound` | enforced; scalar fields are SMT-proved, `.values` maps are `UNKNOWN` advisories | not enforced; do not use for onchain guarantees |
+| `flowBound` | enforced; `verify` advisory is `UNKNOWN` (no SMT proof) | structurally rejected (offchain-only v1) |
+
+Runtime enforcement and formal proof are separate claims. In particular, a
+well-formed `flowBound` is structurally validated and enforced by the offchain
+realtime Worker, but it is deliberately excluded from the combined SMT formal
+claim today. Its non-blocking `UNKNOWN` advisory is not a proof certificate; an
+SMT encoding of the per-partition inequality is not present in the current
+verifier.
 
 "Fails closed" means two things, both load-bearing:
 

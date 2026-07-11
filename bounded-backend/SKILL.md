@@ -2,7 +2,7 @@
 name: bounded-backend
 description: >-
   Author a Bounded backend: policy.json rules and invariants
-  (rollingSum/windowSum/flowBound/conserve/tenantTag/bound), functions (ctx.user/ctx.bounded/ctx.ai/
+  (rollingSum/windowSum/flowBound/conserve/tenantTag/tenantEdge/bound), functions (ctx.user/ctx.bounded/ctx.ai/
   ctx.services/ctx.secrets), the actor and identity model (@user, runAs/actAs,
   @origin, service keys, reserved identity sets), data and queries, realtime/live
   rooms, and the proof loop (bounded verify, counterexamples, proof coverage). Use
@@ -15,9 +15,10 @@ description: >-
 # Bounded backend
 
 The server side of a Bounded app: the policy that governs every write, the
-invariants that are proven at deploy and enforced at runtime, the functions that
-run trusted code, and the actor model that decides who is acting. The proof loop
-is `bounded verify`; `bounded deploy` compiles and pushes; runtime rule and
+proof-backed and runtime-enforced invariants, the functions that run trusted
+code, and the actor model that decides who is acting. The proof loop is `bounded
+verify`; treat `PROVED` differently from a non-blocking runtime advisory with
+proof status `UNKNOWN`. `bounded deploy` compiles and pushes; runtime rule and
 invariant checks fail closed. For CLI/deploy see the **bounded-deploy** skill; for
 the client SDK and auth UI see **bounded-frontend**; to route across the family,
 see the root **bounded** skill.
@@ -35,6 +36,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | Rules, field types, expressions, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
 | Add spending/rate caps | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) |
 | Model balances, points, P&L, or supply | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) |
+| Bound withdrawals/releases/spend by cumulative deposits/credits per user or tenant | [docs/invariants.md](docs/invariants.md#flowbound--per-partition-outflow-never-exceeds-inflow-across-two-collections) |
 | Tenant isolation | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
 | Hard field ceilings/floors, anti-cheat bounds | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
 | Trending feeds, leaderboards, "most active" (windowSum + ranked O(k) reads + index pre-declaration) | [docs/trending-feeds.md](docs/trending-feeds.md) |
@@ -103,6 +105,6 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 
 - Use `@user.id` for normal ownership and membership checks; `@user.address` only for wallet/onchain semantics.
 - Denied reads return empty `200` responses. Test read denial with a different permitted identity, not by waiting for a read `403`.
-- Use `conserve` for money-like values; `rollingSum` for caps over time; one atomic `set-many` when correctness spans multiple writes.
+- Use `conserve` for fixed totals, `rollingSum` for caps over time, and `flowBound` for cumulative per-partition outflow ≤ inflow; use one atomic `set-many` when correctness spans multiple writes.
 - Put provider API keys in Bounded secrets, not frontend code.
 - Know the acting principal before writing a rule: a function's `runAs`/`actAs` and `@origin` decide who `@user` is and whether the call is authorized.

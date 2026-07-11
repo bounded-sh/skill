@@ -9,7 +9,8 @@ closed** — a policy whose *blocking* proof obligations fail is rejected
 — deploy blocked`) and never ships. So `bounded verify` is where you read
 counterexamples and fix them *before* you hit the gate; an unfixed blocking
 DISPROVED will block the deploy. (Non-blocking advisories — literal `false`
-rules, bare-string attestation TODOs — never block; see below.)
+rules, bare-string attestation TODOs, and runtime-only declarations such as
+`flowBound` — never block; see below.)
 
 ## Proofs vs policy tests
 
@@ -30,6 +31,11 @@ scenario catches what the proof structurally can't. Use both. See
   (`bounded verify` does not persist local proof-certificate files.)
 - **DISPROVED** — a concrete counterexample exists, and the report gives it
   to you: the exact variable assignments that break the property.
+- **UNKNOWN / runtime-enforced advisory** — the declaration is structurally
+  valid and its runtime check is active, but the verifier did not generate and
+  discharge an SMT obligation. It never counts as `PROVED`. `flowBound` v1 uses
+  this status: the offchain realtime Worker enforces the per-partition inequality,
+  while `verify` reports a non-blocking advisory rather than a proof certificate.
 - **UNSUPPORTED / NOT PROVEN** — the proof engine cannot prove that obligation.
   It never counts as PROVED. If the unsupported construct is also an invalid
   runtime declaration, static deploy validation rejects it; otherwise it is a
@@ -116,8 +122,8 @@ counterexample is showing you a write that production would have accepted.
 | `ownership field exists in schema` | A rule referencing a missing field fails static validation, not the runtime |
 | `<action> rule runtime safety` (advisory) | Division/exponent expressions that can trap (divide by zero) get a suggested guard; advisory, non-blocking |
 
-**Invariant obligations** (the `transaction postcondition <name> ...` checks;
-failing any is a red-line proof finding to fix before deploy):
+**SMT-backed invariant obligations** (the `transaction postcondition <name> ...`
+checks; failing any is a red-line proof finding to fix before deploy):
 
 | Obligation | Proves |
 |---|---|
@@ -130,6 +136,13 @@ failing any is a red-line proof finding to fix before deploy):
 | `tenant isolation relationship depth <= k` / `declared graph induction` | (Opt-in) bounded-depth isolation (acyclic within k ≤ 10 hops) or inductive isolation over any finite declared path, cycles included |
 | `combined declared DSL formal claim` | One policy-level conjunctive check (`__policy__/formalClaims`) composing every generated obligation into a single verdict |
 | `attestation: <claim> — <sub-check>` | A GLOBAL [`proofs.attestations`](invariants.md#proofsattestations--global-policy-wide-claims) entry, under the `__policy__/attestations` report scope. The human `claim` is echoed verbatim, followed by the discharged obligation (a `roleGatedRead` exposure sweep, `authorityClosure` step, or rolling-limit algebra). A **bare-string** claim with no bound `kind` shows as `UNSUPPORTED` (non-blocking advisory, "NOT proven — bind to prove") — never counted as proven, never blocks deploy. Legacy top-level `attestations` still works. |
+
+**Runtime-only invariant advisories** are intentionally outside the
+`transaction postcondition ...` conjunction. A valid `flowBound` appears as
+`flowBound invariant <name> (runtime-enforced advisory)`, with `passed: true` so
+it does not block verification and proof status `UNKNOWN` so it cannot be counted
+as proved. Structural errors in its `scopeVariable` or `inflow` metadata remain
+blocking validation errors.
 
 **Function-auth obligations** (generated per declared Bounded Function from `functions[<name>].auth` — the imperative escape hatch):
 
