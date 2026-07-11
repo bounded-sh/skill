@@ -302,13 +302,15 @@ trusted full-development surfaces. Full agent workflow: [live-edit.md](live-edit
 Configured daemon `agentCommand` jobs run in a staged workspace first; only a
 validated diff is applied back to the real checkout.
 
-Cloud source tracking is on by default for new registrations and uses
-`sourceProvider: "auto"` unless the repo selects `github`, `artifacts`, or
-`none`. It can be disabled with `--source-provider none`, `--artifacts off`,
-`--artifact-push off`, or the matching `bounded.json` values. When source
-tracking is enabled, a successful local live-edit deploy attempts a filtered
-source sync for cloud/review flows. If Bounded reports that cloud source sync is
-unavailable, the local deploy should remain successful and report the warning.
+Cloud source tracking is opt-in for new registrations: artifacts and automatic
+push both default off. Enable it with `--artifacts on`; unless another provider
+is selected, that chooses the Bounded-managed `artifacts` provider and enables
+artifact push. `--source-provider none`, `--artifacts off`, or
+`--artifact-push off` keeps the corresponding source custody/sync behavior off.
+When source tracking is enabled, a successful local live-edit deploy attempts a
+filtered source sync for cloud/review flows. If Bounded reports that cloud source
+sync is unavailable, the local deploy should remain successful and report the
+warning.
 
 Default local deploy checks `liveEdit.distDir`, then `liveEdit.frontendDir/dist`,
 then `dist`, then `web/dist`. Cloud live-edit uses the same public hints and can
