@@ -114,14 +114,24 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
 
 ## Agent loop tips
 
-- **`409` means back off, not retry-harder.** The state forbids the write; the
+- **`409 invariant_violation` means back off, not retry-harder.** The state forbids the write; the
   same capped write will keep failing until the window ages out. Read the
-  collection and sum the window before retrying. `403` means fix the
+  collection and sum the window before retrying. A distinct `409
+  mutation_conflict` is an optimistic concurrency retry: HTTP `set`/`set-many`/
+  `delete` already reran one bounded internal attempt, while a realtime
+  WebSocket write can surface its first conflict directly. Reload exact state
+  and retry the idempotent operation, never classify it as a cap hit. `403` means fix the
   caller/payload for writes or invokes. Denied reads return `200` with empty data;
   verify read-denial cases with an identity you know is permitted instead of
   waiting for a read `403`. ([../docs/data-plane.md](../docs/data-plane.md))
-- **Capped collections are append-only.** Write each event with a fresh id;
-  don't update or delete a `rollingSum` doc.
+- **`rollingSum` collections are window-live append-only; `windowSum` event
+  collections are fully append-only.** Write each event with a fresh id and
+  never update it. Keep `delete: "false"` by default. If bounded retention is
+  required for an offchain `rollingSum`, opt into delete authorization only for
+  a deliberate sweeper: the runtime still rejects any row whose trusted
+  creation time is at or after any effective window boundary. `windowSum`
+  rejects deletes even after expiry because its durable decrement queue owns
+  the aggregate lifecycle.
 - **Propose invariants from schema shape.** Money-like fields → cap/conserve
   candidates; tenant-ish path vars → tenantTag. `bounded verify` renders these
   as questions; let a human arbitrate when one is available.

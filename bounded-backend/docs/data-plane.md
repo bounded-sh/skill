@@ -47,15 +47,43 @@ rejected), and forgetting the flag on an on-chain-protocol app is a hard
 > client-signed transactions, `--protocol` values, the eventual-consistency mirror,
 > the `0xbc4` gotcha, `--skip-preflight`, and the mainnet human-signed policy permit.
 
+## Collection tier is not the physical document backend
+
+`tier: "durable" | "checkpointed" | "ephemeral"` is a policy/runtime semantic:
+it decides when a collection becomes durable and which invariant/session shapes
+are valid. It does **not** select SQLite or Postgres. Postgres-primary storage is
+a platform-operated, per-app persistence backend behind the same Durable Object
+single writer; there is no public policy key or app-builder migration endpoint
+for it. Rules, invariants, atomic batches, and collection-tier behavior stay in
+front of either backend.
+
+In Postgres-primary mode, an acknowledged document mutation has already been
+synchronously appended to a durable local SQLite outbox. Remote Postgres replay
+is asynchronous; a cold start hydrates Postgres and overlays every still-pending
+outbox entry before serving state. A missing connector, invalid hydration, or
+exhausted outbox fails closed with `503` (`storage_unavailable` or the typed
+`postgres_hydration_limit`) rather than falling back to a stale SQLite document
+corpus; capacity/availability failures are retryable, while an oversized
+hydration corpus requires operator action.
+
+The current implementation envelopes are operational limits, **not permanent
+public API promises**: hydration is capped at 25,000 rows and 32 MiB of serialized
+documents; the pending outbox at 25,000 rows and 64 MiB; and one replay page at
+256 rows / 4 MiB. The internal migration is resumable and write-fenced, and live
+EVM collections remain SQLite-only. Do not market the current Postgres path as
+unbounded storage or encode these numbers into application behavior.
+
 ## Failure semantics
 
 | What failed | Status | What you get back | What committed |
 |---|---|---|---|
 | Invariant violated | `409` `postcondition failed: invariant "<name>" ...` | the invariant's **declared name** (e.g. `spend_cap`), its type, and the arithmetic that failed | nothing |
+| Optimistic write snapshot changed | `409` `code: "mutation_conflict"`, `retryable: true` | HTTP data writes surface this after one bounded internal retry; realtime WebSocket writes may surface the first conflict | nothing |
 | **Write** rule denied (create/update/delete) | `403` | the failed action plus a **trace** of the predicate that evaluated false | nothing |
 | Function `invoke` auth rule denied | `403` `Forbidden: auth rule denied` | denied before the body runs | nothing |
 | **Read** rule denied | **`200`** with `{"data": null}` (single) or `{"data": []}` (list) | **no `403`** — denied reads are *hidden*, not errored (see below) | n/a |
-| Update/delete on a capped collection | `409 append_only` | rolling-cap collections reject history rewrites by design | nothing |
+| Update, or a non-expired `rollingSum` delete | `409` invariant violation | live rolling-cap history cannot be rewritten; only a policy-authorized offchain row strictly older than every effective window may be deleted | nothing |
+| Update/delete on a `windowSum` event collection | `409` invariant violation | maintained-aggregate event history is fully append-only | nothing |
 | Policy fails verification at deploy | deploy fails | the proof report with counterexamples | previous-good policy stays active |
 
 > **How much detail you get back is governed by `errorDisclosure`.** The
@@ -72,7 +100,11 @@ rejected), and forgetting the flag on an on-chain-protocol app is a hard
 > can branch on even in minimal mode: **`policy_denied`** (`403` for writes and
 > function invokes; read denial is hidden as an empty `200`) and
 > **`invariant_violation`** (`409` — a postcondition like `rollingSum`/`conserve`
-> was violated).
+> was violated), and **`mutation_conflict`** (`409`, `retryable: true` — the
+> optimistic document/rule snapshot changed during the write). HTTP data writes
+> retry one complete attempt internally; realtime WebSocket writes can return
+> the first conflict. A mutation conflict is never evidence that a cap was
+> exhausted.
 
 > **Read denials never return `403`.** A read your `read` rule denies comes back
 > with HTTP `200` and an **empty payload** — `{"data": null}` for a single
@@ -84,10 +116,14 @@ rejected), and forgetting the flag on an on-chain-protocol app is a hard
 
 Agent rule of thumb:
 
-- `409` means the **state** forbids it. Backing off is correct; retrying the
+- `409 invariant_violation` means the **state** forbids it. Backing off is correct; retrying the
   same capped write will keep failing until enough of the window ages out.
   Poll cheaply (read the collection, sum the window) or schedule — don't
   hammer the write path.
+- `409 mutation_conflict` means concurrent state changed during evaluation.
+  HTTP data writes already retried once; realtime WebSocket writes may not have.
+  Reload exact state and retry only the idempotent operation. Do not stamp a
+  wall/cap receipt from this response.
 - `403` means **you** may not do it. Fix the caller or the payload, not the
   timing.
 
@@ -168,10 +204,11 @@ $ bounded data set-many --from-json bad-transfer.json
 
 ## In-batch composition
 
-Rules evaluate against **staged** state: the rule for entry *N* sees the
-results of entries 0..*N-1* via `getAfter()`. That turns `set-many` into a
-composition primitive — guard documents and the writes they gate travel in
-one atomic unit, with no TOCTOU window between check and act.
+Rules evaluate against the transaction's **final staged state**: every rule in
+the batch sees every proposed document via `getAfter()`, independent of array
+order. That turns `set-many` into a composition primitive — guard documents
+and the writes they gate travel in one atomic unit, with no TOCTOU window
+between check and act. `get()` still reads the committed pre-batch snapshot.
 
 Allowlist example. `gated/$docId` has the create rule:
 
@@ -193,12 +230,15 @@ $ bounded data set-many --from-json compose.json
 ✓ committed 2 document(s)
 ```
 
-Reverse the order and the gate sees no staged entry — the whole batch `403`s.
+Reversing those two entries has the same result. Write ordering is not an
+authorization primitive; reciprocal rules may safely require each other's
+final staged values in one batch.
 
 Composition rules:
 
-- **Order matters** — stage the guard before the write that reads it.
-- `get()` reads pre-batch state; `getAfter()` reads staged state. Use
+- **Order does not affect `getAfter()` visibility** — each rule sees the final
+  staged value for every distinct path in the batch.
+- `get()` reads pre-batch state; `getAfter()` reads final staged state. Use
   `getAfter` for any post-condition ("balance still ≥ floor after the
   transfer").
 - **Distinct paths per entry** — in-batch path collisions reject.
@@ -213,13 +253,19 @@ collection uses `conserve` so the Ink/payment leg cannot mint or burn. The buyer
 submits the good move plus both wallet updates in one `setMany`; a missing or
 wrong payment rejects the whole batch.
 
-## Append-only caps
+## Window-live append-only caps
 
-Collections under a `rollingSum` are append-only event logs: `update` and
-`delete` are rejected — both offchain and onchain — so the history a cap is
-computed from cannot be rewritten, not by a compromised agent and not by your
-own retry loop. Write each spend as a new document with a fresh id;
-idempotency comes from your ids, not from overwrites.
+Collections under a `rollingSum` reject every `update`, so live cap history
+cannot be rewritten by a compromised agent or retry loop. Write each spend as a
+new document with a fresh id; idempotency comes from your ids, not overwrites.
+
+Deletes remain denied unless the policy explicitly authorizes them. Even then,
+the offchain runtime accepts only a row whose trusted platform `_createdAt` is
+strictly before every matching window's effective start
+(`max(now - windowSeconds, resetAtMs)`). Exact-boundary, live, future, and invalid
+timestamps fail closed. Onchain-supported rolling caps remain fully no-delete.
+This lets an intentional retention sweeper bound storage without weakening any
+live window.
 
 ## SDK write path
 

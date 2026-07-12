@@ -157,8 +157,6 @@ export function tick(state, intents, dt) {
 
 ```ts
 // functions/npcBrain.ts — runs as the service principal declared in session.live.runAs.
-const seen = new Set<string>();
-
 export default async function npcBrain(args, ctx) {
   // The policy `auth` rule is the REAL gate — the runtime already enforced that
   // this call came from this game's live tick (@origin.kind == 'live' &&
@@ -170,9 +168,9 @@ export default async function npcBrain(args, ctx) {
   if (ctx.origin && (ctx.origin.kind !== "live" || ctx.origin.module !== "arena")) {
     return { text: "" };
   }
-  // Dedup on YOUR effectId.
-  if (args.effectId && seen.has(args.effectId)) return { text: "" };
-  if (args.effectId) seen.add(args.effectId);
+  if (typeof args.effectId !== "string" || args.effectId.length < 1) {
+    throw new Error("effectId is required");
+  }
 
   const out = await ctx.ai.run("claude-opus-4-8", {            // billed to runAs, capped at the app account
     messages: [
@@ -180,7 +178,7 @@ export default async function npcBrain(args, ctx) {
       { role: "user", content: args.prompt },
     ],
     max_tokens: 200,
-  });
+  }, { idempotencyKey: `npc:arena:${args.effectId}:reply:v1` });
 
   return { text: out.response ?? out.text ?? "" };
 }
@@ -206,8 +204,11 @@ defense-in-depth.
 - **Delayed, not instant.** An NPC reply lands a short delay after the tick that emitted
   the call. Design the loop to tolerate it (e.g. show "…thinking" until the
   `@effect` result arrives) — don't block the tick on it.
-- **Dedup idempotently.** A call can in principle run more than once. **Dedup on `effectId`
-  inside the function** (as the example does). Do **not** assume exactly-once.
+- **Dedup idempotently.** A call can run more than once. Bind the required
+  app-global `ctx.ai.run` idempotency key to `effectId` plus the callsite and
+  prompt revision (as the example does); the same logical turn then replays one
+  terminal AI result across runtime retries. Do **not** use an in-memory `Set` or
+  assume exactly-once.
 - **Cap NPC spend / rate.** `ctx.ai` is capped per the app account's AI/external-services credit (a
   depleted account fails closed — no runaway bill), but also bound the *rate*:
   gate `npcShouldSpeak` (e.g. once every N ticks, or only on a player action) and

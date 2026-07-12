@@ -105,6 +105,9 @@ This skill is for Bounded users and app builders. Keep guidance user-facing:
 |---|---|
 | `403` | A write or function invoke failed a rule (bounded-backend). Denied reads are hidden as `200` with empty data, not `403`. |
 | `409` + invariant name | The transaction would violate an invariant (bounded-backend). |
+| `409` + `code: "mutation_conflict"` | A concurrent mutation changed the optimistic rule snapshot. HTTP data writes retry once internally; realtime WebSocket writes may surface their first conflict. Reload exact state and retry the idempotent operation. This is not an invariant/cap hit. |
+| `409` + `ai_operation_idempotency_conflict` / `service_invoke_operation_conflict` | An app-global AI/service key was reused with changed actor, model/tool, input, entity, or operation kind. Keep the original request or mint a deliberately new callsite/entity/revision key. |
+| `503` + `ai_operation_attention_required` / `service_invoke_outcome_unknown` | Paid/provider work has an unresolved durable outcome. Do not rotate the key or retry as fresh work; inspect the operation/attention state. |
 | `declined` + boundary name | An escorted external action would cross an Enforced boundary, checked before the call fires ([docs/observe.md](docs/observe.md) / bounded-teams). Read the named boundary; do not retry harder. |
 | `429` + `dimension`/`projectedUsage` | A plan limit or spend cap would be exceeded. Explain the axis; suggest upgrade, top-up, cap change, or less volume ([docs/billing.md](docs/billing.md)). |
 | `DISPROVED` + counterexample | The proof found a breaking assignment (bounded-backend). Strengthen the policy and verify again. |
@@ -113,7 +116,7 @@ This skill is for Bounded users and app builders. Keep guidance user-facing:
 
 Two user-visible buckets:
 
-- **AI/external-services bucket**: AI (`ctx.ai` — chat per call, image generation per image, video per second, all reserved fail-closed and refunded on failure) and managed third-party service proxies (`ctx.services`).
+- **AI/external-services bucket**: AI (`ctx.ai` — chat per call, image generation per image, video per second) and managed third-party service proxies (`ctx.services`). Cost-bearing calls reserve fail-closed, settle/refund confirmed outcomes idempotently, and retain ambiguous provider-started outcomes for attention rather than rerunning paid work.
 - **Bounded infra bucket**: metered Bounded platform usage at public rates.
 
 Free accounts include 3 AI builds per rolling day (fast model) plus a small
