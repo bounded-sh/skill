@@ -107,11 +107,35 @@ reintroducing personal keys:
   single trusted (and replaceable) party as the rest of the runtime. No third
   party gets a key to the app.
 
+### Using the relay from a function
+
+The relay is a standard services tool. From any hosted function:
+
+```ts
+const res = await ctx.services.invoke("X402_FETCH", {
+  url: "https://api.vendor.com/v1/thing", // https only; auth headers are rejected — that's the point
+  method: "GET",                           // or POST + body (≤64KB)
+  maxUsd: 0.25,                            // refuse to pay more than this per call (platform hard-cap applies)
+});
+// res.paid === true → res.result.{status,body} is the paid response;
+// res.chargedMicroUsd = price × 1.05 markup + the flat tx-fee surcharge.
+// A 402 in a scheme we don't support returns error "no_supported_payment_scheme"
+// with the provider's demand attached — surface that to the user, don't work around it.
+```
+
+Semantics to design around: the endpoint is probed unpaid first (non-402
+responses pass through for a flat routing fee); a 402 quoting Solana USDC —
+either the standard x402 `X-PAYMENT` dialect or Bounded's own intake dialect —
+is paid from the relay wallet and retried with proof; anything else is a
+call-out. Charges are refunded in full whenever the paid retry never delivered.
+Discovery: `ctx.services.search("x402")` / `describe("X402_FETCH")`. The tool
+is environment-gated (`x402_relay_disabled` means the relay isn't enabled
+there yet) — when disabled, treat the feature as ladder-step-3 and flag it as
+"unblocks when the x402 relay is enabled".
+
 When designing: if a needed service advertises x402 support, note it as
 "relay-eligible" in your plan and budget its per-call price + surcharge into
-the app's running costs. If the relay capability hasn't reached your runtime
-surface yet, treat the feature as ladder-step-3 (call it out) and flag it as
-"unblocks when the x402 relay covers this counterparty".
+the app's running costs.
 
 ## Practical checklist before launch
 
