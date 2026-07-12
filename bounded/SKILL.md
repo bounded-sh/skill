@@ -70,6 +70,7 @@ only the phase you are working on.
 | Shipping & config: the CLI, environments, live-edit, domains/slugs, `bounded.json`, accounts, sharing access | **bounded-deploy** |
 | Wallets, tokens, on-chain transactions, crypto & card payments (Bounded Pay) | **bounded-onchain** |
 | Org/team governance: org-wide observe, enforcement, custody, and invariants shown on a shared team view | **bounded-teams** |
+| The app will launch on **oapps.fun** / become an oApp (community-owned, token-governed, "outlives its creator"): the zero-secrets discipline, steward-owned services only, the x402 relay fallback | **oapps-fun** |
 | Watching one app's actions, decisions, and action boundaries | [docs/observe.md](docs/observe.md) |
 
 Install the public family with `npx skills add bounded-sh/skill -y`. Do not use

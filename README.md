@@ -72,6 +72,7 @@ Load the root skill first. It routes to the sibling for your task.
 | [`bounded-deploy`](bounded-deploy/SKILL.md) | The CLI (init, verify, deploy, share, dashboard), multi-environment policy files, live-edit, custom domains and vanity slugs, and account and project config. |
 | [`bounded-onchain`](bounded-onchain/SKILL.md) | Solana and EVM collections, embedded non-custodial wallets (`@user.address`, Crossmint), signed transactions, DEX and perps patterns, and crypto and fiat payments (Bounded Pay). |
 | [`bounded-teams`](bounded-teams/SKILL.md) | Org-level governance. Observe every action and policy decision, enforce boundaries, keep custody of secrets, and surface the proven invariants on a shared team view. |
+| [`oapps-fun`](oapps-fun/SKILL.md) | Building apps destined for [oapps.fun](https://oapps.fun) (oApps): the zero-secrets discipline, steward-owned capabilities only ("if Bounded can't do it, you can't do it"), honest call-outs for unsupported capabilities, and the x402 relay fallback. |
 
 ## SDKs
 
