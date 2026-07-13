@@ -52,6 +52,67 @@ So one file gives preview and production **different admin members and different
 caps** with no flags and no copy-paste. Per-env `appId`s keep the two apps
 cleanly separated.
 
+## Staging + production, end to end
+
+Create two apps before adding the `environments` block. Record each printed
+`appId`. The second command creates the production app:
+
+```bash
+bounded deploy ./policy.json --create --name my-app-staging
+bounded deploy ./policy.json --create --name my-app-production
+```
+
+Wire both ids into `policy.json`:
+
+```json
+{
+  "environments": {
+    "staging": {
+      "appId": "<staging-app-id>",
+      "constants": { "ADMIN": "StagingAdmin", "DAILY_CAP": 50 }
+    },
+    "production": {
+      "appId": "<production-app-id>",
+      "constants": { "ADMIN": "ProductionAdmin", "DAILY_CAP": 5000 }
+    }
+  },
+  "constants": { "ADMIN": "StagingAdmin", "DAILY_CAP": 50 }
+}
+```
+
+Resolve, prove, and deploy the policy once per environment:
+
+```bash
+bounded verify ./policy.json --environment staging
+bounded deploy ./policy.json --environment staging
+
+bounded verify ./policy.json --environment production
+bounded deploy ./policy.json --environment production
+```
+
+Build the static frontend, then deploy the same build to each app explicitly:
+
+```bash
+npm run build
+bounded site deploy ./dist --app-id <staging-app-id>
+bounded site deploy ./dist --app-id <production-app-id>
+```
+
+Functions also target an app id directly. Deploy each function to both apps:
+
+```bash
+bounded functions deploy worker --entry ./backend/functions/worker.ts \
+  --auth '@user.id != null' --app-id <staging-app-id>
+bounded functions deploy worker --entry ./backend/functions/worker.ts \
+  --auth '@user.id != null' --app-id <production-app-id>
+```
+
+`policy.json` `--environment` and `bounded.json` `environment` are different
+axes. `--environment staging` selects an entry from the policy and its app id.
+`bounded.json` `environment`, the global `--env` flag, and `BOUNDED_ENV` select
+the Bounded platform control plane. They do not select a staging or production
+entry from the policy.
+
 ## Notes
 
 - `--environment` selects an *entry in your policy* (a per-env `appId` +

@@ -67,7 +67,7 @@ powers explicitly via policy rules ([admin-and-ownership.md](../../bounded-backe
 
 `bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
 Agents should read this file first. It is safe to commit and contains no private
-key material:
+key material. This example explicitly opts into cloud source sync:
 
 ```json
 {
@@ -122,24 +122,13 @@ control-plane commands; commands requiring a wallet signer ask you to select a
 wallet source. Older projects with only `.bounded/app.json` still work; the CLI
 falls back to that marker when `bounded.json` is absent.
 
-New live-edit registrations default `liveEdit.artifacts` and
-`liveEdit.artifactPush` to `true`, with `liveEdit.sourceProvider: "auto"`.
-Set `liveEdit.sourceProvider` to `github`, `artifacts`, or `none` when a repo
-needs an explicit cloud source backend or opt-out. Set either legacy value to
-`false` in `bounded.json`, or pass `--artifacts off` / `--artifact-push off`,
-when a repo should opt out of Bounded cloud source tracking or automatic sync.
-
-Optional `liveEdit.frontendDir`, `liveEdit.distDir`, and
-`liveEdit.buildCommand` are public, secret-free build hints for agents and cloud
-live-edit. They are repo-relative except for `buildCommand`, which runs in
-`frontendDir` when set and otherwise at the repo root.
-
-New live-edit registrations default `liveEdit.artifacts` and
-`liveEdit.artifactPush` to `true`, with `liveEdit.sourceProvider: "auto"`.
-Set `liveEdit.sourceProvider` to `github`, `artifacts`, or `none` when a repo
-needs an explicit cloud source backend or opt-out. Set either legacy value to
-`false` in `bounded.json`, or pass `--artifacts off` / `--artifact-push off`,
-when a repo should opt out of Bounded cloud source tracking or automatic sync.
+Fresh live-edit registrations default `liveEdit.artifacts` and
+`liveEdit.artifactPush` to `false`. Cloud source tracking is opt-in. Pass
+`--artifacts on` to enable it. With no explicit or saved push preference, that
+opt-in also enables artifact push and selects the Bounded-managed `artifacts`
+provider. Use `--source-provider github` for a configured GitHub backend. Use
+`--source-provider none`, `--artifacts off`, or `--artifact-push off` for the
+corresponding opt-out.
 
 Optional `liveEdit.frontendDir`, `liveEdit.distDir`, and
 `liveEdit.buildCommand` are public, secret-free build hints for agents and cloud

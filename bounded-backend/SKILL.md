@@ -50,6 +50,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | Start simple, graduate to functions | [docs/functions-graduation.md](docs/functions-graduation.md) |
 | Give backend code user-owned API keys | [docs/secrets.md](docs/secrets.md) |
 | Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
+| Recurring fleet sweeps without full collection scans | [docs/scheduled-sweeps.md](docs/scheduled-sweeps.md) |
 | What anti-cheat can and cannot prove | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
 | Data-plane read/write semantics and atomic batches | [docs/data-plane.md](docs/data-plane.md) |
 | Queries, pagination, aggregates | [docs/queries.md](docs/queries.md) |

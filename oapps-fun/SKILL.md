@@ -95,9 +95,18 @@ to:
 
 The DYOR window makes source sync load-bearing: the public source page serves
 what the platform has synced, so deploys must push source artifacts. Cloud
-live-edit artifactPush is the default. Do NOT opt out with
-`liveEdit.artifacts: false` on an oapps-bound app, or the public source page
-will sit empty and buyers will treat that as a red flag.
+source sync is opt-in. Fresh live-edit registrations default `artifacts` and
+`artifactPush` off. An oApps-bound app must enable both:
+
+```sh
+bounded live-edit register --app-id <appId> --repo . \
+  --origin https://<slug>.bounded.page \
+  --artifacts on --source-provider artifacts --artifact-push on
+```
+
+Do not set `liveEdit.artifacts: false` or `liveEdit.artifactPush: false` on an
+oApps-bound app. The public source page will stay empty until the platform has
+synced source.
 
 ## The capability ladder
 
@@ -213,7 +222,7 @@ the app's running costs.
   relay-eligible.
 - The site is private (`sitePrivate`) and stays that way; graduation's
   "let go" step does the public flip, not you.
-- Source sync is on (artifactPush default, no `liveEdit.artifacts: false`):
+- Source sync is explicitly on (`artifacts` and `artifactPush` are true):
   `/__bounded/source` shows the current tree, not an empty page.
 - The slug is the name the token should live at (`<slug>.oapps.fun`); rename
   it before launch if it isn't.

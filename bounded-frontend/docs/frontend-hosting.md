@@ -95,6 +95,45 @@ declined-write card the widget shows end users can be turned off in policy with
 `openApps.widget.declineCard: false` (widget `visibility: "hidden"` suppresses
 it too).
 
+## Public source page for launched oApps
+
+`/__bounded/source` is the public browser for an oApp's synchronized source
+tree and change history. It serves the source revision stored by the platform
+through live-edit artifacts. It does not reconstruct source from the hosted
+`dist` directory or read an unsynchronized local checkout.
+
+The launched-oApp gate applies before any source is returned. An unlaunched app
+gets `404` on every source route. After launch, the source page is public even
+when the normal hosted site is private.
+
+If the page says "Source is being prepared," the launch gate passed but the
+platform has no source manifest to show. Inspect the manifest response first:
+
+```bash
+curl -i https://<slug>.bounded.page/__bounded/source/manifest.json
+```
+
+Its status and error body distinguish a missing synchronized repository from a
+temporary source backend failure. Then check the registered settings, opt in to
+source tracking and push, and run a live-edit deploy:
+
+```bash
+bounded live-edit list
+bounded live-edit register --app-id <id> --repo . \
+  --origin https://<slug>.bounded.page \
+  --artifacts on --source-provider artifacts --artifact-push on
+bounded live-edit deploy --app-id <id>
+```
+
+Read the deploy output for a source-sync warning. The frontend deploy can
+succeed when source sync is unavailable, so a live site does not prove that the
+source manifest arrived. A plain `bounded site deploy` uploads the static build;
+it does not replace the live-edit source sync step.
+
+Download the published tree at `/__bounded/source.zip`. The archive also
+contains the published constitution and deployed policy at its root. It uses
+the same launched-oApp gate and fails instead of returning a partial archive.
+
 Frontend variants are optional preview branches:
 
 ```bash

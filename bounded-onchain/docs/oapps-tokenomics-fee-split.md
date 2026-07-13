@@ -1,11 +1,18 @@
-# oApps tokenomics — the 55/25/20 fee split (composed in policy)
+# HISTORICAL worked example: the oApps 55/25/20 fee split
+
+> **HISTORICAL WORKED EXAMPLE.** This document preserves the superseded 55%
+> treasury / 25% creator / 20% Poof reference policy. The current canonical,
+> shipped split is **10% venue / 20% creator / 20% steward / 50% app reserve**.
+> The shipped model uses a treasury ledger with transitions proven at the rule
+> layer, plus a permissionless `distribute` update. Port the mechanics below, not
+> its recipients or percentages.
 
 **What's in here / when to read this:** you launched a token on Meteora (see
 [meteora-token-launch.md](meteora-token-launch.md)) and now you need to *route the
-trading fees to more than two parties* — the oApps model is **55% treasury / 25%
-creator-of-record / 20% Poof**. Meteora's config is only 2-party (creator vs
-partner), so the third leg and the exact bps are **composed in Bounded policy** and
-proven by Z3. This doc is the worked example that
+trading fees to more than two parties*. This historical oApps model is **55%
+treasury / 25% creator-of-record / 20% Poof**. Meteora's config is only 2-party
+(creator vs partner), so the third leg and the exact bps are **composed in Bounded
+policy** and proven by Z3. This doc is the worked example that
 [meteora-token-launch.md → the fee-split reality](meteora-token-launch.md#the-fee-split-reality-honest)
 points at. It also covers the two patterns that make the split run unattended: the
 **keeper** (offchain schedule → function → onchain write) and the **fee-funded build
@@ -261,10 +268,12 @@ this is a *self-refilling* budget backed by real claimed fees):
   - the Meteora / token plugin bodies that build and server-sign the txns, and that a
     `transfer` of `mulDivFloor(amount, bps, 10000)` moves exactly that many lamports.
   - the **`amount` snapshot** on `distributions` / `distributionsPost` — the claimed
-    lamports for the cycle is a caller/keeper-asserted write field. There is **no
-    `conserve` invariant** on the treasury: per the oApps design the split amounts
-    are trusted-in-plugin while the policy proves *who-may-trigger + bps validity +
-    the allowance cap*. Over-stating `amount` fails on-chain (insufficient PDA
+    lamports for the cycle is a caller/keeper-asserted write field. This historical
+    policy has **no `conserve` invariant** on the treasury. Its split amounts are
+    trusted-in-plugin while the policy proves *who-may-trigger + bps validity + the
+    allowance cap*. This limitation does not describe the current shipped model.
+    Its treasury transitions are proven at the rule layer, and distribution is a
+    permissionless update. Over-stating `amount` fails on-chain (insufficient PDA
     balance), so the failure mode is a reverted tx, not a drained pool.
 - **NEEDS-DEVNET (cannot be expressed in policy):**
   - the **creator-leg (45%) recipient binding.** `createMeteoraVirtualPool(configId,
