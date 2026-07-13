@@ -3,8 +3,10 @@ name: oapps-fun
 description: >-
   Build an app destined for oapps.fun (an oApp): the zero-secrets discipline,
   why every capability must be steward-owned ("if Bounded can't do it, you
-  can't do it"), how to call out unsupported capabilities honestly, and the
-  x402 relay fallback for services Bounded doesn't natively provide. Use
+  can't do it"), how to call out unsupported capabilities honestly, the
+  x402 relay fallback for services Bounded doesn't natively provide, and the
+  lifecycle: private bounded.page development, graduation (source and
+  boundaries go public), and the <slug>.oapps.fun address at token launch. Use
   whenever a user says the app will launch on oapps.fun, become an oApp,
   be community-owned / token-governed, or "outlive its creator". Part of the
   Bounded skill family; the mechanics live in bounded-backend / bounded-onchain.
@@ -35,6 +37,67 @@ token says. So for oApps:
   credentials in anyone's drawer. Most apps simply never need one.
 - **If Bounded can't do it, you can't do it.** This is the rule, and it is a
   feature: a smaller app nobody can kill beats a bigger app with a kill switch.
+
+## The lifecycle: local → bounded → oapps.fun
+
+An oApp passes through three addresses. Know which one you are at.
+
+**1. Local.** You build in a normal repo. Nothing is deployed, nothing is
+public.
+
+**2. Bounded (development).** Promote the app: `bounded init`,
+`bounded verify`, `bounded deploy`, `bounded site deploy dist`. At creation
+the app claims a slug derived from its name plus a random suffix, e.g.
+`myapp-x7k2.bounded.page`. That is a development address, not an oapps.fun
+address. There is no oapps.fun URL until the token launches.
+
+While building, keep the site **private** (`sitePrivate`, set via the
+dashboard or API). The platform serves a sign-in gate to everyone else, and
+`bounded site preview` mints short-lived view links when you need to show
+someone. Do not flip it public yourself: the graduation ritual seals the site
+private, and its "let go" step is what makes it public.
+
+**3. oapps.fun (launched).** At token launch the app's slug becomes its
+canonical public address: `<slug>.oapps.fun`. One token, one URL. The
+bounded.page slug stays live forever as the always-works fallback. The slug
+is renameable BEFORE launch (slug API or dashboard), so pick the name you
+want the token to live at while you still can. After launch the pointer is
+governance-controlled, not yours.
+
+**Boundaries come first, not last.** Write `policy.json` boundaries early,
+while you build, not as a launch chore. They are the single most important
+trust artifact reviewers and buyers will read alongside your source. An app
+whose money and state rules are proven invariants graduates cleanly. An app
+with ad-hoc checks in function code reads as a rug risk.
+
+## What graduation publishes (read before you let go)
+
+Graduation is the point of no return. Spell these implications out, in this
+order, before starting the graduation ritual. This is what you are agreeing
+to:
+
+1. **Your source code becomes public.** Anyone can read it at
+   `<your-host>/__bounded/source` and download the whole tree as
+   `source.zip`. Forever.
+2. **Your boundaries are published.** The `policy.json` rules, proven before
+   every deploy, appear at `/__bounded/boundaries`. They are part of your
+   public safety story, and the first thing a careful buyer reads.
+3. **Your code freezes** from graduation until the first governed build. No
+   changes of any kind in between.
+4. **A public DYOR window precedes the token launch.** Anyone can inspect the
+   source, ask questions, and REPORT the app. 5 distinct reports hold the
+   launch at T-0 for steward review, with a public halt log.
+5. **The fee split is fixed:** 50 treasury / 20 creator / 20 steward /
+   10 platform. Nobody gets pre-launch tokens. Not you, not the steward, not
+   the platform.
+6. **Automated integrity scans run** at submission and over time. A failed
+   scan halts the launch, publicly.
+
+The DYOR window makes source sync load-bearing: the public source page serves
+what the platform has synced, so deploys must push source artifacts. Cloud
+live-edit artifactPush is the default. Do NOT opt out with
+`liveEdit.artifacts: false` on an oapps-bound app, or the public source page
+will sit empty and buyers will treat that as a red flag.
 
 ## The capability ladder
 
@@ -139,12 +202,21 @@ the app's running costs.
 
 ## Practical checklist before launch
 
+- Boundaries were written early and cover the app's money and state rules as
+  proven invariants, not ad-hoc checks. They are the trust artifact buyers
+  read alongside your source.
 - `policy.json` contains **no** rule, function, or egress that depends on a
   user-held credential; `bounded verify` passes.
 - Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only — no fetches to
   key-authenticated endpoints.
 - Every external egress is declared and either credential-free, native, or
   relay-eligible.
+- The site is private (`sitePrivate`) and stays that way; graduation's
+  "let go" step does the public flip, not you.
+- Source sync is on (artifactPush default, no `liveEdit.artifacts: false`):
+  `/__bounded/source` shows the current tree, not an empty page.
+- The slug is the name the token should live at (`<slug>.oapps.fun`); rename
+  it before launch if it isn't.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
   sane against the app's expected build-fund inflow — out of budget means
   frozen, and you should be able to say at what usage level that happens.
