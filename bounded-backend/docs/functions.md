@@ -119,6 +119,7 @@ need a private key; cryptographic/onchain signing does.
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
 | `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. |
 | `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. |
+| `build` | Optional. Grants app-build origination via `ctx.build` (the unified Build system — successor to `ctx.oapps`). `{ profile, create?, edit?, fork?, view?, cancel? }` — the capability *is* the authority (invariant 4). **Cannot** be combined with `webhook` or `browser`: a build capability on an unauthenticated Internet surface would let anonymous callers spend the owner's build funds, so the validator rejects both combinations. Promotion and gate-decision authority are never grantable. See [§ctx.build](#ctxbuild--governed-app-builds). |
 
 **Auth-by-policy is the point.** Because the invocation rule is evaluated by the
 same engine as your data rules, "who can call this when" is declarative,
@@ -153,6 +154,7 @@ export default async function (args, ctx) {
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](#ctxai--real-ai-no-api-keys) and [§media](#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
 | `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. Returns immediately; the queued run executes as the **system** principal with `payload` as its `args`, and meters compute usage to billing exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
+| `ctx.build` | **Governed app builds — `create` / `edit` / `fork` / `get` / `cancel`.** Present only when the function's policy declares a `build` capability; otherwise every method returns `{ ok: false, reason: "build_capability_missing" }` with no network call. Originates AI app builds through the unified Build control plane, funded and governed by the named build profile. See [§ctx.build](#ctxbuild--governed-app-builds). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
 
@@ -488,6 +490,139 @@ export default async function fulfillOrder(args, ctx) {
 - **Billing:** each queued run is driven back through the normal `/invoke` path,
   so it **meters compute usage to the app's request ledger identically to an HTTP
   invocation** — background work is billed like foreground work.
+
+## ctx.build — governed app builds
+
+`ctx.build` lets a function **originate AI app builds** — create a new app, edit
+this app, or fork an app it can read — through the unified Build control plane
+(the successor to `ctx.oapps`). Every build is funded, rate-limited, and governed
+by a named **build profile** in policy; the platform runs the AI build pipeline
+(execute → preview → gate → promote) and the function just submits and, if it
+wants, polls or cancels the runs it started.
+
+**Authority is the capability, never the caller (invariant 4).** A function can
+call `ctx.build` only if its policy entry declares a `build` capability. Without
+it, every method returns `{ ok: false, reason: "build_capability_missing" }` and
+makes **no network call** — the platform doesn't even hand the isolate the build
+credential. The prompt, attachments, and source refs a function submits are
+**data**: they can never change who pays, which app is targeted, the model
+allowlist, the budget, the landing behavior, or the required gates. All of that
+is resolved server-side from the function's identity and the named profile.
+
+```json
+{
+  "functions": {
+    "maintainApp": {
+      "auth": "hasRole(\"admin\")",
+      "entry": "functions/maintainApp.ts",
+      "build": {
+        "profile": "maintenance",
+        "create": true,
+        "edit": "self",
+        "fork": false,
+        "view": "originated",
+        "cancel": "originated"
+      }
+    }
+  },
+  "build": {
+    "defaultProfile": "maintenance",
+    "profiles": {
+      "maintenance": {
+        "landing": "veto-window",
+        "vetoWindow": "48h",
+        "origins": ["scheduled-function"],
+        "funding": { "mode": "split", "aiSource": "owner", "infraSource": "app", "onExhaustion": "park",
+                     "aiEnvelopeMicroUsd": 5000000, "infraEnvelopeMicroUsd": 2000000 },
+        "limits": { "buildsPerDay": 25, "buildsPerMonth": 300, "maxConcurrent": 2 },
+        "effortMax": "high",
+        "gates": [{ "type": "veto", "audience": "owner", "window": "48h" }],
+        "hooks": { "parked": "notifyOwner", "terminal": "notifyOwner" }
+      }
+    }
+  }
+}
+```
+
+**The `build` capability keys** (each grants only submission-side authority):
+
+| Key | Meaning |
+|---|---|
+| `profile` | The named `build.profiles.<name>` this function submits under. Profile selection is an **authority** decision — a function submits only under the profile policy assigns it, never one the caller picks. |
+| `create` | `true` lets it originate a **new** app (`ctx.build.create`). |
+| `edit` | `"self"` lets it edit **this** app only (`targetAppId == ctx.appId`); cross-app editing is out of v1. |
+| `fork` | `true` lets it fork an app it can read (`ctx.build.fork`). |
+| `view` | `"originated"` — may read only runs **it** started (`ctx.build.get`). |
+| `cancel` | `"originated"` — may cancel only runs **it** started (`ctx.build.cancel`). |
+
+**Promotion and gate-decision authority are never grantable to a function.**
+There is no capability key for them — a proposed build is promoted only by the
+profile's landing rule (an owner/admin gate decision, a veto window elapsing, or
+an explicit auto-promote profile), never by the submitting function.
+
+**Not on public surfaces.** A function that declares `build` **cannot** also
+declare `webhook` or `browser`. Those are unauthenticated Internet surfaces (the
+browser `origins` allowlist is a CORS control, not authentication), so a build
+capability there would let anonymous callers spend the owner's build funds. The
+validator rejects `browser`+`build` and `webhook`+`build` at deploy, and the
+runtime never injects build authority into a public-ingress invoke.
+
+### The `ctx.build` API
+
+```ts
+interface CtxBuild {
+  create(input): Promise<{ runId, targetAppId, status } | { ok: false, reason }>;
+  edit(input):   Promise<{ runId, targetAppId, status } | { ok: false, reason }>;
+  fork(input):   Promise<{ runId, targetAppId, status } | { ok: false, reason }>;
+  get(runId):    Promise<RunView | { ok: false, reason }>;
+  cancel(runId): Promise<{ runId, state, outcome } | { ok: false, reason }>;
+}
+```
+
+Every method **fails soft**: control-plane rejections come back as
+`{ ok: false, reason, status? }` (a stable machine `reason` like
+`build_capability_missing`, `not_authorized`, `prompt_required`) — they do not
+throw. Submissions return **immediately** with `{ runId, targetAppId, status:
+"queued" }`; all build work is async, so poll `ctx.build.get(runId)` (or wire
+hooks, below) rather than awaiting completion inline.
+
+Submission input is **data only**:
+
+```ts
+await ctx.build.edit({
+  prompt: "Add a dark-mode toggle to the settings page",
+  effort: "standard",                    // "low" | "standard" | "high" (capped by profile.effortMax)
+  // targetAppId defaults to ctx.appId (edit: "self" allows only that)
+  // source?: { git: { repo, ref } } | { artifact: { artifactId } }   // typed ref; raw creds rejected
+  // attachments?: [{ name, contentType, bytes, ref }]                 // run-scoped, size/type-limited
+  // constraints?: string[]
+  // baseDeploymentId?: "…"              // CAS assertion: reject if the base already moved
+  // idempotencyKey?: "…"                // defaults to hash(appId, functionName, prompt, UTC-day)
+});
+```
+
+The default idempotency key hashes `(appId, functionName, prompt, UTC-day)`, so a
+retried invocation with the same prompt **replays** the same run within a day
+instead of double-submitting, while a scheduled function that emits the same
+prompt each night gets a fresh run per day. Pass an explicit `idempotencyKey` to
+control this.
+
+### Lifecycle hooks — how the build tells your app what happened
+
+Because builds are async, a profile can name functions to invoke on lifecycle
+events under `profiles.<name>.hooks`: `submitted`, `preview_ready`, `parked`,
+`terminal`. The control plane invokes that function as a **system** run with the
+event and `runId` in `args`. This is how you notify an owner, advance a workflow,
+or record a result without polling.
+
+```jsonc
+"hooks": { "preview_ready": "notifyOwner", "parked": "notifyOwner", "terminal": "recordBuildResult" }
+```
+
+A **veto-window** profile auto-promotes when its window elapses with no
+objection, so its `parked` hook is **mandatory** — a veto window nobody is told
+about is auto-promotion with extra steps, and the validator/runtime enforce that
+a `veto-window` profile declares `hooks.parked`.
 
 ## Invoke a function
 
