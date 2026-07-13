@@ -135,6 +135,7 @@ const expectedPublicSkills = [
   'bounded-frontend',
   'bounded-onchain',
   'bounded-teams',
+  'oapps-fun',
 ]
 if (publicSkills.sort().join('\n') !== expectedPublicSkills.join('\n')) {
   fail(`public skill set mismatch: received ${publicSkills.sort().join(', ')}`)
@@ -175,6 +176,65 @@ for (const [pattern, label] of forbidden) {
 }
 if (/\bbounded-observe\b/.test(publicText)) {
   fail('public guidance must not route to the repository-internal bounded-observe skill')
+}
+
+// Runtime-semantics pins for high-risk guidance. This repository is released
+// separately from bounded-monorepo, so source-derived counts/limits cannot be
+// imported at validation time; keep the asserted inventory explicit so a
+// future runtime change forces an intentional skill update instead of silent
+// documentation drift.
+const expectedKaniHarnessSourceCount = 283
+const proofCoverage = readFileSync(path.join(root, 'bounded-backend/docs/proof-coverage.md'), 'utf8')
+if (!proofCoverage.includes(`**${expectedKaniHarnessSourceCount} Kani proof harnesses**`)) {
+  fail(`proof coverage: expected current source inventory ${expectedKaniHarnessSourceCount} Kani harnesses`)
+}
+if (/\b(?:263|275)[ /-](?:Kani|harness)/i.test(proofCoverage)) {
+  fail('proof coverage: contains a stale Kani harness count')
+}
+for (const expected of [
+  '`windowSum` | runtime-maintained; structurally validated; `UNKNOWN` non-blocking advisory',
+  'reserves one top-level `obligationCount` slot per invariant declaration',
+  'Do not translate `obligationCount` into "N SMT proofs passed."',
+]) {
+  if (!proofCoverage.includes(expected)) fail(`proof coverage: missing count/coverage boundary ${expected}`)
+}
+
+const invariantGuide = readFileSync(path.join(root, 'bounded-backend/docs/invariants.md'), 'utf8')
+for (const expected of [
+  'The public authoring contract requires `tier: "durable"` for `rollingSum`',
+  'Postgres-primary currently uses the in-memory working-set',
+  'During alarm latency it can conservatively retain contributions',
+  'occupies one advisory slot in the current summary',
+]) {
+  if (!invariantGuide.includes(expected)) fail(`invariants guide: missing runtime boundary ${expected}`)
+}
+
+const dataPlaneGuide = readFileSync(path.join(root, 'bounded-backend/docs/data-plane.md'), 'utf8')
+for (const expected of [
+  'Collection tier is not the physical document backend',
+  'durable local SQLite outbox',
+  '25,000 rows and 32 MiB',
+  '25,000 rows and 64 MiB',
+  '256 rows / 4 MiB',
+  'realtime WebSocket writes may surface the first conflict',
+]) {
+  if (!dataPlaneGuide.includes(expected)) fail(`data-plane guide: missing storage/conflict boundary ${expected}`)
+}
+
+const paidOperationsGuide = readFileSync(path.join(root, 'bounded-backend/docs/functions.md'), 'utf8')
+for (const expected of [
+  'idempotencyKey: string',
+  '1–256-byte UTF-8 string',
+  'are **app-global** across function names',
+  'ai_operation_idempotency_conflict',
+  'ai_operation_attention_required',
+  'service operation keys are app-global',
+  'service_invoke_operation_conflict',
+  'service_invoke_outcome_unknown',
+  'five-minute cache writes 1.25×',
+  'writes 2×.',
+]) {
+  if (!paidOperationsGuide.includes(expected)) fail(`functions guide: missing paid-operation boundary ${expected}`)
 }
 
 for (const file of ['README.md', 'bounded/SKILL.md', 'agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {

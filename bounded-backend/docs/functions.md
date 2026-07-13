@@ -199,22 +199,45 @@ with templated strings — reach for `ctx.ai`, not `Math.random()`.
 ```ts
 // functions/scout.ts — real inference, zero keys
 export default async function (args, ctx) {
+  const operationId = `scout:${args.deskId}:${args.id}:v1`;
   const out = await ctx.ai.run("claude-opus-4-8", {        // any model the gateway routes
     messages: [
       { role: "system", content: "You are a markets analyst. Return ONE JSON thesis." },
       { role: "user", content: args.headlines },
     ],
-  });
+  }, { idempotencyKey: operationId });
   const text = out.response ?? out.choices?.[0]?.message?.content;
   await ctx.bounded.set(`desks/${args.deskId}/theses/${args.id}`, JSON.parse(text));
   return { ok: true };
 }
 ```
 
-- **Contract:** `ctx.ai.run(model: string, input: any): Promise<any>`. `model` is
+- **Contract:** `ctx.ai.run(model: string, input: any, options: {
+  idempotencyKey: string }): Promise<any>`. The key is required and must be a
+  1–256-byte UTF-8 string. `model` is
   config (swap models with no code change); `input` is the provider request shape
-  (`{ messages: [...] }` for chat). A failed inference is **refunded** — you are
-  never charged for an error.
+  (`{ messages: [...] }` for chat).
+- **Make the key a business operation, not an invocation.** AI operation keys
+  are **app-global** across function names, principals, manual/scheduled paths,
+  and retries. Include the callsite/entity/revision when work may intentionally
+  differ, for example `prospect:<id>:assessment:v2`. The same key and exact
+  model/input/actor replay the stored terminal result without another provider
+  call or charge. Reusing it with changed model/input/actor/kind returns `409
+  ai_operation_idempotency_conflict`.
+- **Direct invokes need outer replay provenance too.** A browser/server call to
+  the function must supply an HTTP `Idempotency-Key` in the invoke options;
+  scheduled/system calls already carry stable provenance. Without replay-safe
+  provenance, a cost-bearing `ctx.ai`/`ctx.services` call fails `503` before
+  billing or provider contact.
+- **Billing is pinned at admission.** The operation stores its exact model price
+  row and pricing-table timestamp before reserving an upper bound. Success
+  settles exact reported usage plus the documented 5% and releases the rest;
+  cache reads cost 0.1× input, five-minute cache writes 1.25×, and one-hour cache
+  writes 2×. A pricing rollover during the call cannot change its settlement.
+  Missing/unpriceable usage or an ambiguous provider-started outcome becomes a
+  durable `503 ai_operation_attention_required`; it is never guessed, refunded,
+  or rerun as fresh provider work. Confirmed pre-provider/provider failures are
+  refunded and replay their terminal error.
 - **Model ids:** both provider-prefixed ids (`anthropic/claude-sonnet-5`,
   `openai/...`) and Workers-AI ids (`@cf/zai-org/glm-5.2`) route through the
   gateway. If a provider-prefixed id returns *"provider models not enabled for
@@ -332,7 +355,7 @@ export default async function sports(args, ctx) {
     sport: args.sport ?? "basketball_nba",
     regions: "us",
     markets: "h2h"
-  });
+  }, { idempotencyKey: `sports:${args.id}:odds:v1` });
 
   await ctx.bounded.set(`sportsSnapshots/${args.id}`, {
     at: Date.now(),
@@ -344,7 +367,19 @@ export default async function sports(args, ctx) {
 
 - **Contract:** `ctx.services.search(query, { limit? })`,
   `ctx.services.describe(toolkitOrToolSlug, { limit? })`, and
-  `ctx.services.invoke(toolSlug, args, { entityId? })`.
+  `ctx.services.invoke(toolSlug, args, { idempotencyKey: string; entityId? })`.
+  The required key is a 1–256-byte UTF-8 string. `args` must be an immutable
+  plain finite JSON object when provided (the whole argument may be omitted): no
+  `undefined` inside it, non-finite numbers, `BigInt`, sparse
+  arrays, accessors, cycles, class instances, `Date`, `Map`, or `Set`.
+- **Replay/conflict:** service operation keys are app-global. The same key,
+  normalized tool, effective entity, account, and exact snapshotted args replay
+  one stored response. Changed tool/args/entity returns `409
+  service_invoke_operation_conflict`; an in-flight duplicate returns retryable
+  `503 service_invoke_in_flight`. Provider/charge/result-persistence ambiguity
+  becomes permanent `503 service_invoke_outcome_unknown` and never calls the
+  provider again. `entityId` defaults to the account id, is part of the
+  fingerprint, and is also the provider/Observe entity.
 - **CLI discovery:** during build, agents can run
   `bounded services search "<query>" --json` and
   `bounded services describe <toolkit-or-tool-slug> --json` to inspect the same
@@ -357,6 +392,12 @@ export default async function sports(args, ctx) {
   call cost plus 5%. Composio standard and pro-tool calls are itemized
   separately; the 5% Bounded markup is applied to whichever tier the tool uses.
   The same fail-closed bucket/cap rules as `ctx.ai` apply.
+- **Refunds:** tool/auth/admission failures happen before charge. After charge,
+  confirmed non-OK transport/provider failures refund through their own
+  idempotent operation. A lost refund confirmation is queued for retry and the
+  persisted terminal response is replayed; caller retries never invoke or
+  refund twice. A successful provider result that cannot be durably persisted
+  is outcome-unknown, not permission to replay paid work.
 - **Provider key UX:** if Bounded has not configured an upstream provider key for
   a selected provider, discovery still works but `invoke` throws
   `provider_key_not_configured` with a hint. Choose an enabled managed provider,

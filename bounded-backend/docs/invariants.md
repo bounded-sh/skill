@@ -18,7 +18,12 @@ runtime-enforced but **not SMT-proven** and produces a non-blocking advisory wit
 proof status `UNKNOWN`, not a proof certificate. `windowSum` is structurally
 validated and runtime-maintained. It is primarily a readable aggregate, has no
 SMT aggregate obligation, and still write-gates updates/deletes on its event leg
-to keep that history append-only.
+to keep that history append-only. `windowSum` adds no SMT aggregate obligation
+and is excluded from the combined formal claim. The current summary still
+reserves one top-level `obligationCount` slot for its advisory declaration, but a
+well-formed advisory adds no failure. An offchain `rollingSum` counts two slots:
+live-append cap algebra plus expired-delete no-op algebra; an
+`onchainSupported` one counts live-append algebra plus epoch-bucket conservatism.
 
 Every invariant accepts an optional `name`, surfaced in the `409` when a write
 violates it. **Name them like error codes:** `spend_cap`, `no_minting`,
@@ -102,7 +107,7 @@ that debits one document must credit another **in the same batch**.
 | Key | Required | Meaning |
 |---|---|---|
 | `field` | yes | `Int` or `UInt` field to conserve |
-| `materialization` | no | `direct` (default): sums the write set. `materialized`: keeps a backing aggregate row. `sharded`: spreads the aggregate across fixed shard rows for hot collections. Both non-direct modes require `tier: "durable"` and **fail closed** on missing/corrupt aggregate state. |
+| `materialization` | no | `direct` (default): sums the write set. `materialized`: keeps a backing aggregate row. `sharded`: spreads the aggregate across fixed shard rows for hot collections. The public authoring contract requires `tier: "durable"` for both non-direct modes; they **fail closed** on missing/corrupt aggregate state. |
 | `scope` | no | Alternate path template to bind |
 | `name` | no | Stable name surfaced on `409` |
 
@@ -171,9 +176,13 @@ ledger/IOU you'd drop `>= 0`; for hold-then-release flows, gate the credit claus
 ## `rollingSum` — caps over time windows
 
 The sum of a `UInt` field over a sliding window of the last `windowSeconds` never
-exceeds `limit`. Capped collections are **append-only event logs**: updates and
-deletes are rejected (`409 append_only`), so the history a cap is computed from
-cannot be rewritten. Platform creation time is the clock.
+exceeds `limit`. Capped collections are **window-live append-only event logs**:
+updates are always rejected (`409 invariant_violation`). On offchain collections, a
+policy-authorized delete is accepted only after the row can no longer affect any
+declared window: its trusted platform `_createdAt` must be strictly before
+`max(now - windowSeconds, resetAtMs)`. A row exactly on that boundary, inside the
+window, in the future, or with an invalid timestamp fails closed. Platform
+creation time is the clock.
 
 > **`"update": "false"` / `"delete": "false"` is the correct idiom** for an
 > append-only collection (and for any server-authoritative or immutable
@@ -209,12 +218,16 @@ cannot be rewritten. Platform creation time is the clock.
 | `scopeVariable` | no | A `$variable` from the path — partitioned caps below |
 | `name` | no | Stable name surfaced on `409` |
 
-`rollingSum` requires `tier: "durable"` and rejects `materialization` /
-`pathVariable` metadata.
+The public authoring contract requires `tier: "durable"` for `rollingSum` and
+rejects `materialization` / `pathVariable` metadata.
 
 **What gets proven:** if the runtime admits only nonnegative appended records and
-the projected window sum is within `limit`, the resulting sum stays within `limit`
-— for every possible sequence of appends.
+the projected window sum is within `limit`, the resulting sum stays within
+`limit` for every possible sequence of appends. Offchain verification counts a
+second, independent expired-delete no-op obligation: removing a trusted record
+strictly older than the effective window start cannot change the live window
+sum. Onchain-supported caps instead count epoch-bucket conservatism as their
+second obligation because onchain deletes remain forbidden.
 
 ### Partitioned caps (`scopeVariable`)
 
@@ -229,14 +242,17 @@ per-agent hourly + global daily).
 
 Declare several `rollingSum` invariants on the **same field** with different
 `windowSeconds` — each window is tracked and proven independently. Changing a
-window's length starts that window's tracking fresh.
+window's length starts that window's tracking fresh. A delete is accepted only
+when the row is expired under **every** matching window; equivalently, it must be
+strictly earlier than the earliest effective start (the longest-live boundary).
 
 ### Onchain rolling caps
 
 A `rollingSum` may claim `onchain: "onchainSupported"` only on an onchain
 collection and only with `windowSeconds <= 31536000`; the onchain runtime enforces
 it epoch-bucketed (conservatively — it can over-enforce near the boundary, never
-under-enforce). See [proof-coverage.md](proof-coverage.md).
+under-enforce). Onchain capped collections remain fully no-delete; expired-delete
+retention is offchain-only. See [proof-coverage.md](proof-coverage.md).
 
 ### Recipe — rate-limit an action with a separate event log
 
@@ -310,13 +326,14 @@ only when the action's magnitude is itself the thing being limited.
 
 Where `rollingSum` *caps* a windowed sum at write time, `windowSum` *maintains* one
 as a readable field: declare it on an **append-only event collection** and the
-runtime keeps `target.targetField` equal to the exact sum of `field` over the last
-`windowSeconds` — adding each event's value on create and subtracting it
-automatically when the event ages out of the window (alarm-driven, no cron, no
-sweep). The result is a plain numeric field: readable, subscribable, **sortable**
-— and the ranked-query engine auto-indexes it, so "top-N by 10-minute volume" is
-an O(k) first-class query. This is the primitive behind trending feeds and
-leaderboards ([trending-feeds.md](trending-feeds.md)).
+runtime maintains `target.targetField` from exact per-event contributions — adding
+each event's value atomically on create and subtracting it through a durable,
+alarm-driven expiry queue (no cron or user sweeper). The result is a plain numeric
+field: readable, subscribable, and **sortable**. On the default SQLite document
+backend, ranked pushdown auto-indexes the sort and becomes an O(k) forward scan
+after index creation; Postgres-primary currently uses the in-memory working-set
+query path, so do not promise O(k) there. This is the primitive behind trending
+feeds and leaderboards ([trending-feeds.md](trending-feeds.md)).
 
 ```json
 {
@@ -342,10 +359,12 @@ leaderboards ([trending-feeds.md](trending-feeds.md)).
 
 Semantics and constraints (validated at deploy):
 
-1. **Exact, not approximate.** Every increment enqueues an exact decrement at
-   `createdAt + windowSeconds`; Σ decrements == Σ increments per event, so the
-   field is the true windowed sum at all times (up to alarm latency, typically a
-   few seconds). No EWMA drift, no bucket coarseness.
+1. **Exact contribution accounting, not approximate bucketing.** Every increment
+   enqueues one exact decrement at `createdAt + windowSeconds`; Σ decrements == Σ
+   increments per event. The target is exact as of the last successful expiry
+   drain. During alarm latency it can conservatively retain contributions that
+   are already due, so it is not a strict wall-clock oracle or a cap. There is no
+   EWMA drift or bucket coarseness.
 2. **The event collection becomes append-only** (like `rollingSum`): an update or
    delete would falsify the maintained sum, so both are rejected.
 3. **`field` must be `UInt`; `targetField` must be declared numeric**
@@ -354,11 +373,15 @@ Semantics and constraints (validated at deploy):
 4. **`targetField` is runtime-owned.** Pin it null in the target's user-writable
    rule branches (`@newData.vol10m == null`) so callers can't seed it; the
    runtime's own writes bypass rules but still honor declared invariants.
-5. **Missing target**: the first event merge-creates it. A target deleted before
-   an event expires drops the pending decrement (never resurrects the doc).
+5. **Missing target**: the first event merge-creates it. Ordinary direct target
+   deletion is blocked while the field is governed. If legacy/corrupt state is
+   nevertheless missing the target at expiry, maintenance drains the queued
+   work without resurrecting the document.
 6. `bounded verify` reports a declared `windowSum` as a **non-blocking advisory**
    ("structurally validated, runtime-maintained") — it is an aggregate, not a
-   write-gating cap, so it carries no proof obligation and cannot wedge a deploy.
+   write-gating cap, so it has no SMT certificate and cannot wedge a deploy. A
+   well-formed declaration occupies one advisory slot in the current summary's
+   `obligationCount` but does not increment `failedCount`.
 
 Choose `rollingSum` when you need to **enforce** "no more than X per window";
 choose `windowSum` when you need to **read/rank by** "how much in the last

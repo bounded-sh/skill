@@ -86,14 +86,15 @@ export default {
     await ctx.store.put("last-input", JSON.stringify(input));
 
     const apiKey = await ctx.secrets.get("EXAMPLE_API_KEY");
+    const jobId = String(input.jobId);
     const ai = await ctx.ai.run("model-id", {
       messages: [{ role: "user", content: "Summarize the latest job state." }]
-    });
+    }, { idempotencyKey: `runtime:job:${jobId}:summary:v1` });
     const summary = ai.response ?? ai.choices?.[0]?.message?.content ?? "";
 
     const events = await ctx.services.invoke("SEAT_GEEK_SEARCH_EVENTS", {
       q: input.query ?? "basketball"
-    });
+    }, { idempotencyKey: `runtime:job:${jobId}:events:v1` });
 
     const response = await ctx.fetch("https://api.example.com/jobs", {
       headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
@@ -136,6 +137,11 @@ export default {
 - `ctx.services.invoke` spends against the same AI/external-services bucket and
   uses the applicable upstream service cost plus 5%. Search/describe are catalog
   reads.
+- Both cost-bearing surfaces require a 1–256-byte app-global idempotency key.
+  Direct HTTP function callers must also supply an outer `Idempotency-Key`;
+  otherwise the runtime refuses provider work before charge. Include the
+  callsite/entity/revision in each key and never rotate it after an ambiguous
+  response.
 - For AI NPCs or agents that act in realtime rooms, also read
   [ai-npcs.md](ai-npcs.md) and [service-keys.md](service-keys.md).
 

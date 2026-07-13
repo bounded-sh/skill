@@ -20,6 +20,7 @@ onchain program. Nothing is ported between runtimes, so nothing can drift.
 | `conserve` (materialized) | enforced | **fails closed** |
 | `conserve` (sharded) | enforced | **fails closed** |
 | `rollingSum` | enforced (exact window) | enforced (epoch-bucketed) |
+| `windowSum` | runtime-maintained; structurally validated; `UNKNOWN` non-blocking advisory with no SMT certificate | structurally rejected (offchain-only v1) |
 | `tenantTag` | enforced | enforced |
 | `tenantEdge` | enforced | **fails closed** |
 | `bound` | enforced; scalar fields are SMT-proved, `.values` maps are `UNKNOWN` advisories | not enforced; do not use for onchain guarantees |
@@ -31,6 +32,15 @@ realtime Worker, but it is deliberately excluded from the combined SMT formal
 claim today. Its non-blocking `UNKNOWN` advisory is not a proof certificate; an
 SMT encoding of the per-partition inequality is not present in the current
 verifier.
+
+Verifier summary counts are not simply "number of SMT calls." The current report
+reserves one top-level `obligationCount` slot per invariant declaration. Each
+offchain `rollingSum` then adds a second slot (expired-delete no-op algebra) to
+its live-append cap algebra; each `onchainSupported` `rollingSum` adds
+epoch-bucket conservatism as its second slot. Valid `windowSum`, `flowBound`, and
+`.values`-map `bound` advisories therefore occupy one summary slot with
+`proofStatus: UNKNOWN`, but add no failure and are excluded from the combined
+formal claim. Do not translate `obligationCount` into "N SMT proofs passed."
 
 "Fails closed" means two things, both load-bearing:
 
@@ -69,11 +79,13 @@ reject near the boundary — and never under-enforce.
 
 That safety direction is not an argument; it is an obligation: the verifier
 emits an SMT-proved **epoch-bucket conservatism** check for every
-`onchainSupported` rollingSum. And the bucket mechanism itself is verified
-with Kani (model-checked Rust harnesses, part of a 263-harness matrix). Two
-earlier bucket-width formulas were refuted by Kani with boundary
-counterexamples before the shipped one verified — the tooling caught the
-off-by-one that review missed.
+`onchainSupported` rollingSum. The bucket mechanism also has Kani model-checking
+coverage. The current Rust source declares **283 Kani proof harnesses** in the
+policy-invariant crate; 283 is a source-inventory count, not a claim that a
+particular run passed 283/283. Cite the corresponding run artifact separately
+when reporting pass counts. Two earlier bucket-width formulas were refuted by
+Kani with boundary counterexamples before the shipped one verified — the
+tooling caught the off-by-one that review missed.
 
 Operational notes for capped onchain collections:
 
@@ -81,8 +93,10 @@ Operational notes for capped onchain collections:
   carry several independent windows (hourly + daily) with separate states.
 - Changing a window cuts over to fresh (cold) bucket state; the always-warm
   offchain enforcement shields stack-mediated writes during the cold start.
-- Capped collections reject updates and deletes onchain too — the
-  append-only contract is the same on both runtimes.
+- Capped collections reject updates and deletes onchain. Offchain alone may
+  opt into policy-authorized retention deletes after a row is strictly older
+  than every effective window boundary; the epoch-bucket runtimes keep the
+  stricter fully append-only contract.
 
 > This page is about which *runtime* enforces which *proof*. For how onchain
 > collections actually behave — Solana transactions, client-signed writes,
