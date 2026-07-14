@@ -109,6 +109,16 @@ at 85 SOL market cap:
 the onchain/runtime-supported `@user.address` surface. Rotate the constant with a
 policy update when launcher authority changes.
 
+**Transaction-size note:** `createMeteoraConfig` is one of the largest single
+instructions on the platform (~1189B alone; ~1225B chained with
+`@AccountPlugin.createAccount` — over the raw ~1182B limit). It lands because the
+builder compresses the fixed Meteora/framework accounts through the standard
+platform lookup table (~1104B compressed). Do NOT chain further actions onto this
+hook, keep string args (ids, URIs) short, and omit optional args you don't need —
+each one is bytes you don't have. If `bounded verify` rejects your variant for
+transaction size, read the fix ladder in
+[onchain.md → Transaction-size limit](onchain.md#transaction-size-limit-one-hook--one-solana-transaction).
+
 - `preMigratedFeeAmountBps = 300` (3%) is the settled bonding-curve fee and the decay
   target when `decayEndingFeeBps` is left at its default.
 - `decayStartingFeeBps = 5000` (50%) → `decayEndingFeeBps = 300` (3%) over

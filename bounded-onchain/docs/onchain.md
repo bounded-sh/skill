@@ -276,43 +276,87 @@ realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-refere
 
 Each onchain hook builds **one Solana transaction per write**, and a Solana
 transaction has a hard **1232-byte packet limit** (effective ~1182 after
-signatures). A hook that packs too much into one write — a single big instruction
-(e.g. `@DeFiPlugin.createMeteoraConfig` is ~1189B, `@DeFiPlugin.createPool` ~1341B),
+signatures). A hook that packs too much into one write — a single big instruction,
 or several actions `&&`-chained, or a large `setMany` bundle — produces a
 transaction that **won't fit and fails with "Transaction too large"**.
 
-Bounded surfaces this at two points so you don't discover it only when a user's
+The runtime automatically compresses an over-limit transaction against the
+**standard platform lookup table** (framework programs, sysvars, plugin
+authorities, WSOL move from 32-byte keys to 1-byte indexes), so hooks whose bulk
+is *fixed well-known accounts* land even past ~1182 uncompressed — e.g. the
+Meteora `createAccount + createMeteoraConfig` launch-config hook (~1225B raw,
+~1104B compressed) deploys and lands. What compression can NOT save: **per-write
+accounts** (fresh mints, ATAs, per-doc PDAs, user wallets) and **instruction
+data** (your argument bytes). If a hook is too big because of those, only
+restructuring fixes it.
+
+Bounded surfaces the limit at two points so you don't discover it when a user's
 write fails on-chain:
 
-- **`bounded verify` / `bounded deploy` (compile-time).** On a **devnet/mainnet**
-  deploy, the validator estimates each `onchain: true` collection's single-document
-  hook transaction. If it exceeds the limit, deploy is **rejected** with a message
-  naming the collection, the hook, the actions in it, the estimated size, and the
-  fix — so you learn at deploy time, not at runtime. (Not run for `realtime_offchain`,
-  which simulates the hook.) `bounded deploy --create` infers the protocol from
-  `--protocol`; for an app-less proof pass it explicitly:
-  `bounded verify --protocol realtime_devnet ./policy.json` (otherwise the gate only
-  fires when the protocol is inferred from `--app-id`). The gate blocks only on the
-  **confident, devnet-measured** size — a hook built purely from not-yet-calibrated
-  plugin calls is not false-blocked at deploy; the poofnet runtime guard still
-  catches it against the live estimate.
-- **Runtime (poofnet).** On `realtime_offchain`, the actual write is checked against
-  the same model: a write over the hard cap is **rejected 413** ("would fail on
-  mainnet"), and one in the 1182–1232 band is **allowed with a warning** (a lookup
-  table makes it fit on a real chain). This is the mainnet-reality guard — poofnet
-  no longer silently accepts writes a real chain would reject. The 413 carries the
-  full reason in both `error` and `message` (so `err.message` in the SDK is
-  actionable) and is recorded as a **decision** — `bounded decisions` answers "why
-  did my write fail". A warn-band write succeeds with a `warnings: [...]` array on
-  the response. Bundles repeating the same action (e.g. a `setMany` of several
-  token creates) are estimated with calibrated **repeat costs** — repeated accounts
-  dedupe on-chain, so N calls cost less than N× one call. If the app has a lookup
-  table configured, an over-cap size warns instead of rejecting (the real builder
-  compresses via the LUT).
+- **`bounded verify` / `bounded deploy` (compile-time).** The validator estimates
+  each `onchain: true` collection's single-document hook transaction **after
+  standard-LUT compression**. If it still exceeds the limit, deploy is **rejected**
+  with a message naming the collection, the hook, the actions, the sizes and the
+  fix. This gate runs for **every** Solana protocol — devnet, mainnet, mainnet-
+  preview **and poofnet** (`realtime_offchain`). Poofnet enforcing it is
+  deliberate: a policy proven on poofnet is expected to move to mainnet unchanged,
+  so an unfittable hook must fail the poofnet deploy TODAY, not the mainnet deploy
+  months later (sim == mainnet parity). **Never work around this gate by deploying
+  poofnet-only and hoping** — the same write is rejected by poofnet's runtime
+  guard anyway. The gate blocks only on the **confident, devnet-measured** size —
+  a hook built purely from not-yet-calibrated plugin calls is never false-blocked
+  at deploy; the runtime guard still checks the live estimate.
+- **Runtime (poofnet).** On `realtime_offchain`, the actual write is checked
+  against the same compression-aware model: a write confidently over the cap even
+  compressed is **rejected 413** ("would fail on mainnet"); estimate-driven
+  overages **warn without blocking**. The 413 carries the full reason in both
+  `error` and `message` (so `err.message` in the SDK is actionable) and is
+  recorded as a **decision** — `bounded decisions` answers "why did my write
+  fail". A warn-band write succeeds with a `warnings: [...]` array on the
+  response. Bundles repeating the same action are estimated with calibrated
+  **repeat costs** — repeated accounts dedupe on-chain, so N calls cost less than
+  N× one call. An app-configured lookup table (`appConfig.lutAddress`) demotes a
+  residual overage to a warning (the builder compresses with it too).
 
-**Fixes when you hit it:** split the hook across separate collections/writes (each
-its own transaction), reduce the actions per write, or move the fixed accounts into
-an **address lookup table** so the transaction compresses under the limit.
+### When verify rejects a hook for size — how to fix it, in order
+
+1. **Split the hook across collections/writes.** One write = one transaction, so
+   independent actions belong in separate collections (each with its own small
+   hook) or sequential writes. Only actions that genuinely must commit atomically
+   belong `&&`-chained in one hook. Note the flip side: a Bounded write commits
+   atomically, so splitting REMOVES atomicity between the parts — sequence them
+   from a function (create A, then create B; handle the "A exists, B failed"
+   retry) rather than pretending they were atomic.
+2. **A single oversized instruction cannot be split.** If one plugin call alone
+   is over the limit, splitting does nothing — the only levers are fewer/shorter
+   arguments and lookup-table compression.
+3. **Pass fewer arguments.** Optional args you omit cost zero bytes; every
+   address argument adds ~32 bytes of key plus account metas, and the serialized
+   argument text rides verbatim inside the transaction data. If a default is
+   acceptable, do not spell it out.
+4. **String length is real bytes on the wire.** Token names, symbols, and
+   especially **URIs** are serialized into the transaction (and often hashed into
+   PDA derivations). A 150-character metadata URI is 150 bytes you may not have.
+   Use short hosts/paths for onchain URIs; keep symbols tight; never put
+   paragraphs in an onchain field.
+5. **Keep `onchain: true` collections lean.** Every declared field of the
+   document is serialized into the same transaction as the hook. Display copy,
+   descriptions, tags, denorm counters — all of that belongs in a parallel
+   **offchain** collection keyed by the same id, not on the onchain doc.
+6. **Fewer documents per write.** A `setMany` bundles every onchain doc into ONE
+   transaction. Batch in smaller writes when the estimator warns.
+7. **Lookup tables for account-heavy hooks.** The standard platform table is
+   applied automatically; if your hook references many *stable* extra accounts
+   (a fixed pool, a fixed vault set), configure an app lookup table containing
+   them. Per-write accounts can never be table-compressed — restructure instead.
+
+A useful mental model for budgeting: base transaction overhead is roughly
+~470 bytes (signatures, header, compute-budget, shared accounts) and each plugin
+call adds its marginal cost (a token create ~280B, a transfer ~140B, a Meteora
+config ~720B). If your hook's calls plus argument text can't fit in what remains
+under 1182, restructure before you deploy — the gate is telling you every single
+write to that collection would fail on a real chain, which is exactly the kind of
+guarantee failure Bounded exists to catch at deploy time.
 
 ## Policy upgrade governance (runtime v3)
 

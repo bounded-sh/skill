@@ -26,6 +26,7 @@ the root **bounded** skill.
 |---|---|
 | Onchain data / Solana collections | [docs/onchain.md](docs/onchain.md) |
 | Onchain mirror/indexer, Helius webhook, missed transaction, outage catch-up, replay, reconciliation, or DLQ recovery | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
+| "Transaction too large", verify/deploy rejected for **transaction size**, 413 on an onchain write, hook over the 1182/1232-byte limit, splitting hooks, argument/string bytes, lookup tables | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Policy upgrade governance, immutable apps, controller policies, manifest signing, stuck update sessions, or governance recovery | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
 | Policy-native bytes, PDAs, account reads, generic CPI, cross-app reads/writes, runtime capability gates, or Poofnet/onchain parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
 | Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
@@ -44,6 +45,7 @@ the root **bounded** skill.
 | If you see | Read |
 |---|---|
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
+| "Transaction too large", tx-size gate, packet limit, 1232, oversized hook | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Helius, indexer, mirror, reconciliation debt, missed transaction, replay, cursor, tombstone, DLQ | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | `governance.upgrade`, policy controller, immutable, manifest root, governed session, recovery, extend, cancel | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
 | `@CPI`, `@Solana`, `@Bytes`, `@App`, generic CPI, custom program, PDA seeds, account data, cross-app, runtime v2, Poofnet parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
