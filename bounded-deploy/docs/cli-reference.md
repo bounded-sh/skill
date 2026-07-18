@@ -47,6 +47,7 @@ the web account. The CLI has two account-source families:
 | Command | Does | Example |
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
+| `update` | Update this release build to the latest CLI from its configured HTTPS release host. Downloads the immutable binary for this OS/architecture, verifies its SHA-256 checksum and Go build metadata, then atomically replaces the running executable. Reads no project config, account, or credentials. | `bounded update` |
 | `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. Wallet mode may create the selected key on first run. | `bounded whoami` |
 | `login` | Web login — log the CLI into your Bounded **web account** (the canonical identity; no key involved). Used for projects with `account.keySource:"web"`. `--email` is the current CLI web-login method and stores refreshable credentials in `~/.bounded/web-session.json`. | `bounded login --email you@example.com` |
 | `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
@@ -56,6 +57,39 @@ the web account. The CLI has two account-source families:
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 | `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
+
+### `update` — native CLI upgrades
+
+After the first installer-based setup, update the CLI without piping another
+installer into a shell:
+
+```bash
+bounded update                 # install a newer published release
+bounded update --force         # reinstall latest if current; upgrade if behind
+bounded update --json          # one structured result for agents
+```
+
+`--force` never downgrades a build that is ahead of the published version; it
+reports that no change was made.
+Native replacement supports release builds on macOS and Linux, on amd64 and
+arm64. It refuses development builds, unsupported platforms, unsafe executable
+permissions, and symlinked launch paths (including common package-manager
+installations). If a package manager owns the binary, use that package manager;
+the CLI cannot identify every manager-owned regular file. If an older CLI does
+not recognize `update`, run
+`curl -fsSL https://get.bounded.sh/install.sh | sh` once.
+
+`BOUNDED_BASE_URL` is a security-sensitive release-host override shared with the
+installer. Leave it unset for canonical `https://get.bounded.sh`, or point it
+only at a trusted HTTPS mirror with the same release layout. The checksum
+manifest and binary come from that same host, so this is integrity checking
+inside one distribution trust boundary, not independent signing. `--env` and
+`BOUNDED_ENV` do not select a CLI update channel.
+
+`bounded update` updates only the CLI component and its normal update-check
+cache. Re-run the installer when the Bounded agent skill should be refreshed
+too, and restart any already-running `bounded dashboard` or `bounded dev`
+process after the binary changes.
 
 `link` flags: `--no-browser` (just print the URL), `--email <addr>` (headless
 approval: email an OTP, read it from stdin, approve this wallet key), `--timeout
