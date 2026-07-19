@@ -379,6 +379,15 @@ await signInAnonymously();
 > `completeLoginFromRedirect()` on web app load. The published 0.0.42 client no
 > longer exports app-origin email or text OTP helpers. See [auth.md](auth.md).
 
+**Logout really logs out (0.0.51+).** For hosted sessions on the web, `logout()`
+revokes the refresh-token family, clears local state, then does a top-level
+bounce through the issuer's `/logout` so the hosted session cookie dies too —
+the next `loginWithRedirect` shows a fresh account choice instead of silently
+re-signing in the same user. Expect a page reload on sign-out. Pass
+`logout({ keepIssuerSession: true })` for the old local-only behavior. The
+bounce only runs on issuer-trusted origins (`*.bounded.sh` / `*.bounded.page` /
+`*.oapps.fun` / https localhost); on custom domains logout stays local-only.
+
 The `user` object has four fields:
 
 - `user.id` — the **universal stable identity**, always present for an
