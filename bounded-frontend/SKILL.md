@@ -43,6 +43,7 @@ domains. To route across the family, see the root **bounded** skill.
 
 - Every client write is governed by policy; a `403` on a write is a rule denial, not a client bug. See the bounded-backend skill for the rule.
 - Denied reads return empty `200` responses, never `403`.
+- Batch reads for lists of computed values with `runQueryMany`; never map `runQuery` over a list. See [sdk-reference.md](docs/sdk-reference.md#batch-your-queries).
 - Put provider API keys in Bounded secrets (backend), never in frontend code.
 - **The canonical email/social login can give each real account a wallet.** Turn on `auth.wallets` (Crossmint, non-custodial) in policy so supported email/social logins carry a real `@user.address` alongside their stable `@user.id`. Browser guests use their device keypair and are not Crossmint-provisioned. See [embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md). A purely offchain app may omit the flag; everything else should keep it on.
 - **`@user.id` (the account id) is identity/ownership; `@user.address` is the wallet.** Key ownership, membership, and auth guards on `@user.id` (always present). Reach for `@user.address` only for wallet/onchain semantics — never as the identity key.

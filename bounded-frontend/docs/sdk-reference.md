@@ -308,9 +308,29 @@ const total = await runQuery("orgs/o1/docs/d1", "wordCount", { /* args */ });
 const ok    = await runExpression("@newData.amount <= 100", { amount: 60 });
 ```
 
-`runQueryMany` / `runExpressionMany` batch these. Policy `queries` are validated
-at deploy and participate in a proof where a supported obligation references
-them — see [queries.md](../../bounded-backend/docs/queries.md).
+### Batch your queries
+
+**Never map `runQuery` / `runExpression` over a list - use `runQueryMany` /
+`runExpressionMany`.**
+
+```ts
+// WRONG - one POST per slug
+const totals = await Promise.all(
+  slugs.map((slug) => runQuery(`orgs/o1/docs/${slug}`, "wordCount", {})),
+);
+
+// RIGHT - one POST for every slug
+const totals = await runQueryMany(slugs.map((slug) => ({
+  absolutePath: `orgs/o1/docs/${slug}`,
+  queryName: "wordCount", queryArgs: {},
+})));
+```
+
+Parallel per-item POSTs trip the platform rate limiter (`HTTP 429`); app-level
+`catch(() => null)` often swallows the errors, so the app silently shows empty data.
+
+Policy `queries` are validated at deploy and participate in a proof where a
+supported obligation references them; see [queries.md](../../bounded-backend/docs/queries.md).
 
 ## Collaborators — managed via the CLI (not the SDK)
 
