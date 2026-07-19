@@ -153,7 +153,7 @@ export default async function (args, ctx) {
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](#ctxai--real-ai-no-api-keys) and [§media](#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
-| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. Returns immediately; the queued run executes as the **system** principal with `payload` as its `args`, and meters compute usage to billing exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
+| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **verified enqueuing principal** (or as system when the enqueuer was system), receives `payload` as its `args`, and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
 | `ctx.build` | **Governed app builds — `create` / `edit` / `fork` / `get` / `cancel`.** Present only when the function's policy declares a `build` capability; otherwise every method returns `{ ok: false, reason: "build_capability_missing" }` with no network call. Originates AI app builds through the unified Build control plane, funded and governed by the named build profile. See [§ctx.build](#ctxbuild--governed-app-builds). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
@@ -466,9 +466,10 @@ export default async function placeOrder(args, ctx) {
   return { ok: true, jobId };
 }
 
-// Runs LATER as the system principal; `payload` arrives as `args`.
+// Runs LATER as the verified principal that enqueued it; `payload` arrives as `args`.
 export default async function fulfillOrder(args, ctx) {
-  // ctx.auth -> { enforced: true, rule: null, system: true }
+  // For a user-enqueued job, ctx.user is that verified user and
+  // ctx.auth.system is false. A system-enqueued job remains system.
   const order = await ctx.bounded.get(`orders/${args.orderId}`);
   // ... do the slow work, write results through ctx.bounded ...
   await ctx.bounded.set(`orders/${args.orderId}`, { ...order, status: "fulfilled" });
@@ -478,14 +479,16 @@ export default async function fulfillOrder(args, ctx) {
 - **Contract:** `ctx.enqueue(functionName: string, payload?: unknown, opts?: { delaySeconds?: number }): Promise<{ jobId }>`.
 - **What it runs:** `functionName` must be a **deployed function in this app** (a
   function may enqueue another function or itself; validated at enqueue time).
-- **How it runs:** the queued job executes **server-authoritatively as the system
-  principal** (`ctx.user` is null, `ctx.auth.system === true`) — exactly like a
-  scheduled run. The function's user-facing `auth` rule is the gate for *direct*
-  invocation; the enqueue itself is the authorization for the background run.
-  Writes still pass your `rules` + invariants through `ctx.bounded`.
+- **How it runs:** the platform snapshots the enqueuing run's **verified identity**
+  and the queued replay executes as that same principal. A user-enqueued job sees
+  that user in `ctx.user` and in `@user.*`; a system-enqueued job remains the null
+  system principal. The snapshot is created server-side and cannot be supplied or
+  changed by the isolate. The enqueue itself authorizes the later execution;
+  writes still pass your `rules` + invariants through `ctx.bounded`.
 - **Delivery:** at-least-once, with Cloudflare-managed retries and a dead-letter
   queue. **Make enqueued functions idempotent** so a retry is safe.
-- **Limits:** `payload` must be JSON-serializable and ≤ 128 KB; `delaySeconds`
+- **Limits:** `payload` must be JSON-serializable and ≤ 96,000 UTF-8 bytes;
+  `delaySeconds`
   is 0..86400 (24h).
 - **Billing:** each queued run is driven back through the normal `/invoke` path,
   so it **meters compute usage to the app's request ledger identically to an HTTP

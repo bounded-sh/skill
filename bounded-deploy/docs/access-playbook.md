@@ -76,7 +76,9 @@ not a permissions wall. Fixes, in order:
 
 ```bash
 bounded version                                          # confirm what build you're on
-curl -fsSL https://get.bounded.sh/install.sh | sh        # update to the current CLI
+bounded update                                           # update to the current CLI
+# If this old build has no `update` command, run the installer once:
+curl -fsSL https://get.bounded.sh/install.sh | sh
 # (developing the CLI locally? rebuild the bundle, then `bounded version` to confirm)
 ```
 
@@ -182,5 +184,5 @@ bounded share <email-or-wallet> --role admin     --app-id <id>   # Team+ owner o
   [access-control.md](../../bounded-backend/docs/access-control.md)
 - Identity facets (email/wallet/keypair), account sources, web vs keypair mode →
   [key-and-account-safety.md](key-and-account-safety.md)
-- Every `bounded` command + flag (`whoami`, `access`, `account use`, `share`,
-  `site deploy`) → [cli-reference.md](cli-reference.md)
+- Every `bounded` command + flag (`update`, `whoami`, `access`, `account use`,
+  `share`, `site deploy`) → [cli-reference.md](cli-reference.md)
