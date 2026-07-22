@@ -67,7 +67,7 @@ only the phase you are working on.
 | A generic or complete “build this app” request | **bounded-backend** + **bounded-frontend** + **bounded-deploy**; add **bounded-onchain** or **bounded-teams** only when the requirements call for them |
 | Policy rules, write-gating invariants (rollingSum/flowBound/conserve/tenantTag/tenantEdge/bound), runtime-maintained `windowSum`, functions, data/queries, realtime/live, the actor & identity model (`@user`, runAs/actAs, `@origin`, roles, service keys), proofs & counterexamples, policy tests (`bounded tests run`, concrete allow/deny examples) | **bounded-backend** |
 | The client: `@bounded-sh/client` SDK, hosted frontend, end-user auth UI (email OTP, OAuth, guest) | **bounded-frontend** |
-| Shipping & config: the CLI, environments, live-edit, domains/slugs, `bounded.json`, accounts, sharing access | **bounded-deploy** |
+| Shipping & config: the CLI, environments, cloud source sync, domains/slugs, `bounded.json`, accounts, sharing access | **bounded-deploy** |
 | Wallets, tokens, on-chain transactions, crypto & card payments (Bounded Pay) | **bounded-onchain** |
 | Org/team governance: org-wide observe, enforcement, custody, and invariants shown on a shared team view | **bounded-teams** |
 | The app will launch on **oapps.fun** / become an oApp (community-owned, token-governed, "outlives its creator"): the zero-secrets discipline, steward-owned services only, the x402 relay fallback | **oapps-fun** |
@@ -133,7 +133,6 @@ bounded verify
 bounded deploy --create --name my-app
 # web only, after the frontend build:
 bounded site deploy ./dist --app-id <app-id>
-bounded dashboard
 ```
 
 Wallet/keypair mode (`global`, `project`, `profile`, `env`) or web-account mode

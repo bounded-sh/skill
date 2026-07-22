@@ -88,8 +88,7 @@ inside one distribution trust boundary, not independent signing. `--env` and
 
 `bounded update` updates only the CLI component and its normal update-check
 cache. Re-run the installer when the Bounded agent skill should be refreshed
-too, and restart any already-running `bounded dashboard` or `bounded dev`
-process after the binary changes.
+too.
 
 `link` flags: `--no-browser` (just print the URL), `--email <addr>` (headless
 approval: email an OTP, read it from stdin, approve this wallet key), `--timeout
@@ -156,18 +155,12 @@ control-plane commands; commands requiring a wallet signer ask you to select a
 wallet source. Older projects with only `.bounded/app.json` still work; the CLI
 falls back to that marker when `bounded.json` is absent.
 
-Fresh live-edit registrations default `liveEdit.artifacts` and
-`liveEdit.artifactPush` to `false`. Cloud source tracking is opt-in. Pass
-`--artifacts on` to enable it. With no explicit or saved push preference, that
-opt-in also enables artifact push and selects the Bounded-managed `artifacts`
-provider. Use `--source-provider github` for a configured GitHub backend. Use
-`--source-provider none`, `--artifacts off`, or `--artifact-push off` for the
-corresponding opt-out.
-
-Optional `liveEdit.frontendDir`, `liveEdit.distDir`, and
-`liveEdit.buildCommand` are public, secret-free build hints for agents and cloud
-live-edit. They are repo-relative except for `buildCommand`, which runs in
-`frontendDir` when set and otherwise at the repo root.
+Cloud source sync is opt-in and rides the deploy: set `"sourcePush": true` in
+`bounded.json` (or pass `--with-source`) and every deploy also pushes the
+project source tree to the app's cloud source repository. See
+[source-sync.md](source-sync.md). A legacy `liveEdit` block in `bounded.json`
+is ignored with a deprecation notice (`liveEdit.artifactPush: true` is honored
+as `sourcePush: true`).
 
 ### The per-app marker — `.bounded/app.json`
 
@@ -219,11 +212,8 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment` |
-| `dev` | Run the focused app dashboard, auto-register that app for live-edit, and start the loopback API daemon | `--app-id`, `--port`, `--api-port`, `--policy`, `--force` |
-| `dashboard` | Run the local multi-project dashboard daemon + web UI | `--port`, `--api-port`, `--no-web`, `--force` |
-| `live-edit register/list` | Register local repos for the dashboard daemon's live-edit `/apps/:appId/...` API | `--app-id`, `--repo`, `--origin`, `--scope`, `--artifacts on\|off`, `--source-provider auto\|github\|artifacts\|none`, `--artifact-push on\|off`, `--edit-mode canonical\|variant`, `--build-command`, `--frontend-dir`, `--dist-dir`, `--backend-runtime-dir`, `--deploy-command`, `--rollback-command` |
-| `live-edit validate` | Run the live-edit proof/scope gate on the app repo's current git working-tree diff, no daemon needed; exits non-zero on failure | `--app-id` (defaults to the app whose registered repo is the current directory), `--json` |
-| `live-edit deploy` | Validate the working-tree diff, then run the same build → deploy → cloud source-sync pipeline as the daemon and print the deployed URL | `--app-id` (same default), `--skip-validate`, `--json` |
+| `clone <appId> [dir]` | Clone the app's cloud source repository (read-only token per invocation) | `--branch`, `--link` |
+| `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json
@@ -251,97 +241,19 @@ machine-readable run including per-step traces and denial text.
 the dashboard's Policy tests tab and CI). `push` merges by fileName unless
 `--replace`; `pull` won't overwrite local files without `--force`.
 
-## Local dashboard
+## Cloud source sync
 
-The installer starts the dashboard daemon API on `http://127.0.0.1:8085` by
-default. The full dashboard web UI runs on `http://127.0.0.1:8008` when started
-with `bounded dashboard`. Set `BOUNDED_DASHBOARD=0` during install only when you
-do not want a background local daemon.
+Source rides the deploy: with `"sourcePush": true` in `bounded.json` (or
+`--with-source` on the command), `bounded deploy` and `bounded site deploy`
+also push the project tree to the app's cloud source repository and print
+`source synced: <sha>`. A source-push failure after a successful deploy warns
+but does not fail the deploy. `bounded clone` / `bounded pull` read the same
+repository. Full model: [source-sync.md](source-sync.md).
 
-Open the full web UI beside the normal CLI loop:
+The remote-edit era surface (`bounded edit`, `bounded dashboard`, `bounded
+dev`, `bounded live-edit ...`, the loopback daemon on 8085/8008) is REMOVED —
+do not suggest it.
 
-```bash
-bounded dashboard
-```
-
-It starts a loopback-only daemon API and the local web UI. The daemon holds the
-keypair and mints app-pinned sessions on demand; the browser never receives the
-private key. Use it as the default companion surface while building: inspect all
-local apps, read data through the daemon, view deployed policy/proof reports,
-invoke functions, and check dashboard-brokered invocation logs.
-Deployed HTTPS pages should not depend on background requests to the loopback
-daemon. Private hosted-site gates use normal Bounded sign-in in the deployed
-browser; local Claude/Codex workflows use the daemon through top-level
-localhost navigation, local widgets, or agent API calls. Keep
-`bounded dashboard --no-web` or `bounded dev --app-id <id>` running during local
-live-edit work.
-
-Useful flags:
-
-```bash
-bounded dashboard --port 8008 --api-port 8085
-bounded dashboard --no-web   # daemon API only, for a separate SPA dev server
-```
-
-For the current project only, use:
-
-```bash
-bounded dev --app-id <id>
-```
-
-`bounded dev` opens the dashboard scoped to that app, registers it in the
-live-edit registry if needed, and starts the same `/apps/:appId/...` daemon API.
-
-## Live-edit registry and API
-
-Live-edit is a local daemon API, not a new proof primitive. Register each app id
-with the local checkout and deployed origin the daemon should operate on:
-
-```bash
-bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page
-bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page --edit-mode variant
-bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page --frontend-dir web --dist-dir web/dist
-bounded live-edit register --app-id <id> --repo . --origin https://<slug>.bounded.page --source-provider none --artifacts off --artifact-push off
-bounded live-edit list
-```
-
-The dashboard daemon then serves:
-
-```text
-GET  http://127.0.0.1:8085/apps
-GET  http://127.0.0.1:8085/api/apps/<appId>/site-gate-session
-GET  http://127.0.0.1:8085/apps/<appId>
-GET  http://127.0.0.1:8085/apps/<appId>/widget.js
-POST http://127.0.0.1:8085/apps/<appId>/widget/session
-POST http://127.0.0.1:8085/apps/<appId>/propose
-POST http://127.0.0.1:8085/apps/<appId>/validate
-GET  http://127.0.0.1:8085/apps/<appId>/jobs
-POST http://127.0.0.1:8085/apps/<appId>/deploy/<jobId>
-POST http://127.0.0.1:8085/apps/<appId>/rollback
-```
-
-Use `--scope app` for guarded app-code edits and `--scope app+policy` only for
-trusted full-development surfaces. Full agent workflow: [live-edit.md](live-edit.md).
-Configured daemon `agentCommand` jobs run in a staged workspace first; only a
-validated diff is applied back to the real checkout.
-
-Cloud source tracking is opt-in for new registrations: artifacts and automatic
-push both default off. Enable it with `--artifacts on`; unless another provider
-is selected, that chooses the Bounded-managed `artifacts` provider and enables
-artifact push. `--source-provider none`, `--artifacts off`, or
-`--artifact-push off` keeps the corresponding source custody/sync behavior off.
-When source tracking is enabled, a successful local live-edit deploy attempts a
-filtered source sync for cloud/review flows. If Bounded reports that cloud source
-sync is unavailable, the local deploy should remain successful and report the
-warning.
-
-Default local deploy checks `liveEdit.distDir`, then `liveEdit.frontendDir/dist`,
-then `dist`, then `web/dist`. Cloud live-edit uses the same public hints and can
-also auto-detect root or `web/` package build scripts.
-
-The local daemon accepts browser CORS only from localhost, the dashboard web
-origin, and app-specific registered live-edit origins for `/apps/<appId>/...`
-routes. Register the app's claimed slug or custom domain, not a raw app-id host.
 The widget
 uses the animated Bounded mark as the launcher, saves its corner placement and
 one-hour hide window in localStorage, uses a four-quadrant mark picker, isolates
@@ -477,8 +389,6 @@ Full treatment: [environments.md](environments.md).
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md). Frontend hosting: [frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).
 `<slug>-api.bounded.page` routes to your backend; `<slug>.bounded.page` serves the site.
-For Bounded-hosted static apps, live-edit rollback restores the previous router
-artifact. Custom hosts need an explicit `--rollback-command`.
 
 ## Domains
 

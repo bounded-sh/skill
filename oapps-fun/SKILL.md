@@ -87,26 +87,28 @@ to:
 4. **A public DYOR window precedes the token launch.** Anyone can inspect the
    source, ask questions, and REPORT the app. 5 distinct reports hold the
    launch at T-0 for steward review, with a public halt log.
-5. **The fee split is fixed:** 50 treasury / 20 creator / 20 steward /
-   10 platform. Nobody gets pre-launch tokens. Not you, not the steward, not
-   the platform.
+5. **The fee split is fixed:** 50 app reserve / 20 creator / 20 steward /
+   10 platform. The app reserve is the launch's treasury ledger; the platform
+   leg is what older docs call the "venue" — same 10% recipient. Nobody gets
+   pre-launch tokens. Not you, not the steward, not the platform.
 6. **Automated integrity scans run** at submission and over time. A failed
    scan halts the launch, publicly.
 
 The DYOR window makes source sync load-bearing: the public source page serves
-what the platform has synced, so deploys must push source artifacts. Cloud
-source sync is opt-in. Fresh live-edit registrations default `artifacts` and
-`artifactPush` off. An oApps-bound app must enable both:
+what the platform has synced, and the launch integrity scan reads the same
+synced source (no synced source → the launch cannot complete). Source rides
+the deploy — there is no separate register/sync machinery. Enable it once in
+`bounded.json`:
 
-```sh
-bounded live-edit register --app-id <appId> --repo . \
-  --origin https://<slug>.bounded.page \
-  --artifacts on --source-provider artifacts --artifact-push on
+```json
+{ "sourcePush": true }
 ```
 
-Do not set `liveEdit.artifacts: false` or `liveEdit.artifactPush: false` on an
-oApps-bound app. The public source page will stay empty until the platform has
-synced source.
+With that set, every `bounded site deploy` (and `bounded deploy`) also pushes
+the project source tree to the app's cloud source repository and prints
+`source synced: <sha>`. One-off control: `--with-source` / `--no-source` on
+the deploy commands. An oApps-bound app must deploy with source ON, and the
+source that ships must be the tree that produced the deployed site.
 
 ## The capability ladder
 
@@ -222,8 +224,9 @@ the app's running costs.
   relay-eligible.
 - The site is private (`sitePrivate`) and stays that way; graduation's
   "let go" step does the public flip, not you.
-- Source sync is explicitly on (`artifacts` and `artifactPush` are true):
-  `/__bounded/source` shows the current tree, not an empty page.
+- Source rode the deploy (`sourcePush: true` in bounded.json, or the last
+  deploy ran `--with-source`): `/__bounded/source` shows the current tree,
+  not an empty page.
 - The slug is the name the token should live at (`<slug>.oapps.fun`); rename
   it before launch if it isn't.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are

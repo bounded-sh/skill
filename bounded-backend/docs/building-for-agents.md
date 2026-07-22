@@ -34,21 +34,10 @@ bounded init                                            # or write policy.json d
 bounded deploy ./policy.json --create --name agent-ledger   # creates app, prints <appId>
 bounded verify ./policy.json --app-id <appId>               # PROVED / DISPROVED
 
-# 4. Keep the local daemon running — start it UP FRONT and leave it up
-bounded dashboard
+# 4. Exercise the data plane
 bounded data set --app-id <appId> --path agents/<agent-id>/spend/s1 --data '{"amount":60}'
 bounded data get --app-id <appId> --path agents/<agent-id>/spend
 ```
-
-> ⚠️ **The local daemon (`bounded dashboard`) must be RUNNING for the local
-> dashboard, the "Open local dashboard" gate link, and local live-edit to work.**
-> Start it up front and keep it up — it's the loopback backend (on
-> `http://127.0.0.1:8085`) that lists apps, proxies owner-gated reads, flips site
-> privacy, builds, and deploys without the browser holding a key. If it's down you
-> get "daemon not reachable" and local workflows silently degrade. Re-running
-> `bounded dashboard` reuses a healthy daemon; if it warns the running daemon is an
-> older version, restart it (`kill $(lsof -ti tcp:8085)` then re-run) so you're not
-> on stale behavior. Full detail: [../docs/live-edit.md](../../bounded-deploy/docs/live-edit.md).
 
 > Run each agent under a **distinct** `HOME` or `BOUNDED_PRIVATE_KEY` so
 > identities don't collide. Never hand an autonomous agent a human's keypair.
