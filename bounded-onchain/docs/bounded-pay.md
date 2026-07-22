@@ -214,13 +214,48 @@ Keep them server-side, remove Checkout ids from callback URLs before analytics
 starts, redact both from telemetry, and store subscription ids only behind a
 narrow read rule.
 
-`POST /connect/subscription/cancel` requires the caller's Bounded JWT, allows the
-recorded buyer or merchant, and sets cancellation at period end. Bounded Pay does
-not currently expose a public refund endpoint. Destination charges are created
-on the platform account, so do not promise that every connected merchant can
-refund one in their own Stripe dashboard. Use an explicit platform workflow or
-a direct provider integration for refunds, disputes, per-renewal accounting,
-provider webhooks, and matching idempotent policy updates.
+`POST /connect/subscription/cancel` requires the caller's Bounded JWT and one
+stable, URL-safe `Idempotency-Key` of 1-256 bytes for the logical cancellation.
+Persist that key before the first POST and reuse it across double clicks,
+sibling tabs, reloads, timeouts, and lost responses. Bounded namespaces it by
+the authenticated caller and exact subscription before it reaches Stripe, so
+the same logical retry keeps one provider key without sharing a Stripe key with
+another tenant. Missing, malformed, whitespace-bearing, Unicode, or oversized
+keys fail before any Stripe read or mutation.
+
+```ts
+const cancellationKey = loadOrCreatePendingCancellationKey(subscriptionId);
+const cancel = await fetch(`${HOST}/connect/subscription/cancel`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${buyerOrMerchantJwt}`,
+    "Content-Type": "application/json",
+    "Idempotency-Key": cancellationKey,
+  },
+  body: JSON.stringify({ id: subscriptionId }),
+});
+
+// The POST response alone is not cancellation proof. Re-read exact provider
+// truth with the same subscription capability after every success or error.
+const current = await fetch(
+  `${HOST}/connect/subscription?id=${encodeURIComponent(subscriptionId)}`,
+).then((response) => response.json());
+if (current.cancelAtPeriodEnd === true) {
+  clearPendingCancellationKey(subscriptionId, cancellationKey);
+}
+```
+
+The route allows the recorded buyer or merchant and sets cancellation at period
+end. A retry whose fresh subscription read already shows cancellation returns
+that applied truth without a second provider mutation. Keep the pending key
+when the exact GET is unavailable or still says `cancelAtPeriodEnd: false`.
+
+Bounded Pay does not currently expose a public refund endpoint. Destination
+charges are created on the platform account, so do not promise that every
+connected merchant can refund one in their own Stripe dashboard. Use an
+explicit platform workflow or a direct provider integration for refunds,
+disputes, per-renewal accounting, provider webhooks, and matching idempotent
+policy updates.
 
 Bounded's own account billing supports a Pro subscription and bucket top-ups via
 `bounded billing ...`; that bills the Bounded developer account, not an app's end

@@ -738,39 +738,46 @@ its `PROVED` / `DISPROVED` (+ counterexample) sit side by side.
 
 | `kind` | Use it for | Key params |
 |---|---|---|
-| `roleGatedRead` | "only `<role>` members can read `<scope>`/`<field>`" — closes EVERY read path (rules, relationships, queries, field exposures), not just one rule | `role`, and `scope` or `field`; **`gatedBy`** when `role` is nested (below) |
+| `roleGatedRead` | "only the exact declared role or typed actors can read `<scope>`/`<field>`" — closes every modeled policy data-plane exposure (rules, relationships, queries, fields/schemaless scopes, top-level role grants) | exactly one of flat `role` or non-empty typed `actors`, plus `scope` or `field` |
 | `authorityClosure` | "membership of `<roleScope>` only grows through gated additions — no side doors" | `roleScope` (**flat `<collection>/$docId` only**), optional `initialMember` |
 | `rollingSum` | a windowed cap proven **globally** (same algebra as the per-collection invariant) | `scope`, `field`, `windowSeconds`, `limit`, optional `scopeVariable` |
 
-### Nested role scopes — `roleGatedRead` needs `gatedBy`
+### Nested role scopes — use typed `actors`
 
-`roleGatedRead` derives the membership predicate automatically **only** when
-`role` is a flat `<collection>/$docId` path (e.g. `members/$memberId`). For a
-**multi-tenant** app, membership lives nested under the tenant
-(`tenants/$tenantId/members/$memberId`), and the default derivation can't infer
-the keying — verify rejects it:
+The legacy `role` form derives one canonical membership predicate and therefore
+accepts only a flat `<collection>/$docId` path such as `members/$memberId`.
+Free-form `gatedBy` is never substituted into a proof; when present on the
+legacy form it must equal that exact canonical flat-role predicate.
 
-```
-✗ input (UNSUPPORTED)
-  Role scope "tenants/$tenantId/members/$memberId" is not a simple
-  "<collection>/$docId" path and no gatedBy membership predicate was provided
-```
-
-Supply an explicit **`gatedBy`** membership predicate alongside `role`. `role` is
-still required (a `gatedBy` with no `role` errors `Role scope 'undefined' not
-found`):
+For a multi-tenant app whose membership lives under the tenant, declare a typed
+role actor instead.
+The actor names the nested scope, caller principal, and declared Boolean
+membership field, so the verifier constructs the predicate rather than trusting
+policy text:
 
 ```json
 { "claim": "only members of an org can read that org's tasks",
   "kind": "roleGatedRead",
   "scope": "tenants/$tenantId/tasks/$taskId",
-  "role":  "tenants/$tenantId/members/$memberId",
-  "gatedBy": "get(/tenants/$tenantId/members/@user.id) != null" }
+  "actors": [
+    { "kind": "role", "scope": "tenants/$tenantId/members/$memberId",
+      "principal": "id", "field": "active" }
+  ] }
 ```
 
-With both `role` (the nested member scope) and `gatedBy` (the predicate the read
-rule must imply), the nested case **proves**: `✓ READ EXPOSURE: read rule
-provably implies membership`.
+The target read rule must imply
+`get(/tenants/$tenantId/members/@user.id).active == true`.
+The `actors` array may contain multiple typed roles or exact fixed identities;
+it cannot be combined with `role` or `gatedBy`.
+Hook, function, tick, and scheduled outputs plus cross-app sinks remain outside
+this read-exposure proof and require separate source-to-sink review.
+An `onchain: true` scope is public-chain storage and cannot satisfy a
+role-gated privacy claim, regardless of its policy read rule.
+This proves an upper bound on readers, not who can grant membership.
+Use `authorityClosure` for each flat role when the human claim depends on a
+closed roster.
+Nested roster closure remains unsupported and unproven, so do not make a
+closed-roster claim for the nested actor example.
 
 ### Nested authority — `authorityClosure` is flat-only (known limitation)
 
@@ -805,8 +812,8 @@ tenant data:
 ```
 
 Keep tenant scoping for that admin as an ordinary field (`tenant`) gated in
-rules; the *closure* proof rides the flat `admins/$userId` scope. Use a nested
-`roleGatedRead` + `gatedBy` (above) for the per-tenant read isolation.
+rules; the *closure* proof rides the flat `admins/$userId` scope. Use nested
+typed `roleGatedRead.actors` (above) for the per-tenant read isolation.
 
 ### Plain-string shorthand — and the rule you MUST follow
 

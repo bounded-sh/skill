@@ -326,12 +326,13 @@ only literals; `environments` is stripped by the CLI before the policy is sent.
 
 **Attestation scope notes (nested vs flat):**
 
-- `roleGatedRead` with a flat `role` (`<collection>/$docId`, e.g.
-  `members/$memberId`) derives the membership predicate automatically. With a
-  **nested** `role` (e.g. `tenants/$tenantId/members/$memberId`) you **must** add
-  an explicit **`gatedBy`** membership predicate — the default derivation only
-  handles the flat shape. Worked example:
-  [invariants.md](invariants.md#nested-role-scopes--rolegatedread-needs-gatedby).
+- `roleGatedRead` requires exactly one boundary: a flat `role`
+  (`<collection>/$docId`, e.g. `members/$memberId`) or a non-empty typed
+  `actors` array. Use typed actors for nested roles such as
+  `tenants/$tenantId/members/$memberId`; each role actor declares its caller
+  principal and Boolean membership field. Free-form `gatedBy` is not a nested
+  escape hatch. Worked example:
+  [invariants.md](invariants.md#nested-role-scopes--use-typed-actors).
 - `authorityClosure` supports **only a flat `roleScope`** (`admins/$address`);
   nested role scopes are not yet supported. For multi-tenant admin sets use a flat
   `admins/$address` registry — see
