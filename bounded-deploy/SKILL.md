@@ -29,6 +29,7 @@ skill.
 | Multi-environment policy files | [docs/environments.md](docs/environments.md) |
 | Sync source to the cloud (`sourcePush`, `--with-source`), `bounded clone`/`pull`, the public source page | [docs/source-sync.md](docs/source-sync.md) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
+| Page blank in an iframe, `nosniff` refusing a script, or "who can embed my app" | [docs/domains.md](docs/domains.md#security-headers-on-every-served-page) - Bounded sets security headers on every served page; your app is framable by itself and a Bounded venue only, and you cannot override them from HTML. |
 | Project config, `bounded.json`, account profiles, web login, key safety | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | Share an app / add a collaborator / grant admin, deploy, or billing rights | `bounded share <email-or-wallet> --role admin\|developer\|viewer\|billing --app-id <id>` (owner-only). Do NOT hunt for an allowlist in app code; the control plane governs access. Capability matrix in the **bounded-backend** skill's access-control doc. |
 | Hit `requires a keypair` / `401` / `403` on deploy/site deploy, or about to conclude "blocked on the owner" / "no access" | [docs/access-playbook.md](docs/access-playbook.md) — DON'T give up. Run `bounded whoami` + `bounded access --app-id <id>`; switch identity (`account use --web`/`--global`); web-account deploys work (update the CLI if it refuses). |

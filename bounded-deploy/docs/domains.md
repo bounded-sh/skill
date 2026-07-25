@@ -75,3 +75,40 @@ app, so `<slug>.bounded.page` and `app.yourdomain.com` serve the same published
 frontend. The private-site gate is also keyed by `appId`, so it applies after
 host resolution to every static host for the app. Unmapped hosts 404
 (fail-closed) — a domain never serves the wrong app.
+
+## Security headers on every served page
+
+Bounded sets security headers on every static response it serves, for every app,
+with no configuration and no way to opt out.
+You do not add these yourself, and a `<meta http-equiv>` tag in your HTML will not
+override them.
+
+```
+X-Content-Type-Options: nosniff
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: browsing-topics=()
+Content-Security-Policy: frame-ancestors 'self' https://oapps.fun https://*.oapps.fun
+                                          https://bounded.page https://*.bounded.page
+```
+
+Two consequences worth knowing before you debug a blank page.
+
+**Framing.** Your app may be embedded by itself and by a Bounded venue, and by
+nobody else.
+That is what lets an oApps room show your live app inside its own page while a
+random third-party site cannot frame it to phish your users.
+If you need another embedder, that is a platform change, not something an app can
+declare today.
+
+**`nosniff`.** A browser will refuse an asset whose `Content-Type` does not match
+how the page uses it, instead of guessing.
+The one real failure this causes: an asset with an extension Bounded does not map
+falls back to `application/octet-stream`, and loading it as a script is then
+refused.
+The fix is to give the file an extension Bounded maps (`.js`, `.mjs`, `.css`), not
+to work around the header.
+
+Device and payment capabilities are deliberately NOT restricted: `getUserMedia`,
+geolocation, `PaymentRequest`, DRM playback, motion sensors and autoplay all keep
+working, because an empty `Permissions-Policy` allow-list disables a feature for
+the page itself and revoking those would break apps that legitimately use them.
