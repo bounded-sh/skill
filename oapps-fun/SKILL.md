@@ -70,6 +70,31 @@ trust artifact reviewers and buyers will read alongside your source. An app
 whose money and state rules are proven invariants graduates cleanly. An app
 with ad-hoc checks in function code reads as a rug risk.
 
+The launch gate REFUSES an app whose `boundaries` block is missing or loose, so
+these are requirements and not advice:
+
+| Field | Required value | Refusal if wrong |
+|---|---|---|
+| `boundaries` | present at all | `no_boundaries` |
+| `posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
+| `binding` | `"all"` - applies to everyone including you | `binding_not_all` |
+| `amend` | `"none"` (permanent) or `"creator"` (until renounced) | `amend_invalid` |
+
+**Declare `boundaries.egress` too, even though the gate does not yet demand it.**
+On the functions lane the egress gateway is always constructed and fails closed
+if it cannot be built, but the host allow-list only BINDS when the app declared
+one - without a declaration, destinations are unrestricted. For an ordinary
+Bounded app that default is right: you should not have to enumerate every host to
+ship. For an oApp it is wrong, because the entire promise is that the app can
+only do what it publicly declared, and an undeclared egress surface is the one
+hole through which a governed build could later reach anywhere. Declare the hosts
+your app genuinely needs and nothing else.
+
+A caution worth internalizing: an AI-generated app does NOT produce a boundaries
+block unless the build prompt asks for one. If you are commissioning an app that
+is meant to launch, put the four fields above plus the egress allow-list in the
+prompt, or the app will build cleanly and then be refused at the gate.
+
 ## What graduation publishes (read before you let go)
 
 Graduation is the point of no return. Spell these implications out, in this
