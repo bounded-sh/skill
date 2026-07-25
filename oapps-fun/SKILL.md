@@ -96,9 +96,28 @@ and an undeclared egress surface is the one hole through which a governed build
 could later reach anywhere. An empty `allow` array is a real declaration and the
 honest one for an app that talks to nothing.
 
+### The clone must be BUILDABLE, or the launch is refused
+
+Because the launched thing is a governed copy, the ritual refuses any source
+tree a governed build could never edit - the alternative is a community-owned
+app the community cannot change. On top of the policy table above, your SOURCE
+must be Vite-shaped and synced:
+
+| What | Required | Refusal |
+|---|---|---|
+| synced source | `--with-source` / `sourcePush: true` | `source_not_synced` |
+| `index.html` at the root, loading `src/main.*` as a module | yes | `missing_index_html`, `missing_module_entry` |
+| `package.json` with a `build` script | yes | `missing_package_json`, `missing_build_script` |
+| a literal `init({ appId: "<this app>" })` in the source | yes | `app_id_literal_missing` |
+| every app-id literal names THIS app | yes (repeats of your own id are fine) | `app_id_literal_foreign` |
+| text-only tree (binaries cannot ride the source lane) | yes | `source_not_text` |
+
+The refusal body carries the specific `rejections`, so read them rather than
+guessing.
+
 ### The seal is irreversible, and it happens BEFORE validation
 
-This is the sharpest edge in the whole ritual. The graduation step writes your
+This is the sharpest edge in the whole ritual. The launch wizard writes your
 boundaries block **and** the `gov-frozen` lock over `openApps` + `boundaries` in
 the SAME policy deploy, and `publish-oapp` checks the table above only AFTER that
 deploy has landed.
@@ -144,8 +163,14 @@ to:
 2. **Your boundaries are published.** The `policy.json` rules, proven before
    every deploy, appear at `/__bounded/boundaries`. They are part of your
    public safety story, and the first thing a careful buyer reads.
-3. **Your code freezes** from graduation until the first governed build. No
-   changes of any kind in between.
+3. **What launches is a venue-owned COPY of your app, not your app.** Launch
+   clones the whole thing - source, site, policy - into a fresh app the venue
+   owns, rewrites the Bounded app id so the copy talks to its own backend, and
+   moves your slug onto it. From then on the copy accepts NO interactive deploy
+   of any kind (`oapp_launched`, 403), forever: only a community-governed build
+   can change it. Your original app stays yours, keeps its policy authority, and
+   becomes a disconnected sandbox - editing it no longer affects the launched
+   oApp, and the launched oApp starts with an EMPTY backend (no data is copied).
 4. **A public DYOR window precedes the token launch.** Anyone can inspect the
    source, ask questions, and REPORT the app. 5 distinct reports hold the
    launch at T-0 for steward review, with a public halt log.
@@ -295,7 +320,11 @@ the app's running costs.
   deploy ran `--with-source`): `/__bounded/source` shows the current tree,
   not an empty page.
 - The slug is the name the token should live at (`<slug>.oapps.fun`); rename
-  it before launch if it isn't.
+  it before launch if it isn't. Launch MOVES the slug onto the venue-owned
+  clone, so it is the last moment the name is yours to change.
+- The source tree is Vite-shaped and every `init({ appId })` literal names this
+  app (see "The clone must be BUILDABLE"): the launch clones the source, and a
+  tree a governed build could not edit is refused.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
   sane against the app's expected build-fund inflow — out of budget means
   frozen, and you should be able to say at what usage level that happens.
