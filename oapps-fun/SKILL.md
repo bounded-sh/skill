@@ -70,25 +70,62 @@ trust artifact reviewers and buyers will read alongside your source. An app
 whose money and state rules are proven invariants graduates cleanly. An app
 with ad-hoc checks in function code reads as a rug risk.
 
-The launch gate REFUSES an app whose `boundaries` block is missing or loose, so
-these are requirements and not advice:
+The launch gate (`publish-oapp`) REFUSES an app that does not satisfy ALL of the
+following, so these are requirements and not advice.
 
-| Field | Required value | Refusal if wrong |
+| What | Required value | Refusal if wrong |
 |---|---|---|
 | `boundaries` | present at all | `no_boundaries` |
-| `posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
-| `binding` | `"all"` - applies to everyone including you | `binding_not_all` |
-| `amend` | `"none"` (permanent) or `"creator"` (until renounced) | `amend_invalid` |
+| `boundaries.posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
+| `boundaries.binding` | `"all"` - applies to everyone including you | `binding_not_all` |
+| `boundaries.amend` | `"none"` (permanent) or `"creator"` (until renounced) | `amend_invalid` |
+| `boundaries.egress` | declared (an empty `allow` IS a declaration) | `egress_missing` |
+| `boundaries.policy` | a `"mode": "locked"` freeze covering `openApps` | `policy_freeze_missing_openapps` |
+| `boundaries.policy` | a `"mode": "locked"` freeze covering `boundaries` | `policy_freeze_missing_boundaries` |
+| `openApps.activity` | `"public"` - every prompt and change on the record | `activity_not_public` |
+| a deployed policy | the app must have one to launch | `no_deployed_policy` |
+| accepted terms | current version, accepted | `terms_not_accepted`, `terms_version_unsupported` |
 
-**Declare `boundaries.egress` too, even though the gate does not yet demand it.**
-On the functions lane the egress gateway is always constructed and fails closed
-if it cannot be built, but the host allow-list only BINDS when the app declared
-one - without a declaration, destinations are unrestricted. For an ordinary
-Bounded app that default is right: you should not have to enumerate every host to
-ship. For an oApp it is wrong, because the entire promise is that the app can
-only do what it publicly declared, and an undeclared egress surface is the one
-hole through which a governed build could later reach anywhere. Declare the hosts
-your app genuinely needs and nothing else.
+`boundaries.egress` is REQUIRED, not optional. On the functions lane the egress
+gateway is always constructed and fails closed if it cannot be built, but the host
+allow-list only BINDS when the app declared one - without a declaration,
+destinations are unrestricted. For an ordinary Bounded app that default is right:
+you should not have to enumerate every host to ship. For an oApp it is wrong,
+because the entire promise is that the app can only do what it publicly declared,
+and an undeclared egress surface is the one hole through which a governed build
+could later reach anywhere. An empty `allow` array is a real declaration and the
+honest one for an app that talks to nothing.
+
+### The seal is irreversible, and it happens BEFORE validation
+
+This is the sharpest edge in the whole ritual. The graduation step writes your
+boundaries block **and** the `gov-frozen` lock over `openApps` + `boundaries` in
+the SAME policy deploy, and `publish-oapp` checks the table above only AFTER that
+deploy has landed.
+
+So a policy that misses any row above is sealed first and refused second - and
+the lock now covers `boundaries`, which is the section you would have to edit to
+fix it. The documented three-step recovery (loosen, deploy, re-apply) is itself a
+write to `boundaries`. It is self-sealing, and `amend: "creator"` does not save
+you:
+
+```
+seal rules (403): boundary_violation, gate G2, boundaryId gov-frozen,
+                  section boundaries, bindingAll true
+```
+
+Two test apps were made permanently unlaunchable this way in one afternoon.
+
+**Therefore: build the COMPLETE block and check it against every row above before
+you seal.** If you are writing tooling around this, validate locally first and
+refuse to seal on any missing row - a tool that can create an unrecoverable state
+should not be able to.
+
+A related trap if you script it: read the app's current policy from
+`/app/:id/details` (`GET /app/:id` is not a route and 404s), and remember a
+Bounded policy is FLAT - collections are top-level keys, there is no
+`collections` wrapper. Swallowing that 404 and merging onto `null` replaces the
+app's whole policy with the preset alone, and then locks it.
 
 A caution worth internalizing: an AI-generated app does NOT produce a boundaries
 block unless the build prompt asks for one. If you are commissioning an app that
