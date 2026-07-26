@@ -89,16 +89,33 @@ One file per logical concern, `policy-tests/*.json`:
 | `mock` | `function`, `returns` | Stub a function call (name normalized lowercase, args ignored) for all later steps. |
 | `ensure` | `expr`, `then?` | If `expr` is truthy, run the nested `then` steps; else skip. Without `then`, behaves like `expect` (idempotency helper). |
 | `expect` | `expr` \| `left`+`right` \| `not` | Assert against current sandbox state. Mutually exclusive: `expr` must be truthy; `left`/`right` compare by `JSON.stringify` equality; `not` must be falsy. |
+| `invoke` | `function`, `args?`, `shouldFail?` | Run a policy-declared app function in the sandbox as the current actor. The function's `auth` rule is enforced (same actor/clock/mocks); its declared `actAs` applies; its `ctx.bounded` writes run through the real rules + invariants. `shouldFail` passes on an auth denial OR a function error. `bounded tests run` sends your local `functions/*.ts` sources along automatically (deployed-policy runs have no sources, so `invoke` needs the local-policy loop). |
+| `snapshot` | `name`, `expectSame?` | Capture the sandbox's FULL document state under a name. With `expectSame`, assert it is identical (per-path document data) to a previously captured snapshot — the mismatch report names the added/removed/changed paths. |
 
 `shouldFail: true` on any write op means the step **passes if the write is
 denied** and its denial is recorded — the run only fails if a write that
 should have been denied unexpectedly succeeds.
 
-**Limits:** ≤64KB per file, ≤200 steps per file, ≤50 files per run, 120s wall
-clock per run.
+**The setup-twice gate** (oApp setup-function contract): prove a `setup`
+function is safe to re-run by invoking it twice around snapshots —
 
-**Not yet supported:** `invoke` (calling a hosted function inside a test) is
-planned. Bootstrap/seeding mode and onchain `fund` are out of scope for v1.
+```json
+{ "op": "invoke", "function": "setup", "args": { "slug": "x" } },
+{ "op": "snapshot", "name": "s1" },
+{ "op": "invoke", "function": "setup", "args": { "slug": "x" } },
+{ "op": "snapshot", "name": "s2", "expectSame": "s1" }
+```
+
+**Limits:** ≤64KB per file, ≤200 steps per file, ≤50 files per run, ≤25
+function sources ≤512KB each, 120s wall clock per run.
+
+**`invoke` caveats:** the function's own `Date.now()` is NOT overridden (its
+writes evaluate `@time.now` on the test's logical clock, so avoid `setTime`
+far from real time in files that invoke functions stamping wall-clock into
+time-pinned rules); declared function `secrets` are unavailable in the
+sandbox (such invokes fail closed); `ctx.enqueue` intents and `ctx.build`
+authority are withheld from sandbox runs. Bootstrap/seeding mode and onchain
+`fund` remain out of scope.
 
 ## Running
 

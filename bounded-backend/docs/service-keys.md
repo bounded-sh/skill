@@ -238,7 +238,8 @@ You only need a **real keypair + private key** when the service identity must
 **cryptographically sign** — i.e. submit an on-chain Solana transaction (not
 just a data-plane write). In that case:
 
-- The **private key is a function secret**, declared on each function deploy,
+- The **private key is a function secret**, declared once in the function's
+  `secrets` block (a redeploy preserves it — you do not restate it every time),
   stored with `secret put`, and exposed only to that one function as
   `ctx.env.NAME`. The value stays server-side (never in your repo, never
   returned; only the *name* is ever shown). `actAs`
@@ -268,6 +269,39 @@ just a data-plane write). In that case:
 | --- | --- | --- |
 | Write/read app data as a backend identity | **No** | nothing stored — just the address in policy |
 | Sign an on-chain Solana tx as the identity | Yes | function **secret** (server-side); local mint → `~/.bounded/keys/` `0600` |
+
+## `actAs` cannot log in — that is what the SERVICE USER is for
+
+`actAs` works because the **dispatcher** synthesizes the identity from a string in
+your policy: it swaps the caller for that address before your code runs. There is
+no key and no signature anywhere in that path, which is exactly why it needs
+nothing stored. It also means `actAs` only exists **inside** a dispatched
+function.
+
+Anything that authenticates from **outside** — a browser driving your deployed app
+to test it, a headless QA run signing in behind your auth — cannot use `actAs`.
+Logging in through the front door means signing a SIWS challenge, and a
+synthesized identity has nothing to sign with.
+
+For that, an app can admit a **service user**: a normal, non-privileged user whose
+private key the platform holds instead of you. It signs in like any other user;
+its reads and writes pass the same rules and the same proven invariants;
+`@user.id` is just an address. It gets **no implicit access to anything** — an app
+admits it by DECLARING its address as an ordinary policy constant and granting it
+whatever that app wants, in the same rule language as any other principal. That is
+what makes it safe rather than a backdoor: it is visible, the prover reasons about
+it like any other principal, and on an oApp it appears in the constitution, so
+holders can see that the platform holds a key which can act in their app and
+exactly what it may do.
+
+The two are complementary, not alternatives:
+
+| | `actAs` | service user |
+|---|---|---|
+| Key | none (synthesized) | held by the platform |
+| Usable from | inside a dispatched function | anywhere, including a browser login |
+| Can sign a challenge | no | yes |
+| Authorized by | your policy rules | your policy rules |
 
 ## Security properties
 

@@ -382,6 +382,16 @@ Semantics and constraints (validated at deploy):
    write-gating cap, so it has no SMT certificate and cannot wedge a deploy. A
    well-formed declaration occupies one advisory slot in the current summary's
    `obligationCount` but does not increment `failedCount`.
+7. **A declaration is fixed while contributions are live.** Once a maintained
+   target has active contributions, changing OR removing that `windowSum`
+   declaration is refused at runtime config activation ("windowSum declarations
+   cannot change while maintained target contributions are active"). This is
+   NOT visible to `bounded verify`: whether contributions are active is runtime
+   state, not something a static proof can see, so verify passes and the change
+   fails when the config activates. Plan the window and field before the first
+   contribution lands. To retire one, drain or expire its contributions first;
+   to retire the *data* it ranks, prefer a status flag over deleting the target
+   document, since a governed target cannot be deleted directly either.
 
 Choose `rollingSum` when you need to **enforce** "no more than X per window";
 choose `windowSum` when you need to **read/rank by** "how much in the last

@@ -134,14 +134,14 @@ argv values can appear in shell history and process listings.
   is read by every declared backend component and every Function in app X — no
   copying. The manifest (or a function's `secrets` block) declares the *name* once.
   A Function resolves the value from the SAME per-app store at invoke time, so
-  `ctx.secrets.get("STRIPE_KEY")` returns what you `secret put`. A legacy
-  deploy-time function-secret override still exists (passing values inline in the
-  function-deploy call) for one-off per-function overrides, but **prefer `secret put`**.
-  Those inline values are scoped to that one function **version**: they are wiped on
-  the next redeploy, so you must re-supply them on *every* deploy (and a policy
-  redeploy that replaces the function loses them too) — plus they can leak through
-  argv, process listings, and shell history. `secret put` sets the value **once**,
-  persists it across deploys, and is read back with `ctx.secrets.get`.
+  `ctx.secrets.get("STRIPE_KEY")` returns what you `secret put`. There is exactly
+  **one** store: values live per app, never per function version, so a redeploy
+  cannot lose them. (A second, deploy-time store keyed by the function's code
+  version used to exist and shadowed this one — because its key changed on every
+  deploy, re-deploying a function silently left it running with NO secrets. It has
+  been removed. `--secret NAME=VALUE` now puts the value in the app store for you
+  and declares the name; prefer `secret put` with `--value-stdin` regardless, since
+  a value in argv leaks through process listings and shell history.)
 - Declaring a `secrets` block is the allow-list: only **declared** in-process
   names are readable. For new manifests and functions, always declare the names
   explicitly. If code asks for a name that is not declared for that backend
@@ -150,11 +150,13 @@ argv values can appear in shell history and process listings.
 - The declaration is part of the deployed backend configuration; changing it is a
   new deploy. The **values** are set separately and can be rotated anytime with
   `secret put` (no redeploy).
-- A standalone `bounded functions deploy` writes the function's complete entry.
-  Pass bare `--secret NAME` on every function deploy to declare the name without
-  putting its value in argv; omitting it removes the declaration even when the
-  app secret store still has a value. `secret put` supplies or rotates the value,
-  but never declares exposure by itself.
+- A standalone `bounded functions deploy` **preserves** a declaration you do not
+  restate: omitting `--secret` leaves the function's existing `secrets` block
+  intact, exactly like `actAs`, `webhook` and every other declared capability. (It
+  did not always: `secrets` was once the one key excluded from that carry-forward,
+  so a plain code deploy silently stripped a function's access to its own secrets.)
+  `secret put` supplies or rotates the value but never declares exposure by itself;
+  the `secrets` block is what grants a function the right to read a name.
 
 ## Related
 - [backend-runtime.md](backend-runtime.md) — the `ctx` your code runs with (store/ai/schedule/fetch/secrets)

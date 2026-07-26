@@ -14,9 +14,8 @@ supported declared invariants and generated safety obligations. Only a named
 
 ## Collections & path templates
 
-Top-level keys (other than `links`) are **path templates**. Segments alternate
-between a collection name and a `$variable` (the document id), so paths always have
-an even number of segments:
+Unreserved top-level keys are **path templates**.
+Segments alternate between a collection name and a `$variable` (the document id), so paths always have an even number of segments:
 
 ```json
 {
@@ -313,6 +312,8 @@ never treated as path templates:
 | `links` | array of link definitions | [queries.md](queries.md) |
 | `auth` | `{ anonymous: bool, wallets: bool \| { environment: "staging" \| "production" } }` — app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. `wallets: true` is the **canonical login** flag: it attaches a non-custodial Crossmint wallet (`@user.address`) to every email/social login (see [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md)); omit it only for a purely offchain app. | [auth.md](../../bounded-frontend/docs/auth.md), [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md) |
 | `functions` | `{ name: { auth, entry, timeout, secrets } }` | [functions.md](functions.md) |
+| `oapp` | Optional literal `true` only. Enables the v1 oApp static restrictions from the first verify/deploy; omit the key for a regular app. | [oapps-fun](../../oapps-fun/SKILL.md) |
+| `boundaries` | App boundary metadata, including locked egress allow-list entries. | [§ oApp mode and closed egress](#oapp-mode-and-closed-egress) |
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
@@ -323,6 +324,68 @@ never treated as path templates:
 
 `constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
 only literals; `environments` is stripped by the CLI before the policy is sent.
+
+### oApp mode and closed egress
+
+`oapp` accepts only the literal value `true`.
+Use `"oapp": true` for an oApp and omit the key for a regular app; `false`, strings, objects, arrays, and other values are rejected.
+
+The current v1 static checks require every `functions.<name>` definition to omit `secrets` and require at least one `boundaries.egress` entry.
+Function `actAs` and live `runAs` signing identities are not secrets and remain allowed.
+A missing egress declaration or an outer `boundaries.egress: []` means unrestricted legacy egress at runtime, so oApp mode rejects both shapes.
+An empty inner `allow` array is valid.
+External egress is fully closed when every declared entry has an empty `allow` array, as in this one-entry policy:
+
+```json
+{
+  "oapp": true,
+  "boundaries": {
+    "egress": [
+      {
+        "id": "network",
+        "allow": [],
+        "mode": "locked"
+      }
+    ]
+  }
+}
+```
+
+Each egress entry accepts `id`, optional `title` and `description`, an `allow` array, and literal `"mode": "locked"`.
+Nonempty `allow` values are exact hostnames, `*.suffix` wildcards, or `service:<name>` integration ids.
+
+#### Per-function egress
+
+A function may declare its own `egress`, in the same shape, to narrow what *it*
+may reach:
+
+```jsonc
+"functions": {
+  "settleInvoices": {
+    "auth": "...",
+    "entry": "functions/settleInvoices.ts",
+    "egress": [{ "id": "billing", "allow": ["api.stripe.com"] }]
+  }
+}
+```
+
+`boundaries.egress` is a **ceiling**, not a default a function may exceed. A
+function can only ever narrow it: the app-wide list is the app's published promise
+about where it can reach — on an oApp it is rendered in the constitution — so a
+function naming a host the app never declared would make that promise false. That
+policy is **refused at deploy**, and the offending host is named in the error; the
+dispatcher additionally drops it at runtime, fail-closed.
+
+Declaring nothing on a function means the app-wide posture applies unchanged.
+
+Why bother: an app's functions rarely deserve the same reach. A deterministic
+bookkeeping function and an LLM agent function living in the same app should not
+share one allow-list, and with a single app-wide list they necessarily do.
+
+oApp mode is sticky.
+Once an app's deployed policy carries `"oapp": true`, every later policy deploy inherits the flag automatically when the incoming policy omits the key, and the oApp checks run against the incoming policy (a deploy that declares function secrets or drops the egress boundary is rejected with an `oapp mode:` error).
+There is deliberately no removal path in v1.
+Apps provisioned through the create flow with `oapp: true` start in oApp mode, and commissioned build children (create and fork runs) inherit oApp mode from the commissioning source app's deployed policy.
 
 **Attestation scope notes (nested vs flat):**
 

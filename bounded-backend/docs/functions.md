@@ -117,7 +117,7 @@ need a private key; cryptographic/onchain signing does.
 | `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller — `{ id, address, email }` where `@user.id` is the universal stable identity (always present), `@user.address` is a real onchain wallet (null for email-only logins), and `@user.email` is the verified email (null for wallet logins). `"true"` = any logged-in caller; `get(/admins/@user.id) != null` = only admins. Gate identity/membership on `@user.id`. Evaluated before the function runs; deny → `403`. |
 | `entry` | **Required.** Relative path to the function's source file (e.g. `functions/syncStripe.ts`). No absolute paths, no `..`. |
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
-| `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. |
+| `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. Rejected under top-level `oapp: true`; an oApp function must omit this key. `actAs` is not a secret and remains allowed. |
 | `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. |
 | `build` | Optional. Grants app-build origination via `ctx.build` (the unified Build system — successor to `ctx.oapps`). `{ profile, create?, edit?, fork?, view?, cancel? }` — the capability *is* the authority (invariant 4). **Cannot** be combined with `webhook` or `browser`: a build capability on an unauthenticated Internet surface would let anonymous callers spend the owner's build funds, so the validator rejects both combinations. Promotion and gate-decision authority are never grantable. See [§ctx.build](#ctxbuild--governed-app-builds). |
 
@@ -536,7 +536,8 @@ is resolved server-side from the function's identity and the named profile.
         "vetoWindow": "48h",
         "origins": ["scheduled-function"],
         "funding": { "mode": "split", "aiSource": "owner", "infraSource": "app", "onExhaustion": "park",
-                     "aiEnvelopeMicroUsd": 5000000, "infraEnvelopeMicroUsd": 2000000 },
+                     "aiEnvelopeMicroUsd": 5000000, "infraEnvelopeMicroUsd": 2000000,
+                     "allowPerRunEnvelope": true },
         "limits": { "buildsPerDay": 25, "buildsPerMonth": 300, "maxConcurrent": 2 },
         "effortMax": "high",
         "gates": [{ "type": "veto", "audience": "owner", "window": "48h" }],
@@ -601,8 +602,20 @@ await ctx.build.edit({
   // constraints?: string[]
   // baseDeploymentId?: "…"              // CAS assertion: reject if the base already moved
   // idempotencyKey?: "…"                // defaults to hash(appId, functionName, prompt, UTC-day)
+  // funding?: { aiEnvelopeMicroUsd: 3000000 }   // per-run AI cap; see below
 });
 ```
+
+**Per-run funding cap.** When the profile opts in with
+`funding.allowPerRunEnvelope: true`, an `edit` submission may carry
+`funding: { aiEnvelopeMicroUsd }` (a positive safe integer) to narrow **that
+run's** AI envelope. The effective envelope is
+`min(requested, profile.funding.aiEnvelopeMicroUsd)` — the profile value is a
+ceiling, never raisable per-run. Without the profile opt-in (or with a
+non-positive/non-integer value) the field is ignored and the profile envelope
+applies unchanged. The clamped value is snapshotted at admission and survives
+park/resume; changing only the cap under the same `idempotencyKey` conflicts
+rather than replaying.
 
 The default idempotency key hashes `(appId, functionName, prompt, UTC-day)`, so a
 retried invocation with the same prompt **replays** the same run within a day
