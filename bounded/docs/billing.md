@@ -125,8 +125,8 @@ Do not invent thresholds. Use the values returned in the usage snapshot.
 
 ## Project Creation Limits
 
-Project creation is account-scoped. Free accounts can create 1 project; Pro and
-Enterprise accounts can create unlimited projects.
+Project creation is account-scoped. Free accounts can create 3 projects; Pro,
+Team, and Enterprise accounts can create unlimited projects.
 
 When project creation returns `project_limit_exceeded` or a usage error with
 `dimension: "maxProjects"`:
