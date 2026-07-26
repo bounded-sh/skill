@@ -398,7 +398,7 @@ The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) 
 | | A freshly claimed slug can take up to ~1 minute to serve at `/` (edge-map propagation); the CLI probes the root and says "propagating" until it actually serves | |
 | `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + `slugUrl` fields in `--json`) | `bounded domains list --app-id <id>` |
 | `domains add <domain>` | Add a custom frontend domain you own (Pro); prints the DNS records to create | `bounded domains add app.yourdomain.com --app-id <id>` |
-| `domains remove <domain>` | Remove a custom domain and its routing/origin entry | `bounded domains remove app.yourdomain.com --app-id <id>` |
+| `domains remove <domain>` | Remove a **custom domain** and its routing/origin entry. Does NOT free a vanity slug — that is `domains slug --release`; using it on a slug 404s `domain_not_found` | `bounded domains remove app.yourdomain.com --app-id <id>` |
 
 Vanity slugs are free. Custom domains are Pro-gated on the app owner's account.
 If the owner later loses Pro, Bounded may remove or disable custom domain links;

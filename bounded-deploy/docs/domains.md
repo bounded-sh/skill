@@ -33,6 +33,30 @@ bounded domains slug --release --app-id <id> # free it
 Requires the `app:settings` control-plane capability (owner or admin by default);
 registers the slug for the app atomically.
 
+> **`domains remove` does NOT free a slug.** The two live in different places: a
+> slug is `app.slug`, custom domains are `app.customDomains`, and
+> `DELETE /app/:id/domains/:domain` only searches the latter. So
+> `bounded domains remove myapp.bounded.page` on a slug returns
+> **`404 domain_not_found`**, which reads like the slug is unmanaged rather than
+> like you used the wrong command. Free a slug with
+> `bounded domains slug --release --app-id <id>`.
+
+### Moving a slug to a different app
+
+Claiming a slug another app holds returns `409 slug_taken` with a suggested
+alternative — including when the holder is your own dead app. The suggestion is
+a nudge to pick a new name, not a statement that the original is unavailable to
+you. To keep a stable public URL across a rebuild, release it from the old app
+first, then claim it on the new one:
+
+```bash
+bounded domains slug --release --app-id <old-app-id>
+bounded domains slug myapp --app-id <new-app-id>
+```
+
+Check who holds it with `bounded domains list --app-id <old-app-id>`; a slug is
+listed there as `vanity slug`, distinct from any custom domains beneath it.
+
 ## 2. Custom domain — `app.yourdomain.com` (Pro)
 
 Bring a domain you own. Bounded issues the SSL cert; you add DNS records.
