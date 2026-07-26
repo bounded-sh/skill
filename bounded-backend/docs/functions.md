@@ -263,8 +263,8 @@ AI/external-services credit is **per-account** (the app owner). Two things to wi
 2. **Top up through Bounded** — never a custom checkout:
    - Stripe: `POST /billing/checkout { kind: "services_topup" }` -> redirect the user to the returned `url`.
    - Crypto (USDC on Solana): `POST /billing/x402/intent` -> pay -> `POST /billing/x402/settle`.
-   - Free includes 3 AI builds/day (fast model) plus a small runtime-services trial allowance, and cannot top up.
-   - Pro ($25/mo) gifts $5/mo of AI/external-services credit and $30/mo of Bounded infra credit; Team ($99/mo) gifts $20/$100. Top-ups require Pro-or-better.
+   - Free includes up to $3 of metered AI/external-services usage per rolling 30 days, shared by Build, `ctx.ai`, and `ctx.services`; it allows one Build at a time and cannot top up.
+   - Pro ($25/mo) gifts $5/month of AI/external-services credit and $30/month of Bounded infra credit; Team ($99/mo) gifts $20/$100. AI Build consumes the same measured bucket. Top-ups require Pro-or-better.
 
    Full rails, amounts, and webhooks: [billing.md](../../bounded/docs/billing.md). **If your app
    charges *its own* users for anything, route that through Bounded billing too** —

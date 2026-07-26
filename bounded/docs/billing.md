@@ -21,16 +21,19 @@ There are two user-visible buckets:
 Plans: Free, Pro ($25/month), Team ($99/month). Enterprise terms are negotiated
 per account.
 
-- Free includes **3 AI builds per rolling day** (routed to a fast model) plus a
-  small AI/external-services trial allowance ($0.50/month) for runtime services
-  such as `ctx.ai`. Free accounts cannot top up buckets; when a limit is reached,
-  upgrade.
+- Free includes **up to $3 of metered AI/external-services usage per rolling 30
+  days**, shared by AI Build, `ctx.ai`, and `ctx.services`. It allows one Build
+  at a time and has no daily Build entitlement. Free accounts cannot top up;
+  when the allowance is exhausted, upgrade.
 - Pro includes $5/month for the AI/external-services bucket and $30/month for
-  the Bounded infra bucket, with unmetered (dollar-billed) AI builds.
+  the Bounded infra bucket. AI Build and runtime calls consume the same metered
+  AI/external-services credit. Pro accounts can run up to two Builds at a time
+  and can top up.
 - Team includes everything in Pro plus roles (builders, reviewers, admins),
   Enforced boundary promotion (25 per app), approvals, the audit trail, the
   weekly action report, $20/month AI/external-services credit, and $100/month
-  Bounded infra credit.
+  Bounded infra credit. Team accounts can run up to five Builds at a time and
+  can top up.
 
 Pro-or-better accounts can top up eligible buckets from the public billing
 checkout flow (`kind: "pro" | "team" | "services_topup" | "infra_topup"`).
@@ -43,6 +46,13 @@ Free AI/external-services usage also has a platform-wide rolling abuse cap. If
 that global free pool is paused or exhausted, free accounts see a clear
 "free usage paused" / "upgrade to Pro" error. Paid accounts continue through the
 normal bucket ledger.
+
+Paid included credit is granted once per UTC calendar month while the purchased
+monthly or annual term remains paid through. Build reserves only a bounded AI
+amount before starting, settles the measured AI cost, and releases the unused
+reservation. Confirmed platform failures release the full reservation.
+Infrastructure is not charged as an estimate when no authoritative cost receipt
+exists.
 
 Do not explain pricing with unpublished provider costs, margin targets, private
 payment details, or non-public service details. Use the public plan, usage
@@ -131,8 +141,8 @@ When project creation returns `project_limit_exceeded` or a usage error with
 
 ## Handling Limit Errors
 
-When an operation returns `429`, `402`, or a usage error with `dimension`,
-`usage`, `limit`, or `projectedUsage`:
+When an operation returns `402` or a usage error with `dimension`, `usage`,
+`limit`, or `projectedUsage`:
 
 1. Do not retry blindly.
 2. Name the exact exhausted axis.
@@ -154,6 +164,12 @@ Common axes:
 | AI/external-services bucket | top up the bucket, reduce calls, or lower app caps |
 | free AI/external-services pool | free trial usage is paused or exhausted; upgrade to Pro to continue |
 | Bounded infra bucket | top up the bucket, reduce usage, or adjust allowed caps |
+
+A `429` is separate from funded usage. It can mean either a short operational
+burst/shared-capacity guard or an app-authored daily, monthly, or participant
+policy window. Preserve the idempotency key and saved input, name the exact
+server reason, honor `Retry-After`, and retry after that delay. Do not describe
+it as a plan Build allowance.
 
 ## App Payments
 
