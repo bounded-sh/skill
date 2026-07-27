@@ -53,7 +53,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | Recurring fleet sweeps without full collection scans | [docs/scheduled-sweeps.md](docs/scheduled-sweeps.md) |
 | What anti-cheat can and cannot prove | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
-| Data-plane read/write semantics and atomic batches | [docs/data-plane.md](docs/data-plane.md) |
+| Data-plane read/write semantics, atomic batches, and why atomic is NOT the same as complete (a caller can send a SUBSET of your operation and every rule still passes) | [docs/data-plane.md](docs/data-plane.md) |
 | Queries, pagination, aggregates | [docs/queries.md](docs/queries.md) |
 | Files and search | [docs/files-and-search.md](docs/files-and-search.md) |
 | Realtime rooms and games | [docs/realtime-and-games.md](docs/realtime-and-games.md) |

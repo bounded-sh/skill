@@ -171,3 +171,39 @@ deploy`.
   against a real deployed app, a different layer than policy tests
 - [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — full
   `bounded tests` flags
+
+## A rejection for the wrong reason is a FALSE GREEN
+
+Adversarial suites — the ones where every assertion is "this write must be
+refused" — are the suites that catch the bugs a green `verify` does not. They
+also fail silently in a way that is worse than no suite at all: **a write can be
+refused because your test document was malformed, and be counted as blocked.**
+
+Two ways it happens, both observed:
+
+- **Schema rejection (HTTP 400).** You added a required field to a collection.
+  Every hand-written attack document in your suite now lacks it, so the platform
+  refuses the *shape* and the rule never runs. The suite still prints "blocked".
+- **A broken test.** `ReferenceError`, a renamed helper, a typo in a path. The
+  call throws, the harness catches, and it looks like the policy defended you.
+
+Classify the failure instead of trusting it:
+
+```js
+if (/status code 400|is not defined|is not a function/.test(msg)) {
+  console.log(`${name} ... NOT TESTED - never reached the policy`);
+  notTested++;               // count as a GAP, never as a pass
+} else {
+  blocked++;                 // an actual policy decline
+}
+```
+
+Two related habits:
+
+- **Assert relatively, not absolutely.** `activeCount === 7` breaks the moment
+  the suite runs twice or against a seeded app, and every later run reads as a
+  protocol failure. Assert the *delta* your operation caused.
+- **A suite that dies in setup reports nothing.** If setup depends on protocol
+  state (a queue being clear, an item being live rather than staged), make it
+  wait for that state explicitly — otherwise a correct behaviour change looks
+  like a broken protocol.

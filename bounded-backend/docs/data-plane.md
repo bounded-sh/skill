@@ -234,6 +234,58 @@ Reversing those two entries has the same result. Write ordering is not an
 authorization primitive; reciprocal rules may safely require each other's
 final staged values in one batch.
 
+## Atomic is not the same as COMPLETE
+
+This is the trap that composition sets, and it has cost real money.
+
+A batch commits all-or-nothing, so nothing lands half-written. But **each
+document's rule is evaluated independently, and nothing obliges a caller to
+include every write your operation logically needs.** A hostile client can send
+a SUBSET of the batch, and if the rules you wrote do not reference each other,
+every one of them passes and you get a state your code can never produce.
+
+Concretely, from a gacha pool. Advancing a draw was meant to be three writes:
+mark the pull resolved, mark the won item assigned, and update the aggregate
+that tracks what is still in the pool. A client submitted only the first two:
+
+```jsonc
+// both of these rules passed on their own
+{ "path": "acquisitions/a1", "document": { "status": "allocated", ... } },
+{ "path": "positions/p9",    "document": { "status": "allocated", ... } }
+// ...and the aggregate write was simply omitted
+```
+
+The aggregate kept counting an item that was gone, and its pending-draw counter
+never dropped. Worse, the pull was no longer `pending`, so the expiry path that
+would have cleaned it up no longer applied either. Permanently stuck, with no
+recovery path and no rule broken.
+
+**The fix: make the legs require each other.** Pick the aggregate as the anchor,
+have it name the documents it is moving for, and have each document require to
+see that aggregate move in the same batch:
+
+```jsonc
+// on the aggregate: name what this write is for
+"poolAllocate": "@newData.lastOp == \"allocate\"
+                 && getAfter(/positions/@newData.lastRef).drawId == @newData.lastAcq
+                 && getAfter(/solcredits/@newData.lastAcq).kind == \"pullfee\""
+
+// on each document: refuse unless the aggregate moved for ME
+"positions": "... && getAfter(/pool/main).lastOp == \"allocate\"
+                  && getAfter(/pool/main).lastRef == $positionId"
+```
+
+Two notes from doing this:
+
+- **`get()`/`getAfter()` cannot be nested.** `get(/a/getAfter(/b/x).ref)` is
+  rejected, so when one rule must reach two related documents, carry a SECOND
+  reference field on the anchor (`lastRef` and `lastAcq` above) rather than
+  chaining through one.
+- **Ask the question directly for every multi-document operation you write:**
+  *if a caller sent only some of these writes, would each remaining rule still
+  pass?* If yes, you do not have an operation — you have several writes that
+  usually travel together.
+
 Composition rules:
 
 - **Order does not affect `getAfter()` visibility** — each rule sees the final
