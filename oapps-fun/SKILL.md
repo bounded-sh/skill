@@ -136,16 +136,21 @@ along in the same tree. Never add a framework, a bundler, or an unused
 **The dist must be reproducible.** A deployed frontend classifies at launch,
 and an unclassifiable one refuses (`dist_not_reproducible`):
 
-- **static** — every text file you deploy is byte-identical to a file in your
-  source tree (binary assets like images are exempt). Hand-written HTML/CSS/JS
-  deployed as-is lands here automatically.
-- **built** — your source declares how the dist is produced: a `"build"`
+- **static** — every file you deploy is byte-identical to a file in your source
+  tree. Only inert assets (images, fonts, media) are exempt from the match;
+  anything served as code or markup — `.js`, `.html`, `.css`, `.svg`, `.wasm` —
+  must be in your source verbatim, whatever its encoding. Hand-written pages
+  deployed as-is land here automatically.
+- **built** — your source declares how the frontend is produced: a `"build"`
   object in `bounded.json` (`{"command": "npm run build", "output": "dist"}`)
-  or a `package.json` `build` script. The launch REHEARSES it once — your
-  build runs in an isolated, network-less sandbox and must succeed and produce
-  `<output>/index.html`. The recipe is recorded so community proposals edit
-  source and the platform rebuilds, instead of nobody ever being able to
-  regenerate your minified bundle.
+  or a `package.json` `build` script. **The launch builds your source itself,
+  in an isolated network-less sandbox, and serves THAT output.** The bytes you
+  uploaded are not what the community gets — your own source is. Your build
+  must succeed and produce `<output>/index.html`.
+  This is deliberate: if the launched site were your upload while only your
+  source was checked, the two could say different things, which is exactly the
+  hole the standard exists to close. Your bounded.page development address
+  keeps serving your uploads as always; only the launched oApp is rebuilt.
 - A dist that matches nothing in source and has no working declared build is
   dead weight the community could never maintain, so it cannot launch. Fix it
   by declaring a real build, or by deploying your source files directly.
