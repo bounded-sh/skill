@@ -86,6 +86,12 @@ following, so these are requirements and not advice.
 | a deployed policy | the app must have one to launch | `no_deployed_policy` |
 | accepted terms | current version, accepted | `terms_not_accepted`, `terms_version_unsupported` |
 
+Launching is ONE-WAY. A second `publish-oapp` on an app that already launched
+answers `409 already_launched` and carries the launched app's id as `appId` -
+that id is the venue-owned clone, which is the thing your users are using. It is
+never an error to retry a launch you are unsure landed: the ritual is idempotent
+and converges on the same clone.
+
 `boundaries.egress` is REQUIRED, not optional. On the functions lane the egress
 gateway is always constructed and fails closed if it cannot be built, but the host
 allow-list only BINDS when the app declared one - without a declaration,
