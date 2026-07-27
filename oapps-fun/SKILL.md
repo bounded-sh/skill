@@ -96,21 +96,46 @@ and an undeclared egress surface is the one hole through which a governed build
 could later reach anywhere. An empty `allow` array is a real declaration and the
 honest one for an app that talks to nothing.
 
-### The clone must be BUILDABLE, or the launch is refused
+### What shape the app can take, and what visitors get
 
-Because the launched thing is a governed copy, the ritual refuses any source
-tree a governed build could never edit - the alternative is a community-owned
-app the community cannot change. On top of the policy table above, your SOURCE
-must be Vite-shaped and synced:
+oApps are framework-independent: launch does not require Vite, React, a
+`package.json`, or any particular layout. What it requires is honesty between
+three artifacts — the synced source, the deployed frontend (if any), and the
+policy. There are two shapes, and both are first-class launches; they differ
+in what a visitor sees at `<slug>.oapps.fun`:
+
+**An app with a web frontend.** Deploy the exact static files users should
+see (`bounded site deploy dist --with-source`); the platform serves those
+bytes as-is, forever, and governed edits keep the human source and the
+deployed `dist/` in sync. For anything beyond hand-written HTML, build with a
+real bundler — **Vite is the recommended default** (and if the frontend uses
+`@bounded-sh/client` a real bundler is effectively required; CDN imports break
+it at runtime — see **bounded-frontend**). Plain static HTML with no
+JavaScript is equally valid: what you deploy is what visitors use.
+
+**An app with no web frontend** — a CLI, an agent, a pure backend. Still a
+real oApp: the backend runs, the boundaries hold, the token launches. Its
+home page becomes the public repo view: visitors landing on
+`<slug>.oapps.fun`'s host see the app's source browser — files, history,
+`Download .zip`, `bounded clone` — with a link to the app's page on oapps.fun
+for history, reports and governance. They read and take the project rather
+than using it in the browser. Say this plainly to the user before launch so
+nobody expects a web app to appear.
+
+Either way, the synced source must be the real, complete project — if the
+deployed frontend is compiled output, the source that compiles into it rides
+along in the same tree. Never add a framework, a bundler, or an unused
+`init()` call merely to change shape: launch does not ask for them.
+
+What the ritual still refuses:
 
 | What | Required | Refusal |
 |---|---|---|
 | synced source | `--with-source` / `sourcePush: true` | `source_not_synced` |
-| `index.html` at the root, loading `src/main.*` as a module | yes | `missing_index_html`, `missing_module_entry` |
-| `package.json` with a `build` script | yes | `missing_package_json`, `missing_build_script` |
-| a literal `init({ appId: "<this app>" })` in the source | yes | `app_id_literal_missing` |
 | every app-id literal names THIS app | yes (repeats of your own id are fine) | `app_id_literal_foreign` |
 | text-only tree (binaries cannot ride the source lane) | yes | `source_not_text` |
+| if the source `init()`s the Bounded client, the DEPLOYED site embeds that literal id | yes — rebuild + redeploy if stale | `clone_app_id_not_rewritten` |
+| a recorded site deployment must actually be found at launch | platform-checked | `clone_site_missing_expected` |
 
 The refusal body carries the specific `rejections`, so read them rather than
 guessing.
@@ -322,9 +347,12 @@ the app's running costs.
 - The slug is the name the token should live at (`<slug>.oapps.fun`); rename
   it before launch if it isn't. Launch MOVES the slug onto the venue-owned
   clone, so it is the last moment the name is yours to change.
-- The source tree is Vite-shaped and every `init({ appId })` literal names this
-  app (see "The clone must be BUILDABLE"): the launch clones the source, and a
-  tree a governed build could not edit is refused.
+- The synced tree is the real, complete project and every `init({ appId })`
+  literal names this app (see "What shape the app can take"). If the app has a
+  frontend, the deployed site was built from THIS tree — a stale dist that no
+  longer embeds the app id refuses at launch (`clone_app_id_not_rewritten`).
+- If the app has NO web frontend, the user knows its home page will be the
+  public repo view (source browser + oapps.fun link), not a web app.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
   sane against the app's expected build-fund inflow — out of budget means
   frozen, and you should be able to say at what usage level that happens.
