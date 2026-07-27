@@ -172,6 +172,43 @@ the project source tree to the app's cloud source repository and prints
 the deploy commands. An oApps-bound app must deploy with source ON, and the
 source that ships must be the tree that produced the deployed site.
 
+### Source and frontend contract
+
+oApps are framework-independent.
+Do not add Vite, React, a package manager, `src/main.*`, or a Bounded client call merely to satisfy launch.
+
+The artifacts have separate jobs:
+
+- The synced project tree is required.
+  It is the public, governable source of truth and may be any language or layout.
+- A frontend is optional.
+  When the app should serve a site, deploy a static directory whose root contains `index.html`.
+  `dist/` is the conventional directory, not a framework requirement.
+- Bounded policy and functions are optional.
+  Include and deploy them only when the app needs Bounded data, functions, agents, payments, or other runtime capabilities.
+- A literal Bounded `appId` is required only by code that actually initializes the Bounded client.
+  A static or backend-only oApp does not need one.
+
+For a plain HTML app, this is enough:
+
+```text
+index.html
+dist/
+  index.html
+bounded.json
+```
+
+Deploy the exact static output and source together:
+
+```bash
+bounded site deploy dist --with-source
+```
+
+The CLI keeps source upload secret-safe and separate from generated output.
+For governed editing it also registers the exact deployed frontend as the checked-in `dist` base.
+Later governed edits to a prebuilt app must update the human source and the matching files in `dist/` together.
+The hosted editor does not install packages or execute an imported app's build scripts in this mode.
+
 ## The capability ladder
 
 For EVERY capability the user asks for, resolve it in this order and never
@@ -294,6 +331,12 @@ the app's running costs.
 - Source rode the deploy (`sourcePush: true` in bounded.json, or the last
   deploy ran `--with-source`): `/__bounded/source` shows the current tree,
   not an empty page.
+- If the app has a frontend, the deployed directory has `index.html` at its
+  root and contains the exact static bytes users should see.
+  No particular framework, module entry, or package manifest is required.
+- If the app uses Bounded, its policy and functions are present in source and
+  their deploy has succeeded.
+  If it does not use Bounded, do not add an unused client initialization.
 - The slug is the name the token should live at (`<slug>.oapps.fun`); rename
   it before launch if it isn't.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
