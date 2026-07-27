@@ -32,6 +32,52 @@ The flag beats the config. With no config and no flag, deploys do not push
 source. A failed source push after a successful deploy warns loudly but does
 not fail the deploy — re-run with `--with-source` once the issue is fixed.
 
+## Canonical sites also establish the widget editing base
+
+For a canonical frontend deploy, enabling source with `--with-source` or
+`"sourcePush": true` also prepares the exact base that the hosted widget will
+edit. Before uploading the site, the CLI packages the secret-safe filtered
+project source together with the exact frontend files about to be deployed. It
+rejects the deploy before upload if that archive exceeds any Build-base limit:
+
+- 24 MiB compressed
+- 96 MiB unpacked
+- 8,000 archive entries
+- 400 bytes per archive path
+
+After the site upload, Router compares the local frontend's path, size, and
+content digest set with the authoritative canonical deployment. Build then
+verifies the actual `dist/**` bytes inside the archive before importing it. The
+CLI accepts only a receipt for that exact app, canonical deployment, archive,
+and frontend digest, then prints `widget editing base ready: ...`.
+
+The source-repository push and this editing-base receipt are independent:
+
+- `source synced: ...` proves that the filtered tree reached the cloud Git
+  repository. A source-sync failure remains a warning.
+- `widget editing base ready: ...` proves that the hosted widget has an exact
+  base for the canonical site. If the site landed but this receipt was not
+  established, the command exits nonzero and prints safe recovery guidance; it
+  does not roll back the landed site.
+
+Use the printed command as-is. A retry for the same canonical deployment is
+pinned to its deploy id and the original frontend directory:
+
+```sh
+bounded site seed-build-base --app-id <id> --deploy-id <deploy-id> -- ./dist
+```
+
+`seed-build-base [dir]` defaults to `./dist`. It rebuilds the filtered-source
+archive locally and succeeds only when that directory's frontend bytes match
+the current canonical deployment. If a newer canonical deployment won the
+race, redeploy those exact frontend files with `site deploy --with-source`
+instead of seeding an obsolete deployment. A retired target is terminal until
+it is restored, so the CLI does not print an unsafe retry for that case.
+
+Frontend variants are previews. `site deploy --variant ... --with-source` may
+sync source, but it does not replace or re-establish the canonical widget
+editing base.
+
 ## The data model
 
 - The cloud source repo is a git repository; every push is a commit on `main`.

@@ -71,4 +71,4 @@ The deploy-time validator catches this first: a declaration whose compiled lengt
 An oApp's promise is that it can only do what it publicly declared, so both planes should be declared, not just the server one.
 `boundaries.egress` is where that promise is load-bearing and fail-closed; `boundaries.browser` is what stops a page from quietly beaconing somewhere the declaration never mentioned.
 
-See [policy-reference.md § oApp mode and closed egress](policy-reference.md#oapp-mode-and-closed-egress) for the server plane and the oApp static checks.
+See the [oApp launch-gate table](../../oapps-fun/SKILL.md) for the server plane and the static checks applied before graduation.

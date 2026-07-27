@@ -250,6 +250,19 @@ also push the project tree to the app's cloud source repository and print
 but does not fail the deploy. `bounded clone` / `bounded pull` read the same
 repository. Full model: [source-sync.md](source-sync.md).
 
+For a canonical `bounded site deploy [dir]`, enabling source with
+`--with-source` or `"sourcePush": true` also preflights and uploads a
+deterministic widget editing base containing the filtered source and exact
+deployed frontend bytes. It accepts only a receipt bound to the authoritative
+canonical deploy id and frontend digest. If the site lands but that receipt
+fails, the command exits nonzero and prints either a deployment-pinned `site
+seed-build-base` retry or an exact `site deploy --with-source` recovery when
+retrying is safe; terminal target errors provide guidance without an unsafe
+command. This is separate from the cloud source push, whose failure remains a
+warning. Frontend variants never change the canonical editing base. See
+[source-sync.md](source-sync.md#canonical-sites-also-establish-the-widget-editing-base)
+for limits and recovery semantics.
+
 The remote-edit era surface (`bounded edit`, `bounded dashboard`, `bounded
 dev`, `bounded live-edit ...`, the loopback daemon on 8085/8008) is REMOVED —
 do not suggest it.
@@ -378,7 +391,8 @@ Full treatment: [environments.md](environments.md).
 | `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |
-| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to the app's mapped slug/custom host; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. | `bounded site deploy ./dist --app-id <id>` |
+| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to the app's mapped slug/custom host; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback. Canonical `--with-source` deploys also preflight and establish the exact hosted-widget editing base before reporting success. Add `--variant <var_id>` to upload a preview frontend branch without replacing that canonical site or editing base. | `bounded site deploy ./dist --with-source --app-id <id>` |
+| `site seed-build-base [dir]` | Prepare the current canonical CLI deployment for hosted-widget editing from the filtered local source and exact local frontend bytes (default `./dist`). `--deploy-id` pins the expected current deployment; any deployment, file-digest, or receipt mismatch exits nonzero. | `bounded site seed-build-base --app-id <id> --deploy-id <deploy-id> -- ./dist` |
 | `site variants` | List current frontend variants for owner/admin review: status, deploy id, preview/switch paths, and affected files. | `bounded site variants --app-id <id>` |
 | `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
 | `site promote <variantId>` | Promote a frontend variant into the canonical hosted site after owner/admin authorization. Backend rules, data, functions, and policies stay unchanged. | `bounded site promote var_amit_refunds --app-id <id>` |

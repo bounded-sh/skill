@@ -21,11 +21,19 @@ There are two user-visible buckets:
 Plans: Free, Pro ($25/month), Team ($99/month). Enterprise terms are negotiated
 per account.
 
-- Free includes **3 AI builds per rolling day** (routed to a fast model) plus a 50-credit monthly AI/external-services trial allowance for runtime services such as `ctx.ai`.
-  Free accounts cannot top up buckets; when a limit is reached, upgrade.
-- Pro includes 100 credits per month for the AI/external-services bucket and 600 credits per month for the Bounded infra bucket.
-  Paid AI builds debit the AI/external-services bucket.
-- Team includes everything in Pro plus roles (builders, reviewers, admins), Enforced boundary promotion (25 per app), approvals, the audit trail, the weekly action report, 400 monthly AI/external-services credits, and 2,000 monthly Bounded infra credits.
+- Free includes **up to $3 of metered AI/external-services usage per rolling 30
+  days**, shared by AI Build, `ctx.ai`, and `ctx.services`. It allows one Build
+  at a time and has no daily Build entitlement. Free accounts cannot top up;
+  when the allowance is exhausted, upgrade.
+- Pro includes $5/month for the AI/external-services bucket and $30/month for
+  the Bounded infra bucket. AI Build and runtime calls consume the same metered
+  AI/external-services credit. Pro accounts can run up to two Builds at a time
+  and can top up.
+- Team includes everything in Pro plus roles (builders, reviewers, admins),
+  Enforced boundary promotion (25 per app), approvals, the audit trail, the
+  weekly action report, $20/month AI/external-services credit, and $100/month
+  Bounded infra credit. Team accounts can run up to five Builds at a time and
+  can top up.
 
 Pro-or-better accounts can top up eligible buckets from the public billing
 checkout flow (`kind: "pro" | "team" | "services_topup" | "infra_topup"`).
@@ -39,28 +47,16 @@ that global free pool is paused or exhausted, free accounts see a clear
 "free usage paused" / "upgrade to Pro" error. Paid accounts continue through the
 normal bucket ledger.
 
+Paid included credit is granted once per UTC calendar month while the purchased
+monthly or annual term remains paid through. Build reserves only a bounded AI
+amount before starting, settles the measured AI cost, and releases the unused
+reservation. Confirmed platform failures release the full reservation.
+Infrastructure is not charged as an estimate when no authoritative cost receipt
+exists.
+
 Do not explain pricing with unpublished provider costs, margin targets, private
 payment details, or non-public service details. Use the public plan, usage
 snapshot, and checkout/top-up flows.
-
-## Credits
-
-Metered usage is user-facing in whole credits; subscription prices and the dollar amount paid for a top-up remain dollars.
-One credit currently represents 50,000 microUSD, so a $15 purchase yields 300 credits.
-The server owns this posted conversion rate and may change it.
-
-Balances, allowances, included amounts, remaining amounts, and caps round down.
-Total spend and charges round up, while per-axis informational costs round down and should render as `<1` when a positive amount rounds to zero.
-
-During the additive API transition, prefer these credit fields while tolerating the older money fields:
-
-- `GET` or `POST /billing/me`: `credits.services`, `credits.infra`, optional `credits.freePool`, and `credits.aiRemaining`.
-- `GET /remote-edit/bucket`: `fundedCredits`, `spentCredits`, and `remainingCredits` on `bucket`.
-- `GET /app/:appId/usage`: `totalCostCredits`, `spendCapCredits`, and `costCredits` on each `byAxis` row.
-- Spend-cap and recoup-cap writes: `monthlySpendCapCredits` and `monthlyAiSpendCapCredits` as positive whole credits.
-
-Send only the credits form for a new cap write.
-If compatibility code sends both a credits field and its microUSD twin, the values must match exactly after converting credits at the server-owned rate or the server returns `400`.
 
 ## Transparent Fees
 
@@ -129,8 +125,8 @@ Do not invent thresholds. Use the values returned in the usage snapshot.
 
 ## Project Creation Limits
 
-Project creation is account-scoped. Free accounts can create 1 project; Pro and
-Enterprise accounts can create unlimited projects.
+Project creation is account-scoped. Free accounts can create 3 projects; Pro,
+Team, and Enterprise accounts can create unlimited projects.
 
 When project creation returns `project_limit_exceeded` or a usage error with
 `dimension: "maxProjects"`:
@@ -145,8 +141,8 @@ When project creation returns `project_limit_exceeded` or a usage error with
 
 ## Handling Limit Errors
 
-When an operation returns `429`, `402`, or a usage error with `dimension`,
-`usage`, `limit`, or `projectedUsage`:
+When an operation returns `402` or a usage error with `dimension`, `usage`,
+`limit`, or `projectedUsage`:
 
 1. Do not retry blindly.
 2. Name the exact exhausted axis.
@@ -168,6 +164,12 @@ Common axes:
 | AI/external-services bucket | top up the bucket, reduce calls, or lower app caps |
 | free AI/external-services pool | free trial usage is paused or exhausted; upgrade to Pro to continue |
 | Bounded infra bucket | top up the bucket, reduce usage, or adjust allowed caps |
+
+A `429` is separate from funded usage. It can mean either a short operational
+burst/shared-capacity guard or an app-authored daily, monthly, or participant
+policy window. Preserve the idempotency key and saved input, name the exact
+server reason, honor `Retry-After`, and retry after that delay. Do not describe
+it as a plan Build allowance.
 
 ## App Payments
 

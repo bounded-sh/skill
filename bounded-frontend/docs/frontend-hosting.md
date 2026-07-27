@@ -125,6 +125,14 @@ Read the deploy output: `source synced: <sha>` proves the tree landed; a
 source-sync warning means the site deployed but the source did not (a live
 site alone does not prove the source manifest arrived).
 
+For a canonical site deploy with source, also wait for `widget editing base
+ready: ...`. That separate receipt proves the hosted widget can edit the exact
+deployed frontend. If the site upload lands but the receipt fails, the CLI exits
+nonzero and prints safe recovery guidance, including a deployment-pinned retry
+or exact redeploy command when appropriate; do not assume the nonzero exit
+rolled the site back. See
+[Cloud Source Sync](../../bounded-deploy/docs/source-sync.md#canonical-sites-also-establish-the-widget-editing-base).
+
 Download the published tree at `/__bounded/source.zip`. The archive also
 contains the published constitution and deployed policy at its root. It uses
 the same launched-oApp gate and fails instead of returning a partial archive.
