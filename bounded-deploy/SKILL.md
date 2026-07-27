@@ -40,7 +40,7 @@ skill.
 |---|---|
 | `requires a keypair`, `401`/`403` on deploy, "blocked on the owner", "no access", `bounded access`, `bounded whoami`, wrong identity selected, cross-account collaborator | [docs/access-playbook.md](docs/access-playbook.md) |
 | `boundary_violation`, "Blocked by this app's boundaries", site/policy deploy refused for EVERY identity, `amend: none` vs `amend: creator`, boundary lock | [docs/access-playbook.md](docs/access-playbook.md) §5 |
-| `sourcePush`, `--with-source`/`--no-source`, `source synced:`, empty `/__bounded/source`, `bounded edit`/`bounded live-edit`/`bounded dashboard` (removed legacy) | [docs/source-sync.md](docs/source-sync.md) |
+| `sourcePush`, `--with-source`/`--no-source`, `source synced:`, `widget editing base ready`, `site seed-build-base`, empty `/__bounded/source`, `bounded edit`/`bounded live-edit`/`bounded dashboard` (removed legacy) | [docs/source-sync.md](docs/source-sync.md) |
 | `bounded.json`, `bounded account use --web`, account profiles, `.bounded/app.json`, `~/.bounded/credentials`, `~/.bounded/web-session.json`, `BOUNDED_PRIVATE_KEY` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
 | `bounded domains slug`, mapped hosts, custom domain | [docs/domains.md](docs/domains.md) |
 | `bounded tests run/push/list/pull`, policy tests | [docs/cli-reference.md](docs/cli-reference.md) · [policy-tests.md](../bounded-backend/docs/policy-tests.md) |
