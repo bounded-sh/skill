@@ -87,6 +87,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, AI image/video, `aiJobs` | [docs/functions.md](docs/functions.md#ctxai-media-generation--images-sync-and-video-async-jobs) |
 | `ctx.services`, managed services, third-party API proxy | [docs/functions.md](docs/functions.md#ctxservices--managed-api-discovery-and-invoke) · [docs/backend-runtime.md](docs/backend-runtime.md) |
 | `ctx.browser`, headless browser drive, egress-fenced | [docs/functions.md](docs/functions.md#ctxbrowser--drive-a-headless-browser-fenced-by-your-egress) |
+| agent identity, `@const.AGENT`, `as: { identity: "agent" }`, drive a signed-in page, QA behind a login | [docs/functions.md](docs/functions.md#driving-your-app-signed-in--the-agent-identity) |
 | `actAs`, `runAs`, service key, payout bot, backend identity | [docs/service-keys.md](docs/service-keys.md) · [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `@origin`, `ctx.origin`, live call provenance | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `roles`, `members`, `read:"*"`, scoped admin | [docs/roles.md](docs/roles.md) |

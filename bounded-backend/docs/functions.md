@@ -496,6 +496,73 @@ retried invocation replays the SAME drive result instead of opening and billing
 a second session. Errors carry stable codes to branch on: `egress_denied`,
 `browser_unavailable`, `browser_busy`, `browser_request_invalid`.
 
+### Driving your app SIGNED IN — the agent identity
+
+Most of an app sits behind a login, so a logged-out drive can only ever check the
+front door. Add `as` and the drive runs as your app's **agent identity**: a
+normal, non-privileged user whose key the platform holds — the principal
+Bounded's agents act as *inside* your app.
+
+```ts
+const drive = await ctx.browser.run({
+  idempotencyKey: `dashboard-check:${args.checkId}:v1`,
+  as: { identity: "agent" },              // ← log the drive in
+  steps: [
+    { action: "goto", url: "https://myapp.bounded.page/dashboard" },
+    { action: "waitFor", selector: "#ready" },
+    { action: "readText", selector: "#ready" }
+  ],
+  maxSeconds: 60
+});
+```
+
+**You declare what it may do, and nothing else.** Put its address in `constants`
+and write rules against it in the same language as any other principal. Z3 proves
+over it like anything else, and on an oApp it is published in the constitution —
+so holders can see that a key the platform holds can act in the app, and exactly
+what it may do:
+
+```json
+{
+  "constants": { "AGENT": "<the address Bounded shows you for this app>" },
+  "readings/$id": {
+    "fields": { "value": "Number" },
+    "rules": {
+      "read": "@user.id == @const.AGENT || @user.id == $owner",
+      "create": "false",
+      "update": "false",
+      "delete": "false"
+    }
+  }
+}
+```
+
+**Grant it the least it needs, and on a live app that usually means READ.** Follow
+this one literally, because that grant *is* the whole blast radius: logging a
+browser in means the token lives in your app's own `localStorage`, where your
+app's page can read it. That is inherent to seeding a browser session, and it is
+safe only because the token can do nothing beyond what you declared for that
+address. Read is enough to answer "does the dashboard render for a signed-in
+user", which is what most drives are for. To exercise WRITE paths — signup,
+checkout, delete — use disposable data; never widen the agent's authority on a
+live app to make a test pass.
+
+**The platform resolves everything sensitive, and you cannot pass it.** There is
+no field for a token, an address or an origin, and supplying one is refused
+rather than ignored. Bounded mints the session server-side, seeds it before any
+page script runs, and only at an origin your app itself declares — so the drive's
+first navigation must target one of your app's own origins. `identity` is a
+closed set, today just `"agent"`.
+
+Extra codes on this path: `agent_identity_unavailable` (the platform could not
+produce the identity — a misconfiguration, not your app's fault),
+`agent_session_mint_failed` (the auth issuer declined),
+`target_app_origin_undeclared` (the first navigation is not an origin your app
+declares), `target_app_origin_unresolved` (your app declares no https origin to
+seed at), and `drive_not_authorized` (driving a DIFFERENT app — an app's agent
+identity is granted to the platform, not to whichever app names it, so only
+self-drive is authorized).
+
 ## ctx.enqueue — background jobs
 
 When a function should kick off work that shouldn't block the caller — fan-out,

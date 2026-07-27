@@ -283,8 +283,9 @@ to test it, a headless QA run signing in behind your auth — cannot use `actAs`
 Logging in through the front door means signing a SIWS challenge, and a
 synthesized identity has nothing to sign with.
 
-For that, an app can admit a **service user**: a normal, non-privileged user whose
-private key the platform holds instead of you. It signs in like any other user;
+For that, an app can admit an **agent identity**: a normal, non-privileged user
+whose private key the platform holds instead of you - the principal Bounded's
+agents act as inside your app. It signs in like any other user;
 its reads and writes pass the same rules and the same proven invariants;
 `@user.id` is just an address. It gets **no implicit access to anything** — an app
 admits it by DECLARING its address as an ordinary policy constant and granting it
@@ -296,12 +297,19 @@ exactly what it may do.
 
 The two are complementary, not alternatives:
 
-| | `actAs` | service user |
+| | `actAs` | agent identity |
 |---|---|---|
 | Key | none (synthesized) | held by the platform |
 | Usable from | inside a dispatched function | anywhere, including a browser login |
 | Can sign a challenge | no | yes |
 | Authorized by | your policy rules | your policy rules |
+
+Policies name it `@const.AGENT` by convention. **Grant it the least it needs, and
+on a live app that usually means READ** - the grant is the whole blast radius,
+because logging a browser in puts the token in your app's own `localStorage`
+where your page can read it. See
+[functions.md](functions.md#driving-your-app-signed-in--the-agent-identity) for
+driving a signed-in page with `ctx.browser`.
 
 ## Security properties
 
