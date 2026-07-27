@@ -388,6 +388,16 @@ re-signing in the same user. Expect a page reload on sign-out. Pass
 bounce only runs on issuer-trusted origins (`*.bounded.sh` / `*.bounded.page` /
 `*.oapps.fun` / https localhost); on custom domains logout stays local-only.
 
+> **Warning — custom domains and iframes get local-only logout.** On a custom
+> domain (or embedded in an iframe, where the top-level issuer bounce cannot
+> run), `logout()` clears local state but the hosted session cookie survives:
+> the next `loginWithRedirect` silently re-authenticates the same account with
+> no account-choice screen. If your app serves shared devices, prefer a
+> `*.bounded.sh` / `*.bounded.page` / `*.oapps.fun` hostname so the issuer
+> bounce runs. If you must use a custom domain, tell users sign-out is
+> device-local only, and show your own post-logout screen instead of implying
+> the hosted session ended.
+
 The `user` object has four fields:
 
 - `user.id` — the **universal stable identity**, always present for an

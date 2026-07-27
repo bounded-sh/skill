@@ -78,13 +78,20 @@ following, so these are requirements and not advice.
 | `boundaries` | present at all | `no_boundaries` |
 | `boundaries.posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
 | `boundaries.binding` | `"all"` - applies to everyone including you | `binding_not_all` |
-| `boundaries.amend` | `"none"` (permanent) or `"creator"` (until renounced) | `amend_invalid` |
-| `boundaries.egress` | declared (an empty `allow` IS a declaration) | `egress_missing` |
+| `boundaries.egress` | at least ONE entry (an entry whose `allow` is empty IS a declaration; an empty `egress: []` is NOT) | `egress_missing` |
 | `boundaries.policy` | a `"mode": "locked"` freeze covering `openApps` | `policy_freeze_missing_openapps` |
-| `boundaries.policy` | a `"mode": "locked"` freeze covering `boundaries` | `policy_freeze_missing_boundaries` |
 | `openApps.activity` | `"public"` - every prompt and change on the record | `activity_not_public` |
+| no function declares `secrets` | an oApp holds no keys | `oapp_mode_unsupported` |
+| no whole-backend runtime staged | its manifest declares hosts the rules cannot | `runtime_artifact_staged` |
 | a deployed policy | the app must have one to launch | `no_deployed_policy` |
 | accepted terms | current version, accepted | `terms_not_accepted`, `terms_version_unsupported` |
+
+`boundaries.amend` is NOT a launch requirement and is not offered as a choice.
+"Creator (until renounced)" was never operational - no renounce ceremony exists -
+and requiring `"none"` instead would seal the creator's own app before it ever
+launched. Graduation derives `amend: "none"` on the launched clone, where it is
+simply true: the clone's governance lock covers `boundaries` and is sealed against
+governed runs too, so nobody can amend the rules.
 
 `boundaries.egress` is REQUIRED, not optional. On the functions lane the egress
 gateway is always constructed and fails closed if it cannot be built, but the host
@@ -93,33 +100,48 @@ destinations are unrestricted. For an ordinary Bounded app that default is right
 you should not have to enumerate every host to ship. For an oApp it is wrong,
 because the entire promise is that the app can only do what it publicly declared,
 and an undeclared egress surface is the one hole through which a governed build
-could later reach anywhere. An empty `allow` array is a real declaration and the
-honest one for an app that talks to nothing.
+could later reach anywhere.
 
-### The seal is irreversible, and it happens BEFORE validation
+**Read this distinction carefully, because the two shapes look alike and mean
+opposite things.** An `egress: []` with no entries is NOT "talks to nothing" - the
+runtime reads it exactly as it reads a missing key, which is the UNRESTRICTED
+posture. Talking to nothing is ONE entry whose `allow` list is empty:
 
-This is the sharpest edge in the whole ritual. The graduation step writes your
-boundaries block **and** the `gov-frozen` lock over `openApps` + `boundaries` in
-the SAME policy deploy, and `publish-oapp` checks the table above only AFTER that
-deploy has landed.
-
-So a policy that misses any row above is sealed first and refused second - and
-the lock now covers `boundaries`, which is the section you would have to edit to
-fix it. The documented three-step recovery (loosen, deploy, re-apply) is itself a
-write to `boundaries`. It is self-sealing, and `amend: "creator"` does not save
-you:
-
-```
-seal rules (403): boundary_violation, gate G2, boundaryId gov-frozen,
-                  section boundaries, bindingAll true
+```jsonc
+"egress": [
+  { "id": "egress-none", "title": "The backend talks to nothing",
+    "allow": [], "mode": "locked" }
+]
 ```
 
-Two test apps were made permanently unlaunchable this way in one afternoon.
+Also: a `"service:<name>"` entry inside `allow` is descriptive, not a bound. The
+ctx.services proxy runs server-side over a platform-internal host that is always
+reachable, and nothing consults your declared list when such a call is made. It is
+accepted, but it is not published as an enforced host and you should not plan
+around it as a restriction.
 
-**Therefore: build the COMPLETE block and check it against every row above before
-you seal.** If you are writing tooling around this, validate locally first and
-refuse to seal on any missing row - a tool that can create an unrecoverable state
-should not be able to.
+### A failed launch used to be permanent. It no longer is (fixed 2026-07-26)
+
+Historically the ritual sealed the app before it validated it: the preset deploy
+carried a `gov-frozen` lock over `openApps` **and** `boundaries`, and a freeze over
+`boundaries` covers the very block you would edit to undo it. An app whose launch
+then failed for any reason could never be deployed again, by anyone. Two test apps
+were made permanently unlaunchable this way in one afternoon.
+
+What changed:
+
+- The preset no longer freezes `boundaries`, and launch no longer requires it. The
+  guarantee it was meant to give is stamped on the launched CLONE at graduation,
+  where it is real and cannot strand a creator.
+- A freeze over `boundaries` now binds only on a launched clone. On a creator's own
+  app it is inert, because there it can only ever wedge. **Any app stranded by the
+  old preset recovers by simply deploying again.**
+- The predictable rejections are pre-flight now, not post-seal: source shape,
+  function secrets, and egress shape are all reported by
+  `GET /app/:id/oapp-source-status` and by the wizard before the ritual starts.
+
+Build the complete block anyway - the table above is still the gate, and a launch
+that fails still costs you a round trip. It just no longer costs you the app.
 
 A related trap if you script it: read the app's current policy from
 `/app/:id/details` (`GET /app/:id` is not a route and 404s), and remember a
@@ -279,6 +301,18 @@ reintroducing personal keys:
 - **Trust surface unchanged:** the relay is steward infrastructure — the same
   single trusted (and replaceable) party as the rest of the runtime. No third
   party gets a key to the app.
+- **Reviewed providers only.** The relay pays an **exact-hostname allowlist**
+  an admin reviews and configures. A vendor advertising x402 is *not* enough:
+  an unlisted host returns `url_host_not_allowlisted` (403) at call time.
+  Check before designing around it — `ctx.services.describe("X402_FETCH")`
+  returns `allowedHosts` for the current environment, and an empty list means
+  the relay can pay nobody here whatever `enabled` says. If the host you need
+  is missing, that capability is **ladder step 3**: call it out, and say it
+  unblocks when an admin reviews and lists the provider.
+- **Hard caps.** `maxUsd` defaults to 0.50 and the platform hard-caps it at
+  **$1.00 per call**; request bodies are ≤64KB, responses ≤256KB. There is
+  **one** relay wallet for the whole platform, so its balance is a shared
+  fail-closed dependency, not a per-app one.
 
 ### Using the relay from a function
 

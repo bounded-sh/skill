@@ -447,6 +447,55 @@ For transactional email, SMS, or WhatsApp, use a real provider integration and
 keep provider keys in secrets. Do not expose a shared provider key or treat
 Bounded Auth OTP as recipient consent for app-originated messages.
 
+## ctx.browser — drive a headless browser, fenced by your egress
+
+Use `ctx.browser` when a function needs to SEE a real page: smoke-test your own
+deployed app, read a page that has no API, or prove something renders. It drives
+a managed headless browser server-side — no browser dependency in your code.
+
+```ts
+export default async function smokeTest(args, ctx) {
+  const drive = await ctx.browser.run({
+    idempotencyKey: `smoke:${args.checkId}:v1`,
+    steps: [
+      { action: "goto", url: "https://myapp.bounded.page/" },
+      { action: "waitFor", selector: "#app-shell" },
+      { action: "readText" },
+      { action: "screenshot" }
+    ],
+    maxSeconds: 45
+  });
+  return { healthy: drive.ok, sawText: drive.text[0], paid: drive.costMicroUsd };
+}
+```
+
+Steps are a fixed vocabulary: `goto` (url), `click`/`waitFor` (selector),
+`fill` (selector + value), `readText` (optional selector; captured into
+`result.text`), `screenshot`. The drive stops at the first failed step and
+reports it in `result.steps` — it never throws for a step failure.
+
+**The egress fence.** A browser is the most complete egress bypass there is — one
+page load can pull from any host — so every navigation AND every sub-resource the
+page requests is checked server-side against the calling FUNCTION's declared
+egress (`functions.<name>.egress`, ceilinged by the app-wide `boundaries.egress`).
+An undeclared host refuses with `egress_denied` (403) before a session is even
+opened; a page that reaches for an undeclared host mid-drive has that request
+blocked. An app that declares no egress at all is unfenced, exactly like raw
+`fetch`.
+
+**Billing.** Browser time bills per SECOND of open session against the app
+owner's prepaid services credit, fail-closed, and settles to actual elapsed
+seconds (`result.billedSeconds`, `result.costMicroUsd`, plus the uniform
+`result.meter` capability-spend fact). `maxSeconds` (default 60, ceiling 300) is
+your own spend fence — the reservation is taken up front and released on settle.
+
+**Replay safety.** Like `ctx.ai`, `ctx.browser.run` requires `idempotencyKey`
+and a replay-safe invocation (an `Idempotency-Key` header on direct invokes —
+`bounded functions invoke ... --idempotency-key <key>` — or a scheduled run). A
+retried invocation replays the SAME drive result instead of opening and billing
+a second session. Errors carry stable codes to branch on: `egress_denied`,
+`browser_unavailable`, `browser_busy`, `browser_request_invalid`.
+
 ## ctx.enqueue — background jobs
 
 When a function should kick off work that shouldn't block the caller — fan-out,

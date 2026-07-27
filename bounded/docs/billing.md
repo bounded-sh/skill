@@ -21,16 +21,11 @@ There are two user-visible buckets:
 Plans: Free, Pro ($25/month), Team ($99/month). Enterprise terms are negotiated
 per account.
 
-- Free includes **3 AI builds per rolling day** (routed to a fast model) plus a
-  small AI/external-services trial allowance ($0.50/month) for runtime services
-  such as `ctx.ai`. Free accounts cannot top up buckets; when a limit is reached,
-  upgrade.
-- Pro includes $5/month for the AI/external-services bucket and $30/month for
-  the Bounded infra bucket, with unmetered (dollar-billed) AI builds.
-- Team includes everything in Pro plus roles (builders, reviewers, admins),
-  Enforced boundary promotion (25 per app), approvals, the audit trail, the
-  weekly action report, $20/month AI/external-services credit, and $100/month
-  Bounded infra credit.
+- Free includes **3 AI builds per rolling day** (routed to a fast model) plus a 50-credit monthly AI/external-services trial allowance for runtime services such as `ctx.ai`.
+  Free accounts cannot top up buckets; when a limit is reached, upgrade.
+- Pro includes 100 credits per month for the AI/external-services bucket and 600 credits per month for the Bounded infra bucket.
+  Paid AI builds debit the AI/external-services bucket.
+- Team includes everything in Pro plus roles (builders, reviewers, admins), Enforced boundary promotion (25 per app), approvals, the audit trail, the weekly action report, 400 monthly AI/external-services credits, and 2,000 monthly Bounded infra credits.
 
 Pro-or-better accounts can top up eligible buckets from the public billing
 checkout flow (`kind: "pro" | "team" | "services_topup" | "infra_topup"`).
@@ -47,6 +42,25 @@ normal bucket ledger.
 Do not explain pricing with unpublished provider costs, margin targets, private
 payment details, or non-public service details. Use the public plan, usage
 snapshot, and checkout/top-up flows.
+
+## Credits
+
+Metered usage is user-facing in whole credits; subscription prices and the dollar amount paid for a top-up remain dollars.
+One credit currently represents 50,000 microUSD, so a $15 purchase yields 300 credits.
+The server owns this posted conversion rate and may change it.
+
+Balances, allowances, included amounts, remaining amounts, and caps round down.
+Total spend and charges round up, while per-axis informational costs round down and should render as `<1` when a positive amount rounds to zero.
+
+During the additive API transition, prefer these credit fields while tolerating the older money fields:
+
+- `GET` or `POST /billing/me`: `credits.services`, `credits.infra`, optional `credits.freePool`, and `credits.aiRemaining`.
+- `GET /remote-edit/bucket`: `fundedCredits`, `spentCredits`, and `remainingCredits` on `bucket`.
+- `GET /app/:appId/usage`: `totalCostCredits`, `spendCapCredits`, and `costCredits` on each `byAxis` row.
+- Spend-cap and recoup-cap writes: `monthlySpendCapCredits` and `monthlyAiSpendCapCredits` as positive whole credits.
+
+Send only the credits form for a new cap write.
+If compatibility code sends both a credits field and its microUSD twin, the values must match exactly after converting credits at the server-owned rate or the server returns `400`.
 
 ## Transparent Fees
 
