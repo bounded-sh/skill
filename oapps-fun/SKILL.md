@@ -133,6 +133,27 @@ deployed frontend is compiled output, the source that compiles into it rides
 along in the same tree. Never add a framework, a bundler, or an unused
 `init()` call merely to change shape: launch does not ask for them.
 
+**The dist must be reproducible.** A deployed frontend classifies at launch,
+and an unclassifiable one refuses (`dist_not_reproducible`):
+
+- **static** — every text file you deploy is byte-identical to a file in your
+  source tree (binary assets like images are exempt). Hand-written HTML/CSS/JS
+  deployed as-is lands here automatically.
+- **built** — your source declares how the dist is produced: a `"build"`
+  object in `bounded.json` (`{"command": "npm run build", "output": "dist"}`)
+  or a `package.json` `build` script. The launch REHEARSES it once — your
+  build runs in an isolated, network-less sandbox and must succeed and produce
+  `<output>/index.html`. The recipe is recorded so community proposals edit
+  source and the platform rebuilds, instead of nobody ever being able to
+  regenerate your minified bundle.
+- A dist that matches nothing in source and has no working declared build is
+  dead weight the community could never maintain, so it cannot launch. Fix it
+  by declaring a real build, or by deploying your source files directly.
+
+Because the rehearsal sandbox has no network, a build that fetches things at
+build time (remote configs, API calls in build scripts) will fail there —
+vendor those inputs into the tree instead.
+
 What the ritual still refuses:
 
 | What | Required | Refusal |
