@@ -299,7 +299,7 @@ rejected):
 | `relationships` | `{ name: { type, collection, ... } }` | [queries.md](queries.md) |
 | `type` | `"llm" \| "api" \| "storage"` | [files-and-search.md](files-and-search.md) |
 | `service` / `model` / `prompt` | strings (for `type:"api"`/`"llm"`) | [files-and-search.md](files-and-search.md) |
-| `isPassthrough` / `isRevealPath` | booleans (onchain) | [proof-coverage.md](proof-coverage.md) |
+| `isPassthrough` / `isRevealPath` | booleans (onchain). **`isRevealPath` pins the collection's whole shape** — onchain, EMPTY fields, and a create rule that is exactly `@OraclePlugin.getRandomNumber($id, 0, 1) == 0`; `create: "false"` and a declared `randomness` field are both rejected at deploy | [../../bounded-onchain/docs/randomness.md](../../bounded-onchain/docs/randomness.md) |
 | `description` / `operationDetails` / `functionDescription` | docstrings | — |
 
 ### Top-level blocks (alongside the collection keys)

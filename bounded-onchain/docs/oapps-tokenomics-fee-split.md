@@ -2,7 +2,11 @@
 
 > **HISTORICAL WORKED EXAMPLE.** This document preserves the superseded 55%
 > treasury / 25% creator / 20% Poof reference policy. The current canonical,
-> shipped split is **10% venue / 20% creator / 20% steward / 50% app reserve**.
+> shipped split is **10% platform / 20% creator / 20% steward / 50% app
+> reserve**. Label mapping across docs: the platform leg is the "venue" and the
+> app reserve is the "treasury" — same recipients, and the shipped oapps.fun
+> policy (`treasury/$slug`) states the same split reserve-first as
+> 50/20/20/10.
 > The shipped model uses a treasury ledger with transitions proven at the rule
 > layer, plus a permissionless `distribute` update. Port the mechanics below, not
 > its recipients or percentages.
