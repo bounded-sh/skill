@@ -58,7 +58,7 @@ omit / `0` = cross-margin, `1`–`100` = isolated-margin subaccounts.
 
 | Function | Signature | Does |
 |---|---|---|
-| `registerTrader` | `(source, subaccountIndex?)` | One-time: create the trader PDA. Auto-whitelists for deposits. |
+| `registerTrader` | `(source, subaccountIndex?)` | One-time: create the trader PDA after the source authority is Phoenix-onboarded. |
 | `emberDeposit` | `(source, amount)` | Bridge USDC → PhUSD (collateral currency). |
 | `emberWithdraw` | `(source, amount)` | Bridge PhUSD → USDC. |
 | `depositFunds` | `(source, amount, subaccountIndex?)` | Deposit PhUSD collateral into the margin account. |
@@ -82,6 +82,11 @@ omit / `0` = cross-margin, `1`–`100` = isolated-margin subaccounts.
 | `getPhUSDBalance` | `(source)` | PhUSD balance. |
 | `hasPosition` | `(source, market, subaccountIndex?)` | Bool. |
 | `isRegistered` | `(source, subaccountIndex?)` | Bool — trader PDA exists. |
+
+> On Poofnet, Phoenix registration and onboarding are simulated.
+> On live Solana, Phoenix onboarding is a separate prerequisite for each new authority, including a new app escrow PDA.
+> Use Phoenix's current [build/send registration flow](https://docs.phoenix.trade/sdk/register); `registerTrader` cannot auto-whitelist an authority.
+> The read helpers do not require Phoenix-side onboarding.
 
 > `market` is a Phoenix **market address** (e.g. the SOL market
 > `71Si24E4uc3oCaPbPZTozC1ptSNNqygjjebxSmErSsC2`). "Leverage" is expressed as
