@@ -126,11 +126,17 @@ resolved path — trust the path, not the word.
 
 ## 3b. Deploy denied? You may be using the wrong identity — try the other one first
 
-A control-plane command that fails with **403 `site_control_denied`** (or a
-boundary-violation on `site deploy` / `deploy` / `functions`) almost never means
-"you can't deploy this." It means **the identity your `bounded.json` account source
-points at is not an owner/admin of that app** — and the CLI uses *only that one
-source*. It does **not** fall back to your other signed-in identities.
+A control-plane command that fails with **403 `site_control_denied`** almost never
+means "you can't deploy this." It means **the identity your `bounded.json` account
+source points at is not an owner/admin of that app** — and the CLI uses *only that
+one source*. It does **not** fall back to your other signed-in identities.
+
+**This section is only for `site_control_denied` (an identity problem).** A
+**`boundary_violation`** ("Blocked by this app's boundaries") is a *different* 403:
+an intentional boundary lock that refuses **every** author, including the owner, so
+switching identities can never help. Do **not** cycle credentials against it - stop,
+and follow the boundary-lock playbook
+([access-playbook.md §5](access-playbook.md)) to inspect and amend the boundary.
 
 This is the trap: you can be logged in to two accounts at once — a wallet key at
 `~/.bounded/credentials` **and** a web login at `~/.bounded/web-session.json` — and
@@ -164,9 +170,12 @@ Or, for a project you own, just switch in place: `bounded account use --web` (we
 login) or `bounded account use --global` (wallet), then re-deploy. If the web
 session is expired, `bounded login --email you@example.com` first.
 
-**Rule of thumb: never report a deploy as "owner-gated / blocked" until you've
-tried every identity signed in on the machine.** Wallet-owns-it and web-owns-it are
-both common; the CLI picks one, so the fix is usually just switching sources.
+**Rule of thumb: for a `site_control_denied` error, never report a deploy as
+"owner-gated / blocked" until you've tried every identity signed in on the
+machine.** Wallet-owns-it and web-owns-it are both common; the CLI picks one, so the
+fix is usually just switching sources. (This does **not** apply to a
+`boundary_violation`: a boundary lock refuses every identity, so cycling accounts is
+pointless - amend the boundary via the access playbook instead.)
 
 ## 4. Public project markers — `bounded.json` and `.bounded/app.json`
 
