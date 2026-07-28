@@ -375,6 +375,15 @@ The successful JSON shape is:
 The normalized app `environment` can be `development` while the CLI control
 plane selection is `--env staging`; the `protocol` is the network-specific
 runtime contract.
+`submittedPolicySha256` hashes the exact JSON policy body the CLI sends after
+constant substitution, policy-environment selection and overlay, removal of the
+client-only `environments` block, and JSON reserialization.
+It is not the SHA-256 of the raw `policy.json` file, whose whitespace, key order,
+and escaped characters can produce different bytes.
+`resolvedPolicySha256` hashes the separate server-resolved effective policy and
+may legitimately differ from the submitted-policy digest.
+Retain these active-publication fields as provenance instead of substituting a
+raw local-file digest.
 This inspection carries no site host or URL.
 Use the environment-qualified `slugUrl` from `bounded domains list --app-id <id> --env <environment> --json`, or the `url` retained from the exact successful `bounded site deploy ... --env <environment> --json` receipt, for hosted-site provenance.
 For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
