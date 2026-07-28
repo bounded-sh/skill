@@ -395,17 +395,38 @@ for (const expected of [
   '"code": "deploy_in_progress"',
   '"recoveryCommand": "bounded deploy ./policy.json',
   'The server does not expose a recovery ID to collaborators, admins',
-  'Recovery binds the exact operation and exact policy, never sends a second `updateApp`',
+  'The CLI binds the exact operation and exact policy and never submits a second policy mutation.',
+  'HTTP `202` with `state: "processing"`',
+  'A normal deploy whose first policy mutation has an ambiguous outcome uses this same readback/recovery loop automatically.',
+  'It returns to polling after `202` instead of submitting the policy mutation again.',
+  'reads the finalized onchain policy inventory',
+  'publishes the frozen app/runtime target without replaying an onchain mutation',
+  'The retained operation becomes terminal and a fresh normal `bounded deploy`',
+  'the operation remains locked and pollable',
+  'the operation remains locked for manual intervention',
   'Do not infer success from a human line',
   'still requires an existing app ID',
 ]) {
   if (!cliReference.includes(expected)) fail(`CLI reference: missing sanitized onchain receipt contract ${expected}`)
 }
 
+const rootSkill = readFileSync(path.join(root, 'bounded/SKILL.md'), 'utf8')
+for (const expected of [
+  '`409` + `deploy_in_progress` / `operationId`',
+  '`202` with `state: "processing"`',
+  'let it poll and do not start a normal deploy',
+]) {
+  if (!rootSkill.includes(expected)) fail(`Bounded root skill: missing policy recovery boundary ${expected}`)
+}
+
 const deploySkill = readFileSync(path.join(root, 'bounded-deploy/SKILL.md'), 'utf8')
 for (const expected of [
   '`deploy_in_progress` with an `operationId`',
   'The verified app owner must run the exact emitted `recoveryCommand`',
+  '`202` with `state: "processing"`',
+  'exact finalized target publishes the frozen app/runtime target without replaying an onchain mutation',
+  'Unavailable finalized state remains locked and pollable',
+  'partial or contradictory state remains locked for manual intervention',
 ]) {
   if (!deploySkill.includes(expected)) fail(`Bounded deploy skill: missing policy recovery boundary ${expected}`)
 }
@@ -415,7 +436,11 @@ for (const dropIn of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/w
   for (const expected of [
     '`deploy_in_progress` with an `operationId`',
     'runs the exact emitted `recoveryCommand` with unchanged policy inputs',
-    'without sending a new policy',
+    '`202` with',
+    'A normal deploy with an ambiguous outcome uses that polling loop',
+    'without replaying an onchain mutation',
+    'unavailable state stays locked and pollable',
+    'partial state requires',
   ]) {
     if (!source.includes(expected)) fail(`${dropIn}: missing public policy recovery boundary ${expected}`)
   }

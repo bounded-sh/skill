@@ -54,8 +54,16 @@ bounded init
    re-runs the proof gate and fails closed on any regression.
    If it returns `deploy_in_progress` with an `operationId`, the verified app
    owner runs the exact emitted `recoveryCommand` with unchanged policy inputs.
-   That command resumes the retained operation without sending a new policy
-   update.
+   The CLI does not submit another policy mutation and lets `202` with
+   `state: "processing"` poll the same operation while the server re-runs the
+   proof, compiler, and exact-state reconciliation.
+   A normal deploy with an ambiguous outcome uses that polling loop
+   automatically.
+   For Solana Devnet, an exact finalized target publishes the frozen app/runtime
+   target without replaying an onchain mutation.
+   An exact finalized source ends the operation before a fresh normal deploy;
+   unavailable state stays locked and pollable, while partial state requires
+   manual intervention.
 4. For a hosted web app, build static assets and run
    `bounded site deploy ./dist --app-id <id>`. Then test one complete user flow
    and one intentional boundary rejection. React Native binaries stay in the
