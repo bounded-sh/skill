@@ -36,9 +36,6 @@ deployed Solana program supports them merely because the local compiler does.
 - Reject governance enrollment and governed-update construction below v3.
 - Never deploy or upgrade mainnet as an incidental step. Rehearse captured
   legacy accounts on a local validator/Surfpool, then devnet.
-- When an exact deployed binary hard-codes an admin address, a disposable rehearsal signer cannot call its admin-only app or policy lifecycle instructions.
-  Seed deterministic program-owned policy accounts from the real compiler and IDL, then exercise authority-neutral user document paths through the exact binary.
-  Do not substitute the real admin key, rebuild with local features, or clone mutable policy accounts merely to make the rehearsal pass.
 
 The compatibility contract freezes legacy instruction entrypoints, opcode and
 error discriminants, invariant encodings, and `setDocumentsV2` wire bytes.
@@ -422,9 +419,6 @@ Before enabling a new primitive or runtime version:
   size budgets.
 - Exercise create/update/delete, readonly calls from offchain policies, replay,
   stale delivery, mirror subscription, and rollback on local validator/Surfpool.
-- Before a live Solana program upgrade, follow the [revision-bound release workflow](onchain.md#bind-a-solana-release-to-the-final-merged-revision).
-  Rebuild both the artifact and rehearsal measurements from the exact clean merged release revision.
-  An unchanged ELF digest does not keep an earlier revision-bound rehearsal current.
 - On devnet, assign a run ID, confirm the public transaction, and then poll the exact expected Bounded postcondition.
 - A client preflight or transaction simulation rejection is not proof of an onchain invariant denial.
   Configure a trusted Devnet RPC through `SOLANA_DEVNET_RPC_URL` before CLI submission.

@@ -372,65 +372,9 @@ for (const expected of [
   'omit it from every update payload',
   'Anchor error name `FieldReadOnly`',
   'Treat the live Anchor `Error Code` name and `Error Message` as authoritative',
-  'Treat the candidate artifact measurement and the exact upgrade/rollback rehearsal receipt as two revision-bound measurements.',
-  'A matching ELF SHA-256 does not make an earlier artifact measurement or rehearsal current.',
-  'Rerun the exact candidate-first, rollback, and candidate-final authority-neutral rehearsal',
   'Do not renumber program errors merely to make a local numeric table agree.',
-  'Agave 4.1.1 `solana program deploy` defaults `--max-sign-attempts` to `5`.',
-  'Each recent blockhash is valid for about 60 seconds',
-  'Run only the remote live Devnet program upload with `--max-sign-attempts 15`.',
-  'inside a 45-minute outer timeout',
-  "Keep the disposable loopback candidate-first, rollback, and candidate-final rehearsal deploys at Agave's default `5` attempts inside their existing 5-minute timeout.",
-  'Do not add `--skip-preflight` to compensate for exhausted signing attempts',
-  'Query `getRecentPrioritizationFees` against the exact target RPC endpoint',
-  'If no independently retained pre-deploy baseline exists',
-  'recover the exact private buffer using the single-buffer procedure below',
-  'If the failed attempt did not use an explicit private buffer or its exact address was lost',
-  'Agave 4.1.1 has two mutually exclusive buffer-close forms.',
-  'solana program close <buffer-address> --url <cluster> --commitment finalized --authority <authority-keypair>',
-  'Never run `solana program close <buffer-address> --buffers`',
 ]) {
   if (!solanaOnchain.includes(expected)) fail(`Solana onchain guide: missing required boundary ${expected}`)
-}
-
-const releaseRevisionDropIn = 'Any later relevant or revision-binding commit makes an earlier artifact and rehearsal stale even when the rebuilt ELF has the same SHA-256.'
-const boundedDeployRetryDropIn = 'On Agave 4.1.1, run only the remote live Devnet program upload with `--max-sign-attempts 15` inside a 45-minute outer timeout.'
-const boundedRehearsalRetryDropIn = 'Keep the disposable loopback rehearsal at the default 5 attempts inside its 5-minute timeout.'
-const boundedDeployDefaultDropIn = 'The default is 5 signing iterations with each recent blockhash valid for about 60 seconds, and exhausting them can leave ProgramData unchanged while retaining the exact private buffer.'
-const boundedDeployFeeDropIn = 'Keep deploy preflight enabled and do not add priority fees without evidence from the target RPC endpoint.'
-const singleBufferCloseDropIn = 'On Agave 4.1.1, close one retained upgradeable-loader buffer only with positional `solana program close <buffer-address>` after finalized owner and authority confirmation.'
-const noMixedBufferCloseDropIn = 'Never add `--buffers` to a specific address because that flag selects all matching buffers and the CLI rejects the mixed form.'
-const solanaSkill = readFileSync(path.join(root, 'bounded-onchain/SKILL.md'), 'utf8')
-for (const expected of [
-  boundedDeployRetryDropIn,
-  "Keep the disposable loopback rehearsal at Agave's default `5` attempts inside its 5-minute timeout.",
-  'Keep deploy preflight enabled, retain an explicit private buffer recovery path, and do not add priority fees without evidence from the target RPC endpoint.',
-]) {
-  if (!solanaSkill.includes(expected)) fail(`Bounded onchain skill: missing Solana deploy retry boundary ${expected}`)
-}
-for (const file of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {
-  const source = readFileSync(path.join(root, file), 'utf8')
-  if (!source.includes(releaseRevisionDropIn)) {
-    fail(`${file}: missing revision-bound Solana release rule`)
-  }
-  if (!source.includes(boundedDeployRetryDropIn)) {
-    fail(`${file}: missing bounded Solana deploy retry rule`)
-  }
-  if (!source.includes(boundedRehearsalRetryDropIn)) {
-    fail(`${file}: missing bounded loopback rehearsal retry rule`)
-  }
-  if (!source.includes(boundedDeployDefaultDropIn)) {
-    fail(`${file}: missing default Solana deploy retry behavior`)
-  }
-  if (!source.includes(boundedDeployFeeDropIn)) {
-    fail(`${file}: missing Solana deploy preflight and priority-fee rule`)
-  }
-  if (!source.includes(singleBufferCloseDropIn)) {
-    fail(`${file}: missing single-buffer close rule`)
-  }
-  if (!source.includes(noMixedBufferCloseDropIn)) {
-    fail(`${file}: missing --buffers mixed-form warning`)
-  }
 }
 
 const cliReference = readFileSync(path.join(root, 'bounded-deploy/docs/cli-reference.md'), 'utf8')

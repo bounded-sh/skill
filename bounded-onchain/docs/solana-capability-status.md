@@ -231,5 +231,3 @@ Never store private keys, credentials, secret RPC URLs, access tokens, or signed
 
 A Solana compiler, runtime, manifest, descriptor, deployment, or external configuration change must update this table and its corresponding acceptance scenario in the same change.
 Do not promote a row from `unverified`, `blocked`, or `unsupported` without retained evidence that matches the deployed revision.
-Before a live program upgrade, satisfy the [revision-bound release workflow](onchain.md#bind-a-solana-release-to-the-final-merged-revision).
-Any later relevant or revision-binding commit makes an earlier artifact and rehearsal stale even when the ELF digest is unchanged.

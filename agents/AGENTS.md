@@ -57,14 +57,6 @@ bounded init
    and one intentional boundary rejection. React Native binaries stay in the
    normal mobile release toolchain.
    Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
-5. Before a live Solana program upgrade, rebuild the candidate and rerun its exact upgrade/rollback rehearsal from the clean merged release commit.
-   Any later relevant or revision-binding commit makes an earlier artifact and rehearsal stale even when the rebuilt ELF has the same SHA-256.
-   On Agave 4.1.1, run only the remote live Devnet program upload with `--max-sign-attempts 15` inside a 45-minute outer timeout.
-   Keep the disposable loopback rehearsal at the default 5 attempts inside its 5-minute timeout.
-   The default is 5 signing iterations with each recent blockhash valid for about 60 seconds, and exhausting them can leave ProgramData unchanged while retaining the exact private buffer.
-   Keep deploy preflight enabled and do not add priority fees without evidence from the target RPC endpoint.
-   On Agave 4.1.1, close one retained upgradeable-loader buffer only with positional `solana program close <buffer-address>` after finalized owner and authority confirmation.
-   Never add `--buffers` to a specific address because that flag selects all matching buffers and the CLI rejects the mixed form.
 
 Rejections at runtime are fail-closed: HTTP 409 for a violated invariant, 403 for
 a denied write or invoke rule.
