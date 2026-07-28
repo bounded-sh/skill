@@ -265,21 +265,30 @@ In JSON mode, a successful direct policy deploy emits exactly one committed rece
   "app": {
     "policyRevisionCount": 7,
     "runtimePublicationRevision": 9,
-    "status": "deployed"
+    "status": {
+      "state": "available"
+    }
   },
   "policyDeployReceipt": {
+    "ok": true,
     "appId": "6a37ecc89def2f10f13aa922",
+    "state": "committed",
     "operationId": "<uuid>",
     "policyRevisionCount": 7,
     "runtimePublicationRevision": 9,
-    "status": "deployed"
+    "status": "available"
   }
 }
 ```
 
 `created` is true when the same command used `--create`.
 Recovery uses action `recoverPolicyDeploy` and includes the recovered operation ID plus the same validated `policyDeployReceipt`.
-Treat the operation ID and revision fields as the deployment receipt.
+The top-level `state` and `policyDeployReceipt.state` describe the policy mutation outcome, and `committed` means that durable mutation was confirmed.
+`policyDeployReceipt.status` is a separate app publication status, not another commit marker.
+A direct response reports a publication state such as `pending`, `deploying`, `available`, or `failed`; an operation-bound readback or recovery receipt may report `null` when no publication status is present.
+Never require receipt `status` to equal `committed` or `deployed`.
+Require `state == "committed"`, retain the operation ID and revision fields as the mutation receipt, and record publication `status` verbatim.
+If a release requires the runtime or hosted app to be available, confirm that condition independently after the committed policy receipt.
 Do not infer success from a human line or omit the receipt when recording provenance.
 
 ### `tests` — policy tests
@@ -355,7 +364,7 @@ These are two different payment surfaces:
 
 | Command | Does | Example |
 |---|---|---|
-| `billing status` | Show current Bounded plan and bucket status | `bounded billing status` |
+| `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
 | `billing checkout` | Start Bounded Pro or top up a Bounded bucket | `bounded billing checkout --plan pro` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |
 | `upgrade` | Alias for `billing checkout --plan pro` | `bounded upgrade` |

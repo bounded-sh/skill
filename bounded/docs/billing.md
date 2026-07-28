@@ -88,6 +88,11 @@ bounded billing portal
 `services_topup` funds the AI/external-services bucket. `infra_topup` funds the
 Bounded infra bucket. Top-ups require Pro-or-better.
 
+`bounded billing status` reports the account's effective project cap.
+In JSON, read `.limits.maxProjects`; `-1` means unlimited.
+A platform-issued project-cap grant is reflected in that effective value, but
+the raw operator override record and operator metadata are never returned.
+
 When usage data is available, explain it in user terms:
 
 - request operations,
@@ -132,20 +137,23 @@ When project creation returns `project_limit_exceeded` or a usage error with
 `dimension: "maxProjects"`:
 
 1. Do not retry the create operation.
-2. Tell the user how many owned projects they have and what their current plan
+2. Run `bounded billing status --json` and use `.limits.maxProjects` as the
+   effective account cap.
+   The value `-1` means unlimited.
+3. Tell the user how many owned projects they have and what their current plan
    limit is, if `usage`, `limit`, or `projectedUsage` are present.
-3. Run `bounded apps list --json` to inspect every app the active account owns
+4. Run `bounded apps list --json` to inspect every app the active account owns
    or collaborates on.
    Its safe fields are `appId`, `name`, `environment`, `protocol`, and
    `sitePrivate`.
-4. Before reusing an app, run `bounded access --app-id <id> --json` and confirm
+5. Before reusing an app, run `bounded access --app-id <id> --json` and confirm
    both ownership or deploy rights and protocol compatibility.
    Reuse only the exact app the user approves, and run `bounded deploy` without
    `--create`.
-5. Never delete or repurpose a project automatically to work around the limit.
-6. If the response says the key is unlinked, recommend `bounded link --email
+6. Never delete or repurpose a project automatically to work around the limit.
+7. If the response says the key is unlinked, recommend `bounded link --email
    <their email>` first so the CLI key and web account share one account limit.
-7. If no approved compatible project can be reused, help the user upgrade to
+8. If no approved compatible project can be reused, help the user upgrade to
    Pro through the public billing checkout flow.
    Do not initiate billing changes without approval.
 
