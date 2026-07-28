@@ -63,11 +63,14 @@ bounded deploy --create --name my-app
 
 - Read project config first when entering an existing app; it tells you which app/environment/account source to use.
 - Claim a vanity slug with `bounded domains slug ...` and share the slug/custom-domain host, never a raw app-id host, as the public URL.
-- Use the exact environment-qualified URL returned by the active control plane or `bounded apps inspect`.
-  Production vanity hosts use `*.bounded.page`, while an isolated staging control plane may return `*.staging.bounded.page`; never synthesize a production hostname for a staging app.
+- Resolve the hosted URL in the intended environment with `bounded domains list --app-id <id> --env <environment> --json` and use its nonempty `slugUrl`, or retain the `url` from the exact successful `bounded site deploy ... --env <environment> --json` receipt.
+- For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
+- `bounded apps inspect` carries no hosted URL; use it only to prove the exact active policy/runtime publication.
+- Production vanity hosts use `*.bounded.page`, while an isolated staging control plane may return `*.staging.bounded.page`; never synthesize a production hostname for a staging app.
 - To give a person or agent access, reach straight for `bounded share ... --role ...`; confirm with `bounded access --app-id <id> --json`.
 - After a release-critical policy deploy, use `bounded apps inspect --app-id <id> --json` to prove the exact active publication. Do not treat a toast, human success line, or immediate data read as deployment provenance.
-- For a release-critical policy plus site deployment, independently hash the immutable current site files and re-run `bounded apps inspect` after the site upload. Require the exact policy and runtime publication to remain unchanged.
+- For a release-critical policy plus site deployment, use the receipt `url` or fresh environment-qualified `slugUrl` to independently hash the immutable current site files, then re-run `bounded apps inspect` after the site upload.
+  Require the exact policy and runtime publication to remain unchanged.
 - Never bake mutable acceptance evidence into the generated site artifact whose exact bytes that evidence certifies.
 - Keep the generated catalog as an immutable inventory baseline, publish `deployed_unverified` release evidence into a public-read and authority-write Bounded collection after deployment, and overlay exact accepted scenario evidence at runtime.
 - If local receipt retention succeeds but public evidence publication fails, retry an explicit retained-receipt publication path after rechecking current provenance instead of rerunning state-changing acceptance actions with the same run ID.

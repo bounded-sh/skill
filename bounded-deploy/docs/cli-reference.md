@@ -54,7 +54,7 @@ the web account. The CLI has two account-source families:
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
-| `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes or a runtime bundle. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
+| `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
@@ -329,6 +329,9 @@ The successful JSON shape is:
 The normalized app `environment` can be `development` while the CLI control
 plane selection is `--env staging`; the `protocol` is the network-specific
 runtime contract.
+This inspection carries no site host or URL.
+Use the environment-qualified `slugUrl` from `bounded domains list --app-id <id> --env <environment> --json`, or the `url` retained from the exact successful `bounded site deploy ... --env <environment> --json` receipt, for hosted-site provenance.
+For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
 For release automation, require an exact app ID, protocol, site privacy,
 submitted policy digest, `state == "committed"`, `status == "available"`,
 positive revisions, and the operation/revisions from the deploy receipt.
@@ -555,7 +558,10 @@ Full treatment: [environments.md](environments.md).
 For release-critical public sites, retain the exact successful `site deploy
 --json` receipt and independently verify every uploaded byte through the
 canonical public host.
-Take that canonical host from the active control plane response or `bounded apps inspect`.
+Use the receipt's nonempty `url` as the canonical host.
+When recovering without that receipt, run `bounded domains list --app-id <id> --env <environment> --json` and use its nonempty `slugUrl`.
+For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
+`bounded apps inspect` proves the active policy/runtime publication and does not return a host.
 Production normally returns `https://<slug>.bounded.page`, while an isolated staging control plane may return `https://<slug>.staging.bounded.page`.
 Do not rewrite an environment-qualified URL to match the production examples below.
 The current deployment exposes:
@@ -591,7 +597,7 @@ The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) 
 |---|---|---|
 | `domains slug [slug]` | Claim one canonical vanity `<slug>.bounded.page` for an app; `--release` frees it | `bounded domains slug myapp --app-id <id>` |
 | | A freshly claimed slug can take up to ~1 minute to serve at `/` (edge-map propagation); the CLI probes the root and says "propagating" until it actually serves | |
-| `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + `slugUrl` fields in `--json`) | `bounded domains list --app-id <id>` |
+| `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + environment-qualified `slugUrl` fields in `--json`) | `bounded domains list --app-id <id> --env <environment> --json` |
 | `domains add <domain>` | Add a custom frontend domain you own (Pro); prints the DNS records to create | `bounded domains add app.yourdomain.com --app-id <id>` |
 | `domains remove <domain>` | Remove a **custom domain** and its routing/origin entry. Does NOT free a vanity slug — that is `domains slug --release`; using it on a slug 404s `domain_not_found` | `bounded domains remove app.yourdomain.com --app-id <id>` |
 

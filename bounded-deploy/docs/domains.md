@@ -3,14 +3,18 @@
 Bounded hosted frontends are served through mapped hosts, not raw app-id labels.
 Use a vanity slug or a custom domain for the public URL you give users.
 The examples below show production `*.bounded.page` hosts.
-When an isolated staging control plane returns an environment-qualified host such as `*.staging.bounded.page`, retain that exact host in deploy receipts, release markers, probes, and user-facing links.
+Resolve the vanity host with `bounded domains list --app-id <id> --env <environment> --json` and use its nonempty `slugUrl`.
+For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
+A successful `bounded site deploy ... --env <environment> --json` receipt is the other URL-bearing source; retain its nonempty `url`.
+`bounded apps inspect` proves the active policy/runtime publication and does not return a host.
+When the intended environment returns a host such as `*.staging.bounded.page`, retain that exact host in deploy receipts, release markers, probes, and user-facing links.
 Never replace a returned staging host with a synthesized production hostname.
 
 > **Agents: claim a vanity slug by default.** Don't leave new apps on the raw
 > app id. Immediately after `bounded deploy --create`, run
 > `bounded domains slug <name-kebab-cased> --app-id <id>`. If the name is taken the CLI
 > prints a suggested alternative — claim that instead. Then surface the
-> `https://<slug>.bounded.page` URL to the user (and deploy the site to it). It's free,
+> `slugUrl` from `bounded domains list --app-id <id> --env <environment> --json` to the user (and deploy the site to it). It's free,
 > reversible (`--release`), reserves the name, and wires `allowedOrigins` so auth/CORS work.
 > No need to ask first.
 
@@ -32,7 +36,7 @@ bounded domains slug --release --app-id <id> # free it
 - The slug is added to your app's `allowedOrigins` automatically, so auth + CORS work on the
   vanity domain with no extra setup.
 - The API also serves at `<slug>-api.bounded.page`.
-  On an isolated staging control plane, use the exact API and site hosts returned by that environment rather than deriving either hostname from these production examples.
+  This is a production example, not a source for staging site provenance.
 
 Requires the `app:settings` control-plane capability (owner or admin by default);
 registers the slug for the app atomically.

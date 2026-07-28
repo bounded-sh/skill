@@ -459,6 +459,9 @@ Before enabling a new primitive or runtime version:
   Known-vector booleans must equal `true`, Solana addresses must decode as public keys, and an ORAO result must satisfy `0 <= roll < span`.
 - Bind retained live acceptance to the public deployed release marker and independently read the Devnet Program and ProgramData accounts at the beginning and end of the run.
   For the canonical staging lab, fetch `https://bounded-solana-devnet-lab.staging.bounded.page/bounded-solana-lab-release.json` with caching disabled.
+  Confirm that exact base URL from the `slugUrl` returned by `bounded domains list --app-id <app-id> --env staging --json` or the `url` retained from the exact successful staging site-deploy receipt.
+  Require the JSON field itself instead of copying a human-rendered hostname.
+  Do not use `bounded apps inspect` as a URL source; it proves only the active policy/runtime publication.
   Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.
   Require version 2, release `bounded-solana-devnet-lab`, environment `staging`, protocol `realtime_devnet`, the exact 40-hex source commit and 24-hex app ID, and a 64-hex artifact SHA-256.
   The nested `program` object contains exactly `network`, `programId`, `programDataAddress`, `authority`, `lastDeployedSlot`, `allocatedBytes`, `dumpSha256`, `commitment`, and `contextSlot`.

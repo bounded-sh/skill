@@ -56,6 +56,7 @@ bounded init
    `bounded site deploy ./dist --app-id <id>`. Then test one complete user flow
    and one intentional boundary rejection. React Native binaries stay in the
    normal mobile release toolchain.
+   Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
 
 Rejections at runtime are fail-closed: HTTP 409 for a violated invariant, 403 for
 a denied write or invoke rule.

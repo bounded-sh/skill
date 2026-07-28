@@ -51,6 +51,7 @@ Flow:
 - For hosted web, build static assets and run
   `bounded site deploy ./dist --app-id <id>`. Test a complete user flow and an
   intentional boundary rejection. React Native packaging stays external.
+  Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
 
 Runtime rejections are fail-closed: 409 for a violated invariant, 403 for a denied
 write or invoke rule.

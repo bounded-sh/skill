@@ -77,6 +77,9 @@ the root **bounded** skill.
 - Treat discovery, deployed-runtime support, and live-network verification as three independent states.
 - Check the [Solana devnet capability catalog](docs/solana-capability-status.md) before proposing any plugin or primitive.
 - Never infer devnet support from a compiler tag, manifest, proof contract, Poofnet model, lookup-table entry, or local validator test.
+- When live evidence uses a hosted release marker, resolve its environment-qualified site URL from `bounded domains list --app-id <id> --env <environment> --json` `slugUrl` or the exact successful site-deploy receipt `url`.
+  Require the JSON field itself for staging evidence instead of copying a human-rendered hostname.
+  `bounded apps inspect` proves the active policy/runtime publication and carries no hosted URL.
 - Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
 - Current chain-backed named queries belong on `onchain: true` paths and require an authenticated `userAddress` at execution time.
 - Do not recommend an `onchain: false` view for an offchain-only plugin read until standalone chain-query execution is fixed.
