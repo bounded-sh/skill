@@ -134,10 +134,20 @@ When project creation returns `project_limit_exceeded` or a usage error with
 1. Do not retry the create operation.
 2. Tell the user how many owned projects they have and what their current plan
    limit is, if `usage`, `limit`, or `projectedUsage` are present.
-3. If the response says the key is unlinked, recommend `bounded link --email
+3. Run `bounded apps list --json` to inspect every app the active account owns
+   or collaborates on.
+   Its safe fields are `appId`, `name`, `environment`, `protocol`, and
+   `sitePrivate`.
+4. Before reusing an app, run `bounded access --app-id <id> --json` and confirm
+   both ownership or deploy rights and protocol compatibility.
+   Reuse only the exact app the user approves, and run `bounded deploy` without
+   `--create`.
+5. Never delete or repurpose a project automatically to work around the limit.
+6. If the response says the key is unlinked, recommend `bounded link --email
    <their email>` first so the CLI key and web account share one account limit.
-4. To continue, help them upgrade to Pro through the public billing checkout
-   flow.
+7. If no approved compatible project can be reused, help the user upgrade to
+   Pro through the public billing checkout flow.
+   Do not initiate billing changes without approval.
 
 ## Handling Limit Errors
 
