@@ -78,6 +78,15 @@ paths and `links`, declared once at the root of the policy:
     },
     "fields": { "active": "Bool", "renewsAt": "UInt" }
   },
+  "stripeCustomer/$customerId": {
+    "rules": {
+      "read": "@user.id != null && get(/admins/@user.id) != null",
+      "create": "@user.id != null && @user.id == @const.SUBS_SYNC_ACTOR",
+      "update": "@user.id != null && @user.id == @const.SUBS_SYNC_ACTOR",
+      "delete": "false"
+    },
+    "fields": { "user": "String" }
+  },
   "admins/$adminId": {
     "rules": {
       "read": "true",
@@ -107,7 +116,10 @@ Replace the sample sync address with one dedicated to your app, using the same
 public address for both `SUBS_SYNC_ACTOR` and `syncStripe.actAs`. Admins may
 invoke the Function, but only that service identity may create or update
 subscription rows; an admin cannot bypass the Function with a direct client
-write. For offchain data writes, the owner-declared `actAs` identity does not
+write. That same identity owns the `stripeCustomer/$customerId -> user` mapping,
+which a verified Stripe webhook writes on Checkout completion; `syncStripe` reads
+the credited account from that mapping instead of trusting a caller-supplied id.
+For offchain data writes, the owner-declared `actAs` identity does not
 need a private key; cryptographic/onchain signing does.
 
 *(This exact snippet validates clean against the real policy validator.)*
@@ -763,7 +775,7 @@ token automatically — the **same token** `bounded data` uses — so Bounded
 verifies your identity and evaluates the function's `auth` rule before running it:
 
 ```sh
-bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123","userId":"acct_123"}'
+bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123"}'
 ```
 
 It prints the function's JSON result, or fails with a public error such as
@@ -780,7 +792,7 @@ auth headers:
 ```ts
 import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 
-const res = await functions.invoke("syncStripe", { customerId, userId });
+const res = await functions.invoke("syncStripe", { customerId });
 // → the function's JSON return value.
 ```
 
@@ -793,7 +805,7 @@ rule + `ctx.user` then reflect it):
 
 ```ts
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
-const res = await vault.invoke("syncStripe", { customerId, userId });
+const res = await vault.invoke("syncStripe", { customerId });
 ```
 
 The platform gates the call on the function's `auth` rule using the verified
@@ -871,8 +883,18 @@ deploy.
 ```ts
 export default async function (args, ctx) {
   // Only admins reach here — `auth` gated the original caller before actAs.
-  const { customerId, userId } = args;
-  if (!customerId || !userId) throw new Error("customerId and userId are required");
+  const { customerId } = args;
+  if (!customerId) throw new Error("customerId is required");
+
+  // Derive the credited account from a SERVER-HELD mapping, never from a caller
+  // argument. `stripeCustomer/$customerId` is written only by the sync service
+  // identity from a verified Stripe webhook / Checkout completion, so it is the
+  // trusted link between a paying customer and an app account. Any userId in
+  // `args` is untrusted and is deliberately ignored — trusting it would let an
+  // admin credit their own account using a stranger's customerId.
+  const mapping = await ctx.bounded.get(`stripeCustomer/${customerId}`);
+  const userId = mapping?.user;
+  if (!userId) throw new Error("no verified mapping for this Stripe customer");
 
   // 1. Pull from a third-party API using a declared secret.
   const resp = await fetch(
@@ -898,13 +920,24 @@ export default async function (args, ctx) {
 ```
 
 Invoke it from your admin dashboard with
-`bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123","userId":"acct_123"}'`
+`bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123"}'`
 (or the TypeScript fetch shown above).
 
 Flow: logged-in admin → invoke (attaches token) → Bounded auth gate (verify token →
 resolve `@user` → evaluate `get(/admins/@user.id) != null` → allow) → the
 function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your rules +
 invariants as the declared sync service identity) → returns JSON.
+
+> **Caller-supplied ids are untrusted.** The `auth` boundary proves *who may
+> invoke* the Function - not *that the Stripe customer belongs to the account being
+> credited*. If the Function trusted a caller-supplied `userId`, an admin (or any
+> admin-reachable path: a support tool, an automation, a compromised session) could
+> pass a stranger's paying `customerId` with their own `userId` and grant
+> themselves a subscription paid for by someone else - or point at an unpaid
+> customer to mark a real subscriber unpaid. Derive the credited account from the
+> server-held `stripeCustomer/$customerId -> user` mapping that only a verified
+> Stripe webhook / Checkout completion (running as the sync service identity) may
+> write, and ignore any `userId` in the invocation args.
 
 ## Scheduled functions (run a function on a cadence)
 
