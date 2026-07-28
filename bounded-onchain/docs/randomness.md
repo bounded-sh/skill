@@ -125,6 +125,16 @@ request and the resolution.** Two rules and one kindness:
    debt, a join timestamp) at FLUSH, or the item collects rewards from before it
    joined.
 
+The deploy gate now flags this shape for you: when a mutating rule both
+resolves VRF randomness (a `getRandomNumber` call, or a read of a reveal
+collection) and reads ANOTHER collection's mutable state via `get()`/
+`getAfter()`, `bounded verify` emits a non-blocking **"VRF resolution basis"
+advisory** naming the collection the outcome resolves against. It cannot judge
+whether your freeze is adequate — reads of your own document and of write-once
+snapshot collections (update and delete `"false"`) stay silent, everything else
+is on you to justify — so treat the advisory as the prompt to apply the rules
+above, not as a verdict either way.
+
 ## 4. Making the DRAW provable, not just the number
 
 Here is the trap. You have a verifiable roll, you walk your weighted list in

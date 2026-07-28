@@ -260,7 +260,37 @@ never dropped. Worse, the pull was no longer `pending`, so the expiry path that
 would have cleaned it up no longer applied either. Permanently stuck, with no
 recovery path and no rule broken.
 
-**The fix: make the legs require each other.** Pick the aggregate as the anchor,
+**The declarative fix: `requiresInBatch`.** A collection-level key that refuses
+any mutating write unless the same atomic batch also writes the named path(s):
+
+```jsonc
+"positions/$positionId": {
+  // bare array = create/update/delete; or per-action:
+  // { "update": ["pool/main", "nftescrow/$positionId"], "delete": ["pool/main"] }
+  "requiresInBatch": ["pool/main"],
+  "rules": { ... }
+}
+```
+
+- Entries may bind the collection's OWN path variables
+  (`"nftescrow/$positionId"` resolves with the matched write's id, exactly like
+  `getAfter(/nftescrow/$positionId)` in a rule).
+- A refused batch answers 403 `incomplete_batch` **naming the missing path**.
+- A single-document `set` or `delete` is a batch of one, so it is refused
+  whenever the collection requires companions for that action — route the whole
+  operation through one `setMany`.
+- Presence is sufficient: the batch is all-or-nothing, so a required write that
+  is present but fails its own rule aborts everything anyway.
+- It is a runtime obligation, not a proof obligation — `bounded verify` output
+  does not change, and the enforcement is fail-closed on every client batch
+  (HTTP and WebSocket alike).
+
+Declare it on every collection whose writes only make sense alongside an
+aggregate, escrow, or ledger leg. The cross-referencing technique below remains
+the deeper tool when you also need the *content* of the companion writes bound,
+not just their presence.
+
+**The content-binding fix: make the legs require each other.** Pick the aggregate as the anchor,
 have it name the documents it is moving for, and have each document require to
 see that aggregate move in the same batch:
 
