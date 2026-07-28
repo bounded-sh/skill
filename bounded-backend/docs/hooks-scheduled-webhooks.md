@@ -181,7 +181,7 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 ```json
 {
   "reminders/$reminderId": {
-    "fields": { "owner": "Address!", "message": "String", "scheduledAt": "UInt", "done": "Bool?" },
+    "fields": { "owner": "String!", "message": "String", "scheduledAt": "UInt", "done": "Bool?" },
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
@@ -189,8 +189,13 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
       "update": "false",
       "delete": "@user.id != null && @data.owner == @user.id"
     },
-    "hooks": { "scheduled": { "fire": "@DocumentPlugin.updateField(\"reminders/log\", \"last\", \"fired\")" } },
+    "hooks": { "scheduled": { "fire": "@DocumentPlugin.updateField(\"firelog/global\", \"last\", \"fired\")" } },
     "dueRows": { "run": "fire", "onComplete": "markDone", "doneField": "done" }
+  },
+  "firelog/global": {
+    "fields": { "last": "String?" },
+    "tier": "durable",
+    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" }
   }
 }
 ```
