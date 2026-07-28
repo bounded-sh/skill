@@ -186,8 +186,11 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
   `hooks.tick` advances state. Clients write to `intents` only.
 - Fog-of-war: each player reads only `view/$playerId` where `$playerId ==
   @user.id`.
-- The per-player rate cap is a `rollingSum`, which **requires `durable` tier**,
-  so the `intents` collection is durable while the rest of the room is ephemeral.
+- The per-player rate cap is a `rollingSum` scoped on `$playerId` (**not**
+  `$roomId` - a room-scoped cap would share one 20/sec budget across the whole
+  room, letting one player eat it and freeze everyone else), and it **requires
+  `durable` tier**, so the `intents` collection is durable while the rest of the
+  room is ephemeral.
   The create rule **pins `@newData.weight == 1`** so a client can't append a
   `weight: 0` intent to bypass the cap. (Recipe for capping an action via a
   separate event log:
@@ -216,18 +219,18 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
       "settleFrom": { "collection": "rooms/$roomId/scores/$playerId", "field": "points", "op": "sum", "as": "total" }
     }
   },
-  "rooms/$roomId/intents/$intentId": {
+  "rooms/$roomId/players/$playerId/intents/$intentId": {
     "tier": "durable",
     "fields": { "player": "String", "kind": "String", "weight": "UInt" },
     "rules": {
       "read": "false",
-      "create": "@user.id != null && @newData.player == @user.id && @newData.weight == 1",
+      "create": "@user.id != null && $playerId == @user.id && @newData.player == @user.id && @newData.weight == 1",
       "update": "false",
       "delete": "false"
     },
     "invariants": [
       { "type": "rollingSum", "name": "input_rate_cap",
-        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$roomId" }
+        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$playerId" }
     ]
   },
   "rooms/$roomId/view/$playerId": {
