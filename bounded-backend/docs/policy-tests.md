@@ -75,10 +75,13 @@ One file per logical concern, `policy-tests/*.json`:
   denial.
 - **`constants`** — merged over the policy's own `constants` block before
   compile. Shrink a cap here to make a limit testable without 21 real writes.
-- **`$Actor` substitution** — recursive over string values of the parsed JSON,
-  applied before execution (safe, no injection). Bare in a path segment
-  (`"launches/$Alice"`). Inside an expression, quote it as a string literal:
-  `"get(/x).owner == '$Alice'"` — unquoted, it isn't valid expression syntax.
+- **`$Actor` substitution** is recursive over string values of the parsed JSON and is applied before execution.
+  A write-step `path` is a JSON string, but a `get(/...)` or `getAfter(/...)` path inside `expr` is parsed as an unquoted expression path.
+  Literal segments in those expression paths accept only ASCII letters, digits, and `_`.
+  A hyphen is not a path-segment character, so an expression such as `get(/runs/run-001)` is invalid even though `"path": "runs/run-001"` is a valid write path.
+  If one fixture ID must appear in both a write path and an expectation path, use a grammar-safe value such as `run_001`, not a UUID or run ID containing `-`.
+  There is no documented quoted-segment escape for a `get()` expression path.
+  When substitution is used as a scalar value in an expression, quote it as a string literal: `"get(/x).owner == '$Alice'"`.
 
 ### Ops
 

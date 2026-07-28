@@ -175,11 +175,16 @@ expressions at deploy. **An omitted rule defaults to deny.**
 | `@time.now` | Server time (seconds) | — |
 | `@contract.address` | The app's contract/escrow address (onchain) | — |
 | `$pathVariable` | Any variable from the path template | — |
-| `get(/path)` | Read another doc, **pre-transaction** state | unquoted path, leading `/` |
+| `get(/path)` | Read another doc, **pre-transaction** state | unquoted path, leading `/`; literal segments use letters, digits, or `_` |
 | `getAfter(/path)` | Read another doc, **post-batch (staged)** state | not in `read` rules |
 
 `get(/users/$userId).role` — property access chains off the call. `@data` /
 `@newData` must reference a specific field (`@data.foo`, never bare `@data`).
+Literal `get()` and `getAfter()` path segments are expression tokens, not quoted document-key strings.
+Use only ASCII letters, digits, and `_` for a literal segment.
+A document ID containing `-` can be written through a normal string path, but it cannot be pasted into an unquoted expression path such as `get(/runs/run-001)`.
+Use a grammar-safe fixture ID such as `run_001` when a policy test must address the same document from both forms.
+There is no documented quoted-segment escape for these expression paths.
 
 > **Identity: use `@user.id` for ownership, `@user.address` only for wallets.**
 > `@user.id` is the universal principal and is present for every authenticated
