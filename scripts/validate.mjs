@@ -314,6 +314,8 @@ if (!solanaInventory) {
   }
 }
 for (const expected of [
+  '| `@App.get` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |',
+  '| `@App.set` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |',
   '| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |',
   '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | blocked | not run | METEORA-CONFIG |',
   '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
@@ -339,6 +341,14 @@ for (const expected of [
   '`@AccountPlugin.getAccountAddress(@contract.address)` when a policy expression',
   'Every `@Solana.invoke` meta address must resolve to a concrete base58 public key',
   'Address resolution does not grant signing authority.',
+  'Solana accounts are world-readable',
+  'Every account sample must use finalized commitment',
+  '"query": "@Solana.rentExemption(@data.space)"',
+  'Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.',
+  'one Devnet `getMultipleAccounts` request with base64 encoding and finalized commitment',
+  '`deployment.apps` contains exactly the authenticated primary and cross-app target publications',
+  'Every action-evidence entry contains exactly `actionId`, `contract`, `publicTransactionSignatures`, `transactions`, and `postconditions`.',
+  'Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift',
 ]) {
   if (!policyPrimitives.includes(expected)) fail(`Solana policy primitives: missing contract-address boundary ${expected}`)
 }
@@ -381,10 +391,59 @@ for (const expected of [
   '`policyDeployReceipt.status` is a separate app publication status',
   'operation-bound readback or recovery receipt may report `null`',
   'Never require receipt `status` to equal `committed` or `deployed`.',
+  '### Recover an in-progress policy deploy',
+  '"code": "deploy_in_progress"',
+  '"recoveryCommand": "bounded deploy ./policy.json',
+  'The server does not expose a recovery ID to collaborators, admins',
+  'The CLI binds the exact operation and exact policy and never submits a second policy mutation.',
+  'HTTP `202` with `state: "processing"`',
+  'A normal deploy whose first policy mutation has an ambiguous outcome uses this same readback/recovery loop automatically.',
+  'It returns to polling after `202` instead of submitting the policy mutation again.',
+  'reads the finalized onchain policy inventory',
+  'publishes the frozen app/runtime target without replaying an onchain mutation',
+  'The retained operation becomes terminal and a fresh normal `bounded deploy`',
+  'the operation remains locked and pollable',
+  'the operation remains locked for manual intervention',
   'Do not infer success from a human line',
   'still requires an existing app ID',
 ]) {
   if (!cliReference.includes(expected)) fail(`CLI reference: missing sanitized onchain receipt contract ${expected}`)
+}
+
+const rootSkill = readFileSync(path.join(root, 'bounded/SKILL.md'), 'utf8')
+for (const expected of [
+  '`409` + `deploy_in_progress` / `operationId`',
+  '`202` with `state: "processing"`',
+  'let it poll and do not start a normal deploy',
+]) {
+  if (!rootSkill.includes(expected)) fail(`Bounded root skill: missing policy recovery boundary ${expected}`)
+}
+
+const deploySkill = readFileSync(path.join(root, 'bounded-deploy/SKILL.md'), 'utf8')
+for (const expected of [
+  '`deploy_in_progress` with an `operationId`',
+  'The verified app owner must run the exact emitted `recoveryCommand`',
+  '`202` with `state: "processing"`',
+  'exact finalized target publishes the frozen app/runtime target without replaying an onchain mutation',
+  'Unavailable finalized state remains locked and pollable',
+  'partial or contradictory state remains locked for manual intervention',
+]) {
+  if (!deploySkill.includes(expected)) fail(`Bounded deploy skill: missing policy recovery boundary ${expected}`)
+}
+
+for (const dropIn of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {
+  const source = readFileSync(path.join(root, dropIn), 'utf8')
+  for (const expected of [
+    '`deploy_in_progress` with an `operationId`',
+    'runs the exact emitted `recoveryCommand` with unchanged policy inputs',
+    '`202` with',
+    'A normal deploy with an ambiguous outcome uses that polling loop',
+    'without replaying an onchain mutation',
+    'unavailable state stays locked and pollable',
+    'partial state requires',
+  ]) {
+    if (!source.includes(expected)) fail(`${dropIn}: missing public policy recovery boundary ${expected}`)
+  }
 }
 
 const keySafety = readFileSync(path.join(root, 'bounded-deploy/docs/key-and-account-safety.md'), 'utf8')

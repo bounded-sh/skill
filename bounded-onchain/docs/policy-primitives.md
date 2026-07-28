@@ -8,9 +8,11 @@ reads, PDAs/ATAs, or cross-app document access from policy bytecode.
 - [Runtime capability gates](#status-first-compiler-support-is-not-deployment-support)
 - [`@contract.address`](#contractaddress-is-a-sentinel-not-the-escrow-address)
 - [`@Bytes`](#bytes)
+- [Prediction-market arithmetic](#prediction-market-arithmetic)
 - [`@Solana`](#solana)
 - [Real-network budgets](#real-network-resource-budget)
 - [Descriptor CPI](#descriptor-cpi-cpi)
+- [Onchain staged document updates](#onchain-staged-document-updates)
 - [Cross-app Documents](#cross-app-documents-app)
 - [Poofnet/offchain parity](#poofnet-and-offchain-parity)
 - [Policy updates](#invariant-and-policy-updates)
@@ -94,6 +96,27 @@ All numeric encoding is little-endian and range checked.
 The example illustrates byte construction; use a verified descriptor/built-in
 plugin when one exists because it carries a narrower account contract.
 
+## Prediction-market arithmetic
+
+The pure constant-product helpers round output down directly.
+Use the documented quotient as written:
+
+```text
+@PredictionMarketPlugin.getYesTokenOutAmm(amountIn, collateralReserve, yesSupply)
+  = floor(amountIn * yesSupply / (collateralReserve + amountIn))
+
+@PredictionMarketPlugin.getCollateralOutAmm(yesIn, collateralReserve, yesSupply)
+  = floor(collateralReserve * yesIn / (yesSupply + yesIn))
+```
+
+Do not re-express either quote as an old reserve minus a separately floored new reserve.
+That form rounds the trader's output up when the division has a remainder and can decrease the constant-product invariant by one unit or more.
+For example, `getYesTokenOutAmm(100, 1000, 10000)` returns `909`, and `getCollateralOutAmm(1000, 1000, 10000)` returns `90`.
+Keep all inputs non-negative integers and apply `@PredictionMarketPlugin.applyFee` to the resulting integer amount when a fee is required.
+An exact zero trade input returns zero.
+A positive trade whose floored output would be zero is rejected as too small.
+As with every discovered Solana function, check the function's current support and verification states before presenting it as available on devnet.
+
 ## `@Solana`
 
 Pure/read primitives include:
@@ -102,6 +125,8 @@ Pure/read primitives include:
 - `lamports(address)`, `data(address, offset, length)`, and `slot`
 - `pda(seeds, programId)`, `pdaBump(...)`, `ata(owner, mint)`
 - `signerAccount(name)` and `rentExemption(space)`
+- `systemProgram`, `tokenProgram`, `token2022Program`, `ataProgram`, `rent`, and `clock` are address constants.
+  `@Solana.tokenProgram` is the classic SPL Token program and can be used as a compile-time account owner.
 
 Mutations include `invoke(programId, metas, data)` and
 `createAccount(name, space, ownerProgramId)`.
@@ -121,6 +146,90 @@ Security rules:
   are non-negative u64 little-endian.
 - Real account/ATA creation consumes rent. Poofnet funding does not prove the
   same wallet has sufficient SOL on devnet/mainnet.
+
+When `@Solana.createAccount` spends from the app escrow, do not expose a separate public "fund escrow" action.
+That lets one caller deposit shared funds that another caller can consume.
+Make the caller fund the exact current rent and create the account in one hook.
+This complete policy creates a durable receipt document plus a named app PDA:
+
+```json
+{
+  "auth": {
+    "wallets": true
+  },
+  "acceptance/$runId/rawAccounts/$name": {
+    "onchain": true,
+    "tier": "durable",
+    "fields": {
+      "actor": "Address!",
+      "space": "UInt!",
+      "rentLamports": "UInt!"
+    },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null && @newData.actor == @user.address && @newData.space >= 8 && @newData.space <= 128 && @newData.rentLamports == @Solana.rentExemption(@newData.space)",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@TokenPlugin.transfer(@user.address, @contract.address, @TokenPlugin.SOL, @newData.rentLamports) && @Solana.createAccount($name, @newData.space, @Solana.tokenProgram)"
+      }
+    },
+    "queries": {
+      "rentForSpace": {
+        "returnType": "UInt",
+        "query": "@Solana.rentExemption(@data.space)"
+      },
+      "address": {
+        "returnType": "Address",
+        "query": "@Solana.signerAccount($name)"
+      },
+      "exists": {
+        "returnType": "Bool",
+        "query": "@Solana.account(@Solana.signerAccount($name)) != null"
+      }
+    }
+  }
+}
+```
+
+Use a wallet-authenticated named query to obtain the current rent, then write that exact value:
+
+```sh
+bounded --json --env staging data query \
+  --app-id <app-id> \
+  --path acceptance/<run-id>/rawAccounts/example \
+  --name rentForSpace \
+  --args '{"space":64}'
+
+bounded --json --env staging data set \
+  --app-id <app-id> \
+  --path acceptance/<run-id>/rawAccounts/example \
+  --data '{"actor":"<wallet-address>","space":64,"rentLamports":<exact-query-result>}'
+```
+
+Extract the rent from the query receipt's `.result` field and place that exact canonical integer in `rentLamports`.
+Confirm the returned public signature before reading `acceptance/<run-id>/rawAccounts/example`.
+Then run:
+
+```sh
+bounded --json --env staging data query \
+  --app-id <app-id> \
+  --path acceptance/<run-id>/rawAccounts/example \
+  --name address \
+  --args '{}'
+
+bounded --json --env staging data query \
+  --app-id <app-id> \
+  --path acceptance/<run-id>/rawAccounts/example \
+  --name exists \
+  --args '{}'
+```
+
+Require `address.result` to decode as a Solana public key and `exists.result` to equal `true`.
+Keep the equality in policy so a stale or forged client value fails before it can overfund or underfund the shared escrow.
+Use `isPassthrough: true` only when the application deliberately does not need a durable Bounded document or mirror receipt for the action.
 
 `@Solana.invokeAttested` is reserved and disabled until its client instruction
 builder is complete. Use descriptor `@CPI.*` for attested instruction bytes.
@@ -161,6 +270,73 @@ On current devnet, `@CPI.memoNote` and `@CPI.transferLamports` are source-presen
 All ten Kamino descriptors are unsupported because Kamino is unavailable on devnet.
 Do not describe the generic CPI tag or descriptor registry as proof that a particular descriptor is usable.
 
+## Onchain staged document updates
+
+`@DocumentPlugin.updateField(path, field, value)` is available to onchain policy bytecode even though `@DocumentPlugin.putDocument` is offchain-only.
+The value may be any policy value, including numbers, booleans, strings, structured values, or `null`.
+A `null` value deletes the named field.
+
+Use `get(path)` for the document's pre-transaction state and `getAfter(path)` for its staged post-write state.
+Both functions take exactly one policy path and return the document or `null`.
+An onchain hook may sequence a pre-state read, one or more `updateField` calls, and a post-state read with `&&`.
+Keep fields that the hook derives absent or null in the caller's create rule so a caller cannot forge proof fields.
+This complete policy records a 7-to-12 transition:
+
+```json
+{
+  "auth": {
+    "wallets": true
+  },
+  "acceptance/$runId/counters/$counterId": {
+    "onchain": true,
+    "tier": "durable",
+    "fields": {
+      "owner": "Address!",
+      "value": "UInt"
+    },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null && @newData.owner == @user.address && $counterId == 'main'",
+      "update": "false",
+      "delete": "false"
+    }
+  },
+  "acceptance/$runId/snapshots/$snapshotId": {
+    "onchain": true,
+    "tier": "durable",
+    "fields": {
+      "actor": "Address!",
+      "nextValue": "UInt!",
+      "before": "UInt?",
+      "after": "UInt?"
+    },
+    "rules": {
+      "read": "true",
+      "create": "@user.address != null && @newData.actor == @user.address && @newData.nextValue > 0 && @newData.before == null && @newData.after == null && get(/acceptance/$runId/counters/main).owner == @user.address && $snapshotId == 'proof'",
+      "update": "false",
+      "delete": "false"
+    },
+    "hooks": {
+      "onchain": {
+        "create": "@DocumentPlugin.updateField(/acceptance/$runId/snapshots/$snapshotId, 'before', get(/acceptance/$runId/counters/main).value) && @DocumentPlugin.updateField(/acceptance/$runId/counters/main, 'value', @newData.nextValue) && @DocumentPlugin.updateField(/acceptance/$runId/snapshots/$snapshotId, 'after', getAfter(/acceptance/$runId/counters/main).value)"
+      }
+    }
+  }
+}
+```
+
+Choose a fresh run ID for every execution.
+Create `acceptance/<run-id>/counters/main` with `{"owner":"<wallet-address>","value":7}` and confirm it.
+Then create `acceptance/<run-id>/snapshots/proof` with only `{"actor":"<wallet-address>","nextValue":12}` and confirm it.
+Poll the two mirrors separately.
+Require the counter to retain its owner and reach `value: 12`.
+Require the snapshot to contain the original actor and `nextValue`, plus hook-derived `before: 7` and `after: 12`.
+The initial counter creation is one separately confirmed transaction.
+Snapshot creation plus both staged `updateField` effects is one later Solana transaction.
+After confirmation, poll the Bounded mirror for every affected document separately.
+Local compilation or a successful immediate read does not establish live devnet support.
+Check the individual `get`, `getAfter`, and `@DocumentPlugin.updateField` rows in the capability status before claiming the flow is live verified.
+
 ## Cross-app Documents (`@App`)
 
 - `@App.get(appId, path)` reads the target app's onchain Document PDA.
@@ -170,8 +346,28 @@ Do not describe the generic CPI tag or descriptor registry as proof that a parti
 - Targets with enabled invariants currently reject `@App.set`; accepting them
   without folding target invariant state into the outer transaction would be a
   bypass.
-- Query contexts must not expose cross-app data unless target read authorization
-  can be evaluated. Missing authorization machinery fails closed.
+- `@App.get` reads the target Document PDA directly during onchain execution.
+  Solana accounts are world-readable, so this primitive does not enforce the target Bounded read rule and must not be used for confidential data.
+- Authorization to poll the target through Bounded's mirror API is a separate acceptance prerequisite.
+  Use `read: "true"` only for deliberately public fixture data, or authenticate the polling principal under the target app's normal read rule.
+
+To prove this on Devnet, deploy a distinct target Bounded app instead of substituting the source app:
+
+1. Give the target a create-only onchain path with the exact field schema the source writes.
+2. Make the target create rule evaluate the current transaction user, including `@user.address`, the target path variables, and every source-binding field written into the document.
+3. Keep target onchain hooks and invariants absent.
+   The runtime must fail closed if either is present or if the target rule attempts another nested write.
+4. Make the target mirror readable to the acceptance principal independently of `@App.get`.
+   Treat every field stored in the onchain target Document as public.
+5. Compute the current rent exemption for the target document's maximum serialized space.
+   In the source action, atomically transfer enough SOL from the caller into the source app escrow and require the funded amount to cover that live rent result before calling `@App.set`.
+6. Finalize the one source transaction, then independently poll the source mirror and the distinct target app mirror.
+7. Require the distinct target mirror to match owner, source app ID, source run ID, and value exactly.
+8. Execute a separate source-app Boolean named query using `@App.get(...) != null` and require it to observe that target Document.
+   Do not use `@App.get(...).field` in policy expressions because the hosted verifier does not expose field access on this primitive.
+
+Keep `@App.get` and `@App.set` unverified until one sanitized retained run proves all of those observations against the deployed source and target revisions.
+A compiler tag, a same-app substitute, target deployment alone, or one immediate read is not cross-app support evidence.
 
 ## Poofnet and offchain parity
 
@@ -224,4 +420,83 @@ Before enabling a new primitive or runtime version:
 - Exercise create/update/delete, readonly calls from offchain policies, replay,
   stale delivery, mirror subscription, and rollback on local validator/Surfpool.
 - On devnet, assign a run ID, confirm the public transaction, and then poll the exact expected Bounded postcondition.
+- A client preflight or transaction simulation rejection is not proof of an onchain invariant denial.
+  Configure a trusted Devnet RPC through `SOLANA_DEVNET_RPC_URL` before CLI submission.
+  Never echo, log, commit, or retain a secret RPC URL.
+  For headless wallet-keypair acceptance, the public path is `bounded --json --env staging data set --app-id <app-id> --path <path> --data '<json>' --skip-preflight`.
+  The CLI uses its selected credential source, signs and submits, and emits only `{"transactionId":"<public-signature>","chain":"solana_devnet"}`.
+  It never emits signed bytes.
+  Poll `getSignatureStatuses` until the signature is finalized with an error and retain its public finalized slot.
+  Treat the numeric custom error as necessary but insufficient whenever separate Anchor error enums can assign the same number.
+  Fetch `getTransaction` at finalized commitment, require `meta.err` and slot to match the status evidence, and require the exact authoritative Anchor error name plus the expected runtime program's matching failure marker.
+  Retain only public `meta.err` and the minimum sanitized log markers needed to identify that error.
+  Derive the denied document PDA from the runtime program, app ID, and absolute document path.
+  The document seed is `sha256(utf8("tarobase_document" + appId + absolutePath))`, passed as the sole seed to `findProgramAddressSync`.
+  Starting only after denial finalization, sample both the Bounded mirror and `getAccountInfo` at least four times across a measured monotonic observation window.
+  Every mirror sample must show the exact pre-denial collection unchanged and the forbidden path absent.
+  Every account sample must use finalized commitment, set `minContextSlot` to at least the denial slot, and return `null` for the denied document PDA.
+  Fail the acceptance run if a forbidden row or account appears in any later sample within that window.
+  The canonical Devnet lab uses four observations spanning at least 12 measured monotonic seconds and rejects a declared duration that did not actually elapse.
+  If the command or RPC fails before returning a public signature, the run has no landed-denial evidence and must remain unverified.
+  For a Phantom UI, `setMany(writes, { shouldSubmitTx: false })` returns the signed transaction without submitting it.
+  Serialize it only in memory, call the configured Devnet connection's `sendRawTransaction(bytes, { skipPreflight: true, maxRetries: 3 })`, discard every byte reference immediately, and retain only the public signature.
+  Never print, log, commit, or persist the signed transaction.
+- Before hashing or displaying a wallet-bound review, replace every signer placeholder with the connected wallet address.
+  Reject unsafe JavaScript integer values, preserve validated safe integers exactly, and encode any bigint as its canonical base-10 string before deterministic serialization.
+  Build a review envelope containing a schema version, environment, network, protocol, app ID, the complete public release marker, action ID, wallet address, the materialized logical operation, and the exact Bounded SDK request intent that execution will call.
+  Hash the canonical UTF-8 envelope with SHA-256, freeze it deeply, and execute only the frozen operation whose independently recomputed SDK-intent digest still matches.
+  Invalidate the review and require a new preflight and digest when the wallet, form, action, path, query arguments, write document, policy/release marker, or SDK request intent changes.
+  The current public SDK does not expose the final unsigned Solana transaction message before Phantom approval, so do not claim that this review digest covers the recent blockhash, compute-budget instructions, resolved account metas, lookup tables, or instruction bytes.
+  The SDK and runtime validate the built transaction intent separately after the frozen logical review.
+  If a future builder API exposes exact unsigned message bytes before wallet approval, add a separately labeled message digest rather than silently changing the meaning of the logical review digest.
+- A non-null named-query result is not sufficient.
+  Validate the declared return type and the action predicate.
+  A `UInt` result is either a nonnegative safe integer, a nonnegative bigint, or a canonical decimal string matching `^(0|[1-9][0-9]*)$`.
+  A Pyth decimal is a string matching `^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$`; reject exponential notation, `NaN`, infinities, and JavaScript numeric coercion.
+  Known-vector booleans must equal `true`, Solana addresses must decode as public keys, and an ORAO result must satisfy `0 <= roll < span`.
+- Bind retained live acceptance to the public deployed release marker and independently read the Devnet Program and ProgramData accounts at the beginning and end of the run.
+  For the canonical staging lab, fetch `https://bounded-solana-devnet-lab.staging.bounded.page/bounded-solana-lab-release.json` with caching disabled.
+  Confirm that exact base URL from the `slugUrl` returned by `bounded domains list --app-id <app-id> --env staging --json` or the `url` retained from the exact successful staging site-deploy receipt.
+  Require the JSON field itself instead of copying a human-rendered hostname.
+  Do not use `bounded apps inspect` as a URL source; it proves only the active policy/runtime publication.
+  Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.
+  Require version 2, release `bounded-solana-devnet-lab`, environment `staging`, protocol `realtime_devnet`, the exact 40-hex source commit and 24-hex app ID, and a 64-hex artifact SHA-256.
+  The nested `program` object contains exactly `network`, `programId`, `programDataAddress`, `authority`, `lastDeployedSlot`, `allocatedBytes`, `dumpSha256`, `commitment`, and `contextSlot`.
+  Require finalized commitment and a nonnegative integer context slot.
+  The canonical cross-app lab marker contains the exact active primary publication in `policy` and one distinct private target as `{ "role": "cross_app", "provenance": <active-publication> }` in `targets`.
+  An active publication contains exactly `schemaVersion`, `appId`, `environment`, `protocol`, `sitePrivate`, `submittedPolicySha256`, `resolvedPolicySha256`, `runtimeArtifactSha256`, and `receipt`.
+  Its receipt contains exactly `state`, `operationId`, `status`, `policyRevisionCount`, and `runtimePublicationRevision`.
+  Require committed and available receipts, positive revision numbers, the intended policy hashes, and exact equality between marker publications and fresh authenticated `bounded apps inspect --json` results.
+  Its artifact digest is SHA-256 over every built-site file except the marker, sorted by slash-normalized relative path, updating the hash with `<path-byte-length>:<path>:<file-byte-length>:` followed by the raw file bytes for each file.
+  Read the Program and ProgramData accounts in one Devnet `getMultipleAccounts` request with base64 encoding and finalized commitment so both values share one response context slot.
+  Derive ProgramData as the PDA whose seed is the program public key under `BPFLoaderUpgradeab1e11111111111111111111111`.
+  Require a 36-byte executable Program account with loader state 2 and the derived ProgramData address.
+  Require a non-executable loader-owned ProgramData account with state 3, little-endian deploy slot in bytes 4 through 11, authority option 1 in byte 12, and authority public key in bytes 13 through 44.
+  `allocatedBytes` is the byte length after the 45-byte ProgramData header.
+  `dumpSha256` is SHA-256 over exactly those post-header bytes.
+  Record the independent observation as exactly `network`, `programId`, `programDataAddress`, `authority`, `deployedSlot`, `allocatedBytes`, `dumpSha256`, `commitment`, and `contextSlot`.
+  Require the Program account, ProgramData PDA, owner, authority, deploy slot, allocation, and executable hash to match the marker.
+  At the end of the run, require the marker and active app publications to remain identical, require all observed program facts except the context slot to remain identical, and require the ending finalized context slot not to move backward.
+- Treat the full sanitized receipt as authoritative.
+  Receipt schema version 2 includes `schemaVersion: 2`, `runId`, `network`, `checkedAt`, `commit`, `evidencePath`, `qualifying`, `appId`, `deployment`, `walletAddress`, `startingBalanceLamports`, `runner`, `summary`, and `scenarios`.
+  Require those exact top-level keys, a canonical public Solana wallet address, a canonical decimal starting balance, the exact five terminal-status counts, and runner version 3 with `keySource: "global"`.
+  Do not name the public runner field `credentialSource`; credential-like evidence keys are intentionally rejected by sanitization.
+  `deployment.marker` is the exact public marker above.
+  `deployment.program` is the exact independent finalized observation above.
+  `deployment.apps` contains exactly the authenticated primary and cross-app target publications, which must equal the corresponding marker publications.
+  Require `receipt.commit == deployment.marker.commit`, `receipt.appId == deployment.marker.appId`, and the retained artifact digest to equal `deployment.marker.artifactSha256`.
+  Require every marker program field to equal the independently observed field, with `lastDeployedSlot == deployedSlot`.
+  Each scenario includes its ID, terminal status and reason, commitment, exact covered actions, action evidence, public transaction signatures and explorer links, public addresses and explorer links, sanitized transactions, and postconditions.
+  Every action-evidence entry contains exactly `actionId`, `contract`, `publicTransactionSignatures`, `transactions`, and `postconditions`.
+  The contract pins the exact transaction outcomes, ordered postcondition kinds, minimum attempts, and minimum observation window for that action.
+  Require a nonempty fresh postcondition delta, exact signature equality with the action's transaction records, exact contract satisfaction, and unique ownership for every scenario postcondition receipt.
+  For a passing scenario, require the complete ordered aggregate postcondition list, including independent RPC account probes, to equal the flattened action-owned postcondition lists exactly.
+  Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift, free-floating postconditions, or an aggregate scenario signature, transaction, or postcondition list that differs from the ordered action-owned records.
+  The compact index projection keeps the top-level run identity, app and deployment evidence plus each scenario's ID, status, reason, commitment, exact actions, action evidence, public transaction signatures, explorer links, transactions, and postconditions.
+  Validate that compact projection against its own exact schema.
+  It intentionally omits the full receipt's wallet, starting balance, runner, summary, and scenario address arrays and must never be rehydrated into a partial object for full-receipt validation.
+  Require authoritative `denialProof` only on the invariant-denial action's finalized failed transaction, reject that field everywhere else, and allow ordinary finalized failures in nonpassing scenarios to retain only their sanitized non-null error.
+  Recompute that projection from the full receipt and compare it structurally before use.
+  Hash the raw full receipt file with SHA-256 as a generator input.
+  Load the scenario manifest with `git show <receipt.commit>:<scenario-manifest-path>`, require exact scenario IDs, action lists, function membership, and postcondition kinds, and never let a later scenario or function inherit an older pass.
 - Do not accept a toast, simulation, returned signature, or immediate read as complete evidence.

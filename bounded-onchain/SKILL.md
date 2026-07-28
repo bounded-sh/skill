@@ -29,7 +29,7 @@ the root **bounded** skill.
 | Onchain mirror/indexer, Helius webhook, missed transaction, outage catch-up, replay, reconciliation, or DLQ recovery | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | "Transaction too large", verify/deploy rejected for **transaction size**, 413 on an onchain write, hook over the 1182/1232-byte limit, splitting hooks, argument/string bytes, lookup tables | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Policy upgrade governance, immutable apps, controller policies, manifest signing, stuck update sessions, or governance recovery | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
-| Policy-native bytes, PDAs, account reads, `@contract.address`, app escrow address resolution, generic CPI, cross-app reads/writes, runtime capability gates, or Poofnet/onchain parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| Policy-native bytes, PDAs, account reads, exact-rent account creation, landed invariant-denial proof, `shouldSubmitTx: false`, exact wallet-bound review, query-result predicates, deployed ProgramData evidence, `get`, `getAfter`, onchain `@DocumentPlugin.updateField`, `@contract.address`, app escrow address resolution, generic CPI, cross-app reads/writes, prediction-market arithmetic, runtime capability gates, or Poofnet/onchain parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
 | Onchain update payloads, patch semantics, readonly `!` fields, or `FieldReadOnly` | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
 | Ambiguous Solana custom errors, stale numeric decoding, or an Anchor error name in live logs | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
@@ -53,7 +53,7 @@ the root **bounded** skill.
 | "Transaction too large", tx-size gate, packet limit, 1232, oversized hook | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Helius, indexer, mirror, reconciliation debt, missed transaction, replay, cursor, tombstone, DLQ | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | `governance.upgrade`, policy controller, immutable, manifest root, governed session, recovery, extend, cancel | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
-| `@CPI`, `@Solana`, `@Bytes`, `@App`, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, custom program, PDA seeds, account data, cross-app, runtime v2, Poofnet parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| `@CPI`, `@Solana`, `@Bytes`, `@App`, `@DocumentPlugin.updateField`, `get`, `getAfter`, `@PredictionMarketPlugin`, `getYesTokenOutAmm`, `getCollateralOutAmm`, `shouldSubmitTx`, `skipPreflight`, ProgramData, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, custom program, PDA seeds, account data, cross-app, runtime v2, Poofnet parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
 | `FieldReadOnly`, readonly `!` update, onchain patch | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
 | Anchor error name, ambiguous custom error number, stale IDL error table | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [docs/randomness.md](docs/randomness.md) |
@@ -77,6 +77,9 @@ the root **bounded** skill.
 - Treat discovery, deployed-runtime support, and live-network verification as three independent states.
 - Check the [Solana devnet capability catalog](docs/solana-capability-status.md) before proposing any plugin or primitive.
 - Never infer devnet support from a compiler tag, manifest, proof contract, Poofnet model, lookup-table entry, or local validator test.
+- When live evidence uses a hosted release marker, resolve its environment-qualified site URL from `bounded domains list --app-id <id> --env <environment> --json` `slugUrl` or the exact successful site-deploy receipt `url`.
+  Require the JSON field itself for staging evidence instead of copying a human-rendered hostname.
+  `bounded apps inspect` proves the active policy/runtime publication and carries no hosted URL.
 - Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
 - Current chain-backed named queries belong on `onchain: true` paths and require an authenticated `userAddress` at execution time.
 - Do not recommend an `onchain: false` view for an offchain-only plugin read until standalone chain-query execution is fixed.

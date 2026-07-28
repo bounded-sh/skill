@@ -54,6 +54,7 @@ the web account. The CLI has two account-source families:
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
+| `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
@@ -229,7 +230,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment` |
+| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository (read-only token per invocation) | `--branch`, `--link` |
 | `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |
 
@@ -290,6 +291,134 @@ Never require receipt `status` to equal `committed` or `deployed`.
 Require `state == "committed"`, retain the operation ID and revision fields as the mutation receipt, and record publication `status` verbatim.
 If a release requires the runtime or hosted app to be available, confirm that condition independently after the committed policy receipt.
 Do not infer success from a human line or omit the receipt when recording provenance.
+
+### Recover an in-progress policy deploy
+
+HTTP `409` with stable code `deploy_in_progress` means an earlier policy operation still owns the app's deploy slot.
+When the caller is the verified app owner and the app's active policy status identifies one exact recoverable operation and policy target, the response also contains its validated lowercase RFC 4122 UUIDv4 `operationId`.
+The server does not expose a recovery ID to collaborators, admins, unrelated identities, or malformed and legacy states.
+Its generic message remains deliberately opaque.
+
+The current CLI turns the owner-visible response into one structured error:
+
+```json
+{
+  "error": "<human error plus recovery guidance>",
+  "code": "deploy_in_progress",
+  "operationId": "<uuid>",
+  "recoveryCommand": "bounded deploy ./policy.json --app-id <id> --recover-operation <uuid> --env staging"
+}
+```
+
+Run the exact emitted `recoveryCommand` under the same verified owner identity.
+It preserves the original policy path, app ID, constants, selected policy environment, source-sync choice, and control-plane environment.
+Keep the policy file and every input byte unchanged.
+The CLI binds the exact operation and exact policy and never submits a second policy mutation.
+The server may re-run the policy proof and compiler for that unchanged target before it can reconcile the retained operation safely.
+HTTP `202` with `state: "processing"` means the exact recovery is still in progress.
+The CLI returns to operation-bound readback and continues bounded polling; let it finish instead of starting a parallel or normal deploy.
+A normal deploy whose first policy mutation has an ambiguous outcome uses this same readback/recovery loop automatically.
+It returns to polling after `202` instead of submitting the policy mutation again.
+If polling times out while the operation remains processing, run the same exact `recoveryCommand` again later.
+Do not treat that timeout as permission to create a fresh operation.
+Successful recovery returns action `recoverPolicyDeploy` with the normal committed `policyDeployReceipt`.
+Do not rerun a normal deploy, guess an operation ID, copy one from another app, or scrape internal storage.
+If the response has no operation ID, confirm the active identity with `bounded whoami` and let the verified owner obtain and run the recovery command.
+After recovery commits, poll `bounded apps inspect --app-id <id> --json` for the expected active publication instead of treating the recovery line as final provenance.
+
+For a Solana Devnet policy recovery, the server reads the finalized onchain policy inventory before deciding what the retained operation may publish:
+
+- If finalized state exactly matches the retained target, recovery publishes the frozen app/runtime target without replaying an onchain mutation.
+- If finalized state exactly matches the source, the earlier chain mutation did not apply.
+  The retained operation becomes terminal and a fresh normal `bounded deploy` creates the next operation.
+- If finalized state is temporarily unavailable, the operation remains locked and pollable.
+  Keep using the exact recovery command after a polling timeout.
+- If finalized state is partial or contradictory, the operation remains locked for manual intervention.
+  Do not run a normal deploy or attempt a guessed repair.
+
+### Exact release provenance
+
+`bounded apps inspect --app-id <id> --json` reads the immutable publication
+that currently authorizes runtime requests.
+It is the recovery seam to use after a committed deploy, and it is also useful
+when a release starts from an app selected through `bounded apps list`.
+The caller must own or collaborate on the app.
+Unknown and unauthorized app IDs both return not found.
+Legacy apps, an in-flight publication, a non-policy runtime head, or malformed
+revision state fail closed instead of returning approximate evidence.
+
+The successful JSON shape is:
+
+```json
+{
+  "ok": true,
+  "schemaVersion": 1,
+  "appId": "6a37ecc89def2f10f13aa922",
+  "environment": "development",
+  "protocol": "realtime_devnet",
+  "sitePrivate": false,
+  "submittedPolicySha256": "<64 lowercase hex>",
+  "resolvedPolicySha256": "<64 lowercase hex>",
+  "runtimeArtifactSha256": "<64 lowercase hex>",
+  "receipt": {
+    "state": "committed",
+    "operationId": "<publication id>",
+    "status": "available",
+    "policyRevisionCount": 7,
+    "runtimePublicationRevision": 9
+  }
+}
+```
+
+The normalized app `environment` can be `development` while the CLI control
+plane selection is `--env staging`; the `protocol` is the network-specific
+runtime contract.
+This inspection carries no site host or URL.
+Use the environment-qualified `slugUrl` from `bounded domains list --app-id <id> --env <environment> --json`, or the `url` retained from the exact successful `bounded site deploy ... --env <environment> --json` receipt, for hosted-site provenance.
+For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
+For release automation, require an exact app ID, protocol, site privacy,
+submitted policy digest, `state == "committed"`, `status == "available"`,
+positive revisions, and the operation/revisions from the deploy receipt.
+Poll this read-only command for a bounded window after deploy because the
+active read can lag the mutation receipt.
+Fifteen attempts at two-second intervals is the canonical staging release
+window; fail closed if no exact match appears.
+Run `bounded tests run --deployed-policy --app-id <id> --json` only after that
+exact active read when the release must prove the deployed revision rather
+than the local policy override.
+Inspect again after the tests and require the operation, digests, and revisions
+to be unchanged.
+When the same release also uploads a hosted site, treat that inspection as
+provisional until the site upload and independent byte proof finish.
+Inspect the app again after the upload and require the exact operation,
+submitted and resolved policy digests, runtime artifact digest, revisions,
+availability, protocol, and site privacy to remain unchanged.
+Fail the release if the active publication changes at any point.
+
+For a release whose acceptance evidence overlays a capability or support catalog, do not put mutable acceptance evidence into the generated site artifact whose exact bytes that evidence certifies.
+That creates a fixed point: acceptance certifies artifact D1, adding the receipt produces different bytes D2, and the embedded receipt no longer certifies the deployed artifact.
+Generate only the immutable inventory baseline before deployment.
+After every successful deployment, publish a public-read and authority-write Bounded release record with `state: "deployed_unverified"`, the deployed commit, app ID, exact site deployment and hashes, and exact active policy/runtime publication.
+Publish the root and all ordered scenario-contract records in one atomic `bounded data set-many` request, then independently read and compare every public document.
+Keep the full atomic request below the realtime request-size limit as well as the 100-document bundle limit.
+That new epoch invalidates every earlier acceptance receipt, even when its program or policy happens to match.
+
+After acceptance independently re-observes the exact current site bytes, active publications, and any network-specific provenance, first persist a sanitized local receipt for recovery.
+Then atomically publish every scenario result plus an `acceptance_verified` root bound to the exact release fingerprint, full receipt hash, ordered scenario contract, and child index.
+Independently poll every public document instead of trusting the mutation response or an immediate read.
+Treat `acceptance_verified` as proof that the receipt integrity and release provenance were verified, not as an all-pass claim.
+Promote a scenario only when its own status is `pass`, and promote a capability only when every scenario mapped to it passes.
+Any missing, malformed, stale, unreadable, extra, or hash-mismatched root, index, or child must fail closed to the static classification.
+
+Preserve declared function, action, and postcondition order inside a scenario-contract hash.
+Sort only the outer scenario list when a stable aggregate needs ID ordering.
+If policy expressions cannot parse a JSON child index, publish separate deployment-time contract records and require each accepted child hash to equal its contract record.
+Allow those contract records to change only while the same atomic root transition is `deployed_unverified`, so an accepted release cannot expose a mixed contract epoch.
+
+If local retention succeeds but the atomic public write or readback fails, do not rerun state-changing acceptance work under the retained run ID.
+Provide an explicit republish command that loads that exact retained receipt, rechecks the current source, app, authority, site bytes, active publications, and network provenance before and after publication, retries the same atomic bundle, and independently polls its public projection.
+When retention is version-controlled, require exactly the unstaged index change, unstaged current-deployment change, and untracked receipt for the requested run, validate their canonical projections, reject every other dirty or untracked path, and keep `HEAD` equal to the receipt commit.
+Do not retain credentials, secret RPC URLs, policy bytes, runtime bundles, signed transactions, or full command environments with any receipt.
 
 ### `tests` — policy tests
 
@@ -470,6 +599,38 @@ Full treatment: [environments.md](environments.md).
 | `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. Needs the **owning wallet** identity — a plain web-login session is platform-scoped and can't preview (the command says so). The link is a bearer secret until it expires — don't post it publicly. | `bounded site preview --app-id <id> --open` |
 | `site proof [status\|on\|off]` | Opt-in public proof surface: the /__bounded/boundaries page (proof stamp, plain-English invariants, decline count) + the site's Boundaries corner badge. OFF by default | `bounded site proof on --app-id <id>` |
 
+For release-critical public sites, retain the exact successful `site deploy
+--json` receipt and independently verify every uploaded byte through the
+canonical public host.
+Use the receipt's nonempty `url` as the canonical host.
+When recovering without that receipt, run `bounded domains list --app-id <id> --env <environment> --json` and use its nonempty `slugUrl`.
+For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
+`bounded apps inspect` proves the active policy/runtime publication and does not return a host.
+Production normally returns `https://<slug>.bounded.page`, while an isolated staging control plane may return `https://<slug>.staging.bounded.page`.
+Do not rewrite an environment-qualified URL to match the production examples below.
+The current deployment exposes:
+
+```text
+GET https://<canonical-host>/__bounded/site-provenance.json?deployId=<deploy-id>
+GET https://<canonical-host>/__bounded/site-provenance/file?deployId=<deploy-id>&path=<encoded-path>
+```
+
+The manifest returns only `schemaVersion`, `appId`, `deployId`, and sorted file
+records with `path`, `size`, `sha256`, and `contentType`.
+The file endpoint returns the immutable current-deployment bytes with
+`X-Bounded-Content-Sha256`.
+Fetch the manifest, hash every file independently, then fetch the manifest
+again and require it to be unchanged.
+A release marker inside the site must be parsed from those independently
+fetched bytes, and its artifact digest must be recomputed from the same
+immutable file set.
+Do not use a separately fetched mutable marker as proof of the deployed bytes.
+A stale deployment ID returns a conflict instead of silently proving the new
+deployment.
+Private sites keep these routes behind the normal site gate.
+Never treat a deploy toast, a root-page fetch, or the mutable canonical file
+key alone as proof that every requested file landed.
+
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md). Frontend hosting: [frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).
 `<slug>-api.bounded.page` routes to your backend; `<slug>.bounded.page` serves the site.
@@ -480,7 +641,7 @@ The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) 
 |---|---|---|
 | `domains slug [slug]` | Claim one canonical vanity `<slug>.bounded.page` for an app; `--release` frees it | `bounded domains slug myapp --app-id <id>` |
 | | A freshly claimed slug can take up to ~1 minute to serve at `/` (edge-map propagation); the CLI probes the root and says "propagating" until it actually serves | |
-| `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + `slugUrl` fields in `--json`) | `bounded domains list --app-id <id>` |
+| `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + environment-qualified `slugUrl` fields in `--json`) | `bounded domains list --app-id <id> --env <environment> --json` |
 | `domains add <domain>` | Add a custom frontend domain you own (Pro); prints the DNS records to create | `bounded domains add app.yourdomain.com --app-id <id>` |
 | `domains remove <domain>` | Remove a **custom domain** and its routing/origin entry. Does NOT free a vanity slug — that is `domains slug --release`; using it on a slug 404s `domain_not_found` | `bounded domains remove app.yourdomain.com --app-id <id>` |
 
@@ -521,6 +682,19 @@ same sanitized `--json` receipt:
 
 The JSON receipt never includes the raw server response, serialized
 transaction, signed transaction bytes, credentials, or an RPC URL.
+
+For a successful direct realtime write, the same commands return the exact
+sanitized receipt below:
+
+```json
+{"transactionId":"realtime-direct","chain":"realtime_offchain"}
+```
+
+That receipt proves the CLI command completed without exposing the raw
+transport response.
+It does not report or prove the number of committed documents.
+For release or acceptance evidence, independently read and compare every
+expected public document after the atomic write.
 Confirm `transactionId` independently at the required commitment, then poll the
 exact expected Bounded mirror, query, reveal, account, deletion, or denied
 state.

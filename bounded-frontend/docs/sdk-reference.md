@@ -161,6 +161,34 @@ A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
 composition, and failure codes: [data-plane.md](../../bounded-backend/docs/data-plane.md).
 
+For a Solana wallet UI that deliberately needs a failed transaction to land as denial evidence, pass `{ shouldSubmitTx: false }`:
+
+```ts
+const built = await setMany(
+  [{ path: "caps/denied", document: { actor: walletAddress, weight: 1 } }],
+  { shouldSubmitTx: false },
+);
+
+const raw =
+  typeof built.signedTransaction === "string"
+    ? Uint8Array.from(atob(built.signedTransaction), (byte) => byte.charCodeAt(0))
+    : built.signedTransaction.serialize();
+const signature = await connection.sendRawTransaction(raw, {
+  skipPreflight: true,
+  maxRetries: 3,
+});
+```
+
+This option signs but does not submit.
+It is supported by Solana wallet providers and is intentionally unsupported by wallet providers that can only sign and submit atomically.
+It is not a pre-approval transaction builder: Phantom approval has already occurred when the signed transaction is returned.
+For a review shown before approval, bind and freeze the exact logical SDK request intent.
+Do not claim the review hashes final message bytes unless a separate builder API actually returned those unsigned bytes before approval.
+Keep the signed transaction only in memory, discard it immediately after submission, and never print, log, commit, or persist it.
+Poll the public signature to a finalized failed state before checking the unchanged Bounded mirror.
+Start any stable mirror or denied-account absence observations only after that finalized slot.
+For a headless keypair, prefer the CLI's `data set --skip-preflight` path so application code never reads the private key.
+
 Inside Bounded Functions, the same batch shape is available as
 `ctx.bounded.setMany([{ path, document }, ...])`; it targets the same data-plane
 transaction path and is the right API for function-assembled settlements.
