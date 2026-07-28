@@ -58,7 +58,7 @@ the hook write the NORMALIZED value into a hook-owned event collection and decla
 there — poof.fun's trade feed is the canonical example (swap hook → `flow/$slug/ev/$id {size}` →
 windowSum → `launches.vol10m`).
 
-### 2. Rank with a plain query — auto-indexed, O(k)
+### 2. Rank with a plain query — auto-indexed, O(k) on SQLite
 
 ```ts
 const top = await bounded.get('launches', {
@@ -69,9 +69,11 @@ const top = await bounded.get('launches', {
 // or live: bounded.subscribe('launches', { sort: { vol10m: -1 }, limit: 24 }, cb)
 ```
 
-No index declarations required: the engine pushes `filter + sort + limit` into a single indexed SQL
-query and **auto-creates the composite index** the first time it sees the ranked shape — top-N is
-O(k), not O(collection). Subscriptions get the same acceleration. The engine only pushes when the
+No index declarations required: on the **default SQLite** document backend the engine pushes
+`filter + sort + limit` into a single indexed SQL query and **auto-creates the composite index** the
+first time it sees the ranked shape — top-N is O(k), not O(collection). The **Postgres-primary**
+backend currently uses the in-memory working-set query path, so **do not rely on the O(k) promise
+there** (mirroring [invariants.md](invariants.md)). Subscriptions get the same acceleration. The engine only pushes when the
 result is provably identical to the reference path: numeric sort fields, exact filters, and an
 exactly-compilable read rule (public, or per-user shapes like `@data.owner == @user.id`). Anything
 else falls back transparently — correctness is never traded for speed.
