@@ -202,7 +202,7 @@ ceiling per window. The cap forces the intent collection to `durable`.
   "fields": { "player": "String", "kind": "String", "weight": "UInt" },
   "rules": {
     "read": "false",
-    "create": "@user.id != null && $playerId == @user.id && @newData.player == @user.id",
+    "create": "@user.id != null && $playerId == @user.id && @newData.player == @user.id && @newData.weight == 1",
     "update": "false",
     "delete": "false"
   },
@@ -220,6 +220,14 @@ Scope on `$roomId` instead only if you deliberately want a single shared per-roo
 ceiling - that lets one player consume the whole budget and starve the rest of
 the room, so keep it as a *separate*, clearly-labeled cap rather than the
 per-player one.
+
+> **Pin the cap weight in the create rule** (`@newData.weight == 1`). The `weight`
+> is client-supplied and the cap works by summing it, so without this pin a
+> modified client can send every intent with `weight: 0`; the running total never
+> reaches 20, the cap never trips, and the player fires unlimited actions (macro /
+> turbo-fire) - the exact cheat this page exists to stop. The rule, not the client,
+> must fix each action's cost. (Use a small fixed set like `@newData.weight == 1 ||
+> @newData.weight == 5` when different inputs legitimately cost different amounts.)
 
 ## Fog-of-war via per-player view collections
 
