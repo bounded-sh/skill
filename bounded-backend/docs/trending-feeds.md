@@ -9,16 +9,21 @@ cron sweep, a dirty-set, or a materialized score pipeline.
 
 ### 1. Count the activity at event time (a reactive hook, or `windowSum`)
 
-**Simplest — a lifetime counter via an offchain create-hook** on the event collection (see
-[hooks-and-anti-cheat.md](hooks-and-anti-cheat.md)); null-safe self-initializing increment:
+**Simplest — a lifetime total with atomic `increment()`.** Do **not** hand-roll a
+read-modify-write counter in a hook. A hook that reads `vol`, adds `@newData.amt`,
+and writes it back **loses updates** under concurrency (two trades landing at once
+both read the same starting total and one contribution is clobbered), and
+`@time.now` does **not** resolve as a hook mutation value, so a `lastTradeAt`
+stamped that way is written blank. Use the supported primitives instead:
 
-```json
-"operations/$slug/trade/$tradeId": {
-  "hooks": { "offchain": {
-    "create": "(get(/launches/$slug).vol == null && @DocumentPlugin.updateField(/launches/$slug, 'vol', @newData.amt) || @DocumentPlugin.updateField(/launches/$slug, 'vol', get(/launches/$slug).vol + @newData.amt)) && @DocumentPlugin.updateField(/launches/$slug, 'lastTradeAt', @time.now)"
-  }}
-}
-```
+- **Lifetime total:** write the volume with the atomic `increment()` field helper
+  from the client/server SDK - `set('launches/<slug>', { vol: increment(amt) })` -
+  which adds server-side and atomically, with no lost updates under concurrency
+  (see [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md)).
+- **Last-traded time:** stamp it from the client write with `serverTimestamp()`
+  (resolves server-side at write time), never `@time.now` inside a hook.
+- **Time-windowed volume:** use the `windowSum` invariant below, which the runtime
+  maintains atomically.
 
 **Time-windowed — declare a `windowSum` invariant** on the (append-only) event collection and the
 runtime maintains an EXACT sliding-window sum as a plain readable field on the target doc — events
