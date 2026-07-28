@@ -20,6 +20,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
 - [Revision-bound Solana releases](#bind-a-solana-release-to-the-final-merged-revision)
+- [Retained upgrade buffer cleanup](#close-one-retained-upgradeable-loader-buffer-safely)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
@@ -208,6 +209,26 @@ Before a live program upgrade:
 
 Never carry an older receipt forward by editing its commit, comparing only the ELF digest, or declaring a later revision unrelated when the release schema binds exact HEAD.
 If a post-rehearsal documentation or provenance commit is required and it binds the release revision, make that commit first, then rebuild both measurements and rerun the exact rehearsal.
+
+### Close one retained upgradeable-loader buffer safely
+
+Agave 4.1.1 has two mutually exclusive buffer-close forms.
+Use the positional address form to close exactly one retained deployment buffer, while `--buffers` means every buffer that matches the selected authority.
+The CLI rejects a command that combines a specific address with `--buffers`.
+
+Before closing anything, read the exact account at finalized commitment and require its owner to be the upgradeable loader.
+Then show that exact address at finalized commitment and require it to be a buffer whose recorded authority is the intended close authority.
+Do not infer either property from a deployment log, an earlier read, or a list filtered only by the local default authority.
+
+```bash
+solana account <buffer-address> --url <cluster> --commitment finalized --output json
+solana program show <buffer-address> --url <cluster> --commitment finalized --output json
+solana program close <buffer-address> --url <cluster> --commitment finalized --authority <authority-keypair>
+```
+
+Confirm the close transaction at finalized commitment and reread the exact address before recording cleanup complete.
+Never use `solana program close --buffers` for single-buffer cleanup.
+Never run `solana program close <buffer-address> --buffers`; the mixed form is invalid, and removing the address would broaden the action to all matching buffers.
 
 ## Poofnet: onchain simulation on `realtime_offchain`
 

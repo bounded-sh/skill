@@ -376,14 +376,26 @@ for (const expected of [
   'A matching ELF SHA-256 does not make an earlier artifact measurement or rehearsal current.',
   'Rerun the exact candidate-first, rollback, and candidate-final authority-neutral rehearsal',
   'Do not renumber program errors merely to make a local numeric table agree.',
+  'Agave 4.1.1 has two mutually exclusive buffer-close forms.',
+  'solana program close <buffer-address> --url <cluster> --commitment finalized --authority <authority-keypair>',
+  'Never run `solana program close <buffer-address> --buffers`',
 ]) {
   if (!solanaOnchain.includes(expected)) fail(`Solana onchain guide: missing required boundary ${expected}`)
 }
 
 const releaseRevisionDropIn = 'Any later relevant or revision-binding commit makes an earlier artifact and rehearsal stale even when the rebuilt ELF has the same SHA-256.'
+const singleBufferCloseDropIn = 'On Agave 4.1.1, close one retained upgradeable-loader buffer only with positional `solana program close <buffer-address>` after finalized owner and authority confirmation.'
+const noMixedBufferCloseDropIn = 'Never add `--buffers` to a specific address because that flag selects all matching buffers and the CLI rejects the mixed form.'
 for (const file of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {
-  if (!readFileSync(path.join(root, file), 'utf8').includes(releaseRevisionDropIn)) {
+  const source = readFileSync(path.join(root, file), 'utf8')
+  if (!source.includes(releaseRevisionDropIn)) {
     fail(`${file}: missing revision-bound Solana release rule`)
+  }
+  if (!source.includes(singleBufferCloseDropIn)) {
+    fail(`${file}: missing single-buffer close rule`)
+  }
+  if (!source.includes(noMixedBufferCloseDropIn)) {
+    fail(`${file}: missing --buffers mixed-form warning`)
   }
 }
 

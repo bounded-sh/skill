@@ -33,6 +33,7 @@ the root **bounded** skill.
 | Onchain update payloads, patch semantics, readonly `!` fields, or `FieldReadOnly` | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
 | Ambiguous Solana custom errors, stale numeric decoding, or an Anchor error name in live logs | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | Solana program release artifacts, stale rehearsals, revision-bound inputs, rebasing or merging before an upgrade, or a live program upgrade | [docs/onchain.md](docs/onchain.md#bind-a-solana-release-to-the-final-merged-revision) |
+| Retained Solana upgrade buffer cleanup, `solana program close`, or `--buffers` | [docs/onchain.md](docs/onchain.md#close-one-retained-upgradeable-loader-buffer-safely) |
 | Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
 | Randomness, VRF, a gacha/raffle/shuffle, `isRevealPath`, or making a DRAW provable rather than just the number. **The roll is READABLE before anyone acts on it**, so read this before designing the pool it draws from | [docs/randomness.md](docs/randomness.md) |
@@ -58,6 +59,7 @@ the root **bounded** skill.
 | `FieldReadOnly`, readonly `!` update, onchain patch | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
 | Anchor error name, ambiguous custom error number, stale IDL error table | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | release artifact, ELF hash, rehearsal receipt, revision binding, merged release revision, live program upgrade | [docs/onchain.md](docs/onchain.md#bind-a-solana-release-to-the-final-merged-revision) |
+| upgradeable-loader buffer, retained buffer, `solana program close`, `--buffers` | [docs/onchain.md](docs/onchain.md#close-one-retained-upgradeable-loader-buffer-safely) |
 | `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [docs/randomness.md](docs/randomness.md) |
 | rent, ATA, token account, insufficient SOL, PDA address, passthrough, transaction too large | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | `createMeteoraConfig`, `createMeteoraVirtualPool`, Dynamic Bonding Curve, DBC, bonding curve, anti-snipe / fee decay, token launch, launchpad, graduation, migrate, DAMM v2, `claimDammV2PoolFees`, `withdrawLeftover`, `getDammV2PoolAddress` | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
@@ -84,6 +86,8 @@ the root **bounded** skill.
   `bounded apps inspect` proves the active policy/runtime publication and carries no hosted URL.
 - Before a live Solana program upgrade, rebuild the candidate measurement and rerun the exact rehearsal from the clean merged release revision.
   Any later relevant or revision-binding commit makes the earlier artifact and rehearsal stale even when the ELF SHA-256 is unchanged.
+- On Agave 4.1.1, close one verified retained upgradeable-loader buffer with positional `solana program close <buffer-address>`.
+  Never add `--buffers` to a specific address because that flag selects all matching buffers and the CLI rejects the mixed form.
 - Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
 - Current chain-backed named queries belong on `onchain: true` paths and require an authenticated `userAddress` at execution time.
 - Do not recommend an `onchain: false` view for an offchain-only plugin read until standalone chain-query execution is fixed.
