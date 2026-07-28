@@ -59,7 +59,7 @@ createMeteoraConfig ──► createMeteoraVirtualPool ──► trades on the b
 | # | Param | Meaning |
 |---|---|---|
 | 0 | `configId` | App-unique id for this config (a string). Reuse it across pool creations. |
-| 1 | `feeAccount` | **Partner** fee recipient (the fee claimer). `@contract.address` (escrow PDA), a wallet address, or an `@AccountPlugin` account id. |
+| 1 | `feeAccount` | **Partner** fee recipient (the fee claimer). Use `@contract.address` as the built-in plugin sentinel for the app escrow PDA, a wallet address, or an `@AccountPlugin` account id. |
 | 2 | `preMigratedFeeAmountBps` | Bonding-curve trading fee, in bps (300 = 3%). Also the flat/settled fee when no decay is set. |
 | 3 | `preMigratedCreatorFeePercentage` | Creator's share of the bonding-curve trading fee (0–100). The rest goes to `feeAccount` (partner). |
 | 4 | `postMigratedFeeAmountBps` | DAMM v2 pool swap fee after graduation, in bps (200 = 2%). |
@@ -69,7 +69,7 @@ createMeteoraConfig ──► createMeteoraVirtualPool ──► trades on the b
 | 8 | `totalTokenSupply?` | Total token supply (base units). Default `1000000000`. |
 | 9 | `tokenBaseDecimal?` | Token decimals - `6` or `9`. Default `6`. |
 | 10 | `leftover?` | Tokens reserved outside the curve, minted to the pool's base vault; withdrawable only by `leftoverReceiver` after migration. Must be `< totalTokenSupply`. Default `0`. |
-| 11 | `leftoverReceiver?` | Who can withdraw the `leftover` after migration. Wallet, `@contract.address`, or account id. Default: `feeAccount`. |
+| 11 | `leftoverReceiver?` | Who can withdraw the `leftover` after migration. Use a wallet, the `@contract.address` plugin sentinel, or an account id. Default: `feeAccount`. |
 | 12 | `decayStartingFeeBps?` | **Anti-snipe** opening fee in bps (e.g. `5000` = 50%). Default: `preMigratedFeeAmountBps` (flat, no decay). |
 | 13 | `decayEndingFeeBps?` | Fee the schedule decays down to, in bps. Default: `preMigratedFeeAmountBps`. |
 | 14 | `decayNumberOfPeriod?` | Number of linear reduction steps. Default `0` (flat). |
@@ -112,6 +112,9 @@ at 85 SOL market cap:
 `@const.LAUNCHER` is a statically bootstrapped wallet address and the rule uses
 the onchain/runtime-supported `@user.address` surface. Rotate the constant with a
 policy update when launcher authority changes.
+The `@contract.address` arguments above are interpreted by this documented built-in plugin as the app escrow PDA.
+The sentinel itself evaluates to the Bounded program ID in a direct query.
+Use `@AccountPlugin.getAccountAddress(@contract.address)` when another expression needs the concrete escrow address.
 
 **Transaction-size note:** `createMeteoraConfig` is one of the largest single
 instructions on the platform (~1189B alone; ~1225B chained with
@@ -178,8 +181,8 @@ is fetched by third parties forever after.
 | `getClaimableMeteoraPoolFees` | `(source, poolAddress) -> Int` (pure) | How much is claimable now. |
 | `claimMeteoraPoolFees` | `(source, poolAddress) -> Bool` | Claim accrued bonding-curve fees to `source`. |
 
-`source` follows the same custody rule as all trading calls - `@contract.address`
-(escrow PDA, server-signed) for an app-operated launch, or a user wallet for
+`source` follows the same custody rule as all trading calls - the `@contract.address`
+sentinel resolved by this built-in plugin to the server-signed app escrow PDA for an app-operated launch, or a user wallet for
 self-custody. See [onchain-trading.md → `source`](onchain-trading.md).
 
 ## Graduation to DAMM v2 + post-migration

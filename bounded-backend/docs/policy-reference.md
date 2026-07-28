@@ -102,6 +102,14 @@ the field because nothing can update at all — which is why server-authoritativ
 collections never hit this.) Note: a tenant-tag field bound by a `tenantTag`
 invariant does **not** need `!` — the invariant rebinds it on every write.
 
+Onchain update payloads are patches.
+The onchain program starts with the stored document and applies operations only for keys present in the payload.
+Omitted fields remain in the final document and in the merged `@newData` candidate evaluated by the update rule.
+Include a `!` field on create, but omit it from every later onchain update payload.
+Supplying the readonly key again creates a field operation and the onchain program rejects it with `FieldReadOnly`, even when the supplied value is unchanged.
+The preservation clause above remains required because it proves the merged candidate cannot change the field.
+See [onchain.md](../../bounded-onchain/docs/onchain.md#onchain-updates-are-patches) for the client payload shape.
+
 ## Conditional Transfer Authority
 
 Ownership-like fields (`owner`, `ownerAddress`, `holder`, or a field detected
@@ -173,7 +181,7 @@ expressions at deploy. **An omitted rule defaults to deny.**
 | `@data.field` | Existing document | **not** in `create` rules |
 | `@newData.field` | Incoming document | **not** in `delete` rules |
 | `@time.now` | Server time (seconds) | — |
-| `@contract.address` | The app's contract/escrow address (onchain) | — |
+| `@contract.address` | The deployed Bounded Solana program-ID sentinel; supported built-in plugins may resolve it to the app escrow PDA | Solana/Poofnet |
 | `$pathVariable` | Any variable from the path template | — |
 | `get(/path)` | Read another doc, **pre-transaction** state | unquoted path, leading `/`; literal segments use letters, digits, or `_` |
 | `getAfter(/path)` | Read another doc, **post-batch (staged)** state | not in `read` rules |
@@ -185,6 +193,10 @@ Use only ASCII letters, digits, and `_` for a literal segment.
 A document ID containing `-` can be written through a normal string path, but it cannot be pasted into an unquoted expression path such as `get(/runs/run-001)`.
 Use a grammar-safe fixture ID such as `run_001` when a policy test must address the same document from both forms.
 There is no documented quoted-segment escape for these expression paths.
+
+`@contract.address` does not directly expose the app escrow PDA.
+A direct policy query returns the deployed Bounded program ID.
+Use `@AccountPlugin.getAccountAddress(@contract.address)` when an expression needs the concrete app escrow address, and see [policy-primitives.md](../../bounded-onchain/docs/policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address) before using it in a raw CPI account meta.
 
 > **Identity: use `@user.id` for ownership, `@user.address` only for wallets.**
 > `@user.id` is the universal principal and is present for every authenticated

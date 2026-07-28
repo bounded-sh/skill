@@ -6,6 +6,7 @@ reads, PDAs/ATAs, or cross-app document access from policy bytecode.
 ## Contents
 
 - [Runtime capability gates](#status-first-compiler-support-is-not-deployment-support)
+- [`@contract.address`](#contractaddress-is-a-sentinel-not-the-escrow-address)
 - [`@Bytes`](#bytes)
 - [`@Solana`](#solana)
 - [Real-network budgets](#real-network-resource-budget)
@@ -50,6 +51,33 @@ Extended calls use a reserved u16 tag encoding. Unknown shared or offchain-only
 tags must error; returning `null` for an unknown tag can make Poofnet accept a
 path that Solana rejects.
 
+## `@contract.address` is a sentinel, not the escrow address
+
+In Solana policy bytecode, `@contract.address` evaluates to the deployed Bounded Solana program ID.
+It is an internal sentinel that supported built-in plugin handlers recognize when their manifest documents an app-escrow source or authority.
+Those handlers replace the sentinel with the current app's escrow PDA and apply the plugin's signer contract.
+The value itself is not the escrow PDA.
+
+- A direct policy query whose expression is `@contract.address` returns the Bounded program ID.
+- Use `@AccountPlugin.getAccountAddress(@contract.address)` when a policy expression, query, UI, or account meta needs the concrete app escrow address.
+- Only pass the sentinel to a plugin function whose manifest explicitly documents `@contract.address`, and still check that function's network support state.
+- Every `@Solana.invoke` meta address must resolve to a concrete base58 public key when the transaction is built.
+  Raw CPI does not apply built-in plugin source resolution, so `address: @contract.address` names the Bounded program account rather than the app escrow.
+  Resolve the escrow with an `@AccountPlugin.getAccountAddress(@contract.address)` query or preflight, then place that returned public key in a concrete `Address` field or policy-bound value used by the raw meta.
+- Address resolution does not grant signing authority.
+  The `signer` and `signerName` confinement rules below still apply.
+
+For example, expose the concrete escrow address rather than the sentinel:
+
+```json
+"queries": {
+  "escrowAddress": {
+    "returnType": "Address",
+    "query": "@AccountPlugin.getAccountAddress(@contract.address)"
+  }
+}
+```
+
 ## `@Bytes`
 
 Encoders: `u8`, `u16`, `u32`, `u64`, `u128`, `i64`, `bool`, `pubkey`, `str`
@@ -82,6 +110,8 @@ Security rules:
 
 - Program/owner targets must be static and executable. The Bounded program and
   BPF/native loaders are denied targets.
+- Every raw meta address must resolve to a concrete public key during transaction construction.
+  Resolve the app escrow with `@AccountPlugin.getAccountAddress(@contract.address)`, then use the returned address through a concrete field or policy-bound value instead of placing the sentinel in a raw meta.
 - `signer: true` never grants a signer. Only the current transaction user, or a
   recomputed app PDA named by `signerName`, may remain a CPI signer.
 - Sponsor and attestation accounts are always demoted at foreign CPI boundaries.

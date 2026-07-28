@@ -29,7 +29,9 @@ the root **bounded** skill.
 | Onchain mirror/indexer, Helius webhook, missed transaction, outage catch-up, replay, reconciliation, or DLQ recovery | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | "Transaction too large", verify/deploy rejected for **transaction size**, 413 on an onchain write, hook over the 1182/1232-byte limit, splitting hooks, argument/string bytes, lookup tables | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Policy upgrade governance, immutable apps, controller policies, manifest signing, stuck update sessions, or governance recovery | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
-| Policy-native bytes, PDAs, account reads, generic CPI, cross-app reads/writes, runtime capability gates, or Poofnet/onchain parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| Policy-native bytes, PDAs, account reads, `@contract.address`, app escrow address resolution, generic CPI, cross-app reads/writes, runtime capability gates, or Poofnet/onchain parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| Onchain update payloads, patch semantics, readonly `!` fields, or `FieldReadOnly` | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
+| Ambiguous Solana custom errors, stale numeric decoding, or an Anchor error name in live logs | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
 | Randomness, VRF, a gacha/raffle/shuffle, `isRevealPath`, or making a DRAW provable rather than just the number. **The roll is READABLE before anyone acts on it**, so read this before designing the pool it draws from | [docs/randomness.md](docs/randomness.md) |
@@ -51,7 +53,9 @@ the root **bounded** skill.
 | "Transaction too large", tx-size gate, packet limit, 1232, oversized hook | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Helius, indexer, mirror, reconciliation debt, missed transaction, replay, cursor, tombstone, DLQ | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | `governance.upgrade`, policy controller, immutable, manifest root, governed session, recovery, extend, cancel | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
-| `@CPI`, `@Solana`, `@Bytes`, `@App`, generic CPI, custom program, PDA seeds, account data, cross-app, runtime v2, Poofnet parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| `@CPI`, `@Solana`, `@Bytes`, `@App`, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, custom program, PDA seeds, account data, cross-app, runtime v2, Poofnet parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
+| `FieldReadOnly`, readonly `!` update, onchain patch | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
+| Anchor error name, ambiguous custom error number, stale IDL error table | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [docs/randomness.md](docs/randomness.md) |
 | rent, ATA, token account, insufficient SOL, PDA address, passthrough, transaction too large | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | `createMeteoraConfig`, `createMeteoraVirtualPool`, Dynamic Bonding Curve, DBC, bonding curve, anti-snipe / fee decay, token launch, launchpad, graduation, migrate, DAMM v2, `claimDammV2PoolFees`, `withdrawLeftover`, `getDammV2PoolAddress` | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
@@ -67,6 +71,9 @@ the root **bounded** skill.
 - **Default onchain login = `auth.wallets` + wallet login, side by side.** Turn on `{ "auth": { "wallets": true } }` in policy so email/social users get a Crossmint wallet (the primary path), and add bring-your-own **wallet login** (`walletLogin`) for users who already hold a Solana wallet. See [docs/embedded-wallets.md → recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app). Prescribe this for any onchain app.
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
+- `@contract.address` is the Solana program-ID sentinel, not the app escrow address returned by a direct query.
+  Supported built-in plugins resolve the sentinel to the app escrow PDA.
+  Use `@AccountPlugin.getAccountAddress(@contract.address)` when an expression needs the concrete escrow address.
 - Treat discovery, deployed-runtime support, and live-network verification as three independent states.
 - Check the [Solana devnet capability catalog](docs/solana-capability-status.md) before proposing any plugin or primitive.
 - Never infer devnet support from a compiler tag, manifest, proof contract, Poofnet model, lookup-table entry, or local validator test.

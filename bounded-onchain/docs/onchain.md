@@ -16,6 +16,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Opt in and protocols](#default-is-off-chain--opt-in-deliberately)
 - [Capability status](#check-capability-status-before-building)
 - [Onchain writes and reads](#what-changes-when-a-collection-is-onchain)
+- [Onchain update patches](#onchain-updates-are-patches)
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
@@ -89,6 +90,28 @@ Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exist
   collection like any other.
 - **On-chain data is public** - anyone can read the chain. Use `"read": "true"`.
 
+### Onchain updates are patches
+
+An onchain update object is a patch, not a replacement document.
+The program starts with the stored fields and applies operations only for keys present in the submitted object.
+Fields omitted from the update remain unchanged.
+
+A field declared with `!` is write-once.
+Include it when creating the document, but omit it from every update payload.
+Supplying the readonly key again is still a write operation, even when the value is identical, and the transaction fails with the Anchor error name `FieldReadOnly`.
+The update rule can and should keep its immutability clause because `@newData` represents the merged candidate document.
+
+```jsonc
+// Create includes the write-once owner.
+{ "owner": "<wallet>", "value": 1, "note": "created" }
+
+// Update sends only mutable fields.
+{ "value": 2, "note": "updated" }
+```
+
+After confirming the update transaction, poll the Bounded mirror until it contains the new mutable values and the original readonly value.
+Do not treat omission as deletion, and do not copy the complete mirrored document back into an onchain update.
+
 ## Onchain rules: `@user.address` only
 
 Inside an `onchain: true` collection, rules may reference **only
@@ -143,6 +166,15 @@ So on `realtime_devnet` / `realtime_mainnet`, mark **every** collection
 `onchain: true`. `bounded deploy` warns and names any unflagged collections. (On
 the off-chain `realtime_offchain` protocol it's the reverse: `onchain: true`
 collections are stored off-chain - deploy prints that warning too.)
+
+### Diagnose custom errors by the live Anchor log name
+
+A numeric Solana custom error can be decoded incorrectly when a local IDL or client error table does not match the deployed program revision.
+When the numeric label is ambiguous, inspect the RPC simulation or confirmed transaction logs from the exact deployed program.
+Treat the live Anchor `Error Code` name and `Error Message` as authoritative for diagnosis.
+If the logs name `FieldReadOnly`, fix the update payload by omitting the readonly field even when a stale numeric table suggests another error.
+Preserve deployed ABI discriminants and correct the stale decoder or IDL mapping.
+Do not renumber program errors merely to make a local numeric table agree.
 
 ## Poofnet: onchain simulation on `realtime_offchain`
 

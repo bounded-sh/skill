@@ -54,12 +54,14 @@ authority / fund owner):
 
 | `source` value | Custody model | Use for |
 |---|---|---|
-| `@contract.address` | **Server custody** - the app's escrow PDA, signed by the sponsor wallet. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, pooled funds |
+| `@contract.address` | **Server custody** - a program-ID sentinel that this built-in plugin resolves to the app escrow PDA under its server-signed contract. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, pooled funds |
 | `@newData.source` (a user wallet) | The user's own wallet is the authority (client-signed path). | self-custody trading where the user signs |
 
 For an **autonomous desk** (acts every cycle with no per-trade human gate),
-`@contract.address` is the model: the escrow PDA is the fund, the backend is the
+`@contract.address` is the plugin-source syntax: the resolved escrow PDA is the fund, the backend is the
 only writer, and access rules + invariants on the collection are the guardrails.
+The sentinel itself evaluates to the Bounded program ID in a direct query.
+Use `@AccountPlugin.getAccountAddress(@contract.address)` when the concrete escrow public key is needed outside a documented plugin source argument.
 
 ## Phoenix perps - `@PhoenixPerpsPlugin`
 
@@ -287,8 +289,9 @@ real money that can leave the escrow in any 24h window.
 
 - **Eventual consistency:** confirm the transaction first, then poll the expected Bounded postcondition with a bounded deadline.
   The Phoenix read helpers are offchain-only source functions and are currently unsupported on devnet.
-- **Custody key safety:** the sponsor/escrow wallet IS the fund for `@contract.address`
-  trades - treat it like the owner key.
+- **Custody key safety:** the app escrow PDA resolved by the built-in plugin is the fund for `@contract.address` trades.
+  The sentinel itself is not the fund address.
+  Treat access to that server-signed policy path as fund authority.
 - **Collateral currency is PhUSD** for Phoenix; bridge with `emberDeposit`/`emberWithdraw`.
 - Function name aliases exist as numeric ids (e.g. `placeLong` = `128`); always use the
   named form in policies.

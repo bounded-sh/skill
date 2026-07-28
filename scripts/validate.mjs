@@ -333,10 +333,21 @@ if (/\| supported \|/.test(solanaCapabilityStatus) || /\| live_devnet_pass \|/.t
   fail('Solana capability status: claims a live-supported function without a published receipt')
 }
 
+const policyPrimitives = readFileSync(path.join(root, 'bounded-onchain/docs/policy-primitives.md'), 'utf8')
+for (const expected of [
+  '`@contract.address` evaluates to the deployed Bounded Solana program ID',
+  '`@AccountPlugin.getAccountAddress(@contract.address)` when a policy expression',
+  'Every `@Solana.invoke` meta address must resolve to a concrete base58 public key',
+  'Address resolution does not grant signing authority.',
+]) {
+  if (!policyPrimitives.includes(expected)) fail(`Solana policy primitives: missing contract-address boundary ${expected}`)
+}
+
 const solanaTrading = readFileSync(path.join(root, 'bounded-onchain/docs/onchain-trading.md'), 'utf8')
 for (const expected of [
   'There is no `getPhUSDBalance` function',
   '`getMeteoraVirtualPoolAddress` / `getDammV2PoolAddress` / `getCpAmmPoolAddress`',
+  'a program-ID sentinel that this built-in plugin resolves to the app escrow PDA',
 ]) {
   if (!solanaTrading.includes(expected)) fail(`Solana trading guide: missing catalog correction ${expected}`)
 }
@@ -347,8 +358,13 @@ if (solanaOnchain.includes('@MathPlugin.getRandom')) {
 for (const expected of [
   'receipt deliberately contains only `transactionId` and `chain`',
   'It never returns the raw server transaction, serialized transaction, or signed',
+  'An onchain update object is a patch, not a replacement document.',
+  'omit it from every update payload',
+  'Anchor error name `FieldReadOnly`',
+  'Treat the live Anchor `Error Code` name and `Error Message` as authoritative',
+  'Do not renumber program errors merely to make a local numeric table agree.',
 ]) {
-  if (!solanaOnchain.includes(expected)) fail(`Solana onchain guide: missing sanitized CLI receipt boundary ${expected}`)
+  if (!solanaOnchain.includes(expected)) fail(`Solana onchain guide: missing required boundary ${expected}`)
 }
 
 const cliReference = readFileSync(path.join(root, 'bounded-deploy/docs/cli-reference.md'), 'utf8')
@@ -362,6 +378,9 @@ for (const expected of [
   '`keySource` is one of `global`, `project`, `env`, `web`, `profile`, or `unknown`',
   '"action": "deployPolicy"',
   '"policyDeployReceipt": {',
+  '`policyDeployReceipt.status` is a separate app publication status',
+  'operation-bound readback or recovery receipt may report `null`',
+  'Never require receipt `status` to equal `committed` or `deployed`.',
   'Do not infer success from a human line',
   'still requires an existing app ID',
 ]) {
@@ -400,6 +419,13 @@ for (const expected of [
 const policyReference = readFileSync(path.join(root, 'bounded-backend/docs/policy-reference.md'), 'utf8')
 if (!policyReference.includes('| `requiresInBatch` |')) {
   fail('Policy reference: missing requiresInBatch collection key')
+}
+for (const expected of [
+  'The deployed Bounded Solana program-ID sentinel',
+  'Omitted fields remain in the final document',
+  'rejects it with `FieldReadOnly`, even when the supplied value is unchanged',
+]) {
+  if (!policyReference.includes(expected)) fail(`Policy reference: missing onchain update boundary ${expected}`)
 }
 const randomness = readFileSync(path.join(root, 'bounded-onchain/docs/randomness.md'), 'utf8')
 for (const expected of [

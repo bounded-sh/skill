@@ -291,6 +291,6 @@ Say these plainly in your own docs rather than implying they are proved:
 
 ## Related
 
-- [onchain.md](onchain.md) - collections, hooks, escrow, the `@contract.address` PDA
+- [onchain.md](onchain.md) - collections, hooks, and the `@contract.address` sentinel-to-escrow contract
 - [policy-primitives.md](policy-primitives.md) - the plugin surface
 - [../../bounded-backend/docs/invariants.md](../../bounded-backend/docs/invariants.md) - bounding what a draw can pay out
