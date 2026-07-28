@@ -112,6 +112,9 @@ Boundaries:
 
 - A listing belongs to its seller, an order to its buyer → `tenantTag` on each.
 - Per-buyer daily spend ceiling → `rollingSum` with `scopeVariable: "$buyerId"`.
+- An order's `amountUsd` and `seller` must match the referenced **active**
+  listing → cross-checked against the listing in the order's `create` rule, so
+  the proven cap is over the real price, not a buyer-supplied number.
 - Orders immutable → `update`/`delete` are `"false"` (rules, not invariants).
 
 ```json
@@ -135,7 +138,7 @@ Boundaries:
     "tier": "durable",
     "rules": {
       "read": "@user.id != null && $buyerId == @user.id",
-      "create": "@user.id != null && $buyerId == @user.id && @newData.buyer == @user.id",
+      "create": "@user.id != null && $buyerId == @user.id && @newData.buyer == @user.id && get(/sellers/@newData.seller/listings/@newData.listingRef).active == true && @newData.amountUsd == get(/sellers/@newData.seller/listings/@newData.listingRef).priceUsd",
       "update": "false",
       "delete": "false"
     },
@@ -154,6 +157,17 @@ cap: `update`/`delete` are rejected so the spend history a cap is computed from
 can't be rewritten. Each order is a new document with a fresh id. The `$buyerId
 == @user.id` guard means the path itself enforces "you may only place
 orders under your own buyer id."
+
+A proven cap is only as trustworthy as the field it sums. If the buyer could
+write `amountUsd` freely, they could place a real order for a $500 listing with
+`amountUsd: 0` and the "proven" $5,000/day ceiling would mean nothing. So the
+`create` rule cross-checks the order against the referenced listing:
+`get(/sellers/@newData.seller/listings/@newData.listingRef)` must be `active`,
+and `@newData.amountUsd` must equal that listing's `priceUsd`. Because the listing
+path segments *are* `@newData.seller` and `@newData.listingRef`, the order's
+`seller` is bound to a real listing too - a buyer can't name an arbitrary seller,
+price, or item. (For price lists that change between order placement and
+settlement, derive the order server-side in a function instead.)
 
 ---
 
