@@ -31,6 +31,7 @@ skill.
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
 | Page blank in an iframe, `nosniff` refusing a script, or "who can embed my app" | [docs/domains.md](docs/domains.md#security-headers-on-every-served-page) - Bounded sets security headers on every served page; your app is framable by itself and a Bounded venue only, and you cannot override them from HTML. |
 | Project config, `bounded.json`, account profiles, web login, key safety | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
+| Inventory apps after a project-limit error, or prove the exact active policy/runtime publication after deploy | `bounded apps list --json`, then `bounded apps inspect --app-id <id> --json`; see [docs/cli-reference.md](docs/cli-reference.md#exact-release-provenance). |
 | Share an app / add a collaborator / grant admin, deploy, or billing rights | `bounded share <email-or-wallet> --role admin\|developer\|viewer\|billing --app-id <id>` (owner-only). Do NOT hunt for an allowlist in app code; the control plane governs access. Capability matrix in the **bounded-backend** skill's access-control doc. |
 | Hit `requires a keypair` / `401` / `403` on deploy/site deploy, or about to conclude "blocked on the owner" / "no access" | [docs/access-playbook.md](docs/access-playbook.md) — DON'T give up. Run `bounded whoami` + `bounded access --app-id <id>`; switch identity (`account use --web`/`--global`); web-account deploys work (update the CLI if it refuses). |
 
@@ -42,7 +43,7 @@ skill.
 | `boundary_violation`, "Blocked by this app's boundaries", site/policy deploy refused for EVERY identity, `amend: none` vs `amend: creator`, boundary lock | [docs/access-playbook.md](docs/access-playbook.md) §5 |
 | `sourcePush`, `--with-source`/`--no-source`, `source synced:`, `widget editing base ready`, `site seed-build-base`, empty `/__bounded/source`, `bounded edit`/`bounded live-edit`/`bounded dashboard` (removed legacy) | [docs/source-sync.md](docs/source-sync.md) |
 | `bounded.json`, `bounded account use --web`, account profiles, `.bounded/app.json`, `~/.bounded/credentials`, `~/.bounded/web-session.json`, `BOUNDED_PRIVATE_KEY` | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) · [docs/cli-reference.md](docs/cli-reference.md#project-config--boundedjson) |
-| `402` on `deploy --create`, `project_limit_exceeded`, `dimension: "maxProjects"`, "3 free projects", `bounded apps list` | [../bounded/docs/billing.md](../bounded/docs/billing.md) - inspect the account inventory, confirm access and protocol compatibility, and never delete or repurpose a project automatically. |
+| `402` on `deploy --create`, `project_limit_exceeded`, `dimension: "maxProjects"`, "3 free projects", `bounded apps list`, `bounded apps inspect` | [../bounded/docs/billing.md](../bounded/docs/billing.md) - inspect the account inventory, confirm access and protocol compatibility, and never delete or repurpose a project automatically. |
 | `bounded domains slug`, mapped hosts, custom domain | [docs/domains.md](docs/domains.md) |
 | `bounded tests run/push/list/pull`, policy tests | [docs/cli-reference.md](docs/cli-reference.md) · [policy-tests.md](../bounded-backend/docs/policy-tests.md) |
 
@@ -62,5 +63,6 @@ bounded deploy --create --name my-app
 - Read project config first when entering an existing app; it tells you which app/environment/account source to use.
 - Claim a vanity slug with `bounded domains slug ...` and share the slug/custom-domain host, never a raw app-id host, as the public URL.
 - To give a person or agent access, reach straight for `bounded share ... --role ...`; confirm with `bounded access --app-id <id> --json`.
+- After a release-critical policy deploy, use `bounded apps inspect --app-id <id> --json` to prove the exact active publication. Do not treat a toast, human success line, or immediate data read as deployment provenance.
 - Never conclude "no access / blocked on the owner" from a `requires a keypair`/`401`/`403`. Run `bounded whoami` + `bounded access --app-id <id>` and check under each identity first — see [docs/access-playbook.md](docs/access-playbook.md).
 - `bounded deploy` re-runs the proof gate; a `DISPROVED` result blocks the deploy. See the bounded-backend skill for counterexamples.

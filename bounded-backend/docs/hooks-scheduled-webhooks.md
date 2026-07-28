@@ -70,6 +70,10 @@ Chain effects with `&&`; a falsy result short-circuits later calls.
 > **An onchain plugin (`@TokenPlugin.transfer`, …) in an offchain hook is
 > rejected by the validator.** Onchain plugins belong in `hooks.onchain` on a
 > `"onchain": true` collection.
+>
+> `@DocumentPlugin.updateField` also has a separate onchain bytecode form.
+> It can sequence `get()` pre-state and `getAfter()` staged state inside `hooks.onchain`; `@DocumentPlugin.putDocument` remains offchain-only.
+> Follow the [onchain staged document update contract](../../bounded-onchain/docs/policy-primitives.md#onchain-staged-document-updates) instead of applying this offchain section to a Solana hook.
 
 **Hooks never gate.** There is no throw-from-a-hook. If you want a write to fail,
 that is a `rules` predicate (`403`) or an `invariants` postcondition (`409`).

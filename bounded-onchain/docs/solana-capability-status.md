@@ -30,6 +30,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `SAFE-TARGET-ONLY` | Generic invoke may be claimed only for an explicitly modeled safe program and account flow. |
 | `LIVE-PUMP-PROOF` | Pump.fun or PumpSwap stays unverified until live proof exists. |
 | `LIVE-TENSOR-PROOF` | Tensor stays unverified until live proof exists. |
+| `LIVE-CROSS-APP-PROOF` | A distinct target fixture and source scenario are present, but the finalized source transaction, both mirrors, and exact `@App.get` query still require retained live proof. |
 | `NO-DEVNET-JUPITER` | Jupiter is unavailable on devnet. |
 | `NO-DEVNET-PHOENIX` | Phoenix is unavailable on devnet. |
 | `NO-DEVNET-DFLOW` | DFlow is unavailable on devnet. |
@@ -44,8 +45,8 @@ A function moves to `supported` only after a retained live run confirms both its
 |---|---|---|---|---|
 | `@AccountPlugin.createAccount` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@AccountPlugin.getAccountAddress` | legacy runtime | unverified | source parity only | LIVE-PENDING |
-| `@App.get` | extended runtime | unverified | source parity only | LIVE-PENDING |
-| `@App.set` | extended runtime | unverified | source parity only | LIVE-PENDING |
+| `@App.get` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |
+| `@App.set` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |
 | `@BondingCurvePlugin.getMarketCapInSol` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@BondingCurvePlugin.getMaxSolInProduct` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@BondingCurvePlugin.getMaxTokensInProduct` | legacy runtime | unverified | source parity only | LIVE-PENDING |
@@ -219,6 +220,9 @@ Submission may use the funded global Bounded CLI keypair for automation or Phant
 After submission, confirm the public devnet transaction at the required commitment.
 Then poll with bounded backoff for the exact expected Bounded mirror, query, reveal, account, or denied state.
 A toast, a returned signature, simulation success, or one immediate read is not acceptance evidence.
+Give every declared action its own evidence contract and receipt.
+A write action must own its exact finalized transaction records and postconditions, while a read action must own a new query or read observation produced during that action.
+Reject no-op actions, reused evidence from an earlier action, and any mismatch between the scenario signature list and the action-owned finalized transaction records.
 Store only sanitized receipts containing public transaction signatures, public explorer links, run metadata, and postcondition results.
 Never store private keys, credentials, secret RPC URLs, access tokens, or signed transaction bytes.
 

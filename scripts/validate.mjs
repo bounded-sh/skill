@@ -314,6 +314,8 @@ if (!solanaInventory) {
   }
 }
 for (const expected of [
+  '| `@App.get` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |',
+  '| `@App.set` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |',
   '| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |',
   '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | blocked | not run | METEORA-CONFIG |',
   '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
@@ -339,6 +341,14 @@ for (const expected of [
   '`@AccountPlugin.getAccountAddress(@contract.address)` when a policy expression',
   'Every `@Solana.invoke` meta address must resolve to a concrete base58 public key',
   'Address resolution does not grant signing authority.',
+  'Solana accounts are world-readable',
+  'Every account sample must use finalized commitment',
+  '"query": "@Solana.rentExemption(@data.space)"',
+  'Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.',
+  'one Devnet `getMultipleAccounts` request with base64 encoding and finalized commitment',
+  '`deployment.apps` contains exactly the authenticated primary and cross-app target publications',
+  'Every action-evidence entry contains exactly `actionId`, `contract`, `publicTransactionSignatures`, `transactions`, and `postconditions`.',
+  'Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift',
 ]) {
   if (!policyPrimitives.includes(expected)) fail(`Solana policy primitives: missing contract-address boundary ${expected}`)
 }

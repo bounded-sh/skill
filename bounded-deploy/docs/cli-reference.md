@@ -54,6 +54,7 @@ the web account. The CLI has two account-source families:
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
+| `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes or a runtime bundle. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
 | `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
@@ -291,6 +292,58 @@ Require `state == "committed"`, retain the operation ID and revision fields as t
 If a release requires the runtime or hosted app to be available, confirm that condition independently after the committed policy receipt.
 Do not infer success from a human line or omit the receipt when recording provenance.
 
+### Exact release provenance
+
+`bounded apps inspect --app-id <id> --json` reads the immutable publication
+that currently authorizes runtime requests.
+It is the recovery seam to use after a committed deploy, and it is also useful
+when a release starts from an app selected through `bounded apps list`.
+The caller must own or collaborate on the app.
+Unknown and unauthorized app IDs both return not found.
+Legacy apps, an in-flight publication, a non-policy runtime head, or malformed
+revision state fail closed instead of returning approximate evidence.
+
+The successful JSON shape is:
+
+```json
+{
+  "ok": true,
+  "schemaVersion": 1,
+  "appId": "6a37ecc89def2f10f13aa922",
+  "environment": "development",
+  "protocol": "realtime_devnet",
+  "sitePrivate": false,
+  "submittedPolicySha256": "<64 lowercase hex>",
+  "resolvedPolicySha256": "<64 lowercase hex>",
+  "runtimeArtifactSha256": "<64 lowercase hex>",
+  "receipt": {
+    "state": "committed",
+    "operationId": "<publication id>",
+    "status": "available",
+    "policyRevisionCount": 7,
+    "runtimePublicationRevision": 9
+  }
+}
+```
+
+The normalized app `environment` can be `development` while the CLI control
+plane selection is `--env staging`; the `protocol` is the network-specific
+runtime contract.
+For release automation, require an exact app ID, protocol, site privacy,
+submitted policy digest, `state == "committed"`, `status == "available"`,
+positive revisions, and the operation/revisions from the deploy receipt.
+Poll this read-only command for a bounded window after deploy because the
+active read can lag the mutation receipt.
+Fifteen attempts at two-second intervals is the canonical staging release
+window; fail closed if no exact match appears.
+Run `bounded tests run --deployed-policy --app-id <id> --json` only after that
+exact active read when the release must prove the deployed revision rather
+than the local policy override.
+Inspect again after the tests and require the operation, digests, and revisions
+to be unchanged.
+Do not retain credentials, secret RPC URLs, policy bytes, runtime bundles,
+signed transactions, or full command environments with this receipt.
+
 ### `tests` — policy tests
 
 Concrete allow/deny examples against a fresh sandbox app, complementary to
@@ -469,6 +522,28 @@ Full treatment: [environments.md](environments.md).
 | `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to vanity slug and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
 | `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. Needs the **owning wallet** identity — a plain web-login session is platform-scoped and can't preview (the command says so). The link is a bearer secret until it expires — don't post it publicly. | `bounded site preview --app-id <id> --open` |
 | `site proof [status\|on\|off]` | Opt-in public proof surface: the /__bounded/boundaries page (proof stamp, plain-English invariants, decline count) + the site's Boundaries corner badge. OFF by default | `bounded site proof on --app-id <id>` |
+
+For release-critical public sites, retain the exact successful `site deploy
+--json` receipt and independently verify every uploaded byte through the
+canonical public host.
+The current deployment exposes:
+
+```text
+GET https://<slug>.bounded.page/__bounded/site-provenance.json?deployId=<deploy-id>
+GET https://<slug>.bounded.page/__bounded/site-provenance/file?deployId=<deploy-id>&path=<encoded-path>
+```
+
+The manifest returns only `schemaVersion`, `appId`, `deployId`, and sorted file
+records with `path`, `size`, `sha256`, and `contentType`.
+The file endpoint returns the immutable current-deployment bytes with
+`X-Bounded-Content-Sha256`.
+Fetch the manifest, hash every file independently, then fetch the manifest
+again and require it to be unchanged.
+A stale deployment ID returns a conflict instead of silently proving the new
+deployment.
+Private sites keep these routes behind the normal site gate.
+Never treat a deploy toast, a root-page fetch, or the mutable canonical file
+key alone as proof that every requested file landed.
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md). Frontend hosting: [frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).

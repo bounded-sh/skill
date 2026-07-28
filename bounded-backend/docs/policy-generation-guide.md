@@ -270,6 +270,9 @@ Decide with [functions-when-to-use.md](functions-when-to-use.md). Then add:
 - **Side effects on write** → `hooks.offchain.{create,update,delete}` (call
   `@DocumentPlugin.putDocument` / `updateField`). See
   [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
+- **Onchain side effects on write** → `hooks.onchain.{create,update,delete}` on an `onchain: true` collection.
+  Use only compiler-supported onchain plugins; `@DocumentPlugin.updateField` can compose `get()` pre-state and `getAfter()` staged state, while `putDocument` remains offchain-only.
+  See [policy-primitives.md](../../bounded-onchain/docs/policy-primitives.md#onchain-staged-document-updates).
 - **Recurring jobs** (reset a quota nightly) → `hooks.scheduled.<name>` + a
   `schedule: { every, run }`.
 - **One-shot timers** (fire a reminder when due) → `hooks.scheduled.<name>` +
