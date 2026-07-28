@@ -362,7 +362,9 @@ To prove this on Devnet, deploy a distinct target Bounded app instead of substit
 5. Compute the current rent exemption for the target document's maximum serialized space.
    In the source action, atomically transfer enough SOL from the caller into the source app escrow and require the funded amount to cover that live rent result before calling `@App.set`.
 6. Finalize the one source transaction, then independently poll the source mirror and the distinct target app mirror.
-7. Execute a separate source-app named query using `@App.get` and require an exact match for owner, source app ID, source run ID, and value.
+7. Require the distinct target mirror to match owner, source app ID, source run ID, and value exactly.
+8. Execute a separate source-app Boolean named query using `@App.get(...) != null` and require it to observe that target Document.
+   Do not use `@App.get(...).field` in policy expressions because the hosted verifier does not expose field access on this primitive.
 
 Keep `@App.get` and `@App.set` unverified until one sanitized retained run proves all of those observations against the deployed source and target revisions.
 A compiler tag, a same-app substitute, target deployment alone, or one immediate read is not cross-app support evidence.
@@ -425,15 +427,16 @@ Before enabling a new primitive or runtime version:
   The CLI uses its selected credential source, signs and submits, and emits only `{"transactionId":"<public-signature>","chain":"solana_devnet"}`.
   It never emits signed bytes.
   Poll `getSignatureStatuses` until the signature is finalized with an error and retain its public finalized slot.
-  Require the exact expected custom error from public status evidence.
-  If you also inspect `getTransaction`, use finalized commitment and retain only public `meta.err` and the minimum sanitized log evidence needed to identify the authoritative Anchor error.
+  Treat the numeric custom error as necessary but insufficient whenever separate Anchor error enums can assign the same number.
+  Fetch `getTransaction` at finalized commitment, require `meta.err` and slot to match the status evidence, and require the exact authoritative Anchor error name plus the expected runtime program's matching failure marker.
+  Retain only public `meta.err` and the minimum sanitized log markers needed to identify that error.
   Derive the denied document PDA from the runtime program, app ID, and absolute document path.
   The document seed is `sha256(utf8("tarobase_document" + appId + absolutePath))`, passed as the sole seed to `findProgramAddressSync`.
-  Starting only after denial finalization, sample both the Bounded mirror and `getAccountInfo` at least four times across a declared observation window.
+  Starting only after denial finalization, sample both the Bounded mirror and `getAccountInfo` at least four times across a measured monotonic observation window.
   Every mirror sample must show the exact pre-denial collection unchanged and the forbidden path absent.
   Every account sample must use finalized commitment, set `minContextSlot` to at least the denial slot, and return `null` for the denied document PDA.
   Fail the acceptance run if a forbidden row or account appears in any later sample within that window.
-  The canonical Devnet lab uses four observations spanning at least 12 seconds.
+  The canonical Devnet lab uses four observations spanning at least 12 measured monotonic seconds and rejects a declared duration that did not actually elapse.
   If the command or RPC fails before returning a public signature, the run has no landed-denial evidence and must remain unverified.
   For a Phantom UI, `setMany(writes, { shouldSubmitTx: false })` returns the signed transaction without submitting it.
   Serialize it only in memory, call the configured Devnet connection's `sendRawTransaction(bytes, { skipPreflight: true, maxRetries: 3 })`, discard every byte reference immediately, and retain only the public signature.
@@ -473,6 +476,8 @@ Before enabling a new primitive or runtime version:
   At the end of the run, require the marker and active app publications to remain identical, require all observed program facts except the context slot to remain identical, and require the ending finalized context slot not to move backward.
 - Treat the full sanitized receipt as authoritative.
   Receipt schema version 2 includes `schemaVersion: 2`, `runId`, `network`, `checkedAt`, `commit`, `evidencePath`, `qualifying`, `appId`, `deployment`, `walletAddress`, `startingBalanceLamports`, `runner`, `summary`, and `scenarios`.
+  Require those exact top-level keys, a canonical public Solana wallet address, a canonical decimal starting balance, the exact five terminal-status counts, and runner version 3 with `keySource: "global"`.
+  Do not name the public runner field `credentialSource`; credential-like evidence keys are intentionally rejected by sanitization.
   `deployment.marker` is the exact public marker above.
   `deployment.program` is the exact independent finalized observation above.
   `deployment.apps` contains exactly the authenticated primary and cross-app target publications, which must equal the corresponding marker publications.
@@ -481,9 +486,13 @@ Before enabling a new primitive or runtime version:
   Each scenario includes its ID, terminal status and reason, commitment, exact covered actions, action evidence, public transaction signatures and explorer links, public addresses and explorer links, sanitized transactions, and postconditions.
   Every action-evidence entry contains exactly `actionId`, `contract`, `publicTransactionSignatures`, `transactions`, and `postconditions`.
   The contract pins the exact transaction outcomes, ordered postcondition kinds, minimum attempts, and minimum observation window for that action.
-  Require a nonempty fresh postcondition delta, exact signature equality with the action's transaction records, exact contract satisfaction, and unique ownership for every action-claimed scenario postcondition receipt.
-  Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift, or an aggregate scenario signature or transaction list that differs from the ordered action-owned records.
+  Require a nonempty fresh postcondition delta, exact signature equality with the action's transaction records, exact contract satisfaction, and unique ownership for every scenario postcondition receipt.
+  For a passing scenario, require the complete ordered aggregate postcondition list, including independent RPC account probes, to equal the flattened action-owned postcondition lists exactly.
+  Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift, free-floating postconditions, or an aggregate scenario signature, transaction, or postcondition list that differs from the ordered action-owned records.
   The compact index projection keeps the top-level run identity, app and deployment evidence plus each scenario's ID, status, reason, commitment, exact actions, action evidence, public transaction signatures, explorer links, transactions, and postconditions.
+  Validate that compact projection against its own exact schema.
+  It intentionally omits the full receipt's wallet, starting balance, runner, summary, and scenario address arrays and must never be rehydrated into a partial object for full-receipt validation.
+  Require authoritative `denialProof` only on the invariant-denial action's finalized failed transaction, reject that field everywhere else, and allow ordinary finalized failures in nonpassing scenarios to retain only their sanitized non-null error.
   Recompute that projection from the full receipt and compare it structurally before use.
   Hash the raw full receipt file with SHA-256 as a generator input.
   Load the scenario manifest with `git show <receipt.commit>:<scenario-manifest-path>`, require exact scenario IDs, action lists, function membership, and postcondition kinds, and never let a later scenario or function inherit an older pass.

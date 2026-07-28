@@ -30,7 +30,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `SAFE-TARGET-ONLY` | Generic invoke may be claimed only for an explicitly modeled safe program and account flow. |
 | `LIVE-PUMP-PROOF` | Pump.fun or PumpSwap stays unverified until live proof exists. |
 | `LIVE-TENSOR-PROOF` | Tensor stays unverified until live proof exists. |
-| `LIVE-CROSS-APP-PROOF` | A distinct target fixture and source scenario are present, but the finalized source transaction, both mirrors, and exact `@App.get` query still require retained live proof. |
+| `LIVE-CROSS-APP-PROOF` | A distinct target fixture and source scenario are present, but the finalized source transaction, both mirrors, exact target-field match, and `@App.get` existence query still require retained live proof. |
 | `NO-DEVNET-JUPITER` | Jupiter is unavailable on devnet. |
 | `NO-DEVNET-PHOENIX` | Phoenix is unavailable on devnet. |
 | `NO-DEVNET-DFLOW` | DFlow is unavailable on devnet. |
@@ -222,7 +222,8 @@ Then poll with bounded backoff for the exact expected Bounded mirror, query, rev
 A toast, a returned signature, simulation success, or one immediate read is not acceptance evidence.
 Give every declared action its own evidence contract and receipt.
 A write action must own its exact finalized transaction records and postconditions, while a read action must own a new query or read observation produced during that action.
-Reject no-op actions, reused evidence from an earlier action, and any mismatch between the scenario signature list and the action-owned finalized transaction records.
+For a passing scenario, require every postcondition, including independent RPC account probes, to belong to exactly one action and require the aggregate list to equal the ordered action-owned lists.
+Reject no-op actions, free-floating or reused evidence, and any mismatch between the scenario signature, transaction, or postcondition lists and the action-owned records.
 Store only sanitized receipts containing public transaction signatures, public explorer links, run metadata, and postcondition results.
 Never store private keys, credentials, secret RPC URLs, access tokens, or signed transaction bytes.
 

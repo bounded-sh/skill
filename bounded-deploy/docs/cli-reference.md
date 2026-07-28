@@ -341,8 +341,37 @@ exact active read when the release must prove the deployed revision rather
 than the local policy override.
 Inspect again after the tests and require the operation, digests, and revisions
 to be unchanged.
-Do not retain credentials, secret RPC URLs, policy bytes, runtime bundles,
-signed transactions, or full command environments with this receipt.
+When the same release also uploads a hosted site, treat that inspection as
+provisional until the site upload and independent byte proof finish.
+Inspect the app again after the upload and require the exact operation,
+submitted and resolved policy digests, runtime artifact digest, revisions,
+availability, protocol, and site privacy to remain unchanged.
+Fail the release if the active publication changes at any point.
+
+For a release whose acceptance evidence overlays a capability or support catalog, do not put mutable acceptance evidence into the generated site artifact whose exact bytes that evidence certifies.
+That creates a fixed point: acceptance certifies artifact D1, adding the receipt produces different bytes D2, and the embedded receipt no longer certifies the deployed artifact.
+Generate only the immutable inventory baseline before deployment.
+After every successful deployment, publish a public-read and authority-write Bounded release record with `state: "deployed_unverified"`, the deployed commit, app ID, exact site deployment and hashes, and exact active policy/runtime publication.
+Publish the root and all ordered scenario-contract records in one atomic `bounded data set-many` request, then independently read and compare every public document.
+Keep the full atomic request below the realtime request-size limit as well as the 100-document bundle limit.
+That new epoch invalidates every earlier acceptance receipt, even when its program or policy happens to match.
+
+After acceptance independently re-observes the exact current site bytes, active publications, and any network-specific provenance, first persist a sanitized local receipt for recovery.
+Then atomically publish every scenario result plus an `acceptance_verified` root bound to the exact release fingerprint, full receipt hash, ordered scenario contract, and child index.
+Independently poll every public document instead of trusting the mutation response or an immediate read.
+Treat `acceptance_verified` as proof that the receipt integrity and release provenance were verified, not as an all-pass claim.
+Promote a scenario only when its own status is `pass`, and promote a capability only when every scenario mapped to it passes.
+Any missing, malformed, stale, unreadable, extra, or hash-mismatched root, index, or child must fail closed to the static classification.
+
+Preserve declared function, action, and postcondition order inside a scenario-contract hash.
+Sort only the outer scenario list when a stable aggregate needs ID ordering.
+If policy expressions cannot parse a JSON child index, publish separate deployment-time contract records and require each accepted child hash to equal its contract record.
+Allow those contract records to change only while the same atomic root transition is `deployed_unverified`, so an accepted release cannot expose a mixed contract epoch.
+
+If local retention succeeds but the atomic public write or readback fails, do not rerun state-changing acceptance work under the retained run ID.
+Provide an explicit republish command that loads that exact retained receipt, rechecks the current source, app, authority, site bytes, active publications, and network provenance before and after publication, retries the same atomic bundle, and independently polls its public projection.
+When retention is version-controlled, require exactly the unstaged index change, unstaged current-deployment change, and untracked receipt for the requested run, validate their canonical projections, reject every other dirty or untracked path, and keep `HEAD` equal to the receipt commit.
+Do not retain credentials, secret RPC URLs, policy bytes, runtime bundles, signed transactions, or full command environments with any receipt.
 
 ### `tests` — policy tests
 
@@ -539,6 +568,10 @@ The file endpoint returns the immutable current-deployment bytes with
 `X-Bounded-Content-Sha256`.
 Fetch the manifest, hash every file independently, then fetch the manifest
 again and require it to be unchanged.
+A release marker inside the site must be parsed from those independently
+fetched bytes, and its artifact digest must be recomputed from the same
+immutable file set.
+Do not use a separately fetched mutable marker as proof of the deployed bytes.
 A stale deployment ID returns a conflict instead of silently proving the new
 deployment.
 Private sites keep these routes behind the normal site gate.
@@ -596,6 +629,19 @@ same sanitized `--json` receipt:
 
 The JSON receipt never includes the raw server response, serialized
 transaction, signed transaction bytes, credentials, or an RPC URL.
+
+For a successful direct realtime write, the same commands return the exact
+sanitized receipt below:
+
+```json
+{"transactionId":"realtime-direct","chain":"realtime_offchain"}
+```
+
+That receipt proves the CLI command completed without exposing the raw
+transport response.
+It does not report or prove the number of committed documents.
+For release or acceptance evidence, independently read and compare every
+expected public document after the atomic write.
 Confirm `transactionId` independently at the required commitment, then poll the
 exact expected Bounded mirror, query, reveal, account, deletion, or denied
 state.
