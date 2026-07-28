@@ -1,15 +1,18 @@
-# Verifiable randomness — ORAO VRF, and how to make a DRAW provable
+# Verifiable randomness - ORAO VRF, and how to make a DRAW provable
 
-**What's in here / when to read this:** you need an on-chain random outcome — a
-gacha pull, a raffle, a shuffle, a loot roll — and you want the result to be
+**What's in here / when to read this:** you need an on-chain random outcome - a
+gacha pull, a raffle, a shuffle, a loot roll - and you want the result to be
 something the policy *enforces* rather than something your client asserts.
 
 Two separate things, and the difference is the whole point:
 
-- a **verifiable random number** — cheap, three declarations, covered in §1
-- a **verifiable draw** (the number actually selected *that* winner) — needs the
+- a **verifiable random number** - cheap, three declarations, covered in §1
+- a **verifiable draw** (the number actually selected *that* winner) - needs the
   data modelled for it, covered in §3. Skipping this is how a gacha ships with a
   hole big enough to drain the pool.
+
+> ORAO functions are present in compiler and runtime source, but remain `unverified` on devnet until a retained live run confirms request submission, fulfillment, reveal indexing, and the query result.
+> See [solana-capability-status.md](solana-capability-status.md).
 
 ---
 
@@ -35,7 +38,7 @@ read it. That needs two collections.
   }
 },
 
-// The reveal target. Its shape is DICTATED, not chosen — see below.
+// The reveal target. Its shape is DICTATED, not chosen - see below.
 "drawreveals/$drawId": {
   "isRevealPath": true,
   "onchain": true,
@@ -47,7 +50,7 @@ read it. That needs two collections.
 }
 ```
 
-`requestRandomness` belongs in `hooks.onchain`, **never in a rule** — a rule is a
+`requestRandomness` belongs in `hooks.onchain`, **never in a rule** - a rule is a
 predicate, and a request is an effect. Make the draw id the same as the id of
 whatever the draw is *for* (an order, a pull, a ticket); it removes an
 indirection everywhere downstream.
@@ -60,13 +63,13 @@ guesses are all rejected. **A reveal collection must be:**
 | requirement | why |
 |---|---|
 | `onchain: true` | it is a Solana document |
-| `fields: {}` — **empty** | no attacker-controllable content |
+| `fields: {}` - **empty** | no attacker-controllable content |
 | `create` rule **exactly** `@OraclePlugin.getRandomNumber($id, 0, 1) == 0` | the only legitimate way a doc appears there |
 | `update`/`delete` literal `false` **or absent** | write-once |
 | exactly one path variable | injective id binding |
 
 Anything else fails with `a reveal collection must ...`. In particular
-`create: "false"` looks right — the driver writes it, not a user — and is
+`create: "false"` looks right - the driver writes it, not a user - and is
 rejected. So is declaring a `randomness` field to read the value back; you read
 it through the `roll` **query** on the request collection, not off the reveal doc.
 
@@ -81,10 +84,16 @@ const roll = await client.runQuery(`draws/${id}`, 'roll', {});
 ```
 
 `getRandomNumber(id, min, max)` returns a uniform value in `[min, max)`. The
-range is yours to choose at request time — see §3 for why you may want it large.
+range is yours to choose at request time - see §3 for why you may want it large.
+Current live chain named-query execution requires an authenticated `userAddress` even though the reveal path's read rule is public.
+Catalog browsing and preflight may remain wallet-free.
 
-Fulfilment is not instant. Read it a beat after the request, and treat "not ready
-yet" as a retry rather than an error.
+Fulfilment is asynchronous and an immediate read is not acceptance evidence.
+Give the attempt a unique run ID.
+Confirm the request transaction on devnet first.
+Then poll the reveal path with bounded backoff until it appears, and run the query until it returns the expected in-range value.
+Stop at an explicit deadline and record a sanitized timeout or error instead of treating an absent reveal as success.
+A toast, returned signature, simulation, or one stale mirror read is insufficient.
 
 ## 3. THE ROLL IS READABLE BEFORE IT IS USED
 
@@ -120,7 +129,7 @@ request and the resolution.** Two rules and one kindness:
 
 Here is the trap. You have a verifiable roll, you walk your weighted list in
 client code, you write the winner, and the policy checks the bookkeeping around
-it — status transitions, balances, the aggregate delta. It all passes. **And the
+it - status transitions, balances, the aggregate delta. It all passes. **And the
 selection is completely unconstrained**: whoever submits the write picks the
 winner, because no rule ever checked that the roll implies that row.
 
@@ -142,7 +151,7 @@ exists when the roll lands.
 1. **Fixed weight tiers.** Let a row's weight come from a small ladder of
    allowed values rather than a free number, so every row in a tier shares one
    weight. Uniform-within-a-tier is then *exactly* weighted, not approximately.
-2. **`cum[t]` boundaries** — running weight totals per tier, moved by
+2. **`cum[t]` boundaries** - running weight totals per tier, moved by
    `increment()` on every insert and delete. Never recomputed.
 3. **Dense `slot` per tier**, kept packed by swap-with-last: when a row leaves,
    the last row in its tier moves into the gap. **The mover must name the row it
@@ -162,9 +171,9 @@ The check is then two comparisons and a remainder:
 | | |
 |---|---|
 | a **rule** may call `@OraclePlugin.getRandomNumber` | **yes**, and it rejects a wrong value |
-| it may name the draw **indirectly** through a field | **yes** — `getRandomNumber(@newData.drawRef, 0, get(/draws/@newData.drawRef).span)` |
-| there is a modulo operator | **NO** — spell `a % b` as `a - (a // b) * b` |
-| a rule can bind an intermediate value | **NO** — see below |
+| it may name the draw **indirectly** through a field | **yes** - `getRandomNumber(@newData.drawRef, 0, get(/draws/@newData.drawRef).span)` |
+| there is a modulo operator | **NO** - spell `a % b` as `a - (a // b) * b` |
+| a rule can bind an intermediate value | **NO** - see below |
 
 That last one has a real cost: an expression mentioning the roll a dozen times
 calls the oracle a dozen times. **Materialise it once** into a field on the
@@ -176,6 +185,16 @@ everywhere downstream:
 ```
 
 That also pins the outcome: one paid request, one roll, no re-rolling by retrying.
+
+### Freeze the resolution basis before the roll is readable
+
+The random number becomes readable as soon as ORAO fulfills it, before a later client write resolves the outcome.
+If that resolving rule reads mutable state from another collection, someone who can read the roll first can change the basis and steer which prize, slot, or recipient the same roll selects.
+
+`bounded verify` now emits a non-blocking `UNKNOWN` advisory when a mutating rule both resolves `@OraclePlugin.getRandomNumber` or reads an `isRevealPath` collection and reads another mutable collection through `get()` or `getAfter()`.
+The advisory does not make the deployment unsafe by itself and is not a proof certificate.
+Freeze the complete resolution basis for the life of the draw, or create a write-once snapshot in the same request operation and resolve only against that snapshot.
+Reads of the resolving collection itself, reveal collections, reserved identity sets, and collections whose update and delete rules are absent or literal `false` do not trigger the advisory.
 
 ### NEVER split one roll into two picks
 
@@ -272,6 +291,6 @@ Say these plainly in your own docs rather than implying they are proved:
 
 ## Related
 
-- [onchain.md](onchain.md) — collections, hooks, escrow, the `@contract.address` PDA
-- [policy-primitives.md](policy-primitives.md) — the plugin surface
-- [../../bounded-backend/docs/invariants.md](../../bounded-backend/docs/invariants.md) — bounding what a draw can pay out
+- [onchain.md](onchain.md) - collections, hooks, escrow, the `@contract.address` PDA
+- [policy-primitives.md](policy-primitives.md) - the plugin surface
+- [../../bounded-backend/docs/invariants.md](../../bounded-backend/docs/invariants.md) - bounding what a draw can pay out

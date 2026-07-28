@@ -247,6 +247,169 @@ const capabilities = readFileSync(path.join(root, 'bounded/guides/capabilities-a
 for (const claim of ['Complete agent-built apps', 'Managed app services', 'Web delivery']) {
   if (!capabilities.includes(claim)) fail(`capabilities guide: missing ${claim}`)
 }
+
+const solanaCapabilityStatus = readFileSync(
+  path.join(root, 'bounded-onchain/docs/solana-capability-status.md'),
+  'utf8',
+)
+const solanaInventory = solanaCapabilityStatus
+  .split('## Function inventory')[1]
+  ?.split('## Built-in values')[0]
+if (!solanaInventory) {
+  fail('Solana capability status: missing function inventory section')
+} else {
+  const rows = [...solanaInventory.matchAll(
+    /^\| `([^`]+)` \| ([^|]+) \| (unverified|unsupported|blocked) \| ([^|]+) \| ([^|]+) \|$/gm,
+  )].map((match) => ({
+    id: match[1],
+    support: match[3],
+  }))
+  const ids = rows.map((row) => row.id)
+  if (rows.length !== 149) fail(`Solana capability status: expected 149 function rows, received ${rows.length}`)
+  if (new Set(ids).size !== rows.length) fail('Solana capability status: duplicate function row')
+
+  const supportCounts = rows.reduce((counts, row) => {
+    counts[row.support] = (counts[row.support] ?? 0) + 1
+    return counts
+  }, {})
+  for (const [state, count] of Object.entries({ unverified: 96, unsupported: 34, blocked: 19 })) {
+    if (supportCounts[state] !== count) {
+      fail(`Solana capability status: expected ${count} ${state} rows, received ${supportCounts[state] ?? 0}`)
+    }
+  }
+
+  const namespaceCounts = rows.reduce((counts, row) => {
+    const namespace = row.id.startsWith('@')
+      ? row.id.slice(1).split('.')[0]
+      : 'core'
+    counts[namespace] = (counts[namespace] ?? 0) + 1
+    return counts
+  }, {})
+  const expectedNamespaceCounts = {
+    AccountPlugin: 2,
+    App: 2,
+    BondingCurvePlugin: 6,
+    Bytes: 20,
+    CPI: 12,
+    DeFiPlugin: 21,
+    DflowPlugin: 2,
+    DocumentPlugin: 2,
+    MathPlugin: 2,
+    NFTPlugin: 10,
+    OraclePlugin: 3,
+    PhoenixPerpsPlugin: 18,
+    PredictionMarketPlugin: 7,
+    PriceFeedPlugin: 1,
+    PumpFunPlugin: 12,
+    Solana: 12,
+    StringUtils: 1,
+    TensorPlugin: 2,
+    TokenPlugin: 12,
+    core: 2,
+  }
+  for (const [namespace, count] of Object.entries(expectedNamespaceCounts)) {
+    if (namespaceCounts[namespace] !== count) {
+      fail(`Solana capability status: expected ${count} ${namespace} rows, received ${namespaceCounts[namespace] ?? 0}`)
+    }
+  }
+}
+for (const expected of [
+  '| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |',
+  '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | blocked | not run | METEORA-CONFIG |',
+  '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
+  '| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |',
+  '| `@PumpFunPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |',
+  '| `@TensorPlugin.buyNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |',
+  '| `@Solana.invokeAttested` | extended disabled | unsupported | not applicable | DISABLED |',
+  '`@TokenPlugin.USDC` is mainnet-only',
+  '`@PriceFeedPlugin.getPriceFeed` returns a decimal `String`',
+  'Actual chain-query execution requires an authenticated `userAddress`',
+]) {
+  if (!solanaCapabilityStatus.includes(expected)) {
+    fail(`Solana capability status: missing required boundary ${expected}`)
+  }
+}
+if (/\| supported \|/.test(solanaCapabilityStatus) || /\| live_devnet_pass \|/.test(solanaCapabilityStatus)) {
+  fail('Solana capability status: claims a live-supported function without a published receipt')
+}
+
+const solanaTrading = readFileSync(path.join(root, 'bounded-onchain/docs/onchain-trading.md'), 'utf8')
+for (const expected of [
+  'There is no `getPhUSDBalance` function',
+  '`getMeteoraVirtualPoolAddress` / `getDammV2PoolAddress` / `getCpAmmPoolAddress`',
+]) {
+  if (!solanaTrading.includes(expected)) fail(`Solana trading guide: missing catalog correction ${expected}`)
+}
+const solanaOnchain = readFileSync(path.join(root, 'bounded-onchain/docs/onchain.md'), 'utf8')
+if (solanaOnchain.includes('@MathPlugin.getRandom')) {
+  fail('Solana onchain guide: contains nonexistent @MathPlugin.getRandom')
+}
+for (const expected of [
+  'receipt deliberately contains only `transactionId` and `chain`',
+  'It never returns the raw server transaction, serialized transaction, or signed',
+]) {
+  if (!solanaOnchain.includes(expected)) fail(`Solana onchain guide: missing sanitized CLI receipt boundary ${expected}`)
+}
+
+const cliReference = readFileSync(path.join(root, 'bounded-deploy/docs/cli-reference.md'), 'utf8')
+for (const expected of [
+  '{"transactionId":"<public-signature>","chain":"solana_devnet"}',
+  'The JSON receipt never includes the raw server response, serialized',
+  'Confirm `transactionId` independently at the required commitment',
+  'a non-empty `BOUNDED_PRIVATE_KEY` overrides',
+  '"keySource": "global"',
+  '"keyLocation": "global (~/.bounded/credentials)"',
+  '`keySource` is one of `global`, `project`, `env`, `web`, `profile`, or `unknown`',
+  '"action": "deployPolicy"',
+  '"policyDeployReceipt": {',
+  'Do not infer success from a human line',
+  'still requires an existing app ID',
+]) {
+  if (!cliReference.includes(expected)) fail(`CLI reference: missing sanitized onchain receipt contract ${expected}`)
+}
+
+const keySafety = readFileSync(path.join(root, 'bounded-deploy/docs/key-and-account-safety.md'), 'utf8')
+for (const expected of [
+  'a non-empty `BOUNDED_PRIVATE_KEY` has higher',
+  'run `bounded whoami --json` and require the expected `keySource`',
+  '`account.keySource:"web"` continues to use the web session',
+  'The separate `keyLocation` field carries the descriptive source',
+]) {
+  if (!keySafety.includes(expected)) fail(`Key safety guide: missing identity precedence boundary ${expected}`)
+}
+
+const sdkReference = readFileSync(path.join(root, 'bounded-frontend/docs/sdk-reference.md'), 'utf8')
+for (const expected of [
+  'The runtime stages those fields into `@newData`',
+  'requires an authenticated `userAddress`',
+  'returns a decimal `String`',
+  'does not activate standalone chain execution for an `onchain: false` path',
+]) {
+  if (!sdkReference.includes(expected)) fail(`SDK reference: missing Solana query boundary ${expected}`)
+}
+
+const dataPlane = readFileSync(path.join(root, 'bounded-backend/docs/data-plane.md'), 'utf8')
+for (const expected of [
+  '### Require companion writes with `requiresInBatch`',
+  'code `incomplete_batch`',
+  'A single-document set or delete is still a batch of one',
+  'It is not an SMT proof obligation',
+]) {
+  if (!dataPlane.includes(expected)) fail(`Data plane: missing requiresInBatch contract ${expected}`)
+}
+const policyReference = readFileSync(path.join(root, 'bounded-backend/docs/policy-reference.md'), 'utf8')
+if (!policyReference.includes('| `requiresInBatch` |')) {
+  fail('Policy reference: missing requiresInBatch collection key')
+}
+const randomness = readFileSync(path.join(root, 'bounded-onchain/docs/randomness.md'), 'utf8')
+for (const expected of [
+  '### Freeze the resolution basis before the roll is readable',
+  'non-blocking `UNKNOWN` advisory',
+  'write-once snapshot',
+]) {
+  if (!randomness.includes(expected)) fail(`Randomness guide: missing VRF basis advisory ${expected}`)
+}
+
 const reactNative = readFileSync(path.join(root, 'bounded-frontend/docs/building-for-react-native.md'), 'utf8')
 if (!/guest auth boundary on React Native/i.test(reactNative) || !/WebCrypto[\s\S]*IndexedDB/.test(reactNative)) {
   fail('React Native guide: missing the current secure guest-auth boundary')

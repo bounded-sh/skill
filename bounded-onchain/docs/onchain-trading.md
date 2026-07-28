@@ -1,18 +1,31 @@
-# Onchain trading — Phoenix perps & DEX swaps (server-signed execution)
+# Onchain trading - Phoenix perps & DEX swaps (server-signed execution)
 
 **What's in here / when to read this:** you want an app to actually *trade* onchain
-— open/close a leveraged perp (long or short), swap one token for another (spot),
+- open/close a leveraged perp (long or short), swap one token for another (spot),
 read live position size / mark price / unrealized PnL, and do it under **server
 (service-key) custody** so the backend executes without a user signing each order.
 This is the execution layer for trading agents, copy-trading, treasury/DCA bots,
 and autonomous desks. For plain token movement and the onchain basics (protocols,
 `onchain:true`, the eventual-consistency mirror, server-signed vs client-signed
-settlement) read [onchain.md](onchain.md) first — this builds on it.
+settlement) read [onchain.md](onchain.md) first - this builds on it.
 
-> These primitives are **real and shipped** (covered by on-chain e2e tests against
-> Phoenix + the DeFi DEX plugins). They run through the same server-signed hook path
-> as `@TokenPlugin.transfer` — an onchain collection whose `hooks.onchain` invokes a
-> plugin function, signed by the app's sponsor wallet.
+> The compiler and runtime contain these trading functions, but current devnet support is constrained.
+> Jupiter and Phoenix are unavailable on devnet.
+> Meteora is blocked pending a replacement external config.
+> Source presence, Poofnet behavior, and local cloned-program tests are not live support evidence.
+> Check [solana-capability-status.md](solana-capability-status.md) before using any function in this guide.
+
+## Current devnet status
+
+| Integration | Devnet support | Live verification |
+|---|---|---|
+| Jupiter swap and quote | unsupported | not run |
+| Phoenix perps and reads | unsupported | not run |
+| DFlow prediction order and KYC | unsupported | not run |
+| Kamino descriptor CPI | unsupported | not run |
+| Meteora, DAMM v2, and CP-AMM | blocked by replacement config | not run |
+| Pump.fun and PumpSwap | unverified | no retained live proof |
+| Tensor | unverified | no retained live proof |
 
 ## The model: a plugin call in an onchain hook
 
@@ -26,7 +39,7 @@ escrow PDA is the trading authority). Same mechanism as any other onchain hook.
   "trades/$id": {
     "onchain": true,
     "fields": { "market": "String", "size": "Number" },
-    "rules": { "read": "true", "create": "@user.id == @owner", "update": "false", "delete": "false" },
+    "rules": { "read": "true", "create": "@user.address != null", "update": "false", "delete": "false" },
     "hooks": {
       "onchain": { "create": "@PhoenixPerpsPlugin.placeLong(@contract.address, @newData.market, @newData.size)" }
     }
@@ -34,21 +47,24 @@ escrow PDA is the trading authority). Same mechanism as any other onchain hook.
 }
 ```
 
-### `source` — who holds the position (custody)
+### `source` - who holds the position (custody)
 
 The first argument to every trading function is the **source** (the trading
 authority / fund owner):
 
 | `source` value | Custody model | Use for |
 |---|---|---|
-| `@contract.address` | **Server custody** — the app's escrow PDA, signed by the sponsor wallet. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, pooled funds |
+| `@contract.address` | **Server custody** - the app's escrow PDA, signed by the sponsor wallet. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, pooled funds |
 | `@newData.source` (a user wallet) | The user's own wallet is the authority (client-signed path). | self-custody trading where the user signs |
 
 For an **autonomous desk** (acts every cycle with no per-trade human gate),
 `@contract.address` is the model: the escrow PDA is the fund, the backend is the
 only writer, and access rules + invariants on the collection are the guardrails.
 
-## Phoenix perps — `@PhoenixPerpsPlugin`
+## Phoenix perps - `@PhoenixPerpsPlugin`
+
+Phoenix is unsupported on current devnet.
+The function list below documents the discovered source contract and must not be presented as a runnable devnet flow.
 
 Leveraged long/short on Phoenix. Collateral is **PhUSD** (bridge USDC ↔ PhUSD with
 the ember calls). Sizes are in **base lots** of the market. `subaccountIndex`:
@@ -70,7 +86,7 @@ omit / `0` = cross-margin, `1`–`100` = isolated-margin subaccounts.
 | `transferToCross` | `(source, subaccountIndex)` | Sweep collateral isolated → cross. |
 | `syncParentToChild` | `(source, subaccountIndex)` | Copy capabilities to an isolated subaccount (run before its first deposit). |
 
-**Read functions** (live position state — for monitors, sizing, stop/target logic):
+**Read functions** (live position state - for monitors, sizing, stop/target logic):
 
 | Function | Signature | Returns |
 |---|---|---|
@@ -79,21 +95,25 @@ omit / `0` = cross-margin, `1`–`100` = isolated-margin subaccounts.
 | `getUnrealizedPnl` | `(source, market, subaccountIndex?)` | Live unrealized PnL. |
 | `getCollateralBalance` | `(source, subaccountIndex?)` | Deposited collateral. |
 | `getPortfolioValue` | `(source, subaccountIndex?)` | Collateral + unrealized PnL. |
-| `getPhUSDBalance` | `(source)` | PhUSD balance. |
 | `hasPosition` | `(source, market, subaccountIndex?)` | Bool. |
-| `isRegistered` | `(source, subaccountIndex?)` | Bool — trader PDA exists. |
+| `isRegistered` | `(source, subaccountIndex?)` | Bool - trader PDA exists. |
+
+There is no `getPhUSDBalance` function in the current manifest or compiler catalog.
 
 > On Poofnet, Phoenix registration and onboarding are simulated.
 > On live Solana, Phoenix onboarding is a separate prerequisite for each new authority, including a new app escrow PDA.
 > Use Phoenix's current [build/send registration flow](https://docs.phoenix.trade/sdk/register); `registerTrader` cannot auto-whitelist an authority.
-> The read helpers do not require Phoenix-side onboarding.
+> These facts do not change the current devnet classification of unsupported.
 
 > `market` is a Phoenix **market address** (e.g. the SOL market
 > `71Si24E4uc3oCaPbPZTozC1ptSNNqygjjebxSmErSsC2`). "Leverage" is expressed as
-> position size relative to deposited collateral — size big vs collateral = more
+> position size relative to deposited collateral - size big vs collateral = more
 > leverage; the margin account enforces maintenance.
 
 ### Minimal perp flow
+
+This is a source-contract sequence only.
+It is not a runnable current-devnet recipe.
 
 ```
 registerTrader(@contract.address)
@@ -105,9 +125,11 @@ closePosition(@contract.address, "<market>", <lots>, 1)  // close the long
 withdrawFunds(@contract.address, <phusd>)
 ```
 
-## DEX swaps — `@DeFiPlugin`
+## DEX swaps - `@DeFiPlugin`
 
 Spot swaps and liquidity (Meteora / cp-AMM pools), incl. tokenized assets.
+The Jupiter rows are unsupported on devnet.
+The Meteora and CP-AMM rows are blocked pending the replacement config.
 
 | Function | Signature | Does |
 |---|---|---|
@@ -117,33 +139,39 @@ Spot swaps and liquidity (Meteora / cp-AMM pools), incl. tokenized assets.
 | `swapInMeteoraVirtualPool` | `(source, pool, amountIn, …)` | Swap against a Meteora virtual pool. |
 | `createPool` / `createMeteoraVirtualPool` | … | Create liquidity pools. |
 | `addCpAmmLiquidity` / `removeCpAmmLiquidity` | … | LP in/out of a cp-AMM. |
-| `getPoolAddress` / `getCpAmmPoolAddress` | … | Resolve pool addresses. |
+| `getMeteoraVirtualPoolAddress` / `getDammV2PoolAddress` / `getCpAmmPoolAddress` | … | Resolve the corresponding pool address. |
 
-`@TokenPlugin.SOL` and `@TokenPlugin.USDC` are built-in mint constants; pass any
-SPL mint address for other tokens.
+`@TokenPlugin.SOL` is the native-token alias.
+`@TokenPlugin.USDC` is mainnet-only and must not be used in a devnet TokenPlugin flow.
+Create an app-owned devnet mint for token scenarios.
 
 ```json
 "hooks": { "onchain": { "create":
-  "@DeFiPlugin.swap(@contract.address, @TokenPlugin.SOL, @TokenPlugin.USDC, @newData.amountIn)" } }
+  "@DeFiPlugin.swap(@contract.address, @TokenPlugin.SOL, @const.APP_DEVNET_MINT, @newData.amountIn)" } }
 ```
+
+The snippet shows source syntax only because the Jupiter-backed `swap` function is unsupported on devnet.
 
 ## Making it safe (the Bounded part)
 
 Plugin **bodies are trusted** (they build the Solana tx), but everything *around*
-the trade is provable on the collection — that's where you put the guardrails:
+the trade is provable on the collection - that's where you put the guardrails:
 
 - **Who can trade** → `rules.create` (owner-only; the desk's backend identity for an autonomous desk).
 - **What/where** → `rules` + field validation on `market`, `side`, `size` (e.g. only whitelisted markets, `size <= cap`).
 - **Loss / spend ceilings** → a `rollingSum` cap (rolling-24h daily-loss) on a
   per-desk loss collection, so the desk stops trading at the cap. The naive version
-  caps *realized-loss rows the code writes at close* — which only binds losses your
+  caps *realized-loss rows the code writes at close* - which only binds losses your
   code chooses to record, not the real onchain outcome. The robust version is the
   **reserve-at-open** pattern below, which makes the proven cap bind the realized
   onchain loss as an upper bound. See [invariants.md](../../bounded-backend/docs/invariants.md) and
   [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) for what the proof boundary reaches once
   execution is on-chain.
 
-## Reserve-at-open loss cap — making the proven cap bind the *real* onchain loss
+## Reserve-at-open loss cap / making the proven cap bind the *real* onchain loss
+
+This section documents a policy safety pattern.
+It does not make the currently unsupported Phoenix integration available on devnet.
 
 **The gap (B-2).** A `rollingSum` daily-loss cap is only as honest as the rows fed
 into it. If you record a loss row *after* a trade settles (`closePosition` →
@@ -151,16 +179,16 @@ into it. If you record a loss row *after* a trade settles (`closePosition` →
 code chooses to write. A crashed runtime, a skipped writeback, or a trade that blows
 through its stop between cycles can all produce a real onchain loss that **never
 hits the proven window**. The prover proves "the recorded sum never exceeds the cap"
-— a true statement about a number that may not equal the money that actually left
+- a true statement about a number that may not equal the money that actually left
 the escrow. That's a proof of the wrong quantity.
 
 **The fix: reserve the worst case at OPEN, reconcile to realized at CLOSE.** For an
 **isolated-margin** perp (Phoenix subaccount `1`–`100`), the committed margin *is*
-the maximum the position can lose — liquidation closes it at the margin, so
+the maximum the position can lose - liquidation closes it at the margin, so
 `realized_loss ≤ committed_margin` **always**. So at open we append **one proven
 write** to the loss collection reserving exactly that margin as the worst-case loss.
-The `rollingSum` cap rejects that write — and therefore the whole atomic batch,
-including the `hooks.onchain` order — if it would push the 24h reserved-loss window
+The `rollingSum` cap rejects that write - and therefore the whole atomic batch,
+including the `hooks.onchain` order - if it would push the 24h reserved-loss window
 over the cap. The cap is now enforced **before** the trade exists, against the
 *worst case*, not after the fact against a hopeful realized number.
 
@@ -184,12 +212,12 @@ CLOSE    hooks.onchain fires closePosition(...); realized = -getUnrealizedPnl(..
          ])
          │  Reconcile INTO THE SAME 24h window: realized ≤ reserved, so the net window can only shrink.
          ▼
-         Window stays ≤ cap for every sequence — proven.
+         Window stays ≤ cap for every sequence - proven.
 ```
 
 Because `reservedMicro` is `UInt` (the cap field can't go negative), the *release*
 leg is modeled as a second append that **lowers the desk's effective reserved loss
-back toward the realized number** — e.g. credit the unused margin to a separate
+back toward the realized number** - e.g. credit the unused margin to a separate
 `releases` field/window, or (simplest, proven) just never release and let the
 reservation expire out of the 24h window on its own. Either way the invariant only
 ever sees **nonnegative reserved amounts whose window sum ≤ cap**, which is exactly
@@ -221,13 +249,13 @@ the *safety* (window ≤ cap) holds without it.
 verbatim:
 
 ```
-[PASS] the running total can never exceed the cap — for every possible sequence of writes
+[PASS] the running total can never exceed the cap - for every possible sequence of writes
        Declared invariant "reserved_daily_loss_cap" has an SMT-proved offchain
        append-only rolling-limit postcondition algebra per $deskId partition: if the
        runtime admits only nonnegative appended records and the projected window sum
        is within the declared limit, the resulting window sum is within that limit.
 
-✓ Proven — every [PASS] guarantee holds for all possible inputs. Safe to deploy.
+✓ Proven - every [PASS] guarantee holds for all possible inputs. Safe to deploy.
 ```
 
 ### What is PROVEN vs what is trusted (state it honestly)
@@ -236,19 +264,19 @@ verbatim:
   24h *reserved*-loss window exceed the cap, per desk. Since for isolated margin
   `realized_loss ≤ reserved_margin`, the proven cap is a **provable upper bound on
   the realized onchain loss**: `realized ≤ reserved ≤ cap`. An over-cap open is
-  rejected `409` and — because the reservation and the `hooks.onchain` order ride
-  one atomic `setMany` — the onchain order never fires. The cap binds *before* the
+  rejected `409` and - because the reservation and the `hooks.onchain` order ride
+  one atomic `setMany` - the onchain order never fires. The cap binds *before* the
   trade exists.
-- **TRUSTED (imperative, not proven):** the hook body itself — `placeLong` /
-  `closePosition` building and server-signing the Solana tx — is trusted plugin code
+- **TRUSTED (imperative, not proven):** the hook body itself - `placeLong` /
+  `closePosition` building and server-signing the Solana tx - is trusted plugin code
   (as all plugin bodies are). The proof says no *accepted* open can over-reserve; it
   does not prove the chain executed the tx, nor that the fill matched the intent.
 - **RESIDUAL needing a live onchain fill to confirm e2e:** that the hook actually
   fires on the reservation write and that the realized-PnL writeback lands in the
   same window on a *real* Phoenix fill (margin committed == `reservedMicro`, and
   `realized ≤ margin` holding through liquidation). That's an integration test
-  against a live market, not an SMT obligation — the one part of the loop the prover
-  structurally can't reach.
+  against a supported live market, not an SMT obligation.
+  Current devnet cannot close this residual because Phoenix is unavailable there.
 
 This is the resolution to **B-2**: the cap no longer binds only the losses the code
 remembers to write; it binds the worst case at the moment of opening, which the
@@ -257,10 +285,10 @@ real money that can leave the escrow in any 24h window.
 
 ## Notes & gotchas
 
-- **Eventual consistency:** don't read-after-write the onchain doc; use the read
-  functions (`getPositionSize`, `getUnrealizedPnl`) for authoritative live state.
+- **Eventual consistency:** confirm the transaction first, then poll the expected Bounded postcondition with a bounded deadline.
+  The Phoenix read helpers are offchain-only source functions and are currently unsupported on devnet.
 - **Custody key safety:** the sponsor/escrow wallet IS the fund for `@contract.address`
-  trades — treat it like the owner key.
+  trades - treat it like the owner key.
 - **Collateral currency is PhUSD** for Phoenix; bridge with `emberDeposit`/`emberWithdraw`.
 - Function name aliases exist as numeric ids (e.g. `placeLong` = `128`); always use the
   named form in policies.

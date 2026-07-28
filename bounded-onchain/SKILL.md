@@ -13,7 +13,7 @@ description: >-
 
 Wallets, tokens, on-chain transactions, and payments. The **canonical Bounded
 email/social login can include a wallet**: turn on `auth.wallets` (Crossmint,
-non-custodial) and supported email/social logins carry a real `@user.address` — see
+non-custodial) and supported email/social logins carry a real `@user.address` - see
 [docs/embedded-wallets.md](docs/embedded-wallets.md). `@user.id` (the account id)
 stays the identity/ownership key; `@user.address` is the wallet. On-chain writes
 still pass their policy rules and invariants first, so pair this with the
@@ -25,6 +25,7 @@ the root **bounded** skill.
 | User task | Read |
 |---|---|
 | Onchain data / Solana collections | [docs/onchain.md](docs/onchain.md) |
+| Solana function catalog, devnet support, live verification status, blocked integrations, or "does this plugin work on devnet?" | [docs/solana-capability-status.md](docs/solana-capability-status.md) |
 | Onchain mirror/indexer, Helius webhook, missed transaction, outage catch-up, replay, reconciliation, or DLQ recovery | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | "Transaction too large", verify/deploy rejected for **transaction size**, 413 on an onchain write, hook over the 1182/1232-byte limit, splitting hooks, argument/string bytes, lookup tables | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Policy upgrade governance, immutable apps, controller policies, manifest signing, stuck update sessions, or governance recovery | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
@@ -32,12 +33,12 @@ the root **bounded** skill.
 | Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
 | Randomness, VRF, a gacha/raffle/shuffle, `isRevealPath`, or making a DRAW provable rather than just the number. **The roll is READABLE before anyone acts on it**, so read this before designing the pool it draws from | [docs/randomness.md](docs/randomness.md) |
-| **Launch a token** on Meteora — Dynamic Bonding Curve, anti-snipe fee decay, creator/partner fee split, graduation/migration to DAMM v2, claiming fees (`createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover`) | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
+| **Launch a token** on Meteora - Dynamic Bonding Curve, anti-snipe fee decay, creator/partner fee split, graduation/migration to DAMM v2, claiming fees (`createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover`) | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
 | **Split fees between 3+ parties**: the current canonical 10/20/20/50 venue/creator/steward/app-reserve model, its proven treasury ledger and permissionless distribute, or the historical 55/25/20 treasury/creator/Poof worked example | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
-| **Sweep fees / run an onchain job on a schedule** — the keeper pattern (offchain schedule → function `actAs` a signer → onchain write, because schedules are rejected on onchain collections), permissionless = reliability-only | [docs/oapps-tokenomics-fee-split.md → the keeper](docs/oapps-tokenomics-fee-split.md#the-keeper--offchain-schedule--function--onchain-write) |
-| **Fund build/AI spend from earned fees** — a fee-funded build allowance capped by a proven `rollingSum` burn cap on an append-only log | [docs/oapps-tokenomics-fee-split.md → build allowance](docs/oapps-tokenomics-fee-split.md#the-fee-funded-build-allowance--a-proven-rolling-burn-cap) |
+| **Sweep fees / run an onchain job on a schedule** - the keeper pattern (offchain schedule → function `actAs` a signer → onchain write, because schedules are rejected on onchain collections), permissionless = reliability-only | [docs/oapps-tokenomics-fee-split.md → the keeper](docs/oapps-tokenomics-fee-split.md#the-keeper--offchain-schedule--function--onchain-write) |
+| **Fund build/AI spend from earned fees** - a fee-funded build allowance capped by a proven `rollingSum` burn cap on an append-only log | [docs/oapps-tokenomics-fee-split.md → build allowance](docs/oapps-tokenomics-fee-split.md#the-fee-funded-build-allowance--a-proven-rolling-burn-cap) |
 | **Give supported email/social logins an embedded wallet** (`@user.address`), Crossmint, `auth.wallets` | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
-| Let users **connect their own Solana wallet** (Phantom / Wallet-Standard) to log in — "connect wallet", wallet login, `walletLogin`, `authMethod:'phantom'`, real wallet as `@user.address`, local `signMessage`/`signTransaction` — the **bring-your-own companion** to the canonical login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
+| Let users **connect their own Solana wallet** (Phantom / Wallet-Standard) to log in - "connect wallet", wallet login, `walletLogin`, `authMethod:'phantom'`, real wallet as `@user.address`, local `signMessage`/`signTransaction` - the **bring-your-own companion** to the canonical login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
 | Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail, card→crypto rail seam | [docs/accept-crypto.md](docs/accept-crypto.md) |
 | Bounded Pay (accept card payments, Stripe Connect, fiat) | [docs/bounded-pay.md](docs/bounded-pay.md) |
 
@@ -46,6 +47,7 @@ the root **bounded** skill.
 | If you see | Read |
 |---|---|
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
+| compiler support, deployed support, devnet status, supported, unsupported, blocked, unverified, Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor | [docs/solana-capability-status.md](docs/solana-capability-status.md) |
 | "Transaction too large", tx-size gate, packet limit, 1232, oversized hook | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Helius, indexer, mirror, reconciliation debt, missed transaction, replay, cursor, tombstone, DLQ | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | `governance.upgrade`, policy controller, immutable, manifest root, governed session, recovery, extend, cancel | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
@@ -65,9 +67,16 @@ the root **bounded** skill.
 - **Default onchain login = `auth.wallets` + wallet login, side by side.** Turn on `{ "auth": { "wallets": true } }` in policy so email/social users get a Crossmint wallet (the primary path), and add bring-your-own **wallet login** (`walletLogin`) for users who already hold a Solana wallet. See [docs/embedded-wallets.md → recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app). Prescribe this for any onchain app.
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
-- Treat compiler support and deployed-program support as separate capabilities. Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
+- Treat discovery, deployed-runtime support, and live-network verification as three independent states.
+- Check the [Solana devnet capability catalog](docs/solana-capability-status.md) before proposing any plugin or primitive.
+- Never infer devnet support from a compiler tag, manifest, proof contract, Poofnet model, lookup-table entry, or local validator test.
+- Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
+- Current chain-backed named queries belong on `onchain: true` paths and require an authenticated `userAddress` at execution time.
+- Do not recommend an `onchain: false` view for an offchain-only plugin read until standalone chain-query execution is fixed.
 - Treat runtime-v3 governance the same way: enroll only after the deployed capability registry reports v3, and publish governance from observed chain state rather than policy intent.
-- Keep Poofnet, offchain views, and Solana paired. Pure/read primitives must return the same shape from `onchain: false` policies, and mutating primitives must apply a modeled effect or fail closed; validation-only success is a parity bug.
+- Keep Poofnet and Solana behavior paired.
+- Pure/read primitives must return the same shape in runtimes where they are actually executable, and mutating primitives must apply a modeled effect or fail closed.
+- Validation-only success is a parity bug.
 - Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. Do not ask app builders to create webhook URLs or supply provider secrets; follow the operator checklist in [docs/onchain.md](docs/onchain.md#mirror-completeness).
 - Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.

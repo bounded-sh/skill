@@ -40,6 +40,11 @@ obligation and still not do what you meant — see below.
   denial verbatim → fix the policy → `bounded verify` → `bounded deploy`.
   Tests are the tight inner loop; verify is the gate before shipping.
 
+`bounded tests run` executes the local policy in a fresh throwaway sandbox and does not modify the target app's deployed policy.
+It still needs an existing app ID for authentication and plan context.
+For a brand-new project with no app ID, run `bounded verify` first, create and record the app, then run the policy tests before the next deployment.
+You may instead pass `--app-id` for another app you administer when you need the local-policy test loop before creating the new app.
+
 ## File format
 
 One file per logical concern, `policy-tests/*.json`:

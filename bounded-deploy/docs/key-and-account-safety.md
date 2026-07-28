@@ -50,6 +50,14 @@ For wallet-mode CI / automation, set the base58 secret key in the
 `BOUNDED_PRIVATE_KEY` env var. When selected as the account source, it supplies the
 wallet key without reading any credentials file.
 
+For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` has higher precedence than `account.keySource:"global"`, `"project"`, or `"profile"`.
+This is intentional for CI, but it can silently select a different owner if the variable leaks into an interactive shell.
+Before a sensitive deploy that must use a particular stored key, run `bounded whoami --json` and require the expected `keySource` and public address, or fail closed when `BOUNDED_PRIVATE_KEY` is present.
+An explicit `account.keySource:"web"` continues to use the web session for control-plane commands.
+In JSON output, `keySource` is the stable enum `global`, `project`, `env`, `web`, `profile`, or `unknown`.
+The separate `keyLocation` field carries the descriptive source such as `global (~/.bounded/credentials)`.
+Automation must compare the enum instead of parsing the descriptive label.
+
 - It is a **secret**. Never commit it, never log it, never echo it. Store it in your
   CI provider's secret manager.
 - It must be the **same key** that owns the apps your CI touches (or a linked /
@@ -73,7 +81,7 @@ When `keySource` is `web`, control-plane commands use the web session. Commands
 that require a local wallet signer fail with a clear message and ask you to pick
 `project`, `global`, `profile`, or `env`; they should not silently link or create
 a key. When a wallet/keypair source is selected, keypair commands use that source,
-and `BOUNDED_PRIVATE_KEY` is the explicit CI/automation path.
+and `BOUNDED_PRIVATE_KEY` is the higher-precedence CI/automation override.
 
 The global key is the default and auto-works. For one project under another
 account, run `bounded account use client-a`; the next auth command creates/uses

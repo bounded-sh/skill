@@ -1,9 +1,9 @@
-# SDK Reference — `@bounded-sh/client` + `@bounded-sh/server`
+# SDK Reference - `@bounded-sh/client` + `@bounded-sh/server`
 
-**What's in here / when to read this:** every SDK method —
+**What's in here / when to read this:** every SDK method -
 `get`/`setMany`/`subscribe`/`search`/`count`/`aggregate`, auth,
 `createWalletClient`, `verifyWebhook`, and invoking a function. (Collaborators
-are managed by the CLI, not the SDK — see below.)
+are managed by the CLI, not the SDK - see below.)
 
 **Two packages, one operation surface.** The SDK ships as two npm packages:
 
@@ -14,9 +14,9 @@ are managed by the CLI, not the SDK — see below.)
 - `@bounded-sh/server` runs on a server, signs with a keypair (no browser auth),
   and adds `createWalletClient` + `verifyWebhook`.
 
-(`@bounded-sh/core` is a shared dependency of both — you rarely install it directly.)
+(`@bounded-sh/core` is a shared dependency of both - you rarely install it directly.)
 
-Both speak to Bounded's runtime, which enforces the deployed policy — the SDK can
+Both speak to Bounded's runtime, which enforces the deployed policy - the SDK can
 never bypass a rule or invariant.
 
 > Beta: Bounded is in beta. The packages are published on npm; the APIs below are
@@ -43,7 +43,7 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
 `init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
-production by default** — `init({ appId })` just works, no endpoints to set (the
+production by default** - `init({ appId })` just works, no endpoints to set (the
 network is `'bounded-production'`). **Email + OAuth/social + text** work through
 the hosted flow `loginWithRedirect` / `loginWithPopup`; the credential is entered
 on `auth.bounded.sh`, never your origin. Pass `methods: ["email", "google"]` for
@@ -63,12 +63,12 @@ Full flow in [auth.md](auth.md).
 > can override individual endpoints, but you should normally use `network`, which
 > selects the whole set.
 
-`appId` is your project's **public** app id — it is **not a secret API key**.
+`appId` is your project's **public** app id - it is **not a secret API key**.
 Authentication is done with the user's wallet/session id-token bearer (see
 [auth.md](auth.md)), so the `appId` is safe to ship in client code. New code
 must use `appId`; do not teach `apiKey` as app identity or query auth.
 
-## Read — `get` / `getMany`
+## Read - `get` / `getMany`
 
 `get(path, opts?)` reads a single document (even-segment path) or **lists a
 collection** (odd-segment path). For collection reads, `opts` carries the query
@@ -88,21 +88,21 @@ const next = await get("orders", { /* same filter/sort */ limit: 20, cursor: ope
 
 - **Single-document `get` returns exactly one shape: the resolved document, or
   `null` if it doesn't exist** (Firebase/Mongo convention). It is never wrapped in
-  a `{ data, status }` envelope — `if (!doc) { …create… }` is always a safe
+  a `{ data, status }` envelope - `if (!doc) { …create… }` is always a safe
   existence check.
-- **Collection `get` returns `{ data, nextCursor }`** — `data` is the row array,
+- **Collection `get` returns `{ data, nextCursor }`** - `data` is the row array,
   `nextCursor` is the next-page token (`null`/absent when exhausted).
 - **Every returned row carries both `_id` and `id`.** `_id` (and `pathId`) is the
   **full document path** (`"rooms/r1/prompts/8rd49se3sg"`); `id` is the
   convenience **bare leaf doc key** (`"8rd49se3sg"`). Use `id` for React keys and
-  when building a child path (`${path}/${row.id}/votes/...`) — building from `_id`
+  when building a child path (`${path}/${row.id}/votes/...`) - building from `_id`
   doubles the path. The same `_id`/`id` pair is present on single-doc `get`,
   `getMany` rows, and `subscribe`/`useQuery` rows. (A user field literally named
   `id` is never overwritten.) `docId(path)` is exported as a standalone helper that
   returns the leaf key of any path.
 - Cursor paging: a `limit`ed query returns `{ data, nextCursor }`; pass `nextCursor`
   back as `opts.cursor` for the next page, loop until it is null. (There is no
-  separate `getPage` — paging is built into `get`.)
+  separate `getPage` - paging is built into `get`.)
 - `getMany(paths)` → batch-read several **paths** at once (not a filter). Each
   result is `{ path, data, error? }`; `data` is the doc-or-null carrying the bare
   `id`.
@@ -110,11 +110,11 @@ const next = await get("orders", { /* same filter/sort */ limit: 20, cursor: ope
 `GetOptions`: `filter` (structured MongoDB-style), `sort` (`{ field: 1 | -1 }`),
 `limit`, `cursor`, `includeSubPaths`, `shape`, `prompt` (natural-language
 alternative to `filter`), `bypassCache`. Read access always obeys the collection's
-`read` rule — a filter never returns a doc the caller can't read. Filter operators:
+`read` rule - a filter never returns a doc the caller can't read. Filter operators:
 `$ne $gt $gte $lt $lte $in $nin $exists $regex $options $and $or $nor` (bare value
 = equality). See [queries.md](../../bounded-backend/docs/queries.md).
 
-## Search & aggregate — `search` / `count` / `aggregate` / `queryAggregate`
+## Search & aggregate - `search` / `count` / `aggregate` / `queryAggregate`
 
 ```ts
 const hits = await search("notes", "shipping");                  // search(path, query, opts?)
@@ -141,7 +141,7 @@ const rows  = await queryAggregate("orders", { groupBy: ["status"], count: true,
 
 Details and CLI equivalents: [queries.md](../../bounded-backend/docs/queries.md).
 
-## Write — `set` / `setMany`
+## Write - `set` / `setMany`
 
 `set(path, document)` is sugar for a one-element `setMany`. `setMany([...])` is
 **one atomic transaction**: every rule, hook, and invariant passes for the whole
@@ -165,9 +165,9 @@ Inside Bounded Functions, the same batch shape is available as
 `ctx.bounded.setMany([{ path, document }, ...])`; it targets the same data-plane
 transaction path and is the right API for function-assembled settlements.
 
-### Delete — `set(path, null)`
+### Delete / `set(path, null)`
 
-There is **no separate `del`/`remove`** — a write with a `null` document **is**
+There is **no separate `del`/`remove`** - a write with a `null` document **is**
 the delete. `set(path, null)` hard-deletes the document at `path`, routed through
 that collection's policy **`delete` rule** (so a delete is denied unless `delete`
 allows it). Subscribers receive a delete event for that path.
@@ -181,16 +181,16 @@ await setMany([                                  // atomic multi-delete (all-or-
 ]);
 ```
 
-Deletes compose inside a `setMany` alongside upserts — one atomic transaction
+Deletes compose inside a `setMany` alongside upserts - one atomic transaction
 where every affected row's rule + the batch's invariants must pass. To *allow*
 deletes, set a real `delete` rule in your policy (the default scaffolds
 `"delete": "false"`, which blocks them).
 
 **From the CLI** it's a dedicated command, not `set` with null (the CLI rejects a
-null body): `bounded data delete --app-id <id> --path <collection>/<id>` — same
+null body): `bounded data delete --app-id <id> --path <collection>/<id>` - same
 `delete`-rule enforcement. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#data-delete).
 
-### Server-resolved field values — `increment` / `serverTimestamp`
+### Server-resolved field values - `increment` / `serverTimestamp`
 
 A field in a `set`/`setMany` payload can be a plain value **or** a field-value
 operation the server resolves atomically when the write commits. Two are
@@ -204,18 +204,18 @@ await set("scores/p1",      { points: increment(-5) });     // negative = decrem
 await set("posts/p1",       { createdAt: serverTimestamp() }); // server unix-seconds clock
 ```
 
-- **`increment(n)`** adds `n` to a numeric field **server-side and atomically** —
+- **`increment(n)`** adds `n` to a numeric field **server-side and atomically** -
   Bounded serializes writes, so concurrent increments never lose
   updates (verified: 20 concurrent `increment(1)` → exactly 20). The field starts
   from `0` if the doc/field doesn't exist yet. Use this for counters/scores
   instead of read-modify-write (which races and can drop updates).
 - **`serverTimestamp()`** stamps the field with the server's clock (Unix
-  seconds) — the trustworthy "when did this happen" a client clock can't give you
+  seconds) - the trustworthy "when did this happen" a client clock can't give you
   (a hook can't stamp time, so do it here on the client write). **Prefer this for
   any timestamp a policy reads** (TTLs, rate windows, anti-cheat): it's seconds
   (matches `@time.now`) and unforgeable.
 
-#### Time helpers — `now` / `toSeconds` / `toMillis` (avoid the seconds/ms trap)
+#### Time helpers - `now` / `toSeconds` / `toMillis` (avoid the seconds/ms trap)
 
 Bounded's policy layer is **Unix seconds** (`@time.now`, `windowSeconds`,
 `scheduledAt`); JavaScript and the system fields `_createdAt`/`_updatedAt` are
@@ -237,18 +237,18 @@ Rule of thumb: **write** a policy-read timestamp with `serverTimestamp()`,
 
 Both compose inside a `set` alongside plain fields and inside an atomic
 `setMany`. They are plain objects (`{ operation: "increment", value: n }` /
-`{ operation: "time", value: "now" }`) — the helpers are just the discoverable
+`{ operation: "time", value: "now" }`) - the helpers are just the discoverable
 way to write them. Increments still answer to invariants: an `increment` that
 would breach a `rollingSum`/`bound` cap is rejected (409) like any other write.
 
-## Subscribe (live) — `subscribe`
+## Subscribe (live) - `subscribe`
 
 `@bounded-sh/client` only. Every collection is live. **In React, prefer the
 `useQuery` hook** (auto-updating value, no callback to misuse); use the imperative
 `subscribe` outside React or for side-effects.
 
 ```tsx
-// React — reactive value, always the full current set, re-renders on any change:
+// React - reactive value, always the full current set, re-renders on any change:
 import { useQuery } from "@bounded-sh/client";
 const { data: rows, loading, error } = useQuery("rooms/r1/messages", { filter: { open: true } });
 //      ^ array for a collection, doc|null for a single-doc path; undefined until first delivery.
@@ -256,9 +256,9 @@ const { data: rows, loading, error } = useQuery("rooms/r1/messages", { filter: {
 ```
 
 `subscribe` streams a single document or a filtered collection and calls `onData`
-**on every change** (the full current array each time — not per-row deltas). It
+**on every change** (the full current array each time - not per-row deltas). It
 returns an unsubscribe function. **`onData` fires repeatedly; never treat the
-first call as complete** — a doc another writer creates a beat later arrives in a
+first call as complete** - a doc another writer creates a beat later arrives in a
 *later* call, so render/merge on every call, not once.
 
 ```ts
@@ -272,41 +272,57 @@ await stop();
 
 `SubscribeOptions`: `filter`, `prompt`, `shape`, `limit`, `cursor`, `onData`,
 `onError`, `appId`. `filter`/`shape`/paging match `get` and apply to the initial
-snapshot AND deltas (no `sort` — a live feed is event-ordered). Read rules are
+snapshot AND deltas (no `sort` - a live feed is event-ordered). Read rules are
 enforced per delivered document.
 
 `onData` payload follows the path, **not** `get`'s paged envelope: a single-doc
 path delivers the document (or `null`); a collection path delivers a **plain
 array** (`[]` when empty), re-delivering the whole matching set on each change.
-Note the contrast — `get("c", { limit })` returns `{ data, nextCursor }` but
+Note the contrast - `get("c", { limit })` returns `{ data, nextCursor }` but
 `subscribe("c", { limit })` hands `onData` the **bare array** (write
 `onData: (rows) => …`, not `onData: ({ data }) => …`). Each delivered row carries
-the same `_id` (full path) + `id` (bare leaf key) pair as `get` — use `row.id` for
+the same `_id` (full path) + `id` (bare leaf key) pair as `get` - use `row.id` for
 React keys and child paths. More: [realtime-and-games.md](../../bounded-backend/docs/realtime-and-games.md).
 
-## Files — `setFile` / `getFiles`
+## Files - `setFile` / `getFiles`
 
 For `type: "storage"` collections (same path-scoped auth as data).
 
 ```ts
 // blob + declared fields in one atomic create; system meta auto-filled
 await setFile("users/u1/files/avatar", file, { metadata: { name: "avatar.png", owner: myId } });
-const { data } = await getFiles("users/u1/files"); // [{ path, url, metadata }] — signed download links + metadata
+const { data } = await getFiles("users/u1/files"); // [{ path, url, metadata }] - signed download links + metadata
 ```
 
 `setFile(path, file, { metadata })` writes the blob, auto-fills system metadata
 (`contentType`/`size`/`status`/`uploadedBy`/`createdAt`), and sets your declared
 fields from `metadata` (validated against the collection's `fields`; lands in
-`@newData` for the CREATE rule). `metadata` is create-only — change an existing
+`@newData` for the CREATE rule). `metadata` is create-only - change an existing
 file's fields with `set()`. `file = null` deletes. Details:
 [files-and-search.md](../../bounded-backend/docs/files-and-search.md).
 
-## Policy queries & expressions — `runQuery` / `runExpression`
+## Policy queries & expressions - `runQuery` / `runExpression`
 
 ```ts
 const total = await runQuery("orgs/o1/docs/d1", "wordCount", { /* args */ });
 const ok    = await runExpression("@newData.amount <= 100", { amount: 60 });
 ```
+
+The third `runQuery` argument is `queryArgs`.
+The runtime stages those fields into `@newData` while evaluating the named query.
+A query expression may therefore read `@newData.amount`, `@newData.symbol`, or another supplied argument field.
+The arguments do not write or persist a document.
+
+Current Solana named-query behavior has two important limits.
+A chain-backed named query must be declared on an `onchain: true` path because the current executor does not activate standalone chain execution for an `onchain: false` path.
+Actual chain-query execution requires an authenticated `userAddress` even when the path read rule is public.
+Catalog browsing, typed-form validation, and local preflight can remain wallet-free, but a live chain query cannot.
+Offchain-only plugin reads have no working chain-query placement until the runtime is fixed.
+Check the [Solana devnet capability catalog](../../bounded-onchain/docs/solana-capability-status.md) before calling a plugin query.
+
+`@PriceFeedPlugin.getPriceFeed` returns a decimal `String` from the deployed Solana runtime.
+Declare its named query with `returnType: "String"` and parse the returned text explicitly only where application code needs numeric arithmetic.
+Do not declare the result as `Float`.
 
 ### Batch your queries
 
@@ -332,7 +348,7 @@ Parallel per-item POSTs trip the platform rate limiter (`HTTP 429`); app-level
 Policy `queries` are validated at deploy and participate in a proof where a
 supported obligation references them; see [queries.md](../../bounded-backend/docs/queries.md).
 
-## Collaborators — managed via the CLI (not the SDK)
+## Collaborators - managed via the CLI (not the SDK)
 
 Collaborators (who may deploy/update an app's policy) are a **control-plane**
 concern, managed with the **CLI**, not the data-plane `@bounded-sh` SDK. Use:
@@ -348,7 +364,7 @@ to the invitee's Bounded wallet and send an invite email when outbound email is
 configured. `unshare` accepts the resolved wallet address, not the email; obtain
 it from `bounded collaborators` before removing an email-invited collaborator.
 
-## Auth (client) — `login` / `logout` / `getCurrentUser` / `useAuth`
+## Auth (client) - `login` / `logout` / `getCurrentUser` / `useAuth`
 
 ```ts
 import { logout, getCurrentUser, useAuth, signInAnonymously,
@@ -360,7 +376,7 @@ const user = getCurrentUser();       // { id, address, email, isAnonymous } | nu
 // React:
 const { user, logout, loading } = useAuth();
 
-// Human login — pick a UX. HOSTED (most secure; web AND React Native), app-owned
+// Human login - pick a UX. HOSTED (most secure; web AND React Native), app-owned
 // button + callback page:
 await loginWithRedirect({
   methods: ["email", "google"],      // or provider: "apple"/"github" to jump to one;
@@ -381,14 +397,14 @@ await signInAnonymously();
 
 **Logout really logs out (0.0.51+).** For hosted sessions on the web, `logout()`
 revokes the refresh-token family, clears local state, then does a top-level
-bounce through the issuer's `/logout` so the hosted session cookie dies too —
+bounce through the issuer's `/logout` so the hosted session cookie dies too -
 the next `loginWithRedirect` shows a fresh account choice instead of silently
 re-signing in the same user. Expect a page reload on sign-out. Pass
 `logout({ keepIssuerSession: true })` for the old local-only behavior. The
 bounce only runs on issuer-trusted origins (`*.bounded.sh` / `*.bounded.page` /
 `*.oapps.fun` / https localhost); on custom domains logout stays local-only.
 
-> **Warning — custom domains and iframes get local-only logout.** On a custom
+> **Warning - custom domains and iframes get local-only logout.** On a custom
 > domain (or embedded in an iframe, where the top-level issuer bounce cannot
 > run), `logout()` clears local state but the hosted session cookie survives:
 > the next `loginWithRedirect` silently re-authenticates the same account with
@@ -400,18 +416,18 @@ bounce only runs on issuer-trusted origins (`*.bounded.sh` / `*.bounded.page` /
 
 The `user` object has four fields:
 
-- `user.id` — the **universal stable identity**, always present for an
+- `user.id` - the **universal stable identity**, always present for an
   authenticated user. For wallet logins it equals the wallet address; for
   Bounded Auth logins (email, text, OAuth/social) it is the account identity. Use
   this for ownership / membership / identity (e.g. doc keys, owner fields,
   `view/<myId>`).
-- `user.address` — a **real onchain wallet address**. Present for wallet logins
+- `user.address` - a **real onchain wallet address**. Present for wallet logins
   and browser guests; `null` for Bounded Auth logins unless `auth.wallets`
   provisions or the user links a wallet. Guest auth itself remains offchain-only.
   Use this only for onchain operations / wallet semantics.
-- `user.email` — the verified, lowercased email for email/OAuth accounts. It is
+- `user.email` - the verified, lowercased email for email/OAuth accounts. It is
   `null` for wallet and phone-only text users. Use for email-gating.
-- `user.isAnonymous` — `true` for a browser guest and `false` for a real login.
+- `user.isAnonymous` - `true` for a browser guest and `false` for a real login.
   It is mirrored as the offchain-only `@user.isAnonymous` policy value.
 
 `onAuthStateChanged(cb)` / `onAuthLoadingChanged(cb)` are the imperative
@@ -421,7 +437,7 @@ the **only** `@user.*` variable allowed inside `onchain:true` collections); and
 `@user.email` is the verified email. Use `@user.id` for ownership/membership.
 Full flow, providers, and embedded wallets: [auth.md](auth.md).
 
-## `@bounded-sh/server` — `createWalletClient`
+## `@bounded-sh/server` - `createWalletClient`
 
 > **Use Node ≥ 18.** The server SDK
 > pulls in ESM-only transitive deps (e.g. via `@solana/web3.js` →
@@ -430,7 +446,7 @@ Full flow, providers, and embedded wallets: [auth.md](auth.md).
 > entrypoints cleanly. Use an LTS Node (18/20/22).
 
 The server client wraps the **same operations**, signed by a keypair, with no
-browser auth. Each client has its own session — no global state.
+browser auth. Each client has its own session - no global state.
 
 There are two server setup shapes; both work:
 
@@ -447,7 +463,7 @@ await vault.set("markets/123", { open: true });
 await vault.setMany([ /* atomic batch */ ]);
 const doc = await vault.get("markets/123");
 
-// Subscribe AS this wallet — no BOUNDED_PRIVATE_KEY env var needed. The live
+// Subscribe AS this wallet - no BOUNDED_PRIVATE_KEY env var needed. The live
 // connection authenticates with the client's own session, so read rules see the
 // right principal. Accepts a bare callback or { onData, onError, filter, ... }.
 const stop = await vault.subscribe("markets", (rows) => console.log(rows));
@@ -467,18 +483,18 @@ Prefer these client methods over the top-level `get` /
 `subscribe` exports when you hold a `createWalletClient` instance: the top-level
 ones use the ambient `BOUNDED_PRIVATE_KEY` session and throw `No server keypair`
 if it isn't set, whereas the client methods authenticate as the client's own
-keypair. `keypair` is a base58 string or JSON array secret key — the **base58**
+keypair. `keypair` is a base58 string or JSON array secret key - the **base58**
 form is the same value the CLI stores as the `privateKey` field in
 `~/.bounded/credentials` (and accepts via `BOUNDED_PRIVATE_KEY`), so a server can
 sign as the CLI identity by reading that key. Server tasks:
 [../guides/building-a-backend.md](../../bounded-backend/docs/building-a-backend.md).
 
-### Verifying webhooks — `verifyWebhook`
+### Verifying webhooks - `verifyWebhook`
 
 `@bounded-sh/server` also exports `verifyWebhook` for inbound mutation webhooks.
 It fetches + caches Bounded's Ed25519 public key (from the hosted `/.well-known`
 keys endpoint), checks the signature over the raw body, and enforces timestamp
-skew — returning the typed payload or throwing `WebhookVerificationError`.
+skew - returning the typed payload or throwing `WebhookVerificationError`.
 
 ```ts
 import { verifyWebhook, WebhookVerificationError } from "@bounded-sh/server";
@@ -496,7 +512,7 @@ const event = await verifyWebhook(rawBody, headers, {
 ```
 
 Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
-`DEFAULT_WEBHOOK_KEYS_URL`. `verifyWebhook(rawBody, headers, opts?)` — `opts`
+`DEFAULT_WEBHOOK_KEYS_URL`. `verifyWebhook(rawBody, headers, opts?)` - `opts`
 sets `expectedAppId` / `replayStore` and can override `keysUrl` /
 `maxSkewSeconds` / cache TTL. The default keys URL follows
 your `init({ network })` (the receiver verifies against that network's signing
@@ -507,9 +523,9 @@ shared Redis/KV/DB namespace across all receiver instances. The SDK's default
 in-memory replay protection is suitable only for a single process. Declaring webhooks:
 [hooks-scheduled-webhooks.md](../../bounded-backend/docs/hooks-scheduled-webhooks.md).
 
-### Invoking a function — `functions.invoke`
+### Invoking a function - `functions.invoke`
 
-Use the first-class `functions.invoke(name, args)` helper — exported from both
+Use the first-class `functions.invoke(name, args)` helper - exported from both
 `@bounded-sh/client` and `@bounded-sh/server`. It attaches the caller's session token
 automatically (the same token the data plane sends), so Bounded verifies your
 identity and evaluates the function's `auth` policy rule before it runs:
@@ -531,9 +547,9 @@ proof boundary): [functions.md](../../bounded-backend/docs/functions.md).
 
 ## Related
 
-- [../guides/building-a-webapp.md](building-a-webapp.md) — client setup + auth + live reads
-- [../guides/building-a-backend.md](../../bounded-backend/docs/building-a-backend.md) — server-signed writes
-- [auth.md](auth.md) — CLI/admin auth sources and end-user email/wallet auth
-- [queries.md](../../bounded-backend/docs/queries.md) — filters, sort, paging, aggregations, search
-- [data-plane.md](../../bounded-backend/docs/data-plane.md) — atomic writes and failure semantics
-- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — the same operations from the CLI
+- [../guides/building-a-webapp.md](building-a-webapp.md) - client setup + auth + live reads
+- [../guides/building-a-backend.md](../../bounded-backend/docs/building-a-backend.md) - server-signed writes
+- [auth.md](auth.md) - CLI/admin auth sources and end-user email/wallet auth
+- [queries.md](../../bounded-backend/docs/queries.md) - filters, sort, paging, aggregations, search
+- [data-plane.md](../../bounded-backend/docs/data-plane.md) - atomic writes and failure semantics
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) - the same operations from the CLI

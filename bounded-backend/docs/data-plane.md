@@ -297,6 +297,44 @@ Composition rules:
 - Invariants are evaluated against the **whole batch** (that is how the
   balanced transfer above passes `conserve`).
 
+### Require companion writes with `requiresInBatch`
+
+Atomicity does not force a caller to include every logical leg.
+A hostile client can otherwise omit one write and submit a smaller batch whose remaining rules all pass.
+Declare `requiresInBatch` on a collection when mutating one document is only valid with specific companion paths:
+
+```json
+"positions/$positionId": {
+  "requiresInBatch": {
+    "update": ["pool/main", "nftescrow/$positionId"],
+    "delete": ["pool/main"]
+  },
+  "rules": {
+    "read": "true",
+    "create": "@user.id != null",
+    "update": "@user.id != null",
+    "delete": "@user.id != null"
+  }
+}
+```
+
+A bare string array applies to create, update, and delete.
+The per-action object may contain only `create`, `update`, and `delete`, with at most eight distinct document paths per action.
+A referenced `$variable` must be bound by the declaring collection's own path template.
+The required path must address another collection declared in the same policy and cannot be a vacuous reference to the declaring collection itself.
+
+A single-document set or delete is still a batch of one and is refused when it lacks a required companion.
+Any real mutation of the required path satisfies the presence check.
+A delete of a nonexistent document is a no-op and satisfies nothing.
+Because the batch is all-or-nothing, a companion write that fails its own rule or invariant aborts the complete operation.
+The HTTP and WebSocket client mutation lanes enforce this before rule evaluation.
+Platform-derived hook, reveal, room-settlement, and other system writes are outside the client-batch guard and remain governed by their own declarations.
+
+An incomplete batch returns HTTP 403 or a WebSocket error with code `incomplete_batch`.
+The message names the triggering write, declaring collection, and missing concrete paths, and the decision log records the refusal.
+`requiresInBatch` is runtime-enforced and structurally validated.
+It is not an SMT proof obligation, so a green proof report does not replace an allow and deny policy test for the complete batch.
+
 For one-click market settlement, pair this with
 [`proofs.transferAuthority`](policy-reference.md#conditional-transfer-authority):
 put the shared sale predicate in `defs`, use it in the good's `holder` update

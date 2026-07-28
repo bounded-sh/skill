@@ -283,6 +283,7 @@ rejected):
 |---|---|---|
 | `fields` | `{ name: Type }` | this doc |
 | `rules` | `{ read, create, update, delete }` | this doc |
+| `requiresInBatch` | `["other/doc"]` for every mutation, or `{ create?, update?, delete? }` arrays of required companion document paths. Enforced on client data-plane batches with `403 incomplete_batch`; path variables must be bound by this collection's template | [data-plane.md](data-plane.md#require-companion-writes-with-requiresinbatch) |
 | `tier` | `"durable" \| "checkpointed" \| "ephemeral"` | this doc |
 | `errorDisclosure` | `"full" \| "minimal"` — how much of a rejection reason reaches the client | [§ Error disclosure](#error-disclosure) |
 | `invariants` | array of invariant objects | [invariants.md](invariants.md) |

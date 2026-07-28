@@ -149,11 +149,28 @@ bounded login --email you@example.com
 ```
 
 Explicit flags still win for app/environment routing: `--app-id` and `--env`
-override project defaults. `BOUNDED_PRIVATE_KEY` is the wallet-mode CI path, but
-an explicit project `account.keySource:"web"` uses the web session for
-control-plane commands; commands requiring a wallet signer ask you to select a
-wallet source. Older projects with only `.bounded/app.json` still work; the CLI
-falls back to that marker when `bounded.json` is absent.
+override project defaults.
+For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` overrides `account.keySource:"global"`, `"project"`, and `"profile"`.
+Check `bounded whoami --json` before an identity-sensitive deploy instead of assuming the public project config selected the active key.
+An explicit project `account.keySource:"web"` uses the web session for control-plane commands; commands requiring a wallet signer ask you to select a wallet source.
+Older projects with only `.bounded/app.json` still work; the CLI falls back to that marker when `bounded.json` is absent.
+
+`bounded whoami --json` separates the stable machine value from the descriptive location:
+
+```json
+{
+  "authSource": "wallet",
+  "keySource": "global",
+  "keyLocation": "global (~/.bounded/credentials)",
+  "environment": "staging",
+  "address": "<public-wallet-address>"
+}
+```
+
+`keySource` is one of `global`, `project`, `env`, `web`, `profile`, or `unknown`.
+Use `keySource` for release checks and `keyLocation` only as a human-readable diagnostic.
+The human `bounded whoami` output continues to print the descriptive location.
+Identity-sensitive automation should also require the expected environment, `authSource`, public identity, and absence of an unexpected `connection` object.
 
 Cloud source sync is opt-in and rides the deploy: set `"sourcePush": true` in
 `bounded.json` (or pass `--with-source`) and every deploy also pushes the
@@ -224,6 +241,35 @@ bounded tests run                                       # policy-tests/*.json ag
 bounded deploy                                          # redeploy using bounded.json
 ```
 
+In JSON mode, a successful direct policy deploy emits exactly one committed receipt instead of mixing human status text into stdout:
+
+```json
+{
+  "ok": true,
+  "action": "deployPolicy",
+  "state": "committed",
+  "appId": "6a37ecc89def2f10f13aa922",
+  "created": false,
+  "app": {
+    "policyRevisionCount": 7,
+    "runtimePublicationRevision": 9,
+    "status": "deployed"
+  },
+  "policyDeployReceipt": {
+    "appId": "6a37ecc89def2f10f13aa922",
+    "operationId": "<uuid>",
+    "policyRevisionCount": 7,
+    "runtimePublicationRevision": 9,
+    "status": "deployed"
+  }
+}
+```
+
+`created` is true when the same command used `--create`.
+Recovery uses action `recoverPolicyDeploy` and includes the recovered operation ID plus the same validated `policyDeployReceipt`.
+Treat the operation ID and revision fields as the deployment receipt.
+Do not infer success from a human line or omit the receipt when recording provenance.
+
 ### `tests` — policy tests
 
 Concrete allow/deny examples against a fresh sandbox app, complementary to
@@ -236,6 +282,9 @@ needed, the pre-deploy loop. `--deployed-policy` tests against the app's
 already-deployed policy instead. `--file` (repeatable) narrows to specific
 files. Exit code is 1 on any failing file; `--json` gives the full
 machine-readable run including per-step traces and denial text.
+The command still requires an existing app ID for authenticated control-plane and plan context, even when it tests the local policy override in a fresh throwaway sandbox.
+Point `--app-id` at an app you administer, or create and record the new app before its first policy-test run.
+The local-policy test does not replace that app's deployed policy.
 
 `tests push`/`list`/`pull` manage the test files attached to the app (used by
 the dashboard's Policy tests tab and CI). `push` merges by fileName unless
@@ -441,6 +490,19 @@ Bounded, which enforces the deployed policy atomically. Full semantics:
 | `data aggregate` | Grouped count/sum/avg/min/max | `bounded data aggregate --app-id <id> --path agents/a1/spend --group category --sum amount` |
 | `data search` | Full-text search a collection | `bounded data search --app-id <id> --path notes --query "shipping"` |
 | `subscribe` | **Stream realtime changes** for a path (one JSON line per server message) | `bounded subscribe "tasks/$taskId" --app-id <id>` |
+
+For onchain mutations, `data set`, `data set-many`, and `data delete` have the
+same sanitized `--json` receipt:
+
+```json
+{"transactionId":"<public-signature>","chain":"solana_devnet"}
+```
+
+The JSON receipt never includes the raw server response, serialized
+transaction, signed transaction bytes, credentials, or an RPC URL.
+Confirm `transactionId` independently at the required commitment, then poll the
+exact expected Bounded mirror, query, reveal, account, deletion, or denied
+state.
 
 ### `subscribe` — realtime watch from the CLI
 

@@ -22,6 +22,10 @@ policy/immutable upgrade governance without changing their wire tags. Both are
 additive to the legacy bytecode and instruction ABI, but no agent may assume a
 deployed Solana program supports them merely because the local compiler does.
 
+- Treat function discovery, deployed-runtime support, and live-network verification as separate states.
+- The current Bounded program is recorded as runtime v3 on devnet.
+  That establishes its runtime grammar level, not external program or account availability.
+- Check every function in [solana-capability-status.md](solana-capability-status.md) before using it.
 - Resolve the deployed program/runtime capability before compiling.
 - Runtime-v1 is the default for known deployed devnet/mainnet program ids unless
   the capability registry explicitly says otherwise.
@@ -123,6 +127,10 @@ Descriptor CPI and `@Solana.invoke` are complementary:
 Account resolution must reject descriptor drift. Attested bytes must be nonempty,
 the target must be executable, and signer confinement still applies.
 
+On current devnet, `@CPI.memoNote` and `@CPI.transferLamports` are source-present but remain unverified pending retained live proof.
+All ten Kamino descriptors are unsupported because Kamino is unavailable on devnet.
+Do not describe the generic CPI tag or descriptor registry as proof that a particular descriptor is usable.
+
 ## Cross-app Documents (`@App`)
 
 - `@App.get(appId, path)` reads the target app's onchain Document PDA.
@@ -140,8 +148,10 @@ the target must be executable, and signer confinement still applies.
 Parity is a release gate, not a best-effort convenience:
 
 1. Pure functions produce the same value and error shape in both runtimes.
-2. Chain-backed readonly functions can be called from an `onchain: false` view
-   policy through the read-only onchain query executor.
+2. Current chain-backed named queries must be declared on an `onchain: true` path.
+   The executor does not currently activate standalone chain execution for an `onchain: false` path.
+   Offchain-only plugin reads therefore have no working chain-query placement until the runtime is fixed.
+   Actual chain-query execution also requires an authenticated `userAddress`, even when the read rule is public.
 3. Onchain Documents are readable through the offchain mirror/read-through path.
 4. A mutating primitive succeeds on Poofnet only after a deterministic model,
    target-aware host handler, or explicit policy-test mock applies its effect.
@@ -172,6 +182,7 @@ For mirror guarantees and the Helius ingestion release gate, see
 
 Before enabling a new primitive or runtime version:
 
+- Add or update its individual row in [solana-capability-status.md](solana-capability-status.md).
 - Pin compiler/offchain/Rust tag parity and legacy wire fixtures.
 - Typecheck sol-layer, data-layer, and realtime packages.
 - Run compiler, account-extractor, offchain differential, realtime detector,
@@ -182,3 +193,5 @@ Before enabling a new primitive or runtime version:
   size budgets.
 - Exercise create/update/delete, readonly calls from offchain policies, replay,
   stale delivery, mirror subscription, and rollback on local validator/Surfpool.
+- On devnet, assign a run ID, confirm the public transaction, and then poll the exact expected Bounded postcondition.
+- Do not accept a toast, simulation, returned signature, or immediate read as complete evidence.
