@@ -166,6 +166,45 @@ bounded share <email-or-wallet> --role admin     --app-id <id>   # Team+ owner o
   binds the instant they verify that email. So the ask to the owner is concrete:
   *"run `bounded share <my-email> --role developer --app-id <id>`."*
 
+## Letting people INTO a private app without naming them: invite codes
+
+`bounded share` is for people you can name, and it grants a real role. For a slow
+rollout of a **private** app to people you cannot enumerate, mint invite codes
+instead. Redeeming one makes the visitor a **member**: they get past the private-site
+wall and appear to the app's own policy rules, and nothing else. A member holds no
+capability and takes no collaborator seat, so codes never become a way to reach
+`policy:deploy` or the roster.
+
+Codes live on the app, not in `policy.json` (a code is a secret; policy is public).
+The owner-side surface is `access:manage`-gated:
+
+| Do this | Endpoint |
+|---|---|
+| Mint (`count`, `maxUses`, `expiresDays`, or a vanity `code`) | `POST /app/:id/invites` |
+| List codes (metadata only) | `GET /app/:id/invites` |
+| Revoke a code | `DELETE /app/:id/invites/:codeId` |
+| List / remove members | `GET`, `DELETE /app/:id/invites/members[/:accountId]` |
+
+Things worth knowing before you design a rollout:
+
+- A **random** code's plaintext is returned exactly once, at mint. It is stored only
+  as a peppered HMAC, so nobody (including the owner) can read it back later. A
+  **vanity** code (`FRIENDS2026`) is stored in the clear so it can be listed, and is
+  matched case-insensitively.
+- Redeeming requires a **signed-in** account; guest/anonymous sessions are refused,
+  because membership binds to a durable account id.
+- Revoking a code blocks **future** redemptions only. People who already redeemed it
+  keep access (remove them individually), and referral codes minted underneath it stay
+  valid. A revoked code's value can never be minted again.
+- Codes are inert while the app is public - there is no wall to pass.
+- Visitors redeem on the private-site wall itself, which has an invite-code box, or at
+  `POST /__bounded/gate/redeem` with their app session.
+
+To let members invite their own friends, add `access.invites.referrals` to
+`policy.json` - see
+[access-control.md](../../bounded-backend/docs/access-control.md), which also covers
+gating collections on `get(/__invitees__/@user.id)`.
+
 ## The whole playbook in one flow
 
 1. **Don't give up.** `requires a keypair` / `401` / `403` ≠ "you lack access."
