@@ -102,7 +102,8 @@ not the hosting plumbing.
 ```json
 "rooms/$roomId": {
   "tier": "checkpointed",
-  "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800,
+  "session": { "intentRule": "@user.id != null",
+               "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800,
                          "snapshotEveryTicks": 30 } }
 }
 ```
@@ -146,7 +147,7 @@ The validated declaration (room + per-client view + invariants):
     "tier": "checkpointed",
     "fields": { "status": "String", "tick": "UInt" },
     "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
-    "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800, "snapshotEveryTicks": 30 } }
+    "session": { "intentRule": "@user.id != null", "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800, "snapshotEveryTicks": 30 } }
   },
   "rooms/$roomId/view/$userId": {
     "tier": "ephemeral",
@@ -159,6 +160,12 @@ The validated declaration (room + per-client view + invariants):
 
 `update: "false"` + `delete: "false"` on the room means there is no client write
 path into room state — only the native `tick` advances it.
+
+`session.intentRule` is what lets clients **act**: it gates who may send intents,
+and **absent it every intent is denied** (fail-closed). Without it the worked
+client below would subscribe successfully yet have all its `join`/`move` intents
+rejected - the room is watchable but unplayable. `"@user.id != null"` admits any
+signed-in player; use a room-membership check to restrict it further.
 
 ## Tiers: ephemeral (live) vs checkpointed (provable)
 
