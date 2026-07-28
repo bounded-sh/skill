@@ -63,6 +63,8 @@ bounded deploy --create --name my-app
 
 - Read project config first when entering an existing app; it tells you which app/environment/account source to use.
 - Claim a vanity slug with `bounded domains slug ...` and share the slug/custom-domain host, never a raw app-id host, as the public URL.
+- Use the exact environment-qualified URL returned by the active control plane or `bounded apps inspect`.
+  Production vanity hosts use `*.bounded.page`, while an isolated staging control plane may return `*.staging.bounded.page`; never synthesize a production hostname for a staging app.
 - To give a person or agent access, reach straight for `bounded share ... --role ...`; confirm with `bounded access --app-id <id> --json`.
 - After a release-critical policy deploy, use `bounded apps inspect --app-id <id> --json` to prove the exact active publication. Do not treat a toast, human success line, or immediate data read as deployment provenance.
 - For a release-critical policy plus site deployment, independently hash the immutable current site files and re-run `bounded apps inspect` after the site upload. Require the exact policy and runtime publication to remain unchanged.

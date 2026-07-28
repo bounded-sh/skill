@@ -555,11 +555,14 @@ Full treatment: [environments.md](environments.md).
 For release-critical public sites, retain the exact successful `site deploy
 --json` receipt and independently verify every uploaded byte through the
 canonical public host.
+Take that canonical host from the active control plane response or `bounded apps inspect`.
+Production normally returns `https://<slug>.bounded.page`, while an isolated staging control plane may return `https://<slug>.staging.bounded.page`.
+Do not rewrite an environment-qualified URL to match the production examples below.
 The current deployment exposes:
 
 ```text
-GET https://<slug>.bounded.page/__bounded/site-provenance.json?deployId=<deploy-id>
-GET https://<slug>.bounded.page/__bounded/site-provenance/file?deployId=<deploy-id>&path=<encoded-path>
+GET https://<canonical-host>/__bounded/site-provenance.json?deployId=<deploy-id>
+GET https://<canonical-host>/__bounded/site-provenance/file?deployId=<deploy-id>&path=<encoded-path>
 ```
 
 The manifest returns only `schemaVersion`, `appId`, `deployId`, and sorted file

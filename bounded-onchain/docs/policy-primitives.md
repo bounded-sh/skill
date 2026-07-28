@@ -36,6 +36,9 @@ deployed Solana program supports them merely because the local compiler does.
 - Reject governance enrollment and governed-update construction below v3.
 - Never deploy or upgrade mainnet as an incidental step. Rehearse captured
   legacy accounts on a local validator/Surfpool, then devnet.
+- When an exact deployed binary hard-codes an admin address, a disposable rehearsal signer cannot call its admin-only app or policy lifecycle instructions.
+  Seed deterministic program-owned policy accounts from the real compiler and IDL, then exercise authority-neutral user document paths through the exact binary.
+  Do not substitute the real admin key, rebuild with local features, or clone mutable policy accounts merely to make the rehearsal pass.
 
 The compatibility contract freezes legacy instruction entrypoints, opcode and
 error discriminants, invariant encodings, and `setDocumentsV2` wire bytes.
@@ -455,7 +458,7 @@ Before enabling a new primitive or runtime version:
   A Pyth decimal is a string matching `^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$`; reject exponential notation, `NaN`, infinities, and JavaScript numeric coercion.
   Known-vector booleans must equal `true`, Solana addresses must decode as public keys, and an ORAO result must satisfy `0 <= roll < span`.
 - Bind retained live acceptance to the public deployed release marker and independently read the Devnet Program and ProgramData accounts at the beginning and end of the run.
-  For the canonical lab, fetch `https://bounded-solana-devnet-lab.bounded.page/bounded-solana-lab-release.json` with caching disabled.
+  For the canonical staging lab, fetch `https://bounded-solana-devnet-lab.staging.bounded.page/bounded-solana-lab-release.json` with caching disabled.
   Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.
   Require version 2, release `bounded-solana-devnet-lab`, environment `staging`, protocol `realtime_devnet`, the exact 40-hex source commit and 24-hex app ID, and a 64-hex artifact SHA-256.
   The nested `program` object contains exactly `network`, `programId`, `programDataAddress`, `authority`, `lastDeployedSlot`, `allocatedBytes`, `dumpSha256`, `commitment`, and `contextSlot`.
