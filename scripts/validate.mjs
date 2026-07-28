@@ -372,9 +372,19 @@ for (const expected of [
   'omit it from every update payload',
   'Anchor error name `FieldReadOnly`',
   'Treat the live Anchor `Error Code` name and `Error Message` as authoritative',
+  'Treat the candidate artifact measurement and the exact upgrade/rollback rehearsal receipt as two revision-bound measurements.',
+  'A matching ELF SHA-256 does not make an earlier artifact measurement or rehearsal current.',
+  'Rerun the exact candidate-first, rollback, and candidate-final authority-neutral rehearsal',
   'Do not renumber program errors merely to make a local numeric table agree.',
 ]) {
   if (!solanaOnchain.includes(expected)) fail(`Solana onchain guide: missing required boundary ${expected}`)
+}
+
+const releaseRevisionDropIn = 'Any later relevant or revision-binding commit makes an earlier artifact and rehearsal stale even when the rebuilt ELF has the same SHA-256.'
+for (const file of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {
+  if (!readFileSync(path.join(root, file), 'utf8').includes(releaseRevisionDropIn)) {
+    fail(`${file}: missing revision-bound Solana release rule`)
+  }
 }
 
 const cliReference = readFileSync(path.join(root, 'bounded-deploy/docs/cli-reference.md'), 'utf8')

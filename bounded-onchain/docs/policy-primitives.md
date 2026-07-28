@@ -422,6 +422,9 @@ Before enabling a new primitive or runtime version:
   size budgets.
 - Exercise create/update/delete, readonly calls from offchain policies, replay,
   stale delivery, mirror subscription, and rollback on local validator/Surfpool.
+- Before a live Solana program upgrade, follow the [revision-bound release workflow](onchain.md#bind-a-solana-release-to-the-final-merged-revision).
+  Rebuild both the artifact and rehearsal measurements from the exact clean merged release revision.
+  An unchanged ELF digest does not keep an earlier revision-bound rehearsal current.
 - On devnet, assign a run ID, confirm the public transaction, and then poll the exact expected Bounded postcondition.
 - A client preflight or transaction simulation rejection is not proof of an onchain invariant denial.
   Configure a trusted Devnet RPC through `SOLANA_DEVNET_RPC_URL` before CLI submission.

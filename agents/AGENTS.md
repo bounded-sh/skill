@@ -57,6 +57,8 @@ bounded init
    and one intentional boundary rejection. React Native binaries stay in the
    normal mobile release toolchain.
    Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
+5. Before a live Solana program upgrade, rebuild the candidate and rerun its exact upgrade/rollback rehearsal from the clean merged release commit.
+   Any later relevant or revision-binding commit makes an earlier artifact and rehearsal stale even when the rebuilt ELF has the same SHA-256.
 
 Rejections at runtime are fail-closed: HTTP 409 for a violated invariant, 403 for
 a denied write or invoke rule.

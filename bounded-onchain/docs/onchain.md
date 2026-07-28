@@ -19,6 +19,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Onchain update patches](#onchain-updates-are-patches)
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
+- [Revision-bound Solana releases](#bind-a-solana-release-to-the-final-merged-revision)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
@@ -182,6 +183,31 @@ For a release build, point `--sbf-out-dir` at a private disposable directory, co
 Do not direct `--sbf-out-dir` at a retained or published artifact directory and then try to ignore the generated keypair.
 Fail the release if a keypair-named file reaches retained output, and never print, upload, or commit that generated JSON.
 Do not renumber program errors merely to make a local numeric table agree.
+
+### Bind a Solana release to the final merged revision
+
+A verified Solana release is not identified by its ELF digest alone.
+Treat the candidate artifact measurement and the exact upgrade/rollback rehearsal receipt as two revision-bound measurements.
+Each measurement must bind the exact committed HEAD that will be released, the explicit release feature set and toolchain, and every resource input enumerated by the release verifier.
+Those resource inputs include the current-program baseline, release and rehearsal scripts, manifests, IDLs, smoke policies and scenarios, capacity fixtures, and any generated release metadata the verifier reads.
+
+Any later relevant or revision-binding commit makes both earlier measurements stale.
+This includes rebasing or merging onto a new release commit, changing a declared resource input, or committing a catalog, release marker, fixture, or provenance file whose generated contents bind the release revision.
+A matching ELF SHA-256 does not make an earlier artifact measurement or rehearsal current.
+Byte-identical executable output proves only that the executable bytes match, not that the committed source revision, resource closure, baseline, scripts, or evidence contract match.
+
+Before a live program upgrade:
+
+1. Integrate the release work into the latest target branch and commit every relevant and revision-binding file.
+2. From that exact clean merged release revision, rebuild and remeasure the candidate with the explicit safe release features in a fresh private output directory.
+3. Rebuild the rehearsal measurement from the same revision and resource inputs.
+4. Rerun the exact candidate-first, rollback, and candidate-final authority-neutral rehearsal against the newly measured candidate and the independently measured current deployed baseline.
+5. Require the sanitized rehearsal receipt to bind the merged commit, candidate digest, baseline measurement, resource hashes, toolchain, features, and exact rehearsal contract.
+6. Fail closed if HEAD, the worktree, or any bound resource changes between measurement, rehearsal, and live upgrade.
+7. Upgrade only with the exact artifact that passed that exact merged-revision rehearsal.
+
+Never carry an older receipt forward by editing its commit, comparing only the ELF digest, or declaring a later revision unrelated when the release schema binds exact HEAD.
+If a post-rehearsal documentation or provenance commit is required and it binds the release revision, make that commit first, then rebuild both measurements and rerun the exact rehearsal.
 
 ## Poofnet: onchain simulation on `realtime_offchain`
 

@@ -52,6 +52,8 @@ Flow:
   `bounded site deploy ./dist --app-id <id>`. Test a complete user flow and an
   intentional boundary rejection. React Native packaging stays external.
   Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
+- Before a live Solana program upgrade, rebuild the candidate and rerun its exact upgrade/rollback rehearsal from the clean merged release commit.
+  Any later relevant or revision-binding commit makes an earlier artifact and rehearsal stale even when the rebuilt ELF has the same SHA-256.
 
 Runtime rejections are fail-closed: 409 for a violated invariant, 403 for a denied
 write or invoke rule.
