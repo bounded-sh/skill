@@ -33,6 +33,7 @@ the root **bounded** skill.
 | Onchain update payloads, patch semantics, readonly `!` fields, or `FieldReadOnly` | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
 | Ambiguous Solana custom errors, stale numeric decoding, or an Anchor error name in live logs | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | Solana program release artifacts, stale rehearsals, revision-bound inputs, rebasing or merging before an upgrade, or a live program upgrade | [docs/onchain.md](docs/onchain.md#bind-a-solana-release-to-the-final-merged-revision) |
+| Large Solana program uploads, `--max-sign-attempts`, blockhash expiry, retry exhaustion, deploy preflight, or priority fees | [docs/onchain.md](docs/onchain.md#make-large-solana-program-uploads-retry-safe) |
 | Retained Solana upgrade buffer cleanup, `solana program close`, or `--buffers` | [docs/onchain.md](docs/onchain.md#close-one-retained-upgradeable-loader-buffer-safely) |
 | Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
 | Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
@@ -59,6 +60,7 @@ the root **bounded** skill.
 | `FieldReadOnly`, readonly `!` update, onchain patch | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
 | Anchor error name, ambiguous custom error number, stale IDL error table | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | release artifact, ELF hash, rehearsal receipt, revision binding, merged release revision, live program upgrade | [docs/onchain.md](docs/onchain.md#bind-a-solana-release-to-the-final-merged-revision) |
+| `--max-sign-attempts`, blockhash expiration, large program upload, deploy timeout, `solana program deploy --skip-preflight`, `--with-compute-unit-price`, `getRecentPrioritizationFees` | [docs/onchain.md](docs/onchain.md#make-large-solana-program-uploads-retry-safe) |
 | upgradeable-loader buffer, retained buffer, `solana program close`, `--buffers` | [docs/onchain.md](docs/onchain.md#close-one-retained-upgradeable-loader-buffer-safely) |
 | `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [docs/randomness.md](docs/randomness.md) |
 | rent, ATA, token account, insufficient SOL, PDA address, passthrough, transaction too large | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
@@ -86,6 +88,9 @@ the root **bounded** skill.
   `bounded apps inspect` proves the active policy/runtime publication and carries no hosted URL.
 - Before a live Solana program upgrade, rebuild the candidate measurement and rerun the exact rehearsal from the clean merged release revision.
   Any later relevant or revision-binding commit makes the earlier artifact and rehearsal stale even when the ELF SHA-256 is unchanged.
+- On Agave 4.1.1, run only the remote live Devnet program upload with `--max-sign-attempts 15` inside a 45-minute outer timeout.
+  Keep the disposable loopback rehearsal at Agave's default `5` attempts inside its 5-minute timeout.
+  Keep deploy preflight enabled, retain an explicit private buffer recovery path, and do not add priority fees without evidence from the target RPC endpoint.
 - On Agave 4.1.1, close one verified retained upgradeable-loader buffer with positional `solana program close <buffer-address>`.
   Never add `--buffers` to a specific address because that flag selects all matching buffers and the CLI rejects the mixed form.
 - Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).

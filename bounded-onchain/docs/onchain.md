@@ -20,6 +20,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
 - [Revision-bound Solana releases](#bind-a-solana-release-to-the-final-merged-revision)
+- [Large program upload retries](#make-large-solana-program-uploads-retry-safe)
 - [Retained upgrade buffer cleanup](#close-one-retained-upgradeable-loader-buffer-safely)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
@@ -209,6 +210,36 @@ Before a live program upgrade:
 
 Never carry an older receipt forward by editing its commit, comparing only the ELF digest, or declaring a later revision unrelated when the release schema binds exact HEAD.
 If a post-rehearsal documentation or provenance commit is required and it binds the release revision, make that commit first, then rebuild both measurements and rerun the exact rehearsal.
+
+### Make large Solana program uploads retry-safe
+
+Agave 4.1.1 `solana program deploy` defaults `--max-sign-attempts` to `5`.
+Each recent blockhash is valid for about 60 seconds, so the default gives an upload at least five minutes of signing and resigning attempts before unconfirmed write transactions exhaust the retry budget.
+A large Devnet program upload can exhaust that budget without changing the program's finalized ProgramData.
+A failed attempt can also leave its upgradeable-loader buffer allocated.
+Do not treat elapsed time, a failed process, or buffer allocation as evidence that the candidate activated.
+
+Run only the remote live Devnet program upload with `--max-sign-attempts 15`.
+Put that entire deploy subprocess inside a 45-minute outer timeout so the increased retry window remains bounded and there is time for finalized ProgramData and buffer readback.
+Keep the disposable loopback candidate-first, rollback, and candidate-final rehearsal deploys at Agave's default `5` attempts inside their existing 5-minute timeout.
+Do not increase the loopback rehearsal retry or timeout merely to match the remote upload because its short bound catches local hangs and does not govern remote endpoint delivery.
+Use an explicit private `--buffer <buffer-keypair>` so the wrapper can recover the one known buffer after interruption without discovering or sweeping unrelated buffers.
+Keep the buffer signer private, never print its bytes, and never retain it in a published release artifact.
+
+Keep deploy preflight enabled.
+Do not add `--skip-preflight` to compensate for exhausted signing attempts because it removes a different safety check and does not extend blockhash validity.
+This rule applies to `solana program deploy`; it does not change the separate Bounded data-write simulation behavior documented under [`--skip-preflight`](#--skip-preflight).
+
+Do not add `--with-compute-unit-price` merely because a large upload timed out.
+Query `getRecentPrioritizationFees` against the exact target RPC endpoint without logging its secret URL, and retain only sanitized endpoint-specific evidence.
+Add a priority fee only when that endpoint provides evidence that a nonzero fee is warranted.
+
+After any failed upload, reread the program and ProgramData at finalized commitment and compare the observed slot, allocation, and executable hash with the pre-deploy baseline.
+Use the [ProgramData verification checklist](policy-primitives.md#verification-checklist) for the one-context-slot read and executable hash contract.
+If no independently retained pre-deploy baseline exists, record only the current finalized state and do not claim that the failed attempt left ProgramData unchanged.
+If ProgramData is unchanged, record that the candidate did not activate, then recover the exact private buffer using the single-buffer procedure below before starting a fresh attempt.
+If the failed attempt did not use an explicit private buffer or its exact address was lost, stop and escalate instead of guessing from an authority-scoped list or sweeping buffers.
+Do not retry by creating successive unknown buffers, and do not claim success from process output alone.
 
 ### Close one retained upgradeable-loader buffer safely
 
