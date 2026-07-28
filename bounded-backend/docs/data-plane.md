@@ -234,6 +234,40 @@ Reversing those two entries has the same result. Write ordering is not an
 authorization primitive; reciprocal rules may safely require each other's
 final staged values in one batch.
 
+## getAfter() FALLS BACK to committed state
+
+The single most expensive misreading available here, so know it before you write
+a rule that depends on it.
+
+`getAfter(/path)` is **not** "the value this batch is writing". It is "the final
+value of that document" — and for a document the batch does not touch, that is
+simply its **committed** value. So:
+
+```jsonc
+// reads as "this batch settles the position"
+"getAfter(/positions/@newData.ref).status == \"kept\""
+// MEANS "this position has ever been settled" — and stays true forever
+```
+
+Measured on a live protocol: every payout rule was written in that shape, so a
+wallet with no relationship to an already-settled position minted a **second**
+backing credit against it and the write landed. Repeat per settled position and
+the entire escrow drains — every user's funds.
+
+Two guards, and you generally need both:
+
+- **Check PRE-state too.** `get(...)` is the committed snapshot, so pairing
+  `get(x).status != "kept"` with `getAfter(x).status == "kept"` is what actually
+  says *this batch performs the transition*.
+- **Make the obligation UNIQUE.** The only uniqueness the platform gives you is
+  the document id, and the caller chooses it. If one payout may exist per
+  position, key it by the position (`payouts/$positionId`) and assert
+  `$payoutId == @newData.ref` in the rule. Otherwise the same rule is
+  satisfiable N times in a single batch, each write a fresh id.
+
+The general form: **a rule that authorises a transfer must be true only during
+the transition that earns it, and only once.**
+
 ## Atomic is not the same as COMPLETE
 
 This is the trap that composition sets, and it has cost real money.
