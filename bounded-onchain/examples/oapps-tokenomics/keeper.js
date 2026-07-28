@@ -5,13 +5,17 @@
 // is also permissionless, so if the keeper stalls anyone can claim/distribute
 // manually. Writes go through ctx.bounded so rules + invariants still bind.
 export default async function keeper(_args, ctx) {
+  // ctx.bounded exposes get/set/setMany/delete/runQuery - there is no `add`.
+  // Choose a deterministic per-cycle id and set at that path so each 5m tick
+  // appends one fresh row.
+  const cycleId = `cycle-${Date.now()}`;
   // 1) claim accrued fees to the treasury (55%) + split-pool (45%) PDAs
-  await ctx.bounded.add('claims', { note: 'keeper' });
+  await ctx.bounded.set(`claims/${cycleId}`, { note: 'keeper' });
   // 2) atomically distribute the split-pool leg creator:Poof = 5556:4444 bps
   //    (amount = keeper-computed claimed lamports for this cycle)
-  // await ctx.bounded.add('distributions', { amount });
+  // await ctx.bounded.set(`distributions/${cycleId}`, { amount });
   // 3) post-migration: claim DAMM fees + 3-way policy split
-  // await ctx.bounded.add('dammClaims', { note: 'keeper' });
-  // await ctx.bounded.add('distributionsPost', { amount });
+  // await ctx.bounded.set(`dammClaims/${cycleId}`, { note: 'keeper' });
+  // await ctx.bounded.set(`distributionsPost/${cycleId}`, { amount });
   return true;
 }

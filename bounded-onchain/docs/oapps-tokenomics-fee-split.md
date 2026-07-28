@@ -209,11 +209,13 @@ invariants:
 
 ```js
 export default async function keeper(_args, ctx) {
+  // ctx.bounded exposes get/set/setMany/delete/runQuery - there is no `add`.
+  const cycleId = `cycle-${Date.now()}`;
   // 1) claim accrued fees to the treasury (55%) + split-pool (45%) PDAs
-  await ctx.bounded.add('claims', { note: 'keeper' });
+  await ctx.bounded.set(`claims/${cycleId}`, { note: 'keeper' });
   // 2) distribute the split-pool leg creator:Poof = 5556:4444 bps
   //    (amount = keeper-computed claimed lamports for this cycle)
-  // await ctx.bounded.add('distributions', { amount });
+  // await ctx.bounded.set(`distributions/${cycleId}`, { amount });
   return true;
 }
 ```
