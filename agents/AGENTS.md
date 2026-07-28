@@ -52,6 +52,10 @@ bounded init
    counterexamples. Read the counterexample, fix the policy, verify again.
 3. `bounded deploy --create --name <name>` compiles and pushes. The server
    re-runs the proof gate and fails closed on any regression.
+   If it returns `deploy_in_progress` with an `operationId`, the verified app
+   owner runs the exact emitted `recoveryCommand` with unchanged policy inputs.
+   That command resumes the retained operation without sending a new policy
+   update.
 4. For a hosted web app, build static assets and run
    `bounded site deploy ./dist --app-id <id>`. Then test one complete user flow
    and one intentional boundary rejection. React Native binaries stay in the

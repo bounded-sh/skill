@@ -230,7 +230,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate) | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment` |
+| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or resume one exact retained operation without sending another policy update | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository (read-only token per invocation) | `--branch`, `--link` |
 | `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |
 
@@ -291,6 +291,33 @@ Never require receipt `status` to equal `committed` or `deployed`.
 Require `state == "committed"`, retain the operation ID and revision fields as the mutation receipt, and record publication `status` verbatim.
 If a release requires the runtime or hosted app to be available, confirm that condition independently after the committed policy receipt.
 Do not infer success from a human line or omit the receipt when recording provenance.
+
+### Recover an in-progress policy deploy
+
+HTTP `409` with stable code `deploy_in_progress` means an earlier policy operation still owns the app's deploy slot.
+When the caller is the verified app owner and the app's active policy status agrees with either the exact retained publication journal or the exact committed runtime head, the response also contains its validated lowercase RFC 4122 UUIDv4 `operationId`.
+Status-only proof or onchain work that has not produced a recoverable publication remains opaque.
+The server does not expose a recovery ID to collaborators, admins, unrelated identities, or malformed and legacy states.
+Its generic message remains deliberately opaque.
+
+The current CLI turns the owner-visible response into one structured error:
+
+```json
+{
+  "error": "<human error plus recovery guidance>",
+  "code": "deploy_in_progress",
+  "operationId": "<uuid>",
+  "recoveryCommand": "bounded deploy ./policy.json --app-id <id> --recover-operation <uuid> --env staging"
+}
+```
+
+Run the exact emitted `recoveryCommand` under the same verified owner identity.
+It preserves the original policy path, app ID, constants, selected policy environment, source-sync choice, and control-plane environment.
+Keep the policy file and every input byte unchanged.
+Recovery binds the exact operation and exact policy, never sends a second `updateApp`, and returns action `recoverPolicyDeploy` with the normal committed `policyDeployReceipt`.
+Do not rerun a normal deploy, guess an operation ID, copy one from another app, or scrape internal storage.
+If the response has no operation ID, confirm the active identity with `bounded whoami` and let the verified owner obtain and run the recovery command.
+After recovery commits, poll `bounded apps inspect --app-id <id> --json` for the expected active publication instead of treating the recovery line as final provenance.
 
 ### Exact release provenance
 

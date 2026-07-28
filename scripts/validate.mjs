@@ -391,10 +391,34 @@ for (const expected of [
   '`policyDeployReceipt.status` is a separate app publication status',
   'operation-bound readback or recovery receipt may report `null`',
   'Never require receipt `status` to equal `committed` or `deployed`.',
+  '### Recover an in-progress policy deploy',
+  '"code": "deploy_in_progress"',
+  '"recoveryCommand": "bounded deploy ./policy.json',
+  'The server does not expose a recovery ID to collaborators, admins',
+  'Recovery binds the exact operation and exact policy, never sends a second `updateApp`',
   'Do not infer success from a human line',
   'still requires an existing app ID',
 ]) {
   if (!cliReference.includes(expected)) fail(`CLI reference: missing sanitized onchain receipt contract ${expected}`)
+}
+
+const deploySkill = readFileSync(path.join(root, 'bounded-deploy/SKILL.md'), 'utf8')
+for (const expected of [
+  '`deploy_in_progress` with an `operationId`',
+  'The verified app owner must run the exact emitted `recoveryCommand`',
+]) {
+  if (!deploySkill.includes(expected)) fail(`Bounded deploy skill: missing policy recovery boundary ${expected}`)
+}
+
+for (const dropIn of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {
+  const source = readFileSync(path.join(root, dropIn), 'utf8')
+  for (const expected of [
+    '`deploy_in_progress` with an `operationId`',
+    'runs the exact emitted `recoveryCommand` with unchanged policy inputs',
+    'without sending a new policy',
+  ]) {
+    if (!source.includes(expected)) fail(`${dropIn}: missing public policy recovery boundary ${expected}`)
+  }
 }
 
 const keySafety = readFileSync(path.join(root, 'bounded-deploy/docs/key-and-account-safety.md'), 'utf8')
