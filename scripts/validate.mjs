@@ -395,6 +395,7 @@ for (const expected of [
   '"code": "deploy_in_progress"',
   '"recoveryCommand": "bounded deploy ./policy.json',
   'The server does not expose a recovery ID to collaborators, admins',
+  'An older ambiguous Solana Devnet operation that predates the raw request hash can qualify only',
   'The CLI binds the exact operation and exact policy and never submits a second policy mutation.',
   'HTTP `202` with `state: "processing"`',
   'A normal deploy whose first policy mutation has an ambiguous outcome uses this same readback/recovery loop automatically.',
@@ -439,6 +440,7 @@ for (const dropIn of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/w
     '`202` with',
     'A normal deploy with an ambiguous outcome uses that polling loop',
     'without replaying an onchain mutation',
+    'An older ambiguous Devnet operation can use the same recovery path only when',
     'unavailable state stays locked and pollable',
     'partial state requires',
   ]) {

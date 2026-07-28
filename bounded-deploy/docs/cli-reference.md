@@ -296,7 +296,9 @@ Do not infer success from a human line or omit the receipt when recording proven
 
 HTTP `409` with stable code `deploy_in_progress` means an earlier policy operation still owns the app's deploy slot.
 When the caller is the verified app owner and the app's active policy status identifies one exact recoverable operation and policy target, the response also contains its validated lowercase RFC 4122 UUIDv4 `operationId`.
-The server does not expose a recovery ID to collaborators, admins, unrelated identities, or malformed and legacy states.
+The server does not expose a recovery ID to collaborators, admins, unrelated identities, or malformed states.
+An older ambiguous Solana Devnet operation that predates the raw request hash can qualify only when it has no upload journal and the submitted policy reproduces its exact normalized target.
+The server freezes the submitted request hash before that recovery continues.
 Its generic message remains deliberately opaque.
 
 The current CLI turns the owner-visible response into one structured error:

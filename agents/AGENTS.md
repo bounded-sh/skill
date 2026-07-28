@@ -61,6 +61,9 @@ bounded init
    automatically.
    For Solana Devnet, an exact finalized target publishes the frozen app/runtime
    target without replaying an onchain mutation.
+   An older ambiguous Devnet operation can use the same recovery path only when
+   the submitted policy exactly reproduces its normalized target and it has no
+   upload journal.
    An exact finalized source ends the operation before a fresh normal deploy;
    unavailable state stays locked and pollable, while partial state requires
    manual intervention.
