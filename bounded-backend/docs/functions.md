@@ -817,9 +817,28 @@ bounded functions logs   syncStripe --app-id <id>
 ```
 
 The `--entry` may be **TypeScript or JavaScript**. Type annotations are fine.
-Keep it a single self-contained module. Bare `--secret STRIPE_KEY` declares the
-name without putting its value in argv; `secret put` supplies the app-stored
-value separately.
+Bare `--secret STRIPE_KEY` declares the name without putting its value in argv;
+`secret put` supplies the app-stored value separately.
+
+**A function may be split across files.** Import siblings with ordinary relative
+specifiers and deploy the entry as usual - the CLI uploads the entry plus the
+source files in its directory, and the platform bundles them:
+
+```
+functions/
+  syncStripe.ts        ← --entry, imports "./stripe/charges"
+  stripe/
+    charges.ts
+```
+
+Keep a function's modules inside the entry's own directory: that directory is
+what gets uploaded, so an import reaching outside it will not resolve. Only
+source extensions travel (`.ts`, `.tsx`, `.js`, `.mjs`, `.json`, …) - a README or
+a fixture in that folder is ignored - and `node_modules` is never uploaded, so
+npm dependencies still cannot be imported. Limits are 100 files, 512 KB per file
+and 2 MB total; an oversize tree is refused locally with those same numbers.
+Older CLI versions upload only the entry and refuse a relative import at deploy
+time with `Relative import ... cannot be resolved`, so if you see that, update.
 
 Two deploy-ordering notes worth knowing:
 - **A policy deploy preserves deployed functions.** When your `policy.json` omits
