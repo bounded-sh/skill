@@ -174,6 +174,13 @@ When the numeric label is ambiguous, inspect the RPC simulation or confirmed tra
 Treat the live Anchor `Error Code` name and `Error Message` as authoritative for diagnosis.
 If the logs name `FieldReadOnly`, fix the update payload by omitting the readonly field even when a stale numeric table suggests another error.
 Preserve deployed ABI discriminants and correct the stale decoder or IDL mapping.
+
+### Keep `cargo-build-sbf` keypairs out of release artifacts
+
+`cargo build-sbf --sbf-out-dir <dir>` creates a program keypair beside the ELF when no program keypair is already present.
+For a release build, point `--sbf-out-dir` at a private disposable directory, copy only the regular `.so` file into the retained artifact directory, and destroy the disposable build environment.
+Do not direct `--sbf-out-dir` at a retained or published artifact directory and then try to ignore the generated keypair.
+Fail the release if a keypair-named file reaches retained output, and never print, upload, or commit that generated JSON.
 Do not renumber program errors merely to make a local numeric table agree.
 
 ## Poofnet: onchain simulation on `realtime_offchain`
