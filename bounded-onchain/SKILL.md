@@ -73,7 +73,10 @@ the root **bounded** skill.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
 - `@contract.address` is the Solana program-ID sentinel, not the app escrow address returned by a direct query.
   Supported built-in plugins resolve the sentinel to the app escrow PDA.
-  Use `@AccountPlugin.getAccountAddress(@contract.address)` when an expression needs the concrete escrow address.
+  On the current deployed Devnet runtime, do not compose the sentinel as `@AccountPlugin.getAccountAddress(@contract.address)`: that call fails because the sentinel is address-typed while this function currently accepts a string account id.
+  For a Devnet policy query that needs the concrete escrow address, bind the current Devnet program ID as a string literal: `@AccountPlugin.getAccountAddress("openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6F")`.
+  This literal is Devnet-specific and must be updated if the deployed program changes.
+  See [policy-primitives.md](docs/policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address).
 - Treat discovery, deployed-runtime support, and live-network verification as three independent states.
 - Check the [Solana devnet capability catalog](docs/solana-capability-status.md) before proposing any plugin or primitive.
 - Never infer devnet support from a compiler tag, manifest, proof contract, Poofnet model, lookup-table entry, or local validator test.

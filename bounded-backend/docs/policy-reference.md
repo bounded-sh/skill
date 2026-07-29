@@ -196,7 +196,8 @@ There is no documented quoted-segment escape for these expression paths.
 
 `@contract.address` does not directly expose the app escrow PDA.
 A direct policy query returns the deployed Bounded program ID.
-Use `@AccountPlugin.getAccountAddress(@contract.address)` when an expression needs the concrete app escrow address, and see [policy-primitives.md](../../bounded-onchain/docs/policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address) before using it in a raw CPI account meta.
+The `@AccountPlugin.getAccountAddress(@contract.address)` composition is unsupported on the current deployed Devnet runtime.
+For the current Devnet program, bind `openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6F` as the string argument instead, and see [policy-primitives.md](../../bounded-onchain/docs/policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address) before using the result in a raw CPI account meta.
 
 > **Identity: use `@user.id` for ownership, `@user.address` only for wallets.**
 > `@user.id` is the universal principal and is present for every authenticated

@@ -114,7 +114,8 @@ the onchain/runtime-supported `@user.address` surface. Rotate the constant with 
 policy update when launcher authority changes.
 The `@contract.address` arguments above are interpreted by this documented built-in plugin as the app escrow PDA.
 The sentinel itself evaluates to the Bounded program ID in a direct query.
-Use `@AccountPlugin.getAccountAddress(@contract.address)` when another expression needs the concrete escrow address.
+The separate `@AccountPlugin.getAccountAddress(@contract.address)` composition is unsupported on the current deployed Devnet runtime.
+When another expression needs the concrete escrow address, use the current Devnet program-ID string literal documented in [policy-primitives.md](policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address).
 
 **Transaction-size note:** `createMeteoraConfig` is one of the largest single
 instructions on the platform (~1189B alone; ~1225B chained with

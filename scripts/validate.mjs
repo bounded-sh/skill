@@ -316,6 +316,8 @@ if (!solanaInventory) {
 for (const expected of [
   '| `@App.get` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |',
   '| `@App.set` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |',
+  '| `@AccountPlugin.getAccountAddress` | legacy runtime | unverified | source parity only | LIVE-PENDING; DEVNET-ESCROW-SENTINEL |',
+  '| `DEVNET-ESCROW-SENTINEL` | `@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime; bind the current Devnet program ID as a string argument when resolving the escrow. |',
   '| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |',
   '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | blocked | not run | METEORA-CONFIG |',
   '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
@@ -338,7 +340,8 @@ if (/\| supported \|/.test(solanaCapabilityStatus) || /\| live_devnet_pass \|/.t
 const policyPrimitives = readFileSync(path.join(root, 'bounded-onchain/docs/policy-primitives.md'), 'utf8')
 for (const expected of [
   '`@contract.address` evaluates to the deployed Bounded Solana program ID',
-  '`@AccountPlugin.getAccountAddress(@contract.address)` when a policy expression',
+  '`@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime',
+  '`@AccountPlugin.getAccountAddress("openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6F")`',
   'Every `@Solana.invoke` meta address must resolve to a concrete base58 public key',
   'Address resolution does not grant signing authority.',
   'Solana accounts are world-readable',
@@ -351,6 +354,12 @@ for (const expected of [
   'Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift',
 ]) {
   if (!policyPrimitives.includes(expected)) fail(`Solana policy primitives: missing contract-address boundary ${expected}`)
+}
+if (
+  /\bUse `@AccountPlugin\.getAccountAddress\(@contract\.address\)`/u.test(publicText) ||
+  /"query":\s*"@AccountPlugin\.getAccountAddress\(@contract\.address\)"/u.test(publicText)
+) {
+  fail('public Solana guidance still recommends the unsupported Devnet escrow-sentinel composition')
 }
 
 const solanaTrading = readFileSync(path.join(root, 'bounded-onchain/docs/onchain-trading.md'), 'utf8')

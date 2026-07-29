@@ -61,7 +61,8 @@ For an **autonomous desk** (acts every cycle with no per-trade human gate),
 `@contract.address` is the plugin-source syntax: the resolved escrow PDA is the fund, the backend is the
 only writer, and access rules + invariants on the collection are the guardrails.
 The sentinel itself evaluates to the Bounded program ID in a direct query.
-Use `@AccountPlugin.getAccountAddress(@contract.address)` when the concrete escrow public key is needed outside a documented plugin source argument.
+The separate `@AccountPlugin.getAccountAddress(@contract.address)` composition is unsupported on the current deployed Devnet runtime.
+When the concrete escrow public key is needed outside a documented plugin source argument, use the current Devnet program-ID string literal documented in [policy-primitives.md](policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address).
 
 ## Phoenix perps - `@PhoenixPerpsPlugin`
 

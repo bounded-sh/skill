@@ -31,6 +31,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-PUMP-PROOF` | Pump.fun or PumpSwap stays unverified until live proof exists. |
 | `LIVE-TENSOR-PROOF` | Tensor stays unverified until live proof exists. |
 | `LIVE-CROSS-APP-PROOF` | A distinct target fixture and source scenario are present, but the finalized source transaction, both mirrors, exact target-field match, and `@App.get` existence query still require retained live proof. |
+| `DEVNET-ESCROW-SENTINEL` | `@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime; bind the current Devnet program ID as a string argument when resolving the escrow. |
 | `NO-DEVNET-JUPITER` | Jupiter is unavailable on devnet. |
 | `NO-DEVNET-PHOENIX` | Phoenix is unavailable on devnet. |
 | `NO-DEVNET-DFLOW` | DFlow is unavailable on devnet. |
@@ -44,7 +45,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | Function | Discovery | Devnet support | Live verification | Constraint |
 |---|---|---|---|---|
 | `@AccountPlugin.createAccount` | legacy runtime | unverified | source parity only | LIVE-PENDING |
-| `@AccountPlugin.getAccountAddress` | legacy runtime | unverified | source parity only | LIVE-PENDING |
+| `@AccountPlugin.getAccountAddress` | legacy runtime | unverified | source parity only | LIVE-PENDING; DEVNET-ESCROW-SENTINEL |
 | `@App.get` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |
 | `@App.set` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |
 | `@BondingCurvePlugin.getMarketCapInSol` | legacy runtime | unverified | source parity only | LIVE-PENDING |

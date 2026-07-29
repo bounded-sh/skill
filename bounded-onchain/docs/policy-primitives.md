@@ -61,11 +61,14 @@ Those handlers replace the sentinel with the current app's escrow PDA and apply 
 The value itself is not the escrow PDA.
 
 - A direct policy query whose expression is `@contract.address` returns the Bounded program ID.
-- Use `@AccountPlugin.getAccountAddress(@contract.address)` when a policy expression, query, UI, or account meta needs the concrete app escrow address.
+- `@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime.
+  The sentinel is address-typed, while this function currently accepts a string account id.
+- For the current Devnet program, use `@AccountPlugin.getAccountAddress("openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6F")` when a policy query needs the concrete app escrow address.
+  Treat that program literal as network- and deployment-specific and update it if the deployed program changes.
 - Only pass the sentinel to a plugin function whose manifest explicitly documents `@contract.address`, and still check that function's network support state.
 - Every `@Solana.invoke` meta address must resolve to a concrete base58 public key when the transaction is built.
   Raw CPI does not apply built-in plugin source resolution, so `address: @contract.address` names the Bounded program account rather than the app escrow.
-  Resolve the escrow with an `@AccountPlugin.getAccountAddress(@contract.address)` query or preflight, then place that returned public key in a concrete `Address` field or policy-bound value used by the raw meta.
+  Resolve the escrow with the network-specific string-literal query above, then place that returned public key in a concrete `Address` field or policy-bound value used by the raw meta.
 - Address resolution does not grant signing authority.
   The `signer` and `signerName` confinement rules below still apply.
 
@@ -75,10 +78,12 @@ For example, expose the concrete escrow address rather than the sentinel:
 "queries": {
   "escrowAddress": {
     "returnType": "Address",
-    "query": "@AccountPlugin.getAccountAddress(@contract.address)"
+    "query": "@AccountPlugin.getAccountAddress(\"openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6F\")"
   }
 }
 ```
+
+That example is for the current deployed Devnet program only.
 
 ## `@Bytes`
 
@@ -136,7 +141,7 @@ Security rules:
 - Program/owner targets must be static and executable. The Bounded program and
   BPF/native loaders are denied targets.
 - Every raw meta address must resolve to a concrete public key during transaction construction.
-  Resolve the app escrow with `@AccountPlugin.getAccountAddress(@contract.address)`, then use the returned address through a concrete field or policy-bound value instead of placing the sentinel in a raw meta.
+  On the current Devnet runtime, resolve the app escrow with the network-specific string-literal query shown above, then use the returned address through a concrete field or policy-bound value instead of placing the sentinel in a raw meta.
 - `signer: true` never grants a signer. Only the current transaction user, or a
   recomputed app PDA named by `signerName`, may remain a CPI signer.
 - Sponsor and attestation accounts are always demoted at foreign CPI boundaries.
