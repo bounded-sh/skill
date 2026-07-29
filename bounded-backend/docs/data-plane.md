@@ -139,12 +139,22 @@ allowed vs denied, by whom, and why), use **`bounded decisions`**:
 
 ```
 $ bounded data set --app-id <id> --path "rooms/r1" --data '{"name":"x"}'
-✗ 403 Policy failed: Expression evaluated to false (comparison != failed)
+✗ 403 Policy failed: Expression evaluated to false
 
 $ bounded decisions --app-id <id> --denied-only
 TIME       DECISION  ACTION  PATH      ACTOR         REASON
-23:40:08Z  DENY      create  rooms/r1  89MnyG..1ZTe  Policy failed: Expression evaluated to false (comparison != failed)
+23:40:08Z  DENY      create  rooms/r1  89MnyG..1ZTe  Policy failed: Expression evaluated to false
+           ↳ Policy failed: "89MnyG…" != "owner…" -> false | resolved: @user.id="89MnyG…", get("rooms/r1")={"owner":"owner…"}, @time.now="1785346554"
 ```
+
+On denies, the log carries an owner-scoped `detail` line (also in `--json`):
+the failed comparisons with their actual operand values, plus how every
+variable the rule touched resolved — `@time.now`, `@newData.*`, `get()` reads,
+path variables. The CALLER's 403 stays generic on purpose: rules read
+documents with system authority, so the resolved values are evidence for the
+app team, not for the denied writer. If a deny hinges on time, the resolved
+`@time.now` is right there — compare it against the written timestamp before
+suspecting anything else.
 
 The backend keeps a bounded (~200-entry, denies-prioritized) in-memory ring
 buffer of recent WRITE decisions per app. `bounded decisions` reads it
