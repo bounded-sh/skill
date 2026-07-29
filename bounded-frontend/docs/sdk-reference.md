@@ -239,9 +239,14 @@ await set("posts/p1",       { createdAt: serverTimestamp() }); // server unix-se
   instead of read-modify-write (which races and can drop updates).
 - **`serverTimestamp()`** stamps the field with the server's clock (Unix
   seconds) - the trustworthy "when did this happen" a client clock can't give you
-  (a hook can't stamp time, so do it here on the client write). **Prefer this for
-  any timestamp a policy reads** (TTLs, rate windows, anti-cheat): it's seconds
-  (matches `@time.now`) and unforgeable.
+  (a hook can't stamp time, so do it here on the client write). **This is a MUST,
+  not a preference, for any field a rule compares against `@time.now`** (TTLs,
+  rate windows, anti-cheat, `requestedAt <= @time.now` shapes): the rule clock
+  can trail wall time by ~1s, so a client-computed `Date.now()/1000` from an
+  ACCURATE clock reads as "the future" and the write is DENIED - intermittent
+  first-write declines that retries then mask (measured live 2026-07-29).
+  `serverTimestamp()` resolves on the same clock the rule reads, so it can
+  never disagree - and it's unforgeable.
 
 #### Time helpers - `now` / `toSeconds` / `toMillis` (avoid the seconds/ms trap)
 
