@@ -67,8 +67,9 @@ const top = await bounded.get('launches', {
 No index declarations required: the engine pushes `filter + sort + limit` into a single indexed SQL
 query and **auto-creates the composite index** the first time it sees the ranked shape — top-N is
 O(k), not O(collection). Subscriptions get the same acceleration. The engine only pushes when the
-result is provably identical to the reference path (public read rule, numeric sort fields, exact
-filters) and falls back transparently otherwise — correctness is never traded for speed.
+result is provably identical to the reference path: numeric sort fields, exact filters, and an
+exactly-compilable read rule (public, or per-user shapes like `@data.owner == @user.id`). Anything
+else falls back transparently — correctness is never traded for speed.
 
 ### 3. (Optional) Pre-declare hot indexes to skip the first-query build
 
