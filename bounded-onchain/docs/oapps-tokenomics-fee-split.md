@@ -209,11 +209,13 @@ invariants:
 
 ```js
 export default async function keeper(_args, ctx) {
+  // ctx.bounded exposes get/set/setMany/delete/runQuery - there is no `add`.
+  const cycleId = `cycle-${Date.now()}`;
   // 1) claim accrued fees to the treasury (55%) + split-pool (45%) PDAs
-  await ctx.bounded.add('claims', { note: 'keeper' });
+  await ctx.bounded.set(`claims/${cycleId}`, { note: 'keeper' });
   // 2) distribute the split-pool leg creator:Poof = 5556:4444 bps
   //    (amount = keeper-computed claimed lamports for this cycle)
-  // await ctx.bounded.add('distributions', { amount });
+  // await ctx.bounded.set(`distributions/${cycleId}`, { amount });
   return true;
 }
 ```
@@ -221,9 +223,10 @@ export default async function keeper(_args, ctx) {
 - **Reliability-only, not trust.** Every collection the keeper touches is
   permissionless, so if the keeper stalls, anyone can claim/distribute manually and
   get the identical policy-fixed routing. The keeper is a convenience crank, not a
-  privileged party. What *is* proven about it: its `actAs` signer is admin-gated
-  (`auth: get(/admins/@user.id) != null`), so a random caller cannot invoke it as
-  the signer.
+  privileged party.
+  What *is* proven about it: its `actAs` signer is admin-gated (`auth: get(/admins/@user.id) != null`), and the `admins/$userId` role is bootstrap-safe rather than self-enrollable.
+  Admin `create` is gated on a founder-genesis / existing-admin clause (`get(/admins/@user.id) != null || @user.id == @const.FOUNDER`), and an `authorityClosure` attestation over `admins/$userId` proves the set only grows through the founder or an existing admin.
+  Because the role is a provably closed set, a random caller cannot enroll themselves and so cannot invoke the keeper as the signer by direct call.
 - **Honest gap - the reference keeper only claims today.** The stub above fires only
   step 1 (`claims`). Steps 2–4 are commented out because `distributions.amount` must
   be the **claimed lamports for this cycle**, and the keeper has to *compute* that
@@ -266,7 +269,8 @@ this is a *self-refilling* budget backed by real claimed fees):
 
 - **PROVEN (Z3, every input):**
   - **who may trigger** each write - the `rules.create`/`update` proofs (permissionless
-    = any authenticated wallet; the keeper's `actAs` signer is admin-gated).
+    = any authenticated wallet; the keeper's `actAs` signer is admin-gated, and the
+    `admins/$userId` set is provably closed via an `authorityClosure` attestation).
   - **the split bps are fixed literals in policy** - `5556/4444` pre-migration and
     `5500/2500/2000` post-migration are not caller-supplied; a caller cannot move a
     leg or change a share.

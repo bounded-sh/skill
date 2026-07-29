@@ -210,29 +210,47 @@ order. That turns `set-many` into a composition primitive — guard documents
 and the writes they gate travel in one atomic unit, with no TOCTOU window
 between check and act. `get()` still reads the committed pre-batch snapshot.
 
-Allowlist example. `gated/$docId` has the create rule:
+Allowlist example - the guard must not be writable by the caller it gates.
+Declare `allowlist/$userId` so only an admin can add entries, and gate
+`gated/$docId` on it. Key the gate on `@user.id` (present for every login), not
+`@user.address` (empty for email/social users):
 
-```
-getAfter(/allowlist/@user.address).approved == true
+```json
+{
+  "allowlist/$userId": {
+    "rules": { "read": "true", "create": "get(/admins/@user.id) != null", "update": "false", "delete": "false" },
+    "fields": { "approved": "Bool" }
+  },
+  "gated/$docId": {
+    "rules": { "read": "true", "create": "getAfter(/allowlist/@user.id).approved == true" },
+    "fields": { "value": "UInt" }
+  }
+}
 ```
 
-One batch creates the allowlist entry AND the gated write:
+An admin seeds the allowlist once. The caller's batch then creates **only** the
+gated write; the rule admits it by reading the admin-controlled allowlist entry
+(a doc the batch does not touch, so `getAfter` reads its committed value):
 
 ```json
 [
-  { "path": "allowlist/agentA", "document": { "approved": true } },
-  { "path": "gated/g1",         "document": { "value": 7 } }
+  { "path": "gated/g1", "document": { "value": 7 } }
 ]
 ```
 
 ```
 $ bounded data set-many --from-json compose.json
-✓ committed 2 document(s)
+✓ committed 1 document(s)
 ```
 
-Reversing those two entries has the same result. Write ordering is not an
-authorization primitive; reciprocal rules may safely require each other's
-final staged values in one batch.
+> **A `getAfter()` gate is only an authorization gate when the referenced document
+> cannot be created or edited by the same caller in the same batch.**
+> Reciprocal rules may safely require each other's final staged values for ordinary
+> *data* relationships, where write ordering is not an authorization primitive.
+> But a caller-writable guard is no guard: if the batch could also create
+> `allowlist/<self>` with `approved: true`, the caller self-approves and passes in
+> one atomic unit, so the allowlist protects nothing.
+> Keep guard documents admin- or service-created, and only *read* them in the batch.
 
 ## getAfter() FALLS BACK to committed state
 

@@ -236,21 +236,30 @@ owner:
   "accounts/$accountId": {
     "rules": {
       "read": "true",
-      "create": "@user.id == @newData.owner",
-      "update": "@user.id == @data.owner",
+      "create": "@user.id != null && @user.id == @newData.owner",
+      "update": "@user.id != null && @user.id == @data.owner",
       "delete": "false"
     },
-    "fields": { "owner": "String", "label": "String" }
+    "fields": { "owner": "String!", "label": "String" }
   }
 }
 ```
 
-- **create** `@user.id == @newData.owner` — you can only create an account you own.
-- **update** `@user.id == @data.owner` — only the **current** owner may change it.
+- **create** `@user.id != null && @user.id == @newData.owner` — you must be logged
+  in, and can only create an account you own.
+- **update** `@user.id != null && @user.id == @data.owner` — only the logged-in
+  **current** owner may change it.
   Changing `owner` *is* the transfer; the rule checks the *old* owner, so it's
   revocable, auditable, single-owner. `bounded verify`/deploy auto-proves the
   transfer-authority obligation (ownership is transferable but **unseizable**) — see
   [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md).
+- **Reject the logged-out/ownerless case explicitly.** `owner` is `String!`
+  (required, never absent), and both rules require `@user.id != null`.
+  A logged-out caller has `@user.id == null`; without these guards `@user.id ==
+  @newData.owner` collapses to `null == null` (true), letting a stranger create an
+  ownerless account and edit any ownerless row.
+  Guests are fine - an anonymous guest still carries a real `@user.id`, so the
+  transfer/invite flow above is unaffected.
 
 ```ts
 // current owner hands off to recipientId (their @user.id) — only the old owner can:

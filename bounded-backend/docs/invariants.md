@@ -199,7 +199,7 @@ creation time is the clock.
   "agents/$agentId/spend/$spendId": {
     "fields": { "amount": "UInt" },
     "tier": "durable",
-    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null && ($agentId == @user.id || get(/agentMembers/$agentId/@user.id) != null)", "update": "false", "delete": "false" },
     "invariants": [
       { "type": "rollingSum", "name": "per_agent_hourly_cap",
         "field": "amount", "windowSeconds": 3600, "limit": 100, "scopeVariable": "$agentId" },
@@ -209,6 +209,17 @@ creation time is the clock.
   }
 }
 ```
+
+> **A proven cap says nothing about who may add to it, or whether the amount is
+> honest.** `rollingSum` proves the *sum* stays within `limit`; it does not restrict
+> *who* appends or trust the client's `amount`. So the `create` rule must bind the
+> spend record to its owner: here you may append only under your own agent
+> (`$agentId == @user.id`) or an agent you are a listed member of
+> (`agentMembers/$agentId/$userId`). Without that bind, any signed-in user could
+> write a large record under a *victim* agent to exhaust its hourly cap (a
+> cross-tenant denial of service) or poison the usage numbers. For anything that
+> meters real cost, derive `amount` server-side in a function (idempotent), never
+> from the client, and gate writes to that trusted service identity.
 
 | Key | Required | Meaning |
 |---|---|---|
@@ -719,7 +730,7 @@ invariant enforcement.
   "projects/$projectId": { "fields": { "owner": "String", "name": "String" },
     "rules": { "read": "@user.id != null && get(/members/@user.id) != null", "create": "@user.id != null" } },
   "agents/$agentId/spend/$spendId": { "fields": { "amount": "UInt" }, "tier": "durable",
-    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" } },
+    "rules": { "read": "true", "create": "@user.id != null && ($agentId == @user.id || get(/agentMembers/$agentId/@user.id) != null)", "update": "false", "delete": "false" } },
 
   "proofs": {
     "attestations": [

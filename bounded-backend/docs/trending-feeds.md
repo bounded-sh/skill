@@ -9,16 +9,21 @@ cron sweep, a dirty-set, or a materialized score pipeline.
 
 ### 1. Count the activity at event time (a reactive hook, or `windowSum`)
 
-**Simplest — a lifetime counter via an offchain create-hook** on the event collection (see
-[hooks-and-anti-cheat.md](hooks-and-anti-cheat.md)); null-safe self-initializing increment:
+**Simplest — a lifetime total with atomic `increment()`.** Do **not** hand-roll a
+read-modify-write counter in a hook. A hook that reads `vol`, adds `@newData.amt`,
+and writes it back **loses updates** under concurrency (two trades landing at once
+both read the same starting total and one contribution is clobbered), and
+`@time.now` does **not** resolve as a hook mutation value, so a `lastTradeAt`
+stamped that way is written blank. Use the supported primitives instead:
 
-```json
-"operations/$slug/trade/$tradeId": {
-  "hooks": { "offchain": {
-    "create": "(get(/launches/$slug).vol == null && @DocumentPlugin.updateField(/launches/$slug, 'vol', @newData.amt) || @DocumentPlugin.updateField(/launches/$slug, 'vol', get(/launches/$slug).vol + @newData.amt)) && @DocumentPlugin.updateField(/launches/$slug, 'lastTradeAt', @time.now)"
-  }}
-}
-```
+- **Lifetime total:** write the volume with the atomic `increment()` field helper
+  from the client/server SDK - `set('launches/<slug>', { vol: increment(amt) })` -
+  which adds server-side and atomically, with no lost updates under concurrency
+  (see [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md)).
+- **Last-traded time:** stamp it from the client write with `serverTimestamp()`
+  (resolves server-side at write time), never `@time.now` inside a hook.
+- **Time-windowed volume:** use the `windowSum` invariant below, which the runtime
+  maintains atomically.
 
 **Time-windowed — declare a `windowSum` invariant** on the (append-only) event collection and the
 runtime maintains an EXACT sliding-window sum as a plain readable field on the target doc — events
@@ -53,7 +58,7 @@ the hook write the NORMALIZED value into a hook-owned event collection and decla
 there — poof.fun's trade feed is the canonical example (swap hook → `flow/$slug/ev/$id {size}` →
 windowSum → `launches.vol10m`).
 
-### 2. Rank with a plain query — auto-indexed, O(k)
+### 2. Rank with a plain query — auto-indexed, O(k) on SQLite
 
 ```ts
 const top = await bounded.get('launches', {
@@ -64,9 +69,11 @@ const top = await bounded.get('launches', {
 // or live: bounded.subscribe('launches', { sort: { vol10m: -1 }, limit: 24 }, cb)
 ```
 
-No index declarations required: the engine pushes `filter + sort + limit` into a single indexed SQL
-query and **auto-creates the composite index** the first time it sees the ranked shape — top-N is
-O(k), not O(collection). Subscriptions get the same acceleration. The engine only pushes when the
+No index declarations required: on the **default SQLite** document backend the engine pushes
+`filter + sort + limit` into a single indexed SQL query and **auto-creates the composite index** the
+first time it sees the ranked shape — top-N is O(k), not O(collection). The **Postgres-primary**
+backend currently uses the in-memory working-set query path, so **do not rely on the O(k) promise
+there** (mirroring [invariants.md](invariants.md)). Subscriptions get the same acceleration. The engine only pushes when the
 result is provably identical to the reference path: numeric sort fields, exact filters, and an
 exactly-compilable read rule (public, or per-user shapes like `@data.owner == @user.id`). Anything
 else falls back transparently — correctness is never traded for speed.

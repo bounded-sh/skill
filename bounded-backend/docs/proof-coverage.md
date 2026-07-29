@@ -17,14 +17,22 @@ onchain program. Nothing is ported between runtimes, so nothing can drift.
 | Invariant | Offchain (realtime) | Onchain |
 |---|---|---|
 | `conserve` (direct) | enforced | enforced |
-| `conserve` (materialized) | enforced | **fails closed** |
-| `conserve` (sharded) | enforced | **fails closed** |
+| `conserve` (materialized) | enforced | enforced |
+| `conserve` (sharded) | enforced | enforced |
 | `rollingSum` | enforced (exact window) | enforced (epoch-bucketed) |
 | `windowSum` | runtime-maintained; structurally validated; `UNKNOWN` non-blocking advisory with no SMT certificate | structurally rejected (offchain-only v1) |
 | `tenantTag` | enforced | enforced |
-| `tenantEdge` | enforced | **fails closed** |
+| `tenantEdge` (full-path) | enforced | enforced |
 | `bound` | enforced; scalar fields are SMT-proved, `.values` maps are `UNKNOWN` advisories | not enforced; do not use for onchain guarantees |
 | `flowBound` | enforced; `verify` advisory is `UNKNOWN` (no SMT proof) | structurally rejected (offchain-only v1) |
+
+**Onchain-unsupported variants (these genuinely fail closed onchain).** The rows
+above are the base forms, which the validator accepts for `onchainSupported` on
+Solana. Specific advanced variants are still rejected and fail closed if a policy
+claims onchain support for them: `tenantEdge.targetPathVariable`,
+`rollingSum.resetAtMs`, cross-scope forms, and any EVM-chain target (the
+onchain-enforced set above is Solana). Claiming onchain support for one of these
+is rejected at verification and refused by the onchain runtime.
 
 Runtime enforcement and formal proof are separate claims. In particular, a
 well-formed `flowBound` is structurally validated and enforced by the offchain

@@ -67,13 +67,22 @@ Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exist
     "fields": { "score": "UInt", "wallet": "Address", "active": "Bool" },
     "rules": {
       "read":   "true",
-      "create": "@user.address != null",
-      "update": "@user.address != null",
-      "delete": "@user.address != null"
+      "create": "@user.address != null && @newData.wallet == @user.address",
+      "update": "@user.address != null && @data.wallet == @user.address",
+      "delete": "@user.address != null && @data.wallet == @user.address"
     }
   }
 }
 ```
+
+Every write binds the record to its owner: `@newData.wallet == @user.address` on
+create, `@data.wallet == @user.address` on update and delete.
+A bare `@user.address != null` would authorize *any* signed-in wallet to
+overwrite or delete *any* player's record - the id `$id` alone never proves
+ownership, so per-user data must compare the caller to the record's owner field
+(or bind `$id == @user.address`).
+For a value the client must not set for itself - like `score` in a leaderboard -
+write it from a trusted server function instead of the client.
 
 ## What changes when a collection is onchain
 
@@ -192,9 +201,19 @@ A policy that verifies on Poofnet still needs every called function checked agai
   This simulated Poofnet balance does not make the mainnet-only `@TokenPlugin.USDC` constant usable on devnet.
 - **Onchain-parity result fields.** Every write to an `onchain: true` path is
   stamped at commit with `_transaction_hash` (signature-shaped) and
-  `_block_number` (sim slot). A **failed** onchain hook persists the doc and
-  stamps `_error_message` with the failure reason - read it back or subscribe
-  to surface trade errors in UI.
+  `_block_number` (sim slot).
+  A **failed** onchain hook still **persists the doc** and stamps `_error_message`
+  with the failure reason - read it back or subscribe to surface trade errors in UI.
+  **A record existing is NOT proof the onchain action succeeded.**
+  `_error_message` being present means the action **FAILED**; it is a failure signal
+  to gate on, not merely UI text.
+  Any rule, hook, subscription, or UI that represents "successful onchain execution"
+  MUST branch on the *absence* of `_error_message` (or an explicit success marker)
+  and **fail closed** otherwise - never grant a mint, unlock, claim, or downstream
+  write just because the row appeared or a post-commit hook fired.
+  On a real chain a failed transaction would not commit the success state, so
+  treating record-existence as success is a sandbox-only mistake that breaks on
+  mainnet.
 - **Both hooks run.** A collection declaring `hooks.onchain` **and**
   `hooks.offchain` runs both on poofnet - onchain first (as the chain program
   would, inside the tx), then offchain (post-commit) - matching real-network

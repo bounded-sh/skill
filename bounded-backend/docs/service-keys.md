@@ -132,9 +132,13 @@ act as a different identity than the game's session-wide one:
 ```ts
 // functions/npcBrain.ts — runs as NPC_BRAIN (via runAs or actAs), so ctx.ai is funded
 export default async function npcBrain(args, ctx) {
+  // The idempotencyKey is REQUIRED: an NPC brain runs inside an at-least-once
+  // tick loop, so the same call can be re-emitted across ticks/checkpoints.
+  // A stable per-effect key replays one billed inference instead of paying for
+  // each retry; a genuinely new ask carries a new effectId and bills fresh.
   const reply = await ctx.ai.run("@cf/meta/llama-3.1-8b-instruct", {
     messages: [{ role: "user", content: args.prompt }],
-  });
+  }, { idempotencyKey: `npc:arena:${args.effectId}:reply:v1` });
   return { ok: true, text: reply.response };
 }
 ```
