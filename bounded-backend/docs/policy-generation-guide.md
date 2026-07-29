@@ -132,6 +132,10 @@ The expression language (full reference in
 >   `@bounded-sh/client`/`server`): the *server* stamps it in seconds, so it matches
 >   `@time.now` **and can't be forged by the client** — the right choice for TTLs,
 >   rate windows, anti-cheat. `set("posts/p1", { createdAt: serverTimestamp() })`.
+>   This is a MUST when a rule compares the field to `@time.now`, not a nicety:
+>   the rule clock can trail wall time by ~1s, so a client-stamped "now" from an
+>   ACCURATE clock reads as the future and `field <= @time.now` DENIES it —
+>   intermittent first-write declines that retries then mask.
 > - **Comparing in client/render code → `now()`** (seconds), not `Date.now()` (ms);
 >   and **`toSeconds(x)`** to convert any ms value (`Date.now()`, or a doc's
 >   `_createdAt`/`_updatedAt`) first. **`toMillis(s)`** goes back to ms for
