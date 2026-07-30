@@ -87,6 +87,12 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 `!@user.isAnonymous` — the unary `!` isn't supported on special vars.) It's
 **offchain-only** — onchain rules must use `@user.address`.
 
+> **Keep the `@user.id != null` in front of it.** `@user.isAnonymous == false` is
+> not an authentication check on its own: it means "not a guest", and it is also
+> `false` for a caller with **no session at all**. `@user.id != null` is what
+> proves someone is authenticated; `@user.isAnonymous` only narrows *which kind*
+> of authenticated user it is.
+
 ## 3. Migrate browser guest data to a real account
 
 Send the guest through hosted login. `loginWithRedirect` signs them in as a

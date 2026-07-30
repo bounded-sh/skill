@@ -428,6 +428,26 @@ await signInAnonymously();
 > `completeLoginFromRedirect()` on web app load. The published 0.0.42 client no
 > longer exports app-origin email or text OTP helpers. See [auth.md](auth.md).
 
+**Track the user with `onAuthStateChanged`, not a one-time `getCurrentUser()`.**
+`getCurrentUser()` is a snapshot: it does not update when a session expires, so a
+UI built on it keeps showing a signed-in user the server no longer accepts. The
+listener fires on login, on logout, **and** when a session dies on its own:
+
+```ts
+import { onAuthStateChanged, isAuthExpiredError } from "@bounded-sh/client";
+
+const unsubscribe = onAuthStateChanged((user) => setUser(user));  // returns an unsubscribe fn
+```
+
+An unrevivable session surfaces as a typed error (`isAuthExpiredError(e)`, with
+`e.code` of `auth_expired` or `auth_changed`) rather than a silent downgrade to an
+anonymous request. A `403` / `policy_denied` is never a session problem — see
+[auth.md](auth.md#when-a-session-expires).
+
+> **Await `logout()` and `clearSession()`.** Both are async. Session removal is
+> serialized across browser tabs, so a call you do not await can return while the
+> credential is still readable.
+
 **Logout really logs out (0.0.51+).** For hosted sessions on the web, `logout()`
 revokes the refresh-token family, clears local state, then does a top-level
 bounce through the issuer's `/logout` so the hosted session cookie dies too -
