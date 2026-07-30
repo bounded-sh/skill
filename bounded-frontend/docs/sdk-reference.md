@@ -42,7 +42,7 @@ import { createWalletClient } from "@bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
-`init(config)` takes `{ appId, authMethod?, network?, authMode?, walletLogin?, requireEmail? }`. **It points at Bounded
+`init(config)` takes `{ appId, authMethod?, network?, authMode?, walletLogin?, requireEmail?, loginWidget? }`. **It points at Bounded
 production by default** - `init({ appId })` just works, no endpoints to set (the
 network is `'bounded-production'`). **Email + OAuth/social + text** work through
 the hosted flow `loginWithRedirect` / `loginWithPopup`; the credential is entered
@@ -70,7 +70,10 @@ not a client parameter. `walletLogin` (`true | false | { getProvider, network,
 rpcUrl }`) turns on bring-your-own Solana wallet login (full detail:
 [auth.md](auth.md#solana-wallet-login-bring-your-own)). `requireEmail: true` is
 a site policy - every user must have an email on file - and suppresses the
-widget's wallet lane.
+widget's wallet lane. `loginWidget?: { title?, subtitle? }` sets the unified
+widget's text app-wide: `title` replaces the default "Sign in" heading,
+`subtitle` replaces the default subline (`""` renders no subline at all);
+per-call `openBoundedWidget({ title, subtitle })` overrides both.
 
 > Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
 > can override individual endpoints, but you should normally use `network`, which
