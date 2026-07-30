@@ -104,6 +104,13 @@ that debits one document must credit another **in the same batch**.
 }
 ```
 
+> **Demo vs production reads:** the `read: "@user.id != null"` rule above lets any
+> signed-in user read every account's balance. This example keeps reads permissive
+> so a client-side cross-owner transfer can read the recipient's balance before
+> crediting it. A production ledger should move transfers into a server-side function
+> with elevated read and owner-scope the read rule (`@data.owner == @user.id`) so
+> users cannot enumerate every balance.
+
 | Key | Required | Meaning |
 |---|---|---|
 | `field` | yes | `Int` or `UInt` field to conserve |
