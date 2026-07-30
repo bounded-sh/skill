@@ -16,7 +16,7 @@ The current Bounded Solana program is recorded as runtime v3 on devnet.
 Runtime v3 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 96 `unverified`, 34 `unsupported`, and 19 `blocked`.
+The current totals are 115 `unverified`, 34 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -36,7 +36,8 @@ A function moves to `supported` only after a retained live run confirms both its
 | `NO-DEVNET-PHOENIX` | Phoenix is unavailable on devnet. |
 | `NO-DEVNET-DFLOW` | DFlow is unavailable on devnet. |
 | `NO-DEVNET-KAMINO` | Kamino is unavailable on devnet. |
-| `METEORA-CONFIG` | Meteora is blocked until an operator provisions a replacement config for the current Bounded program authority. |
+| `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
+| `CPAMM-SCENARIO` | A devnet acceptance scenario exercises this function, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
 | `DISABLED` | The registry entry exists but is disabled. |
 
@@ -86,27 +87,27 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
 | `@CPI.memoNote` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.transferLamports` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
-| `@DeFiPlugin.addCpAmmLiquidity` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.claimDammV2PoolFees` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.claimMeteoraPoolFees` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.closeCpAmmPosition` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.createCpAmmPosition` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.createMeteoraVirtualPool` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.createPool` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.getClaimableCpAmmPositionFee` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.getClaimableMeteoraPoolFees` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.getCpAmmPoolAddress` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.getCpAmmPositionNftMintAddress` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.getDammV2PoolAddress` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.getMeteoraSwapQuote` | legacy offchain-only | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.getMeteoraVirtualPoolAddress` | legacy runtime | blocked | not run | METEORA-CONFIG |
+| `@DeFiPlugin.addCpAmmLiquidity` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.claimDammV2PoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.claimMeteoraPoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.closeCpAmmPosition` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.createCpAmmPosition` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.createMeteoraVirtualPool` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.createPool` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF; CPAMM-SCENARIO |
+| `@DeFiPlugin.getClaimableCpAmmPositionFee` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.getClaimableMeteoraPoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.getCpAmmPoolAddress` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.getCpAmmPositionNftMintAddress` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.getDammV2PoolAddress` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.getMeteoraSwapQuote` | legacy offchain-only | unverified | not run | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.getMeteoraVirtualPoolAddress` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.getSwapQuote` | legacy offchain-only | unsupported | not run | NO-DEVNET-JUPITER |
-| `@DeFiPlugin.lockCpAmmPosition` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.removeCpAmmLiquidity` | legacy runtime | blocked | not run | METEORA-CONFIG |
+| `@DeFiPlugin.lockCpAmmPosition` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.removeCpAmmLiquidity` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |
-| `@DeFiPlugin.swapInMeteoraVirtualPool` | legacy runtime | blocked | not run | METEORA-CONFIG |
-| `@DeFiPlugin.withdrawLeftover` | legacy runtime | blocked | not run | METEORA-CONFIG |
+| `@DeFiPlugin.swapInMeteoraVirtualPool` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.withdrawLeftover` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DflowPlugin.getKycStatus` | legacy offchain-only | unsupported | not run | NO-DEVNET-DFLOW |
 | `@DflowPlugin.openPredictionMarketOrder` | legacy runtime | unsupported | not run | NO-DEVNET-DFLOW |
 | `@DocumentPlugin.putDocument` | legacy offchain-only | unsupported | not applicable | OFFCHAIN-ONLY |

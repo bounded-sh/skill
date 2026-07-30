@@ -272,8 +272,10 @@ if (!solanaInventory) {
     counts[row.support] = (counts[row.support] ?? 0) + 1
     return counts
   }, {})
-  for (const [state, count] of Object.entries({ unverified: 96, unsupported: 34, blocked: 19 })) {
-    if (supportCounts[state] !== count) {
+  for (const [state, count] of Object.entries({ unverified: 115, unsupported: 34, blocked: 0 })) {
+    // `supportCounts` is reduced from {} and only gains keys for states that occur,
+    // so a legitimately-zero state is `undefined` here and a strict !== 0 would fire.
+    if ((supportCounts[state] ?? 0) !== count) {
       fail(`Solana capability status: expected ${count} ${state} rows, received ${supportCounts[state] ?? 0}`)
     }
   }
@@ -319,7 +321,7 @@ for (const expected of [
   '| `@AccountPlugin.getAccountAddress` | legacy runtime | unverified | source parity only | LIVE-PENDING; DEVNET-ESCROW-SENTINEL |',
   '| `DEVNET-ESCROW-SENTINEL` | `@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime; bind the current Devnet program ID as a string argument when resolving the escrow. |',
   '| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |',
-  '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | blocked | not run | METEORA-CONFIG |',
+  '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |',
   '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
   '| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |',
   '| `@PumpFunPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |',
