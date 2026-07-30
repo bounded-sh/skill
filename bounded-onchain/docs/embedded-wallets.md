@@ -9,10 +9,16 @@ identity (`@user.id`), and Bounded **never holds the key**. Keep it on for any a
 that touches wallets, tokens, or onchain state (most Bounded apps); a purely offchain
 app may leave it off, and its users simply have `@user.address == null`.
 
-Wallets are **Crossmint** smart wallets with an **email admin signer**. The user
-authorizes signatures client-side (email OTP / passkey via Crossmint); Bounded's
-server can create-or-fetch the wallet and read its address but **cannot sign** -
-custody stays with the user.
+Embedded wallets come in **two provisioning paths**. The newer default is
+**Turnkey**: a LAZY embedded wallet - no wallet until the user's first on-chain
+action, which provisions a Turnkey wallet with the user's passkey (Face ID /
+Touch ID) attached in one step; signing afterwards is a passkey approval inside
+the same login widget (see [the Turnkey path](#the-turnkey-path-lazy-passkey-wallet)).
+The established path is **Crossmint** smart wallets with an **email admin
+signer** (the rest of this guide; it remains in use for existing setups). In
+both, the user authorizes signatures client-side; Bounded's server can
+create-or-fetch the wallet and read its address but **cannot sign** - custody
+stays with the user.
 
 > **What ships today:** provisioning + `@user.address` population, client-side
 > **signing of app-built transactions** - a logged-in email user can build a real
@@ -120,6 +126,29 @@ Staging and production are **separate Crossmint worlds** - the same user gets a
 **different** `@user.address` in each. Flipping `environment` re-provisions the user
 into the other world on their next login (their staging wallet and production wallet
 are distinct addresses).
+
+## The Turnkey path (lazy passkey wallet)
+
+New apps should prefer the **Turnkey** path: `authMode: 'bounded'` (the default
+init) plus a LAZY embedded wallet. No wallet exists until the user's first
+on-chain action - that action provisions the Turnkey wallet with the user's
+passkey attached in one step, and every signature afterwards is a passkey
+(Face ID / Touch ID) approval inside the same unified widget
+(`openBoundedWidget`, see
+[auth.md → Choosing your login methods & UX](../../bounded-frontend/docs/auth.md#choosing-your-login-methods--ux)).
+
+- **`authMode: 'turnkey'`** runs the widget's email lane as Turnkey-native OTP
+  inline - no second Bounded OTP, no OIDC redirect for email; the social and
+  wallet lanes are unchanged. It requires the app's Turnkey organization to have
+  email OTP configured (application brand + email OTP enabled) - an
+  issuer/platform-side prerequisite, not a client parameter.
+- **Signer bridge exports:** `startTurnkeyEmailLogin(email)` →
+  `{ verify(code): Promise<User> }` for headless email OTP, plus
+  `getOrCreateTurnkeyWallet` and `signSolanaMessageViaTurnkey` for provisioning
+  and passkey signing after login.
+- **Crossmint remains for existing setups** - the sections below (environments,
+  transaction-building requirements, the wallet page) describe the Crossmint
+  path.
 
 ## 1. What the user gets
 

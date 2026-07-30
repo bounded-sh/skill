@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **CLI/admin auth** | you / your agent | either a wallet/keypair account source or a Bounded web account session | owns/administers apps; wallet mode signs data-plane writes, web mode authenticates control-plane commands |
-| **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP); with `auth.wallets`, supported email/social logins also receive a non-custodial **Crossmint wallet**, so those users carry both `@user.id` and `@user.address`. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
+| **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP); with `auth.wallets`, supported email/social logins also receive a non-custodial **embedded wallet** (Crossmint; the newer default is a lazy **Turnkey** passkey wallet), so those users carry both `@user.id` and `@user.address`. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
 
 ## CLI auth — wallet/keypair vs web account
 
@@ -164,6 +164,17 @@ your app's vibe:
      secure; the credential never touches your origin. Works web + React Native
      (web needs no `redirectUri`; RN passes an https universal link).
    - **Hosted popup** — `loginWithPopup({ methods })`, when the host UI must stay open.
+   - **In-app unified widget** — `openBoundedWidget({ methods })`. A Shadow-DOM
+     login card rendered inside your app: email + social lanes, plus an optional
+     "Continue with wallet" lane (`wallet: true`). With
+     `init({ authMode: 'turnkey' })` (or a per-call `authMode` override) the
+     email lane runs Turnkey-native OTP inline — no second Bounded OTP, no OIDC
+     redirect for email; the social and wallet lanes are unchanged.
+     `authMode: 'turnkey'` requires the app's Turnkey organization to have email
+     OTP configured (application brand + email OTP enabled) — an issuer-side
+     prerequisite, not a client param. `requireEmail: true` in init config makes
+     email mandatory and suppresses the wallet lane. The call resolves with the
+     signed-in `User` and rejects with `Error("cancelled")` when dismissed.
 
 Wallet and guest are unaffected by this choice (they sign locally). Human auth
 always runs through `auth.bounded.sh`; the app owns the button and method selection,
@@ -183,6 +194,7 @@ first-party `*.bounded.sh` origins are always allowed without registration.
 | **email OTP** | `loginWithRedirect({methods:["email"]})` or `loginWithPopup({methods:["email"]})` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | **the canonical login** |
 | **social** (Google/Apple/GitHub) | `loginWithRedirect({provider:"google"})` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | hosted; the canonical login |
 | **text OTP** | `loginWithRedirect({provider:"text"})` or hosted popup | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | opt-in, off by default |
+| **unified widget** (email + social + optional wallet) | `openBoundedWidget({methods:["email","google"], wallet:true})` | account id (the wallet lane yields the user's real wallet) | as per the lane used (email/social rows above) | in-app Shadow-DOM card; with `authMode:'turnkey'` the email OTP runs inline via Turnkey |
 | **guest (browser)** | `signInAnonymously()` | durable device id | device keypair address (guest auth remains offchain-only) | zero-friction; `isAnonymous: true`; policy opt-in `auth.anonymous`; requires WebCrypto Ed25519 + IndexedDB |
 | **WALLET (Solana), bring-your-own** | `init({authMethod:"phantom", walletLogin:true})` → `login()` | **real wallet** | **the wallet** | the companion login for users who already have a wallet — see below |
 | **CLI/admin** | `bounded login` / keypair | web account or keypair | keypair addr | builder identity, not end-user |
@@ -240,6 +252,10 @@ custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider,
 > The two are independent and can coexist. A wallet-login user's `@user.address` is
 > their real wallet and `auth.wallets` will **not** overwrite it (the embedded-wallet
 > provisioner only runs for email/social logins that don't already carry a wallet).
+> The embedded side now has two provisioning paths: **Turnkey** (the newer default —
+> a lazy passkey wallet provisioned on the user's first on-chain action, with passkey
+> approval signing) and **Crossmint** (the established path described above, still in
+> use for existing setups).
 > See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 
 ### Hosted login — email, social, and text in one flow
