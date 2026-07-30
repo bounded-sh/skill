@@ -83,21 +83,60 @@ that require a local wallet signer fail with a clear message and ask you to pick
 a key. When a wallet/keypair source is selected, keypair commands use that source,
 and `BOUNDED_PRIVATE_KEY` is the higher-precedence CI/automation override.
 
-The global key is the default and auto-works. For one project under another
-account, run `bounded account use client-a`; the next auth command creates/uses
-`~/.bounded/accounts/client-a/credentials`. For a repo-local isolated key, run
-`bounded account use --project`; the key lives at `<project>/.bounded/credentials`
-and is gitignored. For a web account, run `bounded account use --web`, then
-`bounded login --email you@example.com`. The public config and marker always
-record *which* source was used (§4).
+**How a NEW project picks its source (email-first once an email exists).** The
+account (an email) is the identity; a keypair is just a signing credential for
+it. When `bounded init`/`deploy --create` infers a source it now prefers, in
+order: `BOUNDED_PRIVATE_KEY` (env), a repo-local `.bounded/credentials`
+(project), the global keypair **when it is linked to an email** (stays
+`global` — no OTP round-trips — and stamps `linkedEmail` so the project names
+the account it acts as), then a signed-in web session (`web` + `loginHint`).
+An UNLINKED global keypair never silently outranks a signed-in email account;
+that is how projects end up owned by phantom wallet identities nobody
+recognizes later. `bounded whoami` leads with
+`account: you@example.com (signing with linked keypair)` when linked, and warns
+when the resolved identity is an unlinked keypair while a web login exists.
+
+For one project under another account, run `bounded account use client-a`; the
+next auth command creates/uses `~/.bounded/accounts/client-a/credentials`. For a
+repo-local isolated key, run `bounded account use --project`; the key lives at
+`<project>/.bounded/credentials` and is gitignored. For a web account, run
+`bounded account use --web`, then `bounded login --email you@example.com`. The
+public config and marker always record *which* source was used (§4).
+
+**`bounded account use ...` EDITS `bounded.json`.** The account source lives in
+the committed project config, so switching is a working-tree change other agents
+and reviewers will see. Commit it if the project should move, revert it if the
+switch was only for one command — or run the one command from a throwaway dir
+(§3b) and leave the shared config untouched.
+
+**Terminal email login (OTP) recipe.** `bounded login --email you@example.com`
+sends a 6-digit code to that inbox and waits for it on stdin — run it in an
+interactive terminal, read the code from the inbox, paste it, done. The session
+lands in `~/.bounded/web-session.json` and refreshes itself. There is one web
+session at a time: logging in with a second email replaces the first, so with
+two accounts expect to re-login when you switch (or keep one as the linked
+keypair and one as the web session). Don't script around the prompt with fifos;
+in `--json` mode the CLI refuses to prompt and tells you to run the login
+interactively.
+
+**Naming trap:** `keySource: "global"` (the `~/.bounded/credentials` keypair)
+and `account.profile: "global"` (`~/.bounded/accounts/global/credentials`) are
+DIFFERENT keypairs that both read as "global". `bounded whoami` prints the
+resolved path — trust the path, not the word.
 
 ## 3b. Deploy denied? You may be using the wrong identity — try the other one first
 
-A control-plane command that fails with **403 `site_control_denied`** (or a
-boundary-violation on `site deploy` / `deploy` / `functions`) almost never means
-"you can't deploy this." It means **the identity your `bounded.json` account source
-points at is not an owner/admin of that app** — and the CLI uses *only that one
-source*. It does **not** fall back to your other signed-in identities.
+A control-plane command that fails with **403 `site_control_denied`** almost never
+means "you can't deploy this." It means **the identity your `bounded.json` account
+source points at is not an owner/admin of that app** — and the CLI uses *only that
+one source*. It does **not** fall back to your other signed-in identities.
+
+**This section is only for `site_control_denied` (an identity problem).** A
+**`boundary_violation`** ("Blocked by this app's boundaries") is a *different* 403:
+an intentional boundary lock that refuses **every** author, including the owner, so
+switching identities can never help. Do **not** cycle credentials against it - stop,
+and follow the boundary-lock playbook
+([access-playbook.md §5](access-playbook.md)) to inspect and amend the boundary.
 
 This is the trap: you can be logged in to two accounts at once — a wallet key at
 `~/.bounded/credentials` **and** a web login at `~/.bounded/web-session.json` — and
@@ -131,9 +170,12 @@ Or, for a project you own, just switch in place: `bounded account use --web` (we
 login) or `bounded account use --global` (wallet), then re-deploy. If the web
 session is expired, `bounded login --email you@example.com` first.
 
-**Rule of thumb: never report a deploy as "owner-gated / blocked" until you've
-tried every identity signed in on the machine.** Wallet-owns-it and web-owns-it are
-both common; the CLI picks one, so the fix is usually just switching sources.
+**Rule of thumb: for a `site_control_denied` error, never report a deploy as
+"owner-gated / blocked" until you've tried every identity signed in on the
+machine.** Wallet-owns-it and web-owns-it are both common; the CLI picks one, so the
+fix is usually just switching sources. (This does **not** apply to a
+`boundary_violation`: a boundary lock refuses every identity, so cycling accounts is
+pointless - amend the boundary via the access playbook instead.)
 
 ## 4. Public project markers — `bounded.json` and `.bounded/app.json`
 

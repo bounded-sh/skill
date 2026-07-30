@@ -139,12 +139,22 @@ allowed vs denied, by whom, and why), use **`bounded decisions`**:
 
 ```
 $ bounded data set --app-id <id> --path "rooms/r1" --data '{"name":"x"}'
-✗ 403 Policy failed: Expression evaluated to false (comparison != failed)
+✗ 403 Policy failed: Expression evaluated to false
 
 $ bounded decisions --app-id <id> --denied-only
 TIME       DECISION  ACTION  PATH      ACTOR         REASON
-23:40:08Z  DENY      create  rooms/r1  89MnyG..1ZTe  Policy failed: Expression evaluated to false (comparison != failed)
+23:40:08Z  DENY      create  rooms/r1  89MnyG..1ZTe  Policy failed: Expression evaluated to false
+           ↳ Policy failed: "89MnyG…" != "owner…" -> false | resolved: @user.id="89MnyG…", get("rooms/r1")={"owner":"owner…"}, @time.now="1785346554"
 ```
+
+On denies, the log carries an owner-scoped `detail` line (also in `--json`):
+the failed comparisons with their actual operand values, plus how every
+variable the rule touched resolved — `@time.now`, `@newData.*`, `get()` reads,
+path variables. The CALLER's 403 stays generic on purpose: rules read
+documents with system authority, so the resolved values are evidence for the
+app team, not for the denied writer. If a deny hinges on time, the resolved
+`@time.now` is right there — compare it against the written timestamp before
+suspecting anything else.
 
 The backend keeps a bounded (~200-entry, denies-prioritized) in-memory ring
 buffer of recent WRITE decisions per app. `bounded decisions` reads it
@@ -210,29 +220,47 @@ order. That turns `set-many` into a composition primitive — guard documents
 and the writes they gate travel in one atomic unit, with no TOCTOU window
 between check and act. `get()` still reads the committed pre-batch snapshot.
 
-Allowlist example. `gated/$docId` has the create rule:
+Allowlist example - the guard must not be writable by the caller it gates.
+Declare `allowlist/$userId` so only an admin can add entries, and gate
+`gated/$docId` on it. Key the gate on `@user.id` (present for every login), not
+`@user.address` (empty for email/social users):
 
-```
-getAfter(/allowlist/@user.address).approved == true
+```json
+{
+  "allowlist/$userId": {
+    "rules": { "read": "true", "create": "get(/admins/@user.id) != null", "update": "false", "delete": "false" },
+    "fields": { "approved": "Bool" }
+  },
+  "gated/$docId": {
+    "rules": { "read": "true", "create": "getAfter(/allowlist/@user.id).approved == true" },
+    "fields": { "value": "UInt" }
+  }
+}
 ```
 
-One batch creates the allowlist entry AND the gated write:
+An admin seeds the allowlist once. The caller's batch then creates **only** the
+gated write; the rule admits it by reading the admin-controlled allowlist entry
+(a doc the batch does not touch, so `getAfter` reads its committed value):
 
 ```json
 [
-  { "path": "allowlist/agentA", "document": { "approved": true } },
-  { "path": "gated/g1",         "document": { "value": 7 } }
+  { "path": "gated/g1", "document": { "value": 7 } }
 ]
 ```
 
 ```
 $ bounded data set-many --from-json compose.json
-✓ committed 2 document(s)
+✓ committed 1 document(s)
 ```
 
-Reversing those two entries has the same result. Write ordering is not an
-authorization primitive; reciprocal rules may safely require each other's
-final staged values in one batch.
+> **A `getAfter()` gate is only an authorization gate when the referenced document
+> cannot be created or edited by the same caller in the same batch.**
+> Reciprocal rules may safely require each other's final staged values for ordinary
+> *data* relationships, where write ordering is not an authorization primitive.
+> But a caller-writable guard is no guard: if the batch could also create
+> `allowlist/<self>` with `approved: true`, the caller self-approves and passes in
+> one atomic unit, so the allowlist protects nothing.
+> Keep guard documents admin- or service-created, and only *read* them in the batch.
 
 ## getAfter() FALLS BACK to committed state
 

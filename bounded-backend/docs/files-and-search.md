@@ -23,7 +23,7 @@ data.
 {
   "users/$userId/files/$fileId": {
     "type": "storage",
-    "fields": { "name": "String", "owner": "Address!" },
+    "fields": { "name": "String", "owner": "String!" },
     "rules": {
       "read":   "@user.id != null && $userId == @user.id",
       "create": "@user.id != null && $userId == @user.id",
@@ -70,6 +70,11 @@ So a create rule can gate on the metadata you upload, e.g.
 `"create": "@newData.owner == @user.id"` — the file is created only if the
 `owner` you pass matches the caller. (`owner` here is an identity/ownership key, so
 use `@user.id`, the universal identity — not the wallet `@user.address`.)
+The field is typed `String!`, not `Address!`, for that reason: `@user.id` is a
+universal account id (a Better Auth id for email/social logins), not a base58
+wallet address, so an `Address!` field would reject uploads from every non-wallet
+user. Use `Address!` with `@user.address` only if the example is deliberately
+wallet-only.
 
 `setFile`'s `metadata` applies on **create** only. To change an existing file's
 declared fields, `set(path, {...})` it like any doc (an update — your `update` rule

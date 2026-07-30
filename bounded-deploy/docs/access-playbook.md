@@ -67,6 +67,38 @@ bounded access --app-id <id>                                          # check as
 The grant is real if *any* of your identities shows it. Don't stop at the first
 one that 403s.
 
+On CLI ≥ 0.0.73 the identity default is **email-first**: a signed-in email
+session outranks an auto-created *unlinked* keypair, and `bounded whoami` leads
+with the account. If your CLI silently acts as a fresh keypair while a web
+login exists, that's the pre-0.0.73 behavior — `bounded update` first, then
+re-run `bounded whoami`.
+
+### 1b. Owner-only operations (`share`, roster, transfer): find WHICH login is the owner
+
+`bounded share` and roster changes are **owner-only** (or `access:manage`), so
+the wrong-identity problem bites hardest here. Don't spend turns hunting for
+keypair files. The identity model is: wallets and emails that belong to the same
+person are **linked into one account**, and a grant held by the wallet is
+carried by a login to the linked email. So:
+
+```bash
+bounded access --app-id <id> --json      # shows the owner identity (often a wallet)
+bounded whoami                            # who you are now; account info shows linked identities
+cat ~/.bounded/account.json               # which email the owner wallet is linked to
+bounded login --email <that-email>        # an OTP login to the LINKED email carries owner rights
+bounded share <email> --role viewer --app-id <id>
+```
+
+If the owner is a wallet linked to `person@example.com`, logging in as that
+email IS acting as the owner — you do not need the wallet's keypair on disk.
+Only a wallet linked to no email requires the actual keypair
+(`bounded account use --global` / the profile holding it).
+
+Also: if `bounded share` returns a **5xx**, the grant may still have landed
+(some failures happen after the roster write — a retry then says "Address is
+already a collaborator"). **Verify with `bounded access --app-id <id>` before
+retrying or concluding failure.**
+
 ### 2. `requires a keypair` on a web session = a CLI-version bug, not a wall
 
 A **web-login session is platform-scoped**, and the CLI performs the deploy on

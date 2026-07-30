@@ -5,6 +5,7 @@
     "CREATOR": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm",
     "POOF": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
     "KEEPER": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm",
+    "FOUNDER": "<founder-user-id>",
     "BUILD_ALLOWANCE": 100000000000
   },
 
@@ -14,7 +15,7 @@
     "tier": "durable",
     "rules": {
       "read": "true",
-      "create": "@user.id != null && $userId == @user.id",
+      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
       "update": "false",
       "delete": "false"
     }
@@ -203,6 +204,12 @@
       "entry": "keeper.js",
       "actAs": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm"
     }
+  },
+
+  "proofs": {
+    "attestations": [
+      { "claim": "the admin set only grows through the founder or an existing admin", "kind": "authorityClosure", "roleScope": "admins/$userId", "initialMember": "@const.FOUNDER" }
+    ]
   },
 
   "auth": {

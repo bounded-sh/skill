@@ -557,7 +557,7 @@ for (const expected of [
   '"SUBS_SYNC_ACTOR": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm"',
   '"actAs": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm"',
   'await ctx.bounded.set(`subs/${userId}`',
-  '{"customerId":"cus_123","userId":"acct_123"}',
+  '{"customerId":"cus_123"}',
   'The original admin is not ctx.user.',
 ]) {
   if (!functionsGuide.includes(expected)) fail(`Functions guide: missing safe sync example fragment ${expected}`)

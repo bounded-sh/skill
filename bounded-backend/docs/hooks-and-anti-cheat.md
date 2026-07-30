@@ -129,26 +129,29 @@ the one class no backend fully cures.
       "delete": "false"
     }
   },
-  "matches/$matchId/inputs/$inputId": {
+  "matches/$matchId/players/$playerId/inputs/$inputId": {
     "tier": "durable",
     "fields": { "player": "String", "action": "String", "weight": "UInt", "at": "UInt!" },
     "rules": {
       "read":   "false",
-      "create": "@user.id != null && @newData.player == @user.id && @newData.weight == 1",
+      "create": "@user.id != null && $playerId == @user.id && @newData.player == @user.id && @newData.weight == 1",
       "update": "false",
       "delete": "false"
     },
     "invariants": [
       { "type": "rollingSum", "name": "input_rate_cap",
-        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$matchId" }
+        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$playerId" }
     ]
   }
 }
 ```
 
 (A `rollingSum` field is `UInt`, lives on the collection it caps, and forces
-`tier: "durable"`. `scopeVariable` is a `$path` variable; per-player scoping
-uses a player path segment. The view/state collections stay `ephemeral`.)
+`tier: "durable"`. `scopeVariable` is a `$path` variable; this cap scopes on the
+`$playerId` path segment so each player gets an independent 20/sec budget - a
+`$matchId`-scoped cap would instead be one shared per-match ceiling that a single
+player could exhaust, freezing everyone else. The view/state collections stay
+`ephemeral`.)
 
 > **Pin the cap weight in the create rule** (`@newData.weight == 1`). Without it
 > a client can append `weight: 0` and the rate cap never increments — the limit is

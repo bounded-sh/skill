@@ -186,6 +186,19 @@ expressions at deploy. **An omitted rule defaults to deny.**
 | `get(/path)` | Read another doc, **pre-transaction** state | unquoted path, leading `/`; literal segments use letters, digits, or `_` |
 | `getAfter(/path)` | Read another doc, **post-batch (staged)** state | not in `read` rules |
 
+**`@time.now` is the RULE clock, and it can trail wall time by about a second.**
+Never write a client-computed "now" (`Date.now()/1000`) into a field a rule
+compares against `@time.now`: with `field <= @time.now` an ACCURATE client
+clock stamps a value the rule clock has not reached yet and the write is
+DENIED — intermittently, per second-boundary alignment, worst on a session's
+first writes (measured live 2026-07-29; retries mask it and users see decline
+noise). `field == @time.now` only ever passes when both clocks share a second.
+The fix is always `serverTimestamp()` (exported from `@bounded-sh/client`,
+`/server`, and `/core`): the platform stamps the field in seconds, so it agrees
+with `@time.now` by construction and cannot be forged. Keep a rule bound like
+`@newData.at <= @time.now && @newData.at + 60 >= @time.now` anyway — it
+constrains a modified client that writes a literal instead of the sentinel.
+
 `get(/users/$userId).role` — property access chains off the call. `@data` /
 `@newData` must reference a specific field (`@data.foo`, never bare `@data`).
 Literal `get()` and `getAfter()` path segments are expression tokens, not quoted document-key strings.

@@ -47,11 +47,11 @@ contract from the top of `pong.live.ts`:
 ```ts
 //   1. init(seed)               -> initial state           (optional)
 //   2. tick(state, intents, dt, ctx) -> next state         (required; server-authoritative)
-//      ctx = { presence: userId[], tick } — who's connected (4th arg, optional to read)
-//   3. views(state)             -> { [userId]: view }      (optional; per-client visibility)
+//      ctx = { presence: address[], tick } — who's connected (4th arg, optional to read)
+//   3. views(state)             -> { [address]: view }      (optional; per-client visibility)
 //
 // `intents` is the list of client inputs received since the last tick:
-//   [{ userId, intent }, ...]   — Bounded orders them; you decide what they mean.
+//   [{ address, intent }, ...]   — Bounded orders them; you decide what they mean.
 ```
 
 - `init(seed): State` — **optional.** The initial state when the room starts.
@@ -63,13 +63,15 @@ contract from the top of `pong.live.ts`:
   it never affects tick determinism. The live module itself has no direct data
   access; Bounded provides the seed, keeping `tick`/`views` pure.
 - `tick(state, intents, dtMs, ctx): State` — **required, server-authoritative.**
-  `intents` is `[{ userId, intent }, ...]` ordered by Bounded; return the next
-  state. This is the only thing that advances the room. (`userId` is the sender's
+  `intents` is `[{ address, intent }, ...]` ordered by Bounded; return the next
+  state. This is the only thing that advances the room. (`address` is the sender's
   universal `@user.id` — present for every authenticated client, wallet or
-  email/social login alike.) The optional **4th arg** `ctx = { presence, tick }`
-  gives the set of currently-connected `userId`s — use `ctx.presence` to evict
+  email/social login alike; the field is named `address` for legacy reasons, but
+  its value is the `@user.id`, not a wallet address.) The optional **4th arg** `ctx
+  = { presence, tick }` gives the set of currently-connected `address`es — use
+  `ctx.presence` to evict
   players who disconnected (see [Reconnection & presence](#reconnection--presence-drops-rejoins-leaves)).
-- `views(state): Record<userId, View>` — **optional.** Maps each client's
+- `views(state): Record<address, View>` — **optional.** Maps each client's
   universal `@user.id` to *what that client may see*. Bounded fans each entry out
   to that user's view collection.
 
@@ -100,7 +102,8 @@ not the hosting plumbing.
 ```json
 "rooms/$roomId": {
   "tier": "checkpointed",
-  "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800,
+  "session": { "intentRule": "@user.id != null",
+               "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800,
                          "snapshotEveryTicks": 30 } }
 }
 ```
@@ -144,7 +147,7 @@ The validated declaration (room + per-client view + invariants):
     "tier": "checkpointed",
     "fields": { "status": "String", "tick": "UInt" },
     "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
-    "session": { "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800, "snapshotEveryTicks": 30 } }
+    "session": { "intentRule": "@user.id != null", "live": { "module": "pong", "everyMs": 33, "maxLifetimeSec": 1800, "snapshotEveryTicks": 30 } }
   },
   "rooms/$roomId/view/$userId": {
     "tier": "ephemeral",
@@ -157,6 +160,12 @@ The validated declaration (room + per-client view + invariants):
 
 `update: "false"` + `delete: "false"` on the room means there is no client write
 path into room state — only the native `tick` advances it.
+
+`session.intentRule` is what lets clients **act**: it gates who may send intents,
+and **absent it every intent is denied** (fail-closed). Without it the worked
+client below would subscribe successfully yet have all its `join`/`move` intents
+rejected - the room is watchable but unplayable. `"@user.id != null"` admits any
+signed-in player; use a room-membership check to restrict it further.
 
 ## Tiers: ephemeral (live) vs checkpointed (provable)
 
@@ -201,8 +210,8 @@ is no delivery path for anyone else's.
 This is the structural cure for maphacks/wallhacks (games) and for leaking
 private layers/selections in a collaborative editor: **hidden information is never
 written to a view it doesn't belong to**, so patching the client reveals nothing
-— there is nothing to reveal. In `views(state)`, only put in `out[userId]` what
-`userId` is allowed to see.
+— there is nothing to reveal. In `views(state)`, only put in `out[address]` what
+that `address` is allowed to see.
 
 **The `*` spectator key.** Pong writes a wildcard `out["*"]` entry with the full
 board. That is appropriate **only** for symmetric / no-hidden-information rooms
