@@ -125,6 +125,17 @@ the same record (idempotent). Wrong amount → **402 `insufficient_payment`**; a
 signature already used by another intent → **409 `signature_already_used`**; a
 tx that isn't finalized yet → **402 `payment_not_final`** (retry shortly).
 
+> **⚠️ Limitation - a payment is not yet bound to a specific order.** Verification proves
+> that *some* payment of the right amount reached `settleTo` and that a signature settles
+> only one intent - but it does **not** prove the payment was made *for this intent*.
+> Because every order shares one `settleTo`, two pending orders for the same amount are
+> indistinguishable: whoever calls `/verify` first claims a given on-chain payment, so a
+> caller can settle **their** order with **someone else's** payment (the real payer then
+> gets `409 signature_already_used`). Do **not** rely on this rail for a production checkout
+> where mis-settlement matters until per-order binding ships - and a unique-amount workaround
+> is not sufficient (an attacker can match the amount). The robust fix (a per-order on-chain
+> reference, or a per-intent escrow deposit address) is tracked and not yet implemented.
+
 ### Poll status — `GET /crypto/intents/:id`
 
 Returns `{ status: "pending" | "settled", intent, settlement? }`. The seller's
