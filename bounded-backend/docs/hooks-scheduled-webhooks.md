@@ -225,7 +225,11 @@ email, analytics, anomaly detection, or any downstream system.
 ```
 
 - `webhooks` is a non-empty array; multiple targets allowed.
-- Each `url` must be a valid `https://` URL.
+- Each `url` must be a valid **public** `https://` URL (max 2048 chars).
+  The deploy gate rejects loopback, link-local, private, multicast, and internal-only hosts (`localhost`, `*.local`, `*.internal`, `127.0.0.1`, `169.254.169.254`, `10.0.0.0/8`, `[::1]`, and the like), embedded credentials (`https://user:pass@…`), a URL `#fragment`, and any non-standard port (only the default https port is allowed).
+  At delivery time the platform additionally resolves the host and refuses any target (or redirect hop) that resolves to a non-public address, and it never follows a 3xx redirect - so a signed POST only ever reaches the declared public URL.
+- Target counts are bounded: at most 16 targets per collection and at most 64 across the whole policy.
+  Exact duplicate `(url, operation)` deliveries are rejected.
 - `on` is a non-empty subset of `["create","update","delete"]` (no duplicates).
 
 ### The delivery (verified 2026-06-16)
@@ -296,11 +300,21 @@ app.post("/hooks/orders", express.text({ type: "*/*" }), async (req, res) => {
 > you intentionally verify against a custom key source; keep `expectedAppId` and
 > `replayStore` in that object.
 
+> **App binding is on by DEFAULT.** Bounded signs every app's webhooks with one
+> shared platform key, so a valid signature only proves the delivery came from
+> Bounded — not from *your* app. `verifyWebhook` therefore binds the delivery to a
+> single app: it uses `expectedAppId` when you pass it, otherwise it falls back to
+> the app id from your `init({ appId })`, and it rejects a mismatch.
+> If it can resolve neither (no `expectedAppId` and no `init`-time app id) it FAILS
+> CLOSED and throws — pass one of them.
+> A receiver that legitimately handles webhooks for many apps must opt out
+> explicitly with `allowAnyAppId: true` and check `event.appId` itself.
+
 `webhookReplayStore` must implement `WebhookReplayStore` with an atomic shared
 Redis/KV/DB record and be reused by every receiver replica. The SDK rejects
 replays in a process-local cache by default, but separate instances do not share
-that cache. `expectedAppId` prevents a validly signed event for another Bounded
-app from being accepted by this endpoint.
+that cache. The app binding (above) is what prevents a validly signed event for
+another Bounded app from being accepted by this endpoint.
 
 Webhooks are **read-only fan-out** — never act on an unauthenticated body, and
 treat the event as a *signal*: if you need to mutate Bounded state in response, do

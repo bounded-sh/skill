@@ -1,7 +1,7 @@
 {
   "accounts/$accountId": {
     "rules": {
-      "read": "true",
+      "read": "@user.id != null && @user.id == @data.owner",
       "create": "@user.id != null && @user.id == @newData.owner",
       "update": "@user.id != null && @user.id == @data.owner",
       "delete": "false"
@@ -10,7 +10,7 @@
   },
   "accounts/$accountId/items/$itemId": {
     "rules": {
-      "read": "true",
+      "read": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
       "create": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
       "update": "@user.id != null && @user.id == get(/accounts/$accountId).owner",
       "delete": "@user.id != null && @user.id == get(/accounts/$accountId).owner"

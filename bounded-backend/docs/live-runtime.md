@@ -624,8 +624,13 @@ headers or routing details.
 
 | Route | Addressed by | Auth | Returns |
 |---|---|---|---|
-| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | none | `{ available, started, running, tick, module, etag, stopReason, generation, connections, lastTickAt, nextAlarmAt }` |
+| `GET /live/status` | `?path=<sessionCollection>/<roomId>` | optional session (gates detail) | authorized: `{ available, started, running, tick, module, etag, stopReason, generation, connections, lastTickAt, nextAlarmAt }`; otherwise slim `{ available, started, module }` |
 | `POST /live/intent` | `body.path` | **required** | `{ ok: true }` |
+
+`GET /live/status` is **passive and least-disclosure**.
+It never starts a runtime — only `live.intent` / `live.subscribeView` (and a WS connect) re-arm a parked room, so a status "ask" is side-effect-free and never spins up billable compute.
+The SDK attaches your session token when you are signed in; the server then gates the **detailed** body on the room's **read rule** (seeing a room's health is the same authority as reading the room document).
+A caller who cannot read the room — anonymous, or not authorized by the read rule — gets only the slim `{ available, started, module }` liveness shape, with no error strings, tick counter, connection count, or telemetry.
 
 Drive intents from anywhere: the browser SDK (`bounded.live.intent(roomPath, intent)`),
 a server with `@bounded-sh/server`, or the **CLI** — `bounded live intent <roomPath>
@@ -703,7 +708,10 @@ await live.intent(roomPath, { type: "move", dir: -1 });
 Status/liveness is first-class in the SDK and CLI:
 `await live.status(roomPath)` or `bounded live status <roomPath>`
 returns `{ available, started, running, tick, module, etag, stopReason,
-generation, connections, lastTickAt, nextAlarmAt }`.
+generation, connections, lastTickAt, nextAlarmAt }` when the caller is authorized
+to read the room; an unauthorized/anonymous caller gets the slim
+`{ available, started, module }` liveness shape instead.
+The call is passive — it never starts a runtime.
 
 The per-client view read rule is what makes the subscribe line safe by
 construction: it can only ever resolve to *your* view, so you cannot subscribe

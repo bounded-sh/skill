@@ -222,6 +222,11 @@ await get("projects/p1", { shape: { owner: { ownedProjects: {} } } });
   omitted (forward) or filtered out (reverse) — never a leak.
 - `shape` resolves both the top-level **`links`** array and per-collection
   **`relationships`** (below).
+- **Bounded:** a `shape` may nest at most **5 levels deep** and reference at most
+  **15 related-collection nodes** in total. An over-broad shape is rejected with a
+  `413` (error code `shape_limit`) before any expansion, on both `get` and
+  `subscribe`. These match the server's relationship limits, so a shape that
+  verifies also works at read time.
 
 ### `relationships` (per-collection) — explicit local/foreign fields
 

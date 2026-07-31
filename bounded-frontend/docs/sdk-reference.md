@@ -387,6 +387,10 @@ re-signing in the same user. Expect a page reload on sign-out. Pass
 `logout({ keepIssuerSession: true })` for the old local-only behavior. The
 bounce only runs on issuer-trusted origins (`*.bounded.sh` / `*.bounded.page` /
 `*.oapps.fun` / https localhost); on custom domains logout stays local-only.
+The SDK sends an `id_token_hint` on the bounce, and the issuer returns you to
+that origin only when it is one your app's owner registered (bound to your live
+session) - otherwise it safely lands on the issuer's own page rather than
+trusting a bare suffix match.
 
 The `user` object has four fields:
 
@@ -485,9 +489,16 @@ const event = await verifyWebhook(rawBody, headers, {
 // event: { id, appId, path, operation, document, previousDocument, timestamp }
 ```
 
+**App binding is on by default.** One shared platform key signs every app's
+webhooks, so a valid signature only proves the delivery is from Bounded, not from
+your app. `verifyWebhook` binds to `expectedAppId` when passed, otherwise to your
+`init({ appId })`, and rejects a mismatch; with neither resolvable it fails closed.
+A genuine multi-app receiver must opt out with `allowAnyAppId: true` and check
+`event.appId` itself.
+
 Also exported: `clearWebhookKeyCache`, `WebhookVerificationError`,
 `DEFAULT_WEBHOOK_KEYS_URL`. `verifyWebhook(rawBody, headers, opts?)` — `opts`
-sets `expectedAppId` / `replayStore` and can override `keysUrl` /
+sets `expectedAppId` / `allowAnyAppId` / `replayStore` and can override `keysUrl` /
 `maxSkewSeconds` / cache TTL. The default keys URL follows
 your `init({ network })` (the receiver verifies against that network's signing
 keys), falling back to production when no network is set. Pass `keysUrl` only
