@@ -317,6 +317,8 @@ It preserves the original policy path, app ID, constants, selected policy enviro
 Keep the policy file and every input byte unchanged.
 The CLI binds the exact operation and exact policy and never submits a second policy mutation.
 The server may re-run the policy proof and compiler for that unchanged target before it can reconcile the retained operation safely.
+While recovery is processing, a retained candidate must not replace or hide the active publication.
+The last committed policy remains the serving policy until the candidate activates.
 HTTP `202` with `state: "processing"` means the exact recovery is still in progress.
 The CLI returns to operation-bound readback and continues bounded polling; let it finish instead of starting a parallel or normal deploy.
 A normal deploy whose first policy mutation has an ambiguous outcome uses this same readback/recovery loop automatically.
@@ -325,6 +327,8 @@ If polling times out while the operation remains processing, run the same exact 
 Do not treat that timeout as permission to create a fresh operation.
 Successful recovery returns action `recoverPolicyDeploy` with the normal committed `policyDeployReceipt`.
 Do not rerun a normal deploy, guess an operation ID, copy one from another app, or scrape internal storage.
+Do not edit release pointers or publication revisions by hand.
+The control plane reconciles a retained candidate with destination revision high-water marks without weakening those monotonic fences.
 If the response has no operation ID, confirm the active identity with `bounded whoami` and let the verified owner obtain and run the recovery command.
 After recovery commits, poll `bounded apps inspect --app-id <id> --json` for the expected active publication instead of treating the recovery line as final provenance.
 

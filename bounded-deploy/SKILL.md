@@ -73,6 +73,8 @@ bounded deploy --create --name my-app
 - If policy deployment reports `deploy_in_progress` with an `operationId`, do not repeat a normal deploy.
   The verified app owner must run the exact emitted `recoveryCommand` with the unchanged policy file and inputs.
   The CLI does not submit another policy mutation, and it keeps polling when recovery returns `202` with `state: "processing"` while the server re-runs the proof, compiler, and exact-state reconciliation.
+  The last committed policy remains serving while that retained candidate is reconciled.
+  Do not edit release pointers or publication revisions by hand.
 - For Solana Devnet recovery, an exact finalized target publishes the frozen app/runtime target without replaying an onchain mutation.
   An exact finalized source makes the retained operation terminal, after which the caller runs a fresh normal `bounded deploy`.
   Unavailable finalized state remains locked and pollable; partial or contradictory state remains locked for manual intervention.
