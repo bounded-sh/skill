@@ -40,7 +40,7 @@ decisions that must agree:
 |---|---|---|
 | `realtime_offchain` | Bounded's durable store (no chain) | **default** - fastest, no wallet signing, full feature set |
 | `realtime_devnet` | Solana **devnet** program accounts | test the real onchain path with throwaway SOL |
-| `realtime_mainnet` | Solana **mainnet** program accounts | production onchain (policy updates need a human permit - see below) |
+| `realtime_mainnet` | Solana **mainnet** program accounts | production onchain (owned by your wallet, immutably - see below) |
 
 ```bash
 # off-chain (default) - omit --protocol or pass realtime_offchain
@@ -49,6 +49,44 @@ bounded deploy ./policy.json --create --name my-app
 # onchain on devnet
 bounded deploy ./policy.json --create --name my-app --protocol realtime_devnet
 ```
+
+## Mainnet apps are owned by your wallet, immutably
+
+This is the one thing to get right before creating a mainnet app, because it
+cannot be undone.
+
+A devnet app is owned on-chain by the Bounded platform admin, which is why the
+platform can sign its policy updates for you. A **mainnet** app is not: it is
+owned on-chain by the wallet that created it, that owner is written once and can
+never be reassigned, and only that wallet can authorize a policy update.
+
+What follows from that:
+
+- **Create mainnet apps from the machine holding the key you want to own them.**
+  `bounded deploy --create --protocol realtime_mainnet` sends your local CLI
+  wallet as the intended owner and the server refuses any wallet you have not
+  proven you control. Creating an app for an address whose key lives elsewhere -
+  a browser wallet, a teammate's machine - produces an app that can never deploy
+  a policy again.
+- **A mainnet app cannot be ownership-transferred or ejected.** The Bounded-side
+  transfer would move the database record while the on-chain owner stayed put,
+  leaving the recipient an app they could never deploy to. Both are refused.
+- **`--starter-policy` is not available on mainnet.** Seeding a starter policy
+  would need the server to sign on your behalf, which it cannot do. Create the
+  app, then deploy your policy.
+- **Deploying is otherwise normal.** The CLI probes, reserves the operation,
+  mints the permit, signs it locally, and deploys - one command, no extra step.
+  Your private key never leaves your machine.
+
+```bash
+# onchain on mainnet - owned by your local CLI wallet
+bounded deploy ./policy.json --create --name my-app --protocol realtime_mainnet
+```
+
+If you see `owner_not_established`, the app's on-chain account is not owned by a
+usable wallet. That is an integrity error rather than a state to recover from:
+the app was not created through the current path, and Bounded will not silently
+reassign ownership to repair it.
 
 ## Check capability status before building
 
@@ -428,8 +466,12 @@ guarantee failure Bounded exists to catch at deploy time.
 
 ## Policy upgrade governance (runtime v3)
 
+Governed upgrades are **not yet available on mainnet**; a mainnet policy
+declaring `governance.upgrade`, and mainnet enrollment, are both rejected at
+validation. The section below applies to devnet today.
+
 Onchain apps have three upgrade modes. **Wallet** mode is the legacy/default
-mode and uses the app authority's human-signed mainnet permit. **Policy** mode
+mode and uses the app owner's signed permit. **Policy** mode
 lets a stable onchain controller path authorize an exact policy manifest.
 **Immutable** mode permanently rejects policy changes. Policy and immutable
 governance require a deployed runtime-v3 program; never infer that capability
