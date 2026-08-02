@@ -323,6 +323,10 @@ HTTP `202` with `state: "processing"` means the exact recovery is still in progr
 The CLI returns to operation-bound readback and continues bounded polling; let it finish instead of starting a parallel or normal deploy.
 A normal deploy whose first policy mutation has an ambiguous outcome uses this same readback/recovery loop automatically.
 It returns to polling after `202` instead of submitting the policy mutation again.
+Every retained runtime publication has a finite per-publication autonomous recovery owner in the control plane.
+If the initiating request or its recovery polling disappears, that owner sleeps until the publication deadline without a cron or background sweeper.
+At the deadline it finishes a publication only when both runtime destinations already acknowledged the exact candidate; otherwise it abandons the candidate, leaves the last committed policy serving, and frees the app for a later normal deploy.
+This fallback does not replace the exact `recoveryCommand` while the operation remains visible as in progress, and callers must not race it with a guessed or fresh operation.
 If polling times out while the operation remains processing, run the same exact `recoveryCommand` again later.
 Do not treat that timeout as permission to create a fresh operation.
 Successful recovery returns action `recoverPolicyDeploy` with the normal committed `policyDeployReceipt`.

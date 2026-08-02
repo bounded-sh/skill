@@ -53,6 +53,9 @@ Flow:
   The CLI does not submit another policy mutation and lets `202` with
   `state: "processing"` poll the same operation while the server re-runs the
   proof, compiler, and exact-state reconciliation.
+  The last committed release remains serving, and a finite per-publication
+  recovery owner eventually finishes an already acknowledged safe candidate or
+  abandons it and frees the deploy slot if request-driven recovery disappears.
   A normal deploy with an ambiguous outcome uses that polling loop
   automatically.
   For Solana Devnet, an exact finalized target publishes the frozen app/runtime
