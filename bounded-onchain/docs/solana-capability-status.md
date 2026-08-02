@@ -1,5 +1,11 @@
 # Solana devnet capability status
 
+**Scope: devnet only.** The Bounded Solana program is live on mainnet-beta as well, with
+bytes identical to devnet, but this table is generated from the Devnet lab and classifies
+devnet alone. Mainnet capability is **not** established here: an external protocol being
+usable on devnet says nothing about its mainnet deployment or configuration, and vice
+versa. Do not read a devnet row as a mainnet guarantee.
+
 This is the canonical public classification of Bounded Solana functions for devnet.
 It is a source-derived snapshot, not a claim that every discovered function works on a live cluster.
 The catalog contains 149 individually classified functions.
