@@ -74,9 +74,11 @@ What follows from that:
 - **`--starter-policy` is not available on mainnet.** Seeding a starter policy
   would need the server to sign on your behalf, which it cannot do. Create the
   app, then deploy your policy.
-- **Deploying is otherwise normal.** The CLI probes, reserves the operation,
-  mints the permit, signs it locally, and deploys - one command, no extra step.
-  Your private key never leaves your machine.
+- **Deploying is otherwise normal.** The CLI checks whether a permit is needed,
+  has the server mint one bound to the exact policy you are deploying, signs it
+  locally, and deploys - one command, no extra step. Your private key never
+  leaves your machine, and the permit cannot authorize a different policy than
+  the one it was issued for.
 - **Mainnet creation needs a paid account.** Creating a mainnet app spends real
   rent on an account that is immutable once it exists, so it is granted by your
   account's plan (`pro`/`enterprise`). There is no API key or shared secret to
