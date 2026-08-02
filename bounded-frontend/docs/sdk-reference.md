@@ -42,7 +42,7 @@ import { createWalletClient } from "@bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
-`init(config)` takes `{ appId, authMethod?, network? }`. **It points at Bounded
+`init(config)` takes `{ appId, authMethod?, network?, authMode?, walletLogin?, requireEmail?, loginWidget? }`. **It points at Bounded
 production by default** - `init({ appId })` just works, no endpoints to set (the
 network is `'bounded-production'`). **Email + OAuth/social + text** work through
 the hosted flow `loginWithRedirect` / `loginWithPopup`; the credential is entered
@@ -58,6 +58,22 @@ Bounded Auth.
 Text OTP (hosted: `provider: "text"` or `methods: ["text"]`) is off by default
 and works only when Bounded explicitly enables it for the app.
 Full flow in [auth.md](auth.md).
+
+`authMode?: 'bounded' | 'turnkey'` (default `'bounded'`) picks how human login
+runs. `'bounded'` is the normal Better Auth email/social/OIDC login - no extra
+setup. `'turnkey'` runs **Turnkey-native email OTP inline** in the unified
+widget (see `openBoundedWidget` below): no second Bounded OTP and no OIDC
+redirect for email, while the social and wallet lanes are unchanged. It
+requires the app's Turnkey organization to have email OTP configured
+(application brand + email OTP enabled) - an issuer/platform-side prerequisite,
+not a client parameter. `walletLogin` (`true | false | { getProvider, network,
+rpcUrl }`) turns on bring-your-own Solana wallet login (full detail:
+[auth.md](auth.md#solana-wallet-login-bring-your-own)). `requireEmail: true` is
+a site policy - every user must have an email on file - and suppresses the
+widget's wallet lane. `loginWidget?: { title?, subtitle? }` sets the unified
+widget's text app-wide: `title` replaces the default "Sign in" heading,
+`subtitle` replaces the default subline (`""` renders no subline at all);
+per-call `openBoundedWidget({ title, subtitle })` overrides both.
 
 > Advanced/escape-hatch only: `apiUrl` / `wsApiUrl` / `authApiUrl` / `functionsUrl`
 > can override individual endpoints, but you should normally use `network`, which
@@ -427,6 +443,28 @@ await signInAnonymously();
 > **Hosted credentials only.** Use `loginWithRedirect` or `loginWithPopup`, with
 > `completeLoginFromRedirect()` on web app load. The published 0.0.42 client no
 > longer exports app-origin email or text OTP helpers. See [auth.md](auth.md).
+
+### The unified login widget - `openBoundedWidget`
+
+`openBoundedWidget(opts?)` opens an **in-app login card** (a Shadow-DOM modal)
+with email + social lanes plus an optional "Continue with wallet" lane. It
+resolves with the signed-in `User`; dismissing it rejects with
+`Error("cancelled")`.
+
+```ts
+import { openBoundedWidget } from "@bounded-sh/client";
+const user = await openBoundedWidget({ methods: ["email", "google"], wallet: true });
+```
+
+Options: `methods` (default `["email", "google"]`), `wallet` (enable the native
+Solana wallet lane - Wallet Standard enumeration: Phantom, Solflare, Backpack,
+etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,
+`subtitle`, and a per-call `authMode` override (falls back to the init config).
+`requireEmail: true` in the init config suppresses the wallet lane. For
+headless flows, `startTurnkeyEmailLogin(email)` returns
+`{ verify(code): Promise<User> }`; `signSolanaMessageViaTurnkey` and
+`getOrCreateTurnkeyWallet` (the Turnkey signer bridge) handle passkey
+(Face ID / Touch ID) signing and lazy wallet provisioning after login.
 
 **Track the user with `onAuthStateChanged`, not a one-time `getCurrentUser()`.**
 `getCurrentUser()` is a snapshot: it does not update when a session expires, so a

@@ -37,7 +37,9 @@ domains. To route across the family, see the root **bounded** skill.
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
 | `bounded link`, `bounded login`, email OTP, OAuth, guest sign-in | [docs/auth.md](docs/auth.md) |
 | `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom / Wallet-Standard login | [docs/auth.md](docs/auth.md#solana-wallet-login-bring-your-own) |
+| `openBoundedWidget`, unified login widget, `authMode:'turnkey'`, Turnkey email OTP | [docs/auth.md](docs/auth.md#choosing-your-login-methods--ux) |
 | `auth.wallets`, embedded wallet, Crossmint, `@user.address` on an email/social login | [../bounded-onchain/docs/embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md) |
+| `onramp()`, fund the user's wallet, buy SOL/USDC with a card, Coinbase Onramp, "top up" | [../bounded-onchain/docs/onramp.md](../bounded-onchain/docs/onramp.md) |
 
 ## Rules Of Thumb
 
