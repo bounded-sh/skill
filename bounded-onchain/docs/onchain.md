@@ -77,6 +77,11 @@ What follows from that:
 - **Deploying is otherwise normal.** The CLI probes, reserves the operation,
   mints the permit, signs it locally, and deploys - one command, no extra step.
   Your private key never leaves your machine.
+- **Mainnet creation needs a paid account.** Creating a mainnet app spends real
+  rent on an account that is immutable once it exists, so it is granted by your
+  account's plan (`pro`/`enterprise`). There is no API key or shared secret to
+  obtain; if your plan does not include it you get a `mainnet_not_entitled`
+  refusal telling you to upgrade. Devnet needs no entitlement.
 
 ```bash
 # onchain on mainnet - owned by your local CLI wallet
