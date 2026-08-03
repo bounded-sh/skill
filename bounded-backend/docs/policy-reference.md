@@ -349,7 +349,7 @@ never treated as path templates:
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
-| `proofs` | `{ transferAuthority?, attestations? }` — proof-only declarations; preferred home for conditional transfer authority and global attestations | [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
+| `proofs` | `{ transferAuthority?, publicReads?, attestations? }` - proof-only declarations for conditional transfer authority, exact conditional public-read posture, and global attestations | [invariants.md](invariants.md#proofspublicreads-exact-conditional-public-read-posture), [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
 | `attestations` | legacy alias for `proofs.attestations` | [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
 | `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
 | `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](../../bounded-deploy/docs/environments.md) |
