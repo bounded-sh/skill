@@ -64,6 +64,22 @@ is renameable BEFORE launch (slug API or dashboard), so pick the name you
 want the token to live at while you still can. After launch the pointer is
 governance-controlled, not yours.
 
+### Community code contributions while exact patches are closed
+
+Do not tell a contributor that `bounded propose` submitted code or created a voteable proposal.
+The venue cannot yet carry the exact reviewed diff through approval, build application, and promotion, so code-patch submission remains fail-closed.
+
+The only supported code-draft mode is local inspection:
+
+```bash
+bounded propose --title "Show the streak counter" --slug <oapp-slug> --dry-run
+```
+
+That command reads the local Git tree, prints the exact diff and deterministic `draftHash`, and never opens a venue session or writes a proposal.
+The hash is local comparison evidence, not an onchain content commitment or proposal id.
+Use the oApp's Ideas tab to submit the intended outcome as a normal idea holders can vote on today.
+`bounded proposals <slug>` is only the read-only viewer for proposal history and backlog.
+
 **Boundaries come first, not last.** Write `policy.json` boundaries early,
 while you build, not as a launch chore. They are the single most important
 trust artifact reviewers and buyers will read alongside your source. An app
@@ -335,20 +351,29 @@ const res = await ctx.services.invoke("X402_FETCH", {
   method: "GET",                           // or POST + body (≤64KB)
   maxUsd: 0.25,                            // refuse to pay more than this per call (platform hard-cap applies)
 });
-// res.paid === true → res.result.{status,body} is the paid response;
+// res.paid === "verification_pending" means the provider response arrived,
+// but finalized settlement still belongs to the recovery lane;
 // res.chargedMicroUsd = price × 1.05 markup + the flat tx-fee surcharge.
-// A 402 in a scheme we don't support returns error "no_supported_payment_scheme"
-// with the provider's demand attached — surface that to the user, don't work around it.
+// Unsupported or unsafe payment terms return a stable public error without
+// reflecting the provider's raw demand.
 ```
 
 Semantics to design around: the endpoint is probed unpaid first (non-402
 responses pass through for a flat routing fee); a 402 quoting Solana USDC —
 either the standard x402 `X-PAYMENT` dialect or Bounded's own intake dialect —
-is paid from the relay wallet and retried with proof; anything else is a
-call-out. Charges are refunded in full whenever the paid retry never delivered.
+is authorized from the relay wallet and retried with proof; anything else is a
+call-out. A failure before signing, submission, or provider disclosure may
+return the reserved app charge immediately. After a transaction is submitted
+or a signed authorization is disclosed, Bounded never guesses that payment did
+not happen and never automatically refunds from an HTTP result.
+The exact operation remains held until independent finalized chain evidence
+proves settlement, an exact failed transaction, or complete absence after the
+signed blockhash is invalid on both recovery RPCs.
+Provider receipts and transaction hints are accelerators only, never settlement
+truth. Retry or reconcile the same operation after an ambiguous response; do
+not create a replacement call or payment.
 Discovery: `ctx.services.search("x402")` / `describe("X402_FETCH")`. The tool
-is environment-gated (`x402_relay_disabled` means the relay isn't enabled
-there yet) — when disabled, treat the feature as ladder-step-3 and flag it as
+is environment-gated. When disabled, treat the feature as ladder-step-3 and flag it as
 "unblocks when the x402 relay is enabled".
 
 When designing: if a needed service advertises x402 support, note it as
