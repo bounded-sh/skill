@@ -531,6 +531,66 @@ wallet address; for onchain operations that is `@user.address`. Server logic is
 just another authenticated actor the rules judge — give the vault key the access
 its rules require, no more.
 
+## When a session expires
+
+Access tokens are short-lived and the SDK refreshes them for you. What matters is
+how a session that **cannot** be refreshed reaches your code, because it is not a
+policy failure and must not be handled like one.
+
+**An expired or otherwise rejected credential is a `401`, never a `403`.** The
+runtime answers `401 { error: "invalid_or_expired_token", code:
+"invalid_or_expired_session" }` before any rule runs, so a dead session can never
+be mistaken for "this user is not allowed to do that". Sending no credential at
+all is still anonymous, unchanged — public reads keep working for logged-out
+visitors.
+
+The SDK refreshes and replays the request for you, so you normally never see this.
+When the session genuinely cannot be revived, the call rejects with a typed error
+instead of quietly falling back to an anonymous request:
+
+```ts
+import { isAuthExpiredError } from "@bounded-sh/client";
+
+try {
+  await set(`runs/${runId}`, { owner: me.address });
+} catch (e: any) {
+  if (isAuthExpiredError(e)) {
+    // e.code === 'auth_expired'  -> the session is gone; prompt a fresh login
+    // e.code === 'auth_changed'  -> a different account signed in mid-request;
+    //                               the request was NOT replayed as them
+    return showSignIn();
+  }
+  throw e;   // a real policy denial (BoundedDeclineError) or anything else
+}
+```
+
+**Never treat a `403` / `policy_denied` as "log in again".** It means an
+authenticated caller was judged and refused. Retrying it with a fresh token
+changes nothing.
+
+**Drive connected-state UI from `onAuthStateChanged`, not from a snapshot.** A
+wallet extension can stay connected long after the Bounded session behind it has
+expired, and it is the Bounded session that authorizes writes. `onAuthStateChanged`
+fires when a session dies on its own — not only on an explicit `logout()` — so a
+header, a "connected" badge, or anything bound to `user.address` stays truthful:
+
+```ts
+onAuthStateChanged((user) => setWallet(user?.address ?? null));
+```
+
+Reading `getCurrentUser()` once at mount is the trap: it never updates, so the UI
+keeps advertising a wallet the server no longer accepts.
+
+> **`logout()` and `clearSession()` are async — await them.** Session removal is
+> serialized across browser tabs, so a call you do not await can return while the
+> credential is still readable, and the very next request authenticates as the
+> user who just left.
+
+> **Auth guards use `@user.id != null`.** `@user.isAnonymous == false` is *not* an
+> authentication check — it distinguishes a guest from a real login, and it is also
+> `false` for a caller with no session at all. Always lead with `@user.id != null`
+> (or `@user.address != null` inside an `onchain: true` collection).
+
 ## Related
 
 - [../guides/building-a-webapp.md](building-a-webapp.md) — wiring end-user auth into a web app

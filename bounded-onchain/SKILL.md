@@ -72,6 +72,7 @@ the root **bounded** skill.
 - **Default onchain login = `auth.wallets` + wallet login, side by side.** Turn on `{ "auth": { "wallets": true } }` in policy so email/social users get a Crossmint wallet (the primary path), and add bring-your-own **wallet login** (`walletLogin`) for users who already hold a Solana wallet. See [docs/embedded-wallets.md → recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app). Prescribe this for any onchain app.
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
+- Mainnet is a real target, not a placeholder: the program is live on mainnet-beta. Creating a mainnet app requires a paid account plan (no API key or shared secret), and the app is owned on-chain by the creator's wallet **immutably** - so it must be created from the machine holding that wallet's key, and it can never be ownership-transferred. See [docs/onchain.md](docs/onchain.md).
 - `@contract.address` is the Solana program-ID sentinel, not the app escrow address returned by a direct query.
   Supported built-in plugins resolve the sentinel to the app escrow PDA.
   On the current deployed Devnet runtime, do not compose the sentinel as `@AccountPlugin.getAccountAddress(@contract.address)`: that call fails because the sentinel is address-typed while this function currently accepts a string account id.
