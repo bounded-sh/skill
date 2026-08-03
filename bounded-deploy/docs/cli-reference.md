@@ -18,11 +18,12 @@ the web account. The CLI has two account-source families:
   a local ed25519 keypair (`~/.bounded/credentials`, a profile/project credentials
   file, or `BOUNDED_PRIVATE_KEY`). The keypair owns apps created with it and signs
   data-plane writes. See [auth.md](../../bounded-frontend/docs/auth.md).
-- **Web account source**: `web`. Run `bounded account use --web`, then
-  `bounded login --email you@example.com`. This uses
-  `~/.bounded/web-session.json` and does not create or link a local key. Email OTP
-  is the current CLI web-login method; the account model is web-based, not
-  email-only.
+- **Web account source**: `web`. Run `bounded login` to open the hosted Bounded
+  sign-in page for email or social login. The CLI uses Authorization Code + PKCE,
+  stores the refreshable session in `~/.bounded/web-session.json`, and selects
+  `web` for the current project when one exists. It does not create or link a
+  local key. Use `bounded login --email you@example.com` for a terminal OTP flow
+  when a browser is unavailable.
 
 > **Wallet keys are unrecoverable if lost.** If you lose a wallet credentials file
 > without having linked, shared, or backed it up, every app it created can be
@@ -49,7 +50,7 @@ the web account. The CLI has two account-source families:
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
 | `update` | Update this release build to the latest CLI from its configured HTTPS release host. Downloads the immutable binary for this OS/architecture, verifies its SHA-256 checksum and Go build metadata, then atomically replaces the running executable. Reads no project config, account, or credentials. | `bounded update` |
 | `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. Wallet mode may create the selected key on first run. | `bounded whoami` |
-| `login` | Web login — log the CLI into your Bounded **web account** (the canonical identity; no key involved). Used for projects with `account.keySource:"web"`. `--email` is the current CLI web-login method and stores refreshable credentials in `~/.bounded/web-session.json`. **Agents: drive this yourself** — run `bounded login --email <email>` with stdin held open (e.g. `tail -f otp.txt \| bounded login --email …`), tell the user "a 6-digit code was sent to <email>, paste it here", then feed the relayed code to stdin. Never make the user run the whole login manually; the code relay is the supported flow. | `bounded login --email you@example.com` |
+| `login` | Log the CLI into your Bounded **web account** (the canonical identity; no key involved). By default it opens the hosted sign-in page, completes Authorization Code + PKCE through a temporary loopback callback, stores refreshable credentials in `~/.bounded/web-session.json`, and selects `account.keySource:"web"` for the current project. Use `--email <addr>` or `--no-browser` for terminal OTP when a browser is unavailable. **Headless agents:** run `bounded login --email <email>` with stdin held open, relay the 6-digit code from the user, then feed it to stdin. Never ask for or embed a reusable credential. | `bounded login` |
 | `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
@@ -94,7 +95,8 @@ too.
 
 `link` flags: `--no-browser` (just print the URL), `--email <addr>` (headless
 approval: email an OTP, read it from stdin, approve this wallet key), `--timeout
-<dur>` (default `10m`). `login` flags: `--email <addr>`. Collaboration grants
+<dur>` (default `10m`). `login` flags: `--email <addr>` (terminal OTP),
+`--no-browser` (prompt for terminal OTP). Collaboration grants
 **control-plane** authority (manage the app), not a data-plane bypass — give data
 powers explicitly via policy rules ([admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md)).
 

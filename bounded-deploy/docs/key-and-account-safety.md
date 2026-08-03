@@ -9,8 +9,8 @@ a project to a teammate or another agent.
 > **TL;DR.** In wallet/keypair mode, `~/.bounded/credentials`, a profile key, a
 > project key, or `BOUNDED_PRIVATE_KEY` owns the apps created with it. Treat that
 > key like an SSH private key: back it up, run `bounded link` on day one, or share
-> a backup owner. In web account mode, run `bounded account use --web` and
-> `bounded login --email ...`; the CLI uses `~/.bounded/web-session.json` instead
+> a backup owner. In web account mode, run `bounded login`; the CLI opens the
+> hosted sign-in page and uses `~/.bounded/web-session.json` instead
 > of a local key. Public `bounded.json` and `.bounded/app.json` are safe to commit;
 > credentials and web-session files are not.
 
@@ -42,7 +42,8 @@ have anything to lose.
 
 If the project uses `account.keySource:"web"`, the CLI does not use a local wallet
 key for control-plane auth. It uses `~/.bounded/web-session.json`, created by
-`bounded login --email ...`, and refreshes the session when possible.
+`bounded login` through hosted browser sign-in, and refreshes the session when
+possible. `bounded login --email ...` is the terminal OTP fallback.
 
 ## 2. `BOUNDED_PRIVATE_KEY` — wallet CI override
 
@@ -71,7 +72,7 @@ The public `bounded.json` can select `global`, `project`, `profile`, `env`, or
 
 | Config | Auth material |
 |---|---|
-| `{"keySource":"web"}` | `~/.bounded/web-session.json` (Bounded Auth session; run `bounded login --email ...`) |
+| `{"keySource":"web"}` | `~/.bounded/web-session.json` (Bounded Auth session; run `bounded login`) |
 | `{"keySource":"env"}` | `BOUNDED_PRIVATE_KEY` |
 | `{"keySource":"profile","profile":"client-a"}` | `~/.bounded/accounts/client-a/credentials` |
 | `{"keySource":"project","keyPath":".bounded/credentials"}` | `<project>/.bounded/credentials` |
@@ -100,8 +101,9 @@ For one project under another account, run `bounded account use client-a`; the
 next auth command creates/uses `~/.bounded/accounts/client-a/credentials`. For a
 repo-local isolated key, run `bounded account use --project`; the key lives at
 `<project>/.bounded/credentials` and is gitignored. For a web account, run
-`bounded account use --web`, then `bounded login --email you@example.com`. The
-public config and marker always record *which* source was used (§4).
+`bounded login`. It opens hosted email/social sign-in and selects `web` in an
+existing current project. The public config and marker always record *which*
+source was used (§4).
 
 **`bounded account use ...` EDITS `bounded.json`.** The account source lives in
 the committed project config, so switching is a working-tree change other agents
@@ -109,7 +111,10 @@ and reviewers will see. Commit it if the project should move, revert it if the
 switch was only for one command — or run the one command from a throwaway dir
 (§3b) and leave the shared config untouched.
 
-**Terminal email login (OTP) recipe.** `bounded login --email you@example.com`
+**Browser and terminal login.** `bounded login` opens the hosted sign-in page,
+uses a temporary loopback callback with PKCE, then closes the callback server
+after saving the session. It sends no reusable CLI secret to the browser.
+For a headless terminal, `bounded login --email you@example.com`
 sends a 6-digit code to that inbox and waits for it on stdin — run it in an
 interactive terminal, read the code from the inbox, paste it, done. The session
 lands in `~/.bounded/web-session.json` and refreshes itself. There is one web

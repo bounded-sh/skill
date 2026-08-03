@@ -21,17 +21,18 @@ CLI has two account-source families:
   (`~/.bounded/accounts/<profile>/credentials`), or `env`
   (`BOUNDED_PRIVATE_KEY`). The keypair is the signing identity; it owns apps
   created with it and signs data-plane writes.
-- **Web account mode**: `bounded account use --web`, then
-  `bounded login --email you@example.com`. This stores refreshable Bounded Auth
-  credentials in `~/.bounded/web-session.json` and uses the web account directly.
-  It does **not** create, link, or reuse a local wallet key. Email OTP is the
-  current CLI web-login method; hosted/social web login uses the same account
-  model when available.
+- **Web account mode**: run `bounded login`. This opens the hosted email/social
+  sign-in page and completes Authorization Code + PKCE through a temporary
+  loopback callback. It stores refreshable Bounded Auth credentials in
+  `~/.bounded/web-session.json`, uses the web account directly, and selects
+  `account.keySource:"web"` for an existing current project. It does **not**
+  create, link, or reuse a local wallet key. Use `bounded login --email
+  you@example.com` for terminal OTP when a browser is unavailable.
 
 ```bash
 bounded whoami                    # shows wallet address or web identity, environment, and source
-bounded account use --web
-bounded login --email you@example.com
+bounded login                     # hosted email/social sign-in
+# bounded login --email you@example.com  # headless terminal OTP fallback
 ```
 
 > **Wallet mode key warning.** A wallet credentials file is auto-generated, never
@@ -58,9 +59,10 @@ contact/login method for the web account. You can **link** a wallet key to a web
 account, and **share** apps with teammates — without anyone juggling raw wallet
 keys:
 
-- **`bounded login`** is a plain **web login** — it signs you in to your web
-  account (the same account you'd use at bounded.sh). No key is involved, and a
-  `bounded login` web session does **not** link any local key.
+- **`bounded login`** is a plain **web login** — it opens the hosted sign-in page
+  and signs you in to your web account (the same account you'd use at
+  bounded.sh). No key is involved, and a `bounded login` web session does
+  **not** link any local key. Headless agents can use `--email` for terminal OTP.
 - **`bounded link`** is wallet-only: it **explicitly attaches THIS device's
   local wallet key** to a **remote Bounded web account**; the current headless
   approval method is email OTP. It runs an OAuth-style **device flow**: the CLI
