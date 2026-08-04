@@ -21,6 +21,15 @@ collection with a founder genesis clause before deploying the Function; see
 [admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
 Public user-invoked functions should usually omit `actAs` and write as the caller.
 
+> **Revocation - pick one and be consistent.** The bare `get(/admins/@user.id) != null`
+> gate above is valid when the `admins` registry declares **no** `active` field: you revoke
+> a compromised admin by **deleting** their row. If you want a reversible off-switch on
+> these money-adjacent payout/quote functions (flip an admin off *without* deleting the
+> row), instead declare an `active` field and gate every privileged rule **and** the
+> function `auth` on `get(/admins/@user.id).active == true` - see the real off-switch
+> pattern in [admin-and-ownership.md](admin-and-ownership.md). Do not declare `active` and
+> then gate on bare existence: that makes the switch inert (finding #392).
+
 ### Who can act as a service identity? (by caller — read this before wiring a grant)
 
 The mode you use depends on **who invokes the function**, and they are not

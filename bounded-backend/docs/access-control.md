@@ -298,8 +298,13 @@ advisories are the intentional public `read` rules.)*
 > performs that deactivating write. Because `update` itself requires `.active == true`, a
 > deactivated admin cannot flip their own row back on (no self-reactivation). Keep at
 > least one active admin: the founder genesis `create` clause is the recovery path if the
-> active set is ever emptied. Do not gate on `get(/admins/@user.id) != null` alone - that
-> checks only that the row exists and makes `active` a dead, decorative field.
+> active set is ever emptied. The rule is scoped: **if a registry declares an `active`
+> field, every gate (and its own `update`/`delete`) must consult it** - do not gate on
+> `get(/admins/@user.id) != null` alone here, because that checks only that the row exists
+> and makes `active` a dead, decorative field. (An admin registry that declares **no**
+> `active` field is a valid, simpler design - there, revocation is by deleting the row;
+> see [service-keys.md](service-keys.md) and the bare-existence gate in
+> [admin-and-ownership.md](admin-and-ownership.md).)
 
 The `authorityClosure` proof makes super-admin a **provable, closed set** — no
 self-promotion, no side doors — which is the platform-grade guarantee you can't get from a

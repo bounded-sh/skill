@@ -107,9 +107,12 @@ discharges the same closure obligation an existence check does.)*
   misbehaving admin's row to `{ "active": false }` instantly revokes every power.
   An active admin (or the founder) performs that write; a deactivated admin cannot
   restore themselves because `update` also requires `.active == true` (no
-  self-reactivation). Never gate on `get(/admins/@user.id) != null` alone - that
-  checks only that the row exists and turns `active` into a dead, decorative field
-  that silently revokes nothing.
+  self-reactivation). Because this registry declares `active`, never gate on
+  `get(/admins/@user.id) != null` alone - that checks only that the row exists and
+  turns `active` into a dead, decorative field that silently revokes nothing. (An
+  admin registry that declares **no** `active` field is a valid, simpler design;
+  there, revocation is by deleting the row - see [service-keys.md](service-keys.md).
+  The rule is only: never *declare* `active` and then *ignore* it.)
 - End-users default to **least privilege**: an author may create their own post;
   only an active admin may hide or delete one.
 - The admin gate is the same `get()` expression the prover already understands —
@@ -197,8 +200,10 @@ When you build an app, **identify who the owner/admin is** (the creator) and
 Then:
 
 1. Express each admin action as an **explicit, active-admin-gated rule**
-   (`get(/admins/@user.id).active == true`) — **never** as a bypass, and never on
-   bare existence (which would make the `active` off-switch inert).
+   (`get(/admins/@user.id).active == true`) - **never** as a bypass. When your
+   registry declares `active`, never gate on bare existence (which would make the
+   `active` off-switch inert); a registry that declares no `active` field may gate
+   on bare existence and revoke by deleting the row.
 2. Keep every constraint that must hold (caps, conservation, isolation) in an
    **invariant** — admins are bound by it too.
 3. Default end-users to **least privilege**; widen only where the description

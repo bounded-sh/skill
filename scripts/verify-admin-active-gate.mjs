@@ -145,6 +145,114 @@ if (staticAdminActiveBlocks === 0) {
 }
 
 // ---------------------------------------------------------------------------
+// CONSISTENCY check (finding #392 review residual)
+//
+// The #392 fix added "off-switch is real" prose that PROHIBITS the bare
+// existence gate. But the bare-existence gate is a LEGITIMATE simpler design
+// for an admin registry that declares NO `active` field (revoke = delete the
+// row, which works). Sibling docs still teach exactly that pattern
+// (service-keys.md, verify-and-counterexamples.md, policy-generation-guide.md,
+// functions-when-to-use.md). If the prohibition prose reads as an UNCONDITIONAL
+// ban, it contradicts those valid examples. Three guards keep the corpus
+// internally consistent:
+//
+//   SCOPING     - every prohibition of the bare gate must be scoped to
+//                 active-declaring registries (an explicit "if ... active"
+//                 condition), never stated as an absolute rule.
+//   CROSS-REF   - every doc that teaches the bare-existence gate must also
+//                 surface the active-gate alternative expression
+//                 (`get(/admins/@user.id).active == true`) so a copy-paste
+//                 reader is pointed at the real off-switch.
+//   FOUNDER-TRAP- any admin block whose founder row is undeletable
+//                 (`... != @const.FOUNDER` on delete) AND whose `update`
+//                 requires `.active == true` must warn that deactivating the
+//                 founder there is an unrecoverable lock-out.
+//
+// Scoped to bounded-backend/docs/ - the onchain tokenomics admin example is
+// coordinated separately under #393 and must not be touched here.
+// ---------------------------------------------------------------------------
+
+const BACKEND_DOCS_PREFIX = 'bounded-backend/docs/'
+const BARE_GATE = /get\(\/admins\/@user\.id\)\s*!=\s*null/
+const ACTIVE_GATE = /get\(\/admins\/@user\.id\)\.active\s*==\s*true/
+// A prohibition of the bare gate stated with the "... != null` alone" idiom.
+const PROHIBITION_RE = /\b(?:never|do not|don't)\b[^.!?\n]*?get\(\/admins\/@user\.id\)\s*!=\s*null[^.!?\n]*?\balone\b/gi
+// A scoping cue that ties the prohibition to an active-declaring registry.
+const SCOPING_CUE = /\b(?:if|when|once|whenever)\b[^.!?]*\bactive\b|\bdeclares?\b[^.!?]*\bactive\b|\bactive-declaring\b/i
+
+// Lead clause of the sentence that ends at `idx` (from the previous sentence
+// terminator forward). Dotted identifiers like `.active` / `@user.id` are never
+// treated as terminators because a sentence-ending `.!?` is always followed by
+// whitespace or end-of-string, whereas a dotted identifier's dot is followed by
+// a word character.
+function sentenceLead(source, idx) {
+  const pre = source.slice(0, idx)
+  const re = /[.!?](?=\s|$)/g
+  let start = 0
+  let m
+  while ((m = re.exec(pre)) !== null) start = m.index + 1
+  return source.slice(start, idx)
+}
+
+for (const file of allMarkdown(root)) {
+  if (!rel(file).startsWith(BACKEND_DOCS_PREFIX)) continue
+  const source = readFileSync(file, 'utf8')
+
+  // SCOPING: no unconditional prohibition of the bare gate.
+  PROHIBITION_RE.lastIndex = 0
+  let pm
+  while ((pm = PROHIBITION_RE.exec(source)) !== null) {
+    const lead = sentenceLead(source, pm.index)
+    if (!SCOPING_CUE.test(lead)) {
+      const lineNo = source.slice(0, pm.index).split('\n').length
+      fail(
+        `${rel(file)}:${lineNo}: unconditional prohibition "${pm[0].trim()}" contradicts sibling docs that ` +
+          `legitimately teach the bare-existence gate (registries with no "active" field). Scope it: ` +
+          `"If your admins registry declares an \`active\` field, never gate on ... alone".`,
+      )
+    }
+  }
+
+  // CROSS-REF: a doc that teaches the bare gate must also show the active gate.
+  if (BARE_GATE.test(source) && !ACTIVE_GATE.test(source)) {
+    fail(
+      `${rel(file)}: teaches the bare-existence admin gate (get(/admins/@user.id) != null) but never surfaces the ` +
+        `active-gate alternative (get(/admins/@user.id).active == true). Add a cross-reference to the real ` +
+        `off-switch pattern so a copy-paste reader is not left with a non-revocable gate.`,
+    )
+  }
+
+  // FOUNDER-TRAP: undeletable founder + active-gated update needs a warning.
+  for (const { body } of jsonBlocks(source)) {
+    if (!/admins\/\$/.test(body)) continue
+    let policy
+    try {
+      policy = looseParse(body)
+    } catch {
+      continue
+    }
+    const adminEntries = Object.entries(policy).filter(([k]) => ADMIN_KEY_RE.test(k))
+    const trapped = adminEntries.some(([, v]) => {
+      const r = (v && v.rules) || {}
+      const del = typeof r.delete === 'string' ? r.delete : ''
+      const upd = typeof r.update === 'string' ? r.update : ''
+      return /!=\s*@const\.FOUNDER/.test(del) && /\.active\s*==\s*true/.test(upd)
+    })
+    if (trapped) {
+      const warned = /deactivat[\s\S]{0,220}founder|founder[\s\S]{0,220}deactivat/i.test(source)
+      if (!warned) {
+        fail(
+          `${rel(file)}: the admin registry makes the founder row undeletable ($userId != @const.FOUNDER) while ` +
+            `\`update\` requires .active == true, so a founder who is set active:false can neither be deleted nor ` +
+            `reactivate itself - an unrecoverable lock-out. Add an explicit founder-self-deactivation-trap warning.`,
+        )
+      }
+      break
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // PROOF check (bounded-monorepo schema verifier)
 // ---------------------------------------------------------------------------
 

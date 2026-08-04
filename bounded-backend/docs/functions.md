@@ -110,8 +110,11 @@ The gate is a **real off-switch**: every privileged rule and the `syncStripe`
 admin's row to `{ "active": false }` immediately blocks them from invoking this
 `STRIPE_KEY`-signing Function. An active admin performs that deactivating write;
 `update` also requires `.active == true`, so a deactivated admin cannot reactivate
-themselves. Do not gate on `get(/admins/@user.id) != null` alone - existence never
-consults `active`, leaving the money-adjacent Function with no working revocation.
+themselves. Because this `admins` registry declares `active`, do not gate on
+`get(/admins/@user.id) != null` alone - existence never consults `active`, leaving
+this money-adjacent Function with no working revocation. (A registry that declares
+**no** `active` field may gate on bare existence and revoke by deleting the row;
+this example ships `active`, so its gate must read it.)
 Replace the sample sync address with one dedicated to your app, using the same
 public address for both `SUBS_SYNC_ACTOR` and `syncStripe.actAs`. Admins may
 invoke the Function, but only that service identity may create or update

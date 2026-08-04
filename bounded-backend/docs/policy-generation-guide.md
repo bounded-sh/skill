@@ -182,7 +182,12 @@ on membership — never a bypass:
 
 Only an admin can mint an admin (no self-promotion); seed the creator's `@user.id`
 at bootstrap; default end-users to least privilege; admins stay bound by every
-invariant. Full model + the validated `admins` collection:
+invariant. This bare-existence gate is fine when the registry declares **no**
+`active` field - revoke a compromised admin by deleting their row. If you instead
+want a reversible off-switch, declare an `active` field and gate on
+`get(/admins/@user.id).active == true` (never declare `active` and then gate on
+bare existence - that makes the switch inert; finding #392). Full model, the
+validated `admins` collection, and the active off-switch pattern:
 [admin-and-ownership.md](admin-and-ownership.md).
 
 Distinguish two questions. The above is the **data plane** ("who may moderate the

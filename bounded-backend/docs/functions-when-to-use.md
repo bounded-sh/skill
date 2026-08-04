@@ -56,6 +56,13 @@ Clearbit, an LLM, an FX API). Every "don't" row is access control, a provable
 constraint, or an in-boundary cascade — declarative or contained tiers that a
 function would only weaken.
 
+> The `get(/admins/@user.id) != null` gate above fits an `admins` registry with **no**
+> `active` field - revoke a compromised admin by deleting their row. If you want a
+> reversible off-switch (flip an admin off without deleting), declare an `active` field and
+> gate on `get(/admins/@user.id).active == true` instead; never declare `active` and then
+> gate on bare existence, which leaves the switch inert (see
+> [admin-and-ownership.md](admin-and-ownership.md)).
+
 ## The trap to avoid
 
 Re-implementing access control or a cap *inside* a function ("the function checks
