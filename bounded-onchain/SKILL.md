@@ -2,7 +2,7 @@
 name: bounded-onchain
 description: >-
   Add onchain to a Bounded app: Solana and EVM collections, embedded
-  non-custodial wallets for email/social users (@user.address, Crossmint),
+  non-custodial wallets for email/social users (@user.address, Turnkey by default),
   client- and server-signed transactions, DEX/perps trading patterns, and crypto payments
   (accept USDC/crypto non-custodially, Bounded Pay for card/fiat). Use for wallet,
   token, on-chain transaction, or crypto/fiat payment work. Part of the Bounded
@@ -12,8 +12,8 @@ description: >-
 # Bounded onchain
 
 Wallets, tokens, on-chain transactions, and payments. The **canonical Bounded
-email/social login can include a wallet**: turn on `auth.wallets` (Crossmint,
-non-custodial) and supported email/social logins carry a real `@user.address` - see
+email/social login includes a wallet by default**: keep the default Turnkey auth
+and supported email/social logins carry a real `@user.address` - see
 [docs/embedded-wallets.md](docs/embedded-wallets.md). `@user.id` (the account id)
 stays the identity/ownership key; `@user.address` is the wallet. On-chain writes
 still pass their policy rules and invariants first, so pair this with the
@@ -39,7 +39,7 @@ the root **bounded** skill.
 | **Split fees between 3+ parties**: the current canonical 10/20/20/50 venue/creator/steward/app-reserve model, its proven treasury ledger and permissionless distribute, or the historical 55/25/20 treasury/creator/Poof worked example | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
 | **Sweep fees / run an onchain job on a schedule** - the keeper pattern (offchain schedule → function `actAs` a signer → onchain write, because schedules are rejected on onchain collections), permissionless = reliability-only | [docs/oapps-tokenomics-fee-split.md → the keeper](docs/oapps-tokenomics-fee-split.md#the-keeper--offchain-schedule--function--onchain-write) |
 | **Fund build/AI spend from earned fees** - a fee-funded build allowance capped by a proven `rollingSum` burn cap on an append-only log | [docs/oapps-tokenomics-fee-split.md → build allowance](docs/oapps-tokenomics-fee-split.md#the-fee-funded-build-allowance--a-proven-rolling-burn-cap) |
-| **Give supported email/social logins an embedded wallet** (`@user.address`), Crossmint, `auth.wallets` | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
+| **Give supported email/social logins an embedded wallet** (`@user.address`), default Turnkey behavior, `auth.wallets` | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | Let users **connect their own Solana wallet** (Phantom / Wallet-Standard) to log in - "connect wallet", wallet login, `walletLogin`, `authMethod:'phantom'`, real wallet as `@user.address`, local `signMessage`/`signTransaction` - the **bring-your-own companion** to the canonical login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
 | **Fund a user's wallet with fiat** — `onramp()`, buy SOL/USDC with a card, Coinbase Onramp, "top up", fiat → crypto for the embedded wallet | [docs/onramp.md](docs/onramp.md) |
 | Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail, card→crypto rail seam | [docs/accept-crypto.md](docs/accept-crypto.md) |
@@ -63,13 +63,13 @@ the root **bounded** skill.
 | 3-way / multi-party fee split, canonical 10/20/20/50 venue/creator/steward/app-reserve, proven treasury ledger, permissionless distribute, historical 55/25/20 treasury/creator/Poof, `feepool` PDA, `mulDivFloor`, phase asymmetry, `distributionsPost` | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
 | keeper, scheduled onchain write, `schedule` + `actAs`, offchain → function → onchain, "schedule rejected on onchain collection", crank, sweep fees, `rollingSum` build allowance, fee-funded build credit | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
 | `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom login, Wallet-Standard, `window.solana`, SIWS wallet login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
-| `@user.address`, embedded wallet, Crossmint | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
+| `@user.address`, embedded wallet, Turnkey | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | `payments.acceptCrypto`, USDC, seller settlement, direct-transfer rail | [docs/accept-crypto.md](docs/accept-crypto.md) |
 | `payment`, `checkout`, `seller`, `merchant`, `subscription`, `Stripe`, `/connect/onboard`, `/connect/status`, `/connect/checkout`, `/connect/session`, `/connect/subscription`, `/connect/subscription/cancel` | [docs/bounded-pay.md](docs/bounded-pay.md) |
 
 ## Rules Of Thumb
 
-- **Default onchain login = `auth.wallets` + wallet login, side by side.** Turn on `{ "auth": { "wallets": true } }` in policy so email/social users get a Crossmint wallet (the primary path), and add bring-your-own **wallet login** (`walletLogin`) for users who already hold a Solana wallet. See [docs/embedded-wallets.md → recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app). Prescribe this for any onchain app.
+- **Default onchain login = default Turnkey email/social auth + optional wallet login, side by side.** Do not add `authMode` or `auth.wallets` for the normal path. Turnkey is the sole embedded-wallet implementation, and Turnkey-native auth with eager provisioning is already the default. Supported email/social users have `@user.address` when login completes. Add bring-your-own **wallet login** (`walletLogin`) only for users who already hold a Solana wallet. Use explicit auth policy only to opt out or retain the legacy hosted login mode. See [docs/embedded-wallets.md -> recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app).
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
 - Mainnet is a real target, not a placeholder: the program is live on mainnet-beta. Creating a mainnet app requires a paid account plan (no API key or shared secret), and the app is owned on-chain by the creator's wallet **immutably** - so it must be created from the machine holding that wallet's key, and it can never be ownership-transferred. See [docs/onchain.md](docs/onchain.md).

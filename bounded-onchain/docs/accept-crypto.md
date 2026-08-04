@@ -20,29 +20,26 @@ keys or funds** at any point.
 
 - **`settleTo`** (required) - a base58 Solana address **you own**. This is where
   buyers pay **directly**. Paste your embedded-wallet address from
-  [`auth.bounded.sh/wallet`](embedded-wallets.md#4-the-wallet-page-view-balance--send--cash-out),
+  [`auth.bounded.sh/wallet`](embedded-wallets.md#turnkey-login-and-signing),
   or any wallet / PDA. Bounded never touches this address's keys.
-- **`token`** (required) - `"usdc"` (the only supported token in v1; on `staging`
-  this is the Crossmint test stablecoin on devnet).
+- **`token`** (required) - `"usdc"` (the only supported token in v1; staging
+  uses the platform's configured devnet test mint).
 - **`environment`** (optional, default `"production"`) - `"staging"` verifies
-  against Solana **devnet** (pairs with `auth.wallets: { environment: "staging" }`
-  for testing); `"production"` verifies against **mainnet**.
+  against Solana **devnet**; `"production"` verifies against **mainnet**. Wallet
+  provisioning does not have an environment selector.
 - **`notify`** (optional) - an email that gets a branded "you received X USDC"
   message when a payment settles. Best-effort; it never blocks settlement.
 
 The `payments.acceptCrypto` token registry is separate from TokenPlugin constants.
-Its staging `"usdc"` value means the configured Crossmint devnet test stablecoin.
+Its staging `"usdc"` value means the platform-configured devnet test stablecoin.
 `@TokenPlugin.USDC` is mainnet-only and is unsupported for TokenPlugin operations on devnet.
 Use an app-created devnet mint for TokenPlugin labs, but do not substitute that mint into the v1 payment rail.
 
 > **What ships today:** the **direct-transfer rail** - a buyer pays your `settleTo`
 > address directly with USDC, then your app submits the transaction to Bounded,
 > which verifies it on-chain and records a settlement. **Fee is 0** on this rail
-> (a direct transfer can't be split). A **credit-card → USDC** buyer rail (buyer
-> pays by card / Apple Pay / Google Pay, seller still receives USDC to `settleTo`)
-> also **exists** - it's built and staging-proven behind a platform flag, with
-> production activation pending Crossmint commercial enablement. When it's on,
-> **sellers change nothing** (see [§5](#5-the-card-rail-crossmint-checkout)).
+> (a direct transfer can't be split). For card payments with fiat settlement,
+> use [Bounded Pay](bounded-pay.md).
 
 `payments` is a **control-plane** policy block, like `openApps` / `boundaries`. It
 adds **zero prover obligations** and does not change any of your collections or
@@ -98,7 +95,7 @@ The intent just *names where and how much to pay*. If the app hasn't declared
 ### Pay it
 
 The buyer sends `amount` USDC to `settleTo` on Solana - from the Bounded
-[wallet page](embedded-wallets.md#4-the-wallet-page-view-balance--send--cash-out),
+[wallet page](embedded-wallets.md#turnkey-login-and-signing),
 from `signAndSubmitTransaction` in your app, or from **any** wallet. Bounded is not
 in the money path; the transfer is buyer → seller directly. Capture the resulting
 **transaction signature**.
@@ -137,21 +134,14 @@ Returns `{ status: "pending" | "settled", intent, settlement? }`. The seller's
 
 ---
 
-## 3. Fee semantics + the rail seam
+## 3. Fee semantics
 
-- **`feeBps` is 0 on both rails today.** A buyer→seller transfer can't be split, so
-  the direct-transfer rail takes nothing; the card rail (§5) is also non-custodial -
-  Crossmint delivers USDC straight to `settleTo`, so there is no split point - and
-  likewise records **`feeBps 0`**. The field exists so a rail that *does* support a
-  platform-fee split can populate it later (mirrors Bounded Pay's 1% fiat fee).
-  Bounded **never takes a fee by touching seller funds** post-settlement.
-- **The rail seam.** Internally, settlement funnels through one function,
-  `markSettled(intent, evidence)`. The direct-transfer rail calls it after on-chain
-  verification; the **card rail** (a Crossmint checkout webhook, §5) calls the
-  **same** function after **its own** verification (a signed delivery event),
-  passing its own evidence - **without changing the policy block, the intent shape,
-  or your setup.** Your `payments.acceptCrypto` declaration is rail-agnostic on
-  purpose, so enabling the card rail is a platform flag, not a seller change.
+- **`feeBps` is 0.** A buyer-to-seller transfer cannot be split, so the direct
+  transfer rail takes nothing. The field leaves room for a future rail that can
+  support a platform-fee split. Bounded never takes a fee by touching seller
+  funds after settlement.
+- Internally, verified settlement funnels through `markSettled(intent,
+  evidence)`. Treat the current public surface as direct transfer only.
 
 ---
 
@@ -176,91 +166,23 @@ one has **no effect** on the other.
 
 ---
 
-## 5. The card rail (Crossmint checkout)
+## 5. Signing and receiving with Turnkey
 
-A **credit-card → USDC** buyer flow - the buyer pays with a **card, Apple Pay, or
-Google Pay** and the seller still receives **USDC to `settleTo`** - is **built and
-staging-proven**, sitting behind a platform feature flag
-(`CROSSMINT_CARD_RAIL_ENABLED`). It's **on in staging** (end-to-end proven) and
-**off on production**, pending Crossmint **commercial enablement** (Crossmint must
-grant the `orders.create` scope on the production key after a KYB + signed order
-form). When that lands, flipping the flag turns it on - **no code or seller change.**
-
-**For sellers, nothing changes.** You keep the **same `payments.acceptCrypto`
-block** and the same setup. When a buyer chooses the card option, Bounded creates a
-**Crossmint checkout order** that delivers USDC to your `settleTo`, and settlement
-flows through the **exact same verify → `markSettled` seam** (§3) - the seller
-notification email and settled record are **identical** to the direct rail. The rail
-records **`rail: "crossmint-checkout"`, `feeBps: 0`** (non-custodial: Crossmint, a
-licensed processor, charges the card and delivers USDC directly to the seller, so
-there's no platform split point).
-
-**For buyers,** the card flow runs in **Crossmint's embedded checkout** (card / Apple
-Pay / Google Pay), which includes **Crossmint's own KYC** (a Persona identity flow)
-as the regulated card→crypto gate. Bounded is never in the money path - Crossmint
-settles USDC to the seller and signs a delivery webhook that Bounded verifies before
-recording the settlement.
-
-Under the hood (when the flag is on) `bounded-host` exposes
-`POST /crypto/checkout` (create a Crossmint order for an intent),
-`GET /crypto/checkout/:id` (the Bounded-hosted embedded checkout page), and
-`POST /crypto/webhooks/crossmint` (the svix-signed `orders.delivery.completed`
-webhook → `markSettled`). With the flag **off**, these routes are inert (checkout
-`404`, webhook no-ops) and buyers simply pay USDC directly (the direct rail).
-
-### Platform guardrails - the card rail is approval- and cap-gated
-
-All builder card volume rides Bounded's **one** Crossmint account (there's no
-per-seller isolation like Stripe Connect), so a single bad actor's chargebacks could
-put the shared account at risk for everyone. To contain that, the **card rail** is
-governed at the platform level (enforced by `bounded-host` at `POST /crypto/checkout`):
-
-- **Per-app status** - `default` | `approved` | `blocked`, plus a **global mode**:
-  `open` (any app with the `payments.acceptCrypto` block may use the card rail unless
-  blocked) or `approval` (only explicitly-approved apps may). A blocked app - or an
-  unapproved app while in approval mode - gets a clear **`403 card_rail_not_enabled`**.
-- **Per-app volume caps (USD)** - a **per-order** max plus rolling **daily** and
-  **7-day** totals, with sensible platform defaults ($100 / order, $1,000 / day,
-  $5,000 / 7-day) and per-app overrides. Over a cap → **`429 card_rail_over_cap`** with
-  the specific limit in the error hint. Card-rail volume is counted on settlement.
-
-Bounded operators drive status, mode, and cap overrides from the admin console.
-**None of this touches the direct-transfer rail:** wallet-to-wallet payments
-(`/crypto/intents` + `/crypto/intents/:id/verify`) are **permissionless** - no
-approval, no volume caps, zero Bounded-account risk (the buyer pays your address
-directly on-chain and Bounded only verifies). If you want a fully permissionless
-crypto-accept experience, the direct rail is always available regardless of card-rail
-status.
-
-For card payments settling to **fiat** (not USDC), use
-[Bounded Pay](bounded-pay.md) instead.
-
----
-
-## 6. Signing + receiving - what a smart wallet can and can't do
-
-Embedded wallets are Solana **smart wallets** (a smart *account*, not a raw
-keypair), so a few semantics matter here:
+Embedded wallets are Turnkey-backed Solana wallets. A few semantics matter here:
 
 - **Receiving needs no signing at all.** Being paid to `settleTo` is just an
   inbound transfer - nothing to authorize. Any seller wallet/PDA works.
-- **Sending / paying** an intent is an **"approve an execution"** model:
-  `signAndSubmitTransaction` (in-app) or the wallet page's **Send** - authorized by
-  the user's **email-OTP-derived signer in the browser** (a Crossmint TEE iframe).
-  This is **browser-only**; it cannot run headless / server-side.
-- Smart wallets **cannot produce raw signatures** - `signMessage` and classic
-  `signTransaction` are **unsupported** and throw an informative error. See
-  [embedded-wallets.md §3](embedded-wallets.md#3-signing-with-the-wallet).
-- **First signature on a device = two emailed codes** (sign-in + device confirm);
-  after that a persisted session = **zero codes**.
+- **Sending or paying** an intent uses `signAndSubmitTransaction` in the app.
+- Turnkey also supports raw `signMessage` and `signTransaction` through the
+  normal auth provider. Each signing action requires user approval in the
+  Bounded signer window.
+- Browser signing is interactive. It is not a headless server signer.
 
 ---
 
-## 7. Cash out
+## 6. Cash out
 
 Cash-out today = **send USDC to your exchange deposit address** (Coinbase, Kraken,
-…) from the [wallet page](embedded-wallets.md#4-the-wallet-page-view-balance--send--cash-out),
-then withdraw to fiat there. A **native in-app fiat offramp** is future work: it
-requires Bounded doing a one-time **platform KYB** with Crossmint plus **per-user
-KYC** at cash-out time (Crossmint is the regulated party; Bounded stays
-non-custodial). Until then, the send-to-exchange path is the supported story.
+...) from the [wallet page](embedded-wallets.md#turnkey-login-and-signing),
+then withdraw to fiat there. A native in-app fiat offramp is future work. Until
+then, the send-to-exchange path is the supported story.
