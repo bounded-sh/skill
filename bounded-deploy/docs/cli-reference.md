@@ -501,6 +501,35 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 > re-running, and don't spin `verify` in a tight retry. A `429` is throttling, not
 > a policy error — back off ~60s and retry.
 
+### `propose` / `proposals` - launched oApp contributions
+
+`bounded propose` is currently an inspection command, not a submission command.
+Exact code-patch execution is not wired end to end, so live submission fails before Git inspection, identity setup, venue access, or any write.
+Use the explicit dry-run mode to inspect a local draft:
+
+```bash
+bounded propose --title "Show the streak counter" --dry-run
+bounded propose --title "Show the streak counter" --slug streaks --dry-run --json
+```
+
+The dry-run reads only the local project configuration and Git checkout.
+It never opens a venue session, signs in, creates a keypair, or writes a proposal.
+The patch is measured against the published remote-tracking head by default, or against `--base <revision>` when supplied.
+If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
+The reported and fingerprinted base is always the resolved exact commit object ID, never a moving symbolic ref such as `HEAD`.
+Top-level `bounded.json` and `.gitignore` clone plumbing are excluded.
+Untracked files are refused instead of silently omitted, and one draft is capped at 512 KiB.
+The canonical patch includes reconstructable binary deltas, ignores ambient global and system Git configuration, and fixes the diff algorithm, context, prefixes, rename behavior, and presentation.
+
+Human output prints the exact diff and its `draft hash`.
+JSON output returns the exact `diff`, `draftHash`, target labels, title, description, intent, base, changed file names, file count, and byte count.
+The versioned fingerprint binds those local draft fields with unambiguous JSON field boundaries.
+It is not an onchain content commitment, does not reserve a proposal id, and does not create something holders can vote on.
+
+Until the exact-patch lane is available, submit the intended outcome as a normal idea in the oApp's Ideas tab.
+`bounded proposals [slug]` remains a read-only venue command for listing existing proposals newest-first.
+It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `propose --dry-run`, it opens a venue data-plane session to read the backlog.
+
 ## Billing and Bounded Pay
 
 These are two different payment surfaces:
