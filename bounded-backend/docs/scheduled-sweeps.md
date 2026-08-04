@@ -63,9 +63,9 @@ the same address. Keep the bootstrap-safe admin collection from your app.
     },
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null && $userId != @const.FOUNDER"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true && $userId != @const.FOUNDER"
     }
   },
   "dirty/$slug": {
@@ -95,7 +95,7 @@ the same address. Keep the bootstrap-safe admin collection from your app.
   },
   "functions": {
     "tick": {
-      "auth": "@user.id != null && get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id).active == true",
       "entry": "functions/tick.ts",
       "actAs": "<service-address>",
       "timeout": 60

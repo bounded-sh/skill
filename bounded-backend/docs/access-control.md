@@ -243,13 +243,15 @@ flat, provable admin registry and gate rules on it:
     "tier": "durable",
     "rules": {
       "read":   "@user.id != null",
-      // only existing admins add admins; the founder bootstraps (genesis clause).
+      // only ACTIVE admins add admins; the founder bootstraps (genesis clause).
+      // Every privileged gate reads `.active == true`, not mere existence, so
+      // `active: false` is a REAL off-switch (see the revocation note below).
       // Gate on THIS collection (/admins) — the same scope the authorityClosure
       // proof is taken over — NOT the control-plane bridge (/__admins__). Every
       // write action needs `@user.id != null` so an anonymous caller can't slip in.
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
   },
   "tenants/$tenantId": {
@@ -258,10 +260,10 @@ flat, provable admin registry and gate rules on it:
     "rules": {
       "read":   "true",
       "create": "@user.id != null && @newData.owner == @user.id",
-      // the holder may transfer; an admin may moderate but NOT seize ownership
-      // (@newData.owner == @data.owner) — this is what proves transfer authority.
-      "update": "@user.id != null && (@user.id == @data.owner || (get(/admins/@user.id) != null && @newData.owner == @data.owner))",
-      "delete": "@user.id != null && (@user.id == @data.owner || get(/admins/@user.id) != null)"
+      // the holder may transfer; an ACTIVE admin may moderate but NOT seize
+      // ownership (@newData.owner == @data.owner) - this proves transfer authority.
+      "update": "@user.id != null && (@user.id == @data.owner || (get(/admins/@user.id).active == true && @newData.owner == @data.owner))",
+      "delete": "@user.id != null && (@user.id == @data.owner || get(/admins/@user.id).active == true)"
     }
   },
   "tenants/$tenantId/items/$itemId": {
@@ -270,8 +272,8 @@ flat, provable admin registry and gate rules on it:
     "rules": {
       "read":   "true",
       "create": "@user.id != null && @user.id == get(/tenants/$tenantId).owner",
-      "update": "@user.id != null && (@user.id == get(/tenants/$tenantId).owner || get(/admins/@user.id) != null)",
-      "delete": "@user.id != null && get(/admins/@user.id) != null"
+      "update": "@user.id != null && (@user.id == get(/tenants/$tenantId).owner || get(/admins/@user.id).active == true)",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
   },
   "proofs": {
@@ -284,8 +286,20 @@ flat, provable admin registry and gate rules on it:
 ```
 
 *(Verifies clean against the real proof engine: `✓ Proven — Safe to deploy`. The
-`authorityClosure` BASE+INDUCTION+side-door sweep passes and tenant ownership is proven
-transfer-safe; the only advisories are the intentional public `read` rules.)*
+`authorityClosure` BASE+INDUCTION+side-door sweep passes with the `.active == true`
+gate (`.active == true` implies the record exists, so it satisfies the same closure
+obligation existence does), and tenant ownership is proven transfer-safe; the only
+advisories are the intentional public `read` rules.)*
+
+> **`active` is a REAL off-switch - use it to revoke.** Every privileged rule gates on
+> `get(/admins/@user.id).active == true`, not on mere existence, so writing
+> `{ "active": false }` to a misbehaving admin instantly strips every power - they can no
+> longer moderate, transfer, or add/remove admins. An active admin (or the founder)
+> performs that deactivating write. Because `update` itself requires `.active == true`, a
+> deactivated admin cannot flip their own row back on (no self-reactivation). Keep at
+> least one active admin: the founder genesis `create` clause is the recovery path if the
+> active set is ever emptied. Do not gate on `get(/admins/@user.id) != null` alone - that
+> checks only that the row exists and makes `active` a dead, decorative field.
 
 The `authorityClosure` proof makes super-admin a **provable, closed set** — no
 self-promotion, no side doors — which is the platform-grade guarantee you can't get from a

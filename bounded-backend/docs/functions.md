@@ -37,8 +37,10 @@ caller, so `auth: "true"` means any logged-in caller may invoke it and
 `ctx.bounded` still cannot exceed that caller's data-plane authority. A function
 that declares `actAs` writes as a backend/service identity and is therefore
 privileged: deploy requires its `auth` rule to imply the app's admin predicate
-using a runtime-valid expression such as `get(/admins/@user.id) != null`. Declare
-and bootstrap that `admins/$userId` scope before deploying an `actAs` function.
+using a runtime-valid expression such as `get(/admins/@user.id).active == true`
+(`.active == true` implies the row exists, so it satisfies the deploy gate while
+giving you a real off-switch - see [admin-and-ownership.md](admin-and-ownership.md)).
+Declare and bootstrap that `admins/$userId` scope before deploying an `actAs` function.
 
 ## When to reach for a function — read this first
 
@@ -81,15 +83,15 @@ paths and `links`, declared once at the root of the policy:
   "admins/$adminId": {
     "rules": {
       "read": "true",
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "false",
-      "delete": "false"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     },
     "fields": { "active": "Bool" }
   },
   "functions": {
     "syncStripe": {
-      "auth": "@user.id != null && get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id).active == true",
       "entry": "functions/syncStripe.ts",
       "actAs": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm",
       "timeout": 30,
@@ -99,10 +101,17 @@ paths and `links`, declared once at the root of the policy:
 }
 ```
 
-Seed `admins/<FOUNDER>` once as the founder after deploy. `bounded data set` does
-not bypass rules; the founder disjunct is what makes the first write possible.
-After that, existing admins may create later admin rows. See
+Seed `admins/<FOUNDER>` once as the founder after deploy, with `{ "active": true }`.
+`bounded data set` does not bypass rules; the founder disjunct is what makes the
+first write possible. After that, active admins may create later admin rows. See
 [admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
+The gate is a **real off-switch**: every privileged rule and the `syncStripe`
+`auth` read `get(/admins/@user.id).active == true`, so setting a compromised
+admin's row to `{ "active": false }` immediately blocks them from invoking this
+`STRIPE_KEY`-signing Function. An active admin performs that deactivating write;
+`update` also requires `.active == true`, so a deactivated admin cannot reactivate
+themselves. Do not gate on `get(/admins/@user.id) != null` alone - existence never
+consults `active`, leaving the money-adjacent Function with no working revocation.
 Replace the sample sync address with one dedicated to your app, using the same
 public address for both `SUBS_SYNC_ACTOR` and `syncStripe.actAs`. Admins may
 invoke the Function, but only that service identity may create or update
@@ -114,7 +123,7 @@ need a private key; cryptographic/onchain signing does.
 
 | Key | Meaning |
 |---|---|
-| `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller — `{ id, address, email }` where `@user.id` is the universal stable identity (always present), `@user.address` is a real onchain wallet (null for email-only logins), and `@user.email` is the verified email (null for wallet logins). `"true"` = any logged-in caller; `get(/admins/@user.id) != null` = only admins. Gate identity/membership on `@user.id`. Evaluated before the function runs; deny → `403`. |
+| `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller — `{ id, address, email }` where `@user.id` is the universal stable identity (always present), `@user.address` is a real onchain wallet (null for email-only logins), and `@user.email` is the verified email (null for wallet logins). `"true"` = any logged-in caller; `get(/admins/@user.id).active == true` = only active admins (a real off-switch). Gate identity/membership on `@user.id`. Evaluated before the function runs; deny → `403`. |
 | `entry` | **Required.** Relative path to the function's source file (e.g. `functions/syncStripe.ts`). No absolute paths, no `..`. |
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
 | `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. |
@@ -712,7 +721,7 @@ code and message.
 bounded functions deploy syncStripe \
   --entry functions/syncStripe.ts \
   --app-id <id> \
-  --auth 'get(/admins/@user.id) != null' \
+  --auth 'get(/admins/@user.id).active == true' \
   --secret STRIPE_KEY \
   --timeout 30
 
@@ -788,7 +797,7 @@ Invoke it from your admin dashboard with
 (or the TypeScript fetch shown above).
 
 Flow: logged-in admin → invoke (attaches token) → Bounded auth gate (verify token →
-resolve `@user` → evaluate `get(/admins/@user.id) != null` → allow) → the
+resolve `@user` → evaluate `get(/admins/@user.id).active == true` → allow) → the
 function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your rules +
 invariants as the declared sync service identity) → returns JSON.
 
@@ -811,18 +820,24 @@ function on the cadence as the **system principal**.
 
 ```json
 {
+  "constants": { "FOUNDER": "<founder-user-id>" },
   "rollups/$day": {
     "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
     "fields": { "total": "UInt" },
     "schedule": { "every": "1d", "run": "rollupDaily" }
   },
   "admins/$adminId": {
-    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
+    "rules": {
+      "read": "true",
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
+    },
     "fields": { "active": "Bool" }
   },
   "functions": {
     "rollupDaily": {
-      "auth": "@user.id != null && get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id).active == true",
       "entry": "functions/rollupDaily.ts",
       "timeout": 120
     }
@@ -831,10 +846,14 @@ function on the cadence as the **system principal**.
 ```
 
 *(Validates clean and **fires** — `schedule.run` can name either a scheduled hook
-or a top-level function. Add `"actAs": "<address>"` to the function block to run
-it as that identity so its `ctx.bounded` writes satisfy owner/controller rules;
-without `actAs` it runs as the all-null system principal, which cannot bill
-`ctx.ai` or satisfy `owner == @user.id`.)*
+or a top-level function. The `admins` registry gates every privileged path on
+`.active == true` (a real off-switch: `active: false` revokes a user-invoker, and
+`update` itself requires `.active == true`, so no self-reactivation); seed
+`admins/<FOUNDER>` `{ "active": true }` once as the founder. Add
+`"actAs": "<address>"` to the function block to run it as that identity so its
+`ctx.bounded` writes satisfy owner/controller rules; without `actAs` it runs as
+the all-null system principal, which cannot bill `ctx.ai` or satisfy
+`owner == @user.id`.)*
 
 > **`dueRows.run` → function caveat.** A `dueRows { run }` pointing at a function
 > also fires, but the due row's id is **not** yet passed to the function (it sees

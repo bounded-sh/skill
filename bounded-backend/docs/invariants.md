@@ -803,9 +803,9 @@ tenant data:
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
   },
   "proofs": {
@@ -821,6 +821,12 @@ tenant data:
 Keep tenant scoping for that admin as an ordinary field (`tenant`) gated in
 rules; the *closure* proof rides the flat `admins/$userId` scope. Use nested
 typed `roleGatedRead.actors` (above) for the per-tenant read isolation.
+
+Every privileged rule gates on `get(/admins/@user.id).active == true`, not on
+mere existence, so `active: false` is a real off-switch (revoke a misbehaving
+admin by writing it; `update` also requires `.active == true`, so they cannot
+reactivate themselves). `.active == true` implies the row exists, so the
+`authorityClosure` attestation still proves clean over the flat scope.
 
 ### Plain-string shorthand — and the rule you MUST follow
 
