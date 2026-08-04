@@ -80,6 +80,15 @@ paths and `links`, declared once at the root of the policy:
     },
     "fields": { "active": "Bool", "renewsAt": "UInt" }
   },
+  "stripeCustomer/$customerId": {
+    "rules": {
+      "read": "@user.id != null && get(/admins/@user.id) != null",
+      "create": "@user.id != null && @user.id == @const.SUBS_SYNC_ACTOR",
+      "update": "@user.id != null && @user.id == @const.SUBS_SYNC_ACTOR",
+      "delete": "false"
+    },
+    "fields": { "user": "String" }
+  },
   "admins/$adminId": {
     "rules": {
       "read": "true",
@@ -119,7 +128,10 @@ Replace the sample sync address with one dedicated to your app, using the same
 public address for both `SUBS_SYNC_ACTOR` and `syncStripe.actAs`. Admins may
 invoke the Function, but only that service identity may create or update
 subscription rows; an admin cannot bypass the Function with a direct client
-write. For offchain data writes, the owner-declared `actAs` identity does not
+write. That same identity owns the `stripeCustomer/$customerId -> user` mapping,
+which a verified Stripe webhook writes on Checkout completion; `syncStripe` reads
+the credited account from that mapping instead of trusting a caller-supplied id.
+For offchain data writes, the owner-declared `actAs` identity does not
 need a private key; cryptographic/onchain signing does.
 
 *(This exact snippet validates clean against the real policy validator.)*
@@ -129,8 +141,8 @@ need a private key; cryptographic/onchain signing does.
 | `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller — `{ id, address, email }` where `@user.id` is the universal stable identity (always present), `@user.address` is a real onchain wallet (null for email-only logins), and `@user.email` is the verified email (null for wallet logins). `"true"` = any logged-in caller; `get(/admins/@user.id).active == true` = only active admins (a real off-switch). Gate identity/membership on `@user.id`. Evaluated before the function runs; deny → `403`. |
 | `entry` | **Required.** Relative path to the function's source file (e.g. `functions/syncStripe.ts`). No absolute paths, no `..`. |
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
-| `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. |
-| `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. **Concurrency-bounded:** a sandbox container is a real shared resource, so an app (and an account, across its apps) may only hold a limited number of live containers at once — each distinct `scope` you pass is a distinct container that counts toward the limit, and a container stays counted for a short idle window after your call returns (it is kept warm, not destroyed). Exceeding the limit is a fail-closed `429` `sandbox_concurrency_limit` (with `retryAfterMs`); reuse the **same** `scope` for sequential steps that share a workspace so they share one container instead of each consuming a slot. Sandbox is a paid capability — a plan (or account) with no sandbox allowance is refused with `403` `sandbox_capability_plan_gated`. |
+| `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. Rejected under top-level `oapp: true`; an oApp function must omit this key. `actAs` is not a secret and remains allowed. |
+| `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. **Concurrency-bounded:** a sandbox container is a real shared resource, so an app (and an account, across its apps) may only hold a limited number of live containers at once - each distinct `scope` you pass is a distinct container that counts toward the limit, and a container stays counted for a short idle window after your call returns (it is kept warm, not destroyed). Exceeding the limit is a fail-closed `429` `sandbox_concurrency_limit` (with `retryAfterMs`); reuse the **same** `scope` for sequential steps that share a workspace so they share one container instead of each consuming a slot. Sandbox is a paid capability - a plan (or account) with no sandbox allowance is refused with `403` `sandbox_capability_plan_gated`. |
 | `build` | Optional. Grants app-build origination via `ctx.build` (the unified Build system — successor to `ctx.oapps`). `{ profile, create?, edit?, fork?, view?, cancel? }` — the capability *is* the authority (invariant 4). **Cannot** be combined with `webhook` or `browser`: a build capability on an unauthenticated Internet surface would let anonymous callers spend the owner's build funds, so the validator rejects both combinations. Promotion and gate-decision authority are never grantable. See [§ctx.build](#ctxbuild--governed-app-builds). |
 
 **Auth-by-policy is the point.** Because the invocation rule is evaluated by the
@@ -275,8 +287,8 @@ AI/external-services credit is **per-account** (the app owner). Two things to wi
 2. **Top up through Bounded** — never a custom checkout:
    - Stripe: `POST /billing/checkout { kind: "services_topup" }` -> redirect the user to the returned `url`.
    - Crypto (USDC on Solana): `POST /billing/x402/intent` -> pay -> `POST /billing/x402/settle`.
-   - Free includes 3 AI builds/day (fast model) plus a small runtime-services trial allowance, and cannot top up.
-   - Pro ($25/mo) gifts $5/mo of AI/external-services credit and $30/mo of Bounded infra credit; Team ($99/mo) gifts $20/$100. Top-ups require Pro-or-better.
+   - Free includes up to $3 of metered AI/external-services usage per rolling 30 days, shared by Build, `ctx.ai`, and `ctx.services`; it allows one Build at a time and cannot top up.
+   - Pro ($25/mo) gifts $5/month of AI/external-services credit and $30/month of Bounded infra credit; Team ($99/mo) gifts $20/$100. AI Build consumes the same measured bucket. Top-ups require Pro-or-better.
 
    Full rails, amounts, and webhooks: [billing.md](../../bounded/docs/billing.md). **If your app
    charges *its own* users for anything, route that through Bounded billing too** —
@@ -459,6 +471,122 @@ For transactional email, SMS, or WhatsApp, use a real provider integration and
 keep provider keys in secrets. Do not expose a shared provider key or treat
 Bounded Auth OTP as recipient consent for app-originated messages.
 
+## ctx.browser — drive a headless browser, fenced by your egress
+
+Use `ctx.browser` when a function needs to SEE a real page: smoke-test your own
+deployed app, read a page that has no API, or prove something renders. It drives
+a managed headless browser server-side — no browser dependency in your code.
+
+```ts
+export default async function smokeTest(args, ctx) {
+  const drive = await ctx.browser.run({
+    idempotencyKey: `smoke:${args.checkId}:v1`,
+    steps: [
+      { action: "goto", url: "https://myapp.bounded.page/" },
+      { action: "waitFor", selector: "#app-shell" },
+      { action: "readText" },
+      { action: "screenshot" }
+    ],
+    maxSeconds: 45
+  });
+  return { healthy: drive.ok, sawText: drive.text[0], paid: drive.costMicroUsd };
+}
+```
+
+Steps are a fixed vocabulary: `goto` (url), `click`/`waitFor` (selector),
+`fill` (selector + value), `readText` (optional selector; captured into
+`result.text`), `screenshot`. The drive stops at the first failed step and
+reports it in `result.steps` — it never throws for a step failure.
+
+**The egress fence.** A browser is the most complete egress bypass there is — one
+page load can pull from any host — so every navigation AND every sub-resource the
+page requests is checked server-side against the calling FUNCTION's declared
+egress (`functions.<name>.egress`, ceilinged by the app-wide `boundaries.egress`).
+An undeclared host refuses with `egress_denied` (403) before a session is even
+opened; a page that reaches for an undeclared host mid-drive has that request
+blocked. An app that declares no egress at all is unfenced, exactly like raw
+`fetch`.
+
+**Billing.** Browser time bills per SECOND of open session against the app
+owner's prepaid services credit, fail-closed, and settles to actual elapsed
+seconds (`result.billedSeconds`, `result.costMicroUsd`, plus the uniform
+`result.meter` capability-spend fact). `maxSeconds` (default 60, ceiling 300) is
+your own spend fence — the reservation is taken up front and released on settle.
+
+**Replay safety.** Like `ctx.ai`, `ctx.browser.run` requires `idempotencyKey`
+and a replay-safe invocation (an `Idempotency-Key` header on direct invokes —
+`bounded functions invoke ... --idempotency-key <key>` — or a scheduled run). A
+retried invocation replays the SAME drive result instead of opening and billing
+a second session. Errors carry stable codes to branch on: `egress_denied`,
+`browser_unavailable`, `browser_busy`, `browser_request_invalid`.
+
+### Driving your app SIGNED IN — the agent identity
+
+Most of an app sits behind a login, so a logged-out drive can only ever check the
+front door. Add `as` and the drive runs as your app's **agent identity**: a
+normal, non-privileged user whose key the platform holds — the principal
+Bounded's agents act as *inside* your app.
+
+```ts
+const drive = await ctx.browser.run({
+  idempotencyKey: `dashboard-check:${args.checkId}:v1`,
+  as: { identity: "agent" },              // ← log the drive in
+  steps: [
+    { action: "goto", url: "https://myapp.bounded.page/dashboard" },
+    { action: "waitFor", selector: "#ready" },
+    { action: "readText", selector: "#ready" }
+  ],
+  maxSeconds: 60
+});
+```
+
+**You declare what it may do, and nothing else.** Put its address in `constants`
+and write rules against it in the same language as any other principal. Z3 proves
+over it like anything else, and on an oApp it is published in the constitution —
+so holders can see that a key the platform holds can act in the app, and exactly
+what it may do:
+
+```json
+{
+  "constants": { "AGENT": "<the address Bounded shows you for this app>" },
+  "readings/$id": {
+    "fields": { "value": "Number" },
+    "rules": {
+      "read": "@user.id == @const.AGENT || @user.id == $owner",
+      "create": "false",
+      "update": "false",
+      "delete": "false"
+    }
+  }
+}
+```
+
+**Grant it the least it needs, and on a live app that usually means READ.** Follow
+this one literally, because that grant *is* the whole blast radius: logging a
+browser in means the token lives in your app's own `localStorage`, where your
+app's page can read it. That is inherent to seeding a browser session, and it is
+safe only because the token can do nothing beyond what you declared for that
+address. Read is enough to answer "does the dashboard render for a signed-in
+user", which is what most drives are for. To exercise WRITE paths — signup,
+checkout, delete — use disposable data; never widen the agent's authority on a
+live app to make a test pass.
+
+**The platform resolves everything sensitive, and you cannot pass it.** There is
+no field for a token, an address or an origin, and supplying one is refused
+rather than ignored. Bounded mints the session server-side, seeds it before any
+page script runs, and only at an origin your app itself declares — so the drive's
+first navigation must target one of your app's own origins. `identity` is a
+closed set, today just `"agent"`.
+
+Extra codes on this path: `agent_identity_unavailable` (the platform could not
+produce the identity — a misconfiguration, not your app's fault),
+`agent_session_mint_failed` (the auth issuer declined),
+`target_app_origin_undeclared` (the first navigation is not an origin your app
+declares), `target_app_origin_unresolved` (your app declares no https origin to
+seed at), and `drive_not_authorized` (driving a DIFFERENT app — an app's agent
+identity is granted to the platform, not to whichever app names it, so only
+self-drive is authorized).
+
 ## ctx.enqueue — background jobs
 
 When a function should kick off work that shouldn't block the caller — fan-out,
@@ -562,7 +690,7 @@ is resolved server-side from the function's identity and the named profile.
 {
   "functions": {
     "maintainApp": {
-      "auth": "hasRole(\"admin\")",
+      "auth": "get(/admins/@user.id) != null",
       "entry": "functions/maintainApp.ts",
       "build": {
         "profile": "maintenance",
@@ -582,7 +710,8 @@ is resolved server-side from the function's identity and the named profile.
         "vetoWindow": "48h",
         "origins": ["scheduled-function"],
         "funding": { "mode": "split", "aiSource": "owner", "infraSource": "app", "onExhaustion": "park",
-                     "aiEnvelopeMicroUsd": 5000000, "infraEnvelopeMicroUsd": 2000000 },
+                     "aiEnvelopeMicroUsd": 5000000, "infraEnvelopeMicroUsd": 2000000,
+                     "allowPerRunEnvelope": true },
         "limits": { "buildsPerDay": 25, "buildsPerMonth": 300, "maxConcurrent": 2 },
         "effortMax": "high",
         "gates": [{ "type": "veto", "audience": "owner", "window": "48h" }],
@@ -592,6 +721,13 @@ is resolved server-side from the function's identity and the named profile.
   }
 }
 ```
+
+The `auth` rule uses the runtime-valid admin predicate `get(/admins/@user.id) !=
+null` (and needs an `admins` scope bootstrapped, as above).
+Do **not** write `hasRole("admin")` in an executable `auth` rule: `hasRole(...)`
+is a proof-grammar-only construct that parses during verification but has no
+runtime evaluator, so it fails validation (fail-closed) or never resolves to the
+admin gate - a broken permission check on a money-spending build function.
 
 **The `build` capability keys** (each grants only submission-side authority):
 
@@ -647,8 +783,20 @@ await ctx.build.edit({
   // constraints?: string[]
   // baseDeploymentId?: "…"              // CAS assertion: reject if the base already moved
   // idempotencyKey?: "…"                // defaults to hash(appId, functionName, prompt, UTC-day)
+  // funding?: { aiEnvelopeMicroUsd: 3000000 }   // per-run AI cap; see below
 });
 ```
+
+**Per-run funding cap.** When the profile opts in with
+`funding.allowPerRunEnvelope: true`, an `edit` submission may carry
+`funding: { aiEnvelopeMicroUsd }` (a positive safe integer) to narrow **that
+run's** AI envelope. The effective envelope is
+`min(requested, profile.funding.aiEnvelopeMicroUsd)` — the profile value is a
+ceiling, never raisable per-run. Without the profile opt-in (or with a
+non-positive/non-integer value) the field is ignored and the profile envelope
+applies unchanged. The clamped value is snapshotted at admission and survives
+park/resume; changing only the cap under the same `idempotencyKey` conflicts
+rather than replaying.
 
 The default idempotency key hashes `(appId, functionName, prompt, UTC-day)`, so a
 retried invocation with the same prompt **replays** the same run within a day
@@ -680,7 +828,7 @@ token automatically — the **same token** `bounded data` uses — so Bounded
 verifies your identity and evaluates the function's `auth` rule before running it:
 
 ```sh
-bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123","userId":"acct_123"}'
+bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123"}'
 ```
 
 It prints the function's JSON result, or fails with a public error such as
@@ -697,7 +845,7 @@ auth headers:
 ```ts
 import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 
-const res = await functions.invoke("syncStripe", { customerId, userId });
+const res = await functions.invoke("syncStripe", { customerId });
 // → the function's JSON return value.
 ```
 
@@ -710,7 +858,7 @@ rule + `ctx.user` then reflect it):
 
 ```ts
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
-const res = await vault.invoke("syncStripe", { customerId, userId });
+const res = await vault.invoke("syncStripe", { customerId });
 ```
 
 The platform gates the call on the function's `auth` rule using the verified
@@ -734,9 +882,28 @@ bounded functions logs   syncStripe --app-id <id>
 ```
 
 The `--entry` may be **TypeScript or JavaScript**. Type annotations are fine.
-Keep it a single self-contained module. Bare `--secret STRIPE_KEY` declares the
-name without putting its value in argv; `secret put` supplies the app-stored
-value separately.
+Bare `--secret STRIPE_KEY` declares the name without putting its value in argv;
+`secret put` supplies the app-stored value separately.
+
+**A function may be split across files.** Import siblings with ordinary relative
+specifiers and deploy the entry as usual - the CLI uploads the entry plus the
+source files in its directory, and the platform bundles them:
+
+```
+functions/
+  syncStripe.ts        ← --entry, imports "./stripe/charges"
+  stripe/
+    charges.ts
+```
+
+Keep a function's modules inside the entry's own directory: that directory is
+what gets uploaded, so an import reaching outside it will not resolve. Only
+source extensions travel (`.ts`, `.tsx`, `.js`, `.mjs`, `.json`, …) - a README or
+a fixture in that folder is ignored - and `node_modules` is never uploaded, so
+npm dependencies still cannot be imported. Limits are 100 files, 512 KB per file
+and 2 MB total; an oversize tree is refused locally with those same numbers.
+Older CLI versions upload only the entry and refuse a relative import at deploy
+time with `Relative import ... cannot be resolved`, so if you see that, update.
 
 Two deploy-ordering notes worth knowing:
 - **A policy deploy preserves deployed functions.** When your `policy.json` omits
@@ -769,8 +936,18 @@ deploy.
 ```ts
 export default async function (args, ctx) {
   // Only admins reach here — `auth` gated the original caller before actAs.
-  const { customerId, userId } = args;
-  if (!customerId || !userId) throw new Error("customerId and userId are required");
+  const { customerId } = args;
+  if (!customerId) throw new Error("customerId is required");
+
+  // Derive the credited account from a SERVER-HELD mapping, never from a caller
+  // argument. `stripeCustomer/$customerId` is written only by the sync service
+  // identity from a verified Stripe webhook / Checkout completion, so it is the
+  // trusted link between a paying customer and an app account. Any userId in
+  // `args` is untrusted and is deliberately ignored — trusting it would let an
+  // admin credit their own account using a stranger's customerId.
+  const mapping = await ctx.bounded.get(`stripeCustomer/${customerId}`);
+  const userId = mapping?.user;
+  if (!userId) throw new Error("no verified mapping for this Stripe customer");
 
   // 1. Pull from a third-party API using a declared secret.
   const resp = await fetch(
@@ -796,13 +973,24 @@ export default async function (args, ctx) {
 ```
 
 Invoke it from your admin dashboard with
-`bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123","userId":"acct_123"}'`
+`bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123"}'`
 (or the TypeScript fetch shown above).
 
 Flow: logged-in admin → invoke (attaches token) → Bounded auth gate (verify token →
 resolve `@user` → evaluate `get(/admins/@user.id).active == true` → allow) → the
 function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your rules +
 invariants as the declared sync service identity) → returns JSON.
+
+> **Caller-supplied ids are untrusted.** The `auth` boundary proves *who may
+> invoke* the Function - not *that the Stripe customer belongs to the account being
+> credited*. If the Function trusted a caller-supplied `userId`, an admin (or any
+> admin-reachable path: a support tool, an automation, a compromised session) could
+> pass a stranger's paying `customerId` with their own `userId` and grant
+> themselves a subscription paid for by someone else - or point at an unpaid
+> customer to mark a real subscriber unpaid. Derive the credited account from the
+> server-held `stripeCustomer/$customerId -> user` mapping that only a verified
+> Stripe webhook / Checkout completion (running as the sync service identity) may
+> write, and ignore any `userId` in the invocation args.
 
 ## Scheduled functions (run a function on a cadence)
 

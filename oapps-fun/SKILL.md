@@ -64,11 +64,165 @@ is renameable BEFORE launch (slug API or dashboard), so pick the name you
 want the token to live at while you still can. After launch the pointer is
 governance-controlled, not yours.
 
+### Community code contributions while exact patches are closed
+
+Do not tell a contributor that `bounded propose` submitted code or created a voteable proposal.
+The venue cannot yet carry the exact reviewed diff through approval, build application, and promotion, so code-patch submission remains fail-closed.
+
+The only supported code-draft mode is local inspection:
+
+```bash
+bounded propose --title "Show the streak counter" --slug <oapp-slug> --dry-run
+```
+
+That command reads the local Git tree, prints the exact diff and deterministic `draftHash`, and never opens a venue session or writes a proposal.
+The hash is local comparison evidence, not an onchain content commitment or proposal id.
+Use the oApp's Ideas tab to submit the intended outcome as a normal idea holders can vote on today.
+`bounded proposals <slug>` is only the read-only viewer for proposal history and backlog.
+
 **Boundaries come first, not last.** Write `policy.json` boundaries early,
 while you build, not as a launch chore. They are the single most important
 trust artifact reviewers and buyers will read alongside your source. An app
 whose money and state rules are proven invariants graduates cleanly. An app
 with ad-hoc checks in function code reads as a rug risk.
+
+The launch gate (`publish-oapp`) REFUSES an app that does not satisfy ALL of the
+following, so these are requirements and not advice.
+
+| What | Required value | Refusal if wrong |
+|---|---|---|
+| `boundaries` | present at all | `no_boundaries` |
+| `boundaries.posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
+| `boundaries.binding` | `"all"` - applies to everyone including you | `binding_not_all` |
+| `boundaries.amend` | `"none"` (permanent) or `"creator"` (until renounced) | `amend_invalid` |
+| `boundaries.egress` | declared (an empty `allow` IS a declaration) | `egress_missing` |
+| `boundaries.policy` | a `"mode": "locked"` freeze covering `openApps` | `policy_freeze_missing_openapps` |
+| `boundaries.policy` | a `"mode": "locked"` freeze covering `boundaries` | `policy_freeze_missing_boundaries` |
+| `openApps.activity` | `"public"` - every prompt and change on the record | `activity_not_public` |
+| a deployed policy | the app must have one to launch | `no_deployed_policy` |
+| accepted terms | current version, accepted | `terms_not_accepted`, `terms_version_unsupported` |
+
+Launching is ONE-WAY. A second `publish-oapp` on an app that already launched
+answers `409 already_launched` and carries the launched app's id as `appId` -
+that id is the venue-owned clone, which is the thing your users are using. It is
+never an error to retry a launch you are unsure landed: the ritual is idempotent
+and converges on the same clone.
+
+`boundaries.egress` is REQUIRED, not optional. On the functions lane the egress
+gateway is always constructed and fails closed if it cannot be built, but the host
+allow-list only BINDS when the app declared one - without a declaration,
+destinations are unrestricted. For an ordinary Bounded app that default is right:
+you should not have to enumerate every host to ship. For an oApp it is wrong,
+because the entire promise is that the app can only do what it publicly declared,
+and an undeclared egress surface is the one hole through which a governed build
+could later reach anywhere. An empty `allow` array is a real declaration and the
+honest one for an app that talks to nothing.
+
+### What shape the app can take, and what visitors get
+
+oApps are framework-independent: launch does not require Vite, React, a
+`package.json`, or any particular layout. What it requires is honesty between
+three artifacts — the synced source, the deployed frontend (if any), and the
+policy. There are two shapes, and both are first-class launches; they differ
+in what a visitor sees at `<slug>.oapps.fun`:
+
+**An app with a web frontend.** Deploy the exact static files users should
+see (`bounded site deploy dist --with-source`); the platform serves those
+bytes as-is, forever, and governed edits keep the human source and the
+deployed `dist/` in sync. For anything beyond hand-written HTML, build with a
+real bundler — **Vite is the recommended default** (and if the frontend uses
+`@bounded-sh/client` a real bundler is effectively required; CDN imports break
+it at runtime — see **bounded-frontend**). Plain static HTML with no
+JavaScript is equally valid: what you deploy is what visitors use.
+
+**An app with no web frontend** — a CLI, an agent, a pure backend. Still a
+real oApp: the backend runs, the boundaries hold, the token launches. Its
+home page becomes the public repo view: visitors landing on
+`<slug>.oapps.fun`'s host see the app's source browser — files, history,
+`Download .zip`, `bounded clone` — with a link to the app's page on oapps.fun
+for history, reports and governance. They read and take the project rather
+than using it in the browser. Say this plainly to the user before launch so
+nobody expects a web app to appear.
+
+Either way, the synced source must be the real, complete project — if the
+deployed frontend is compiled output, the source that compiles into it rides
+along in the same tree. Never add a framework, a bundler, or an unused
+`init()` call merely to change shape: launch does not ask for them.
+
+**The dist must be reproducible.** A deployed frontend classifies at launch,
+and an unclassifiable one refuses (`dist_not_reproducible`):
+
+- **static** — every file you deploy is byte-identical to a file in your source
+  tree. Only inert assets (images, fonts, media) are exempt from the match;
+  anything served as code or markup — `.js`, `.html`, `.css`, `.svg`, `.wasm` —
+  must be in your source verbatim, whatever its encoding. Hand-written pages
+  deployed as-is land here automatically.
+- **built** — your source declares how the frontend is produced: a `"build"`
+  object in `bounded.json` (`{"command": "npm run build", "output": "dist"}`)
+  or a `package.json` `build` script. **The launch builds your source itself,
+  in an isolated network-less sandbox, and serves THAT output.** The bytes you
+  uploaded are not what the community gets — your own source is. Your build
+  must succeed and produce `<output>/index.html`.
+  This is deliberate: if the launched site were your upload while only your
+  source was checked, the two could say different things, which is exactly the
+  hole the standard exists to close. Your bounded.page development address
+  keeps serving your uploads as always; only the launched oApp is rebuilt.
+- A dist that matches nothing in source and has no working declared build is
+  dead weight the community could never maintain, so it cannot launch. Fix it
+  by declaring a real build, or by deploying your source files directly.
+
+Because the rehearsal sandbox has no network, a build that fetches things at
+build time (remote configs, API calls in build scripts) will fail there —
+vendor those inputs into the tree instead.
+
+What the ritual still refuses:
+
+| What | Required | Refusal |
+|---|---|---|
+| synced source | `--with-source` / `sourcePush: true` | `source_not_synced` |
+| every app-id literal names THIS app | yes (repeats of your own id are fine) | `app_id_literal_foreign` |
+| text-only tree (binaries cannot ride the source lane) | yes | `source_not_text` |
+| if the source `init()`s the Bounded client, the DEPLOYED site embeds that literal id | yes — rebuild + redeploy if stale | `clone_app_id_not_rewritten` |
+| a recorded site deployment must actually be found at launch | platform-checked | `clone_site_missing_expected` |
+
+The refusal body carries the specific `rejections`, so read them rather than
+guessing.
+
+### The seal is irreversible, and it happens BEFORE validation
+
+This is the sharpest edge in the whole ritual. The launch wizard writes your
+boundaries block **and** the `gov-frozen` lock over `openApps` + `boundaries` in
+the SAME policy deploy, and `publish-oapp` checks the table above only AFTER that
+deploy has landed.
+
+So a policy that misses any row above is sealed first and refused second - and
+the lock now covers `boundaries`, which is the section you would have to edit to
+fix it. The documented three-step recovery (loosen, deploy, re-apply) is itself a
+write to `boundaries`. It is self-sealing, and `amend: "creator"` does not save
+you:
+
+```
+seal rules (403): boundary_violation, gate G2, boundaryId gov-frozen,
+                  section boundaries, bindingAll true
+```
+
+Two test apps were made permanently unlaunchable this way in one afternoon.
+
+**Therefore: build the COMPLETE block and check it against every row above before
+you seal.** If you are writing tooling around this, validate locally first and
+refuse to seal on any missing row - a tool that can create an unrecoverable state
+should not be able to.
+
+A related trap if you script it: read the app's current policy from
+`/app/:id/details` (`GET /app/:id` is not a route and 404s), and remember a
+Bounded policy is FLAT - collections are top-level keys, there is no
+`collections` wrapper. Swallowing that 404 and merging onto `null` replaces the
+app's whole policy with the preset alone, and then locks it.
+
+A caution worth internalizing: an AI-generated app does NOT produce a boundaries
+block unless the build prompt asks for one. If you are commissioning an app that
+is meant to launch, put the four fields above plus the egress allow-list in the
+prompt, or the app will build cleanly and then be refused at the gate.
 
 ## What graduation publishes (read before you let go)
 
@@ -82,8 +236,14 @@ to:
 2. **Your boundaries are published.** The `policy.json` rules, proven before
    every deploy, appear at `/__bounded/boundaries`. They are part of your
    public safety story, and the first thing a careful buyer reads.
-3. **Your code freezes** from graduation until the first governed build. No
-   changes of any kind in between.
+3. **What launches is a venue-owned COPY of your app, not your app.** Launch
+   clones the whole thing - source, site, policy - into a fresh app the venue
+   owns, rewrites the Bounded app id so the copy talks to its own backend, and
+   moves your slug onto it. From then on the copy accepts NO interactive deploy
+   of any kind (`oapp_launched`, 403), forever: only a community-governed build
+   can change it. Your original app stays yours, keeps its policy authority, and
+   becomes a disconnected sandbox - editing it no longer affects the launched
+   oApp, and the launched oApp starts with an EMPTY backend (no data is copied).
 4. **A public DYOR window precedes the token launch.** Anyone can inspect the
    source, ask questions, and REPORT the app. 5 distinct reports hold the
    launch at T-0 for steward review, with a public halt log.
@@ -191,20 +351,29 @@ const res = await ctx.services.invoke("X402_FETCH", {
   method: "GET",                           // or POST + body (≤64KB)
   maxUsd: 0.25,                            // refuse to pay more than this per call (platform hard-cap applies)
 });
-// res.paid === true → res.result.{status,body} is the paid response;
+// res.paid === "verification_pending" means the provider response arrived,
+// but finalized settlement still belongs to the recovery lane;
 // res.chargedMicroUsd = price × 1.05 markup + the flat tx-fee surcharge.
-// A 402 in a scheme we don't support returns error "no_supported_payment_scheme"
-// with the provider's demand attached — surface that to the user, don't work around it.
+// Unsupported or unsafe payment terms return a stable public error without
+// reflecting the provider's raw demand.
 ```
 
 Semantics to design around: the endpoint is probed unpaid first (non-402
 responses pass through for a flat routing fee); a 402 quoting Solana USDC —
 either the standard x402 `X-PAYMENT` dialect or Bounded's own intake dialect —
-is paid from the relay wallet and retried with proof; anything else is a
-call-out. Charges are refunded in full whenever the paid retry never delivered.
+is authorized from the relay wallet and retried with proof; anything else is a
+call-out. A failure before signing, submission, or provider disclosure may
+return the reserved app charge immediately. After a transaction is submitted
+or a signed authorization is disclosed, Bounded never guesses that payment did
+not happen and never automatically refunds from an HTTP result.
+The exact operation remains held until independent finalized chain evidence
+proves settlement, an exact failed transaction, or complete absence after the
+signed blockhash is invalid on both recovery RPCs.
+Provider receipts and transaction hints are accelerators only, never settlement
+truth. Retry or reconcile the same operation after an ambiguous response; do
+not create a replacement call or payment.
 Discovery: `ctx.services.search("x402")` / `describe("X402_FETCH")`. The tool
-is environment-gated (`x402_relay_disabled` means the relay isn't enabled
-there yet) — when disabled, treat the feature as ladder-step-3 and flag it as
+is environment-gated. When disabled, treat the feature as ladder-step-3 and flag it as
 "unblocks when the x402 relay is enabled".
 
 When designing: if a needed service advertises x402 support, note it as
@@ -233,7 +402,14 @@ the app's running costs.
   deploy ran `--with-source`): `/__bounded/source` shows the current tree,
   not an empty page.
 - The slug is the name the token should live at (`<slug>.oapps.fun`); rename
-  it before launch if it isn't.
+  it before launch if it isn't. Launch MOVES the slug onto the venue-owned
+  clone, so it is the last moment the name is yours to change.
+- The synced tree is the real, complete project and every `init({ appId })`
+  literal names this app (see "What shape the app can take"). If the app has a
+  frontend, the deployed site was built from THIS tree — a stale dist that no
+  longer embeds the app id refuses at launch (`clone_app_id_not_rewritten`).
+- If the app has NO web frontend, the user knows its home page will be the
+  public repo view (source browser + oapps.fun link), not a web app.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
   sane against the app's expected build-fund inflow — out of budget means
   frozen, and you should be able to say at what usage level that happens.

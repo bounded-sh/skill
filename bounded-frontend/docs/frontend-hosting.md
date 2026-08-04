@@ -60,7 +60,10 @@ bounded site deploy ./dist --app-id <id>
   they were. After creation, flip or inspect the gate with
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it
   from the in-app Bounded widget's always-visible privacy toggle (cloud-backed;
-  no local daemon required). The setting applies to every mapped static host
+  no local daemon required).
+  Launched oApps are the exception: a launched app is public by its own
+  constitution, so re-privatizing is refused (`oapp_launched`) and the widget's
+  privacy toggle does not exist on its launched face. The setting applies to every mapped static host
   that resolves to the app: vanity slug and active custom domains. API hosts
   are not gated. The private-site gate page itself tells owners and visitors
   how to make the app public.
@@ -94,6 +97,10 @@ within about a minute; no policy redeploy needed. Related presentation knob: the
 declined-write card the widget shows end users can be turned off in policy with
 `openApps.widget.declineCard: false` (widget `visibility: "hidden"` suppresses
 it too).
+On a **launched oApp** the widget is the app's trust surface and is forced
+visible: a `visibility: "hidden"` frozen into the pre-launch policy neither
+hides the widget nor suppresses the declined-write card there. The explicit
+`declineCard: false` opt-out stays honored on every face.
 
 ## Public source page for launched oApps
 
@@ -105,6 +112,45 @@ read an unsynchronized local checkout.
 The launched-oApp gate applies before any source is returned. An unlaunched app
 gets `404` on every source route. After launch, the source page is public even
 when the normal hosted site is private.
+
+On a launched oApp the in-app widget also switches to a dedicated launched
+face: a public trust rundown (rules, source link, constitution, security,
+fuel state, version history, the app's venue room link) instead of the owner
+console.
+The rundown states only what the published data supports.
+A security row reads `audited clean` only when the audit ran against the
+revision deployed right now; a mismatch, a missing revision, or an unreadable
+head reads `stale`, and an app with no completed audit reads `never audited`.
+A paused app says `out of fuel` only when its published gauge is actually
+empty - otherwise it says the engine is paused without naming a cause.
+An announced build shows its veto countdown, and where circulating supply is
+not yet counted it says the threshold is pending rather than naming a number
+the engine cannot enforce.
+Owner-console actions are refused on launched apps with `launched_locked` /
+`oapp_launched` errors - changes ship only through the app's governed build
+lane on its venue.
+The refusal covers app settings, both slug routes (claiming a new label and
+releasing the current one), custom domains, `allowedOrigins`, collaborators,
+access requests, the proof-page toggle, widget-report status and deletion,
+UI boundaries, ownership transfer, backend runtime and live deploys, and
+direct AI edits.
+The address and origin routes matter most: a launched app's slug is the
+address its constitution points at, and `allowedOrigins` decides where its
+sign-in tokens may be delivered.
+Ownership is refused on both rails.
+A launched oApp belongs to its venue, so a single-app transfer returns
+`oapp_launched`, and the bulk wallet-to-web-login migration
+(`bounded transfer-apps`) skips launched apps and reports them back to you
+under `skippedLaunched` rather than moving them.
+An interactive deploy is refused even when the uploaded bytes are identical to
+what the app already serves: the deploy claims a canonical operation that ends
+the governed build lane, and identical bytes end it just as thoroughly.
+That applies to the site lane and to `bounded/runtime/deploy` and
+`bounded/live/deploy` alike, and it does not depend on the size of the
+changeset - the manifest a deploy carries (entry, dependencies, allowed hosts,
+sandbox) is not part of that diff at all.
+A launched app's declared boundaries are frozen for the same reason: they are
+what the app's public trust surface reports as its enforced rules.
 
 If the page says "Source is being prepared," the launch gate passed but the
 platform has no source manifest to show. Inspect the manifest response first:
@@ -124,6 +170,14 @@ bounded site deploy ./dist --with-source
 Read the deploy output: `source synced: <sha>` proves the tree landed; a
 source-sync warning means the site deployed but the source did not (a live
 site alone does not prove the source manifest arrived).
+
+For a canonical site deploy with source, also wait for `widget editing base
+ready: ...`. That separate receipt proves the hosted widget can edit the exact
+deployed frontend. If the site upload lands but the receipt fails, the CLI exits
+nonzero and prints safe recovery guidance, including a deployment-pinned retry
+or exact redeploy command when appropriate; do not assume the nonzero exit
+rolled the site back. See
+[Cloud Source Sync](../../bounded-deploy/docs/source-sync.md#canonical-sites-also-establish-the-widget-editing-base).
 
 Download the published tree at `/__bounded/source.zip`. The archive also
 contains the published constitution and deployed policy at its root. It uses

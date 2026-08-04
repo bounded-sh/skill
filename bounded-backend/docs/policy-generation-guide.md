@@ -132,6 +132,10 @@ The expression language (full reference in
 >   `@bounded-sh/client`/`server`): the *server* stamps it in seconds, so it matches
 >   `@time.now` **and can't be forged by the client** — the right choice for TTLs,
 >   rate windows, anti-cheat. `set("posts/p1", { createdAt: serverTimestamp() })`.
+>   This is a MUST when a rule compares the field to `@time.now`, not a nicety:
+>   the rule clock can trail wall time by ~1s, so a client-stamped "now" from an
+>   ACCURATE clock reads as the future and `field <= @time.now` DENIES it —
+>   intermittent first-write declines that retries then mask.
 > - **Comparing in client/render code → `now()`** (seconds), not `Date.now()` (ms);
 >   and **`toSeconds(x)`** to convert any ms value (`Date.now()`, or a doc's
 >   `_createdAt`/`_updatedAt`) first. **`toMillis(s)`** goes back to ms for
@@ -275,6 +279,9 @@ Decide with [functions-when-to-use.md](functions-when-to-use.md). Then add:
 - **Side effects on write** → `hooks.offchain.{create,update,delete}` (call
   `@DocumentPlugin.putDocument` / `updateField`). See
   [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
+- **Onchain side effects on write** → `hooks.onchain.{create,update,delete}` on an `onchain: true` collection.
+  Use only compiler-supported onchain plugins; `@DocumentPlugin.updateField` can compose `get()` pre-state and `getAfter()` staged state, while `putDocument` remains offchain-only.
+  See [policy-primitives.md](../../bounded-onchain/docs/policy-primitives.md#onchain-staged-document-updates).
 - **Recurring jobs** (reset a quota nightly) → `hooks.scheduled.<name>` + a
   `schedule: { every, run }`.
 - **One-shot timers** (fire a reminder when due) → `hooks.scheduled.<name>` +

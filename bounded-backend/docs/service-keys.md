@@ -141,9 +141,13 @@ act as a different identity than the game's session-wide one:
 ```ts
 // functions/npcBrain.ts — runs as NPC_BRAIN (via runAs or actAs), so ctx.ai is funded
 export default async function npcBrain(args, ctx) {
+  // The idempotencyKey is REQUIRED: an NPC brain runs inside an at-least-once
+  // tick loop, so the same call can be re-emitted across ticks/checkpoints.
+  // A stable per-effect key replays one billed inference instead of paying for
+  // each retry; a genuinely new ask carries a new effectId and bills fresh.
   const reply = await ctx.ai.run("@cf/meta/llama-3.1-8b-instruct", {
     messages: [{ role: "user", content: args.prompt }],
-  });
+  }, { idempotencyKey: `npc:arena:${args.effectId}:reply:v1` });
   return { ok: true, text: reply.response };
 }
 ```
@@ -247,7 +251,8 @@ You only need a **real keypair + private key** when the service identity must
 **cryptographically sign** — i.e. submit an on-chain Solana transaction (not
 just a data-plane write). In that case:
 
-- The **private key is a function secret**, declared on each function deploy,
+- The **private key is a function secret**, declared once in the function's
+  `secrets` block (a redeploy preserves it — you do not restate it every time),
   stored with `secret put`, and exposed only to that one function as
   `ctx.env.NAME`. The value stays server-side (never in your repo, never
   returned; only the *name* is ever shown). `actAs`
@@ -277,6 +282,47 @@ just a data-plane write). In that case:
 | --- | --- | --- |
 | Write/read app data as a backend identity | **No** | nothing stored — just the address in policy |
 | Sign an on-chain Solana tx as the identity | Yes | function **secret** (server-side); local mint → `~/.bounded/keys/` `0600` |
+
+## `actAs` cannot log in — that is what the SERVICE USER is for
+
+`actAs` works because the **dispatcher** synthesizes the identity from a string in
+your policy: it swaps the caller for that address before your code runs. There is
+no key and no signature anywhere in that path, which is exactly why it needs
+nothing stored. It also means `actAs` only exists **inside** a dispatched
+function.
+
+Anything that authenticates from **outside** — a browser driving your deployed app
+to test it, a headless QA run signing in behind your auth — cannot use `actAs`.
+Logging in through the front door means signing a SIWS challenge, and a
+synthesized identity has nothing to sign with.
+
+For that, an app can admit an **agent identity**: a normal, non-privileged user
+whose private key the platform holds instead of you - the principal Bounded's
+agents act as inside your app. It signs in like any other user;
+its reads and writes pass the same rules and the same proven invariants;
+`@user.id` is just an address. It gets **no implicit access to anything** — an app
+admits it by DECLARING its address as an ordinary policy constant and granting it
+whatever that app wants, in the same rule language as any other principal. That is
+what makes it safe rather than a backdoor: it is visible, the prover reasons about
+it like any other principal, and on an oApp it appears in the constitution, so
+holders can see that the platform holds a key which can act in their app and
+exactly what it may do.
+
+The two are complementary, not alternatives:
+
+| | `actAs` | agent identity |
+|---|---|---|
+| Key | none (synthesized) | held by the platform |
+| Usable from | inside a dispatched function | anywhere, including a browser login |
+| Can sign a challenge | no | yes |
+| Authorized by | your policy rules | your policy rules |
+
+Policies name it `@const.AGENT` by convention. **Grant it the least it needs, and
+on a live app that usually means READ** - the grant is the whole blast radius,
+because logging a browser in puts the token in your app's own `localStorage`
+where your page can read it. See
+[functions.md](functions.md#driving-your-app-signed-in--the-agent-identity) for
+driving a signed-in page with `ctx.browser`.
 
 ## Security properties
 

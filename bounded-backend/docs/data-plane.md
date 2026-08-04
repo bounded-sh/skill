@@ -139,12 +139,22 @@ allowed vs denied, by whom, and why), use **`bounded decisions`**:
 
 ```
 $ bounded data set --app-id <id> --path "rooms/r1" --data '{"name":"x"}'
-✗ 403 Policy failed: Expression evaluated to false (comparison != failed)
+✗ 403 Policy failed: Expression evaluated to false
 
 $ bounded decisions --app-id <id> --denied-only
 TIME       DECISION  ACTION  PATH      ACTOR         REASON
-23:40:08Z  DENY      create  rooms/r1  89MnyG..1ZTe  Policy failed: Expression evaluated to false (comparison != failed)
+23:40:08Z  DENY      create  rooms/r1  89MnyG..1ZTe  Policy failed: Expression evaluated to false
+           ↳ Policy failed: "89MnyG…" != "owner…" -> false | resolved: @user.id="89MnyG…", get("rooms/r1")={"owner":"owner…"}, @time.now="1785346554"
 ```
+
+On denies, the log carries an owner-scoped `detail` line (also in `--json`):
+the failed comparisons with their actual operand values, plus how every
+variable the rule touched resolved — `@time.now`, `@newData.*`, `get()` reads,
+path variables. The CALLER's 403 stays generic on purpose: rules read
+documents with system authority, so the resolved values are evidence for the
+app team, not for the denied writer. If a deny hinges on time, the resolved
+`@time.now` is right there — compare it against the written timestamp before
+suspecting anything else.
 
 The backend keeps a bounded (~200-entry, denies-prioritized) in-memory ring
 buffer of recent WRITE decisions per app. `bounded decisions` reads it
@@ -210,29 +220,163 @@ order. That turns `set-many` into a composition primitive — guard documents
 and the writes they gate travel in one atomic unit, with no TOCTOU window
 between check and act. `get()` still reads the committed pre-batch snapshot.
 
-Allowlist example. `gated/$docId` has the create rule:
+Allowlist example - the guard must not be writable by the caller it gates.
+Declare `allowlist/$userId` so only an admin can add entries, and gate
+`gated/$docId` on it. Key the gate on `@user.id` (present for every login), not
+`@user.address` (empty for email/social users):
 
-```
-getAfter(/allowlist/@user.address).approved == true
+```json
+{
+  "allowlist/$userId": {
+    "rules": { "read": "true", "create": "get(/admins/@user.id) != null", "update": "false", "delete": "false" },
+    "fields": { "approved": "Bool" }
+  },
+  "gated/$docId": {
+    "rules": { "read": "true", "create": "getAfter(/allowlist/@user.id).approved == true" },
+    "fields": { "value": "UInt" }
+  }
+}
 ```
 
-One batch creates the allowlist entry AND the gated write:
+An admin seeds the allowlist once. The caller's batch then creates **only** the
+gated write; the rule admits it by reading the admin-controlled allowlist entry
+(a doc the batch does not touch, so `getAfter` reads its committed value):
 
 ```json
 [
-  { "path": "allowlist/agentA", "document": { "approved": true } },
-  { "path": "gated/g1",         "document": { "value": 7 } }
+  { "path": "gated/g1", "document": { "value": 7 } }
 ]
 ```
 
 ```
 $ bounded data set-many --from-json compose.json
-✓ committed 2 document(s)
+✓ committed 1 document(s)
 ```
 
-Reversing those two entries has the same result. Write ordering is not an
-authorization primitive; reciprocal rules may safely require each other's
-final staged values in one batch.
+> **A `getAfter()` gate is only an authorization gate when the referenced document
+> cannot be created or edited by the same caller in the same batch.**
+> Reciprocal rules may safely require each other's final staged values for ordinary
+> *data* relationships, where write ordering is not an authorization primitive.
+> But a caller-writable guard is no guard: if the batch could also create
+> `allowlist/<self>` with `approved: true`, the caller self-approves and passes in
+> one atomic unit, so the allowlist protects nothing.
+> Keep guard documents admin- or service-created, and only *read* them in the batch.
+
+## getAfter() FALLS BACK to committed state
+
+The single most expensive misreading available here, so know it before you write
+a rule that depends on it.
+
+`getAfter(/path)` is **not** "the value this batch is writing". It is "the final
+value of that document" — and for a document the batch does not touch, that is
+simply its **committed** value. So:
+
+```jsonc
+// reads as "this batch settles the position"
+"getAfter(/positions/@newData.ref).status == \"kept\""
+// MEANS "this position has ever been settled" — and stays true forever
+```
+
+Measured on a live protocol: every payout rule was written in that shape, so a
+wallet with no relationship to an already-settled position minted a **second**
+backing credit against it and the write landed. Repeat per settled position and
+the entire escrow drains — every user's funds.
+
+Two guards, and you generally need both:
+
+- **Check PRE-state too.** `get(...)` is the committed snapshot, so pairing
+  `get(x).status != "kept"` with `getAfter(x).status == "kept"` is what actually
+  says *this batch performs the transition*.
+- **Make the obligation UNIQUE.** The only uniqueness the platform gives you is
+  the document id, and the caller chooses it. If one payout may exist per
+  position, key it by the position (`payouts/$positionId`) and assert
+  `$payoutId == @newData.ref` in the rule. Otherwise the same rule is
+  satisfiable N times in a single batch, each write a fresh id.
+
+The general form: **a rule that authorises a transfer must be true only during
+the transition that earns it, and only once.**
+
+## Atomic is not the same as COMPLETE
+
+This is the trap that composition sets, and it has cost real money.
+
+A batch commits all-or-nothing, so nothing lands half-written. But **each
+document's rule is evaluated independently, and nothing obliges a caller to
+include every write your operation logically needs.** A hostile client can send
+a SUBSET of the batch, and if the rules you wrote do not reference each other,
+every one of them passes and you get a state your code can never produce.
+
+Concretely, from a gacha pool. Advancing a draw was meant to be three writes:
+mark the pull resolved, mark the won item assigned, and update the aggregate
+that tracks what is still in the pool. A client submitted only the first two:
+
+```jsonc
+// both of these rules passed on their own
+{ "path": "acquisitions/a1", "document": { "status": "allocated", ... } },
+{ "path": "positions/p9",    "document": { "status": "allocated", ... } }
+// ...and the aggregate write was simply omitted
+```
+
+The aggregate kept counting an item that was gone, and its pending-draw counter
+never dropped. Worse, the pull was no longer `pending`, so the expiry path that
+would have cleaned it up no longer applied either. Permanently stuck, with no
+recovery path and no rule broken.
+
+**The declarative fix: `requiresInBatch`.** A collection-level key that refuses
+any mutating write unless the same atomic batch also writes the named path(s):
+
+```jsonc
+"positions/$positionId": {
+  // bare array = create/update/delete; or per-action:
+  // { "update": ["pool/main", "nftescrow/$positionId"], "delete": ["pool/main"] }
+  "requiresInBatch": ["pool/main"],
+  "rules": { ... }
+}
+```
+
+- Entries may bind the collection's OWN path variables
+  (`"nftescrow/$positionId"` resolves with the matched write's id, exactly like
+  `getAfter(/nftescrow/$positionId)` in a rule).
+- A refused batch answers 403 `incomplete_batch` **naming the missing path**.
+- A single-document `set` or `delete` is a batch of one, so it is refused
+  whenever the collection requires companions for that action — route the whole
+  operation through one `setMany`.
+- Presence is sufficient: the batch is all-or-nothing, so a required write that
+  is present but fails its own rule aborts everything anyway.
+- It is a runtime obligation, not a proof obligation — `bounded verify` output
+  does not change, and the enforcement is fail-closed on every client batch
+  (HTTP and WebSocket alike).
+
+Declare it on every collection whose writes only make sense alongside an
+aggregate, escrow, or ledger leg. The cross-referencing technique below remains
+the deeper tool when you also need the *content* of the companion writes bound,
+not just their presence.
+
+**The content-binding fix: make the legs require each other.** Pick the aggregate as the anchor,
+have it name the documents it is moving for, and have each document require to
+see that aggregate move in the same batch:
+
+```jsonc
+// on the aggregate: name what this write is for
+"poolAllocate": "@newData.lastOp == \"allocate\"
+                 && getAfter(/positions/@newData.lastRef).drawId == @newData.lastAcq
+                 && getAfter(/solcredits/@newData.lastAcq).kind == \"pullfee\""
+
+// on each document: refuse unless the aggregate moved for ME
+"positions": "... && getAfter(/pool/main).lastOp == \"allocate\"
+                  && getAfter(/pool/main).lastRef == $positionId"
+```
+
+Two notes from doing this:
+
+- **`get()`/`getAfter()` cannot be nested.** `get(/a/getAfter(/b/x).ref)` is
+  rejected, so when one rule must reach two related documents, carry a SECOND
+  reference field on the anchor (`lastRef` and `lastAcq` above) rather than
+  chaining through one.
+- **Ask the question directly for every multi-document operation you write:**
+  *if a caller sent only some of these writes, would each remaining rule still
+  pass?* If yes, you do not have an operation — you have several writes that
+  usually travel together.
 
 Composition rules:
 
@@ -244,6 +388,44 @@ Composition rules:
 - **Distinct paths per entry** — in-batch path collisions reject.
 - Invariants are evaluated against the **whole batch** (that is how the
   balanced transfer above passes `conserve`).
+
+### Require companion writes with `requiresInBatch`
+
+Atomicity does not force a caller to include every logical leg.
+A hostile client can otherwise omit one write and submit a smaller batch whose remaining rules all pass.
+Declare `requiresInBatch` on a collection when mutating one document is only valid with specific companion paths:
+
+```json
+"positions/$positionId": {
+  "requiresInBatch": {
+    "update": ["pool/main", "nftescrow/$positionId"],
+    "delete": ["pool/main"]
+  },
+  "rules": {
+    "read": "true",
+    "create": "@user.id != null",
+    "update": "@user.id != null",
+    "delete": "@user.id != null"
+  }
+}
+```
+
+A bare string array applies to create, update, and delete.
+The per-action object may contain only `create`, `update`, and `delete`, with at most eight distinct document paths per action.
+A referenced `$variable` must be bound by the declaring collection's own path template.
+The required path must address another collection declared in the same policy and cannot be a vacuous reference to the declaring collection itself.
+
+A single-document set or delete is still a batch of one and is refused when it lacks a required companion.
+Any real mutation of the required path satisfies the presence check.
+A delete of a nonexistent document is a no-op and satisfies nothing.
+Because the batch is all-or-nothing, a companion write that fails its own rule or invariant aborts the complete operation.
+The HTTP and WebSocket client mutation lanes enforce this before rule evaluation.
+Platform-derived hook, reveal, room-settlement, and other system writes are outside the client-batch guard and remain governed by their own declarations.
+
+An incomplete batch returns HTTP 403 or a WebSocket error with code `incomplete_batch`.
+The message names the triggering write, declaring collection, and missing concrete paths, and the decision log records the refusal.
+`requiresInBatch` is runtime-enforced and structurally validated.
+It is not an SMT proof obligation, so a green proof report does not replace an allow and deny policy test for the complete batch.
 
 For one-click market settlement, pair this with
 [`proofs.transferAuthority`](policy-reference.md#conditional-transfer-authority):

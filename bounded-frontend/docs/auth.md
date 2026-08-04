@@ -9,7 +9,7 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
 | **CLI/admin auth** | you / your agent | either a wallet/keypair account source or a Bounded web account session | owns/administers apps; wallet mode signs data-plane writes, web mode authenticates control-plane commands |
-| **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP); with `auth.wallets`, supported email/social logins also receive a non-custodial **Crossmint wallet**, so those users carry both `@user.id` and `@user.address`. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
+| **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP). **Turnkey-native auth with eager embedded-wallet provisioning is the default**, so supported email/social users carry both `@user.id` and `@user.address` without an `authMode` or `auth.wallets` override. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
 
 ## CLI auth — wallet/keypair vs web account
 
@@ -21,17 +21,18 @@ CLI has two account-source families:
   (`~/.bounded/accounts/<profile>/credentials`), or `env`
   (`BOUNDED_PRIVATE_KEY`). The keypair is the signing identity; it owns apps
   created with it and signs data-plane writes.
-- **Web account mode**: `bounded account use --web`, then
-  `bounded login --email you@example.com`. This stores refreshable Bounded Auth
-  credentials in `~/.bounded/web-session.json` and uses the web account directly.
-  It does **not** create, link, or reuse a local wallet key. Email OTP is the
-  current CLI web-login method; hosted/social web login uses the same account
-  model when available.
+- **Web account mode**: run `bounded login`. This opens the hosted email/social
+  sign-in page and completes Authorization Code + PKCE through a temporary
+  loopback callback. It stores refreshable Bounded Auth credentials in
+  `~/.bounded/web-session.json`, uses the web account directly, and selects
+  `account.keySource:"web"` for an existing current project. It does **not**
+  create, link, or reuse a local wallet key. Use `bounded login --email
+  you@example.com` for terminal OTP when a browser is unavailable.
 
 ```bash
 bounded whoami                    # shows wallet address or web identity, environment, and source
-bounded account use --web
-bounded login --email you@example.com
+bounded login                     # hosted email/social sign-in
+# bounded login --email you@example.com  # headless terminal OTP fallback
 ```
 
 > **Wallet mode key warning.** A wallet credentials file is auto-generated, never
@@ -58,9 +59,10 @@ contact/login method for the web account. You can **link** a wallet key to a web
 account, and **share** apps with teammates — without anyone juggling raw wallet
 keys:
 
-- **`bounded login`** is a plain **web login** — it signs you in to your web
-  account (the same account you'd use at bounded.sh). No key is involved, and a
-  `bounded login` web session does **not** link any local key.
+- **`bounded login`** is a plain **web login** — it opens the hosted sign-in page
+  and signs you in to your web account (the same account you'd use at
+  bounded.sh). No key is involved, and a `bounded login` web session does
+  **not** link any local key. Headless agents can use `--email` for terminal OTP.
 - **`bounded link`** is wallet-only: it **explicitly attaches THIS device's
   local wallet key** to a **remote Bounded web account**; the current headless
   approval method is email OTP. It runs an OAuth-style **device flow**: the CLI
@@ -119,13 +121,14 @@ array). The keypair is read lazily — only the first signed write needs it.
 ## End-user auth — the `user` object
 
 Your app's users authenticate through `@bounded-sh/client`. The canonical human login is
-**Bounded Auth** — email OTP and OAuth/social login — with
-**`auth.wallets` turned on** so supported email/social logins also get a non-custodial
-**Crossmint wallet** (`@user.address`) without leaving the email flow. That gives
-you the best of both: a stable account identity (`@user.id`) *and* a real wallet on
-those accounts. Browser guests are a separate, offchain-only path. See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
-A purely offchain app may omit `auth.wallets` and its users simply have
-`@user.address == null`; everything else should keep it on.
+**Turnkey-native Bounded Auth**: email OTP and OAuth/social login with eager,
+non-custodial wallet provisioning. Keep the defaults in the majority of apps:
+omit both `authMode` in client initialization and `auth.wallets` in policy.
+After a supported email/social login completes, the user has a stable account
+identity (`@user.id`) and a real wallet (`@user.address`). Add explicit auth
+configuration only to opt out (`auth.wallets: false`) or retain the legacy
+hosted login mode. Browser guests and phone-only sessions are separate cases.
+See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 
 There are **two issuers**: wallet/guest auth (Phantom / anonymous,
 `wallet-auth.bounded.sh`) and **human auth** (email / phone / social,
@@ -164,6 +167,17 @@ your app's vibe:
      secure; the credential never touches your origin. Works web + React Native
      (web needs no `redirectUri`; RN passes an https universal link).
    - **Hosted popup** — `loginWithPopup({ methods })`, when the host UI must stay open.
+   - **In-app unified widget** - `openBoundedWidget({ methods })`. A Shadow-DOM
+     login card rendered inside your app: email + social lanes, plus an optional
+     "Continue with wallet" lane (`wallet: true`). The default email lane runs
+     Turnkey-native OTP inline - no second Bounded OTP and no OIDC redirect for
+     email. Do not pass `authMode: 'turnkey'` in normal app code because it is
+     already the default. An explicit `authMode: 'bounded'` is the legacy hosted
+     BetterAuth path. The app's Turnkey organization must have email OTP configured
+     (application brand + email OTP enabled); that is an issuer-side prerequisite,
+     not a client parameter. `requireEmail: true` in init config makes
+     email mandatory and suppresses the wallet lane. The call resolves with the
+     signed-in `User` and rejects with `Error("cancelled")` when dismissed.
 
 Wallet and guest are unaffected by this choice (they sign locally). Human auth
 always runs through `auth.bounded.sh`; the app owns the button and method selection,
@@ -180,23 +194,24 @@ first-party `*.bounded.sh` origins are always allowed without registration.
 
 | Method | How you start it | Identity result | `@user.address` | Notes |
 |---|---|---|---|---|
-| **email OTP** | `loginWithRedirect({methods:["email"]})` or `loginWithPopup({methods:["email"]})` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | **the canonical login** |
-| **social** (Google/Apple/GitHub) | `loginWithRedirect({provider:"google"})` | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | hosted; the canonical login |
-| **text OTP** | `loginWithRedirect({provider:"text"})` or hosted popup | account id | **Crossmint wallet** with `auth.wallets` (else `null`) | opt-in, off by default |
+| **email OTP** | `openBoundedWidget({methods:["email"]})` | account id | **Turnkey wallet by default** | canonical inline Turnkey OTP; address is available when login completes |
+| **social** (Google/Apple/GitHub) | `openBoundedWidget({methods:["google"]})` or hosted redirect/popup | account id | **Turnkey wallet by default** for email-carrying accounts | canonical social login |
+| **text OTP** | `loginWithRedirect({provider:"text"})` or hosted popup | account id | `null` for a phone-only session | opt-in, off by default |
+| **unified widget** (email + social + optional wallet) | `openBoundedWidget({methods:["email","google"], wallet:true})` | account id (the wallet lane yields the user's real wallet) | Turnkey for email/social; connected wallet for wallet lane | in-app Shadow-DOM card; Turnkey email OTP is the default |
 | **guest (browser)** | `signInAnonymously()` | durable device id | device keypair address (guest auth remains offchain-only) | zero-friction; `isAnonymous: true`; policy opt-in `auth.anonymous`; requires WebCrypto Ed25519 + IndexedDB |
 | **WALLET (Solana), bring-your-own** | `init({authMethod:"phantom", walletLogin:true})` → `login()` | **real wallet** | **the wallet** | the companion login for users who already have a wallet — see below |
 | **CLI/admin** | `bounded login` / keypair | web account or keypair | keypair addr | builder identity, not end-user |
 
 ### Solana wallet login (bring your own)
 
-> **The companion to the canonical login.** The canonical login (email/social +
-> `auth.wallets`) gives those users a Crossmint wallet; wallet login is for
+> **The companion to the canonical login.** The canonical email/social login
+> gives those users a Turnkey wallet by default; wallet login is for
 > users who **already have** a Solana wallet and want to sign in *with it*. Add it
 > alongside the canonical login by turning it on at `init()` with
 > **`walletLogin: true`** (it's off until you pass the knob — an app that doesn't
 > pass it sees no wallet-login button, and calling wallet login without the knob
 > throws a clear error naming `walletLogin`). The two coexist: a bring-your-own
-> user keeps their real wallet as `@user.address`, and `auth.wallets` never
+> user keeps their real wallet as `@user.address`, and embedded provisioning never
 > overwrites it.
 
 When enabled, wallet login lets a user **connect their own Solana browser wallet**
@@ -227,19 +242,21 @@ Advanced: pass an object instead of `true` to point at a specific wallet or brid
 custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
 `authMethod: "wallet"` is an alias for `"phantom"`.
 
-> **Wallet login vs `auth.wallets` (embedded wallets) — don't confuse them.**
+> **Wallet login vs the default embedded wallet - don't confuse them.**
 >
-> | | **Wallet login** (`walletLogin: true`) | **Email login + `auth.wallets`** (embedded) |
+> | | **Wallet login** (`walletLogin: true`) | **Default email/social login** (embedded) |
 > |---|---|---|
-> | Who has the key | the **user** (their Phantom/Wallet-Standard wallet) | a non-custodial **Crossmint embedded smart wallet** |
+> | Who has the key | the **user** (their Phantom/Wallet-Standard wallet) | the user through a non-custodial **Turnkey wallet** |
 > | How they log in | connect wallet + SIWS | email/social OTP; the wallet is attached to the login |
 > | `@user.address` | their **real** wallet | the embedded smart-wallet address |
-> | Signing surface | full **local** `signMessage` / `signTransaction` / `signAndSubmitTransaction` (no popup) | `signAndSubmitTransaction` **only**, via a popup with email-OTP approval; `signMessage`/`signTransaction` throw |
+> | Signing surface | full **local** `signMessage` / `signTransaction` / `signAndSubmitTransaction` (no popup) | Turnkey signing with user approval |
 > | Use it when | your users already have wallets / want wallet-native UX | you want email users to get a wallet without ever leaving email login |
 >
 > The two are independent and can coexist. A wallet-login user's `@user.address` is
-> their real wallet and `auth.wallets` will **not** overwrite it (the embedded-wallet
+> their real wallet and embedded provisioning will **not** overwrite it (the embedded-wallet
 > provisioner only runs for email/social logins that don't already carry a wallet).
+> Turnkey is the sole embedded-wallet implementation and is eagerly provisioned
+> by default.
 > See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 
 ### Hosted login — email, social, and text in one flow
@@ -398,9 +415,10 @@ documented choices are:
 | React Native Privy | `authMethod: "privy-expo"` plus an explicit bridged `privyExpoProvider` |
 | Guest | call `signInAnonymously()`; guest is not selected through `authMethod` |
 
-Pair hosted Bounded Auth with `auth.wallets` (policy) when email/social users
-also need a Crossmint wallet. Browser wallet login is the bring-your-own-wallet
-companion for users who already have a Solana wallet and need local signing; see
+Keep the default Turnkey auth and wallet behavior for normal apps. Do not add
+`authMode` or `auth.wallets` merely to get an address: supported email/social
+users receive a Turnkey wallet eagerly. Browser wallet login is the
+bring-your-own-wallet companion for users who already have a Solana wallet; see
 [Solana wallet login (bring your own)](#solana-wallet-login-bring-your-own).
 
 The authenticated `user` object — mirrored into policy as `@user.*` — has **four
@@ -409,17 +427,16 @@ fields**:
 | Field | Type | Meaning |
 |---|---|---|
 | `user.id` | `string` | the **universal stable identity**, **always present** for an authenticated user. For wallet logins it equals the wallet address; for Bounded Auth logins (email, text, OAuth/social) it is the account identity. **Use this for ownership / membership / identity / auth guards.** |
-| `user.address` | `string \| null` | a **real onchain wallet address**. With the canonical `auth.wallets` config it is the user's **Crossmint wallet**, populated for email/social logins too (a bring-your-own wallet login sets it to that real wallet). `null` only when the app runs without `auth.wallets` and the user has no connected wallet. **Use this for onchain operations / wallet semantics — not as the identity key.** |
+| `user.address` | `string \| null` | a **real onchain wallet address**. By default it is the email/social user's eagerly provisioned **Turnkey wallet**; a bring-your-own wallet login sets it to that real wallet. It can be `null` for guest/phone-only sessions or when wallets are explicitly disabled. **Use this for onchain operations / wallet semantics, not as the identity key.** |
 | `user.email` | `string \| null` | the verified, lowercased email for email/OAuth accounts. It is `null` for wallet and phone-only text users. Use it only when email-gating is genuinely intended. |
 | `user.isAnonymous` | `boolean` | `true` for a zero-friction **guest** (`signInAnonymously()`); `false` for any real (email/social/text/wallet) login. Drives the "create a real account" prompt. Mirrored in policy as `@user.isAnonymous` (offchain; write `== false` to gate guests out). |
 
 - **Bounded Auth** (the canonical login) supports email OTP, optional text OTP (when
   enabled), and OAuth/social login (Google, Apple, GitHub today) through the
-  hosted issuer (`loginWithRedirect` / `loginWithPopup`).
-  Bounded Auth users authenticate as an **account identity** — a stable `@user.id` —
-  and with **`auth.wallets`** on (the canonical config) they also carry a
-  non-custodial **Crossmint `@user.address`**. Without `auth.wallets`, `@user.address`
-  is `null` unless a wallet is connected. Phone-only text users have
+  hosted issuer or unified widget.
+  Bounded Auth users authenticate as an **account identity** - a stable `@user.id` -
+  and by default also carry a non-custodial **Turnkey `@user.address`**. Explicit
+  `auth.wallets: false` disables embedded-wallet provisioning. Phone-only text users have
   `@user.email == null`.
 - **Phantom (wallet login)** is the **bring-your-own-wallet companion** — it connects
   an existing Solana wallet directly (the "connect wallet" choice), turned on at
@@ -479,20 +496,19 @@ caller writing `owner: null` satisfies `null == null`. The proof engine hands
 you that exact counterexample if you forget it
 ([verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md)).
 
-Use `@user.id` — **not** `@user.address` — for ownership, membership, allowlist
+Use `@user.id` - **not** `@user.address` - for ownership, membership, allowlist
 gates, and bare auth guards. `@user.id` is always present the instant a user is
-authenticated, so it never breaks a login. This holds **even with the canonical
-`auth.wallets` config**: a brand-new email's Crossmint `@user.address` is provisioned
-in the background and lands on the user's *next* login, so keying ownership on
-`@user.address` would intermittently break first-time users. `@user.id` has no such
-lag — reach for it for identity, and treat `@user.address` as the wallet.
+authenticated. Even though default Turnkey provisioning eagerly makes the wallet
+address available when a supported email/social login completes, identity rules
+should not depend on wallet-provider behavior. Reach for `@user.id` for identity
+and treat `@user.address` as the wallet.
 
-> **`@user.address` for wallet semantics.** With the canonical `auth.wallets` config
-> (`{ "auth": { "wallets": true } }`), the issuer attaches a non-custodial Crossmint
-> wallet to **every email-carrying login** and populates `@user.address` — so it is
+> **`@user.address` for wallet semantics.** With the default Turnkey configuration,
+> the issuer eagerly attaches a non-custodial wallet to supported email/social
+> logins and populates `@user.address`, so it is
 > safe to *use* for onchain operations and wallet lookups for email/social users, not
-> just wallet-login users. Keep keying **ownership/identity** on `@user.id` (no
-> first-login lag); use `@user.address` for the wallet. See
+> just wallet-login users. Keep keying **ownership/identity** on `@user.id`; use
+> `@user.address` for the wallet. See
 > [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 
 **Onchain-only rule for `@user.address`:** inside an **`onchain: true`**
@@ -513,12 +529,72 @@ wallet address; for onchain operations that is `@user.address`. Server logic is
 just another authenticated actor the rules judge — give the vault key the access
 its rules require, no more.
 
+## When a session expires
+
+Access tokens are short-lived and the SDK refreshes them for you. What matters is
+how a session that **cannot** be refreshed reaches your code, because it is not a
+policy failure and must not be handled like one.
+
+**An expired or otherwise rejected credential is a `401`, never a `403`.** The
+runtime answers `401 { error: "invalid_or_expired_token", code:
+"invalid_or_expired_session" }` before any rule runs, so a dead session can never
+be mistaken for "this user is not allowed to do that". Sending no credential at
+all is still anonymous, unchanged — public reads keep working for logged-out
+visitors.
+
+The SDK refreshes and replays the request for you, so you normally never see this.
+When the session genuinely cannot be revived, the call rejects with a typed error
+instead of quietly falling back to an anonymous request:
+
+```ts
+import { isAuthExpiredError } from "@bounded-sh/client";
+
+try {
+  await set(`runs/${runId}`, { owner: me.address });
+} catch (e: any) {
+  if (isAuthExpiredError(e)) {
+    // e.code === 'auth_expired'  -> the session is gone; prompt a fresh login
+    // e.code === 'auth_changed'  -> a different account signed in mid-request;
+    //                               the request was NOT replayed as them
+    return showSignIn();
+  }
+  throw e;   // a real policy denial (BoundedDeclineError) or anything else
+}
+```
+
+**Never treat a `403` / `policy_denied` as "log in again".** It means an
+authenticated caller was judged and refused. Retrying it with a fresh token
+changes nothing.
+
+**Drive connected-state UI from `onAuthStateChanged`, not from a snapshot.** A
+wallet extension can stay connected long after the Bounded session behind it has
+expired, and it is the Bounded session that authorizes writes. `onAuthStateChanged`
+fires when a session dies on its own — not only on an explicit `logout()` — so a
+header, a "connected" badge, or anything bound to `user.address` stays truthful:
+
+```ts
+onAuthStateChanged((user) => setWallet(user?.address ?? null));
+```
+
+Reading `getCurrentUser()` once at mount is the trap: it never updates, so the UI
+keeps advertising a wallet the server no longer accepts.
+
+> **`logout()` and `clearSession()` are async — await them.** Session removal is
+> serialized across browser tabs, so a call you do not await can return while the
+> credential is still readable, and the very next request authenticates as the
+> user who just left.
+
+> **Auth guards use `@user.id != null`.** `@user.isAnonymous == false` is *not* an
+> authentication check — it distinguishes a guest from a real login, and it is also
+> `false` for a caller with no session at all. Always lead with `@user.id != null`
+> (or `@user.address != null` inside an `onchain: true` collection).
+
 ## Related
 
 - [../guides/building-a-webapp.md](building-a-webapp.md) — wiring end-user auth into a web app
 - [../guides/building-for-agents.md](../../bounded-backend/docs/building-for-agents.md) — the zero-ceremony keypair flow
 - [sdk-reference.md](sdk-reference.md) — `login` / `useAuth` / `createWalletClient`
-- [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md) — `auth.wallets`: a non-custodial wallet + `@user.address` on every email login
+- [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md) - default Turnkey wallet provisioning and `@user.address` for email/social login
 - [admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md) — control-plane collaborators vs data-plane rules (no god-mode)
 - [access-control.md](../../bounded-backend/docs/access-control.md) — control roles, sharing by email (registered or brand-new), external contributors & platform super-admins
 - [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — `link`, `share`/`unshare`/`collaborators` flags

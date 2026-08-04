@@ -112,6 +112,9 @@ Boundaries:
 
 - A listing belongs to its seller, an order to its buyer → `tenantTag` on each.
 - Per-buyer daily spend ceiling → `rollingSum` with `scopeVariable: "$buyerId"`.
+- An order's `amountUsd` and `seller` must match the referenced **active**
+  listing → cross-checked against the listing in the order's `create` rule, so
+  the proven cap is over the real price, not a buyer-supplied number.
 - Orders immutable → `update`/`delete` are `"false"` (rules, not invariants).
 
 ```json
@@ -135,7 +138,7 @@ Boundaries:
     "tier": "durable",
     "rules": {
       "read": "@user.id != null && $buyerId == @user.id",
-      "create": "@user.id != null && $buyerId == @user.id && @newData.buyer == @user.id",
+      "create": "@user.id != null && $buyerId == @user.id && @newData.buyer == @user.id && get(/sellers/@newData.seller/listings/@newData.listingRef).active == true && @newData.amountUsd == get(/sellers/@newData.seller/listings/@newData.listingRef).priceUsd",
       "update": "false",
       "delete": "false"
     },
@@ -155,6 +158,17 @@ can't be rewritten. Each order is a new document with a fresh id. The `$buyerId
 == @user.id` guard means the path itself enforces "you may only place
 orders under your own buyer id."
 
+A proven cap is only as trustworthy as the field it sums. If the buyer could
+write `amountUsd` freely, they could place a real order for a $500 listing with
+`amountUsd: 0` and the "proven" $5,000/day ceiling would mean nothing. So the
+`create` rule cross-checks the order against the referenced listing:
+`get(/sellers/@newData.seller/listings/@newData.listingRef)` must be `active`,
+and `@newData.amountUsd` must equal that listing's `priceUsd`. Because the listing
+path segments *are* `@newData.seller` and `@newData.listingRef`, the order's
+`seller` is bound to a real listing too - a buyer can't name an arbitrary seller,
+price, or item. (For price lists that change between order placement and
+settlement, derive the order server-side in a function instead.)
+
 ---
 
 ## C — Realtime game (rooms, tick, fog-of-war, settlement)
@@ -172,8 +186,11 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
   `hooks.tick` advances state. Clients write to `intents` only.
 - Fog-of-war: each player reads only `view/$playerId` where `$playerId ==
   @user.id`.
-- The per-player rate cap is a `rollingSum`, which **requires `durable` tier**,
-  so the `intents` collection is durable while the rest of the room is ephemeral.
+- The per-player rate cap is a `rollingSum` scoped on `$playerId` (**not**
+  `$roomId` - a room-scoped cap would share one 20/sec budget across the whole
+  room, letting one player eat it and freeze everyone else), and it **requires
+  `durable` tier**, so the `intents` collection is durable while the rest of the
+  room is ephemeral.
   The create rule **pins `@newData.weight == 1`** so a client can't append a
   `weight: 0` intent to bypass the cap. (Recipe for capping an action via a
   separate event log:
@@ -202,18 +219,18 @@ Design moves (full rationale in [realtime-and-games.md](realtime-and-games.md)):
       "settleFrom": { "collection": "rooms/$roomId/scores/$playerId", "field": "points", "op": "sum", "as": "total" }
     }
   },
-  "rooms/$roomId/intents/$intentId": {
+  "rooms/$roomId/players/$playerId/intents/$intentId": {
     "tier": "durable",
     "fields": { "player": "String", "kind": "String", "weight": "UInt" },
     "rules": {
       "read": "false",
-      "create": "@user.id != null && @newData.player == @user.id && @newData.weight == 1",
+      "create": "@user.id != null && $playerId == @user.id && @newData.player == @user.id && @newData.weight == 1",
       "update": "false",
       "delete": "false"
     },
     "invariants": [
       { "type": "rollingSum", "name": "input_rate_cap",
-        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$roomId" }
+        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$playerId" }
     ]
   },
   "rooms/$roomId/view/$playerId": {

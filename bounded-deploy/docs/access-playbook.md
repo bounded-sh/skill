@@ -67,6 +67,38 @@ bounded access --app-id <id>                                          # check as
 The grant is real if *any* of your identities shows it. Don't stop at the first
 one that 403s.
 
+On CLI ≥ 0.0.73 the identity default is **email-first**: a signed-in email
+session outranks an auto-created *unlinked* keypair, and `bounded whoami` leads
+with the account. If your CLI silently acts as a fresh keypair while a web
+login exists, that's the pre-0.0.73 behavior — `bounded update` first, then
+re-run `bounded whoami`.
+
+### 1b. Owner-only operations (`share`, roster, transfer): find WHICH login is the owner
+
+`bounded share` and roster changes are **owner-only** (or `access:manage`), so
+the wrong-identity problem bites hardest here. Don't spend turns hunting for
+keypair files. The identity model is: wallets and emails that belong to the same
+person are **linked into one account**, and a grant held by the wallet is
+carried by a login to the linked email. So:
+
+```bash
+bounded access --app-id <id> --json      # shows the owner identity (often a wallet)
+bounded whoami                            # who you are now; account info shows linked identities
+cat ~/.bounded/account.json               # which email the owner wallet is linked to
+bounded login --email <that-email>        # an OTP login to the LINKED email carries owner rights
+bounded share <email> --role viewer --app-id <id>
+```
+
+If the owner is a wallet linked to `person@example.com`, logging in as that
+email IS acting as the owner — you do not need the wallet's keypair on disk.
+Only a wallet linked to no email requires the actual keypair
+(`bounded account use --global` / the profile holding it).
+
+Also: if `bounded share` returns a **5xx**, the grant may still have landed
+(some failures happen after the roster write — a retry then says "Address is
+already a collaborator"). **Verify with `bounded access --app-id <id>` before
+retrying or concluding failure.**
+
 ### 2. `requires a keypair` on a web session = a CLI-version bug, not a wall
 
 A **web-login session is platform-scoped**, and the CLI performs the deploy on
@@ -165,6 +197,45 @@ bounded share <email-or-wallet> --role admin     --app-id <id>   # Team+ owner o
 - Share **by email** works even if the recipient has never signed up — the grant
   binds the instant they verify that email. So the ask to the owner is concrete:
   *"run `bounded share <my-email> --role developer --app-id <id>`."*
+
+## Letting people INTO a private app without naming them: invite codes
+
+`bounded share` is for people you can name, and it grants a real role. For a slow
+rollout of a **private** app to people you cannot enumerate, mint invite codes
+instead. Redeeming one makes the visitor a **member**: they get past the private-site
+wall and appear to the app's own policy rules, and nothing else. A member holds no
+capability and takes no collaborator seat, so codes never become a way to reach
+`policy:deploy` or the roster.
+
+Codes live on the app, not in `policy.json` (a code is a secret; policy is public).
+The owner-side surface is `access:manage`-gated:
+
+| Do this | Endpoint |
+|---|---|
+| Mint (`count`, `maxUses`, `expiresDays`, or a vanity `code`) | `POST /app/:id/invites` |
+| List codes (metadata only) | `GET /app/:id/invites` |
+| Revoke a code | `DELETE /app/:id/invites/:codeId` |
+| List / remove members | `GET`, `DELETE /app/:id/invites/members[/:accountId]` |
+
+Things worth knowing before you design a rollout:
+
+- A **random** code's plaintext is returned exactly once, at mint. It is stored only
+  as a peppered HMAC, so nobody (including the owner) can read it back later. A
+  **vanity** code (`FRIENDS2026`) is stored in the clear so it can be listed, and is
+  matched case-insensitively.
+- Redeeming requires a **signed-in** account; guest/anonymous sessions are refused,
+  because membership binds to a durable account id.
+- Revoking a code blocks **future** redemptions only. People who already redeemed it
+  keep access (remove them individually), and referral codes minted underneath it stay
+  valid. A revoked code's value can never be minted again.
+- Codes are inert while the app is public - there is no wall to pass.
+- Visitors redeem on the private-site wall itself, which has an invite-code box, or at
+  `POST /__bounded/gate/redeem` with their app session.
+
+To let members invite their own friends, add `access.invites.referrals` to
+`policy.json` - see
+[access-control.md](../../bounded-backend/docs/access-control.md), which also covers
+gating collections on `get(/__invitees__/@user.id)`.
 
 ## The whole playbook in one flow
 

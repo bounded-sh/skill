@@ -216,6 +216,47 @@ modify an entry (the `__`-prefixed paths are write-blocked), so nobody can self-
 This keeps the no-god-mode + provability guarantees: the control plane *seeds* the data
 plane, policy still governs everyone.
 
+## Invite codes - gating data on "redeemed an invite"
+
+A private app can hand out invite CODES instead of granting access one email at a time
+(see the bounded-deploy skill for minting them). When someone redeems a code they become
+a **member**, and the platform records that at `/__invitees__/<accountId>` - another
+read-only projection your rules can opt into:
+
+```jsonc
+"members/$id": {
+  // any account that redeemed ANY invite code for this app
+  "rules": { "read": "get(/__invitees__/@user.id) != null" }
+},
+"founders/$id": {
+  // narrower: only the people who came in on a specific code
+  "rules": { "read": "get(/__invitees__/@user.id).code == 'FOUNDERS2026'" }
+}
+```
+
+The record carries `code` (the vanity label, or the code id for a random code), `kind`
+(`owner` or `referral`), `invitedBy` (the account id of whoever minted it) and
+`redeemedAt`. Like the role sets above it is platform-written and write-blocked, so an
+app can never mint its own membership; and because it is a `__` path it cannot be declared
+as a collection, listed, or joined - rules read it, nothing else.
+
+Membership is deliberately NOT a control-plane grant: it carries no capability and no
+billing seat, so no code (and no referral chain) can become a route to `policy:deploy`.
+
+Referrals are opt-in from the `access` block:
+
+```jsonc
+"access": {
+  "invites": {
+    "referrals": { "codes": 3, "maxUses": 1, "expiresDays": 30 }
+  }
+}
+```
+
+`codes` (1-20, required) is how many codes each member may mint for friends; `maxUses`
+(1-100, default 1) and `expiresDays` (1-365, default none) shape the codes they mint.
+Omit the block entirely and members cannot mint anything.
+
 ## Platform use-case — super-admins (multi-tenant apps on Bounded)
 
 Building a **platform** (a multi-tenant SaaS, marketplace, or tool where *your* users each

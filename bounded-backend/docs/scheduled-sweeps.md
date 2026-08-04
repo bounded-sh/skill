@@ -26,7 +26,22 @@ rule for direct invocation and for the privileged function declaration.
 Deploy the function before, or with, the policy that schedules it.
 
 This is a compact policy shape. Replace both service-address placeholders with
-the same address. Keep the bootstrap-safe admin collection from your app.
+the same address — the address of a **service identity whose key the platform
+holds**, never a person's wallet. The sweeper keypair is provisioned for the
+function's `actAs` identity and stays in the server/platform environment that
+runs the schedule; it must never be the founder's wallet (the `FOUNDER`
+constant sits directly above and is the wrong guess), an end user's wallet, or
+any key a human can sign with. Whoever holds the sweeper key can write
+`launches/`, `dirty/`, and `tickstate/` directly through the data plane,
+bypassing every invariant the `tick` function enforces. Keep the
+bootstrap-safe admin collection from your app.
+
+`@user.address` is the right guard key here, and nowhere else in this shape:
+an `actAs` service identity is an address, not an account, so it cannot be
+keyed on `@user.id`. This is the service-identity exception to the family rule
+(bounded-frontend SKILL) that ownership, membership, and auth guards for human
+principals key on `@user.id` and reach for `@user.address` only for
+wallet/onchain semantics.
 
 ```json
 {
@@ -77,7 +92,7 @@ the same address. Keep the bootstrap-safe admin collection from your app.
       "read": "@user.id != null",
       "create": "@user.id != null && @newData.at >= @time.now - 120 && @newData.at <= @time.now + 120",
       "update": "@user.id != null && @newData.at >= @time.now - 120 && @newData.at <= @time.now + 120",
-      "delete": "@user.address == @const.SWEEPER"
+      "delete": "@user.address == @const.SWEEPER && @data.at <= get(/tickstate/sweep).at"
     }
   },
   "tickstate/$key": {
@@ -117,6 +132,19 @@ the same address. Keep the bootstrap-safe admin collection from your app.
 Any signed-in identity may create or refresh `dirty/$slug`. Only the sweeper
 may delete it. A false flag causes a truthful recomputation, not an authorized
 state change. The time check rejects stale or far-future flag timestamps.
+
+The delete rule is **delete-if-unchanged**: it also requires the flag's current
+`at` to be no newer than the pass-start timestamp the tick stamps into
+`tickstate/sweep` before processing. This closes the **read-then-delete race**:
+the tick reads `dirty/` at T0 and deletes after processing at T1, and any flag
+re-created by user activity in between carries a fresh `at`, so the delete is
+denied and the flag survives for the next pass instead of being wiped without
+its item ever being processed. Without the guard that lost update has no error
+surface; the only backstop is the round-robin cursor, which can take hours to
+reach the entity on a large collection (`SWEEP_LIMIT` per minute). The stamp
+must land before the deletes (the reference code writes `tickstate/sweep`
+first); if that write fails, the rule denies every delete and the flags are
+retried next pass — fail-closed.
 
 Write the flag in the same atomic batch as the activity when both writes use the
 same data plane:
@@ -216,6 +244,10 @@ export default async function tick(_args: any, ctx: any) {
   }
 
   for (const slug of dirtySlugs) {
+    // Delete-if-unchanged: the rule compares the flag's CURRENT `at` against
+    // the pass start stamped in tickstate/sweep, so a flag refreshed by user
+    // activity since the T0 read is denied here and survives for the next
+    // pass. The catch absorbs that expected denial.
     await ctx.bounded.delete(`dirty/${slug}`).catch(() => {});
   }
 
@@ -296,7 +328,9 @@ atomic `setMany` for side effects that must occur exactly once.
 - Give it a narrow `actAs` identity. Gate manual invocation with admin auth.
 - Query due states with structured filters.
 - Coalesce activity into `dirty/<entityId>`.
-- Let signed-in actors flag. Let only the service identity clear.
+- Let signed-in actors flag. Let only the service identity clear, and clear
+  delete-if-unchanged (flag `at` no newer than pass start) so a flag refreshed
+  mid-pass survives for the next pass.
 - Read one ordered cursor page with a fixed `SWEEP_LIMIT`.
 - Store the opaque cursor in service-only `tickstate/sweep`.
 - Deduplicate all candidates before processing.

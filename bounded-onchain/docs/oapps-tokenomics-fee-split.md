@@ -2,10 +2,18 @@
 
 > **HISTORICAL WORKED EXAMPLE.** This document preserves the superseded 55%
 > treasury / 25% creator / 20% Poof reference policy. The current canonical,
-> shipped split is **10% venue / 20% creator / 20% steward / 50% app reserve**.
+> shipped split is **10% platform / 20% creator / 20% steward / 50% app
+> reserve**. Label mapping across docs: the platform leg is the "venue" and the
+> app reserve is the "treasury" - same recipients, and the shipped oapps.fun
+> policy (`treasury/$slug`) states the same split reserve-first as
+> 50/20/20/10.
 > The shipped model uses a treasury ledger with transitions proven at the rule
 > layer, plus a permissionless `distribute` update. Port the mechanics below, not
 > its recipients or percentages.
+>
+> **Current devnet status: blocked.**
+> The Meteora config is bound to a retired Bounded program authority and must be replaced by a Meteora operator.
+> This document and its example are verify-only source references until that blocker is cleared and live acceptance evidence exists.
 
 **What's in here / when to read this:** you launched a token on Meteora (see
 [meteora-token-launch.md](meteora-token-launch.md)) and now you need to *route the
@@ -20,8 +28,8 @@ allowance** (a proven rolling burn cap).
 
 > Every collection below is copied from the Z3-verified reference policy at
 > [examples/oapps-tokenomics/policy.json](../examples/oapps-tokenomics/policy.json).
-> Signatures match `plugin-contracts.ts` exactly. What Z3 proves vs what stays
-> trusted is stated honestly at the end — read that block before you quote any
+> Signatures match `plugin-contracts.ts` exactly, which establishes source shape rather than live network availability. What Z3 proves vs what stays
+> trusted is stated honestly at the end - read that block before you quote any
 > guarantee.
 
 ## The shape of the split
@@ -30,7 +38,7 @@ allowance** (a proven rolling burn cap).
                          each trade's fee
                                │
         ┌──────────────────────┴───────────────────────┐
-        │ TIER 1 — native 2-party leg (on the pool)     │
+        │ TIER 1 - native 2-party leg (on the pool)     │
         │                                                │
    feeAccount="treasury"                    preMigratedCreatorFeePercentage=45
    → 55% direct to the Treasury PDA         → the 45% "creator" leg accrues to
@@ -38,7 +46,7 @@ allowance** (a proven rolling burn cap).
         │                                                │
         ▼                                                ▼
    done (55%)                        ┌──────────────────────────────────┐
-                                     │ TIER 2 — policy split of feepool │
+                                     │ TIER 2 - policy split of feepool │
                                      │  atomic, permissionless          │
                                      │  creator : Poof = 5556 : 4444 bps│
                                      │  (= 25 : 20 of the whole)        │
@@ -46,7 +54,7 @@ allowance** (a proven rolling burn cap).
 ```
 
 - **55% is native.** Point Meteora's `feeAccount` at the Treasury PDA and that leg is
-  paid by the pool directly — no Bounded write moves it.
+  paid by the pool directly - no Bounded write moves it.
 - **25% + 20% is composed.** The remaining 45% accrues to a shared `feepool` PDA;
   a permissionless Bounded write claims it and splits it creator:Poof by **fixed
   bps literals in policy**. `5556/4444` of the 45% pool is exactly `25/20` of the
@@ -54,7 +62,7 @@ allowance** (a proven rolling burn cap).
 - **The seam is deliberate.** Both bps live in policy, so re-tuning creator≠Poof
   later is a one-line policy change that re-proves, not a plugin edit.
 
-## Tier 1 — the native legs (`launch` + `pools`)
+## Tier 1 - the native legs (`launch` + `pools`)
 
 The config sends 55% to `treasury` and routes the 45% creator leg to the pool
 authority. `preMigratedCreatorFeePercentage = 45` is the only split knob Meteora
@@ -99,7 +107,7 @@ The two PDAs are created once, idempotently, by the `vaults` collection:
 
 `treasury` = the 55% partner leg; `feepool` = the shared creator+Poof split pool.
 
-## Tier 2 — the atomic permissionless distribute (`claims` + `distributions`)
+## Tier 2 - the atomic permissionless distribute (`claims` + `distributions`)
 
 Fees do not auto-sweep. A permissionless `claims` write pulls **both** native legs
 to their PDAs (treasury and feepool), and a permissionless `distributions` write
@@ -120,23 +128,23 @@ claims the feepool leg and splits it in one atomic hook:
 ```
 
 - The recipients (`@const.CREATOR`, `@const.POOF`) and the bps (`5556`, `4444`) are
-  **fixed literals in policy** — a caller cannot redirect a leg or change a share.
+  **fixed literals in policy** - a caller cannot redirect a leg or change a share.
 - Only `@newData.amount` (the claimed lamports snapshot for this cycle) is
   caller-supplied. It sizes both legs via `@MathPlugin.mulDivFloor(amount, bps,
   10000)`. Over-stating it just fails on-chain (insufficient PDA balance); see the
   TRUSTED note below.
 - **Permissionless = reliability.** `create: "@user.address != null"` means any
-  authenticated wallet — trader, keeper, or a good samaritan — can turn the crank.
+  authenticated wallet - trader, keeper, or a good samaritan - can turn the crank.
   Nobody can steal from it because the routing is policy-fixed. (Literally-anonymous
   `create:"true"` is rejected by the write-auth-consistency gate when update/delete
   deny; every actor here has a wallet, so this is permissionless in practice.)
 
-## Phase asymmetry — post-migration is a full 3-way policy split
+## Phase asymmetry - post-migration is a full 3-way policy split
 
 **This is the subtle part.** At graduation the native partner leg zeroes: post-migration
 all DAMM v2 fees route to the creator-authority (`feepool`), not to `feeAccount`. So
 the Tier-1 native 55% *disappears* as a native leg. To keep the 55/25/20 invariant,
-post-migration does the **entire** split in policy — a 3-way distribute of the DAMM
+post-migration does the **entire** split in policy - a 3-way distribute of the DAMM
 claim, `5500 / 2500 / 2000` bps:
 
 ```json
@@ -169,11 +177,11 @@ Same 55/25/20 outcome on both sides of graduation, reached two different ways. T
 prover checks both distribute hooks the same way: fixed recipients, fixed bps,
 caller-supplied `amount` only.
 
-## The keeper — offchain schedule → function → onchain write
+## The keeper / offchain schedule → function → onchain write
 
 Because fees do not auto-sweep, something has to fire `claims` / `distributions` /
 `dammClaims` on a cadence. **A schedule cannot run directly on an onchain
-collection** — a scheduled mutation needs a server signer, which an onchain
+collection** - a scheduled mutation needs a server signer, which an onchain
 collection lacks, and the validator rejects `schedule` on `"onchain": true` (see
 [hooks-scheduled-webhooks.md](../../bounded-backend/docs/hooks-scheduled-webhooks.md#hooksscheduled--schedule--recurring-jobs)).
 So the keeper is **offchain heartbeat → Bounded function (`actAs` a signer) →
@@ -201,11 +209,13 @@ invariants:
 
 ```js
 export default async function keeper(_args, ctx) {
+  // ctx.bounded exposes get/set/setMany/delete/runQuery - there is no `add`.
+  const cycleId = `cycle-${Date.now()}`;
   // 1) claim accrued fees to the treasury (55%) + split-pool (45%) PDAs
-  await ctx.bounded.add('claims', { note: 'keeper' });
+  await ctx.bounded.set(`claims/${cycleId}`, { note: 'keeper' });
   // 2) distribute the split-pool leg creator:Poof = 5556:4444 bps
   //    (amount = keeper-computed claimed lamports for this cycle)
-  // await ctx.bounded.add('distributions', { amount });
+  // await ctx.bounded.set(`distributions/${cycleId}`, { amount });
   return true;
 }
 ```
@@ -213,10 +223,11 @@ export default async function keeper(_args, ctx) {
 - **Reliability-only, not trust.** Every collection the keeper touches is
   permissionless, so if the keeper stalls, anyone can claim/distribute manually and
   get the identical policy-fixed routing. The keeper is a convenience crank, not a
-  privileged party. What *is* proven about it: its `actAs` signer is admin-gated
-  (`auth: get(/admins/@user.id) != null`), so a random caller cannot invoke it as
-  the signer.
-- **Honest gap — the reference keeper only claims today.** The stub above fires only
+  privileged party.
+  What *is* proven about it: its `actAs` signer is admin-gated (`auth: get(/admins/@user.id) != null`), and the `admins/$userId` role is bootstrap-safe rather than self-enrollable.
+  Admin `create` is gated on a founder-genesis / existing-admin clause (`get(/admins/@user.id) != null || @user.id == @const.FOUNDER`), and an `authorityClosure` attestation over `admins/$userId` proves the set only grows through the founder or an existing admin.
+  Because the role is a provably closed set, a random caller cannot enroll themselves and so cannot invoke the keeper as the signer by direct call.
+- **Honest gap - the reference keeper only claims today.** The stub above fires only
   step 1 (`claims`). Steps 2–4 are commented out because `distributions.amount` must
   be the **claimed lamports for this cycle**, and the keeper has to *compute* that
   (read claimable before the claim, or diff the PDA balance) to wire the distribute
@@ -224,11 +235,11 @@ export default async function keeper(_args, ctx) {
   distribute is safe *for whatever amount is asserted*, not that the keeper computed
   it correctly. See `amount` in the TRUSTED block.
 
-## The fee-funded build allowance — a proven rolling burn cap
+## The fee-funded build allowance / a proven rolling burn cap
 
 oApps fund their own AI build spend from the fees they earn. Model it as an
 **append-only spend log** with a `rollingSum` invariant capping spend over a rolling
-window — distinct from the fixed platform trial allowance (that is a flat quota;
+window - distinct from the fixed platform trial allowance (that is a flat quota;
 this is a *self-refilling* budget backed by real claimed fees):
 
 ```json
@@ -254,20 +265,21 @@ this is a *self-refilling* budget backed by real claimed fees):
   is what makes "spend up to what the app earned" a *provable* boundary rather than a
   hope.
 
-## PROVEN vs TRUSTED vs NEEDS-DEVNET (state it honestly)
+## PROVEN vs TRUSTED vs BLOCKED / NEEDS LIVE PROOF
 
 - **PROVEN (Z3, every input):**
-  - **who may trigger** each write — the `rules.create`/`update` proofs (permissionless
-    = any authenticated wallet; the keeper's `actAs` signer is admin-gated).
-  - **the split bps are fixed literals in policy** — `5556/4444` pre-migration and
+  - **who may trigger** each write - the `rules.create`/`update` proofs (permissionless
+    = any authenticated wallet; the keeper's `actAs` signer is admin-gated, and the
+    `admins/$userId` set is provably closed via an `authorityClosure` attestation).
+  - **the split bps are fixed literals in policy** - `5556/4444` pre-migration and
     `5500/2500/2000` post-migration are not caller-supplied; a caller cannot move a
     leg or change a share.
-  - **the build-allowance rolling burn cap** — `rollingSum` holds for every sequence
+  - **the build-allowance rolling burn cap** - `rollingSum` holds for every sequence
     of appends; the 24h budget cannot be overspent.
-- **TRUSTED (in-plugin, not proven — intentional, per design):**
+- **TRUSTED (in-plugin, not proven - intentional, per design):**
   - the Meteora / token plugin bodies that build and server-sign the txns, and that a
     `transfer` of `mulDivFloor(amount, bps, 10000)` moves exactly that many lamports.
-  - the **`amount` snapshot** on `distributions` / `distributionsPost` — the claimed
+  - the **`amount` snapshot** on `distributions` / `distributionsPost` - the claimed
     lamports for the cycle is a caller/keeper-asserted write field. This historical
     policy has **no `conserve` invariant** on the treasury. Its split amounts are
     trusted-in-plugin while the policy proves *who-may-trigger + bps validity + the
@@ -275,7 +287,9 @@ this is a *self-refilling* budget backed by real claimed fees):
     Its treasury transitions are proven at the rule layer, and distribution is a
     permissionless update. Over-stating `amount` fails on-chain (insufficient PDA
     balance), so the failure mode is a reverted tx, not a drained pool.
-- **NEEDS-DEVNET (cannot be expressed in policy):**
+- **BLOCKED on current devnet:**
+  - every Meteora transaction and dependent read remains blocked until the replacement config is provisioned for the current Bounded authority.
+- **NEEDS LIVE PROOF after the blocker is cleared:**
   - the **creator-leg (45%) recipient binding.** `createMeteoraVirtualPool(configId,
     tokenId, name, symbol, uri, initialSolBuy?)` has **no source/creator param**
     (confirmed vs `plugin-contracts.ts`), so the creator leg follows the
@@ -285,7 +299,7 @@ this is a *self-refilling* budget backed by real claimed fees):
     extending Bounded so `createMeteoraVirtualPool` takes an explicit creator/source).
   - that a live curve trade under the decay schedule charges the expected fee, that
     migration triggers at `migrationMarketCap`, and that `withdrawLeftover` releases
-    exactly `leftover` — all live-fill residuals, same as in
+    exactly `leftover` - all live-fill residuals, same as in
     [meteora-token-launch.md](meteora-token-launch.md#what-is-proven-vs-what-is-trusted-state-it-honestly).
 
 ## Run it
@@ -298,5 +312,6 @@ verify-only (no `appId`, deploys nothing). From that directory:
 bounded verify
 ```
 
-proves every construct above. See the example README for the one residual (a
-server-side verifier arity, not a policy defect) and how to read the result.
+checks the policy and source contracts above.
+It does not prove that the blocked Meteora integration works on devnet.
+See the example README for the source-verification residual and the current network blocker.

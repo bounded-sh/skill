@@ -60,9 +60,16 @@ function boundedSession(appId, { env = 'production', privateKey } = {}) {
   if (privateKey) e.BOUNDED_PRIVATE_KEY = privateKey;
   execFileSync('bounded', ['data', 'get', '--app-id', appId, '--path', '__login_probe__', '--limit', '1', '--json'],
     { env: e, stdio: 'ignore' });                                   // mint + cache
+  // Resolve the EXACT identity we just minted for and look it up by
+  // "<appId>:<address>". Never fall back to "first session for this app": a
+  // leftover admin session cached for the same app would silently be picked,
+  // seeding the browser as the wrong (more powerful) user and masking a broken
+  // access-control test.
+  const acct = JSON.parse(execFileSync('bounded', ['account', '--json'], { env: e }).toString());
   const all = JSON.parse(readFileSync(join(homedir(), '.bounded', 'sessions.json'), 'utf8'));
-  const k = Object.keys(all).find((x) => x.startsWith(appId + ':'));
+  const k = `${appId}:${acct.address}`;
   const s = all[k];
+  if (!s) throw new Error(`no cached session for ${k}; refusing to substitute another identity`);
   const claims = JSON.parse(Buffer.from(s.id_token.split('.')[1], 'base64url').toString());
   return {
     bounded_session_storage: JSON.stringify({

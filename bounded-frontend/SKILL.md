@@ -24,7 +24,7 @@ domains. To route across the family, see the root **bounded** skill.
 | SDK calls, reads, writes, and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | Build a web app frontend | [docs/building-a-webapp.md](docs/building-a-webapp.md) |
 | Build for React Native / mobile | [docs/building-for-react-native.md](docs/building-for-react-native.md) |
-| Bounded Auth, email OTP, OAuth, browser guest users, optional text OTP — `auth.wallets` gives supported email/social logins a Crossmint wallet | [docs/auth.md](docs/auth.md) |
+| Bounded Auth, email OTP, OAuth, browser guest users, optional text OTP - Turnkey is the default and gives supported email/social logins a wallet address | [docs/auth.md](docs/auth.md) |
 | **Bring-your-own wallet login** (connect wallet, `walletLogin`, `authMethod:'phantom'`) — the companion to the canonical login | [docs/auth.md](docs/auth.md#solana-wallet-login-bring-your-own) |
 | Anonymous users, invite links, account upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | Hosted frontend and app URLs | [docs/frontend-hosting.md](docs/frontend-hosting.md) |
@@ -37,7 +37,9 @@ domains. To route across the family, see the root **bounded** skill.
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
 | `bounded link`, `bounded login`, email OTP, OAuth, guest sign-in | [docs/auth.md](docs/auth.md) |
 | `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom / Wallet-Standard login | [docs/auth.md](docs/auth.md#solana-wallet-login-bring-your-own) |
-| `auth.wallets`, embedded wallet, Crossmint, `@user.address` on an email/social login | [../bounded-onchain/docs/embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md) |
+| `openBoundedWidget`, unified login widget, Turnkey email OTP, default auth mode | [docs/auth.md](docs/auth.md#choosing-your-login-methods--ux) |
+| embedded wallet, Turnkey, `auth.wallets`, `@user.address` on an email/social login | [../bounded-onchain/docs/embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md) |
+| `onramp()`, fund the user's wallet, buy SOL/USDC with a card, Coinbase Onramp, "top up" | [../bounded-onchain/docs/onramp.md](../bounded-onchain/docs/onramp.md) |
 
 ## Rules Of Thumb
 
@@ -45,5 +47,5 @@ domains. To route across the family, see the root **bounded** skill.
 - Denied reads return empty `200` responses, never `403`.
 - Batch reads for lists of computed values with `runQueryMany`; never map `runQuery` over a list. See [sdk-reference.md](docs/sdk-reference.md#batch-your-queries).
 - Put provider API keys in Bounded secrets (backend), never in frontend code.
-- **The canonical email/social login can give each real account a wallet.** Turn on `auth.wallets` (Crossmint, non-custodial) in policy so supported email/social logins carry a real `@user.address` alongside their stable `@user.id`. Browser guests use their device keypair and are not Crossmint-provisioned. See [embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md). A purely offchain app may omit the flag; everything else should keep it on.
-- **`@user.id` (the account id) is identity/ownership; `@user.address` is the wallet.** Key ownership, membership, and auth guards on `@user.id` (always present). Reach for `@user.address` only for wallet/onchain semantics — never as the identity key.
+- **Keep the auth defaults for most apps.** Do not add `authMode` or `auth.wallets` merely to enable wallets. Turnkey is the sole embedded-wallet implementation and the default is Turnkey-native auth with eager provisioning, so a completed email/social login carries a real `@user.address` alongside its stable `@user.id`. Add explicit auth config only to opt out (`auth.wallets: false`) or retain the legacy hosted login mode. Browser guests and phone-only sessions are exceptions. See [embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md).
+- **`@user.id` (the account id) is identity/ownership; `@user.address` is the wallet.** Key ownership, membership, and auth guards on `@user.id` (always present). Reach for `@user.address` only for wallet/onchain semantics - never as the identity key.

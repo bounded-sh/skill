@@ -206,7 +206,7 @@ creation time is the clock.
   "agents/$agentId/spend/$spendId": {
     "fields": { "amount": "UInt" },
     "tier": "durable",
-    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null && ($agentId == @user.id || get(/agentMembers/$agentId/@user.id) != null)", "update": "false", "delete": "false" },
     "invariants": [
       { "type": "rollingSum", "name": "per_agent_hourly_cap",
         "field": "amount", "windowSeconds": 3600, "limit": 100, "scopeVariable": "$agentId" },
@@ -216,6 +216,17 @@ creation time is the clock.
   }
 }
 ```
+
+> **A proven cap says nothing about who may add to it, or whether the amount is
+> honest.** `rollingSum` proves the *sum* stays within `limit`; it does not restrict
+> *who* appends or trust the client's `amount`. So the `create` rule must bind the
+> spend record to its owner: here you may append only under your own agent
+> (`$agentId == @user.id`) or an agent you are a listed member of
+> (`agentMembers/$agentId/$userId`). Without that bind, any signed-in user could
+> write a large record under a *victim* agent to exhaust its hourly cap (a
+> cross-tenant denial of service) or poison the usage numbers. For anything that
+> meters real cost, derive `amount` server-side in a function (idempotent), never
+> from the client, and gate writes to that trusted service identity.
 
 | Key | Required | Meaning |
 |---|---|---|
@@ -389,6 +400,16 @@ Semantics and constraints (validated at deploy):
    write-gating cap, so it has no SMT certificate and cannot wedge a deploy. A
    well-formed declaration occupies one advisory slot in the current summary's
    `obligationCount` but does not increment `failedCount`.
+7. **A declaration is fixed while contributions are live.** Once a maintained
+   target has active contributions, changing OR removing that `windowSum`
+   declaration is refused at runtime config activation ("windowSum declarations
+   cannot change while maintained target contributions are active"). This is
+   NOT visible to `bounded verify`: whether contributions are active is runtime
+   state, not something a static proof can see, so verify passes and the change
+   fails when the config activates. Plan the window and field before the first
+   contribution lands. To retire one, drain or expire its contributions first;
+   to retire the *data* it ranks, prefer a status flag over deleting the target
+   document, since a governed target cannot be deleted directly either.
 
 Choose `rollingSum` when you need to **enforce** "no more than X per window";
 choose `windowSum` when you need to **read/rank by** "how much in the last
@@ -699,6 +720,35 @@ For `flowBound`, structural rejection is the current fail-closed boundary; there
 is no onchain implementation. See [proof-coverage.md](proof-coverage.md) for the
 coverage matrix.
 
+<a id="publicreads-exact-conditional-public-read-posture"></a>
+
+## `proofs.publicReads`: exact conditional public-read posture
+
+The deploy verifier normally requires a non-literal read rule to imply an authenticated caller.
+Some collections intentionally allow a public subset, such as a published launch while keeping its private draft hidden.
+Name each such collection exactly once in `proofs.publicReads`:
+
+```json
+{
+  "proofs": {
+    "publicReads": ["launches/$slug"]
+  },
+  "launches/$slug": {
+    "fields": { "visibility": "String", "owner": "String" },
+    "rules": {
+      "read": "@doc.visibility == 'public' || @doc.owner == @user.id"
+    }
+  }
+}
+```
+
+This declaration changes only the deploy-time authentication posture.
+It never widens runtime access, and the collection's `rules.read` expression still decides which documents are visible.
+Use exact declared collection paths with no surrounding whitespace or duplicates.
+Every named collection must exist and declare a non-empty, non-literal `rules.read` expression.
+Do not list a literal `true` read because it is already explicitly public, and do not list a literal `false` read because it is never public.
+An unknown, duplicate, malformed, always-public, or always-denied entry invalidates the whole declaration and makes verification fail closed.
+
 <a id="attestations--global-policy-wide-claims"></a>
 
 ## `proofs.attestations` — GLOBAL, policy-wide claims
@@ -716,7 +766,7 @@ invariant enforcement.
   "projects/$projectId": { "fields": { "owner": "String", "name": "String" },
     "rules": { "read": "@user.id != null && get(/members/@user.id) != null", "create": "@user.id != null" } },
   "agents/$agentId/spend/$spendId": { "fields": { "amount": "UInt" }, "tier": "durable",
-    "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" } },
+    "rules": { "read": "true", "create": "@user.id != null && ($agentId == @user.id || get(/agentMembers/$agentId/@user.id) != null)", "update": "false", "delete": "false" } },
 
   "proofs": {
     "attestations": [

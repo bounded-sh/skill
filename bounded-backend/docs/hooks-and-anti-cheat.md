@@ -129,26 +129,29 @@ the one class no backend fully cures.
       "delete": "false"
     }
   },
-  "matches/$matchId/inputs/$inputId": {
+  "matches/$matchId/players/$playerId/inputs/$inputId": {
     "tier": "durable",
     "fields": { "player": "String", "action": "String", "weight": "UInt", "at": "UInt!" },
     "rules": {
       "read":   "false",
-      "create": "@user.id != null && @newData.player == @user.id && @newData.weight == 1",
+      "create": "@user.id != null && $playerId == @user.id && @newData.player == @user.id && @newData.weight == 1",
       "update": "false",
       "delete": "false"
     },
     "invariants": [
       { "type": "rollingSum", "name": "input_rate_cap",
-        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$matchId" }
+        "field": "weight", "windowSeconds": 1, "limit": 20, "scopeVariable": "$playerId" }
     ]
   }
 }
 ```
 
 (A `rollingSum` field is `UInt`, lives on the collection it caps, and forces
-`tier: "durable"`. `scopeVariable` is a `$path` variable; per-player scoping
-uses a player path segment. The view/state collections stay `ephemeral`.)
+`tier: "durable"`. `scopeVariable` is a `$path` variable; this cap scopes on the
+`$playerId` path segment so each player gets an independent 20/sec budget - a
+`$matchId`-scoped cap would instead be one shared per-match ceiling that a single
+player could exhaust, freezing everyone else. The view/state collections stay
+`ephemeral`.)
 
 > **Pin the cap weight in the create rule** (`@newData.weight == 1`). Without it
 > a client can append `weight: 0` and the rate cap never increments — the limit is
@@ -197,17 +200,22 @@ live; do not let the client self-report the result — see
 ## Onchain-update signing note
 
 Updating a **mainnet** app's policy requires an onchain **authority-permit
-signature** — the on-chain program must see a signed permit from the app
-authority before accepting a new policy. That is real friction for an
-agent-first workflow.
+signature** - the on-chain program must see a permit signed by the wallet that
+owns the app on-chain before accepting a new policy.
 
-- **Deferred.** Frictionless agent signing of the authority permit is on the
-  not currently available. For now a mainnet policy update is a deliberately
-  human-gated step.
-- **The default path never hits it.** Realtime / offchain apps — the default
-  protocol, and what nearly every app starts as — update their policy with no
-  onchain signature at all. You only encounter the permit when you
-  deliberately put a policy on a mainnet onchain program.
+- **The CLI handles it.** `bounded deploy` probes whether a permit is needed,
+  reserves the deploy operation, has the server mint the permit transaction,
+  signs it locally with your CLI key, and submits it with the deploy. The
+  private key never leaves your machine, and no extra command is involved.
+- **It only works if the CLI holds the owner's key.** A mainnet app is owned
+  on-chain by the wallet that created it, and that owner is **immutable**. If the
+  app was created for a wallet this CLI cannot sign with, no policy can ever be
+  deployed to it. Create mainnet apps from the machine holding the key you intend
+  to own them.
+- **The default path never hits any of this.** Realtime / offchain apps - the
+  default protocol, and what nearly every app starts as - update their policy with
+  no onchain signature at all. Devnet apps are admin-managed and need no permit
+  either. You only encounter the permit on a mainnet onchain program.
 
 When advising an agent: assume the default realtime/offchain path and do not
 introduce onchain signing unless the user explicitly targets a mainnet onchain

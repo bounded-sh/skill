@@ -113,11 +113,20 @@ or spoof it.
 - **`@origin.kind` is ALWAYS set** (never null). **Produced today: `'live'`** = a
   live game tick, and **`'user'`** = a direct end-user/SDK call (the
   **no-live-origin sentinel**). `'scheduled'`, `'function'`, `'webhook'` are
-  **reserved for future dispatch paths** (not stamped yet — don't gate on them
-  today; such a rule verifies but never matches at runtime). Because kind is never
-  null, **`@origin.kind == 'live'`** is the way to allow only a live tick, and
-  **`@origin.kind != 'user'`** excludes direct callers — **sound both at runtime
-  and in `bounded verify`**.
+  **reserved for future dispatch paths** (not stamped yet - don't gate on them
+  today; such a rule verifies but never matches at runtime).
+- **For a privileged action, allow-list the exact origin you mean.** Use the
+  positive form `@origin.kind == 'live'` (optionally `&& @origin.module ==
+  '<game>'` plus a path/room bind). An allow-list names what is permitted and
+  stays tight as the platform grows.
+- **Do NOT gate a privileged action on the deny-list `@origin.kind != 'user'`.**
+  It happens to mean "live only" *today* only because `live` and `user` are the
+  sole origins that exist. The instant `scheduled`, `webhook`, or `function`
+  callers ship, they all satisfy `!= 'user'` and are silently admitted - a latent
+  privilege escalation that appears with no change to your app and with the proof
+  still green, because soundness here rests on which caller types happen to exist
+  right now. `!= 'user'` is acceptable only for **non-privileged reads**, and even
+  there, understand that it broadens automatically as new origins go live.
 - `path` / `module` / `room` / `tick` are **null when not applicable** (e.g. all
   null for `kind: 'user'`). So a rule gating on `@origin.module` should also
   require `@origin.kind == 'live'`.

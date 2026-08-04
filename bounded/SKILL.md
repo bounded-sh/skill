@@ -109,7 +109,10 @@ This skill is for Bounded users and app builders. Keep guidance user-facing:
 | `409` + `ai_operation_idempotency_conflict` / `service_invoke_operation_conflict` | An app-global AI/service key was reused with changed actor, model/tool, input, entity, or operation kind. Keep the original request or mint a deliberately new callsite/entity/revision key. |
 | `503` + `ai_operation_attention_required` / `service_invoke_outcome_unknown` | Paid/provider work has an unresolved durable outcome. Do not rotate the key or retry as fresh work; inspect the operation/attention state. |
 | `declined` + boundary name | An escorted external action would cross an Enforced boundary, checked before the call fires ([docs/observe.md](docs/observe.md) / bounded-teams). Read the named boundary; do not retry harder. |
-| `429` + `dimension`/`projectedUsage` | A plan limit or spend cap would be exceeded. Explain the axis; suggest upgrade, top-up, cap change, or less volume ([docs/billing.md](docs/billing.md)). |
+| `409` + `deploy_in_progress` / `operationId` | An earlier exact policy operation still owns the app's deploy slot. The verified owner runs the emitted `recoveryCommand`; the CLI may receive `202` with `state: "processing"` while that same operation is re-proved and reconciled, so let it poll and do not start a normal deploy. The last committed release stays serving, and a finite per-publication recovery owner eventually finishes an already acknowledged safe publication or abandons its candidate. See bounded-deploy. |
+| `402` on `deploy --create` + `project_limit_exceeded` / `dimension: "maxProjects"` | The account reached its project-creation limit. Do not retry or switch wallets. Run `bounded apps list --json`, confirm an approved compatible target with `bounded access`, inspect its active publication with `bounded apps inspect --app-id <id> --json`, and follow [docs/billing.md](docs/billing.md). |
+| `402` + `dimension`/credit details | The account's included AI/services credit or another funded bucket is exhausted. Free accounts upgrade; paid accounts can top up ([docs/billing.md](docs/billing.md)). |
+| `429` + retry details | Either a short operational capacity/burst guard or an app-authored daily, monthly, or participant policy window is active. Preserve the operation, name the exact reason, and retry only after the server's delay. This is not a plan Build entitlement. |
 | `DISPROVED` + counterexample | The proof found a breaking assignment (bounded-backend). Strengthen the policy and verify again. |
 
 ## Billing Basics
@@ -119,10 +122,13 @@ Two user-visible buckets:
 - **AI/external-services bucket**: AI (`ctx.ai` — chat per call, image generation per image, video per second) and managed third-party service proxies (`ctx.services`). Cost-bearing calls reserve fail-closed, settle/refund confirmed outcomes idempotently, and retain ambiguous provider-started outcomes for attention rather than rerunning paid work.
 - **Bounded infra bucket**: metered Bounded platform usage at public rates.
 
-Free accounts include 3 AI builds per rolling day (fast model) plus a small
-AI/external-services trial allowance for runtime services, but cannot top up
-buckets. Pro-or-better accounts can top up eligible buckets. Both the relevant
-bucket and any app-level cap must have room before cost-bearing work runs.
+Free accounts include up to $3 of metered AI/external-services usage per rolling
+30 days, shared by Build, `ctx.ai`, and `ctx.services`, with one Build at a time
+and no daily Build entitlement. Free accounts cannot top up. Pro includes $5
+and Team includes $20 in the same bucket each calendar month while paid; both
+can top up and have higher Build concurrency.
+Both the relevant bucket and any app-level cap must have room before
+cost-bearing work runs.
 
 ## Setup
 

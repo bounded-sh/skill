@@ -87,19 +87,25 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 `!@user.isAnonymous` — the unary `!` isn't supported on special vars.) It's
 **offchain-only** — onchain rules must use `@user.address`.
 
-## 2b. Guests are offchain-only on mainnet — and warn your users
+> **Keep the `@user.id != null` in front of it.** `@user.isAnonymous == false` is
+> not an authentication check on its own: it means "not a guest", and it is also
+> `false` for a caller with **no session at all**. `@user.id != null` is what
+> proves someone is authenticated; `@user.isAnonymous` only narrows *which kind*
+> of authenticated user it is.
+
+## 2b. Guests are offchain-only on mainnet - and warn your users
 
 Treat a guest as a **temporary, try-the-app identity**. Two things the platform does, and one
 thing you must do:
 
-- **The platform blocks guests from writing to MAINNET onchain**, fail-closed — a guest write to
+- **The platform blocks guests from writing to MAINNET onchain**, fail-closed - a guest write to
   a `realtime_mainnet`/`solana_mainnet` (or `*_mainnet_preview`) collection returns
   **403 `anonymous_onchain_blocked`** before any transaction is built. Devnet/testnet, poofnet
   simulation, offchain writes, and onchain reads are all still allowed, so a guest can fully
   explore your app. (See
   [onchain.md](../../bounded-onchain/docs/onchain.md#guests-cannot-write-to-mainnet-onchain-platform-invariant).)
 - **A guest is dropped on upgrade.** Signing in with email or a wallet creates a **new** real
-  account — the guest's keypair, its data, and any funds sitting in the guest device wallet do
+  account - the guest's keypair, its data, and any funds sitting in the guest device wallet do
   **not** carry over (see §3/§4 for the deliberate patterns to migrate data before upgrading).
 
 Because of that, and because the platform can't stop someone *depositing* into a guest's device
@@ -110,7 +116,7 @@ const { user } = useAuthUser();
 
 {user?.isAnonymous && (
   <Banner>
-    You're browsing as a guest. This is temporary — your data and this guest wallet will be
+    You're browsing as a guest. This is temporary - your data and this guest wallet will be
     lost when you sign in with email or a wallet. Don't deposit or send funds to your guest
     account. Sign in to save your progress and transact.
   </Banner>
@@ -269,21 +275,30 @@ owner:
   "accounts/$accountId": {
     "rules": {
       "read": "true",
-      "create": "@user.id == @newData.owner",
-      "update": "@user.id == @data.owner",
+      "create": "@user.id != null && @user.id == @newData.owner",
+      "update": "@user.id != null && @user.id == @data.owner",
       "delete": "false"
     },
-    "fields": { "owner": "String", "label": "String" }
+    "fields": { "owner": "String!", "label": "String" }
   }
 }
 ```
 
-- **create** `@user.id == @newData.owner` — you can only create an account you own.
-- **update** `@user.id == @data.owner` — only the **current** owner may change it.
+- **create** `@user.id != null && @user.id == @newData.owner` — you must be logged
+  in, and can only create an account you own.
+- **update** `@user.id != null && @user.id == @data.owner` — only the logged-in
+  **current** owner may change it.
   Changing `owner` *is* the transfer; the rule checks the *old* owner, so it's
   revocable, auditable, single-owner. `bounded verify`/deploy auto-proves the
   transfer-authority obligation (ownership is transferable but **unseizable**) — see
   [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md).
+- **Reject the logged-out/ownerless case explicitly.** `owner` is `String!`
+  (required, never absent), and both rules require `@user.id != null`.
+  A logged-out caller has `@user.id == null`; without these guards `@user.id ==
+  @newData.owner` collapses to `null == null` (true), letting a stranger create an
+  ownerless account and edit any ownerless row.
+  Guests are fine - an anonymous guest still carries a real `@user.id`, so the
+  transfer/invite flow above is unaffected.
 
 ```ts
 // current owner hands off to recipientId (their @user.id) — only the old owner can:

@@ -44,6 +44,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | Hard field ceilings/floors, anti-cheat bounds | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
 | Trending feeds, leaderboards, "most active" (windowSum + ranked O(k) reads + index pre-declaration) | [docs/trending-feeds.md](docs/trending-feeds.md) |
 | Conditional ownership or holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
+| Restrict what the app's own PAGES may reach (CSP) | [docs/browser-boundary.md](docs/browser-boundary.md) |
 | Constants, reusable rule fragments, `@const`, `@def` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
 | Decide rule vs invariant vs hook vs function | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
 | Functions and external API calls | [docs/functions.md](docs/functions.md) |
@@ -52,7 +53,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 | Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
 | Recurring fleet sweeps without full collection scans | [docs/scheduled-sweeps.md](docs/scheduled-sweeps.md) |
 | What anti-cheat can and cannot prove | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
-| Data-plane read/write semantics and atomic batches | [docs/data-plane.md](docs/data-plane.md) |
+| Data-plane read/write semantics, atomic batches, subset attacks, and required companion writes | [docs/data-plane.md](docs/data-plane.md) |
 | Queries, pagination, aggregates | [docs/queries.md](docs/queries.md) |
 | Files and search | [docs/files-and-search.md](docs/files-and-search.md) |
 | Realtime rooms and games | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
@@ -79,12 +80,15 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 |---|---|
 | `rollingSum`, `windowSum`, `flowBound`, `windowSeconds`, `scopeVariable`, `conserve`, `bound`, `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md) |
 | `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
+| `requiresInBatch`, `incomplete_batch`, missing companion write | [docs/data-plane.md](docs/data-plane.md#require-companion-writes-with-requiresinbatch) |
 | `transferAuthority`, one-click market trade, holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
 | `@const`, `@def`, deploy constants | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
 | `functions`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets` | [docs/functions.md](docs/functions.md) |
 | `ctx.ai.run`, AI NPC | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/ai-npcs.md](docs/ai-npcs.md) |
 | `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, AI image/video, `aiJobs` | [docs/functions.md](docs/functions.md#ctxai-media-generation--images-sync-and-video-async-jobs) |
 | `ctx.services`, managed services, third-party API proxy | [docs/functions.md](docs/functions.md#ctxservices--managed-api-discovery-and-invoke) · [docs/backend-runtime.md](docs/backend-runtime.md) |
+| `ctx.browser`, headless browser drive, egress-fenced | [docs/functions.md](docs/functions.md#ctxbrowser--drive-a-headless-browser-fenced-by-your-egress) |
+| agent identity, `@const.AGENT`, `as: { identity: "agent" }`, drive a signed-in page, QA behind a login | [docs/functions.md](docs/functions.md#driving-your-app-signed-in--the-agent-identity) |
 | `actAs`, `runAs`, service key, payout bot, backend identity | [docs/service-keys.md](docs/service-keys.md) · [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `@origin`, `ctx.origin`, live call provenance | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
 | `roles`, `members`, `read:"*"`, scoped admin | [docs/roles.md](docs/roles.md) |
@@ -102,6 +106,7 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 |---|---|
 | `403` | A write or function invoke failed a rule. Check auth, ownership, roles, or function `auth`. Denied reads are hidden as `200` with empty data, not `403`. |
 | `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
+| `403 incomplete_batch` | A collection's `requiresInBatch` declaration names companion paths missing from the atomic batch. Submit the complete `setMany`. |
 | `DISPROVED` + counterexample | The proof found a breaking assignment. Fix every blocking result and verify again; only non-blocking advisories are reviewable. |
 | Static validation error | Fix policy syntax, field types, tier/invariant pairing, constants, or expression use. |
 
@@ -110,5 +115,6 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 - Use `@user.id` for normal ownership and membership checks; `@user.address` only for wallet/onchain semantics.
 - Denied reads return empty `200` responses. Test read denial with a different permitted identity, not by waiting for a read `403`.
 - Use `conserve` for fixed totals, `rollingSum` for caps over time, and `flowBound` for cumulative per-partition outflow ≤ inflow; use one atomic `set-many` when correctness spans multiple writes.
+- When one write is invalid without companion writes, declare `requiresInBatch` so a hostile client cannot submit only the individually valid subset.
 - Put provider API keys in Bounded secrets, not frontend code.
 - Know the acting principal before writing a rule: a function's `runAs`/`actAs` and `@origin` decide who `@user` is and whether the call is authorized.

@@ -40,6 +40,11 @@ obligation and still not do what you meant — see below.
   denial verbatim → fix the policy → `bounded verify` → `bounded deploy`.
   Tests are the tight inner loop; verify is the gate before shipping.
 
+`bounded tests run` executes the local policy in a fresh throwaway sandbox and does not modify the target app's deployed policy.
+It still needs an existing app ID for authentication and plan context.
+For a brand-new project with no app ID, run `bounded verify` first, create and record the app, then run the policy tests before the next deployment.
+You may instead pass `--app-id` for another app you administer when you need the local-policy test loop before creating the new app.
+
 ## File format
 
 One file per logical concern, `policy-tests/*.json`:
@@ -70,10 +75,13 @@ One file per logical concern, `policy-tests/*.json`:
   denial.
 - **`constants`** — merged over the policy's own `constants` block before
   compile. Shrink a cap here to make a limit testable without 21 real writes.
-- **`$Actor` substitution** — recursive over string values of the parsed JSON,
-  applied before execution (safe, no injection). Bare in a path segment
-  (`"launches/$Alice"`). Inside an expression, quote it as a string literal:
-  `"get(/x).owner == '$Alice'"` — unquoted, it isn't valid expression syntax.
+- **`$Actor` substitution** is recursive over string values of the parsed JSON and is applied before execution.
+  A write-step `path` is a JSON string, but a `get(/...)` or `getAfter(/...)` path inside `expr` is parsed as an unquoted expression path.
+  Literal segments in those expression paths accept only ASCII letters, digits, and `_`.
+  A hyphen is not a path-segment character, so an expression such as `get(/runs/run-001)` is invalid even though `"path": "runs/run-001"` is a valid write path.
+  If one fixture ID must appear in both a write path and an expectation path, use a grammar-safe value such as `run_001`, not a UUID or run ID containing `-`.
+  There is no documented quoted-segment escape for a `get()` expression path.
+  When substitution is used as a scalar value in an expression, quote it as a string literal: `"get(/x).owner == '$Alice'"`.
 
 ### Ops
 
@@ -89,16 +97,33 @@ One file per logical concern, `policy-tests/*.json`:
 | `mock` | `function`, `returns` | Stub a function call (name normalized lowercase, args ignored) for all later steps. |
 | `ensure` | `expr`, `then?` | If `expr` is truthy, run the nested `then` steps; else skip. Without `then`, behaves like `expect` (idempotency helper). |
 | `expect` | `expr` \| `left`+`right` \| `not` | Assert against current sandbox state. Mutually exclusive: `expr` must be truthy; `left`/`right` compare by `JSON.stringify` equality; `not` must be falsy. |
+| `invoke` | `function`, `args?`, `shouldFail?` | Run a policy-declared app function in the sandbox as the current actor. The function's `auth` rule is enforced (same actor/clock/mocks); its declared `actAs` applies; its `ctx.bounded` writes run through the real rules + invariants. `shouldFail` passes on an auth denial OR a function error. `bounded tests run` sends your local `functions/*.ts` sources along automatically (deployed-policy runs have no sources, so `invoke` needs the local-policy loop). |
+| `snapshot` | `name`, `expectSame?` | Capture the sandbox's FULL document state under a name. With `expectSame`, assert it is identical (per-path document data) to a previously captured snapshot — the mismatch report names the added/removed/changed paths. |
 
 `shouldFail: true` on any write op means the step **passes if the write is
 denied** and its denial is recorded — the run only fails if a write that
 should have been denied unexpectedly succeeds.
 
-**Limits:** ≤64KB per file, ≤200 steps per file, ≤50 files per run, 120s wall
-clock per run.
+**The setup-twice gate** (oApp setup-function contract): prove a `setup`
+function is safe to re-run by invoking it twice around snapshots —
 
-**Not yet supported:** `invoke` (calling a hosted function inside a test) is
-planned. Bootstrap/seeding mode and onchain `fund` are out of scope for v1.
+```json
+{ "op": "invoke", "function": "setup", "args": { "slug": "x" } },
+{ "op": "snapshot", "name": "s1" },
+{ "op": "invoke", "function": "setup", "args": { "slug": "x" } },
+{ "op": "snapshot", "name": "s2", "expectSame": "s1" }
+```
+
+**Limits:** ≤64KB per file, ≤200 steps per file, ≤50 files per run, ≤25
+function sources ≤512KB each, 120s wall clock per run.
+
+**`invoke` caveats:** the function's own `Date.now()` is NOT overridden (its
+writes evaluate `@time.now` on the test's logical clock, so avoid `setTime`
+far from real time in files that invoke functions stamping wall-clock into
+time-pinned rules); declared function `secrets` are unavailable in the
+sandbox (such invokes fail closed); `ctx.enqueue` intents and `ctx.build`
+authority are withheld from sandbox runs. Bootstrap/seeding mode and onchain
+`fund` remain out of scope.
 
 ## Running
 
@@ -154,3 +179,39 @@ deploy`.
   against a real deployed app, a different layer than policy tests
 - [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — full
   `bounded tests` flags
+
+## A rejection for the wrong reason is a FALSE GREEN
+
+Adversarial suites — the ones where every assertion is "this write must be
+refused" — are the suites that catch the bugs a green `verify` does not. They
+also fail silently in a way that is worse than no suite at all: **a write can be
+refused because your test document was malformed, and be counted as blocked.**
+
+Two ways it happens, both observed:
+
+- **Schema rejection (HTTP 400).** You added a required field to a collection.
+  Every hand-written attack document in your suite now lacks it, so the platform
+  refuses the *shape* and the rule never runs. The suite still prints "blocked".
+- **A broken test.** `ReferenceError`, a renamed helper, a typo in a path. The
+  call throws, the harness catches, and it looks like the policy defended you.
+
+Classify the failure instead of trusting it:
+
+```js
+if (/status code 400|is not defined|is not a function/.test(msg)) {
+  console.log(`${name} ... NOT TESTED - never reached the policy`);
+  notTested++;               // count as a GAP, never as a pass
+} else {
+  blocked++;                 // an actual policy decline
+}
+```
+
+Two related habits:
+
+- **Assert relatively, not absolutely.** `activeCount === 7` breaks the moment
+  the suite runs twice or against a seeded app, and every later run reads as a
+  protocol failure. Assert the *delta* your operation caused.
+- **A suite that dies in setup reports nothing.** If setup depends on protocol
+  state (a queue being clear, an item being live rather than staged), make it
+  wait for that state explicitly — otherwise a correct behaviour change looks
+  like a broken protocol.

@@ -214,6 +214,31 @@ drafts → engine proves or refutes with counterexamples → human decides.
 > (concrete variable assignments) — those are the ones to fix before deploy. Don't
 > loop trying to "fix" an intentional `false` rule.
 
+## When the prover refuses to even try
+
+A rule can get too big to decide. The failure does not look like a
+counterexample — it says the obligation **could not be conclusively proven**:
+
+```
+positions/$positionId: createdAt is immutable on update — Field immutability
+update rule exact decomposition exceeds aggregate branch budget (8000 nodes)
+```
+
+That is a **complexity** limit, not a logic error, and it usually appears after
+you add another per-case disjunction to an already-branchy update rule. Rules
+generated per tier/level/band are the usual cause: three 17-way disjunctions in
+one update rule multiply out fast.
+
+The fix is to move a check to a **sibling document's rule that must accompany
+the write anyway**. If an aggregate write is mandatory for the transition, the
+per-case check can live there instead, and the budget is spent across two rules
+instead of one. Same guarantee, decidable shape.
+
+Watch what you are trading away: a check only holds if the write carrying it is
+genuinely required. See "Atomic is not the same as COMPLETE" in
+[data-plane.md](data-plane.md) — if the sibling write can be omitted, you have
+moved the check to somewhere it can be skipped.
+
 ## Related
 
 - [policy-generation-guide.md](policy-generation-guide.md) — generating the policy you verify
