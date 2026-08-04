@@ -44,3 +44,9 @@ Preview costs without opening anything: `await onrampQuote({ asset: 'SOL', minAm
 - The Coinbase session is single-use and short-lived, minted for exactly the address/asset requested and bound to the caller's verified login. Anonymous/guest sessions can mint too, but guests have no embedded wallet — pass `address` or upgrade the account first.
 - Purchases run entirely inside Coinbase's checkout: Bounded never sees card details, and the crypto lands directly at the destination address (non-custodial).
 - **Link the hosted wallet page wherever you offer onramp.** Users who fund a wallet need a place to manage it. `https://auth.bounded.sh/wallet` is the hosted, Bounded-secured page for the Turnkey wallet, including its address and passkey-gated export. A simple `<a href="https://auth.bounded.sh/wallet" target="_blank">Manage wallet</a>` next to your fund button is the expected pattern.
+
+## Fiat-funded crypto purchases
+
+Bounded does not provide a shared card-to-USDC merchant checkout.
+If an app wants a buyer to start with fiat and pay a `payments.acceptCrypto` intent, call `onramp({ asset: 'USDC' })` to fund the buyer's Turnkey wallet, wait for a completed fill, then construct and sign the normal direct USDC transfer.
+The app owns that multi-step checkout UX, while Coinbase owns the fiat purchase and Bounded verifies only the final on-chain payment.

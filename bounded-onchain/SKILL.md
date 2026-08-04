@@ -42,7 +42,7 @@ the root **bounded** skill.
 | **Give supported email/social logins an embedded wallet** (`@user.address`), default Turnkey behavior, `auth.wallets` | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
 | Let users **connect their own Solana wallet** (Phantom / Wallet-Standard) to log in - "connect wallet", wallet login, `walletLogin`, `authMethod:'phantom'`, real wallet as `@user.address`, local `signMessage`/`signTransaction` - the **bring-your-own companion** to the canonical login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
 | **Fund a user's wallet with fiat** — `onramp()`, buy SOL/USDC with a card, Coinbase Onramp, "top up", fiat → crypto for the embedded wallet | [docs/onramp.md](docs/onramp.md) |
-| Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail, card→crypto rail seam | [docs/accept-crypto.md](docs/accept-crypto.md) |
+| Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail | [docs/accept-crypto.md](docs/accept-crypto.md) |
 | Bounded Pay (accept card payments, Stripe Connect, fiat) | [docs/bounded-pay.md](docs/bounded-pay.md) |
 
 ## Term Router
