@@ -174,6 +174,17 @@ Where `schedule` is "every N", `dueRows` is "once, when this row is due." A
 document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 `hooks.scheduled.<run>` once when due, then is deleted or marked done.
 
+If the collection declares a schema (a non-empty `fields`), the deploy gate now
+proves the timer can actually fire and complete, and rejects the policy otherwise.
+It requires a declared `"scheduledAt": "UInt"` field (unix seconds), because on a
+schemaful collection an undeclared field cannot be written, so rows could never
+carry a firing time and the collection would silently never fire.
+For `onComplete: "markDone"` it also requires the resolved `doneField` (default
+`done`) to be a declared `Bool` (optionally `Bool?`), because completion writes
+`{ "<doneField>": true }`, which a missing or non-Bool declaration would reject on
+every retry, churning the row forever.
+Schemaless collections (no `fields`) are unconstrained.
+
 ```json
 {
   "reminders/$reminderId": {
@@ -195,7 +206,9 @@ document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 |---|---|---|
 | `run` | yes | a declared `hooks.scheduled.<run>` hook (naming a `functions.<run>` is accepted by the validator but does not fire yet — see the schedule note above) |
 | `onComplete` | no | `"delete"` (default-ish) or `"markDone"` |
-| `doneField` | no | the `Bool` field flipped when `onComplete: "markDone"` |
+| `doneField` | no | the `Bool` field flipped when `onComplete: "markDone"`; on a schemaful collection this field must be declared as `Bool`/`Bool?` or the deploy is rejected |
+
+On a schemaful collection the deploy also requires a declared `"scheduledAt": "UInt"` (see the note above).
 
 Also offchain-only.
 

@@ -118,7 +118,7 @@ need a private key; cryptographic/onchain signing does.
 | `entry` | **Required.** Relative path to the function's source file (e.g. `functions/syncStripe.ts`). No absolute paths, no `..`. |
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
 | `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. |
-| `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. |
+| `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. **Concurrency-bounded:** a sandbox container is a real shared resource, so an app (and an account, across its apps) may only hold a limited number of live containers at once — each distinct `scope` you pass is a distinct container that counts toward the limit, and a container stays counted for a short idle window after your call returns (it is kept warm, not destroyed). Exceeding the limit is a fail-closed `429` `sandbox_concurrency_limit` (with `retryAfterMs`); reuse the **same** `scope` for sequential steps that share a workspace so they share one container instead of each consuming a slot. Sandbox is a paid capability — a plan (or account) with no sandbox allowance is refused with `403` `sandbox_capability_plan_gated`. |
 | `build` | Optional. Grants app-build origination via `ctx.build` (the unified Build system — successor to `ctx.oapps`). `{ profile, create?, edit?, fork?, view?, cancel? }` — the capability *is* the authority (invariant 4). **Cannot** be combined with `webhook` or `browser`: a build capability on an unauthenticated Internet surface would let anonymous callers spend the owner's build funds, so the validator rejects both combinations. Promotion and gate-decision authority are never grantable. See [§ctx.build](#ctxbuild--governed-app-builds). |
 
 **Auth-by-policy is the point.** Because the invocation rule is evaluated by the
@@ -153,7 +153,7 @@ export default async function (args, ctx) {
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](#ctxai--real-ai-no-api-keys) and [§media](#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
-| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **verified enqueuing principal** (or as system when the enqueuer was system), receives `payload` as its `args`, and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
+| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **null system principal** (`ctx.user == null`), never as the enqueuer, so the target must opt in with `queueCallable: true` in policy; it receives `payload` as its `args` and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
 | `ctx.build` | **Governed app builds — `create` / `edit` / `fork` / `get` / `cancel`.** Present only when the function's policy declares a `build` capability; otherwise every method returns `{ ok: false, reason: "build_capability_missing" }` with no network call. Originates AI app builds through the unified Build control plane, funded and governed by the named build profile. See [§ctx.build](#ctxbuild--governed-app-builds). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
@@ -466,30 +466,64 @@ export default async function placeOrder(args, ctx) {
   return { ok: true, jobId };
 }
 
-// Runs LATER as the verified principal that enqueued it; `payload` arrives as `args`.
+// Runs LATER as the null SYSTEM principal (ctx.user == null, ctx.auth.system == true) —
+// a queued replay is NEVER deputized as the enqueuer. The target must opt in with
+// `queueCallable: true` in policy (below); pass any identity the job needs through the
+// payload (it arrives as `args`), not via ctx.user.
 export default async function fulfillOrder(args, ctx) {
-  // For a user-enqueued job, ctx.user is that verified user and
-  // ctx.auth.system is false. A system-enqueued job remains system.
+  // ctx.user is the null system principal here; args.orderId + args.buyer came from
+  // the enqueuer's payload. Do NOT read the caller from ctx.user on a queued run.
   const order = await ctx.bounded.get(`orders/${args.orderId}`);
-  // ... do the slow work, write results through ctx.bounded ...
+  // ... do the slow work, write results through ctx.bounded (as system) ...
   await ctx.bounded.set(`orders/${args.orderId}`, { ...order, status: "fulfilled" });
+}
+```
+
+The queued target must declare `queueCallable: true` in its policy `functions` entry.
+This is the explicit opt-in that authorizes a system-principal background run; a target
+that has not opted in has its queued replay dropped (fail-closed):
+
+```jsonc
+{
+  "functions": {
+    "placeOrder":  { "auth": "@user.id != null", "entry": "functions/placeOrder.ts" },
+    "fulfillOrder": {
+      "auth": "false",              // no human may call it directly
+      "entry": "functions/fulfillOrder.ts",
+      "queueCallable": true          // ...but it MAY run as a queued background job
+    }
+  }
 }
 ```
 
 - **Contract:** `ctx.enqueue(functionName: string, payload?: unknown, opts?: { delaySeconds?: number }): Promise<{ jobId }>`.
 - **What it runs:** `functionName` must be a **deployed function in this app** (a
   function may enqueue another function or itself; validated at enqueue time).
-- **How it runs:** the platform snapshots the enqueuing run's **verified identity**
-  and the queued replay executes as that same principal. A user-enqueued job sees
-  that user in `ctx.user` and in `@user.*`; a system-enqueued job remains the null
-  system principal. The snapshot is created server-side and cannot be supplied or
-  changed by the isolate. The enqueue itself authorizes the later execution;
-  writes still pass your `rules` + invariants through `ctx.bounded`.
+- **How it runs:** a queued replay is **never deputized as the enqueuer** — it runs as the **null system principal** (`ctx.user == null`, `ctx.auth.system == true`, and every `@user.*` resolves to null), regardless of who enqueued it.
+  Because the human `auth` rule is written against a real caller, it cannot authorize a null-user run, so the queued lane instead requires the **target** to opt in with `queueCallable: true` in its policy `functions` entry.
+  A target that has not opted in is **rejected fail-closed**: the queued message is dropped (a `function_failed` analytics event is emitted for operators) and the human `auth` rule is never evaluated under a null user.
+  Pass any caller identity or context the job needs through the `payload` (it arrives as `args`); do **not** expect the enqueuer in `ctx.user`.
+  `ctx.bounded` writes from the queued run still pass your `rules` + invariants as the system principal.
+- **Public-origin restriction:** `queueCallable` authorizes **trusted** callers (a cron/heartbeat schedule, an internal run, or a user-authenticated function) to drive a system-principal background run - it does **not** authorize the anonymous internet.
+  A queued job that **descends from public ingress** (it was enqueued by a `browser`- or `webhook`-public function, or by any descendant of one) is **refused fail-closed** at replay even when the target declares `queueCallable: true`: the message is dropped and a `function_failed` analytics event is emitted, mirroring the build ban on public-origin runs.
+  This prevents an anonymous caller from laundering public ingress into a full system-principal run through your enqueue code.
+  If a public-facing function needs to trigger background work, do that work inline in the function (still under its own `auth` rule), not by enqueuing a system-principal job.
 - **Delivery:** at-least-once, with Cloudflare-managed retries and a dead-letter
   queue. **Make enqueued functions idempotent** so a retry is safe.
 - **Limits:** `payload` must be JSON-serializable and ≤ 96,000 UTF-8 bytes;
   `delaySeconds`
-  is 0..86400 (24h).
+  is 0..86400 (24h). One invocation may emit at most 50 enqueue intents.
+- **Breadth budget:** each run also carries a bounded **fan-out breadth budget**
+  that its descendant background jobs share, so one app cannot multiply itself
+  into an unbounded queue backlog. A **single-successor chain** (enqueue one next
+  step, e.g. a paginator/cursor loop) is free and runs unbounded; **fanning out to
+  many children** spends the budget, and it shrinks for each further generation, so
+  deep *recursive fan-out trees* are cut off. If a run tries to fan out beyond its
+  remaining budget the whole enqueue drain is refused (the parent invocation
+  surfaces a `429` with `enqueue_descendant_budget_exceeded`); the cross-host
+  producer refuses with `enqueue_descendant_budget_unavailable`. The ceiling is
+  generous - ordinary fan-out and chains are unaffected - so prefer chains over
+  wide recursion for large workloads.
 - **Billing:** each queued run is driven back through the normal `/invoke` path,
   so it **meters compute usage to the app's request ledger identically to an HTTP
   invocation** — background work is billed like foreground work.
