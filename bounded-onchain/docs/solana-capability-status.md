@@ -45,7 +45,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
 | `CPAMM-SCENARIO` | A devnet acceptance scenario exercises this function, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
-| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4, which is not deployed on any cluster yet. Either its worst-case rendered call key exceeds the v3 buffer (the `@CPI.*` protocol calls) or the runtime simply has no handler for it yet (the signature and hashing primitives). Both are refused at deploy time with a clear error rather than failing on chain. |
+| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4. Runtime v4 is live on both devnet and mainnet-beta as of 2026-08-05, so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-RAYDIUM-PROOF` | Raydium CPMM is deployed on devnet (at a different address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-DLMM-PROOF` | Meteora DLMM is deployed on devnet at the same address as mainnet and stays unverified until retained live proof exists. |
