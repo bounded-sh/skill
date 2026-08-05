@@ -26,7 +26,8 @@ bounded init
 
 `bounded init` opens Bounded's hosted browser login when needed, then creates
 `policy.json` and public project config. It reuses a valid saved web session.
-Do not ask a new user to run a separate login or link step first.
+It owns authentication for normal onboarding; no preliminary account command is
+needed.
 
 ## Work by phase
 

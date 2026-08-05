@@ -15,7 +15,7 @@ returns to the terminal after sign-in. `init` then creates:
 - `bounded.json`, public project configuration safe to commit
 - `.gitignore` entries for local Bounded credentials
 
-Do not add a separate `bounded login` or `bounded link` step to normal setup.
+No separate authentication command is required before `bounded init`.
 
 ## Prove and deploy
 
