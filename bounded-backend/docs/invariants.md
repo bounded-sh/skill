@@ -713,6 +713,35 @@ For `flowBound`, structural rejection is the current fail-closed boundary; there
 is no onchain implementation. See [proof-coverage.md](proof-coverage.md) for the
 coverage matrix.
 
+<a id="publicreads-exact-conditional-public-read-posture"></a>
+
+## `proofs.publicReads`: exact conditional public-read posture
+
+The deploy verifier normally requires a non-literal read rule to imply an authenticated caller.
+Some collections intentionally allow a public subset, such as a published launch while keeping its private draft hidden.
+Name each such collection exactly once in `proofs.publicReads`:
+
+```json
+{
+  "proofs": {
+    "publicReads": ["launches/$slug"]
+  },
+  "launches/$slug": {
+    "fields": { "visibility": "String", "owner": "String" },
+    "rules": {
+      "read": "@doc.visibility == 'public' || @doc.owner == @user.id"
+    }
+  }
+}
+```
+
+This declaration changes only the deploy-time authentication posture.
+It never widens runtime access, and the collection's `rules.read` expression still decides which documents are visible.
+Use exact declared collection paths with no surrounding whitespace or duplicates.
+Every named collection must exist and declare a non-empty, non-literal `rules.read` expression.
+Do not list a literal `true` read because it is already explicitly public, and do not list a literal `false` read because it is never public.
+An unknown, duplicate, malformed, always-public, or always-denied entry invalidates the whole declaration and makes verification fail closed.
+
 <a id="attestations--global-policy-wide-claims"></a>
 
 ## `proofs.attestations` — GLOBAL, policy-wide claims

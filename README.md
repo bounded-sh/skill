@@ -44,14 +44,14 @@ policy surface.
 
 ## Install
 
-Bounded CLI (single binary, no deps):
+Bounded CLI plus the public skill family:
 
 ```bash
 curl -fsSL https://get.bounded.sh/install.sh | sh
 ```
 
-This skill family (into Claude Code, Cursor, and other agents that read
-`SKILL.md`):
+To refresh only the skill family in Claude Code, Cursor, and other agents that
+read `SKILL.md`:
 
 ```bash
 npx skills add bounded-sh/skill -y
@@ -66,11 +66,11 @@ Load the root skill first. It routes to the sibling for your task.
 
 | Skill | For |
 |---|---|
-| [`bounded`](bounded/SKILL.md) | Root router. Setup, billing, buckets, usage limits, project config (`bounded.json`, account profiles). Start here. |
+| [`bounded`](bounded/SKILL.md) | Small root router. Start here, then load only the current backend, frontend, deploy, onchain, or teams phase. |
 | [`bounded-backend`](bounded-backend/SKILL.md) | `policy.json` rules, write-gating invariants (rollingSum, flowBound, conserve, tenantTag, tenantEdge, bound), runtime-maintained `windowSum`, functions (`ctx.user`/`ctx.bounded`/`ctx.ai`/`ctx.services`/`ctx.secrets`), the actor and identity model, data and queries, realtime rooms, and the proof loop. |
 | [`bounded-frontend`](bounded-frontend/SKILL.md) | The `@bounded-sh/client` SDK (reads, writes, subscriptions, queries), hosted static frontends, and end-user auth UI (email OTP, OAuth, guest accounts, upgrade). |
 | [`bounded-deploy`](bounded-deploy/SKILL.md) | The CLI (init, verify, deploy, share, data), multi-environment policy files, cloud source sync (source rides the deploy), custom domains and vanity slugs, and account and project config. |
-| [`bounded-onchain`](bounded-onchain/SKILL.md) | Solana and EVM collections, embedded non-custodial wallets (`@user.address`, Crossmint), signed transactions, DEX and perps patterns, and crypto and fiat payments (Bounded Pay). |
+| [`bounded-onchain`](bounded-onchain/SKILL.md) | Solana and EVM collections, Turnkey embedded non-custodial wallets (`@user.address`), signed transactions, DEX and perps patterns, and crypto and fiat payments (Bounded Pay). |
 | [`bounded-teams`](bounded-teams/SKILL.md) | Org-level governance. Observe every action and policy decision, enforce boundaries, keep custody of secrets, and surface the proven invariants on a shared team view. |
 | [`oapps-fun`](oapps-fun/SKILL.md) | Building apps destined for [oapps.fun](https://oapps.fun) (oApps): the zero-secrets discipline, steward-owned capabilities only ("if Bounded can't do it, you can't do it"), honest call-outs for unsupported capabilities, and the x402 relay fallback. |
 
@@ -102,4 +102,4 @@ node scripts/validate.mjs --verify-policies
 ```
 
 The policy option uses the `bounded` CLI on `PATH`; install the current release
-with `curl -fsSL https://get.bounded.sh/install.sh | BOUNDED_SKILL=0 BOUNDED_DASHBOARD=0 sh`.
+with `curl -fsSL https://get.bounded.sh/install.sh | BOUNDED_SKILL=0 sh`.

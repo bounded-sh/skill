@@ -38,9 +38,15 @@ Preview costs without opening anything: `await onrampQuote({ asset: 'SOL', minAm
 
 ## Semantics and requirements
 
-- **Requires a signed-in user** (`login()` first). The destination defaults to the user's embedded wallet, so turn on `auth.wallets` ([embedded-wallets.md](embedded-wallets.md)) — or pass `address` explicitly (e.g. a bring-your-own wallet login's address).
+- **Requires a signed-in user** (`login()` first). The destination defaults to the user's Turnkey wallet, which is eagerly provisioned by default. Set `auth.wallets: false` only when the app intentionally opts out, or pass `address` explicitly for a bring-your-own wallet login.
 - **Works on your deployed app origin** (`<app>.bounded.page` or a custom domain). On a local dev server the session endpoint does not exist and the call fails with a clear error — test funding flows on the deployed app.
 - After the window closes, the SDK polls Coinbase for the actual fill and resolves `{ status: 'completed', actualOut, txHash }` when the purchase is confirmed. `{ status: 'closed' }` means no completed purchase was observed in the verification window (abandoned, or still settling — call `onrampStatus()` later). `{ status: 'opened' }` means a new tab was opened (tab close is not observable; verify via `onrampStatus()`).
 - The Coinbase session is single-use and short-lived, minted for exactly the address/asset requested and bound to the caller's verified login. Anonymous/guest sessions can mint too, but guests have no embedded wallet — pass `address` or upgrade the account first.
 - Purchases run entirely inside Coinbase's checkout: Bounded never sees card details, and the crypto lands directly at the destination address (non-custodial).
-- **Link the hosted wallet page wherever you offer onramp.** Users who fund a wallet need a place to *manage* it — `https://auth.bounded.sh/wallet` is the hosted, Bounded-secured page for the embedded wallet: view balance, send anywhere (each transfer approved by the user with an emailed code — Bounded cannot sign), and cash out. A simple `<a href="https://auth.bounded.sh/wallet" target="_blank">Manage wallet</a>` next to your fund button is the expected pattern; onramp providers' compliance reviews also look for exactly this (users must visibly control the wallet they're funding).
+- **Link the hosted wallet page wherever you offer onramp.** Users who fund a wallet need a place to manage it. `https://auth.bounded.sh/wallet` is the hosted, Bounded-secured page for the Turnkey wallet, including its address and passkey-gated export. A simple `<a href="https://auth.bounded.sh/wallet" target="_blank">Manage wallet</a>` next to your fund button is the expected pattern.
+
+## Fiat-funded crypto purchases
+
+Bounded does not provide a shared card-to-USDC merchant checkout.
+If an app wants a buyer to start with fiat and pay a `payments.acceptCrypto` intent, call `onramp({ asset: 'USDC' })` to fund the buyer's Turnkey wallet, wait for a completed fill, then construct and sign the normal direct USDC transfer.
+The app owns that multi-step checkout UX, while Coinbase owns the fiat purchase and Bounded verifies only the final on-chain payment.

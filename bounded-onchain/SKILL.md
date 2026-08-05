@@ -2,7 +2,7 @@
 name: bounded-onchain
 description: >-
   Add onchain to a Bounded app: Solana and EVM collections, embedded
-  non-custodial wallets for email/social users (@user.address, Crossmint),
+  non-custodial wallets for email/social users (@user.address, Turnkey by default),
   client- and server-signed transactions, DEX/perps trading patterns, and crypto payments
   (accept USDC/crypto non-custodially, Bounded Pay for card/fiat). Use for wallet,
   token, on-chain transaction, or crypto/fiat payment work. Part of the Bounded
@@ -12,64 +12,40 @@ description: >-
 # Bounded onchain
 
 Wallets, tokens, on-chain transactions, and payments. The **canonical Bounded
-email/social login can include a wallet**: turn on `auth.wallets` (Crossmint,
-non-custodial) and supported email/social logins carry a real `@user.address` - see
+email/social login includes a wallet by default**: keep the default Turnkey auth
+and supported email/social logins carry a real `@user.address` - see
 [docs/embedded-wallets.md](docs/embedded-wallets.md). `@user.id` (the account id)
 stays the identity/ownership key; `@user.address` is the wallet. On-chain writes
 still pass their policy rules and invariants first, so pair this with the
 **bounded-backend** skill for the governing rules. To route across the family, see
 the root **bounded** skill.
 
-## Task Router
+## Reference Router
 
-| User task | Read |
+Read only the row matching the current task or term.
+
+| Task or term | Read |
 |---|---|
-| Onchain data / Solana collections | [docs/onchain.md](docs/onchain.md) |
-| Solana function catalog, devnet support, live verification status, blocked integrations, or "does this plugin work on devnet?" | [docs/solana-capability-status.md](docs/solana-capability-status.md) |
-| Onchain mirror/indexer, Helius webhook, missed transaction, outage catch-up, replay, reconciliation, or DLQ recovery | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
-| "Transaction too large", verify/deploy rejected for **transaction size**, 413 on an onchain write, hook over the 1182/1232-byte limit, splitting hooks, argument/string bytes, lookup tables | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
-| Policy upgrade governance, immutable apps, controller policies, manifest signing, stuck update sessions, or governance recovery | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
-| Policy-native bytes, PDAs, account reads, exact-rent account creation, landed invariant-denial proof, `shouldSubmitTx: false`, exact wallet-bound review, query-result predicates, deployed ProgramData evidence, `get`, `getAfter`, onchain `@DocumentPlugin.updateField`, `@contract.address`, app escrow address resolution, generic CPI, cross-app reads/writes, prediction-market arithmetic, runtime capability gates, or Poofnet/onchain parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
-| Onchain update payloads, patch semantics, readonly `!` fields, or `FieldReadOnly` | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
-| Ambiguous Solana custom errors, stale numeric decoding, or an Anchor error name in live logs | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
-| Real-network rent, ATA creation, passthrough storage, PDA signing, transaction limits, or Poofnet-only success | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
-| Trading patterns (Phoenix perps, DEX swaps, server-signed execution) | [docs/onchain-trading.md](docs/onchain-trading.md) |
-| Randomness, VRF, a gacha/raffle/shuffle, `isRevealPath`, or making a DRAW provable rather than just the number. **The roll is READABLE before anyone acts on it**, so read this before designing the pool it draws from | [docs/randomness.md](docs/randomness.md) |
-| **Launch a token** on Meteora - Dynamic Bonding Curve, anti-snipe fee decay, creator/partner fee split, graduation/migration to DAMM v2, claiming fees (`createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover`) | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
-| **Split fees between 3+ parties**: the current canonical 10/20/20/50 venue/creator/steward/app-reserve model, its proven treasury ledger and permissionless distribute, or the historical 55/25/20 treasury/creator/Poof worked example | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
-| **Sweep fees / run an onchain job on a schedule** - the keeper pattern (offchain schedule → function `actAs` a signer → onchain write, because schedules are rejected on onchain collections), permissionless = reliability-only | [docs/oapps-tokenomics-fee-split.md → the keeper](docs/oapps-tokenomics-fee-split.md#the-keeper--offchain-schedule--function--onchain-write) |
-| **Fund build/AI spend from earned fees** - a fee-funded build allowance capped by a proven `rollingSum` burn cap on an append-only log | [docs/oapps-tokenomics-fee-split.md → build allowance](docs/oapps-tokenomics-fee-split.md#the-fee-funded-build-allowance--a-proven-rolling-burn-cap) |
-| **Give supported email/social logins an embedded wallet** (`@user.address`), Crossmint, `auth.wallets` | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
-| Let users **connect their own Solana wallet** (Phantom / Wallet-Standard) to log in - "connect wallet", wallet login, `walletLogin`, `authMethod:'phantom'`, real wallet as `@user.address`, local `signMessage`/`signTransaction` - the **bring-your-own companion** to the canonical login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
-| **Fund a user's wallet with fiat** — `onramp()`, buy SOL/USDC with a card, Coinbase Onramp, "top up", fiat → crypto for the embedded wallet | [docs/onramp.md](docs/onramp.md) |
-| Accept crypto / USDC, `payments.acceptCrypto`, get paid to a wallet non-custodially, seller settlement + notification, direct-transfer rail, card→crypto rail seam | [docs/accept-crypto.md](docs/accept-crypto.md) |
-| Bounded Pay (accept card payments, Stripe Connect, fiat) | [docs/bounded-pay.md](docs/bounded-pay.md) |
-
-## Term Router
-
-| If you see | Read |
-|---|---|
-| `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
-| compiler support, deployed support, devnet status, supported, unsupported, blocked, unverified, Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor, SPL stake pool, liquid staking, Raydium, CPMM, Meteora DLMM | [docs/solana-capability-status.md](docs/solana-capability-status.md) |
-| "Transaction too large", tx-size gate, packet limit, 1232, oversized hook | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
-| Helius, indexer, mirror, reconciliation debt, missed transaction, replay, cursor, tombstone, DLQ | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
-| `governance.upgrade`, policy controller, immutable, manifest root, governed session, recovery, extend, cancel | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
-| `@CPI`, `@Solana`, `@Bytes`, `@App`, `@DocumentPlugin.updateField`, `get`, `getAfter`, `@PredictionMarketPlugin`, `getYesTokenOutAmm`, `getCollateralOutAmm`, `shouldSubmitTx`, `skipPreflight`, ProgramData, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, custom program, PDA seeds, account data, cross-app, runtime v2, Poofnet parity | [docs/policy-primitives.md](docs/policy-primitives.md) |
-| `FieldReadOnly`, readonly `!` update, onchain patch | [docs/onchain.md](docs/onchain.md#onchain-updates-are-patches) |
-| Anchor error name, ambiguous custom error number, stale IDL error table | [docs/onchain.md](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
-| `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [docs/randomness.md](docs/randomness.md) |
-| rent, ATA, token account, insufficient SOL, PDA address, passthrough, transaction too large | [docs/policy-primitives.md](docs/policy-primitives.md#real-network-resource-budget) |
-| `createMeteoraConfig`, `createMeteoraVirtualPool`, Dynamic Bonding Curve, DBC, bonding curve, anti-snipe / fee decay, token launch, launchpad, graduation, migrate, DAMM v2, `claimDammV2PoolFees`, `withdrawLeftover`, `getDammV2PoolAddress` | [docs/meteora-token-launch.md](docs/meteora-token-launch.md) |
-| 3-way / multi-party fee split, canonical 10/20/20/50 venue/creator/steward/app-reserve, proven treasury ledger, permissionless distribute, historical 55/25/20 treasury/creator/Poof, `feepool` PDA, `mulDivFloor`, phase asymmetry, `distributionsPost` | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
-| keeper, scheduled onchain write, `schedule` + `actAs`, offchain → function → onchain, "schedule rejected on onchain collection", crank, sweep fees, `rollingSum` build allowance, fee-funded build credit | [docs/oapps-tokenomics-fee-split.md](docs/oapps-tokenomics-fee-split.md) |
-| `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom login, Wallet-Standard, `window.solana`, SIWS wallet login | [auth.md → Solana wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
-| `@user.address`, embedded wallet, Crossmint | [docs/embedded-wallets.md](docs/embedded-wallets.md) |
-| `payments.acceptCrypto`, USDC, seller settlement, direct-transfer rail | [docs/accept-crypto.md](docs/accept-crypto.md) |
-| `payment`, `checkout`, `seller`, `merchant`, `subscription`, `Stripe`, `/connect/onboard`, `/connect/status`, `/connect/checkout`, `/connect/session`, `/connect/subscription`, `/connect/subscription/cancel` | [docs/bounded-pay.md](docs/bounded-pay.md) |
+| Onchain collections, `onchain:true`, `--protocol`, Solana, mainnet permit, patches, readonly `!`, `FieldReadOnly` | [onchain](docs/onchain.md) |
+| Compiler vs deployed support, devnet status, blocked or unverified integrations (Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor, SPL stake pool, liquid staking, Raydium CPMM, Meteora DLMM), runtime-v4 gating | [capability status](docs/solana-capability-status.md) |
+| Helius, mirror/indexer, missed transactions, replay, reconciliation, cursor, tombstone, DLQ | [mirror completeness](docs/onchain.md#mirror-completeness) |
+| Transaction too large, 413, 1182/1232-byte packet limit, oversized hook, lookup tables | [transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
+| `governance.upgrade`, immutable/controller policy, manifest root, governed session, recovery, extend, cancel | [runtime-v3 governance](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
+| `@CPI`, `@Solana`, `@Bytes`, `@App`, `@DocumentPlugin.updateField`, `@PredictionMarketPlugin`, PDAs, `get`/`getAfter`, ProgramData, `shouldSubmitTx`, `skipPreflight`, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, cross-app, prediction-market arithmetic, runtime parity, `@Solana.verifyEd25519`, `@Solana.secp256k1Recover`, `@Bytes.sha256`, `@Bytes.keccak256`, signature verification, EVM signer recovery | [policy primitives](docs/policy-primitives.md) |
+| Anchor/custom errors or stale numeric decoding | [custom-error diagnosis](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
+| Trading, Phoenix perps, DEX swaps, server-signed execution | [onchain trading](docs/onchain-trading.md) |
+| Randomness, VRF, raffle/gacha/shuffle, `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [randomness](docs/randomness.md) |
+| Meteora token launch, DBC, anti-snipe fee decay, DAMM v2, `createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover` | [Meteora launch](docs/meteora-token-launch.md) |
+| Multi-party fee split, `feepool`, `mulDivFloor`, keeper/scheduled onchain writes, `actAs`, `rollingSum` fee-funded build allowance | [oApps tokenomics](docs/oapps-tokenomics-fee-split.md) |
+| Embedded wallet for email/social users, `@user.address`, Turnkey, `auth.wallets` | [embedded wallets](docs/embedded-wallets.md) |
+| Bring-your-own Solana wallet login, `walletLogin`, Phantom / Wallet-Standard, SIWS | [wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
+| `onramp()`, buy SOL/USDC by card, Coinbase Onramp, wallet top-up | [onramp](docs/onramp.md) |
+| Accept crypto/USDC, `payments.acceptCrypto`, seller settlement, direct-transfer rail | [accept crypto](docs/accept-crypto.md) |
+| Card/fiat payments, Stripe Connect, checkout, subscriptions, `/connect/onboard`, `/connect/status`, `/connect/checkout`, `/connect/session`, Bounded Pay | [Bounded Pay](docs/bounded-pay.md) |
 
 ## Rules Of Thumb
 
-- **Default onchain login = `auth.wallets` + wallet login, side by side.** Turn on `{ "auth": { "wallets": true } }` in policy so email/social users get a Crossmint wallet (the primary path), and add bring-your-own **wallet login** (`walletLogin`) for users who already hold a Solana wallet. See [docs/embedded-wallets.md → recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app). Prescribe this for any onchain app.
+- **Default onchain login = default Turnkey email/social auth + optional wallet login, side by side.** Do not add `authMode` or `auth.wallets` for the normal path. Turnkey is the sole embedded-wallet implementation, and Turnkey-native auth with eager provisioning is already the default. Supported email/social users have `@user.address` when login completes. Add bring-your-own **wallet login** (`walletLogin`) only for users who already hold a Solana wallet. Use explicit auth policy only to opt out or retain the legacy hosted login mode. See [docs/embedded-wallets.md -> recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app).
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
 - Mainnet is a real target, not a placeholder: the program is live on mainnet-beta. Creating a mainnet app requires a paid account plan (no API key or shared secret), and the app is owned on-chain by the creator's wallet **immutably** - so it must be created from the machine holding that wallet's key, and it can never be ownership-transferred. See [docs/onchain.md](docs/onchain.md).

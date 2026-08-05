@@ -1,16 +1,15 @@
 # Key & account safety — wallet keys and web sessions
 
-**What's in here / when to read this:** how `bounded.json` selects the CLI account
-source, when wallet/keypair credentials are the ownership secret, and when a
-project should use a Bounded web account session instead. Read this before your
-first deploy, and read it again any time you set up CI, switch machines, or hand
-a project to a teammate or another agent.
+**Advanced reference.** Read this only when a user deliberately selects local
+wallet signing, a named key profile, `BOUNDED_PRIVATE_KEY` for CI, or recovery of
+an existing key-owned app. Normal projects use the web account selected by
+`bounded init`; see [accounts.md](accounts.md).
 
 > **TL;DR.** In wallet/keypair mode, `~/.bounded/credentials`, a profile key, a
 > project key, or `BOUNDED_PRIVATE_KEY` owns the apps created with it. Treat that
 > key like an SSH private key: back it up, run `bounded link` on day one, or share
-> a backup owner. In web account mode, run `bounded account use --web` and
-> `bounded login --email ...`; the CLI uses `~/.bounded/web-session.json` instead
+> a backup owner. In web account mode, run `bounded login`; the CLI opens the
+> hosted sign-in page and uses `~/.bounded/web-session.json` instead
 > of a local key. Public `bounded.json` and `.bounded/app.json` are safe to commit;
 > credentials and web-session files are not.
 
@@ -42,7 +41,8 @@ have anything to lose.
 
 If the project uses `account.keySource:"web"`, the CLI does not use a local wallet
 key for control-plane auth. It uses `~/.bounded/web-session.json`, created by
-`bounded login --email ...`, and refreshes the session when possible.
+`bounded login` through hosted browser sign-in, and refreshes the session when
+possible. `bounded login --email ...` is the terminal OTP fallback.
 
 ## 2. `BOUNDED_PRIVATE_KEY` — wallet CI override
 
@@ -71,7 +71,7 @@ The public `bounded.json` can select `global`, `project`, `profile`, `env`, or
 
 | Config | Auth material |
 |---|---|
-| `{"keySource":"web"}` | `~/.bounded/web-session.json` (Bounded Auth session; run `bounded login --email ...`) |
+| `{"keySource":"web"}` | `~/.bounded/web-session.json` (Bounded Auth session; run `bounded login`) |
 | `{"keySource":"env"}` | `BOUNDED_PRIVATE_KEY` |
 | `{"keySource":"profile","profile":"client-a"}` | `~/.bounded/accounts/client-a/credentials` |
 | `{"keySource":"project","keyPath":".bounded/credentials"}` | `<project>/.bounded/credentials` |
@@ -83,25 +83,20 @@ that require a local wallet signer fail with a clear message and ask you to pick
 a key. When a wallet/keypair source is selected, keypair commands use that source,
 and `BOUNDED_PRIVATE_KEY` is the higher-precedence CI/automation override.
 
-**How a NEW project picks its source (email-first once an email exists).** The
-account (an email) is the identity; a keypair is just a signing credential for
-it. When `bounded init`/`deploy --create` infers a source it now prefers, in
-order: `BOUNDED_PRIVATE_KEY` (env), a repo-local `.bounded/credentials`
-(project), the global keypair **when it is linked to an email** (stays
-`global` — no OTP round-trips — and stamps `linkedEmail` so the project names
-the account it acts as), then a signed-in web session (`web` + `loginHint`).
-An UNLINKED global keypair never silently outranks a signed-in email account;
-that is how projects end up owned by phantom wallet identities nobody
-recognizes later. `bounded whoami` leads with
-`account: you@example.com (signing with linked keypair)` when linked, and warns
-when the resolved identity is an unlinked keypair while a web login exists.
+**How a new project picks its source.** `bounded init` defaults to the web
+account, reuses or refreshes its saved session, and opens browser login when
+needed. An explicit `BOUNDED_PRIVATE_KEY` or repo-local `.bounded/credentials`
+remains an intentional advanced override. An existing global key never silently
+captures a new project. Select global, project, profile, or env signing first
+with `bounded account use ...` only when that is deliberately required.
 
 For one project under another account, run `bounded account use client-a`; the
 next auth command creates/uses `~/.bounded/accounts/client-a/credentials`. For a
 repo-local isolated key, run `bounded account use --project`; the key lives at
 `<project>/.bounded/credentials` and is gitignored. For a web account, run
-`bounded account use --web`, then `bounded login --email you@example.com`. The
-public config and marker always record *which* source was used (§4).
+`bounded login`. It opens hosted email/social sign-in and selects `web` in an
+existing current project. The public config and marker always record *which*
+source was used (§4).
 
 **`bounded account use ...` EDITS `bounded.json`.** The account source lives in
 the committed project config, so switching is a working-tree change other agents
@@ -109,7 +104,10 @@ and reviewers will see. Commit it if the project should move, revert it if the
 switch was only for one command — or run the one command from a throwaway dir
 (§3b) and leave the shared config untouched.
 
-**Terminal email login (OTP) recipe.** `bounded login --email you@example.com`
+**Browser and terminal login.** `bounded login` opens the hosted sign-in page,
+uses a temporary loopback callback with PKCE, then closes the callback server
+after saving the session. It sends no reusable CLI secret to the browser.
+For a headless terminal, `bounded login --email you@example.com`
 sends a 6-digit code to that inbox and waits for it on stdin — run it in an
 interactive terminal, read the code from the inbox, paste it, done. The session
 lands in `~/.bounded/web-session.json` and refreshes itself. There is one web
@@ -339,7 +337,7 @@ app*. Add a backup owner **before** anything goes wrong.
 Choose web mode or link wallet keys early so a local-machine loss is not an app
 loss.
 
-## 9. Agent guidance — what the assistant must do
+## 9. Agent guidance for an advanced local-key project
 
 When you (an AI agent) operate Bounded on a human's behalf:
 
@@ -370,19 +368,14 @@ When you (an AI agent) operate Bounded on a human's behalf:
    approval for that target.
    Never delete or repurpose another app automatically.
 
-## First-time setup (do this once)
+## First-time local-key setup (only when explicitly selected)
 
 ```bash
-bounded init          # writes policy.json + public bounded.json
-# Wallet/keypair mode:
+bounded account use --global
+bounded init          # preserves the explicit local-key source
 bounded whoami        # auto-creates selected wallet credentials; note the address
 bounded link          # attach the wallet key to your web account
 # ... back up the selected credentials file somewhere safe
-
-# Web account mode instead:
-bounded account use --web
-bounded login --email you@example.com
-bounded whoami        # confirms the web identity and source
 
 bounded deploy --create --name my-app       # records appId in bounded.json + .bounded/app.json
 git add bounded.json .bounded/app.json .gitignore      # commit PUBLIC markers, not keys
@@ -420,6 +413,7 @@ app/account context for configured projects.
 ## Related
 
 - [cli-reference.md](cli-reference.md) — `whoami`, `login`, `link`, `share`, `collaborators`, account source
-- [auth.md](../../bounded-frontend/docs/auth.md) — CLI auth, end-user login, and the recovery callout
+- [accounts.md](accounts.md) — normal CLI web login and session behavior
+- [auth.md](../../bounded-frontend/docs/auth.md) — authentication for users of the deployed app
 - [admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md) — control plane vs data plane; no owner god-mode
 - [secrets.md](../../bounded-backend/docs/secrets.md) — app-level secret values (Stripe/OpenAI keys), kept out of code

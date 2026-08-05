@@ -30,75 +30,44 @@ Write the actor model in mind from the start: know who `@user` is, which princip
 a function acts as (`runAs`/`actAs`), and where authorization comes from
 (`@origin`) before you write a rule.
 
-## Task Router
+## Reference Router
 
-| User task | Read |
+Read only the row matching the current task or term.
+
+| Task or term | Read |
 |---|---|
-| Generate or repair a policy from an app description | [docs/policy-generation-guide.md](docs/policy-generation-guide.md) |
-| See complete policy examples | [docs/policy-examples.md](docs/policy-examples.md) |
-| Rules, field types, expressions, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
-| Add spending/rate caps | [docs/invariants.md](docs/invariants.md#rollingsum--caps-over-time-windows) |
-| Model balances, points, P&L, or supply | [docs/invariants.md](docs/invariants.md#conserve--sums-dont-change) |
-| Bound withdrawals/releases/spend by cumulative deposits/credits per user or tenant | [docs/invariants.md](docs/invariants.md#flowbound--per-partition-outflow-never-exceeds-inflow-across-two-collections) |
-| Tenant isolation | [docs/invariants.md](docs/invariants.md#tenanttag--documents-carry-their-tenant) |
-| Hard field ceilings/floors, anti-cheat bounds | [docs/invariants.md](docs/invariants.md#bound--hard-ceilings--floors-on-a-field-anti-cheat) |
-| Trending feeds, leaderboards, "most active" (windowSum + ranked O(k) reads + index pre-declaration) | [docs/trending-feeds.md](docs/trending-feeds.md) |
-| Conditional ownership or holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
-| Restrict what the app's own PAGES may reach (CSP) | [docs/browser-boundary.md](docs/browser-boundary.md) |
-| Constants, reusable rule fragments, `@const`, `@def` | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
-| Decide rule vs invariant vs hook vs function | [docs/functions-when-to-use.md](docs/functions-when-to-use.md) |
-| Functions and external API calls | [docs/functions.md](docs/functions.md) |
-| Start simple, graduate to functions | [docs/functions-graduation.md](docs/functions-graduation.md) |
-| Give backend code user-owned API keys | [docs/secrets.md](docs/secrets.md) |
-| Scheduled functions or in-boundary scheduled hooks | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
-| Recurring fleet sweeps without full collection scans | [docs/scheduled-sweeps.md](docs/scheduled-sweeps.md) |
-| What anti-cheat can and cannot prove | [docs/hooks-and-anti-cheat.md](docs/hooks-and-anti-cheat.md) |
-| Data-plane read/write semantics, atomic batches, subset attacks, and required companion writes | [docs/data-plane.md](docs/data-plane.md) |
-| Queries, pagination, aggregates | [docs/queries.md](docs/queries.md) |
-| Files and search | [docs/files-and-search.md](docs/files-and-search.md) |
-| Realtime rooms and games | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| Native live modules and live status | [docs/live-runtime.md](docs/live-runtime.md) |
-| Realtime game feel: input cadence, interpolation, prediction | [docs/realtime-netcode.md](docs/realtime-netcode.md) |
-| AI NPCs / AI players | [docs/ai-npcs.md](docs/ai-npcs.md) |
-| Long-running backend runtime | [docs/backend-runtime.md](docs/backend-runtime.md) |
-| Multi-step Flue agents | [docs/agents-flue.md](docs/agents-flue.md) |
-| Roles, owners, collaborators, scoped admins | [docs/admin-and-ownership.md](docs/admin-and-ownership.md) |
-| Top-level roles and read/write scopes | [docs/roles.md](docs/roles.md) |
-| `access` block, custom roles, external access, platform super-admins | [docs/access-control.md](docs/access-control.md) |
-| Manager/owner/collaborator identity sets or function log access | [docs/identity-and-logs.md](docs/identity-and-logs.md) |
-| Service keys / backend identities, payout bots | [docs/service-keys.md](docs/service-keys.md) |
-| Who the actor is on a live call: `runAs`, `actAs`, `@origin` | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
-| Proof coverage and counterexamples | [docs/proof-coverage.md](docs/proof-coverage.md) · [docs/verify-and-counterexamples.md](docs/verify-and-counterexamples.md) |
-| Write concrete allow/deny tests for a policy | [docs/policy-tests.md](docs/policy-tests.md) |
-| End-to-end tests for authed apps | [docs/testing-authed-apps.md](docs/testing-authed-apps.md) |
-| Quality checklist before calling the app done | [docs/quality-checklist.md](docs/quality-checklist.md) |
-| Build for agents or a backend-only app | [docs/building-for-agents.md](docs/building-for-agents.md) · [docs/building-a-backend.md](docs/building-a-backend.md) |
-
-## Term Router
-
-| If you see | Read |
-|---|---|
-| `rollingSum`, `windowSum`, `flowBound`, `windowSeconds`, `scopeVariable`, `conserve`, `bound`, `tenantTag`, `tenantEdge` | [docs/invariants.md](docs/invariants.md) |
-| `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()` | [docs/policy-reference.md](docs/policy-reference.md) |
-| `requiresInBatch`, `incomplete_batch`, missing companion write | [docs/data-plane.md](docs/data-plane.md#require-companion-writes-with-requiresinbatch) |
-| `transferAuthority`, one-click market trade, holder transfer | [docs/policy-reference.md](docs/policy-reference.md#conditional-transfer-authority) |
-| `@const`, `@def`, deploy constants | [docs/constants-and-defs.md](docs/constants-and-defs.md) |
-| `functions`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets` | [docs/functions.md](docs/functions.md) |
-| `ctx.ai.run`, AI NPC | [docs/functions.md](docs/functions.md#ctxai--real-ai-no-api-keys) · [docs/ai-npcs.md](docs/ai-npcs.md) |
-| `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, AI image/video, `aiJobs` | [docs/functions.md](docs/functions.md#ctxai-media-generation--images-sync-and-video-async-jobs) |
-| `ctx.services`, managed services, third-party API proxy | [docs/functions.md](docs/functions.md#ctxservices--managed-api-discovery-and-invoke) · [docs/backend-runtime.md](docs/backend-runtime.md) |
-| `ctx.browser`, headless browser drive, egress-fenced | [docs/functions.md](docs/functions.md#ctxbrowser--drive-a-headless-browser-fenced-by-your-egress) |
-| agent identity, `@const.AGENT`, `as: { identity: "agent" }`, drive a signed-in page, QA behind a login | [docs/functions.md](docs/functions.md#driving-your-app-signed-in--the-agent-identity) |
-| `actAs`, `runAs`, service key, payout bot, backend identity | [docs/service-keys.md](docs/service-keys.md) · [docs/principals-and-origins.md](docs/principals-and-origins.md) |
-| `@origin`, `ctx.origin`, live call provenance | [docs/principals-and-origins.md](docs/principals-and-origins.md) |
-| `roles`, `members`, `read:"*"`, scoped admin | [docs/roles.md](docs/roles.md) |
-| `__owners__`, `__admins__`, `__developers__`, `__viewers__` role sets in policy | [docs/access-control.md](docs/access-control.md) · [docs/identity-and-logs.md](docs/identity-and-logs.md) |
-| `session.live`, `init`, `tick`, `views`, `@effect`, `live.intent` | [docs/live-runtime.md](docs/live-runtime.md) |
-| `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [docs/realtime-and-games.md](docs/realtime-and-games.md) |
-| `schedule`, `dueRows`, `hooks.scheduled`, `webhooks`, `verifyWebhook` | [docs/hooks-scheduled-webhooks.md](docs/hooks-scheduled-webhooks.md) |
-| collection paging with `get`, `queryAggregate`, `count`, filters, sort, cursor | [docs/queries.md](docs/queries.md) |
-| policy tests, `policy-tests/*.json`, `bounded tests run/push/list/pull` | [docs/policy-tests.md](docs/policy-tests.md) |
-| `setFile`, storage collection, full-text search | [docs/files-and-search.md](docs/files-and-search.md) |
+| Generate or repair a policy from an app description | [policy generation](docs/policy-generation-guide.md) |
+| Complete policy examples | [examples](docs/policy-examples.md) |
+| Rules, fields, expressions, `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()`, `transferAuthority` | [policy reference](docs/policy-reference.md) |
+| Caps, balances, supply, tenant isolation, hard bounds; `rollingSum`, `windowSum`, `flowBound`, `conserve`, `tenantTag`, `tenantEdge`, `bound` | [invariants](docs/invariants.md) |
+| Trending feeds, leaderboards, ranked `windowSum` reads | [trending feeds](docs/trending-feeds.md) |
+| Browser CSP / restrict what app pages may reach | [browser boundary](docs/browser-boundary.md) |
+| Constants, reusable rules, `@const`, `@def` | [constants and defs](docs/constants-and-defs.md) |
+| Choose rule vs invariant vs hook vs function | [when to use functions](docs/functions-when-to-use.md) |
+| Functions; `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets`, `ctx.ai.run`, `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, `ctx.services`, `ctx.browser`, `@const.AGENT`, agent identity | [functions](docs/functions.md) |
+| Start simple and graduate to functions | [function graduation](docs/functions-graduation.md) |
+| User-owned provider API keys | [secrets](docs/secrets.md) |
+| Schedules, `dueRows`, hooks, webhooks, `verifyWebhook` | [scheduled hooks and webhooks](docs/hooks-scheduled-webhooks.md) |
+| Recurring fleet sweeps without full scans | [scheduled sweeps](docs/scheduled-sweeps.md) |
+| Anti-cheat proof limits | [hooks and anti-cheat](docs/hooks-and-anti-cheat.md) |
+| Atomic writes, subset attacks, `requiresInBatch`, `incomplete_batch` | [data plane](docs/data-plane.md) |
+| Queries, pagination, `queryAggregate`, `count`, filters, sort, cursor | [queries](docs/queries.md) |
+| Files, `setFile`, storage, full-text search | [files and search](docs/files-and-search.md) |
+| Realtime rooms; `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [realtime and games](docs/realtime-and-games.md) |
+| Native live modules; `session.live`, `tick`, `views`, `@effect`, `live.intent` | [live runtime](docs/live-runtime.md) |
+| Input cadence, interpolation, prediction | [realtime netcode](docs/realtime-netcode.md) |
+| AI NPCs / AI players | [AI NPCs](docs/ai-npcs.md) |
+| Long-running backend runtime or managed services | [backend runtime](docs/backend-runtime.md) |
+| Multi-step Flue agents | [Flue agents](docs/agents-flue.md) |
+| Owners, collaborators, scoped admins | [admin and ownership](docs/admin-and-ownership.md) |
+| Top-level `roles`, `members`, `read:"*"`, read/write scopes | [roles](docs/roles.md) |
+| `access`, custom/external roles, `__owners__`, `__admins__`, `__developers__`, `__viewers__` | [access control](docs/access-control.md) · [identity and logs](docs/identity-and-logs.md) |
+| Service keys, payout bots, backend identities, `runAs`, `actAs`, `@origin`, `ctx.origin` | [service keys](docs/service-keys.md) · [principals and origins](docs/principals-and-origins.md) |
+| Proof coverage, `PROVED` / `DISPROVED`, counterexamples | [proof coverage](docs/proof-coverage.md) · [verify and counterexamples](docs/verify-and-counterexamples.md) |
+| Concrete allow/deny tests; `policy-tests/*.json`, `bounded tests run/push/list/pull` | [policy tests](docs/policy-tests.md) |
+| End-to-end tests for authenticated apps | [testing authed apps](docs/testing-authed-apps.md) |
+| Completion review | [quality checklist](docs/quality-checklist.md) |
+| Agent-facing or backend-only app | [building for agents](docs/building-for-agents.md) · [building a backend](docs/building-a-backend.md) |
 
 ## Error Router
 

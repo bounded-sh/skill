@@ -10,21 +10,25 @@ errors are emitted as JSON too), `--quiet` (minimal output), `--env`
 
 ## Identity & teams
 
-The canonical identity is your **web account's user id**; wallet keys are
-detachable signing credentials, and email is a verified contact/login method for
-the web account. The CLI has two account-source families:
+The normal CLI identity is your **web account's user id**. `bounded init` reuses
+or refreshes the saved session and opens browser login when needed. A separate
+`bounded login` is useful for explicit reauthentication, account switching, or
+headless OTP, but is not required before init.
 
-- **Wallet/keypair sources**: `global`, `project`, `profile`, and `env`. These use
+The CLI also supports advanced local-signing sources:
+
+- **Wallet/keypair sources** (advanced): `global`, `project`, `profile`, and `env`. These use
   a local ed25519 keypair (`~/.bounded/credentials`, a profile/project credentials
   file, or `BOUNDED_PRIVATE_KEY`). The keypair owns apps created with it and signs
   data-plane writes. See [auth.md](../../bounded-frontend/docs/auth.md).
-- **Web account source**: `web`. Run `bounded account use --web`, then
-  `bounded login --email you@example.com`. This uses
-  `~/.bounded/web-session.json` and does not create or link a local key. Email OTP
-  is the current CLI web-login method; the account model is web-based, not
-  email-only.
+- **Web account source** (default): `web`. Init opens the hosted Bounded
+  sign-in page for email or social login. The CLI uses Authorization Code + PKCE,
+  stores the refreshable session in `~/.bounded/web-session.json`, and selects
+  `web` for the current project when one exists. It does not create or link a
+  local key. Use `bounded login --email you@example.com` for a terminal OTP flow
+  when a browser is unavailable.
 
-> **Wallet keys are unrecoverable if lost.** If you lose a wallet credentials file
+> **Advanced wallet warning.** If you deliberately choose a wallet source and lose its credentials file
 > without having linked, shared, or backed it up, every app it created can be
 > orphaned forever. Treat wallet keys like SSH private keys: back them up, then run
 > `bounded link` so the apps survive local key loss. Full safety model:
@@ -49,7 +53,7 @@ the web account. The CLI has two account-source families:
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
 | `update` | Update this release build to the latest CLI from its configured HTTPS release host. Downloads the immutable binary for this OS/architecture, verifies its SHA-256 checksum and Go build metadata, then atomically replaces the running executable. Reads no project config, account, or credentials. | `bounded update` |
 | `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. Wallet mode may create the selected key on first run. | `bounded whoami` |
-| `login` | Web login — log the CLI into your Bounded **web account** (the canonical identity; no key involved). Used for projects with `account.keySource:"web"`. `--email` is the current CLI web-login method and stores refreshable credentials in `~/.bounded/web-session.json`. **Agents: drive this yourself** — run `bounded login --email <email>` with stdin held open (e.g. `tail -f otp.txt \| bounded login --email …`), tell the user "a 6-digit code was sent to <email>, paste it here", then feed the relayed code to stdin. Never make the user run the whole login manually; the code relay is the supported flow. | `bounded login --email you@example.com` |
+| `login` | Log the CLI into your Bounded **web account** (the canonical identity; no key involved). By default it opens the hosted sign-in page, completes Authorization Code + PKCE through a temporary loopback callback, stores refreshable credentials in `~/.bounded/web-session.json`, and selects `account.keySource:"web"` for the current project. Use `--email <addr>` or `--no-browser` for terminal OTP when a browser is unavailable. **Headless agents:** run `bounded login --email <email>` with stdin held open, relay the 6-digit code from the user, then feed it to stdin. Never ask for or embed a reusable credential. | `bounded login` |
 | `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
@@ -94,7 +98,8 @@ too.
 
 `link` flags: `--no-browser` (just print the URL), `--email <addr>` (headless
 approval: email an OTP, read it from stdin, approve this wallet key), `--timeout
-<dur>` (default `10m`). `login` flags: `--email <addr>`. Collaboration grants
+<dur>` (default `10m`). `login` flags: `--email <addr>` (terminal OTP),
+`--no-browser` (prompt for terminal OTP). Collaboration grants
 **control-plane** authority (manage the app), not a data-plane bypass — give data
 powers explicitly via policy rules ([admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md)).
 
@@ -122,8 +127,8 @@ key material. This example explicitly opts into cloud source sync:
     "buildCommand": "npm run build"
   },
   "account": {
-    "keySource": "profile",
-    "profile": "client-a"
+    "keySource": "web",
+    "loginHint": "you@example.com"
   }
 }
 ```
@@ -317,14 +322,22 @@ It preserves the original policy path, app ID, constants, selected policy enviro
 Keep the policy file and every input byte unchanged.
 The CLI binds the exact operation and exact policy and never submits a second policy mutation.
 The server may re-run the policy proof and compiler for that unchanged target before it can reconcile the retained operation safely.
+While recovery is processing, a retained candidate must not replace or hide the active publication.
+The last committed policy remains the serving policy until the candidate activates.
 HTTP `202` with `state: "processing"` means the exact recovery is still in progress.
 The CLI returns to operation-bound readback and continues bounded polling; let it finish instead of starting a parallel or normal deploy.
 A normal deploy whose first policy mutation has an ambiguous outcome uses this same readback/recovery loop automatically.
 It returns to polling after `202` instead of submitting the policy mutation again.
+Every retained runtime publication has a finite per-publication autonomous recovery owner in the control plane.
+If the initiating request or its recovery polling disappears, that owner sleeps until the publication deadline without a cron or background sweeper.
+At the deadline it finishes a publication only when both runtime destinations already acknowledged the exact candidate; otherwise it abandons the candidate, leaves the last committed policy serving, and frees the app for a later normal deploy.
+This fallback does not replace the exact `recoveryCommand` while the operation remains visible as in progress, and callers must not race it with a guessed or fresh operation.
 If polling times out while the operation remains processing, run the same exact `recoveryCommand` again later.
 Do not treat that timeout as permission to create a fresh operation.
 Successful recovery returns action `recoverPolicyDeploy` with the normal committed `policyDeployReceipt`.
 Do not rerun a normal deploy, guess an operation ID, copy one from another app, or scrape internal storage.
+Do not edit release pointers or publication revisions by hand.
+The control plane reconciles a retained candidate with destination revision high-water marks without weakening those monotonic fences.
 If the response has no operation ID, confirm the active identity with `bounded whoami` and let the verified owner obtain and run the recovery command.
 After recovery commits, poll `bounded apps inspect --app-id <id> --json` for the expected active publication instead of treating the recovery line as final provenance.
 
@@ -490,6 +503,35 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 > "declare → verify → fix" fast loop is real, but pace it: batch edits before
 > re-running, and don't spin `verify` in a tight retry. A `429` is throttling, not
 > a policy error — back off ~60s and retry.
+
+### `propose` / `proposals` - launched oApp contributions
+
+`bounded propose` is currently an inspection command, not a submission command.
+Exact code-patch execution is not wired end to end, so live submission fails before Git inspection, identity setup, venue access, or any write.
+Use the explicit dry-run mode to inspect a local draft:
+
+```bash
+bounded propose --title "Show the streak counter" --dry-run
+bounded propose --title "Show the streak counter" --slug streaks --dry-run --json
+```
+
+The dry-run reads only the local project configuration and Git checkout.
+It never opens a venue session, signs in, creates a keypair, or writes a proposal.
+The patch is measured against the published remote-tracking head by default, or against `--base <revision>` when supplied.
+If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
+The reported and fingerprinted base is always the resolved exact commit object ID, never a moving symbolic ref such as `HEAD`.
+Top-level `bounded.json` and `.gitignore` clone plumbing are excluded.
+Untracked files are refused instead of silently omitted, and one draft is capped at 512 KiB.
+The canonical patch includes reconstructable binary deltas, ignores ambient global and system Git configuration, and fixes the diff algorithm, context, prefixes, rename behavior, and presentation.
+
+Human output prints the exact diff and its `draft hash`.
+JSON output returns the exact `diff`, `draftHash`, target labels, title, description, intent, base, changed file names, file count, and byte count.
+The versioned fingerprint binds those local draft fields with unambiguous JSON field boundaries.
+It is not an onchain content commitment, does not reserve a proposal id, and does not create something holders can vote on.
+
+Until the exact-patch lane is available, submit the intended outcome as a normal idea in the oApp's Ideas tab.
+`bounded proposals [slug]` remains a read-only venue command for listing existing proposals newest-first.
+It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `propose --dry-run`, it opens a venue data-plane session to read the backlog.
 
 ## Billing and Bounded Pay
 

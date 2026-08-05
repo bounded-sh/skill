@@ -217,7 +217,7 @@ A function moves to `supported` only after a retained live run confirms both its
 
 `@TokenPlugin.SOL` is a source-defined native token alias, but its complete lab flow remains unverified in this snapshot.
 `@TokenPlugin.USDC` is mainnet-only and is unsupported for TokenPlugin operations on devnet.
-Do not confuse that constant with the separate Crossmint staging test-stablecoin payment rail.
+Do not confuse that constant with the platform-configured staging test-stablecoin payment rail.
 Devnet token acceptance must create and use an app-owned classic SPL or Token-2022 mint.
 `@TokenPlugin.EURC` has no published devnet acceptance receipt and must remain unverified.
 
