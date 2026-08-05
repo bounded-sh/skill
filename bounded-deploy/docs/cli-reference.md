@@ -10,22 +10,25 @@ errors are emitted as JSON too), `--quiet` (minimal output), `--env`
 
 ## Identity & teams
 
-The canonical identity is your **web account's user id**; wallet keys are
-detachable signing credentials, and email is a verified contact/login method for
-the web account. The CLI has two account-source families:
+The normal CLI identity is your **web account's user id**. `bounded init` reuses
+or refreshes the saved session and opens browser login when needed. A separate
+`bounded login` is useful for explicit reauthentication, account switching, or
+headless OTP, but is not required before init.
 
-- **Wallet/keypair sources**: `global`, `project`, `profile`, and `env`. These use
+The CLI also supports advanced local-signing sources:
+
+- **Wallet/keypair sources** (advanced): `global`, `project`, `profile`, and `env`. These use
   a local ed25519 keypair (`~/.bounded/credentials`, a profile/project credentials
   file, or `BOUNDED_PRIVATE_KEY`). The keypair owns apps created with it and signs
   data-plane writes. See [auth.md](../../bounded-frontend/docs/auth.md).
-- **Web account source**: `web`. Run `bounded login` to open the hosted Bounded
+- **Web account source** (default): `web`. Init opens the hosted Bounded
   sign-in page for email or social login. The CLI uses Authorization Code + PKCE,
   stores the refreshable session in `~/.bounded/web-session.json`, and selects
   `web` for the current project when one exists. It does not create or link a
   local key. Use `bounded login --email you@example.com` for a terminal OTP flow
   when a browser is unavailable.
 
-> **Wallet keys are unrecoverable if lost.** If you lose a wallet credentials file
+> **Advanced wallet warning.** If you deliberately choose a wallet source and lose its credentials file
 > without having linked, shared, or backed it up, every app it created can be
 > orphaned forever. Treat wallet keys like SSH private keys: back them up, then run
 > `bounded link` so the apps survive local key loss. Full safety model:
@@ -124,8 +127,8 @@ key material. This example explicitly opts into cloud source sync:
     "buildCommand": "npm run build"
   },
   "account": {
-    "keySource": "profile",
-    "profile": "client-a"
+    "keySource": "web",
+    "loginHint": "you@example.com"
   }
 }
 ```

@@ -422,25 +422,13 @@ for (const expected of [
   if (!cliReference.includes(expected)) fail(`CLI reference: missing sanitized onchain receipt contract ${expected}`)
 }
 
-const rootSkill = readFileSync(path.join(root, 'bounded/SKILL.md'), 'utf8')
-for (const expected of [
-  '`409` + `deploy_in_progress` / `operationId`',
-  '`202` with `state: "processing"`',
-  'let it poll and do not start a normal deploy',
-]) {
-  if (!rootSkill.includes(expected)) fail(`Bounded root skill: missing policy recovery boundary ${expected}`)
-}
-
 const deploySkill = readFileSync(path.join(root, 'bounded-deploy/SKILL.md'), 'utf8')
 for (const expected of [
-  '`deploy_in_progress` with an `operationId`',
-  'The verified app owner must run the exact emitted `recoveryCommand`',
-  '`202` with `state: "processing"`',
-  'exact finalized target publishes the frozen app/runtime target without replaying an onchain mutation',
-  'Unavailable finalized state remains locked and pollable',
-  'partial or contradictory state remains locked for manual intervention',
+  '[deploy recovery](docs/cli-reference.md#recover-an-in-progress-policy-deploy)',
+  '`deploy_in_progress`',
+  '`recoveryCommand`',
 ]) {
-  if (!deploySkill.includes(expected)) fail(`Bounded deploy skill: missing policy recovery boundary ${expected}`)
+  if (!deploySkill.includes(expected)) fail(`Bounded deploy skill: missing recovery routing ${expected}`)
 }
 
 for (const dropIn of ['agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {

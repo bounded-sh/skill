@@ -1,27 +1,32 @@
-# Auth — CLI/admin auth vs end-user auth
+# App-user authentication
 
-**What's in here / when to read this:** the two identity systems — CLI/admin auth
-for builders vs your app's end-users — plus account **linking**, CLI web login,
-and **sharing** an app with teammates by email.
+This page is about people signing in to a deployed app. The developer account
+used by `bounded init` and the CLI is separate; see
+[developer accounts](../../bounded-deploy/docs/accounts.md). Do not expose CLI
+sessions or developer credentials to app users.
 
 Bounded has **two distinct identity systems**. Don't conflate them:
 
 | | Who | What it is | Where it shows up |
 |---|---|---|---|
-| **CLI/admin auth** | you / your agent | either a wallet/keypair account source or a Bounded web account session | owns/administers apps; wallet mode signs data-plane writes, web mode authenticates control-plane commands |
+| **CLI/admin auth** | you / your agent | normally a Bounded web account session selected by `bounded init`; local signing is an advanced alternative | owns/administers apps and is documented in the deploy skill |
 | **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP). **Turnkey-native auth with eager embedded-wallet provisioning is the default**, so supported email/social users carry both `@user.id` and `@user.address` without an `authMode` or `auth.wallets` override. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
 
-## CLI auth — wallet/keypair vs web account
+## CLI auth boundary
 
-`bounded init` writes public `bounded.json`; account selection lives there. The
-CLI has two account-source families:
+`bounded init` writes public `bounded.json`, reuses a web session, and opens
+hosted browser login when needed. That is the normal onboarding flow. Full
+developer-account guidance lives in
+[accounts.md](../../bounded-deploy/docs/accounts.md).
 
-- **Wallet/keypair mode** (default): `global` (`~/.bounded/credentials`),
+The CLI also has advanced local signing sources:
+
+- **Wallet/keypair mode** (advanced): `global` (`~/.bounded/credentials`),
   `project` (`<project>/.bounded/credentials`), `profile`
   (`~/.bounded/accounts/<profile>/credentials`), or `env`
   (`BOUNDED_PRIVATE_KEY`). The keypair is the signing identity; it owns apps
   created with it and signs data-plane writes.
-- **Web account mode**: run `bounded login`. This opens the hosted email/social
+- **Web account mode** (default): `bounded init` opens the hosted email/social
   sign-in page and completes Authorization Code + PKCE through a temporary
   loopback callback. It stores refreshable Bounded Auth credentials in
   `~/.bounded/web-session.json`, uses the web account directly, and selects
@@ -35,12 +40,12 @@ bounded login                     # hosted email/social sign-in
 # bounded login --email you@example.com  # headless terminal OTP fallback
 ```
 
-> **Wallet mode key warning.** A wallet credentials file is auto-generated, never
+> **Advanced wallet-mode warning.** A wallet credentials file is auto-generated, never
 > shown, and never backed up. Lose it without having linked, shared, or backed it
 > up first and its apps are unrecoverable (there is no key-recovery command;
 > `bounded account transfer-to-web` requires the key to still exist). Treat it
 > like an SSH private key and
-> run **`bounded link`** on day one if you choose wallet/keypair mode. Full
+> set up a recovery path if you deliberately choose wallet/keypair mode. Full
 > guidance: [key-and-account-safety.md](../../bounded-deploy/docs/key-and-account-safety.md).
 
 - Use `bounded account use <profile>` to run one project under another named

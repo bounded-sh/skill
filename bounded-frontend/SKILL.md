@@ -24,7 +24,7 @@ domains. To route across the family, see the root **bounded** skill.
 | SDK calls, reads, writes, and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | Build a web app frontend | [docs/building-a-webapp.md](docs/building-a-webapp.md) |
 | Build for React Native / mobile | [docs/building-for-react-native.md](docs/building-for-react-native.md) |
-| Bounded Auth, email OTP, OAuth, browser guest users, optional text OTP - Turnkey is the default and gives supported email/social logins a wallet address | [docs/auth.md](docs/auth.md) |
+| Bounded Auth, email OTP, OAuth, default Turnkey wallet provisioning | [docs/app-auth.md](docs/app-auth.md) |
 | **Bring-your-own wallet login** (connect wallet, `walletLogin`, `authMethod:'phantom'`) — the companion to the canonical login | [docs/auth.md](docs/auth.md#solana-wallet-login-bring-your-own) |
 | Anonymous users, invite links, account upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | Hosted frontend and app URLs | [docs/frontend-hosting.md](docs/frontend-hosting.md) |
@@ -35,9 +35,11 @@ domains. To route across the family, see the root **bounded** skill.
 |---|---|
 | collection paging with `get`, `queryAggregate`, `count`, filters, sort, cursor | [docs/sdk-reference.md](docs/sdk-reference.md) |
 | `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
-| `bounded link`, `bounded login`, email OTP, OAuth, guest sign-in | [docs/auth.md](docs/auth.md) |
+| CLI developer login or `bounded login` | [developer accounts](../bounded-deploy/docs/accounts.md) |
+| App-user email OTP or OAuth | [docs/app-auth.md](docs/app-auth.md) |
+| Guest sign-in or guest upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
 | `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom / Wallet-Standard login | [docs/auth.md](docs/auth.md#solana-wallet-login-bring-your-own) |
-| `openBoundedWidget`, unified login widget, Turnkey email OTP, default auth mode | [docs/auth.md](docs/auth.md#choosing-your-login-methods--ux) |
+| `openBoundedWidget`, unified login widget, Turnkey email OTP, default auth mode | [docs/app-auth.md](docs/app-auth.md) |
 | embedded wallet, Turnkey, `auth.wallets`, `@user.address` on an email/social login | [../bounded-onchain/docs/embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md) |
 | `onramp()`, fund the user's wallet, buy SOL/USDC with a card, Coinbase Onramp, "top up" | [../bounded-onchain/docs/onramp.md](../bounded-onchain/docs/onramp.md) |
 

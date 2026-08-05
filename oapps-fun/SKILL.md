@@ -382,11 +382,11 @@ the app's running costs.
 
 ## Practical checklist before launch
 
-- The key that owns the app is LINKED to the human's email (`bounded whoami`
-  shows their email; if not, `bounded link --email <their email>` with them
-  present for the OTP - do this at project START, not launch time). Launch is
-  owner-only and needs an email-backed account: an unlinked machine key is a
-  wall the human hits in the browser.
+- The app uses the human owner's normal Bounded web account (`bounded init`
+  opens login when needed; confirm with `bounded whoami`). Launch is owner-only
+  and needs an email-backed account. If this is an intentionally legacy
+  key-owned app, use the advanced deploy account-recovery reference before
+  launch rather than inventing a new owner.
 - Boundaries were written early and cover the app's money and state rules as
   proven invariants, not ad-hoc checks. They are the trust artifact buyers
   read alongside your source.
