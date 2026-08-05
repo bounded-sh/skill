@@ -275,8 +275,24 @@ Account resolution must reject descriptor drift. Attested bytes must be nonempty
 the target must be executable, and signer confinement still applies.
 
 On current devnet, `@CPI.memoNote` and `@CPI.transferLamports` are source-present but remain unverified pending retained live proof.
-All ten Kamino descriptors are unsupported because Kamino is unavailable on devnet.
+The eight Kamino descriptors are unsupported, but NOT because Kamino is missing from devnet: the KLend program is deployed and executable there at the same address as mainnet (verified on chain 2026-08-05). What is unestablished is a usable market and reserve set.
+Most Kamino, stake-pool, Raydium and DLMM calls additionally carry `NEEDS-RUNTIME-V4` and are refused at deploy time until that runtime ships.
 Do not describe the generic CPI tag or descriptor registry as proof that a particular descriptor is usable.
+
+### String arguments cannot contain `,` `{` `}` `[` `]`
+
+A plugin call's arguments are rendered into a single log line that the account resolver
+parses back. The format has no quoting, so a string argument carrying one of those
+characters changes how the line is read and the call ends up with a different number of
+arguments than you wrote.
+
+That is now refused at build time with an explicit error naming the character. It used to
+be accepted, and silently produced a write built from a truncated value - so if you have a
+policy passing free-form user text to a plugin function, this is the failure you may start
+seeing, and the write it replaces was wrong rather than right.
+
+Sanitise or encode the value first - `@Bytes.utf8(...)` and the `@Bytes.*` builders are
+unaffected, since they carry bytes rather than rendered text.
 
 ## Onchain staged document updates
 

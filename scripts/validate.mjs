@@ -265,14 +265,14 @@ if (!solanaInventory) {
     support: match[3],
   }))
   const ids = rows.map((row) => row.id)
-  if (rows.length !== 149) fail(`Solana capability status: expected 149 function rows, received ${rows.length}`)
+  if (rows.length !== 157) fail(`Solana capability status: expected 157 function rows, received ${rows.length}`)
   if (new Set(ids).size !== rows.length) fail('Solana capability status: duplicate function row')
 
   const supportCounts = rows.reduce((counts, row) => {
     counts[row.support] = (counts[row.support] ?? 0) + 1
     return counts
   }, {})
-  for (const [state, count] of Object.entries({ unverified: 115, unsupported: 34, blocked: 0 })) {
+  for (const [state, count] of Object.entries({ unverified: 115, unsupported: 42, blocked: 0 })) {
     // `supportCounts` is reduced from {} and only gains keys for states that occur,
     // so a legitimately-zero state is `undefined` here and a strict !== 0 would fire.
     if ((supportCounts[state] ?? 0) !== count) {
@@ -291,8 +291,8 @@ if (!solanaInventory) {
     AccountPlugin: 2,
     App: 2,
     BondingCurvePlugin: 6,
-    Bytes: 20,
-    CPI: 12,
+    Bytes: 22,
+    CPI: 16,
     DeFiPlugin: 21,
     DflowPlugin: 2,
     DocumentPlugin: 2,
@@ -303,7 +303,7 @@ if (!solanaInventory) {
     PredictionMarketPlugin: 7,
     PriceFeedPlugin: 1,
     PumpFunPlugin: 12,
-    Solana: 12,
+    Solana: 14,
     StringUtils: 1,
     TensorPlugin: 2,
     TokenPlugin: 12,
@@ -323,7 +323,7 @@ for (const expected of [
   '| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |',
   '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |',
   '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
-  '| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |',
+  '| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |',
   '| `@PumpFunPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |',
   '| `@TensorPlugin.buyNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |',
   '| `@Solana.invokeAttested` | extended disabled | unsupported | not applicable | DISABLED |',

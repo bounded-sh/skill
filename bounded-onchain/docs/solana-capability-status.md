@@ -8,7 +8,7 @@ versa. Do not read a devnet row as a mainnet guarantee.
 
 This is the canonical public classification of Bounded Solana functions for devnet.
 It is a source-derived snapshot, not a claim that every discovered function works on a live cluster.
-The catalog contains 149 individually classified functions.
+The catalog contains 157 individually classified functions.
 
 ## Read the three states independently
 
@@ -22,7 +22,7 @@ The current Bounded Solana program is recorded as runtime v3 on devnet.
 Runtime v3 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 115 `unverified`, 34 `unsupported`, and 0 `blocked`.
+The current totals are 115 `unverified`, 42 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -41,10 +41,14 @@ A function moves to `supported` only after a retained live run confirms both its
 | `NO-DEVNET-JUPITER` | Jupiter is unavailable on devnet. |
 | `NO-DEVNET-PHOENIX` | Phoenix is unavailable on devnet. |
 | `NO-DEVNET-DFLOW` | DFlow is unavailable on devnet. |
-| `NO-DEVNET-KAMINO` | Kamino is unavailable on devnet. |
+| `NO-USABLE-DEVNET-KAMINO-MARKET` | The KLend program IS deployed and executable on devnet at the same address as mainnet (verified on chain 2026-08-05); what has not been established is a usable market and reserve set there. Treat Kamino as untestable on devnet for that reason, not because the program is missing. |
 | `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
 | `CPAMM-SCENARIO` | A devnet acceptance scenario exercises this function, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
+| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4, which is not deployed on any cluster yet. Either its worst-case rendered call key exceeds the v3 buffer (the `@CPI.*` protocol calls) or the runtime simply has no handler for it yet (the signature and hashing primitives). Both are refused at deploy time with a clear error rather than failing on chain. |
+| `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
+| `LIVE-RAYDIUM-PROOF` | Raydium CPMM is deployed on devnet (at a different address from mainnet) and stays unverified until retained live proof exists. |
+| `LIVE-DLMM-PROOF` | Meteora DLMM is deployed on devnet at the same address as mainnet and stays unverified until retained live proof exists. |
 | `DISABLED` | The registry entry exists but is disabled. |
 
 ## Function inventory
@@ -81,18 +85,26 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@Bytes.u8` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@Bytes.u8At` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@Bytes.utf8` | extended runtime | unverified | source parity only | LIVE-PENDING |
-| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoDeposit` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoInitObligation` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoInitUserMetadata` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoRefreshObligation` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoRefreshObligationDeposited` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoRefreshObligationEmpty` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoRefreshReserve` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoRepay` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
-| `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-DEVNET-KAMINO |
+| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
+| `@CPI.kaminoDeposit` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
+| `@CPI.kaminoInitObligation` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
+| `@CPI.kaminoInitUserMetadata` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
+| `@CPI.kaminoRefreshObligation` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
+| `@CPI.kaminoRefreshReserve` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
+| `@CPI.kaminoRepay` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
+| `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
 | `@CPI.memoNote` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.transferLamports` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
+| `@CPI.stakePoolDepositSol` | descriptor CPI | unsupported | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.stakePoolWithdrawSol` | descriptor CPI | unsupported | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.raydiumSwapBaseInput` | descriptor CPI | unsupported | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.raydiumDeposit` | descriptor CPI | unsupported | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.raydiumWithdraw` | descriptor CPI | unsupported | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.dlmmSwap` | descriptor CPI | unsupported | not run | LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4 |
+| `@Solana.verifyEd25519` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
+| `@Solana.secp256k1Recover` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
+| `@Bytes.sha256` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
+| `@Bytes.keccak256` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
 | `@DeFiPlugin.addCpAmmLiquidity` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.claimDammV2PoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.claimMeteoraPoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |

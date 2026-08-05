@@ -50,7 +50,7 @@ the root **bounded** skill.
 | If you see | Read |
 |---|---|
 | `onchain:true`, `--protocol`, Solana, mainnet permit | [docs/onchain.md](docs/onchain.md) |
-| compiler support, deployed support, devnet status, supported, unsupported, blocked, unverified, Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor | [docs/solana-capability-status.md](docs/solana-capability-status.md) |
+| compiler support, deployed support, devnet status, supported, unsupported, blocked, unverified, Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor, SPL stake pool, liquid staking, Raydium, CPMM, Meteora DLMM | [docs/solana-capability-status.md](docs/solana-capability-status.md) |
 | "Transaction too large", tx-size gate, packet limit, 1232, oversized hook | [docs/onchain.md → Transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | Helius, indexer, mirror, reconciliation debt, missed transaction, replay, cursor, tombstone, DLQ | [docs/onchain.md](docs/onchain.md#mirror-completeness) |
 | `governance.upgrade`, policy controller, immutable, manifest root, governed session, recovery, extend, cancel | [docs/onchain.md](docs/onchain.md#policy-upgrade-governance-runtime-v3) |

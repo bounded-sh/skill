@@ -100,8 +100,10 @@ reassign ownership to repair it.
 Protocol selection does not make every discovered plugin usable on that network.
 Bounded tracks function discovery, deployed-runtime support, and retained live verification separately.
 The current devnet program is recorded as runtime v3, but runtime v3 does not prove that an external protocol is deployed or configured.
-Consult the [149-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
-Jupiter, Phoenix, DFlow, and Kamino are unavailable on devnet.
+Consult the [157-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
+Jupiter, Phoenix, and DFlow are unavailable on devnet.
+Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
+SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4, which is not deployed on any cluster yet, so they are refused at deploy time.
 Meteora is blocked pending a replacement external config.
 Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.
 
