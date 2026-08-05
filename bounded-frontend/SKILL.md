@@ -17,31 +17,22 @@ every write from the client, so pair this with the **bounded-backend** skill whe
 a client action needs a rule or invariant, and **bounded-deploy** for hosting and
 domains. To route across the family, see the root **bounded** skill.
 
-## Task Router
+## Reference Router
 
-| User task | Read |
+Read only the row matching the current task or term.
+
+| Task or term | Read |
 |---|---|
-| SDK calls, reads, writes, and subscriptions | [docs/sdk-reference.md](docs/sdk-reference.md) |
-| Build a web app frontend | [docs/building-a-webapp.md](docs/building-a-webapp.md) |
-| Build for React Native / mobile | [docs/building-for-react-native.md](docs/building-for-react-native.md) |
-| Bounded Auth, email OTP, OAuth, default Turnkey wallet provisioning | [docs/app-auth.md](docs/app-auth.md) |
-| **Bring-your-own wallet login** (connect wallet, `walletLogin`, `authMethod:'phantom'`) — the companion to the canonical login | [docs/auth.md](docs/auth.md#solana-wallet-login-bring-your-own) |
-| Anonymous users, invite links, account upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
-| Hosted frontend and app URLs | [docs/frontend-hosting.md](docs/frontend-hosting.md) |
-
-## Term Router
-
-| If you see | Read |
-|---|---|
-| collection paging with `get`, `queryAggregate`, `count`, filters, sort, cursor | [docs/sdk-reference.md](docs/sdk-reference.md) |
-| `set(path, null)`, delete, `setMany` | [docs/sdk-reference.md](docs/sdk-reference.md#delete--setpath-null) |
+| SDK reads, writes, subscriptions, paging, `queryAggregate`, `count`, filters, sort, cursor, `setMany`, `set(path, null)` | [SDK reference](docs/sdk-reference.md) |
+| Build a web frontend | [web app guide](docs/building-a-webapp.md) |
+| Build for React Native / mobile | [React Native guide](docs/building-for-react-native.md) |
+| App-user email OTP, OAuth, `openBoundedWidget`, unified login widget, default Turnkey auth | [app auth](docs/app-auth.md) |
+| Bring-your-own wallet login; `walletLogin`, `authMethod:'phantom'`, Phantom / Wallet-Standard | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) |
+| Guests, anonymous users, invite links, account upgrade | [anonymous accounts](docs/anonymous-accounts.md) |
+| Hosted frontend and app URLs | [frontend hosting](docs/frontend-hosting.md) |
 | CLI developer login or `bounded login` | [developer accounts](../bounded-deploy/docs/accounts.md) |
-| App-user email OTP or OAuth | [docs/app-auth.md](docs/app-auth.md) |
-| Guest sign-in or guest upgrade | [docs/anonymous-accounts.md](docs/anonymous-accounts.md) |
-| `walletLogin`, `authMethod:'phantom'`, connect wallet, Phantom / Wallet-Standard login | [docs/auth.md](docs/auth.md#solana-wallet-login-bring-your-own) |
-| `openBoundedWidget`, unified login widget, Turnkey email OTP, default auth mode | [docs/app-auth.md](docs/app-auth.md) |
-| embedded wallet, Turnkey, `auth.wallets`, `@user.address` on an email/social login | [../bounded-onchain/docs/embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md) |
-| `onramp()`, fund the user's wallet, buy SOL/USDC with a card, Coinbase Onramp, "top up" | [../bounded-onchain/docs/onramp.md](../bounded-onchain/docs/onramp.md) |
+| Embedded wallet, `auth.wallets`, `@user.address` after email/social login | [embedded wallets](../bounded-onchain/docs/embedded-wallets.md) |
+| `onramp()`, buy SOL/USDC by card, Coinbase Onramp, wallet top-up | [onramp](../bounded-onchain/docs/onramp.md) |
 
 ## Rules Of Thumb
 
