@@ -52,6 +52,14 @@ So one file gives preview and production **different admin members and different
 caps** with no flags and no copy-paste. Per-env `appId`s keep the two apps
 cleanly separated.
 
+Server-side resolution inlines an exact `@const.NAME` in **any** data position,
+not just rules; a function's `actAs` is included.
+So an environment can also select a different **service identity** per
+environment: declare `"actAs": "@const.STEWARD"` on the function and override
+`STEWARD` in the staging entry only, leaving the production-resolved policy
+unchanged.
+See [constants-and-defs.md §Per-environment service identity](../../bounded-backend/docs/constants-and-defs.md#per-environment-service-identity-actas).
+
 ## Staging + production, end to end
 
 Create two apps before adding the `environments` block. Record each printed
