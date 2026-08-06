@@ -66,9 +66,9 @@ admin can seed itself — see the bootstrap section below for why.
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
   },
   "posts/$postId": {
@@ -77,8 +77,8 @@ admin can seed itself — see the bootstrap section below for why.
     "rules": {
       "read": "true",
       "create": "@user.id != null && @newData.author == @user.id",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null"
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
   },
   "proofs": {
@@ -91,16 +91,30 @@ admin can seed itself — see the bootstrap section below for why.
 }
 ```
 
-*(Validates clean against the real PolicyValidator.)*
+*(Validates clean against the real PolicyValidator, and the `authorityClosure`
+attestation stays PROVED: `.active == true` implies the row exists, so it
+discharges the same closure obligation an existence check does.)*
 
-- Only an existing admin **or the founder** can mint an admin. The
+- Only an **active** admin **or the founder** can mint an admin. The
   `@user.id == @const.FOUNDER` disjunct is the **genesis clause**: on a
-  fresh app where `get(/admins/@user.id)` is null for everyone, it lets the
-  one constant founder identity create the first admin row (`admins/<FOUNDER>`).
-  After that, `get(/admins/@user.id) != null` carries every subsequent
-  promotion — the founder clause is dormant once the set is non-empty.
+  fresh app where no admin row is active yet, it lets the
+  one constant founder identity create the first admin row (`admins/<FOUNDER>`,
+  seeded `{ "active": true }`). After that, `get(/admins/@user.id).active == true`
+  carries every subsequent promotion - the founder clause is dormant once an
+  active admin exists.
+- **`active` is a REAL off-switch.** Every privileged rule gates on
+  `get(/admins/@user.id).active == true`, never on mere existence, so setting a
+  misbehaving admin's row to `{ "active": false }` instantly revokes every power.
+  An active admin (or the founder) performs that write; a deactivated admin cannot
+  restore themselves because `update` also requires `.active == true` (no
+  self-reactivation). Because this registry declares `active`, never gate on
+  `get(/admins/@user.id) != null` alone - that checks only that the row exists and
+  turns `active` into a dead, decorative field that silently revokes nothing. (An
+  admin registry that declares **no** `active` field is a valid, simpler design;
+  there, revocation is by deleting the row - see [service-keys.md](service-keys.md).
+  The rule is only: never *declare* `active` and then *ignore* it.)
 - End-users default to **least privilege**: an author may create their own post;
-  only an admin may hide or delete one.
+  only an active admin may hide or delete one.
 - The admin gate is the same `get()` expression the prover already understands —
   so "who may moderate" stays declarative and analyzable, not buried in code.
   Note the gate keys on `@user.id` (stable identity), so an email-login admin
@@ -126,8 +140,8 @@ onchain operations where you need a real wallet pubkey.
 ## Bootstrapping the first admin — the genesis flow
 
 There is a chicken-and-egg here that bites every fresh app: a create rule of
-**only** `get(/admins/@user.id) != null` means you must *already* be an
-admin to create one. On a brand-new app **nobody** is — the app owner is **not**
+**only** `get(/admins/@user.id).active == true` means you must *already* be an
+active admin to create one. On a brand-new app **nobody** is — the app owner is **not**
 implicitly an admin on the data plane (no god-mode). And `bounded data set` does
 **not** bypass create rules: the owner shows up as just another
 `@user.id`, so a genesis `set` to `admins/<owner>` is rejected with
@@ -140,16 +154,18 @@ The idiom that actually works, end to end:
    `"constants": { "FOUNDER": "<user-id>" }` (use an `environments` block for a
    per-env founder, see [environments.md](../../bounded-deploy/docs/environments.md)).
 2. **Add the genesis clause to the `admins` create rule** —
-   `get(/admins/@user.id) != null || @user.id == @const.FOUNDER`
+   `get(/admins/@user.id).active == true || @user.id == @const.FOUNDER`
    (shown in the collection above). This is the *only* sanctioned side door, and
    it admits exactly one identity.
 3. **Seed once from the founder identity** — run
    `bounded data set --path admins/<FOUNDER> --data '{"active":true}'` **as the
-   founder** (the identity whose `@user.id` equals `@const.FOUNDER`). The
-   genesis disjunct now passes and the first admin row lands.
+   founder** (the identity whose `@user.id` equals `@const.FOUNDER`). Seeding
+   `active: true` is required, not cosmetic: every privileged gate reads
+   `.active == true`, so a row written without it (or with `false`) is inert. The
+   genesis disjunct now passes and the first active admin row lands.
 4. **Promote everyone else through the founder/admin** — every later
-   `admins/<x>` write is carried by `get(/admins/@user.id) != null`; the
-   genesis clause never fires again once the set is non-empty.
+   `admins/<x>` write is carried by `get(/admins/@user.id).active == true`; the
+   genesis clause never fires again once an active admin exists.
 
 Pair this with the `authorityClosure` attestation above (`initialMember:
 "@const.FOUNDER"`) to **prove** the founder is the *only* bootstrap — the proof
@@ -183,8 +199,11 @@ When you build an app, **identify who the owner/admin is** (the creator) and
 **what admin actions the app genuinely needs** (moderation, config, refunds).
 Then:
 
-1. Express each admin action as an **explicit, admin-gated rule**
-   (`get(/admins/@user.id) != null`) — **never** as a bypass.
+1. Express each admin action as an **explicit, active-admin-gated rule**
+   (`get(/admins/@user.id).active == true`) - **never** as a bypass. When your
+   registry declares `active`, never gate on bare existence (which would make the
+   `active` off-switch inert); a registry that declares no `active` field may gate
+   on bare existence and revoke by deleting the row.
 2. Keep every constraint that must hold (caps, conservation, isolation) in an
    **invariant** — admins are bound by it too.
 3. Default end-users to **least privilege**; widen only where the description

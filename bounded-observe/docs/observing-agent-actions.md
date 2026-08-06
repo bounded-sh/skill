@@ -117,7 +117,7 @@ emitEvent(
   { ingestUrl: env.BOUNDED_INGEST_URL, sensorToken: env.BOUNDED_SENSOR_TOKEN },
   {
     class: "action",
-    actor: { id: tenantAppId, kind: "service", grade: "attested" },
+    actor: { id: tenantAppId, kind: "service", grade: "asserted" },
     dest: { host: "api.anthropic.com", pathTemplate: "/v1/messages", method: "POST" },
     status: 200, dur_ms: 0, bytes: { i: 0, o: 0 },
     rec: { rail: "llm-gateway", action: "acme.tenant.aiRun", registryVersion: "acme-proxy",
@@ -132,7 +132,14 @@ and `sensorToken` are present** (deleting the secret is the kill switch),
 `postEvent` never rejects, the POST is bounded by `timeoutMs` (default 2 s),
 and `org`/`sensor` are never sent — the ingest stamps both from the sensor
 key. Metadata only, same denylist rules; per-tenant attribution comes from
-whatever identity your chokepoint already verified (`grade: "attested"`).
+whatever identity your chokepoint already verified.
+
+Actor grade is a claim, not a proof. The ingest currently normalizes **every**
+sensor-supplied `actor.grade` to `asserted` — a cryptographically `attested`
+grade is reserved for a future attestation-bound credential and is **not**
+honored from event data today. Send `asserted` (or omit the grade); a self-set
+`attested` label is downgraded server-side, so never rely on it as a trust
+signal in rollups or reports.
 
 ## The AI base-URL gateway — for tools you can't wrap
 

@@ -186,6 +186,39 @@ This is the opposite of the off-chain default: off-chain, prefer the universal
 `@user.id`; onchain, you have nothing but `@user.address`. See
 [policy-reference.md](../../bounded-backend/docs/policy-reference.md) for the full identity triad.
 
+## Guests cannot write to MAINNET onchain (platform invariant)
+
+A **guest (anonymous) session is blocked from every mainnet onchain write**, at the
+platform level, fail-closed - you do not (and cannot reliably) enforce this in your own
+policy, because onchain rules can't even reference `@user.isAnonymous` (above). A blocked
+write returns **HTTP 403 with `code: "anonymous_onchain_blocked"`** *before* any transaction
+is built.
+
+**Why.** A guest is an ephemeral device-keypair identity that is **dropped when the user
+upgrades to email or a real wallet** - its data and its keypair do not carry over. Letting a
+guest move or accumulate real value it would then lose is a footgun, so the platform simply
+forbids it. This mirrors the platform's "fail-closed on money-out" posture.
+
+**Exactly what is and isn't blocked:**
+
+| A guest can... | Blocked? |
+|---|---|
+| Read onchain data (any network) | ✓ allowed |
+| Write **offchain** collections (even in a mainnet app) | ✓ allowed |
+| Write onchain on **`realtime_devnet` / `solana_devnet`** (valueless testnet) | ✓ allowed |
+| Write onchain-flagged paths on **poofnet** (`realtime_offchain`, simulated) | ✓ allowed |
+| Write onchain on **`realtime_mainnet` / `solana_mainnet` (+ `*_mainnet_preview`)** | ✗ **403 `anonymous_onchain_blocked`** |
+
+So a guest can fully try your app and develop against devnet/poofnet; only **real mainnet
+value movement** requires a real login. This also covers writes a guest triggers **through a
+function** (`ctx.bounded`) - the anonymity signal is carried end to end, so there is no
+"launder it through a function" bypass.
+
+> **Value coming IN is your job to warn about.** The platform blocks value *out* (mainnet
+> writes) but cannot stop someone *depositing* funds into a guest's device wallet from
+> off-platform. Tell guests not to fund the guest wallet - see the guest-mode warning in
+> [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md).
+
 ## The mirror is eventually-consistent / don't read-after-write
 
 The read path is a **mirror** of on-chain state that runs a few seconds behind

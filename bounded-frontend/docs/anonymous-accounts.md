@@ -93,6 +93,39 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 > proves someone is authenticated; `@user.isAnonymous` only narrows *which kind*
 > of authenticated user it is.
 
+## 2b. Guests are offchain-only on mainnet - and warn your users
+
+Treat a guest as a **temporary, try-the-app identity**. Two things the platform does, and one
+thing you must do:
+
+- **The platform blocks guests from writing to MAINNET onchain**, fail-closed - a guest write to
+  a `realtime_mainnet`/`solana_mainnet` (or `*_mainnet_preview`) collection returns
+  **403 `anonymous_onchain_blocked`** before any transaction is built. Devnet/testnet, poofnet
+  simulation, offchain writes, and onchain reads are all still allowed, so a guest can fully
+  explore your app. (See
+  [onchain.md](../../bounded-onchain/docs/onchain.md#guests-cannot-write-to-mainnet-onchain-platform-invariant).)
+- **A guest is dropped on upgrade.** Signing in with email or a wallet creates a **new** real
+  account - the guest's keypair, its data, and any funds sitting in the guest device wallet do
+  **not** carry over (see §3/§4 for the deliberate patterns to migrate data before upgrading).
+
+Because of that, and because the platform can't stop someone *depositing* into a guest's device
+wallet from off-platform, **show a guest-mode warning** whenever `user.isAnonymous` is true:
+
+```jsx
+const { user } = useAuthUser();
+
+{user?.isAnonymous && (
+  <Banner>
+    You're browsing as a guest. This is temporary - your data and this guest wallet will be
+    lost when you sign in with email or a wallet. Don't deposit or send funds to your guest
+    account. Sign in to save your progress and transact.
+  </Banner>
+)}
+```
+
+Adapt the tone to your app, but keep the two load-bearing points: **temporary (data/funds lost on
+upgrade)** and **don't fund the guest wallet**. Prompt the upgrade before any real transaction.
+
 ## 3. Migrate browser guest data to a real account
 
 Send the guest through hosted login. `loginWithRedirect` signs them in as a

@@ -104,6 +104,13 @@ that debits one document must credit another **in the same batch**.
 }
 ```
 
+> **Demo vs production reads:** the `read: "@user.id != null"` rule above lets any
+> signed-in user read every account's balance. This example keeps reads permissive
+> so a client-side cross-owner transfer can read the recipient's balance before
+> crediting it. A production ledger should move transfers into a server-side function
+> with elevated read and owner-scope the read rule (`@data.owner == @user.id`) so
+> users cannot enumerate every balance.
+
 | Key | Required | Meaning |
 |---|---|---|
 | `field` | yes | `Int` or `UInt` field to conserve |
@@ -846,9 +853,9 @@ tenant data:
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
   },
   "proofs": {
@@ -864,6 +871,12 @@ tenant data:
 Keep tenant scoping for that admin as an ordinary field (`tenant`) gated in
 rules; the *closure* proof rides the flat `admins/$userId` scope. Use nested
 typed `roleGatedRead.actors` (above) for the per-tenant read isolation.
+
+Every privileged rule gates on `get(/admins/@user.id).active == true`, not on
+mere existence, so `active: false` is a real off-switch (revoke a misbehaving
+admin by writing it; `update` also requires `.active == true`, so they cannot
+reactivate themselves). `.active == true` implies the row exists, so the
+`authorityClosure` attestation still proves clean over the flat scope.
 
 ### Plain-string shorthand — and the rule you MUST follow
 

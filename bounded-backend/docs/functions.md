@@ -37,8 +37,10 @@ caller, so `auth: "true"` means any logged-in caller may invoke it and
 `ctx.bounded` still cannot exceed that caller's data-plane authority. A function
 that declares `actAs` writes as a backend/service identity and is therefore
 privileged: deploy requires its `auth` rule to imply the app's admin predicate
-using a runtime-valid expression such as `get(/admins/@user.id) != null`. Declare
-and bootstrap that `admins/$userId` scope before deploying an `actAs` function.
+using a runtime-valid expression such as `get(/admins/@user.id).active == true`
+(`.active == true` implies the row exists, so it satisfies the deploy gate while
+giving you a real off-switch - see [admin-and-ownership.md](admin-and-ownership.md)).
+Declare and bootstrap that `admins/$userId` scope before deploying an `actAs` function.
 
 ## When to reach for a function — read this first
 
@@ -90,15 +92,15 @@ paths and `links`, declared once at the root of the policy:
   "admins/$adminId": {
     "rules": {
       "read": "true",
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "false",
-      "delete": "false"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
     },
     "fields": { "active": "Bool" }
   },
   "functions": {
     "syncStripe": {
-      "auth": "@user.id != null && get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id).active == true",
       "entry": "functions/syncStripe.ts",
       "actAs": "AK5RcyBCHnMmiS9KN1RMPktVKpjeEZKMhV6oe6r7m9Hm",
       "timeout": 30,
@@ -108,10 +110,20 @@ paths and `links`, declared once at the root of the policy:
 }
 ```
 
-Seed `admins/<FOUNDER>` once as the founder after deploy. `bounded data set` does
-not bypass rules; the founder disjunct is what makes the first write possible.
-After that, existing admins may create later admin rows. See
+Seed `admins/<FOUNDER>` once as the founder after deploy, with `{ "active": true }`.
+`bounded data set` does not bypass rules; the founder disjunct is what makes the
+first write possible. After that, active admins may create later admin rows. See
 [admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
+The gate is a **real off-switch**: every privileged rule and the `syncStripe`
+`auth` read `get(/admins/@user.id).active == true`, so setting a compromised
+admin's row to `{ "active": false }` immediately blocks them from invoking this
+`STRIPE_KEY`-signing Function. An active admin performs that deactivating write;
+`update` also requires `.active == true`, so a deactivated admin cannot reactivate
+themselves. Because this `admins` registry declares `active`, do not gate on
+`get(/admins/@user.id) != null` alone - existence never consults `active`, leaving
+this money-adjacent Function with no working revocation. (A registry that declares
+**no** `active` field may gate on bare existence and revoke by deleting the row;
+this example ships `active`, so its gate must read it.)
 Replace the sample sync address with one dedicated to your app, using the same
 public address for both `SUBS_SYNC_ACTOR` and `syncStripe.actAs`. Admins may
 invoke the Function, but only that service identity may create or update
@@ -126,11 +138,11 @@ need a private key; cryptographic/onchain signing does.
 
 | Key | Meaning |
 |---|---|
-| `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller — `{ id, address, email }` where `@user.id` is the universal stable identity (always present), `@user.address` is a real onchain wallet (null for email-only logins), and `@user.email` is the verified email (null for wallet logins). `"true"` = any logged-in caller; `get(/admins/@user.id) != null` = only admins. Gate identity/membership on `@user.id`. Evaluated before the function runs; deny → `403`. |
+| `auth` | **Required.** The invocation rule — a policy expression (same language as `rules`). `@user` is the verified caller — `{ id, address, email }` where `@user.id` is the universal stable identity (always present), `@user.address` is a real onchain wallet (null for email-only logins), and `@user.email` is the verified email (null for wallet logins). `"true"` = any logged-in caller; `get(/admins/@user.id).active == true` = only active admins (a real off-switch). Gate identity/membership on `@user.id`. Evaluated before the function runs; deny → `403`. |
 | `entry` | **Required.** Relative path to the function's source file (e.g. `functions/syncStripe.ts`). No absolute paths, no `..`. |
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
 | `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. Rejected under top-level `oapp: true`; an oApp function must omit this key. `actAs` is not a secret and remains allowed. |
-| `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. |
+| `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. **Concurrency-bounded:** a sandbox container is a real shared resource, so an app (and an account, across its apps) may only hold a limited number of live containers at once - each distinct `scope` you pass is a distinct container that counts toward the limit, and a container stays counted for a short idle window after your call returns (it is kept warm, not destroyed). Exceeding the limit is a fail-closed `429` `sandbox_concurrency_limit` (with `retryAfterMs`); reuse the **same** `scope` for sequential steps that share a workspace so they share one container instead of each consuming a slot. Sandbox is a paid capability - a plan (or account) with no sandbox allowance is refused with `403` `sandbox_capability_plan_gated`. |
 | `build` | Optional. Grants app-build origination via `ctx.build` (the unified Build system — successor to `ctx.oapps`). `{ profile, create?, edit?, fork?, view?, cancel? }` — the capability *is* the authority (invariant 4). **Cannot** be combined with `webhook` or `browser`: a build capability on an unauthenticated Internet surface would let anonymous callers spend the owner's build funds, so the validator rejects both combinations. Promotion and gate-decision authority are never grantable. See [§ctx.build](#ctxbuild--governed-app-builds). |
 
 **Auth-by-policy is the point.** Because the invocation rule is evaluated by the
@@ -165,7 +177,7 @@ export default async function (args, ctx) {
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](#ctxai--real-ai-no-api-keys) and [§media](#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
-| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **verified enqueuing principal** (or as system when the enqueuer was system), receives `payload` as its `args`, and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
+| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **null system principal** (`ctx.user == null`), never as the enqueuer, so the target must opt in with `queueCallable: true` in policy; it receives `payload` as its `args` and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
 | `ctx.build` | **Governed app builds — `create` / `edit` / `fork` / `get` / `cancel`.** Present only when the function's policy declares a `build` capability; otherwise every method returns `{ ok: false, reason: "build_capability_missing" }` with no network call. Originates AI app builds through the unified Build control plane, funded and governed by the named build profile. See [§ctx.build](#ctxbuild--governed-app-builds). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
@@ -594,30 +606,64 @@ export default async function placeOrder(args, ctx) {
   return { ok: true, jobId };
 }
 
-// Runs LATER as the verified principal that enqueued it; `payload` arrives as `args`.
+// Runs LATER as the null SYSTEM principal (ctx.user == null, ctx.auth.system == true) —
+// a queued replay is NEVER deputized as the enqueuer. The target must opt in with
+// `queueCallable: true` in policy (below); pass any identity the job needs through the
+// payload (it arrives as `args`), not via ctx.user.
 export default async function fulfillOrder(args, ctx) {
-  // For a user-enqueued job, ctx.user is that verified user and
-  // ctx.auth.system is false. A system-enqueued job remains system.
+  // ctx.user is the null system principal here; args.orderId + args.buyer came from
+  // the enqueuer's payload. Do NOT read the caller from ctx.user on a queued run.
   const order = await ctx.bounded.get(`orders/${args.orderId}`);
-  // ... do the slow work, write results through ctx.bounded ...
+  // ... do the slow work, write results through ctx.bounded (as system) ...
   await ctx.bounded.set(`orders/${args.orderId}`, { ...order, status: "fulfilled" });
+}
+```
+
+The queued target must declare `queueCallable: true` in its policy `functions` entry.
+This is the explicit opt-in that authorizes a system-principal background run; a target
+that has not opted in has its queued replay dropped (fail-closed):
+
+```jsonc
+{
+  "functions": {
+    "placeOrder":  { "auth": "@user.id != null", "entry": "functions/placeOrder.ts" },
+    "fulfillOrder": {
+      "auth": "false",              // no human may call it directly
+      "entry": "functions/fulfillOrder.ts",
+      "queueCallable": true          // ...but it MAY run as a queued background job
+    }
+  }
 }
 ```
 
 - **Contract:** `ctx.enqueue(functionName: string, payload?: unknown, opts?: { delaySeconds?: number }): Promise<{ jobId }>`.
 - **What it runs:** `functionName` must be a **deployed function in this app** (a
   function may enqueue another function or itself; validated at enqueue time).
-- **How it runs:** the platform snapshots the enqueuing run's **verified identity**
-  and the queued replay executes as that same principal. A user-enqueued job sees
-  that user in `ctx.user` and in `@user.*`; a system-enqueued job remains the null
-  system principal. The snapshot is created server-side and cannot be supplied or
-  changed by the isolate. The enqueue itself authorizes the later execution;
-  writes still pass your `rules` + invariants through `ctx.bounded`.
+- **How it runs:** a queued replay is **never deputized as the enqueuer** — it runs as the **null system principal** (`ctx.user == null`, `ctx.auth.system == true`, and every `@user.*` resolves to null), regardless of who enqueued it.
+  Because the human `auth` rule is written against a real caller, it cannot authorize a null-user run, so the queued lane instead requires the **target** to opt in with `queueCallable: true` in its policy `functions` entry.
+  A target that has not opted in is **rejected fail-closed**: the queued message is dropped (a `function_failed` analytics event is emitted for operators) and the human `auth` rule is never evaluated under a null user.
+  Pass any caller identity or context the job needs through the `payload` (it arrives as `args`); do **not** expect the enqueuer in `ctx.user`.
+  `ctx.bounded` writes from the queued run still pass your `rules` + invariants as the system principal.
+- **Public-origin restriction:** `queueCallable` authorizes **trusted** callers (a cron/heartbeat schedule, an internal run, or a user-authenticated function) to drive a system-principal background run - it does **not** authorize the anonymous internet.
+  A queued job that **descends from public ingress** (it was enqueued by a `browser`- or `webhook`-public function, or by any descendant of one) is **refused fail-closed** at replay even when the target declares `queueCallable: true`: the message is dropped and a `function_failed` analytics event is emitted, mirroring the build ban on public-origin runs.
+  This prevents an anonymous caller from laundering public ingress into a full system-principal run through your enqueue code.
+  If a public-facing function needs to trigger background work, do that work inline in the function (still under its own `auth` rule), not by enqueuing a system-principal job.
 - **Delivery:** at-least-once, with Cloudflare-managed retries and a dead-letter
   queue. **Make enqueued functions idempotent** so a retry is safe.
 - **Limits:** `payload` must be JSON-serializable and ≤ 96,000 UTF-8 bytes;
   `delaySeconds`
-  is 0..86400 (24h).
+  is 0..86400 (24h). One invocation may emit at most 50 enqueue intents.
+- **Breadth budget:** each run also carries a bounded **fan-out breadth budget**
+  that its descendant background jobs share, so one app cannot multiply itself
+  into an unbounded queue backlog. A **single-successor chain** (enqueue one next
+  step, e.g. a paginator/cursor loop) is free and runs unbounded; **fanning out to
+  many children** spends the budget, and it shrinks for each further generation, so
+  deep *recursive fan-out trees* are cut off. If a run tries to fan out beyond its
+  remaining budget the whole enqueue drain is refused (the parent invocation
+  surfaces a `429` with `enqueue_descendant_budget_exceeded`); the cross-host
+  producer refuses with `enqueue_descendant_budget_unavailable`. The ceiling is
+  generous - ordinary fan-out and chains are unaffected - so prefer chains over
+  wide recursion for large workloads.
 - **Billing:** each queued run is driven back through the normal `/invoke` path,
   so it **meters compute usage to the app's request ledger identically to an HTTP
   invocation** — background work is billed like foreground work.
@@ -826,7 +872,7 @@ code and message.
 bounded functions deploy syncStripe \
   --entry functions/syncStripe.ts \
   --app-id <id> \
-  --auth 'get(/admins/@user.id) != null' \
+  --auth 'get(/admins/@user.id).active == true' \
   --secret STRIPE_KEY \
   --timeout 30
 
@@ -931,7 +977,7 @@ Invoke it from your admin dashboard with
 (or the TypeScript fetch shown above).
 
 Flow: logged-in admin → invoke (attaches token) → Bounded auth gate (verify token →
-resolve `@user` → evaluate `get(/admins/@user.id) != null` → allow) → the
+resolve `@user` → evaluate `get(/admins/@user.id).active == true` → allow) → the
 function (fetch Stripe → transform → `ctx.bounded.set`, re-checked by your rules +
 invariants as the declared sync service identity) → returns JSON.
 
@@ -965,18 +1011,24 @@ function on the cadence as the **system principal**.
 
 ```json
 {
+  "constants": { "FOUNDER": "<founder-user-id>" },
   "rollups/$day": {
     "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
     "fields": { "total": "UInt" },
     "schedule": { "every": "1d", "run": "rollupDaily" }
   },
   "admins/$adminId": {
-    "rules": { "read": "true", "create": "false", "update": "false", "delete": "false" },
+    "rules": {
+      "read": "true",
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true"
+    },
     "fields": { "active": "Bool" }
   },
   "functions": {
     "rollupDaily": {
-      "auth": "@user.id != null && get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id).active == true",
       "entry": "functions/rollupDaily.ts",
       "timeout": 120
     }
@@ -985,10 +1037,14 @@ function on the cadence as the **system principal**.
 ```
 
 *(Validates clean and **fires** — `schedule.run` can name either a scheduled hook
-or a top-level function. Add `"actAs": "<address>"` to the function block to run
-it as that identity so its `ctx.bounded` writes satisfy owner/controller rules;
-without `actAs` it runs as the all-null system principal, which cannot bill
-`ctx.ai` or satisfy `owner == @user.id`.)*
+or a top-level function. The `admins` registry gates every privileged path on
+`.active == true` (a real off-switch: `active: false` revokes a user-invoker, and
+`update` itself requires `.active == true`, so no self-reactivation); seed
+`admins/<FOUNDER>` `{ "active": true }` once as the founder. Add
+`"actAs": "<address>"` to the function block to run it as that identity so its
+`ctx.bounded` writes satisfy owner/controller rules; without `actAs` it runs as
+the all-null system principal, which cannot bill `ctx.ai` or satisfy
+`owner == @user.id`.)*
 
 > **`dueRows.run` → function caveat.** A `dueRows { run }` pointing at a function
 > also fires, but the due row's id is **not** yet passed to the function (it sees

@@ -214,7 +214,12 @@ defense-in-depth.
   gate `npcShouldSpeak` (e.g. once every N ticks, or only on a player action) and
   keep `pendingRef` so at most one call is in flight. For a hard ceiling, fund the
   `runAs` service account with a small AI/external-services budget — see
-  [billing.md](../../bounded/docs/billing.md).
+  [billing.md](../../bounded/docs/billing.md). On top of your own gating, the
+  platform enforces a **per-app daily ceiling on live calls** (a plan-tiered
+  denial-of-wallet backstop): once it is hit, further live `call`s that day come
+  back as an `@effect` result `{ ok: false, error: "effect_budget_exhausted" }`
+  instead of dispatching, so the same delay-tolerant loop should degrade
+  gracefully (show "…thinking" / skip the turn) rather than assume every call ran.
 - **Gate by `@origin`, keep `calls` tight.** The `@origin` `auth` rule is what
   stops a direct client call from reaching the NPC brain; the `session.live.calls`
   whitelist is what the tick may invoke. Whitelist only functions the game should

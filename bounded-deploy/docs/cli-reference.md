@@ -639,7 +639,7 @@ Full treatment: [environments.md](environments.md).
 | `runtime invoke <agent>` | Invoke a deployed agent/backend through Bounded (attaches your session token) | `bounded runtime invoke my-agent --app-id <id> --data '{}'` |
 | `live deploy <file>` | Upload a native `session.live` module (`init`/`tick`/`views`) to the code registry; the policy still declares the room binding | `bounded live deploy pong.live.ts --app-id <id>` |
 | `live intent <room-path>` | Send one authenticated live intent to a room and arm/cold-start the live loop | `bounded live intent rooms/r1 --app-id <id> --intent '{"type":"join"}'` |
-| `live status <room-path>` | Show live room diagnostics (`available`, `running`, `stopReason`, `etag`, `generation`, tick/alarm times). `--app-id` defaults to `bounded.json`. | `bounded live status rooms/r1` |
+| `live status <room-path>` | Show live room diagnostics (`available`, `running`, `stopReason`, `etag`, `generation`, tick/alarm times). Passive (never starts the room); the detailed shape requires read access to the room, otherwise a slim `{ available, started, module }` is returned. `--app-id` defaults to `bounded.json`. | `bounded live status rooms/r1` |
 | `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |

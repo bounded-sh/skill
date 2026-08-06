@@ -78,9 +78,9 @@ wallet/onchain semantics.
     },
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && (get(/admins/@user.id) != null || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id) != null",
-      "delete": "@user.id != null && get(/admins/@user.id) != null && $userId != @const.FOUNDER"
+      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true && $userId != @const.FOUNDER"
     }
   },
   "dirty/$slug": {
@@ -110,7 +110,7 @@ wallet/onchain semantics.
   },
   "functions": {
     "tick": {
-      "auth": "@user.id != null && get(/admins/@user.id) != null",
+      "auth": "@user.id != null && get(/admins/@user.id).active == true",
       "entry": "functions/tick.ts",
       "actAs": "<service-address>",
       "timeout": 60
@@ -118,6 +118,16 @@ wallet/onchain semantics.
   }
 }
 ```
+
+> **Founder self-deactivation trap - do not disable the founder here.** This variant
+> makes the founder row **undeletable** (`$userId != @const.FOUNDER` on `delete`) while
+> `update` requires `.active == true`. So if the founder's own `admins/<FOUNDER>` row is
+> ever written `active: false`, it can be **neither** deleted **nor** reactivated (the
+> genesis `create` clause only fires on a *non-existent* row) - the founder is locked out
+> with no recovery path. Do not deactivate the founder in this shape; keep at least one
+> **other** active admin for routine revocation. If you genuinely need delete-based founder
+> recovery, drop the `$userId != @const.FOUNDER` delete-guard (then an active admin can
+> delete the founder row and the founder re-creates it via the genesis clause).
 
 Any signed-in identity may create or refresh `dirty/$slug`. Only the sweeper
 may delete it. A false flag causes a truthful recomputation, not an authorized
