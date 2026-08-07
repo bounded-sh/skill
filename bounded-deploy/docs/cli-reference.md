@@ -28,6 +28,11 @@ The CLI also supports advanced local-signing sources:
   local key. Use `bounded login --email you@example.com` for a terminal OTP flow
   when a browser is unavailable.
 
+Outside a project, control-plane commands with an explicit `--app-id` also use
+the saved web session by default. They do not silently select or create
+`~/.bounded/credentials`. `BOUNDED_PRIVATE_KEY` or an explicit project account
+source remains an intentional wallet-mode selection.
+
 > **Advanced wallet warning.** If you deliberately choose a wallet source and lose its credentials file
 > without having linked, shared, or backed it up, every app it created can be
 > orphaned forever. Treat wallet keys like SSH private keys: back them up, then run
@@ -60,7 +65,7 @@ The CLI also supports advanced local-signing sources:
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
 | `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
-| `unshare <wallet> --app-id <id>` | Remove a collaborator (owner only) | `bounded unshare <wallet> --app-id <id>` |
+| `unshare <wallet\|email> --app-id <id>` | Remove a wallet or canonical email collaborator (owner only) | `bounded unshare teammate@example.com --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 | `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
 
@@ -159,7 +164,7 @@ Explicit flags still win for app/environment routing: `--app-id` and `--env`
 override project defaults.
 For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` overrides `account.keySource:"global"`, `"project"`, and `"profile"`.
 Check `bounded whoami --json` before an identity-sensitive deploy instead of assuming the public project config selected the active key.
-An explicit project `account.keySource:"web"` uses the web session for control-plane commands; commands requiring a wallet signer ask you to select a wallet source.
+An explicit project `account.keySource:"web"`, and projectless control-plane commands, use the web session. Exact app-bound data-plane operations such as `data`, `subscribe`, `functions invoke`, and `runtime invoke` still require a selected local signer until the platform exposes a browser-session token exchange for those services.
 Older projects with only `.bounded/app.json` still work; the CLI falls back to that marker when `bounded.json` is absent.
 
 `bounded whoami --json` separates the stable machine value from the descriptive location:
@@ -236,7 +241,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation` |
-| `clone <appId> [dir]` | Clone the app's cloud source repository (read-only token per invocation) | `--branch`, `--link` |
+| `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
 | `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |
 
 ```bash
@@ -486,9 +491,8 @@ warning. Frontend variants never change the canonical editing base. See
 [source-sync.md](source-sync.md#canonical-sites-also-establish-the-widget-editing-base)
 for limits and recovery semantics.
 
-The remote-edit era surface (`bounded edit`, `bounded dashboard`, `bounded
-dev`, `bounded live-edit ...`, the loopback daemon on 8085/8008) is REMOVED —
-do not suggest it.
+The remote-edit era surface (`bounded edit`, `bounded dashboard`, `bounded dev`, `bounded live-edit
+...`, the loopback daemon on 8085/8008) is REMOVED — do not suggest it.
 
 The widget
 uses the animated Bounded mark as the launcher, saves its corner placement and
@@ -649,7 +653,7 @@ Full treatment: [environments.md](environments.md).
 | `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
 | `site promote <variantId>` | Promote a frontend variant into the canonical hosted site after owner/admin authorization. Backend rules, data, functions, and policies stay unchanged. | `bounded site promote var_amit_refunds --app-id <id>` |
 | `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to vanity slug and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
-| `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. Needs the **owning wallet** identity — a plain web-login session is platform-scoped and can't preview (the command says so). The link is a bearer secret until it expires — don't post it publicly. | `bounded site preview --app-id <id> --open` |
+| `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. The router currently requires an exact app-bound wallet token for preview minting; the platform-scoped browser session is not accepted. The link is a bearer secret until it expires - don't post it publicly. | `bounded site preview --app-id <id> --open` |
 | `site proof [status\|on\|off]` | Opt-in public proof surface: the /__bounded/boundaries page (proof stamp, plain-English invariants, decline count) + the site's Boundaries corner badge. OFF by default | `bounded site proof on --app-id <id>` |
 
 For release-critical public sites, retain the exact successful `site deploy

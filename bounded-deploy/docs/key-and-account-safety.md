@@ -83,6 +83,11 @@ that require a local wallet signer fail with a clear message and ask you to pick
 a key. When a wallet/keypair source is selected, keypair commands use that source,
 and `BOUNDED_PRIVATE_KEY` is the higher-precedence CI/automation override.
 
+With no `bounded.json`, projectless control-plane commands that take `--app-id`
+also default to the saved web session. They do not discover or create the global
+key implicitly. Set `BOUNDED_PRIVATE_KEY`, or choose a wallet source in a
+project, only when wallet mode is intentional.
+
 **How a new project picks its source.** `bounded init` defaults to the web
 account, reuses or refreshes its saved session, and opens browser login when
 needed. An explicit `BOUNDED_PRIVATE_KEY` or repo-local `.bounded/credentials`

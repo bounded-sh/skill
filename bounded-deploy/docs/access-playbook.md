@@ -52,8 +52,8 @@ hold the grant:
 - their **CLI keypair** (`~/.bounded/credentials`).
 
 If the owner shared the app **with an email**, the **email identity** is the
-member — **not necessarily the CLI keypair** you happen to be signed in as. A
-freshly auto-created global keypair owns nothing and will 401 on everything.
+member - **not necessarily the CLI keypair** you happen to be signed in as. A
+freshly selected global keypair may own nothing and will 401 on everything.
 `bounded whoami` tells you which identity is active. Switch and **re-check under
 each relevant identity before concluding anything**:
 
@@ -67,11 +67,10 @@ bounded access --app-id <id>                                          # check as
 The grant is real if *any* of your identities shows it. Don't stop at the first
 one that 403s.
 
-On CLI ≥ 0.0.73 the identity default is **email-first**: a signed-in email
-session outranks an auto-created *unlinked* keypair, and `bounded whoami` leads
-with the account. If your CLI silently acts as a fresh keypair while a web
-login exists, that's the pre-0.0.73 behavior — `bounded update` first, then
-re-run `bounded whoami`.
+On current CLI builds the identity default is **email-first**: projectless
+control-plane commands use the saved browser session and never silently fall
+back to an unlinked global key. If a management command acts as a fresh keypair
+while a web login exists, run `bounded update`, then re-run `bounded whoami`.
 
 ### 1b. Owner-only operations (`share`, roster, transfer): find WHICH login is the owner
 
@@ -99,12 +98,15 @@ Also: if `bounded share` returns a **5xx**, the grant may still have landed
 already a collaborator"). **Verify with `bounded access --app-id <id>` before
 retrying or concluding failure.**
 
-### 2. `requires a keypair` on a web session = a CLI-version bug, not a wall
+### 2. `requires a keypair` on a management command = a CLI-version bug
 
-A **web-login session is platform-scoped**, and the CLI performs the deploy on
-behalf of web-account members (as of the CLI fix). If an **older** CLI refuses a
-web-account deploy with `requires a keypair`, that is a **version bug in the CLI**,
-not a permissions wall. Fixes, in order:
+A **web-login session is platform-scoped**, and the CLI uses it for deploy,
+access, domains, site, source clone, and other control-plane operations. If an
+older CLI refuses one of those with `requires a keypair`, that is a CLI version
+bug, not a permissions wall. Exact app-bound data-plane operations (`data`,
+`subscribe`, `functions invoke`, `runtime invoke`) are different: their deployed
+services currently require an app-bound signer. Fix outdated management-command
+behavior in this order:
 
 ```bash
 bounded version                                          # confirm what build you're on

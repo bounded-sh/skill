@@ -91,15 +91,17 @@ editing base.
 
 - **oApps launches.** The launch integrity scan reads the synced source and
   the public DYOR source page serves it. No synced source → no launch.
-- **`bounded clone` / `bounded pull`** — read the same repo (read-only
-  tokens, `code:read` authority).
+- **`bounded clone` / `bounded pull`** - read the same repo (read-only
+  tokens, `code:read` authority). Browser login is the default identity, and a
+  cloned checkout keeps `account.keySource: web`; `--link` exists only for an
+  explicitly selected wallet key.
 
 ## Removed legacy surface (do not suggest these)
 
 The remote-edit era CLI surface is gone: `bounded edit`, `bounded dashboard`
-(the localhost daemon and its `/apps/:appId/propose|validate|deploy` API), and
-the `bounded live-edit` command group (`register`/`validate`/`deploy`, the
-`liveEdit.artifacts`/`artifactPush` knobs). A `liveEdit` block in an old
-`bounded.json` is ignored with a deprecation notice; `liveEdit.artifactPush:
-true` is honored as `sourcePush: true`. Editing happens in your working tree
-with your own tools; deploying and source sync are the only cloud writes.
+(the localhost daemon and its `/apps/:appId/propose|validate|deploy` API),
+and the `bounded live-edit` command group (`register`/`validate`/`deploy`, the
+`liveEdit.artifacts`/`artifactPush` knobs). A `liveEdit` block in an old `bounded.json` is ignored with a
+deprecation notice; `liveEdit.artifactPush: true` is honored as `sourcePush:
+true`. Editing happens in your working tree with your own tools; deploying and
+source sync are the only cloud writes.
