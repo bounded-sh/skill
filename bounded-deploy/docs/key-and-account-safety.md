@@ -301,18 +301,21 @@ If the project already uses `account.keySource:"web"`, do not run `bounded link`
 run `bounded login --email ...` (or the current web login method) to refresh the
 web session.
 
-## 7. `bounded share` — add a backup owner BEFORE loss
+## 7. `bounded share` - add a collaborator before you need one
 
 ```bash
-bounded share <wallet|email> --app-id <id> [--role developer|admin|viewer|billing]
+bounded share <wallet|email> --app-id <id> --role developer|admin|viewer|billing
 ```
 
 Adds a collaborator to one app (owner-gated):
 
-- **email** → resolved to its auto-provisioned embedded wallet, added as **admin**
-  by default (they need no wallet of their own).
-- **wallet** → added directly, default role **policy**.
-- `admin` grants act/sign + policy management; `policy` is policy-only.
+- **email** - stored as the canonical verified-email subject. It works before or
+  after signup and follows that Bounded account; no wallet lookup is required.
+  When the person signs in with supported email/social auth, the default
+  Turnkey flow also provisions their `@user.address` wallet facet.
+- **wallet** - added directly as the collaborator subject.
+- `--role` is required. `policy` remains a legacy alias for `developer`.
+- Roles and seat counts are gated by the app owner's plan.
 
 A shared **admin** can act on the app, so they survive wallet-key loss *for that
 app*. Add a backup owner **before** anything goes wrong.

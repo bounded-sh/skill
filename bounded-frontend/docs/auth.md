@@ -94,10 +94,12 @@ keys:
 - **`bounded share <wallet|email> --role developer|admin|viewer|billing --app-id <id>`** adds a
   collaborator (`policy` is a legacy alias for `developer`). **Roles are plan-gated by the
   app OWNER's plan** — Free: none; Pro: 3 seats, `developer` only; Team+: 25 seats, every
-  role — so default to `--role developer` unless the owner is Team+. Pass a **wallet** to add it directly. Pass an **email** and
-  Bounded resolves it to that person's canonical wallet — an **auto-provisioned
-  embedded wallet**, so the invitee needs no wallet of their own — then sends an
-  invite email when outbound email is configured. `policy` may update the
+  role - so default to `--role developer` unless the owner is Team+. Pass a **wallet** to add it directly. Pass an **email** and
+  Bounded stores the verified email as the canonical collaborator subject; it
+  does not resolve the email through an embedded-wallet provider. When that
+  person signs in, the account's default Turnkey flow separately provisions the
+  wallet exposed as `@user.address`. Bounded sends an invite email when outbound
+  email is configured. `policy` may update the
   policy; `admin` may also act/sign on the app's data the way the owner can.
   Only the owner can add collaborators; the server enforces it against the active
   CLI identity. List with `bounded collaborators`.
