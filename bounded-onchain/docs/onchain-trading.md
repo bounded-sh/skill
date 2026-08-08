@@ -54,7 +54,7 @@ authority / fund owner):
 
 | `source` value | Custody model | Use for |
 |---|---|---|
-| `@contract.address` | **Server custody, ONE shared fund** - a program-ID sentinel that this built-in plugin resolves to the app's single escrow PDA under its server-signed contract. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, a single pooled fund |
+| `@contract.address` | **Server custody, ONE shared fund** - a program-ID sentinel that this built-in plugin resolves to the app escrow PDA - the app's single shared fund - under its server-signed contract. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, a single pooled fund |
 | **any other string** (an account id) | **Server custody, ONE fund PER NAME** - the string is treated as a Bounded account id and resolved to its own named PDA. The program signs for it exactly as it does for the escrow. | per-market, per-launch, per-round, or per-tenant funds that must not share a balance |
 | `@newData.source` (a user wallet) | The user's own wallet is the authority (client-signed path). | self-custody trading where the user signs |
 
