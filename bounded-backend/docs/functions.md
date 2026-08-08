@@ -804,6 +804,40 @@ instead of double-submitting, while a scheduled function that emits the same
 prompt each night gets a fresh run per day. Pass an explicit `idempotencyKey` to
 control this.
 
+### Who may see the app a build produces
+
+**Only the owner.** Two build-profile ceilings widen that, and both are **deny-by-default and boolean-exact**: the key must be the literal JSON `true`.
+An absent key, or `false`, leaves the ceiling closed.
+A non-boolean like `"true"` or `1` fails policy validation, so the deploy is refused rather than quietly leaving the ceiling shut on a value that reads as open.
+
+| Profile key | What it opens | Refusal while closed |
+|---|---|---|
+| `viewerGrants` | A submission may carry `viewerGrantSubjects`: 1-8 distinct trimmed user ids or emails (320 chars max each) that get read-only view of the child app. | `400 viewer_grants_not_allowed` |
+| `publicRuns` | A submission may carry `public: true`, making the run's app viewable by anyone. | `400 public_runs_not_allowed` |
+
+A request over a closed ceiling is **refused, never silently stripped or downgraded**.
+The whole submission fails, so you are never told "ok" while your viewers were dropped or while an app you asked to publish stayed private.
+
+**You open a ceiling on the profile the build runs under, in `policy.json`.**
+Both are plain booleans on a `build.profiles.<name>` block, and only the literal `true` opens one.
+
+```jsonc
+"build": {
+  "defaultProfile": "standard",
+  "profiles": {
+    "standard": {
+      "landing": "approval-required",
+      "viewerGrants": true,   // submissions may carry viewerGrantSubjects
+      "publicRuns": true      // submissions may carry "public": true
+    }
+  }
+}
+```
+
+A profile that names neither key keeps the owner-only default, and the ceiling that applies is the one on the profile the submission actually resolves to, so opening it on one profile opens nothing on any other.
+Pass `viewerGrantSubjects` from `ctx.build` only when the resolved profile carries `viewerGrants: true`; against a profile without it the whole build is a `400`.
+There is no `public` field on `ctx.build` at all, so a function can never request a public run, open ceiling or not.
+
 ### Lifecycle hooks — how the build tells your app what happened
 
 Because builds are async, a profile can name functions to invoke on lifecycle
