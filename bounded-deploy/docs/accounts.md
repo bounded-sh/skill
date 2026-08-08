@@ -12,10 +12,14 @@ Run:
 bounded init
 ```
 
-The CLI reuses or refreshes `~/.bounded/web-session.json`. If no usable session
-exists, it opens `https://auth.bounded.sh` in the browser with a loopback PKCE
-callback, saves the session locally, and resumes initialization. No reusable CLI
-credential is bundled into the browser page or project.
+The CLI reuses or refreshes the stored web session. Sessions are kept per
+(environment, platform app, account) under `~/.bounded/web-sessions/`, with
+`~/.bounded/web-session.json` holding the most recent login - so switching
+between environments (staging vs production) or accounts does not evict the
+other scope's session or force a fresh login. If no usable session exists for
+the scope, the CLI opens `https://auth.bounded.sh` in the browser with a
+loopback PKCE callback, saves the session locally, and resumes initialization.
+No reusable CLI credential is bundled into the browser page or project.
 
 `bounded login` remains useful when the user explicitly wants to sign in again,
 switch web accounts, or authenticate before entering a project. It is not a
