@@ -243,6 +243,15 @@ export default async function (args, ctx) {
   1–256-byte UTF-8 string. `model` is
   config (swap models with no code change); `input` is the provider request shape
   (`{ messages: [...] }` for chat).
+- **Model ids.** Bare provider ids are fine — the gateway normalizes
+  `claude-*` to `anthropic/claude-*` and `gpt-*` to `openai/gpt-*`; `@cf/...`
+  ids run keyless on Workers AI. Every model must have a reviewed row in the
+  platform price table or the call refuses with `ai_model_price_unavailable`
+  (400) before any provider work. Priced text families include
+  `claude-opus-4-8`, `claude-sonnet-5`, `claude-haiku-4-5`, and the GPT-5.6
+  family `gpt-5.6-sol` / `gpt-5.6-terra` / `gpt-5.6-luna` (luna is the
+  cheapest). Provider-prefixed models must also pass the deployment's
+  `AI_PROVIDER_ALLOWLIST`.
 - **Make the key a business operation, not an invocation.** AI operation keys
   are **app-global** across function names, principals, manual/scheduled paths,
   and retries. Include the callsite/entity/revision when work may intentionally
