@@ -883,6 +883,7 @@ fix the policy or the calling identity.
 bounded functions deploy <name> --entry <file> --app-id <id> \
   --auth '<rule>' [--timeout <sec>] [--secret NAME] \
   [--act-as <address>] [--logs-auth '<rule>'] [--sandbox]
+bounded functions deploy --all --policy policy.json --environment <env>
 printf '%s' "$VALUE" | bounded secret put NAME --value-stdin --app-id <id>
 bounded functions list   --app-id <id>
 bounded functions invoke <name> --app-id <id> [--data '<json>']
@@ -893,7 +894,13 @@ bounded functions logs   <name> --app-id <id>
 owner/admin only. `--auth` is required. Repeat every optional field the function
 needs on every deploy: bare `--secret NAME` declares a name without exposing its
 value in argv, while `--act-as`, `--logs-auth`, `--sandbox`, and `--timeout`
-preserve those fields. Omitted optional fields are removed. `invoke`
+preserve those fields. Omitted optional fields are removed.
+`deploy --all` (CLI 0.0.88+) is the batch form and the right default after a
+policy deploy: it reads every function from the policy file (metadata included,
+`@const.*` actAs resolved from the environment's constants), sends ONE request,
+and the service skips unchanged pins and publishes the changed set in one
+atomic publication — a no-op pass is a single round-trip, never one
+publication per function. `invoke`
 attaches your session token automatically (same token as `data`) so the
 Bounded gates the call on the `auth` rule, then prints the function's JSON (or
 the platform error — `403` if the rule denies you). Caller-scoped functions may
