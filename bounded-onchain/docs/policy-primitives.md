@@ -104,6 +104,40 @@ All numeric encoding is little-endian and range checked.
 The example illustrates byte construction; use a verified descriptor/built-in
 plugin when one exists because it carries a narrower account contract.
 
+## Rule arithmetic is bounded on-chain - write pins division-first
+
+`bounded verify` proves rules with **unbounded** integers (Z3), but the on-chain
+rule plane evaluates them in **fixed-width signed integers**. A pin that is
+provably correct can therefore be *runtime-dead* on-chain: the intermediate
+product overflows the register and the write is denied, forever, at the
+magnitudes the app actually runs at. No proof gate catches this, because the
+prover and the enforcer disagree about the number domain rather than about the
+logic.
+
+This bites exactly where money lives, because lamports (1e9/SOL) and raw token
+units (1e6-1e9/token) are already large before you multiply them by a scale
+factor. Cross-multiplying two such quantities blows past 9.2e18 immediately.
+
+**Never cross-multiply two large operands in a rule.** Rewrite the comparison so
+every intermediate stays small:
+
+| Instead of | Write |
+|---|---|
+| `a * SCALE <= b * BIG` | `a <= (b // SCALE) * (BIG // 1) ...` - divide the constant out first |
+| `spent * SCALE <= tokens * price` | `spent // (tokens // SCALE + 1) <= price` - compare per block |
+| `netA * SCALE + remA >= netB * SCALE + remB` | `netA > netB \|\| (netA == netB && remA >= remB)` - compare lexicographically |
+| `total * pct // 100 * x // y` | pre-reduce to bps: `x * ((total * pct // 100) * 10000 // y) // 10000` |
+
+Keep a floor+remainder pair (`net`, `rem` with `rem < SCALE`) when you need an
+exact scaled accumulator, and pin the pair rather than the reconstructed
+product. Mirror the exact rule form in any off-chain code that has to produce
+values the rule will accept - if the engine and the rule round differently, every
+write is refused.
+
+The same care applies to what you STORE: documents serialize through JSON
+numbers, so a stored field beyond 2^53 loses precision silently. The
+floor+remainder shape solves both problems at once.
+
 ## Prediction-market arithmetic
 
 The pure constant-product helpers round output down directly.

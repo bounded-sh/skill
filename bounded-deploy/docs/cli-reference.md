@@ -64,6 +64,7 @@ source remains an intentional wallet-mode selection.
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
 | `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
+| `dashboard [page]` | Open the hosted dashboard. In a linked project it opens that app directly; optional pages include `data/<path>`, `policy/tests`, `boundaries/change`, and `activity/logs`. `--app-id` overrides the project, `--no-open` prints guidance without launching, and `--print` emits only the URL. Staging opens the staging dashboard. The app-ID handoff is replaced by the dashboard's readable app-name URL after load. | `bounded dashboard data/orders` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
 | `unshare <wallet\|email> --app-id <id>` | Remove a wallet or canonical email collaborator (owner only) | `bounded unshare teammate@example.com --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
@@ -491,8 +492,10 @@ warning. Frontend variants never change the canonical editing base. See
 [source-sync.md](source-sync.md#canonical-sites-also-establish-the-widget-editing-base)
 for limits and recovery semantics.
 
-The remote-edit era surface (`bounded edit`, `bounded dashboard`, `bounded dev`, `bounded live-edit
-...`, the loopback daemon on 8085/8008) is REMOVED — do not suggest it.
+The remote-edit era surface (`bounded edit`, `bounded dev`, `bounded live-edit
+...`, and the loopback daemon on 8085/8008) is REMOVED - do not suggest it.
+`bounded dashboard` is now only a hosted-dashboard browser launcher; it never
+starts a local daemon or restores the removed remote-edit APIs.
 
 The widget
 uses the animated Bounded mark as the launcher, saves its corner placement and

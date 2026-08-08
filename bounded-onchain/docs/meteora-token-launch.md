@@ -198,6 +198,29 @@ Post-migration the fee model switches to the DAMM v2 side of the config
 | `claimDammV2PoolFees` | `(source, poolAddress, positionMintAddress?) -> Bool` | Claim LP fees from the migrated pool. With `positionMintAddress`, only that position; otherwise all positions `source` owns in the pool. |
 | `withdrawLeftover` | `(virtualPoolAddress) -> Bool` | Sweep the reserved `leftover` tokens to the config's `leftoverReceiver`. Only valid **after** migration. |
 
+## One escrow per launch, not one escrow per app
+
+A launchpad holds several launches' money at once - presale/auction deposits,
+proceeds waiting to seed a pool, fees waiting to be split. If every launch's
+funds ride `@contract.address`, they share ONE balance and isolation between
+launches is only your accounting; a bug in one launch's settlement is paid for
+out of another launch's deposits.
+
+Pass the launch's own id as the `source` instead. Any non-pubkey string is an
+account id resolved to its own program-signed PDA, and it works identically on
+`createPool`, `claimMeteoraPoolFees`, `claimDammV2PoolFees`,
+`swapInMeteoraVirtualPool`, and `@TokenPlugin.transfer`:
+
+```json
+"hooks": { "onchain": { "create": "@AccountPlugin.createAccount($launchId)" } }
+```
+
+then `@TokenPlugin.transfer(@user.address, $launchId, @TokenPlugin.SOL, amount)`
+in, and `@DeFiPlugin.createPool($launchId, mint, @TokenPlugin.SOL, tokens, sol, config)`
+out. See
+[named escrow accounts](onchain-trading.md#named-escrow-accounts---the-third-custody-model-read-this-before-pooling-funds)
+for the full resolution rule.
+
 ## The fee-split reality (honest)
 
 Meteora's config is **2-party**: on the curve, each trade's fee splits between the

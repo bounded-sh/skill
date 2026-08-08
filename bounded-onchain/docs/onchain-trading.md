@@ -54,8 +54,52 @@ authority / fund owner):
 
 | `source` value | Custody model | Use for |
 |---|---|---|
-| `@contract.address` | **Server custody** - a program-ID sentinel that this built-in plugin resolves to the app escrow PDA under its server-signed contract. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, pooled funds |
+| `@contract.address` | **Server custody, ONE shared fund** - a program-ID sentinel that this built-in plugin resolves to the app's single escrow PDA under its server-signed contract. The backend trades autonomously; no user signature per order. | trading agents, desks, treasury/DCA bots, a single pooled fund |
+| **any other string** (an account id) | **Server custody, ONE fund PER NAME** - the string is treated as a Bounded account id and resolved to its own named PDA. The program signs for it exactly as it does for the escrow. | per-market, per-launch, per-round, or per-tenant funds that must not share a balance |
 | `@newData.source` (a user wallet) | The user's own wallet is the authority (client-signed path). | self-custody trading where the user signs |
+
+### Named escrow accounts - the third custody model (read this before pooling funds)
+
+The rule is uniform and it is decided **by the shape of the string**, in the
+program's own source resolver:
+
+1. the value parses as a pubkey **and equals the program ID** -> the app escrow PDA, program-signed;
+2. the value parses as a pubkey -> that wallet, no program signing (the user signs);
+3. **the value does not parse as a pubkey -> it is an account id**, resolved to
+   `hash("tarobase_pda" + appId + accountId)`, and the program signs for it with those seeds.
+
+Branch 3 is the one people miss, because most examples only ever show branch 1.
+It applies to **every documented plugin `source`/owner argument** the same way -
+`@TokenPlugin.transfer`, `@DeFiPlugin.createPool`, `claimMeteoraPoolFees`,
+`claimDammV2PoolFees`, `swapInMeteoraVirtualPool`, `closeCpAmmPosition` - not just
+to transfers. Create the account once with
+`@AccountPlugin.createAccount("<id>")` and read its address with
+`@AccountPlugin.getAccountAddress("<id>")`.
+
+**Why this is a design decision, not a detail.** With `@contract.address`, every
+market/launch/round in your app shares ONE balance, so isolation between them is
+only as good as your accounting: nothing on-chain stops one from drawing down
+another's funds, and the failure surfaces as an unrelated user's withdrawal
+reverting for insufficient funds. With a per-entity account id, isolation is
+**physical and chain-enforced** - a hook for entity A structurally cannot name
+entity B's account.
+
+```json
+"hooks": { "onchain": {
+  "create": "@AccountPlugin.createAccount($marketId)"
+} }
+```
+
+```json
+"create": "@TokenPlugin.transfer(@user.address, $marketId, @TokenPlugin.SOL, @newData.amount)",
+"...later, paying out of that market only...":
+  "@TokenPlugin.transfer($marketId, @newData.winner, @TokenPlugin.SOL, @newData.payout)"
+```
+
+Choose the shared escrow when the app genuinely is one fund. Choose named
+accounts whenever separate pots of user money coexist in one app - escrows,
+auctions, prize pools, per-tenant balances. Retrofitting the split later means
+migrating live balances, so decide it before the first deposit lands.
 
 For an **autonomous desk** (acts every cycle with no per-trade human gate),
 `@contract.address` is the plugin-source syntax: the resolved escrow PDA is the fund, the backend is the
