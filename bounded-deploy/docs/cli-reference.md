@@ -911,7 +911,12 @@ every invoke — end-user and scheduled runs included — is persisted with stat
 latency, error, and console output for 30 days, and the readable window/entry
 count is plan-tiered (free reads the recent days; Pro the full history). Name a
 function to filter to it, or omit the name for all of them; owner/admin gated,
-with per-function `logsAuth` delegation for other viewers. Debug loop: a flow
+with per-function `logsAuth` delegation for other viewers. Every invoke also
+returns an `x-bounded-invocation-id` response header; the same id is stamped on
+the invocation's log entry (and carried to every `ctx.*` hop as
+`x-bounded-correlation-id`), so a frontend error report carrying the header
+value is directly greppable to its exact entry. Same-key retries share the id -
+one business operation groups under one value. Debug loop: a flow
 fails in the browser → `bounded functions logs <fn> --since 1h --errors-only` →
 read the invocation's error and console lines. Full guide:
 [functions.md](../../bounded-backend/docs/functions.md).
