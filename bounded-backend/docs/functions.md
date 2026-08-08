@@ -791,27 +791,25 @@ await ctx.build.edit({
   // attachments?: [{ name, contentType, bytes, ref }]                 // run-scoped, size/type-limited
   // constraints?: string[]
   // baseDeploymentId?: "…"              // CAS assertion: reject if the base already moved
-  // idempotencyKey?: "…"                // defaults to hash(appId, functionName, prompt, UTC-day)
+  // idempotencyKey?: "…"                // default: hash of the invocation id + this whole submission; see below
   // funding?: { aiEnvelopeMicroUsd: 3000000 }   // per-run AI cap; see below
 });
 ```
 
-**Per-run funding cap.** When the profile opts in with
-`funding.allowPerRunEnvelope: true`, an `edit` submission may carry
-`funding: { aiEnvelopeMicroUsd }` (a positive safe integer) to narrow **that
-run's** AI envelope. The effective envelope is
-`min(requested, profile.funding.aiEnvelopeMicroUsd)` — the profile value is a
-ceiling, never raisable per-run. Without the profile opt-in (or with a
-non-positive/non-integer value) the field is ignored and the profile envelope
-applies unchanged. The clamped value is snapshotted at admission and survives
-park/resume; changing only the cap under the same `idempotencyKey` conflicts
-rather than replaying.
+**Per-run funding cap.** When the profile opts in with `funding.allowPerRunEnvelope: true`, **any** submission (`create`, `edit`, or `fork`) may carry `funding: { aiEnvelopeMicroUsd }` (a positive safe integer) to narrow **that run's** AI envelope.
+The effective envelope is `min(requested, profile.funding.aiEnvelopeMicroUsd)`, so the profile value is a ceiling and is never raisable per-run.
+Without the profile opt-in (or with a non-positive/non-integer value) the field is ignored and the profile envelope applies unchanged.
+A clamped envelope below the 800000 micro-USD reservation minimum is refused with `400 ai_envelope_below_minimum` rather than run.
+The clamped value is snapshotted at admission, and a park/resume re-clamps it to `min(admitted, live profile)`, so an owner may tighten the cap mid-run but can never widen it; every other field of the resolved profile is pinned for the run's whole life, and a drifted profile fails the resume instead of swapping under it.
 
-The default idempotency key hashes `(appId, functionName, prompt, UTC-day)`, so a
-retried invocation with the same prompt **replays** the same run within a day
-instead of double-submitting, while a scheduled function that emits the same
-prompt each night gets a fresh run per day. Pass an explicit `idempotencyKey` to
-control this.
+**The default idempotency key is per invocation, not per prompt.**
+When the invocation is replay-safe it hashes the invocation id together with the app id, function name, operation, and the **full** submitted body, so a retry of that one invocation reproduces the key and replays the same run, while any change to the submission (constraints, source, attachments, effort, profile, target, funding cap) is a different key and a different run.
+Two *distinct* invocations that submit the same prompt are two distinct funded runs: a nightly schedule builds every night, and a user who resubmits pays for both.
+There is no same-prompt or same-day deduplication, so do not rely on the prompt to make a resubmission safe.
+An invocation is replay-safe when it carries host-verifiable provenance: an `Idempotency-Key` on a direct invoke, a scheduled dispatch, or a live-room call.
+Anything else (a direct invoke with no key) mints a fresh random key per attempt, so every attempt is a fresh funded run.
+Pass an explicit `idempotencyKey` whenever retries must converge on one run regardless of how the function was invoked.
+Reusing an explicit key with a changed submission (a narrowed funding cap, say) returns `409 idempotency_conflict` rather than replaying.
 
 ### Who may see the app a build produces
 
