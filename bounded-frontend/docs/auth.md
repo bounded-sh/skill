@@ -25,7 +25,12 @@ The CLI also has advanced local signing sources:
   `project` (`<project>/.bounded/credentials`), `profile`
   (`~/.bounded/accounts/<profile>/credentials`), or `env`
   (`BOUNDED_PRIVATE_KEY`). The keypair is the signing identity; it owns apps
-  created with it and signs data-plane writes.
+  created with it and signs data-plane writes. It needs no other credential:
+  a key that signs in from a CLI or server, and never from a browser wallet,
+  is cleared for server-side sessions automatically. Use a dedicated key for
+  automation - if the same key also signs in to the app through a browser
+  wallet, its server-side sessions stop working and every server call fails
+  with `relying party not allowed for app`.
 - **Web account mode** (default): `bounded init` opens the hosted email/social
   sign-in page and completes Authorization Code + PKCE through a temporary
   loopback callback. It stores refreshable Bounded Auth credentials in

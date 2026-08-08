@@ -543,6 +543,11 @@ Full flow, providers, and embedded wallets: [auth.md](auth.md).
 The server client wraps the **same operations**, signed by a keypair, with no
 browser auth. Each client has its own session - no global state.
 
+> Use a keypair dedicated to the server. A key that has signed in to the app
+> from a browser wallet can no longer open a server-side session, and
+> `createWalletClient` then fails with `relying party not allowed for app`.
+> Server-only keys need no extra credential or configuration.
+
 There are two server setup shapes; both work:
 
 ```ts
