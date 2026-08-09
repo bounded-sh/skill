@@ -242,6 +242,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation` |
+| `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
 | `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |
 
@@ -356,6 +357,52 @@ For a Solana Devnet policy recovery, the server reads the finalized onchain poli
   Keep using the exact recovery command after a polling timeout.
 - If finalized state is partial or contradictory, the operation remains locked for manual intervention.
   Do not run a normal deploy or attempt a guessed repair.
+
+### Is a fresh deploy safe? (`bounded deploy status`)
+
+`bounded deploy status --json` is the read-only answer to "what is holding this
+app's deploy slot". Use it after any ambiguous deploy, before deciding between a
+recovery and a fresh deploy.
+
+```json
+{
+  "ok": true,
+  "appId": "<id>",
+  "state": "deploying",
+  "operationId": "<uuid>",
+  "operationKind": "policy",
+  "phase": "onchain",
+  "ageSeconds": 412,
+  "pendingPublication": true,
+  "freshDeploySafe": false
+}
+```
+
+It is a status projection, not a verdict on recoverability: it deliberately does
+not classify the retained operation (that requires the exact policy body and its
+digests, which a GET does not carry) and it never emits a recovery command.
+`freshDeploySafe` is true only when no policy operation holds the fence and no
+publication is pending; anything unreadable or unrecognized reports false.
+The command needs the verified owner - a non-owner and an unknown app both
+answer `404`, so it can never be used to probe whether an app exists.
+
+### Structured errors and when a recovery command is offered
+
+Every ambiguous deploy or recovery outcome now emits the documented object with
+`code`, `state`, `operationId`, and - only when the outcome is actually
+resumable - `recoveryCommand`:
+
+- **Resumable** (`unknown`, `processing`): run the emitted `recoveryCommand`
+  verbatim, under the same verified owner identity.
+- **Definitive** (`410 policy_operation_unrecoverable`, plus abandoned,
+  superseded, target-mismatch, permission, invalid-input, and manual-intervention
+  outcomes): NO `recoveryCommand` is emitted, because re-running the operation
+  can never commit. The message says whether to run a fresh `bounded deploy` or
+  to escalate for operator review.
+
+The operation id the CLI minted stays authoritative: a response carrying a
+different id is refused rather than followed, so a recovery can never be bound to
+someone else's operation.
 
 ### Exact release provenance
 

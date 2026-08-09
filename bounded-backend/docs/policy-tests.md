@@ -94,7 +94,7 @@ One file per logical concern, `policy-tests/*.json`:
 | `setMany` | `writes: [{path,data}]`, `shouldFail?` | Atomic batch write. |
 | `delete` | `path`, `shouldFail?` | Delete one document. |
 | `deleteMany` | `paths`, `shouldFail?` | Delete many documents. |
-| `mock` | `function`, `returns` | Stub a function call (name normalized lowercase, args ignored) for all later steps. |
+| `mock` | `function`, `returns` | Stub a plugin function call for all later steps (args ignored). Write the name exactly as a policy hook does - `@AccountPlugin.createAccount`. The `@`, the dots, and case are normalized away, so `accountplugin_createaccount` is equivalent. A name that is not plugin-function shaped fails the file at validation. |
 | `ensure` | `expr`, `then?` | If `expr` is truthy, run the nested `then` steps; else skip. Without `then`, behaves like `expect` (idempotency helper). |
 | `expect` | `expr` \| `left`+`right` \| `not` | Assert against current sandbox state. Mutually exclusive: `expr` must be truthy; `left`/`right` compare by `JSON.stringify` equality; `not` must be falsy. |
 | `invoke` | `function`, `args?`, `shouldFail?` | Run a policy-declared app function in the sandbox as the current actor. The function's `auth` rule is enforced (same actor/clock/mocks); its declared `actAs` applies; its `ctx.bounded` writes run through the real rules + invariants. `shouldFail` passes on an auth denial OR a function error. `bounded tests run` sends your local `functions/*.ts` sources along automatically (deployed-policy runs have no sources, so `invoke` needs the local-policy loop). |
@@ -162,7 +162,10 @@ exactly how far the scenario got before the policy diverged from intent.
 Every run gets a **fresh sandbox app**, one per test file per run: same engine
 as a production app (`realtime_offchain`, the realtime DO, rules plus runtime
 invariants — no parallel evaluator), platform-owned, never claimable, deleted
-after the run. Writes go through the identical enforcement path a real caller
+after the run. Because the sandbox runs the offchain engine, an
+`onchain: true` path's **onchain hook is simulated in-worker** and its offchain
+hook runs after it — both run. Mocks apply everywhere the sandbox evaluates the
+function: rules (including read rules), hooks, and named queries. Writes go through the identical enforcement path a real caller
 would hit, so a pass means the write really would be allowed in production.
 **The Z3 proof gate is deliberately skipped** for sandbox apps — tests are not
 proofs, and sandboxes are quarantined precisely so skipping it is safe. Policy

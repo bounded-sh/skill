@@ -53,6 +53,14 @@ account profile, or recovery of an existing key-owned app.
 - `deploy_in_progress`, `operationId`, or `recoveryCommand`: use only the exact
   owner-visible recovery command with unchanged inputs, then let the CLI poll.
   See [deploy recovery](docs/cli-reference.md#recover-an-in-progress-policy-deploy).
+- An error with `code`/`state` but NO `recoveryCommand` is terminal for that
+  operation - `410 policy_operation_unrecoverable` and the abandoned, superseded,
+  target-mismatch and manual-intervention states. Re-running the recovery can
+  never commit it; run a fresh `bounded deploy` (or escalate, when the message
+  says operator review). Never invent a recovery command for these.
+- Unsure which applies, or unsure whether a fresh deploy is safe: run the
+  read-only `bounded deploy status --json` first. It reports what holds the
+  deploy slot and a `freshDeploySafe` verdict, and it never mutates anything.
 - `site_control_denied`, wrong owner, or unexpected `401`/`403`: run
   `bounded whoami` and `bounded access --app-id <id>` before changing identity.
   See [access playbook](docs/access-playbook.md).
