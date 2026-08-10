@@ -52,8 +52,7 @@ So one file gives preview and production **different admin members and different
 caps** with no flags and no copy-paste. Per-env `appId`s keep the two apps
 cleanly separated.
 
-Server-side resolution inlines an exact `@const.NAME` in **any** data position,
-not just rules; a function's `actAs` is included.
+Server-side resolution inlines an exact `@const.NAME` in any authored data position except within a reserved `constants` or `defs` block, not just rules; a function's `actAs` is included.
 So an environment can also select a different **service identity** per
 environment: declare `"actAs": "@const.STEWARD"` on the function and override
 `STEWARD` in the staging entry only, leaving the production-resolved policy
@@ -106,13 +105,11 @@ bounded site deploy ./dist --app-id <staging-app-id>
 bounded site deploy ./dist --app-id <production-app-id>
 ```
 
-Functions also target an app id directly. Deploy each function to both apps:
+Deploy the policy-declared function set once per environment so the same environment-specific constants resolve inside `actAs`:
 
 ```bash
-bounded functions deploy worker --entry ./backend/functions/worker.ts \
-  --auth '@user.id != null' --app-id <staging-app-id>
-bounded functions deploy worker --entry ./backend/functions/worker.ts \
-  --auth '@user.id != null' --app-id <production-app-id>
+bounded functions deploy --all --policy ./policy.json --environment staging
+bounded functions deploy --all --policy ./policy.json --environment production
 ```
 
 `policy.json` `--environment` and `bounded.json` `environment` are different

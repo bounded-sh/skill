@@ -103,16 +103,17 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
 
 ## Agent loop tips
 
-- **`409 invariant_violation` means back off, not retry-harder.** The state forbids the write; the
-  same capped write will keep failing until the window ages out. Read the
-  collection and sum the window before retrying. A distinct `409
-  mutation_conflict` is an optimistic concurrency retry: HTTP `set`/`set-many`/
-  `delete` already reran one bounded internal attempt, while a realtime
-  WebSocket write can surface its first conflict directly. Reload exact state
-  and retry the idempotent operation, never classify it as a cap hit. `403` means fix the
-  caller/payload for writes or invokes. Denied reads return `200` with empty data;
-  verify read-denial cases with an identity you know is permitted instead of
-  waiting for a read `403`. ([../docs/data-plane.md](../docs/data-plane.md))
+- **Classify `409 invariant_violation` by its stable decline cause before retrying.**
+  `cap_exceeded` proves only that the cap comparison rejected this attempt.
+  Wait only when trusted state shows the unchanged attempt can fit after existing in-window usage ages out; otherwise reduce or correct the payload.
+  `append_only_update` never becomes valid through waiting.
+  An offchain `append_only_delete` can become valid only after a row with a trusted creation time falls strictly before every effective window; onchain rows and rows without a valid trusted time remain non-deletable.
+  Correct other invariant failures instead of blindly retrying.
+  A distinct `409 mutation_conflict` is an optimistic concurrency retry: HTTP `set`/`set-many`/`delete` already reran one bounded internal attempt, while a realtime WebSocket write can surface its first conflict directly.
+  Reload exact state and retry the idempotent operation, never classify it as a cap hit.
+  `403` means the rule denies the current actor, action, or state: inspect the rule or trace and wait only when the rule is intentionally time-dependent.
+  Denied reads return `200` with empty data; verify read-denial cases with an identity you know is permitted instead of waiting for a read `403`.
+  See [data-plane.md](data-plane.md) for the complete retry contract.
 - **`rollingSum` collections are window-live append-only; `windowSum` event
   collections are fully append-only.** Write each event with a fresh id and
   never update it. Keep `delete: "false"` by default. If bounded retention is

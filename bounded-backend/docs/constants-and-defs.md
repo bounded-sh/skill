@@ -22,11 +22,9 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
 ```
 
 - Values may be **string, number, or boolean**.
-- Reference anywhere a value appears: rule strings, role members, invariant
-  limits, field defaults, and a function's `actAs` service identity.
-  Resolution walks the WHOLE policy, so an exact `@const.NAME` in any
-  non-expression (data) position, `functions.<name>.actAs` included, is
-  replaced by the constant's value.
+- Reference anywhere an authored policy value appears except within a reserved `constants` or `defs` block: rule strings, role members, invariant limits, field defaults, and a function's `actAs` service identity.
+  In those fields, an exact `@const.NAME` in a non-expression (data) position, `functions.<name>.actAs` included, is replaced by the constant's value.
+  Constant values are literals and are not recursively macro-resolved, so do not define one constant as another `@const` token.
   (`@def` is a rule fragment and is rejected in a data position.)
 - **Type is preserved when the whole value is one `@const`**: `"limit": "@const.DAILY_CAP"`
   compiles to the number `5000`, not the string `"5000"`.

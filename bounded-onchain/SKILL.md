@@ -59,6 +59,8 @@ Read only the row matching the current task or term.
   This literal is Devnet-specific and must be updated if the deployed program changes.
   See [policy-primitives.md](docs/policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address).
 - Treat discovery, deployed-runtime support, and live-network verification as three independent states.
+- Use `bounded plugins list --json` and `bounded plugins describe <plugin.function> --json` as the offline callable signature source before authoring a hook.
+- Run `bounded verify --protocol <protocol> --json` on the actual policy and inspect advisory `capabilityReadiness`, while still requiring retained live evidence before claiming network support.
 - Check the [Solana devnet capability catalog](docs/solana-capability-status.md) before proposing any plugin or primitive.
 - Never infer devnet support from a compiler tag, manifest, proof contract, Poofnet model, lookup-table entry, or local validator test.
 - When live evidence uses a hosted release marker, resolve its environment-qualified site URL from `bounded domains list --app-id <id> --env <environment> --json` `slugUrl` or the exact successful site-deploy receipt `url`.

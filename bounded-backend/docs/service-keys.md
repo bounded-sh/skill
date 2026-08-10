@@ -254,12 +254,10 @@ just a data-plane write). In that case:
 - The **private key is a function secret**, declared once in the function's
   `secrets` block (a redeploy preserves it — you do not restate it every time),
   stored with `secret put`, and exposed only to that one function as
-  `ctx.env.NAME`. The value stays server-side (never in your repo, never
-  returned; only the *name* is ever shown). `actAs`
-  itself is a policy `functions`-block field and is also passed as `--act-as` on
-  a standalone function deploy. Set the secret value through stdin so it does
-  not appear in argv or shell history, then declare the name again on the
-  complete-entry function deploy:
+  `ctx.env.NAME`.
+  The value stays server-side (never in your repo, never returned; only the *name* is ever shown).
+  `actAs` itself is a policy `functions`-block field and can also be replaced with `--act-as` on a standalone function deploy.
+  Set the secret value through stdin so it does not appear in argv or shell history, then declare the name on the function deploy when you want to replace that function's secret grant:
   ```bash
   printf '%s' "$PAYOUT_BOT_KEY" | bounded secret put PAYOUT_BOT_KEY --value-stdin --app-id <id>
   bounded functions deploy runPayouts \
@@ -269,9 +267,9 @@ just a data-plane write). In that case:
     --act-as '9aZ…address' \
     --secret PAYOUT_BOT_KEY
   ```
-  `functions deploy` writes the complete entry, so omitting `--act-as` or
-  `--secret PAYOUT_BOT_KEY` would remove that field even though the policy or
-  app secret store previously contained it.
+  A standalone `functions deploy` preserves omitted function metadata, including existing `actAs` and secret grants.
+  Supplying `--act-as` or `--secret` replaces the corresponding declaration.
+  The secret value itself remains in the app-scoped secret store until it is explicitly changed or removed.
 - If you mint the keypair locally, keep the private key in
   `~/.bounded/keys/<name>.json` with `0600` perms (machine-local, never
   committed) until you set it as the secret, then you can delete the local copy.

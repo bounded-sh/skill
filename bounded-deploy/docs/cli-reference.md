@@ -120,12 +120,14 @@ Running `bounded account transfer-to-web --json` without `--yes` returns an `act
 `bounded link --json` requires `--email <you@example.com>`.
 The interactive browser device flow must expose a verification URL, user code, and security fingerprint before approval, so it is intentionally unavailable when the command must emit only one final JSON document.
 Use `bounded link --email you@example.com --json`, provide the OTP on stdin, and read the single `action: "linked"` result.
-If a web session is absent or cannot be refreshed, JSON mode fails without opening a browser and directs the caller to run `bounded login --email <you@example.com>` first.
+The email device-link path performs its own OTP exchange and works without a saved web session.
+For commands that instead require an existing web control-plane session, such as default-web `bounded init` or transfer-to-web, an absent or unrefreshable session in JSON mode fails without opening a browser and directs the caller to run `bounded login --email <you@example.com>` first.
 
-Failures returned by the device start, info, approval, or polling API use `action: "deviceLink"`, the failed `stage`, and either an HTTP `statusCode` or a transport-safe fallback in JSON mode.
+Non-2xx responses and request transport/decode failures from the device start, info, approval, or polling API use `action: "deviceLink"`, the failed `stage`, and either an HTTP `statusCode` or a transport-safe fallback in JSON mode.
 Only `device_confirmation_required`, `device_already_linked`, and `account_link_would_merge_existing_projects` are preserved as upstream machine codes.
 An unknown code becomes `device_link_request_failed`, and a transport or decode failure becomes `device_link_transport_failed`.
-The CLI never copies a raw response object, request URL, device code, user code, token, or other credential material into stdout or stderr.
+Structured device API error paths never copy a raw response object, request URL, response-body device or user code, token, or other credential material into stdout or stderr.
+The interactive human approval flow still intentionally prints its verification URL, user code, and security fingerprint before approval.
 An explicit public `message` field may supply human detail, but an absent message produces a generic status description instead of reflecting the response body.
 
 ### Project config — `bounded.json`
@@ -255,7 +257,9 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | Command | Does | Key flags |
 |---|---|---|
 | `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
-| `verify [policy.json]` | Run the proof engine, print the report + counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--constants`, `--environment` |
+| `verify [policy.json]` | Run the proof engine, print the report + counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--json` |
+| `plugins list` | List the callable plugin projection offline | `--family`, `--grep`, `--json`, `--quiet` |
+| `plugins describe <plugin.function>` | Print one plugin function's exact argument, return, auth, support, and verification contract offline | `--json`, `--quiet` |
 | `tests run [dir\|file]` | Run policy test files against a sandboxed app, print per-file PASS/FAIL | `--app-id`, `--deployed-policy`, `--file` (repeatable), `--json` |
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
@@ -272,6 +276,36 @@ bounded verify                                          # re-prove after edits
 bounded tests run                                       # policy-tests/*.json against LOCAL policy.json
 bounded deploy                                          # redeploy using bounded.json
 ```
+
+`verify` and `deploy --create` reject an unknown `--protocol` locally before any network call and list the valid app protocols.
+When the verifier returns a valid result, `bounded verify --json` emits exactly one schema-version-2 document with `status`, `passed`, `safeToDeploy`, exact counts, structured proof details and counterexamples, the access report, and `capabilityReadiness`.
+Local argument, file, JSON, environment, configuration, authentication, transport, and malformed-response failures that occur before a valid verifier result instead use the ordinary one-document root error shape and exit nonzero.
+`status` is one of `PROVEN`, `DISPROVED`, `INVALID`, or `UNPROVEN`.
+`safeToDeploy` describes the whole-policy schema and proof gate and can be true only for the default `verifyForDeploy` operation.
+For that operation, a passing gate with genuinely unresolved non-blocking advisories can be `UNPROVEN` with `passed: true` and `safeToDeploy: true`; a passing custom `--operation` still reports `safeToDeploy: false`.
+The command exits nonzero for a failed gate.
+
+`capabilityReadiness` is advisory and never changes `passed` or `safeToDeploy`.
+It is reported verbatim from the verifier, with one row per plugin function and execution context, the canonical capability state, an `applicability` field, and named-query return-type advisories; repeated occurrences of the same function-context pair are grouped.
+It is always an object.
+`{}` means the platform supplied no usable readiness section; otherwise the report metadata remains present even when its rows and advisories are empty.
+It does not prove live-network execution.
+
+Use the offline plugin reference before authoring an onchain hook:
+
+```bash
+bounded plugins list
+bounded plugins list --family "Pump Fun" --json
+bounded plugins describe @PumpFunPlugin.buyExactSolIn
+bounded plugins describe buyExactSolIn --json
+```
+
+These commands need no account, project, or network.
+`list` reports each callable identifier, signature, return type, and network-scoped capability state; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
+The embedded plugin projection has its own catalog `schemaVersion`, which is separate from the verify report's schema version 2.
+Capability state describes onchain reachability for the catalog's named network, not a deploy verdict: `unverified` means no retained live proof exists, while `unsupported` also covers offchain-only functions and functions unavailable on that network.
+An unambiguous bare function name is accepted, but use the returned canonical identifier in policy source.
+Namespaced entries use `@Namespace.function`, while core entries such as `get` and `getAfter` remain bare.
 
 On Free, `deploy --create` stops with HTTP `402` after 3 owned projects.
 Do not retry with another identity.
@@ -332,8 +366,37 @@ A requested source-sync failure happens after the policy commits, so the result 
 That partial source outcome exits zero and does not roll the committed policy back, so inspect the structured fields instead of relying on the process exit alone.
 When source sync was not requested, `sourceSync.status` is `"skipped"` with `requested: false`.
 
-For `deploy --create`, schema validation runs before app creation.
-A schema failure emits `ok: false`, `action: "deployPolicy"`, `code: "invalid_policy"`, `created: false`, `issueCount`, and `issues[]`, and no app is created.
+For `deploy --create`, the CLI requests schema validation before app creation.
+When that preflight returns schema issues, the CLI emits `ok: false`, `action: "deployPolicy"`, `code: "invalid_policy"`, `created: false`, `issueCount`, and `issues[]`, and creates no app.
+Preflight transport failure or a malformed verifier response is fail-open so the authoritative deploy can still decide.
+If app creation returns a durable app ID but policy client setup, policy submission, or receipt validation then fails, JSON mode exits nonzero with one recovery document shaped like this:
+
+```json
+{
+  "ok": false,
+  "action": "deployPolicy",
+  "status": "partial",
+  "partial": true,
+  "stage": "policyClient | policyDeploy | policyReceipt",
+  "appId": "<durably created app ID>",
+  "created": true,
+  "code": "<safe code when available>",
+  "statusCode": 422,
+  "error": "<safe non-reflective error>",
+  "sourceSync": {
+    "requested": true,
+    "status": "skipped",
+    "reason": "policy_not_committed"
+  },
+  "warnings": []
+}
+```
+
+Treat the durable `appId` as recovery state and do not retry `--create` for the same intended app.
+The optional `code`, `statusCode`, `state`, `operationId`, and `recoveryCommand` fields appear only when they pass the CLI's safe allowlists.
+Marker, project-config, and protocol warnings remain in `warnings[]`.
+No `policyDeployReceipt` is present because the policy commit was not confirmed, and no site-live field is inferred.
+When source sync was not requested, the same skipped object uses `requested: false` and reason `source_not_requested`.
 Protocol mismatches are retained in `warnings[]` with code `onchain_collections_with_offchain_protocol` or `onchain_protocol_collections_not_registered` and the affected collections.
 App-recording failures such as `app_marker_not_written`, `gitignore_not_updated`, or `project_config_not_updated` also remain in `warnings[]` and make the otherwise committed result partial.
 The `unlinked_wallet_owner` warning is anti-loss guidance and does not by itself make a deploy partial.
@@ -362,6 +425,10 @@ Run the exact emitted `recoveryCommand` under the same verified owner identity.
 It preserves the original policy path, app ID, constants, selected policy environment, source-sync choice, and control-plane environment.
 Keep the policy file and every input byte unchanged.
 The CLI binds the exact operation and exact policy and never submits a second policy mutation.
+For a mainnet app under onchain user custody, recovery may require a fresh owner signature for that retained operation.
+The CLI retrieves the permit with the same operation ID, signs it locally, and retries only the recovery endpoint.
+It never calls `updateApp` or creates a replacement policy operation during this recovery.
+If the read-only permit requirement probe is temporarily unavailable, the CLI keeps the exact recovery operation pollable instead of falling back to a fresh deploy.
 The server may re-run the policy proof and compiler for that unchanged target before it can reconcile the retained operation safely.
 While recovery is processing, a retained candidate must not replace or hide the active publication.
 The last committed policy remains the serving policy until the candidate activates.
@@ -514,9 +581,13 @@ also push the project tree to the app's cloud source repository and print
 but does not fail the deploy. `bounded clone` / `bounded pull` read the same
 repository. Full model: [source-sync.md](source-sync.md).
 
-`bounded site deploy ... --json` emits one aggregate document for the complete command instead of one document per phase.
+`bounded site deploy ... --json` always keeps stdout to one JSON document.
+Successful deploys, post-upload editing-base failures, and recovery failures after an implicit app was durably created use the aggregate document below instead of emitting one document per phase.
+Pre-mutation failures and control-token or upload failures against an existing app can instead use the ordinary root JSON error shape because no new app or landed upload needs a recovery receipt.
 It has `action: "siteDeploy"`, top-level `ok`, `status`, `partial`, `siteLive`, `appId`, and any upload `deployId` or `url`, plus component objects named `upload`, `sourceSync`, `editingBase`, and `classification`.
-Each requested component reports its own `status` and `ok`; unrequested source-dependent components report `status: "skipped"` and `requested: false`.
+Every component reports its own `status`.
+A requested component that runs reports `ok`; one that cannot run because upload did not complete can report `status: "skipped"` without `ok`.
+Unrequested source-dependent components report `status: "skipped"` and `requested: false`.
 Inspect the top-level result and every requested component instead of treating the process exit alone as proof that all follow-up work succeeded.
 
 The upload can land before a later phase fails.
@@ -788,6 +859,9 @@ Bounded, which enforces the deployed policy atomically. Full semantics:
 | `data search` | Full-text search a collection | `bounded data search --app-id <id> --path notes --query "shipping"` |
 | `subscribe` | **Stream realtime changes** for a path (one JSON line per server message) | `bounded subscribe "tasks/$taskId" --app-id <id>` |
 
+In CLI releases with structured decline propagation, a rejected `data set`, `data set-many`, or `data delete` in `--json` mode preserves the safe server envelope under `decline` without copying unknown response fields.
+For a `rollingSum` rejection, branch on `decline.boundary.cause`; disclosure-gated `cap`, `current`, and `attempted` values can be JSON numbers or exact decimal strings.
+
 For onchain mutations, `data set`, `data set-many`, and `data delete` have the
 same sanitized `--json` receipt:
 
@@ -945,11 +1019,10 @@ bounded functions invoke <name> --app-id <id> [--data '<json>']
 bounded functions logs   [name] --app-id <id> [--since 2h] [--limit N] [--errors-only]
 ```
 
-`deploy` uploads the function's code and writes its **complete** entry —
-owner/admin only. `--auth` is required. Repeat every optional field the function
-needs on every deploy: bare `--secret NAME` declares a name without exposing its
-value in argv, while `--act-as`, `--logs-auth`, `--sandbox`, and `--timeout`
-preserve those fields. Omitted optional fields are removed.
+`deploy` uploads the function's code and updates its policy entry for a caller with `functions:deploy`.
+`--auth` is required.
+Explicit optional metadata overrides the existing entry, while omitted optional metadata such as timeout, secrets, runtime, sandbox, webhook, egress, browser origins, `actAs`, `logsAuth`, and build capability is preserved by the deploy service.
+A bare `--secret NAME` declares a name without exposing its value in argv.
 `deploy --all` (CLI 0.0.88+) is the batch form and the right default after a
 policy deploy: it reads every function from the policy file (metadata included,
 `@const.*` actAs resolved from the environment's constants), sends ONE request,
