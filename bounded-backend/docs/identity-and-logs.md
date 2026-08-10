@@ -72,12 +72,17 @@ function's `auth` rule:
 ```json
 { "functions": {
   "runPayouts": {
-    "auth": "true",                                     // who may INVOKE
+    "auth": "@user.id != null && get(/__managers__/@user.id) != null",     // who may INVOKE
     "entry": "functions/runPayouts.ts",
-    "logsAuth": "@user.id != null && get(/__managers__/@user.id) != null"   // who may VIEW logs
+    "logsAuth": "@user.id != null && get(/__owners__/@user.id) != null"     // who may VIEW logs
   }
 } }
 ```
+
+`runPayouts` moves money, so its **`auth`** gates on the owning identity
+(`__managers__`), never `auth: "true"` - an open invoke rule would let any
+signed-in user trigger payouts. `logsAuth` is an independent, narrower knob here
+(owners only): who may *view* the logs is separate from who may *invoke*.
 
 - **Default** (omit `logsAuth`): app managers. So owner + collaborators + their
   linked accounts see logs out of the box; nobody else does — even an end-user

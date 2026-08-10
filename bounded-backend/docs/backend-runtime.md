@@ -116,11 +116,18 @@ export default {
 };
 ```
 
-For `kind: "backend"`, export a `fetch` handler:
+For `kind: "backend"`, export a `fetch` handler. A backend URL is **publicly
+reachable** and is not behind a policy `auth` rule, so gate every handler on
+`ctx.identity` and fail closed for an unauthenticated caller:
 
 ```ts
 export default {
   async fetch(req, ctx) {
+    // `ctx.identity` is null for an unauthenticated request. Require an acting
+    // identity and fail closed - never serve app data to an anonymous caller.
+    if (!ctx.identity) {
+      return new Response("unauthorized", { status: 401 });
+    }
     return Response.json({ ok: true });
   }
 };
@@ -129,6 +136,10 @@ export default {
 ## Boundaries
 
 - Backend runtime code is ordinary imperative code, not formally proven.
+- A `kind: "backend"` `fetch` handler is served at a **public URL** and is not
+  behind a policy `auth` rule. Gate every handler on `ctx.identity` and fail
+  closed (`401`) for an unauthenticated caller; never assume the request already
+  carries an identity.
 - Writes through `ctx.bounded` still pass the app's policy rules and invariants.
 - `allowedHosts` and `ctx.secrets` keep provider credentials out of frontend
   code.
