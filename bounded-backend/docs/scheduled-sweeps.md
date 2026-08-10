@@ -11,9 +11,10 @@ Candidate selection has three inputs:
 3. A fixed-size cursor page gives every entity eventual background coverage.
 
 Deduplicate the three inputs by entity id, process each entity independently,
-then advance the cursor. The cursor page is bounded by `SWEEP_LIMIT`. Due and
-dirty inputs are selective, but can still grow during a burst. Add page caps or
-backpressure if those inputs can exceed the function timeout.
+then advance the cursor. The cursor page and the dirty page are both bounded by
+`SWEEP_LIMIT`, so no single invocation enumerates the whole collection. Due
+queries are selective by status/time; add a page cap or backpressure to them too
+if they can grow past the function timeout during a burst.
 
 ## Schedule and service identity
 
@@ -209,7 +210,15 @@ export default async function tick(_args: any, ctx: any) {
     filter: { status: "live", liveAt: { $lte: now - 3600 } },
   });
 
-  const dirtyRows = await readAll(ctx, "dirty");
+  // Cap the dirty input the same way as the round-robin sweep below: one bounded
+  // page (SWEEP_LIMIT), oldest-first. Excess flags stay for the next pass and the
+  // cursor sweep is the eventual backstop, so a burst of dirty writes can never
+  // make one invocation enumerate the whole collection.
+  const dirtyPage: any = await ctx.bounded.get("dirty", {
+    sort: { at: 1 },
+    limit: SWEEP_LIMIT,
+  });
+  const dirtyRows = asRows(dirtyPage);
   const dirtySlugs = dirtyRows.map(rowId).filter(Boolean);
 
   const state = await ctx.bounded.get("tickstate/sweep").catch(() => null);
@@ -327,7 +336,8 @@ atomic `setMany` for side effects that must occur exactly once.
 - Schedule one function with `every: "1m"`.
 - Give it a narrow `actAs` identity. Gate manual invocation with admin auth.
 - Query due states with structured filters.
-- Coalesce activity into `dirty/<entityId>`.
+- Coalesce activity into `dirty/<entityId>`, and read it back capped at
+  `SWEEP_LIMIT` (never a full-collection scan).
 - Let signed-in actors flag. Let only the service identity clear, and clear
   delete-if-unchanged (flag `at` no newer than pass start) so a flag refreshed
   mid-pass survives for the next pass.
