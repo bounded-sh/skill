@@ -56,12 +56,16 @@ entry; use an explicit wallet-provider entry only once your app opts into one.
 **1. Install the RN runtime dependencies** used by the setup below:
 
 ```sh
-npx expo install expo-web-browser expo-crypto react-native-mmkv react-native-url-polyfill
+npx expo install expo-web-browser expo-crypto react-native-url-polyfill \
+  react-native-mmkv react-native-nitro-modules
 npm install base-64
 ```
 
-`react-native-mmkv` requires a native development/production build; it does not
-run in Expo Go. If your app already supplies an equivalent synchronous storage
+`react-native-mmkv` v4 is a Nitro module, hence the `react-native-nitro-modules`
+peer, and it requires a native development/production build; it does not
+run in Expo Go.
+Add `expo-secure-store` as well if you encrypt the store (next section), which you
+should. If your app already supplies an equivalent synchronous storage
 adapter, use that instead.
 
 **2. Provide PKCE randomness + the RN session store at startup**, before `init()`.
@@ -90,6 +94,57 @@ setPlatform({
 // Alternatively, `import 'react-native-get-random-values'` once at app entry and
 // you can omit getRandomBytes (it polyfills the global crypto.getRandomValues).
 ```
+
+> **Encrypt the session store; hold its key in the OS keychain.** The store above
+> persists Bounded's bearer session; on a lost, rooted, or jailbroken device an
+> **unencrypted** MMKV file is readable at rest. Encrypt it, and keep the
+> encryption key in the platform secure enclave - iOS **Keychain** / Android
+> **Keystore** via `expo-secure-store` (or `react-native-keychain`) - never in the
+> MMKV file, `AsyncStorage`, or source. Replace the plain `createMMKV()` above with
+> an encrypted instance whose key comes from the keychain:
+>
+> ```ts
+> import * as SecureStore from "expo-secure-store";
+> import * as Crypto from "expo-crypto";
+> import { createMMKV } from "react-native-mmkv";
+>
+> // MMKV measures `encryptionKey` in BYTES of the string and refuses anything longer
+> // than its algorithm allows: 16 bytes for the default AES-128, 32 for AES-256
+> // ("`encryptionKey` cannot be longer than ..."). A 32-byte key rendered as 64 hex
+> // characters is 64 bytes and throws - the store never opens. Below: 24 random bytes
+> // in a 64-character alphabet, so exactly 32 single-byte characters, 192 bits.
+> const KEY_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+>
+> // Generate the key once, then keep it only in the Keychain/Keystore.
+> // SecureStore.getItem/setItem are the SYNCHRONOUS variants, so this whole opener is
+> // synchronous and drops in at module scope where the plain createMMKV() call was -
+> // the storage adapter has to exist before setPlatform, hence before init().
+> function openEncryptedStore() {
+>   let key = SecureStore.getItem("bounded.session.key");
+>   if (!key) {
+>     // 256 / 64 = 4, so the modulo is unbiased.
+>     key = Array.from(Crypto.getRandomBytes(24), (b) => KEY_ALPHABET[b % 64]).join("");
+>     SecureStore.setItem("bounded.session.key", key, {
+>       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+>     });
+>   }
+>   return createMMKV({ id: "bounded", encryptionKey: key, encryptionType: "AES-256" });
+> }
+> const store = openEncryptedStore();  // use in place of createMMKV()
+> ```
+>
+> Two details that bite in practice. The key is per install and never leaves the
+> device, so losing it (keychain cleared, app reinstalled) is a logged-out user,
+> not a corrupted app - the session simply cannot be read and the user signs in
+> again. And an app that already shipped with a plain `createMMKV()` keeps its
+> existing PLAINTEXT file: opening the same `id` with an `encryptionKey` does not
+> encrypt what is already on disk, so migrate deliberately - either
+> `store.encrypt(key, "AES-256")` once on the existing instance (`recrypt` is
+> deprecated and AES-128-only), or clear it and let the user re-auth.
+>
+> On web, `@bounded-sh/client` already persists the session through the browser's
+> own storage; encrypting MMKV with a keychain-held key is the React Native
+> equivalent of that at-rest protection.
 
 **3. Register the https callback origin** in your app's `allowedOrigins` (owner
 setting, same place web origins go) — e.g. `https://yourapp.com`.

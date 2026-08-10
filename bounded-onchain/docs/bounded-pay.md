@@ -31,25 +31,35 @@ For Bounded Pay's managed Connect flow, generate a real app integration, not a
 CLI-driven purchase flow. The CLI is for manual smoke tests and operator
 debugging.
 
-1. Add policy state for purchases/settlements/entitlements or balances. Use an
-   idempotent document keyed by the Stripe Checkout `sessionId`.
+1. Add policy state for a **server-authored order** plus
+   purchases/settlements/entitlements or balances. The order
+   (`orders/<sessionId>`) fixes item, amount, and currency **server-side**; the
+   client never sends a price. Key idempotent settlement by the Stripe Checkout
+   `sessionId`.
 2. Seller onboarding UI calls `POST /connect/onboard` with the seller's Bounded
    JWT, redirects them to the returned `onboardingUrl`, then calls
    `GET /connect/status` until `chargesEnabled` is true. This creates/reuses one
    Stripe Standard connected account for that Bounded identity; it is not scoped
    to one app.
-3. Buyer checkout UI calls `POST /connect/checkout` with the buyer's Bounded JWT.
-   This is the app's user-facing payment entrypoint. Send one stable
-   `Idempotency-Key` per logical checkout and reuse it across retries, double
-   clicks, and lost responses. Store the key and returned `sessionId` as pending
-   reconciliation state, then redirect the buyer to the returned `url`.
+3. Buyer checkout runs through **your backend**, never from client-chosen
+   amounts. The client names the item; a Bounded function looks up the fixed
+   price/currency from a server-side catalog, calls `POST /connect/checkout` with
+   those server-fixed terms, and writes the pending `orders/<sessionId>` record.
+   Send one stable `Idempotency-Key` per logical checkout and reuse it across
+   retries, double clicks, and lost responses. Never let the client choose
+   `amount` or `currency`, then redirect the buyer to the returned `url`.
 4. After payment, the success URL receives `?sessionId=cs_...`. On callback
    entry, synchronously capture the id and remove it from the browser URL before
    importing or initializing analytics; then invoke an app function such as
    `claimPurchase({ sessionId })` with the captured value.
 5. The app function calls `GET /connect/session?id=cs_...` server-side, verifies
-   `paid`, buyer, merchant, amount, and currency, then writes an idempotent claim
-   or settlement through normal Bounded policy rules/invariants.
+   `paid`, then **compares** the paid session's `gross`, `currency`, `merchant`
+   and `buyer` against the server order in `orders/<sessionId>` before writing any
+   claim. A session that does not match the order grants nothing. Only then write
+   an idempotent claim/settlement through normal Bounded policy rules/invariants.
+   The paid amount comes back as `gross` (minor units); there is no `amount` field
+   on that response, so comparing `session.amount` compares `undefined` and
+   refuses every real payment.
 6. A trusted settlement function grants credits, ownership, entitlements, or
    conserved ledger entries. Use `conserve` for money-like balances and
    `rollingSum` for spend or grant caps.
@@ -96,30 +106,55 @@ const r = await fetch(`${HOST}/connect/status`, {
 const status = await r.json(); // { connected, stripeAccountId, chargesEnabled, ... }
 ```
 
-Buyer checkout:
+Buyer checkout - the backend fixes the terms, opens Checkout, and records the order:
 
 ```ts
+// In a Bounded function (server-side). The client sends only the item key; the
+// price and currency come from a server-side catalog, never from the caller.
+const CATALOG = {
+  "creator-sale": { amount: 1000, currency: "usd", productName: "Creator sale" },
+};
+const item = CATALOG[args.item];
+if (!item) throw new Error("unknown item");
+
 const r = await fetch(`${HOST}/connect/checkout`, {
   method: "POST",
   headers: {
     Authorization: `Bearer ${buyerJwt}`,
     "Content-Type": "application/json",
-    // Persist this with the pending checkout and reuse it for this purchase only.
+    // Persist this with the pending order and reuse it for this purchase only.
     "Idempotency-Key": logicalCheckoutId,
   },
   body: JSON.stringify({
     merchant: sellerBoundedUserId,
-    amount: 1000, // minor units, e.g. cents
-    currency: "usd",
-    productName: "Creator sale",
-    successUrl: `${location.origin}/paid?sessionId={CHECKOUT_SESSION_ID}`,
-    cancelUrl: `${location.origin}/checkout/canceled`,
+    amount: item.amount, // server-fixed, minor units - not a client value
+    currency: item.currency, // server-fixed
+    productName: item.productName,
+    successUrl: `${appOrigin}/paid?sessionId={CHECKOUT_SESSION_ID}`,
+    cancelUrl: `${appOrigin}/checkout/canceled`,
   }),
 });
 const { url, sessionId } = await r.json();
-// Write a pending order keyed by sessionId and retain logicalCheckoutId for retries.
-location.href = url;
+
+// Persist the SERVER order keyed by sessionId with the exact server-fixed terms.
+// Settlement compares the paid session against this record before releasing value.
+await ctx.bounded.set(`orders/${sessionId}`, {
+  item: args.item,
+  amount: item.amount,
+  currency: item.currency,
+  merchant: sellerBoundedUserId,
+  buyer: ctx.user.id,
+  status: "pending",
+});
+
+return { url }; // the client then redirects to `url`
 ```
+
+The order record only exists after the checkout call returns, so let a failed order
+write fail the whole function rather than returning `url` anyway: settlement refuses
+a session with no order, and the buyer would have paid for something unclaimable.
+Because the same `Idempotency-Key` returns the same session, the client's retry
+re-runs the order write against the identical `sessionId`.
 
 The durable checkout contract applies only when `Idempotency-Key` is present.
 Bounded namespaces the key by authenticated buyer and merchant and rejects reuse
@@ -134,7 +169,28 @@ Settlement:
 const r = await fetch(`${HOST}/connect/session?id=${encodeURIComponent(sessionId)}`);
 const session = await r.json();
 if (!session.paid) throw new Error("not paid");
-// Then write idempotent policy state keyed by session.sessionId.
+
+// Compare the PAID session to the SERVER-CREATED order for this checkout.
+// amount/currency/item were fixed server-side in `orders/${sessionId}`; the client
+// never chose them, so never grant value from a session the order does not match.
+const order = await ctx.bounded.get(`orders/${sessionId}`);
+if (!order || order.status !== "pending") {
+  throw new Error("unknown or already-settled order");
+}
+// `gross` is the paid amount in minor units - the response has no `amount` field.
+// `buyer` is the Bounded identity the session was created for, so a caller holding
+// someone else's `cs_...` id cannot settle it into their own account.
+if (
+  session.gross !== order.amount ||
+  session.currency !== order.currency ||
+  session.merchant !== order.merchant ||
+  session.buyer !== order.buyer
+) {
+  throw new Error("paid session does not match the server order");
+}
+
+// Only now write the idempotent claim, keyed by session.sessionId, and mark the
+// order settled in the same atomic batch.
 ```
 
 `/connect/session` is not JWT-gated. The high-entropy `cs_...` id is a bearer

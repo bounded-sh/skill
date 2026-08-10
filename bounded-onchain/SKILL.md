@@ -28,7 +28,7 @@ Read only the row matching the current task or term.
 |---|---|
 | Onchain collections, `onchain:true`, `--protocol`, Solana, mainnet permit, patches, readonly `!`, `FieldReadOnly` | [onchain](docs/onchain.md) |
 | Compiler vs deployed support, devnet status, blocked or unverified integrations (Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor, SPL stake pool, liquid staking, Raydium CPMM, Meteora DLMM), runtime-v4 gating | [capability status](docs/solana-capability-status.md) |
-| Helius, mirror/indexer, missed transactions, replay, reconciliation, cursor, tombstone, DLQ | [mirror completeness](docs/onchain.md#mirror-completeness) |
+| Helius, mirror/indexer, missed transactions, eventual consistency, unmirrored writes; who owns webhooks, ingest queue/DLQ, recovery and reconciliation | [mirror completeness](docs/onchain.md#mirror-completeness) |
 | Transaction too large, 413, 1182/1232-byte packet limit, oversized hook, lookup tables | [transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | `governance.upgrade`, immutable/controller policy, manifest root, governed session, recovery, extend, cancel | [runtime-v3 governance](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
 | `@CPI`, `@Solana`, `@Bytes`, `@App`, `@DocumentPlugin.updateField`, `@PredictionMarketPlugin`, PDAs, `get`/`getAfter`, ProgramData, `shouldSubmitTx`, `skipPreflight`, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, cross-app, prediction-market arithmetic, runtime parity, `@Solana.verifyEd25519`, `@Solana.secp256k1Recover`, `@Bytes.sha256`, `@Bytes.keccak256`, signature verification, EVM signer recovery | [policy primitives](docs/policy-primitives.md) |
@@ -72,6 +72,6 @@ Read only the row matching the current task or term.
 - Keep Poofnet and Solana behavior paired.
 - Pure/read primitives must return the same shape in runtimes where they are actually executable, and mutating primitives must apply a modeled effect or fail closed.
 - Validation-only success is a parity bug.
-- Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. Do not ask app builders to create webhook URLs or supply provider secrets; follow the operator checklist in [docs/onchain.md](docs/onchain.md#mirror-completeness).
+- Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. App builders never create webhook URLs or supply provider secrets, and the operator runbook (webhook, secrets, queue/DLQ, recovery) lives in the monorepo, not this skill. See [mirror completeness](docs/onchain.md#mirror-completeness) for the app-facing caveats.
 - Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.
