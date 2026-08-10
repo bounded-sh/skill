@@ -349,11 +349,6 @@ for (const expected of [
   'Solana accounts are world-readable',
   'Every account sample must use finalized commitment',
   '"query": "@Solana.rentExemption(@data.space)"',
-  'Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.',
-  'one Devnet `getMultipleAccounts` request with base64 encoding and finalized commitment',
-  '`deployment.apps` contains exactly the authenticated primary and cross-app target publications',
-  'Every action-evidence entry contains exactly `actionId`, `contract`, `publicTransactionSignatures`, `transactions`, and `postconditions`.',
-  'Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift',
 ]) {
   if (!policyPrimitives.includes(expected)) fail(`Solana policy primitives: missing contract-address boundary ${expected}`)
 }

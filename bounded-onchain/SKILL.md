@@ -72,6 +72,6 @@ Read only the row matching the current task or term.
 - Keep Poofnet and Solana behavior paired.
 - Pure/read primitives must return the same shape in runtimes where they are actually executable, and mutating primitives must apply a modeled effect or fail closed.
 - Validation-only success is a parity bug.
-- Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. Do not ask app builders to create webhook URLs or supply provider secrets; follow the operator checklist in [docs/onchain.md](docs/onchain.md#mirror-completeness).
+- Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. App builders never create webhook URLs or supply provider secrets, and the operator runbook (webhook, secrets, queue/DLQ, recovery) lives in the monorepo, not this skill. See [mirror completeness](docs/onchain.md#mirror-completeness) for the app-facing caveats.
 - Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.

@@ -512,49 +512,12 @@ Before enabling a new primitive or runtime version:
   A `UInt` result is either a nonnegative safe integer, a nonnegative bigint, or a canonical decimal string matching `^(0|[1-9][0-9]*)$`.
   A Pyth decimal is a string matching `^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$`; reject exponential notation, `NaN`, infinities, and JavaScript numeric coercion.
   Known-vector booleans must equal `true`, Solana addresses must decode as public keys, and an ORAO result must satisfy `0 <= roll < span`.
-- Bind retained live acceptance to the public deployed release marker and independently read the Devnet Program and ProgramData accounts at the beginning and end of the run.
-  For the canonical staging lab, fetch `https://bounded-solana-devnet-lab.staging.bounded.page/bounded-solana-lab-release.json` with caching disabled.
-  Confirm that exact base URL from the `slugUrl` returned by `bounded domains list --app-id <app-id> --env staging --json` or the `url` retained from the exact successful staging site-deploy receipt.
-  Require the JSON field itself instead of copying a human-rendered hostname.
-  Do not use `bounded apps inspect` as a URL source; it proves only the active policy/runtime publication.
-  Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.
-  Require version 2, release `bounded-solana-devnet-lab`, environment `staging`, protocol `realtime_devnet`, the exact 40-hex source commit and 24-hex app ID, and a 64-hex artifact SHA-256.
-  The nested `program` object contains exactly `network`, `programId`, `programDataAddress`, `authority`, `lastDeployedSlot`, `allocatedBytes`, `dumpSha256`, `commitment`, and `contextSlot`.
-  Require finalized commitment and a nonnegative integer context slot.
-  The canonical cross-app lab marker contains the exact active primary publication in `policy` and one distinct private target as `{ "role": "cross_app", "provenance": <active-publication> }` in `targets`.
-  An active publication contains exactly `schemaVersion`, `appId`, `environment`, `protocol`, `sitePrivate`, `submittedPolicySha256`, `resolvedPolicySha256`, `runtimeArtifactSha256`, and `receipt`.
-  Its receipt contains exactly `state`, `operationId`, `status`, `policyRevisionCount`, and `runtimePublicationRevision`.
-  Require committed and available receipts, positive revision numbers, the intended policy hashes, and exact equality between marker publications and fresh authenticated `bounded apps inspect --json` results.
-  Its artifact digest is SHA-256 over every built-site file except the marker, sorted by slash-normalized relative path, updating the hash with `<path-byte-length>:<path>:<file-byte-length>:` followed by the raw file bytes for each file.
-  Read the Program and ProgramData accounts in one Devnet `getMultipleAccounts` request with base64 encoding and finalized commitment so both values share one response context slot.
-  Derive ProgramData as the PDA whose seed is the program public key under `BPFLoaderUpgradeab1e11111111111111111111111`.
-  Require a 36-byte executable Program account with loader state 2 and the derived ProgramData address.
-  Require a non-executable loader-owned ProgramData account with state 3, little-endian deploy slot in bytes 4 through 11, authority option 1 in byte 12, and authority public key in bytes 13 through 44.
-  `allocatedBytes` is the byte length after the 45-byte ProgramData header.
-  `dumpSha256` is SHA-256 over exactly those post-header bytes.
-  Record the independent observation as exactly `network`, `programId`, `programDataAddress`, `authority`, `deployedSlot`, `allocatedBytes`, `dumpSha256`, `commitment`, and `contextSlot`.
-  Require the Program account, ProgramData PDA, owner, authority, deploy slot, allocation, and executable hash to match the marker.
-  At the end of the run, require the marker and active app publications to remain identical, require all observed program facts except the context slot to remain identical, and require the ending finalized context slot not to move backward.
-- Treat the full sanitized receipt as authoritative.
-  Receipt schema version 2 includes `schemaVersion: 2`, `runId`, `network`, `checkedAt`, `commit`, `evidencePath`, `qualifying`, `appId`, `deployment`, `walletAddress`, `startingBalanceLamports`, `runner`, `summary`, and `scenarios`.
-  Require those exact top-level keys, a canonical public Solana wallet address, a canonical decimal starting balance, the exact five terminal-status counts, and runner version 3 with `keySource: "global"`.
-  Do not name the public runner field `credentialSource`; credential-like evidence keys are intentionally rejected by sanitization.
-  `deployment.marker` is the exact public marker above.
-  `deployment.program` is the exact independent finalized observation above.
-  `deployment.apps` contains exactly the authenticated primary and cross-app target publications, which must equal the corresponding marker publications.
-  Require `receipt.commit == deployment.marker.commit`, `receipt.appId == deployment.marker.appId`, and the retained artifact digest to equal `deployment.marker.artifactSha256`.
-  Require every marker program field to equal the independently observed field, with `lastDeployedSlot == deployedSlot`.
-  Each scenario includes its ID, terminal status and reason, commitment, exact covered actions, action evidence, public transaction signatures and explorer links, public addresses and explorer links, sanitized transactions, and postconditions.
-  Every action-evidence entry contains exactly `actionId`, `contract`, `publicTransactionSignatures`, `transactions`, and `postconditions`.
-  The contract pins the exact transaction outcomes, ordered postcondition kinds, minimum attempts, and minimum observation window for that action.
-  Require a nonempty fresh postcondition delta, exact signature equality with the action's transaction records, exact contract satisfaction, and unique ownership for every scenario postcondition receipt.
-  For a passing scenario, require the complete ordered aggregate postcondition list, including independent RPC account probes, to equal the flattened action-owned postcondition lists exactly.
-  Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift, free-floating postconditions, or an aggregate scenario signature, transaction, or postcondition list that differs from the ordered action-owned records.
-  The compact index projection keeps the top-level run identity, app and deployment evidence plus each scenario's ID, status, reason, commitment, exact actions, action evidence, public transaction signatures, explorer links, transactions, and postconditions.
-  Validate that compact projection against its own exact schema.
-  It intentionally omits the full receipt's wallet, starting balance, runner, summary, and scenario address arrays and must never be rehydrated into a partial object for full-receipt validation.
-  Require authoritative `denialProof` only on the invariant-denial action's finalized failed transaction, reject that field everywhere else, and allow ordinary finalized failures in nonpassing scenarios to retain only their sanitized non-null error.
-  Recompute that projection from the full receipt and compare it structurally before use.
-  Hash the raw full receipt file with SHA-256 as a generator input.
-  Load the scenario manifest with `git show <receipt.commit>:<scenario-manifest-path>`, require exact scenario IDs, action lists, function membership, and postcondition kinds, and never let a later scenario or function inherit an older pass.
+- The end-to-end live-acceptance release proof - the staging lab's release marker
+  and sanitized run receipt, the artifact and program-account hashing, and the
+  per-scenario acceptance definitions - is **Bounded-operated release evidence** kept
+  in the monorepo's internal runbooks, not in this public skill. As an app builder,
+  prove your own capability from the retained Devnet receipt above: assign a run ID,
+  confirm the public signature at the required commitment, and poll the exact
+  expected postcondition. Do not treat compiler reachability, a local validator pass,
+  an immediate read, or a returned signature as proof.
 - Do not accept a toast, simulation, returned signature, or immediate read as complete evidence.
