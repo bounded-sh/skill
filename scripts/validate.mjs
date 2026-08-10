@@ -5,6 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, w
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isWithinRoot } from './lib/contained-path.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const ignoredDirectories = new Set(['.git', '.gstack', 'node_modules'])
@@ -73,6 +74,14 @@ function checkMarkdownLink(sourceFile, rawTarget, line) {
   const targetPath = rawPath
     ? path.resolve(path.dirname(sourceFile), decodeURIComponent(rawPath.split('?')[0]))
     : sourceFile
+
+  // Containment: a link target that resolves outside the project root (e.g.
+  // `../../../../etc/passwd`) must never be stat-ed or read. Reject it before any
+  // filesystem access on the resolved path.
+  if (!isWithinRoot(root, targetPath)) {
+    fail(`${relative(sourceFile)}:${line}: link target escapes project root ${rawTarget}`)
+    return
+  }
 
   if (!existsSync(targetPath)) {
     fail(`${relative(sourceFile)}:${line}: missing link target ${rawTarget}`)

@@ -91,6 +91,39 @@ setPlatform({
 // you can omit getRandomBytes (it polyfills the global crypto.getRandomValues).
 ```
 
+> **Encrypt the session store; hold its key in the OS keychain.** The store above
+> persists Bounded's bearer session; on a lost, rooted, or jailbroken device an
+> **unencrypted** MMKV file is readable at rest. Encrypt it, and keep the
+> encryption key in the platform secure enclave - iOS **Keychain** / Android
+> **Keystore** via `expo-secure-store` (or `react-native-keychain`) - never in the
+> MMKV file, `AsyncStorage`, or source. Replace the plain `createMMKV()` above with
+> an encrypted instance whose key comes from the keychain:
+>
+> ```ts
+> import * as SecureStore from "expo-secure-store";
+> import * as Crypto from "expo-crypto";
+> import { MMKV } from "react-native-mmkv";
+>
+> // Generate the MMKV encryption key once, then keep it only in the Keychain/Keystore.
+> async function openEncryptedStore() {
+>   let key = await SecureStore.getItemAsync("bounded.session.key");
+>   if (!key) {
+>     key = [...Crypto.getRandomBytes(32)]
+>       .map((byte) => byte.toString(16).padStart(2, "0"))
+>       .join("");
+>     await SecureStore.setItemAsync("bounded.session.key", key, {
+>       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+>     });
+>   }
+>   return new MMKV({ id: "bounded", encryptionKey: key });
+> }
+> // const store = await openEncryptedStore();  // use in place of createMMKV()
+> ```
+>
+> On web, `@bounded-sh/client` already persists the session through the browser's
+> own storage; encrypting MMKV with a keychain-held key is the React Native
+> equivalent of that at-rest protection.
+
 **3. Register the https callback origin** in your app's `allowedOrigins` (owner
 setting, same place web origins go) — e.g. `https://yourapp.com`.
 

@@ -120,15 +120,18 @@ X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: browsing-topics=()
 Content-Security-Policy: frame-ancestors 'self' https://oapps.fun https://*.oapps.fun
-                                          https://bounded.page https://*.bounded.page
+                                          https://bounded.page
 ```
 
 Two consequences worth knowing before you debug a blank page.
 
-**Framing.** Your app may be embedded by itself and by a Bounded venue, and by
-nobody else.
+**Framing.** Your app may be embedded by itself and by a Bounded venue
+(`oapps.fun` rooms and the `bounded.page` apex), and by nobody else.
 That is what lets an oApps room show your live app inside its own page while a
 random third-party site cannot frame it to phish your users.
+The venue hosts are named explicitly, not a `*.bounded.page` wildcard, so a
+sibling Bounded app on its own `*.bounded.page` subdomain is **not** a permitted
+embedder and cannot frame you either.
 If you need another embedder, that is a platform change, not something an app can
 declare today.
 
