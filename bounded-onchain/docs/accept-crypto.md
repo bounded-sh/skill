@@ -127,16 +127,57 @@ the same record (idempotent). Wrong amount → **402 `insufficient_payment`**; a
 signature already used by another intent → **409 `signature_already_used`**; a
 tx that isn't finalized yet → **402 `payment_not_final`** (retry shortly).
 
-> **⚠️ Limitation - a payment is not yet bound to a specific order.** Verification proves
-> that *some* payment of the right amount reached `settleTo` and that a signature settles
-> only one intent - but it does **not** prove the payment was made *for this intent*.
-> Because every order shares one `settleTo`, two pending orders for the same amount are
-> indistinguishable: whoever calls `/verify` first claims a given on-chain payment, so a
-> caller can settle **their** order with **someone else's** payment (the real payer then
-> gets `409 signature_already_used`). Do **not** rely on this rail for a production checkout
-> where mis-settlement matters until per-order binding ships - and a unique-amount workaround
-> is not sufficient (an attacker can match the amount). The robust fix (a per-order on-chain
-> reference, or a per-intent escrow deposit address) is tracked and not yet implemented.
+> **Bind each payment to its order with a per-order reference.** On its own,
+> verification proves only that *some* payment of the right amount reached `settleTo`
+> and that each signature settles one intent - **not** that the payment was made *for
+> this order*. Because every order shares one `settleTo`, two pending orders for the
+> same amount are otherwise indistinguishable (whoever calls `/verify` first claims a
+> given on-chain payment), and a unique-amount trick does **not** help - an attacker can
+> match the amount. Close the gap with a **per-order reference** the app controls:
+> generate an unguessable reference per order, record it server-side, require the
+> buyer's transfer to carry it, and settle an order only against a transaction that
+> carries *that order's* reference.
+
+**Per-order reference binding** (app-side, works today - layer it on top of `/verify`):
+
+```ts
+import { Keypair } from "@solana/web3.js";
+
+// 1. Create the order server-side with an unguessable per-order reference.
+const reference = Keypair.generate().publicKey.toBase58(); // Solana Pay-style reference
+await ctx.bounded.set(`orders/${orderId}`, {
+  buyer: ctx.user.id, amountUsdc: 5, reference, status: "pending",
+});
+
+// 2. The buyer includes `reference` as a read-only account (Solana Pay reference)
+//    in the USDC transfer to `settleTo`, submits it, and captures the signature.
+
+// 3. Settle ONLY when the confirmed transaction carries THIS order's reference.
+const verified = await fetch(`${HOST}/crypto/intents/${intentId}/verify`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ txSignature }),
+}).then((res) => res.json());
+if (verified.status !== "settled") throw new Error("not settled");
+
+const order = await ctx.bounded.get(`orders/${orderId}`);
+const tx = await connection.getTransaction(txSignature, {
+  commitment: "finalized",
+  maxSupportedTransactionVersion: 0,
+});
+const carriesReference = tx?.transaction.message
+  .getAccountKeys()
+  .staticAccountKeys.some((key) => key.toBase58() === order.reference);
+if (order.status !== "pending" || !carriesReference) {
+  throw new Error("payment is not for this order");
+}
+// A payment made for a different order cannot carry this order's reference, so it
+// can never be claimed here. Only now grant the order's entitlement (idempotently).
+```
+
+Verification still enforces the amount, finality, and one-signature-per-intent
+replay guard; the per-order reference is the app-side layer that binds the accepted
+payment to the specific order before any value is released.
 
 ### Poll status - `GET /crypto/intents/:id`
 
