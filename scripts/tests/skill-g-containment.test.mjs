@@ -76,6 +76,11 @@ test('3: React Native guide documents encrypted device storage + keychain', () =
     /encryptionKey/.test(doc) && /16 bytes/.test(doc),
     'the RN guide must state MMKV\'s 16-byte encryptionKey ceiling next to the sample',
   )
+  // v4 is a Nitro module exposing a createMMKV factory; `new MMKV(...)` is the v3 API.
+  assert.ok(
+    !/new MMKV\(/.test(doc),
+    'the sample must open the store with createMMKV(), not the removed `new MMKV(...)` constructor',
+  )
   // The store adapter is consumed synchronously by setPlatform/configure, so an
   // async opener cannot be dropped in where createMMKV() was.
   assert.ok(

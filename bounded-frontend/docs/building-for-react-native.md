@@ -56,12 +56,16 @@ entry; use an explicit wallet-provider entry only once your app opts into one.
 **1. Install the RN runtime dependencies** used by the setup below:
 
 ```sh
-npx expo install expo-web-browser expo-crypto react-native-mmkv react-native-url-polyfill
+npx expo install expo-web-browser expo-crypto react-native-url-polyfill \
+  react-native-mmkv react-native-nitro-modules
 npm install base-64
 ```
 
-`react-native-mmkv` requires a native development/production build; it does not
-run in Expo Go. If your app already supplies an equivalent synchronous storage
+`react-native-mmkv` v4 is a Nitro module, hence the `react-native-nitro-modules`
+peer, and it requires a native development/production build; it does not
+run in Expo Go.
+Add `expo-secure-store` as well if you encrypt the store (next section), which you
+should. If your app already supplies an equivalent synchronous storage
 adapter, use that instead.
 
 **2. Provide PKCE randomness + the RN session store at startup**, before `init()`.
@@ -102,24 +106,29 @@ setPlatform({
 > ```ts
 > import * as SecureStore from "expo-secure-store";
 > import * as Crypto from "expo-crypto";
-> import { encode as btoa } from "base-64";
-> import { MMKV } from "react-native-mmkv";
+> import { createMMKV } from "react-native-mmkv";
 >
-> // Generate the MMKV encryption key once, then keep it only in the Keychain/Keystore.
-> // SecureStore.getItem/setItem are the SYNCHRONOUS variants, so this runs at module
-> // scope in front of `setPlatform` - the store adapter has to be ready before init().
+> // MMKV measures `encryptionKey` in BYTES of the string and refuses anything longer
+> // than its algorithm allows: 16 bytes for the default AES-128, 32 for AES-256
+> // ("`encryptionKey` cannot be longer than ..."). A 32-byte key rendered as 64 hex
+> // characters is 64 bytes and throws - the store never opens. Below: 24 random bytes
+> // in a 64-character alphabet, so exactly 32 single-byte characters, 192 bits.
+> const KEY_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+>
+> // Generate the key once, then keep it only in the Keychain/Keystore.
+> // SecureStore.getItem/setItem are the SYNCHRONOUS variants, so this whole opener is
+> // synchronous and drops in at module scope where the plain createMMKV() call was -
+> // the storage adapter has to exist before setPlatform, hence before init().
 > function openEncryptedStore() {
 >   let key = SecureStore.getItem("bounded.session.key");
 >   if (!key) {
->     // 12 random bytes -> 16 base64 chars. react-native-mmkv REFUSES an
->     // encryptionKey longer than 16 bytes ("cannot be longer than 16 bytes"),
->     // so a 32-byte hex key throws and the store never opens.
->     key = btoa(String.fromCharCode(...Crypto.getRandomBytes(12)));
+>     // 256 / 64 = 4, so the modulo is unbiased.
+>     key = Array.from(Crypto.getRandomBytes(24), (b) => KEY_ALPHABET[b % 64]).join("");
 >     SecureStore.setItem("bounded.session.key", key, {
 >       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 >     });
 >   }
->   return new MMKV({ id: "bounded", encryptionKey: key });
+>   return createMMKV({ id: "bounded", encryptionKey: key, encryptionType: "AES-256" });
 > }
 > const store = openEncryptedStore();  // use in place of createMMKV()
 > ```
@@ -128,9 +137,10 @@ setPlatform({
 > device, so losing it (keychain cleared, app reinstalled) is a logged-out user,
 > not a corrupted app - the session simply cannot be read and the user signs in
 > again. And an app that already shipped with a plain `createMMKV()` keeps its
-> existing PLAINTEXT file: switching to an encrypted instance with the same `id`
-> does not encrypt what is already on disk, so migrate deliberately - either
-> `store.recrypt(key)` once, or clear the old instance and let the user re-auth.
+> existing PLAINTEXT file: opening the same `id` with an `encryptionKey` does not
+> encrypt what is already on disk, so migrate deliberately - either
+> `store.encrypt(key, "AES-256")` once on the existing instance (`recrypt` is
+> deprecated and AES-128-only), or clear it and let the user re-auth.
 >
 > On web, `@bounded-sh/client` already persists the session through the browser's
 > own storage; encrypting MMKV with a keychain-held key is the React Native
