@@ -102,23 +102,35 @@ setPlatform({
 > ```ts
 > import * as SecureStore from "expo-secure-store";
 > import * as Crypto from "expo-crypto";
+> import { encode as btoa } from "base-64";
 > import { MMKV } from "react-native-mmkv";
 >
 > // Generate the MMKV encryption key once, then keep it only in the Keychain/Keystore.
-> async function openEncryptedStore() {
->   let key = await SecureStore.getItemAsync("bounded.session.key");
+> // SecureStore.getItem/setItem are the SYNCHRONOUS variants, so this runs at module
+> // scope in front of `setPlatform` - the store adapter has to be ready before init().
+> function openEncryptedStore() {
+>   let key = SecureStore.getItem("bounded.session.key");
 >   if (!key) {
->     key = [...Crypto.getRandomBytes(32)]
->       .map((byte) => byte.toString(16).padStart(2, "0"))
->       .join("");
->     await SecureStore.setItemAsync("bounded.session.key", key, {
+>     // 12 random bytes -> 16 base64 chars. react-native-mmkv REFUSES an
+>     // encryptionKey longer than 16 bytes ("cannot be longer than 16 bytes"),
+>     // so a 32-byte hex key throws and the store never opens.
+>     key = btoa(String.fromCharCode(...Crypto.getRandomBytes(12)));
+>     SecureStore.setItem("bounded.session.key", key, {
 >       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 >     });
 >   }
 >   return new MMKV({ id: "bounded", encryptionKey: key });
 > }
-> // const store = await openEncryptedStore();  // use in place of createMMKV()
+> const store = openEncryptedStore();  // use in place of createMMKV()
 > ```
+>
+> Two details that bite in practice. The key is per install and never leaves the
+> device, so losing it (keychain cleared, app reinstalled) is a logged-out user,
+> not a corrupted app - the session simply cannot be read and the user signs in
+> again. And an app that already shipped with a plain `createMMKV()` keeps its
+> existing PLAINTEXT file: switching to an encrypted instance with the same `id`
+> does not encrypt what is already on disk, so migrate deliberately - either
+> `store.recrypt(key)` once, or clear the old instance and let the user re-auth.
 >
 > On web, `@bounded-sh/client` already persists the session through the browser's
 > own storage; encrypting MMKV with a keychain-held key is the React Native

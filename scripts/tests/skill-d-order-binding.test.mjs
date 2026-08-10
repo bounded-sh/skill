@@ -31,6 +31,23 @@ test('bounded-pay settlement compares the paid session to a server-created order
     settlement.includes('order.amount') && settlement.includes('order.currency'),
     'settlement must COMPARE the paid session amount/currency to the server order, not settle on session.paid alone',
   )
+  // GET /connect/session returns gross/fee/net, never `amount`. Comparing
+  // session.amount compares undefined and refuses every real paid session, so the
+  // snippet reads as a working guard while being copy-paste broken.
+  assert.ok(
+    /session\.gross\s*!==\s*order\.amount/.test(settlement),
+    'settlement must compare the paid amount as session.gross (the field /connect/session actually returns)',
+  )
+  assert.ok(
+    !/session\.amount/.test(settlement),
+    'session.amount does not exist on the /connect/session response',
+  )
+  // The cs_... id is a bearer capability: bind the session to the order's buyer so a
+  // leaked id cannot be settled into somebody else's account.
+  assert.ok(
+    /session\.buyer\s*!==\s*order\.buyer/.test(settlement),
+    'settlement must bind the paid session to the order buyer',
+  )
 })
 
 test('bounded-pay checkout fixes amount/currency/item server-side in an order', () => {
@@ -52,5 +69,16 @@ test('accept-crypto shows a per-order reference binding instead of deferring it'
   assert.ok(
     /per-order reference/i.test(crypto),
     'accept-crypto must show the per-order reference binding pattern in an example',
+  )
+  // /verify is what settles the intent and burns the signature globally, so the
+  // reference must be checked BEFORE it: verifying first can bind another order's
+  // payment to this intent and leave the real payer with signature_already_used.
+  const referenceCheck = crypto.indexOf('carriesReference')
+  const verifyCall = crypto.indexOf('/verify`, {')
+  assert.notEqual(referenceCheck, -1, 'accept-crypto must check the order reference in the example')
+  assert.notEqual(verifyCall, -1, 'accept-crypto must show the /verify call in the example')
+  assert.ok(
+    referenceCheck < verifyCall,
+    'the per-order reference must be checked BEFORE calling /verify, which consumes the signature',
   )
 })

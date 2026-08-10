@@ -11,10 +11,11 @@ Candidate selection has three inputs:
 3. A fixed-size cursor page gives every entity eventual background coverage.
 
 Deduplicate the three inputs by entity id, process each entity independently,
-then advance the cursor. The cursor page and the dirty page are both bounded by
-`SWEEP_LIMIT`, so no single invocation enumerates the whole collection. Due
-queries are selective by status/time; add a page cap or backpressure to them too
-if they can grow past the function timeout during a burst.
+then advance the cursor. Every input is one page bounded by `SWEEP_LIMIT` - due
+queries, the dirty flags, and the round-robin cursor alike - so no invocation
+ever enumerates the whole collection, and no burst decides how much work one
+pass does. Anything past a cap stays due for the next pass, and the cursor sweep
+is the eventual backstop, so nothing is dropped.
 
 ## Schedule and service identity
 
@@ -174,7 +175,6 @@ cursor as the first page.
 
 ```ts
 const SWEEP_LIMIT = 40;
-const PAGE_LIMIT = 500;
 
 function asRows(raw: any): any[] {
   return Array.isArray(raw) ? raw : raw?.data || raw?.documents || [];
@@ -184,30 +184,27 @@ function rowId(row: any): string {
   return row.id || row._id?.split("/").pop() || "";
 }
 
-async function readAll(ctx: any, path: string, opts: any = {}): Promise<any[]> {
-  const rows: any[] = [];
-  let cursor: string | undefined;
-  do {
-    const page: any = await ctx.bounded.get(path, {
-      ...opts,
-      limit: PAGE_LIMIT,
-      cursor,
-    });
-    rows.push(...asRows(page));
-    cursor = page?.nextCursor || undefined;
-  } while (cursor);
-  return rows;
+// Every input to one pass is a single bounded page. There is deliberately no
+// read-until-cursor-exhausted helper here: a due-query burst would then decide how
+// much work one invocation does, and the pass would time out mid-flight.
+async function readPage(ctx: any, path: string, opts: any = {}): Promise<any[]> {
+  const page: any = await ctx.bounded.get(path, { limit: SWEEP_LIMIT, ...opts });
+  return asRows(page);
 }
 
 export default async function tick(_args: any, ctx: any) {
   const now = Math.floor(Date.now() / 1000);
   const errors: Array<{ slug: string; error: string }> = [];
 
-  const dueCountdown = await readAll(ctx, "launches", {
+  // Oldest-due first, one capped page each. Anything past the cap stays due and is
+  // picked up next minute; the cursor sweep below is the eventual backstop.
+  const dueCountdown = await readPage(ctx, "launches", {
     filter: { status: "countdown", launchAt: { $lte: now } },
+    sort: { launchAt: 1 },
   });
-  const dueLive = await readAll(ctx, "launches", {
+  const dueLive = await readPage(ctx, "launches", {
     filter: { status: "live", liveAt: { $lte: now - 3600 } },
+    sort: { liveAt: 1 },
   });
 
   // Cap the dirty input the same way as the round-robin sweep below: one bounded

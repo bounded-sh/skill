@@ -15,6 +15,8 @@ node scripts/validate.mjs
 ```
 
 It must pass; there is no CI here, and `main` is what users pull.
+It also runs the contract tests under `scripts/tests/`, so that is the whole gate;
+run them alone with `node --test "scripts/tests/*.test.mjs"` while iterating.
 
 ## Content rules
 

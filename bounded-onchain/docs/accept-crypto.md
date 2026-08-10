@@ -141,9 +141,11 @@ tx that isn't finalized yet → **402 `payment_not_final`** (retry shortly).
 **Per-order reference binding** (app-side, works today - layer it on top of `/verify`):
 
 ```ts
-import { Keypair } from "@solana/web3.js";
+import { Connection, Keypair } from "@solana/web3.js";
 
-// 1. Create the order server-side with an unguessable per-order reference.
+// 1. Create the order server-side with an unguessable per-order reference. Keep
+//    `reference` out of any collection other users can read: it is the token that
+//    decides which order a payment belongs to.
 const reference = Keypair.generate().publicKey.toBase58(); // Solana Pay-style reference
 await ctx.bounded.set(`orders/${orderId}`, {
   buyer: ctx.user.id, amountUsdc: 5, reference, status: "pending",
@@ -152,27 +154,34 @@ await ctx.bounded.set(`orders/${orderId}`, {
 // 2. The buyer includes `reference` as a read-only account (Solana Pay reference)
 //    in the USDC transfer to `settleTo`, submits it, and captures the signature.
 
-// 3. Settle ONLY when the confirmed transaction carries THIS order's reference.
+// 3. Check the reference BEFORE calling /verify. /verify is what marks an intent
+//    settled and burns that signature globally, so verifying first can attach a
+//    payment made for another order to THIS intent - the real payer then gets
+//    409 signature_already_used and their order can never settle.
+const order = await ctx.bounded.get(`orders/${orderId}`);
+if (order.status !== "pending") throw new Error("order is not pending");
+
+// The RPC host has to be declared in `boundaries.egress`, or the read is refused.
+const connection = new Connection(RPC_URL, "finalized");
+const tx = await connection.getTransaction(txSignature, {
+  commitment: "finalized",
+  maxSupportedTransactionVersion: 0,
+});
+// Only STATIC account keys are inspected, so a reference smuggled through an address
+// lookup table reads as absent and is refused - have the buyer attach it directly.
+const carriesReference = tx?.transaction.message
+  .getAccountKeys()
+  .staticAccountKeys.some((key) => key.toBase58() === order.reference);
+if (!carriesReference) throw new Error("payment is not for this order");
+
+// 4. Only now settle, then grant the entitlement and flip the order to "settled" in
+//    ONE atomic ctx.bounded batch, so a replayed call cannot grant twice.
 const verified = await fetch(`${HOST}/crypto/intents/${intentId}/verify`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ txSignature }),
 }).then((res) => res.json());
 if (verified.status !== "settled") throw new Error("not settled");
-
-const order = await ctx.bounded.get(`orders/${orderId}`);
-const tx = await connection.getTransaction(txSignature, {
-  commitment: "finalized",
-  maxSupportedTransactionVersion: 0,
-});
-const carriesReference = tx?.transaction.message
-  .getAccountKeys()
-  .staticAccountKeys.some((key) => key.toBase58() === order.reference);
-if (order.status !== "pending" || !carriesReference) {
-  throw new Error("payment is not for this order");
-}
-// A payment made for a different order cannot carry this order's reference, so it
-// can never be claimed here. Only now grant the order's entitlement (idempotently).
 ```
 
 Verification still enforces the amount, finality, and one-signature-per-intent

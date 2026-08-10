@@ -53,10 +53,13 @@ debugging.
    importing or initializing analytics; then invoke an app function such as
    `claimPurchase({ sessionId })` with the captured value.
 5. The app function calls `GET /connect/session?id=cs_...` server-side, verifies
-   `paid`, then **compares** the paid session's `amount`, `currency`, and
-   `merchant` against the server order in `orders/<sessionId>` before writing any
+   `paid`, then **compares** the paid session's `gross`, `currency`, `merchant`
+   and `buyer` against the server order in `orders/<sessionId>` before writing any
    claim. A session that does not match the order grants nothing. Only then write
    an idempotent claim/settlement through normal Bounded policy rules/invariants.
+   The paid amount comes back as `gross` (minor units); there is no `amount` field
+   on that response, so comparing `session.amount` compares `undefined` and
+   refuses every real payment.
 6. A trusted settlement function grants credits, ownership, entitlements, or
    conserved ledger entries. Use `conserve` for money-like balances and
    `rollingSum` for spend or grant caps.
@@ -147,6 +150,12 @@ await ctx.bounded.set(`orders/${sessionId}`, {
 return { url }; // the client then redirects to `url`
 ```
 
+The order record only exists after the checkout call returns, so let a failed order
+write fail the whole function rather than returning `url` anyway: settlement refuses
+a session with no order, and the buyer would have paid for something unclaimable.
+Because the same `Idempotency-Key` returns the same session, the client's retry
+re-runs the order write against the identical `sessionId`.
+
 The durable checkout contract applies only when `Idempotency-Key` is present.
 Bounded namespaces the key by authenticated buyer and merchant and rejects reuse
 with different normalized terms. Omitting it uses the legacy non-durable path and
@@ -168,10 +177,14 @@ const order = await ctx.bounded.get(`orders/${sessionId}`);
 if (!order || order.status !== "pending") {
   throw new Error("unknown or already-settled order");
 }
+// `gross` is the paid amount in minor units - the response has no `amount` field.
+// `buyer` is the Bounded identity the session was created for, so a caller holding
+// someone else's `cs_...` id cannot settle it into their own account.
 if (
-  session.amount !== order.amount ||
+  session.gross !== order.amount ||
   session.currency !== order.currency ||
-  session.merchant !== order.merchant
+  session.merchant !== order.merchant ||
+  session.buyer !== order.buyer
 ) {
   throw new Error("paid session does not match the server order");
 }

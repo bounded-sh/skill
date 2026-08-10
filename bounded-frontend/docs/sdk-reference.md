@@ -716,7 +716,10 @@ const res = await functions.invoke("syncStripe", {});
 ```ts
 // functions/syncStripe.ts - resolve the customer from ctx.user, not from args.
 export default async function syncStripe(_args, ctx) {
-  if (!ctx.user) throw new Error("unauthorized"); // fail closed
+  // Gate on the ID, not on the object: `ctx.user` is ALWAYS present, and a system
+  // principal (queued/scheduled run) is `{ id: null, ... , system: true }`, so a
+  // truthiness check on the object never fires and reads `stripeCustomers/null`.
+  if (!ctx.user?.id) throw new Error("unauthorized"); // fail closed
   // Server-owned mapping keyed by the authenticated user; the caller can't forge it.
   const mapping = await ctx.bounded.get(`stripeCustomers/${ctx.user.id}`);
   const customerId = mapping?.customerId;

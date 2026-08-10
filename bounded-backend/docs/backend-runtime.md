@@ -116,34 +116,46 @@ export default {
 };
 ```
 
-For `kind: "backend"`, export a `fetch` handler. A backend URL is **publicly
-reachable** and is not behind a policy `auth` rule, so gate every handler on the
-acting user (`ctx.identity.user`) and fail closed for an unauthenticated caller:
+For `kind: "backend"`, export a `fetch` handler.
+Bounded verifies the caller's app token before your handler runs, but it does
+**not** evaluate a policy `auth` rule for a backend route, so authorization is
+yours: every signed-in user of the app reaches the same handler.
+Gate on the acting user and fail closed:
 
 ```ts
 export default {
   async fetch(req, ctx) {
     // `ctx.identity` is ALWAYS a populated object, so a bare `!ctx.identity`
     // check never fires and fails OPEN. Gate on the acting user instead:
-    // `ctx.identity.user` is the @user.id, absent/empty for an unauthenticated
-    // request. Fail closed - never serve app data to an anonymous caller.
+    // `ctx.identity.user` is the platform-verified caller id (null/empty when the
+    // token carries no user), and it is set by Bounded from the verified token -
+    // a caller cannot supply it. Fail closed, then authorize the specific action.
     if (!ctx.identity.user) {
       return new Response("unauthorized", { status: 401 });
     }
+    // Being signed in is not being allowed: check ownership/role for what this
+    // route does, keyed by ctx.identity.user, before reading or writing.
     return Response.json({ ok: true });
   }
 };
 ```
 
+One subtlety if you also write policy rules: `ctx.identity.user` is the caller's
+platform-resolved account identity, not necessarily the same string as `@user.id`
+in a policy rule for the same human (a wallet login and an email login on one
+account resolve differently).
+Use it for "who is calling this backend route", and let policy rules on
+`ctx.bounded` writes do the per-collection authorization.
+
 ## Boundaries
 
 - Backend runtime code is ordinary imperative code, not formally proven.
-- A `kind: "backend"` `fetch` handler is served at a **public URL** and is not
-  behind a policy `auth` rule. `ctx.identity` is always a populated object, so
-  gating on the bare `!ctx.identity` fails open; gate every handler on the acting
-  user (`ctx.identity.user`, the `@user.id`, which is absent/empty for an
-  unauthenticated caller) and fail closed (`401`). Never assume the request
-  already carries an authenticated identity.
+- A `kind: "backend"` `fetch` handler runs behind token verification but **not**
+  behind a policy `auth` rule, so it is reachable by every signed-in user of the
+  app and must authorize its own actions. `ctx.identity` is always a populated
+  object, so gating on the bare `!ctx.identity` fails open; gate on the acting user
+  (`ctx.identity.user`, null/empty when the token carries no user) and fail closed
+  (`401`), then check ownership for the specific action.
 - Writes through `ctx.bounded` still pass the app's policy rules and invariants.
 - `allowedHosts` and `ctx.secrets` keep provider credentials out of frontend
   code.

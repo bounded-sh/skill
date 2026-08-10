@@ -77,4 +77,28 @@ test('3: sdk-reference resolves the customer server-side with an untrusted-argum
     /ctx\.(user|identity)/.test(invoke),
     'the invoke section must demonstrate SERVER-SIDE resolution of the customer from the authenticated identity',
   )
+  // ctx.user is ALWAYS an object - a system principal is { id: null, ..., system: true } -
+  // so `if (!ctx.user)` is the same fail-open shape this batch removed for ctx.identity.
+  assert.ok(
+    !/if\s*\(\s*!\s*ctx\.user\s*\)/.test(doc),
+    'no example may gate on the bare !ctx.user, which never fires (ctx.user is always populated)',
+  )
+  assert.ok(
+    /!\s*ctx\.user\?\.id/.test(invoke),
+    'the invoke example must gate on ctx.user?.id, the field that is null for a non-human principal',
+  )
+})
+
+test('4: functions.md describes the system principal as an object with a null id, not a null ctx.user', () => {
+  // The runtime hands a queued/scheduled run { id: null, ..., system: true }; docs that
+  // say `ctx.user == null` teach exactly the fail-open gate above.
+  const doc = read('bounded-backend/docs/functions.md')
+  assert.ok(
+    !/ctx\.user\s*==\s*null/.test(doc),
+    'functions.md must not claim ctx.user is null on a queued/system run',
+  )
+  assert.ok(
+    /ctx\.user\.id\s*==\s*null/.test(doc),
+    'functions.md must describe the system principal as ctx.user.id == null',
+  )
 })

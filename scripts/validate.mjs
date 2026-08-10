@@ -614,10 +614,31 @@ if (process.argv.includes('--verify-policies')) {
   }
 }
 
+// The contract tests under scripts/tests are part of THIS gate, not a separate one
+// a contributor has to remember: `node scripts/validate.mjs` is the documented
+// pre-push command and there is no CI here, so a fence nothing runs is not a fence.
+// Skipped with --no-tests only when this script is invoked BY the test run itself.
+let contractTestCount = 0
+if (!process.argv.includes('--no-tests')) {
+  const testFiles = readdirSync(path.join(root, 'scripts/tests'))
+    .filter((name) => name.endsWith('.test.mjs'))
+    .map((name) => path.join('scripts/tests', name))
+    .sort()
+  if (testFiles.length === 0) fail('scripts/tests: no contract tests found')
+  const result = spawnSync(process.execPath, ['--test', ...testFiles], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+  if (result.status !== 0) {
+    fail(`contract tests failed\n${result.stdout || ''}${result.stderr || ''}`)
+  }
+  contractTestCount = testFiles.length
+}
+
 if (errors.length > 0) {
   console.error(`Skill validation failed (${errors.length}):`)
   for (const error of errors) console.error(`- ${error}`)
   process.exit(1)
 }
 
-console.log(`Skill validation passed: ${expectedPublicSkills.length} public skills, ${textFiles.length} text files, ${skillFiles.length} skill manifests.`)
+console.log(`Skill validation passed: ${expectedPublicSkills.length} public skills, ${textFiles.length} text files, ${skillFiles.length} skill manifests, ${contractTestCount} contract test files.`)
