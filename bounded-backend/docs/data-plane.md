@@ -106,6 +106,10 @@ unbounded storage or encode these numbers into application behavior.
 > the first conflict. A mutation conflict is never evidence that a cap was
 > exhausted.
 
+> **Structured rolling-boundary cause.** An invariant rejection may also carry `decline.boundary.cause` with stable value `cap_exceeded`, `append_only_update`, or `append_only_delete`.
+> This cause remains available under minimal disclosure even when numeric cap details and the full message are withheld.
+> Only `cap_exceeded` says a value crossed the rolling cap; the two `append_only_*` causes say that the attempted mutation kind is forbidden and must not be presented or retried as a temporarily exhausted cap.
+
 > **Read denials never return `403`.** A read your `read` rule denies comes back
 > with HTTP `200` and an **empty payload** — `{"data": null}` for a single
 > document, `{"data": []}` for a collection list (silent read-hiding / filtering).

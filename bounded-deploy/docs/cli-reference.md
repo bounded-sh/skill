@@ -109,6 +109,25 @@ approval: email an OTP, read it from stdin, approve this wallet key), `--timeout
 **control-plane** authority (manage the app), not a data-plane bypass — give data
 powers explicitly via policy rules ([admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md)).
 
+### Machine-readable onboarding
+
+Onboarding commands in `--json` mode keep stdout to exactly one JSON document and keep stderr free of human progress text, including first-use key-creation guidance.
+The successful `bounded init --json` result has `action: "init"`, the written policy and project-config paths, the selected account source and environment, and `nextCommands`.
+The successful `bounded account use ... --json` result has `action: "accountUse"`, the selected `keySource`, project context, and safe next commands.
+When a wallet source and a saved web session are separate, `bounded whoami --json` reports the condition in `warnings[]` with stable code `unlinked_web_account`, the public wallet address, the web email, and next commands instead of printing a warning beside the JSON.
+Running `bounded account transfer-to-web --json` without `--yes` returns an `action: "transferToWebPreview"` document with `requiresConfirmation: true` and replayable `confirmationArgs`; its `ok: true` means the preview completed, not that ownership moved.
+
+`bounded link --json` requires `--email <you@example.com>`.
+The interactive browser device flow must expose a verification URL, user code, and security fingerprint before approval, so it is intentionally unavailable when the command must emit only one final JSON document.
+Use `bounded link --email you@example.com --json`, provide the OTP on stdin, and read the single `action: "linked"` result.
+If a web session is absent or cannot be refreshed, JSON mode fails without opening a browser and directs the caller to run `bounded login --email <you@example.com>` first.
+
+Failures returned by the device start, info, approval, or polling API use `action: "deviceLink"`, the failed `stage`, and either an HTTP `statusCode` or a transport-safe fallback in JSON mode.
+Only `device_confirmation_required`, `device_already_linked`, and `account_link_would_merge_existing_projects` are preserved as upstream machine codes.
+An unknown code becomes `device_link_request_failed`, and a transport or decode failure becomes `device_link_transport_failed`.
+The CLI never copies a raw response object, request URL, device code, user code, token, or other credential material into stdout or stderr.
+An explicit public `message` field may supply human detail, but an absent message produces a generic status description instead of reflecting the response body.
+
 ### Project config — `bounded.json`
 
 `bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
@@ -289,6 +308,11 @@ In JSON mode, a successful direct policy deploy emits exactly one committed rece
     "policyRevisionCount": 7,
     "runtimePublicationRevision": 9,
     "status": "available"
+  },
+  "sourceSync": {
+    "requested": false,
+    "status": "skipped",
+    "reason": "source_not_requested"
   }
 }
 ```
@@ -302,6 +326,17 @@ Never require receipt `status` to equal `committed` or `deployed`.
 Require `state == "committed"`, retain the operation ID and revision fields as the mutation receipt, and record publication `status` verbatim.
 If a release requires the runtime or hosted app to be available, confirm that condition independently after the committed policy receipt.
 Do not infer success from a human line or omit the receipt when recording provenance.
+
+The JSON policy-deploy result aggregates policy mutation, app creation, local marker, protocol warnings, and optional source sync into that one stdout document.
+A requested source-sync failure happens after the policy commits, so the result retains `state: "committed"` and the full `policyDeployReceipt` while reporting top-level `ok: false`, `status: "partial"`, `partial: true`, and `sourceSync.status: "failed"`.
+That partial source outcome exits zero and does not roll the committed policy back, so inspect the structured fields instead of relying on the process exit alone.
+When source sync was not requested, `sourceSync.status` is `"skipped"` with `requested: false`.
+
+For `deploy --create`, schema validation runs before app creation.
+A schema failure emits `ok: false`, `action: "deployPolicy"`, `code: "invalid_policy"`, `created: false`, `issueCount`, and `issues[]`, and no app is created.
+Protocol mismatches are retained in `warnings[]` with code `onchain_collections_with_offchain_protocol` or `onchain_protocol_collections_not_registered` and the affected collections.
+App-recording failures such as `app_marker_not_written`, `gitignore_not_updated`, or `project_config_not_updated` also remain in `warnings[]` and make the otherwise committed result partial.
+The `unlinked_wallet_owner` warning is anti-loss guidance and does not by itself make a deploy partial.
 
 ### Recover an in-progress policy deploy
 
@@ -478,6 +513,26 @@ also push the project tree to the app's cloud source repository and print
 `source synced: <sha>`. A source-push failure after a successful deploy warns
 but does not fail the deploy. `bounded clone` / `bounded pull` read the same
 repository. Full model: [source-sync.md](source-sync.md).
+
+`bounded site deploy ... --json` emits one aggregate document for the complete command instead of one document per phase.
+It has `action: "siteDeploy"`, top-level `ok`, `status`, `partial`, `siteLive`, `appId`, and any upload `deployId` or `url`, plus component objects named `upload`, `sourceSync`, `editingBase`, and `classification`.
+Each requested component reports its own `status` and `ok`; unrequested source-dependent components report `status: "skipped"` and `requested: false`.
+Inspect the top-level result and every requested component instead of treating the process exit alone as proof that all follow-up work succeeded.
+
+The upload can land before a later phase fails.
+A source-sync failure keeps the canonical site live, exits zero, and returns `ok: false`, `status: "partial"`, `partial: true`, and `siteLive: true` with the successful upload receipt and failed `sourceSync` component.
+A fatal post-upload editing-base failure exits nonzero but emits that same landed partial receipt exactly once, with `editingBase.status: "failed"`; the nonzero exit does not roll the site back.
+A deploy without source reports `sourceSync`, `editingBase`, and `classification` as skipped.
+A variant upload sets `siteLive: false` because it did not replace the canonical site, even when the preview variant upload itself succeeded.
+
+An implicit first site deploy can create the app before a later starter-policy validation, editing-base preflight, control-token, or upload failure.
+In that case JSON mode still emits exactly one recovery document with `ok: false`, `status: "partial"`, `partial: true`, `siteLive: false`, the durable `appId`, `created: true`, and `stage` equal to `starterPolicyValidation`, `editingBasePreflight`, `controlToken`, or `upload`.
+Its `upload` component says whether upload was skipped or failed and carries the corresponding safe reason, while `warnings[]` retains any marker or account-recovery warning generated after app creation.
+Treat that `appId` as the recovery handle because the app exists even though the site is not live.
+If starter-policy acknowledgement or source validation fails after creation, `upload.reason` is `starter_policy_validation_failed` and the partial warning code is `app_not_linked_after_create`.
+The response never reflects untrusted starter-policy response fields.
+Keep the returned `appId`, leave the project unlinked, and do not retry the source-backed deploy until the control-plane response is healthy.
+If a warning says the local marker or project config was not written, correct the local problem and retry against the same app with `bounded site deploy <dir> --app-id <appId>` instead of creating another app.
 
 For a canonical `bounded site deploy [dir]`, enabling source with
 `--with-source` or `"sourcePush": true` also preflights and uploads a
