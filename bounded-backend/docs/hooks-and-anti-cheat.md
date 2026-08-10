@@ -38,8 +38,11 @@ authorization logic an external caller has.
 > `@user.id` is the **universal stable identity** — always present for any
 > authenticated player (for wallet logins it equals the wallet address; for
 > email/social logins it is the account identity). `@user.address` is a **real
-> onchain wallet address** — present for wallet logins, `null` for email-only
-> logins. `@user.email` is the verified, lowercased email (email logins only;
+> onchain wallet address** — present for wallet logins and, by default, for
+> supported email/social logins too (an eagerly provisioned embedded Turnkey
+> wallet); `null` for phone-only sessions, `auth.wallets: false` apps, the legacy
+> lazy `authMode: "bounded"` path, and on a wallet-config lookup failure.
+> `@user.email` is the verified, lowercased email (email logins only;
 > null for wallet). Use **`@user.id` for ownership / membership / player-identity
 > gates** — the offchain game collections below all key on `@user.id`. Reserve
 > `@user.address` for genuinely onchain / wallet operations; inside an

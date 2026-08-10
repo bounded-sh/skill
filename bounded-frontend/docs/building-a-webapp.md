@@ -57,8 +57,11 @@ Whatever the method, an authenticated `user` is `{ id, address, email }`:
 - `user.id` — the universal stable identity, **always present**. For wallet
   logins it equals the wallet address; for email/social logins it is the account
   identity. Use this for ownership / membership / identity.
-- `user.address` — a real onchain wallet address. Present for wallet logins,
-  `null` for email-only logins. Use only for onchain / wallet operations.
+- `user.address` — a real onchain wallet address. Present for wallet logins and,
+  by default, for supported email/social logins too (an embedded Turnkey wallet is
+  eagerly provisioned on first login); `null` for phone-only sessions, apps with
+  `auth.wallets: false`, the legacy lazy `authMode: "bounded"` path, and on a
+  wallet-config lookup failure. Use for onchain / wallet operations.
 - `user.email` — the verified, lowercased email (email logins only; `null` for
   wallet). Use for email-gating.
 
@@ -152,7 +155,7 @@ the same `@bounded-sh/client` package — see
 ## Related
 
 - [../docs/sdk-reference.md](../docs/sdk-reference.md) — full client method surface
-- [../docs/auth.md](../docs/auth.md) — email (default) / Phantom wallet → `@user.id` (universal identity), `@user.address` (wallet-or-null), `@user.email`
+- [../docs/auth.md](../docs/auth.md) — email (default) / Phantom wallet → `@user.id` (universal identity), `@user.address` (an embedded Turnkey wallet is eagerly provisioned by default, so this is present for supported email/social logins too), `@user.email`
 - [../docs/queries.md](../../bounded-backend/docs/queries.md) — filters, sort, paging, aggregations, search
 - [building-for-react-native.md](building-for-react-native.md) — shipping to iOS/Android
 - [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — what Bounded does and doesn't do

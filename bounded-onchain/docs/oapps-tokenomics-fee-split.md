@@ -11,9 +11,9 @@
 > layer, plus a permissionless `distribute` update. Port the mechanics below, not
 > its recipients or percentages.
 >
-> **Current devnet status: blocked.**
-> The Meteora config is bound to a retired Bounded program authority and must be replaced by a Meteora operator.
-> This document and its example are verify-only source references until that blocker is cleared and live acceptance evidence exists.
+> **Current devnet status: unverified, not blocked.**
+> The earlier retired-authority blocker was cleared on 2026-07-29: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` is deployed on devnet and the deployed runtime targets it.
+> This document and its example remain verify-only source references until live acceptance evidence exists, but nothing external blocks producing that evidence.
 
 **What's in here / when to read this:** you launched a token on Meteora (see
 [meteora-token-launch.md](meteora-token-launch.md)) and now you need to *route the
@@ -99,13 +99,17 @@ The two PDAs are created once, idempotently, by the `vaults` collection:
     "onchain": { "create": "@AccountPlugin.createAccount(\"treasury\") && @AccountPlugin.createAccount(\"feepool\")" }
   },
   "queries": {
-    "treasuryAddress": { "returnType": "String", "query": "@AccountPlugin.getAccountAddress(\"treasury\")" },
-    "feepoolAddress": { "returnType": "String", "query": "@AccountPlugin.getAccountAddress(\"feepool\")" }
+    "treasuryAddress": { "returnType": "Address", "query": "@AccountPlugin.getAccountAddress(\"treasury\")" },
+    "feepoolAddress": { "returnType": "Address", "query": "@AccountPlugin.getAccountAddress(\"feepool\")" }
   }
 }
 ```
 
 `treasury` = the 55% partner leg; `feepool` = the shared creator+Poof split pool.
+
+Declare an address-returning query as `"returnType": "Address"`, not `"String"`.
+`Address` is the canonical declaration and matches the plugin contract's return sort.
+A `String` declaration also parses today (the result parser is variant-authoritative, and nothing validates declared query return types at deploy), so this is an alignment rule rather than a failure you will see.
 
 ## Tier 2 - the atomic permissionless distribute (`claims` + `distributions`)
 
@@ -265,7 +269,7 @@ this is a *self-refilling* budget backed by real claimed fees):
   is what makes "spend up to what the app earned" a *provable* boundary rather than a
   hope.
 
-## PROVEN vs TRUSTED vs BLOCKED / NEEDS LIVE PROOF
+## PROVEN vs TRUSTED vs NEEDS LIVE PROOF
 
 - **PROVEN (Z3, every input):**
   - **who may trigger** each write - the `rules.create`/`update` proofs (permissionless
@@ -287,9 +291,15 @@ this is a *self-refilling* budget backed by real claimed fees):
     Its treasury transitions are proven at the rule layer, and distribution is a
     permissionless update. Over-stating `amount` fails on-chain (insufficient PDA
     balance), so the failure mode is a reverted tx, not a drained pool.
-- **BLOCKED on current devnet:**
-  - every Meteora transaction and dependent read remains blocked until the replacement config is provisioned for the current Bounded authority.
-- **NEEDS LIVE PROOF after the blocker is cleared:**
+- **NOT DERIVABLE today (state it as unavailable, do not compute it):**
+  - **a fee-attributed total per recipient.** No current primitive yields a per-mint
+    claimed amount: the claims return `Bool(true)` even when nothing was claimed and
+    discard the balance delta, Bounded exposes no partner-side claim at all, and
+    `getClaimableMeteoraPoolFees` sums two different mints into one `UInt` and returns
+    `0` for a non-creator source. Report "unavailable" rather than deriving a number
+    from those. See
+    [meteora-token-launch.md → what the fee surface cannot tell you yet](meteora-token-launch.md#what-the-fee-surface-cannot-tell-you-yet-read-before-building-fee-accounting).
+- **NEEDS LIVE PROOF:**
   - the **creator-leg (45%) recipient binding.** `createMeteoraVirtualPool(configId,
     tokenId, name, symbol, uri, initialSolBuy?)` has **no source/creator param**
     (confirmed vs `plugin-contracts.ts`), so the creator leg follows the
@@ -313,5 +323,5 @@ bounded verify
 ```
 
 checks the policy and source contracts above.
-It does not prove that the blocked Meteora integration works on devnet.
-See the example README for the source-verification residual and the current network blocker.
+It does not prove that the Meteora integration works on devnet; that still needs a retained live run.
+See the example README for the source-verification residual.

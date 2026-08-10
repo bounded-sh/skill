@@ -44,7 +44,8 @@ behaves exactly as before.
   authenticated user; for a wallet login it equals the wallet address, for an
   email/social login it is the account identity). Role membership is an
   identity/auth gate, so it keys on `@user.id`, not the wallet `@user.address`
-  (which is null for email-only logins). Use `@const.NAME` to keep these
+  (which can still be null - phone-only sessions, `auth.wallets: false` apps, the
+  legacy lazy `authMode: "bounded"` path). Use `@const.NAME` to keep these
   identities in a `constants` block — see
   [constants-and-defs.md](constants-and-defs.md).
 - `read` — gates the `read` action. `"*"` = every collection; an array lists

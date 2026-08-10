@@ -82,16 +82,68 @@ must allow it). To replace just the bytes, `setFile(path, file)` again.
 
 ### Reading files back
 
-`getFiles(path)` lists readable files with their metadata and a signed download URL:
+`getFiles(path)` lists readable files with their metadata and a download URL:
 `{ data: [{ path, url, metadata }] }`, where `metadata` carries both system fields
-and your declared fields, and `url` is a short-lived signed download link. For a single
-file you can also `get(path)` / subscribe the storage document like any other doc.
+and your declared fields. For a single file you can also `get(path)` / subscribe the
+storage document like any other doc.
 
 ```ts
 const { data } = await getFiles("users/u1/files");
 // data[0] = { path, url, metadata: { name, owner, contentType, size, status, … } }
-const bytes = await (await fetch(data[0].url)).text();    // download via the signed url
+const bytes = await (await fetch(data[0].url)).text();    // download via the returned url
 ```
+
+#### `url` has two modes, decided by your read rule
+
+The shape of `url` is not a client option - the runtime picks it by evaluating the
+collection's **`read` rule against the anonymous principal** for that file:
+
+| Read rule authorizes anonymous? | What `url` is |
+|---|---|
+| No (e.g. `@user.id != null && $userId == @user.id`) | a **short-lived signed link**, valid ~60 seconds, carrying the caller's identity. Fetch it now; never store it. |
+| Yes (e.g. `"read": "true"`) | a **tokenless, permanent public URL**. No token, no expiry, safe to persist and hand to third parties. |
+
+**The public URL is permanent but revocable.** It is not a signed snapshot: the
+serve path re-evaluates the anonymous read rule on **every GET** against the file's
+current document. Tighten the rule (redeploy a policy where that path is no longer
+anonymous-readable) or delete the file and the very next request 403s, everywhere,
+including links already published. So it is durable enough to mint token metadata or
+a public asset URL against, and still under policy control - but treat any URL you
+have published to third parties as something you must not later revoke by accident.
+
+Two consequences worth designing around:
+
+- **Uploads stay policy-governed.** Only `read` decides publicness; your `create`
+  rule still decides who may publish. "Any signed-in user may publish their own
+  small permanent public JSON" is exactly expressible: public `read`, owner-scoped
+  `create`, `update`/`delete` denied.
+- **Public objects are served `Cache-Control: public, no-store`**, because the
+  authorization decision is generation-scoped and must never be replayed from a
+  cache after revocation. Every third-party fetch therefore reaches the worker and
+  bills as a request; there is no CDN cache in front of it. Fine for small JSON
+  documents, wrong for a hot image or video path. They also carry
+  `Content-Disposition: attachment` and a sandbox CSP, so a browser navigating
+  straight to the URL downloads rather than renders it - programmatic `fetch` by a
+  wallet or indexer is unaffected.
+
+```json
+{
+  "public/$fileId": {
+    "type": "storage",
+    "fields": { "owner": "String!" },
+    "rules": {
+      "read":   "true",
+      "create": "@newData.owner == @user.id",
+      "update": "false",
+      "delete": "false"
+    }
+  }
+}
+```
+
+`read: "true"` is what makes `getFiles` hand back the permanent URL for this
+collection. A rule that merely admits every *authenticated* caller
+(`@user.id != null`) is **not** anonymous-readable and still yields signed links.
 
 ## Search — `search: { fields: [...] }`
 

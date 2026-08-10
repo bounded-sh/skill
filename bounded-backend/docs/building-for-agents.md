@@ -83,7 +83,10 @@ read-check-write race for the agent to lose.
 > equals the wallet address; for an email/social login it is the account
 > identity) — guard ownership, membership, and bare auth on `@user.id`, as the
 > example above does. `@user.address` is a *real onchain wallet address*: present
-> for wallet logins, `null` for email-only ones — reach for it only in
+> for wallet logins and, by default, for supported email/social logins too (an
+> embedded Turnkey wallet is eagerly provisioned on first login), and `null` for a
+> phone-only session, an `auth.wallets: false` app, the legacy lazy
+> `authMode: "bounded"` path, or a wallet-config lookup failure - reach for it in
 > `onchain: true` collections or genuine wallet/transfer semantics (and inside
 > those, `@user.id`/`@user.email` are forbidden). `@user.email` is the verified,
 > lowercased email (null for wallet callers), for email-gating.

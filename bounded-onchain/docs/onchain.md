@@ -17,6 +17,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Capability status](#check-capability-status-before-building)
 - [Onchain writes and reads](#what-changes-when-a-collection-is-onchain)
 - [Onchain update patches](#onchain-updates-are-patches)
+- [Mixing onchain and offchain collections](#onchain-and-offchain-collections-coexist-and-the-0xbc4-gotcha)
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
@@ -104,7 +105,8 @@ Consult the [157-function devnet catalog](solana-capability-status.md) before ge
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
 Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
 SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4; that runtime is now live on both clusters, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
-Meteora is blocked pending a replacement external config.
+Meteora is **not** blocked.
+The replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so nothing about the Meteora flows is externally blocked; they stay unverified until retained live proof exists, like the rest.
 Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.
 
 ```json
@@ -241,20 +243,32 @@ cache - it self-corrects.
   Treat the public transaction ID as the input to independent confirmation, not
   as proof that the mirror has indexed the expected state.
 
-## Gotcha: `0xbc4` AccountNotInitialized
+## Onchain and offchain collections coexist (and the `0xbc4` gotcha)
 
-> **On an onchain-protocol app, forgetting `"onchain": true` on a collection is a
-> hard failure, not a silent off-chain fallback.** Bounded routes the app's
-> collection writes on-chain for this protocol, but deploy only
-> **registers** the collections you marked `onchain: true`. A collection left
-> without the flag is written on-chain yet was never registered - so every write
-> to it fails `AccountNotInitialized` (Solana custom error **`0xbc4`**) with no
-> off-chain fallback.
+**An onchain-protocol app may mix onchain and offchain collections, and that is the shipping pattern.**
+Write routing is decided **per batch, by the collection paths that batch actually touches**, not by the app's protocol.
+A batch whose paths all match collections without `onchain: true` commits off-chain, with no Solana transaction and no wallet signature - even in a `realtime_devnet` or `realtime_mainnet` app.
+That is what makes the common launchpad shape legal: onchain money collections next to an offchain heartbeat, cursor, or index row that a keeper writes on a schedule (see the keeper in [oapps-tokenomics-fee-split.md](oapps-tokenomics-fee-split.md)).
 
-So on `realtime_devnet` / `realtime_mainnet`, mark **every** collection
-`onchain: true`. `bounded deploy` warns and names any unflagged collections. (On
-the off-chain `realtime_offchain` protocol it's the reverse: `onchain: true`
-collections are stored off-chain - deploy prints that warning too.)
+Two real hazards remain.
+
+> **1. Never mix an onchain path and an unflagged path in ONE `setMany` batch.**
+> Once any path in the batch matches an `onchain: true` collection, the whole batch
+> is routed on-chain and **every** upsert in it goes into the built transaction -
+> including the unflagged one. Deploy only **registers** the collections you marked
+> `onchain: true`, so that account was never initialized and the transaction fails
+> `AccountNotInitialized` (Solana custom error **`0xbc4`**), taking the whole atomic
+> batch down with it. Split them into two writes.
+
+> **2. Legacy apps with no policy at all still route everything on-chain.**
+> The per-path routing needs a declared policy to match against. An app on an onchain
+> protocol whose deployed config carries no collections falls back to the old
+> app-wide rule and sends every write on-chain, where the same unregistered-account
+> `0xbc4` applies.
+
+So: flag `onchain: true` on the collections that must live on Solana, leave the rest unflagged, and keep each batch on one side of the line.
+`bounded deploy` still prints a warning naming any unflagged collection on an onchain protocol; that warning restates the older every-collection rule and overstates the risk - it is not an error, and an intentionally offchain collection is fine.
+(On the off-chain `realtime_offchain` protocol it is the reverse: `onchain: true` collections are simulated/stored off-chain - deploy prints that warning too.)
 
 ### Diagnose custom errors by the live Anchor log name
 

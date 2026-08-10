@@ -24,8 +24,10 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Identity uses `@user.id`, not `@user.address`.** `@user.id` is the
   universal stable identity, always present for an authenticated user (the wallet
   address for wallet logins, the account identity for email/social logins).
-  `@user.address` is a real onchain wallet address — present for wallet logins,
-  `null` for email-only logins — so reserve it for onchain / wallet semantics. In
+  `@user.address` is a real onchain wallet address — present for wallet logins and,
+  by default, for supported email/social logins too, but still `null` for
+  phone-only sessions, `auth.wallets: false` apps, and the legacy lazy
+  `authMode: "bounded"` path — so reserve it for onchain / wallet semantics. In
   `onchain: true` collections only `@user.address` is allowed; `@user.id`,
   `@user.email`, and `@user.isAnonymous` are forbidden there.
 

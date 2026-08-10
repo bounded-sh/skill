@@ -28,7 +28,9 @@ always present for an authenticated caller (it equals the wallet address for
 wallet logins and the account identity for email/social logins). Use `@user.id`
 for membership/ownership gates so they work for every login type, not just wallet
 logins. (Reserve `@user.address` for genuinely onchain/wallet operations, where
-it is the only allowed identity variable; it is `null` for email-only logins.)
+it is the only allowed identity variable; an email/social login does get one by
+default, but it is still `null` for phone-only sessions, `auth.wallets: false`
+apps, and the legacy lazy `authMode: "bounded"` path.)
 
 "Linked to the same account" means the human's other wallets/devices (their
 embedded wallet + linked CLI keypairs) — so a teammate signing in from a

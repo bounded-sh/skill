@@ -67,8 +67,10 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
 >   identity for email/social logins). **Use this for ownership / membership /
 >   admin / auth-guard checks** — the `isOwner` / `isAdmin` defs above.
 > - `@user.address` — a **real onchain wallet address**; present for wallet
->   logins, **null** for email-only logins. Use it **only** for onchain / wallet
->   semantics. In `onchain: true` collections, `@user.id` and `@user.email` are
+>   logins and, by default, for supported email/social logins too (an eagerly
+>   provisioned embedded Turnkey wallet), and **null** for phone-only sessions,
+>   `auth.wallets: false` apps, and the legacy lazy `authMode: "bounded"` path.
+>   Use it for onchain / wallet semantics. In `onchain: true` collections, `@user.id` and `@user.email` are
 >   forbidden — only `@user.address` is allowed there.
 > - `@user.email` — the verified, lowercased email (email logins only; null for
 >   wallet). Use it for email-gating.

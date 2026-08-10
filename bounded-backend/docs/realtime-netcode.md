@@ -267,7 +267,9 @@ This is intentionally fail-closed because "can see the room" is not the same as
 - **Gate on identity, not wallet.** The caller is `@user = { id, address, email }`:
   `@user.id` is the universal stable identity (always present for an authed user —
   the wallet address for wallet logins, the account identity for email/social logins),
-  `@user.address` is a real onchain wallet (null for email-only logins), and
+  `@user.address` is a real onchain wallet (present by default for supported
+  email/social logins too, and null for phone-only sessions, `auth.wallets: false`
+  apps, and the legacy lazy `authMode: "bounded"` path), and
   `@user.email` is the verified email (null for wallet logins). A live room is an
   offchain (`ephemeral`) collection, so membership/auth gates use `@user.id` —
   store `@user.id` in membership fields and gate on those fields. Reserve

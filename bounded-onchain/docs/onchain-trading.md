@@ -11,7 +11,7 @@ settlement) read [onchain.md](onchain.md) first - this builds on it.
 
 > The compiler and runtime contain these trading functions, but current devnet support is constrained.
 > Jupiter and Phoenix are unavailable on devnet.
-> Meteora is blocked pending a replacement external config.
+> Meteora is not blocked: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so the Meteora rows are unverified pending live proof rather than externally blocked.
 > Source presence, Poofnet behavior, and local cloned-program tests are not live support evidence.
 > Check [solana-capability-status.md](solana-capability-status.md) before using any function in this guide.
 
@@ -23,7 +23,7 @@ settlement) read [onchain.md](onchain.md) first - this builds on it.
 | Phoenix perps and reads | unsupported | not run |
 | DFlow prediction order and KYC | unsupported | not run |
 | Kamino descriptor CPI | unsupported | not run |
-| Meteora, DAMM v2, and CP-AMM | blocked by replacement config | not run |
+| Meteora, DAMM v2, and CP-AMM | unverified | no retained live proof |
 | Pump.fun and PumpSwap | unverified | no retained live proof |
 | Tensor | unverified | no retained live proof |
 
@@ -176,14 +176,14 @@ withdrawFunds(@contract.address, <phusd>)
 
 Spot swaps and liquidity (Meteora / cp-AMM pools), incl. tokenized assets.
 The Jupiter rows are unsupported on devnet.
-The Meteora and CP-AMM rows are blocked pending the replacement config.
+The Meteora and CP-AMM rows are unverified pending live proof; nothing about them is externally blocked.
 
 | Function | Signature | Does |
 |---|---|---|
 | `swap` | `(source, tokenInMint, tokenOutMint, amountIn)` | Swap spot, in → out. |
 | `getSwapQuote` | `(tokenInMint, tokenOutMint, amountIn)` | Expected out (size before you swap). |
-| `getMeteoraSwapQuote` | `(pool, amountIn)` | Quote against a Meteora pool. |
-| `swapInMeteoraVirtualPool` | `(source, pool, amountIn, …)` | Swap against a Meteora virtual pool. |
+| `getMeteoraSwapQuote` | `(tokenMintAddress, tokenToSwapInMintAddress, tokenAmount)` | Quote against a Meteora pool. **Offchain-only** - the compiler rejects it inside an onchain hook. |
+| `swapInMeteoraVirtualPool` | `(source, poolTokenMint, tokenMint, amount, minimumAmountOut?)` | Swap against a Meteora virtual pool. **Pass the fifth argument** - it is the slippage floor (see below). |
 | `createPool` / `createMeteoraVirtualPool` | … | Create liquidity pools. |
 | `addCpAmmLiquidity` / `removeCpAmmLiquidity` | … | LP in/out of a cp-AMM. |
 | `getMeteoraVirtualPoolAddress` / `getDammV2PoolAddress` / `getCpAmmPoolAddress` | … | Resolve the corresponding pool address. |
@@ -191,6 +191,22 @@ The Meteora and CP-AMM rows are blocked pending the replacement config.
 `@TokenPlugin.SOL` is the native-token alias.
 `@TokenPlugin.USDC` is mainnet-only and must not be used in a devnet TokenPlugin flow.
 Create an app-owned devnet mint for token scenarios.
+
+### `swapInMeteoraVirtualPool` takes a slippage floor - use it
+
+```
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?) -> Bool
+```
+
+`minimumAmountOut` is the **minimum output in the output token's smallest units**.
+The swap fails rather than filling when the pool would return less, which is the slippage protection for a bonding-curve trade.
+It is optional only for backward compatibility: **an omitted floor means no slippage protection at all**, so pass it on any trade carrying value.
+Compute the floor where you can quote - `@DeFiPlugin.getMeteoraSwapQuote` is offchain-only, so quote in a function or on the client, write the resulting minimum as a document field, and have `rules` constrain it (for example `@newData.minOut >= @MathPlugin.mulDivFloor(@newData.quotedOut, 9900, 10000)`) before the hook passes `@newData.minOut` through.
+
+Two limits worth knowing before you design around it:
+
+- **There is no deadline parameter.** The underlying Meteora DBC `swap2` has none either, so this is a missing protocol capability, not a missing Bounded exposure. A stale queued write cannot be time-bounded at the swap; bound it in policy instead (for example, reject a write whose `@newData.quotedAt` is older than N seconds against `@time.now`).
+- **The swap returns `Bool`, not the output amount.** A successful call tells you the floor was met, not what you received. Read the resulting balance (or the mirror) afterwards if you need the figure.
 
 ```json
 "hooks": { "onchain": { "create":

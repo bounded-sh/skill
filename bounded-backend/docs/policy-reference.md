@@ -173,7 +173,7 @@ expressions at deploy. **An omitted rule defaults to deny.**
 | Variable | Meaning | Restrictions |
 |---|---|---|
 | `@user.id` | **Universal principal** — always present for any authenticated user (JWT `custom:userId`, falling back to the wallet address). Use for ownership, membership, roles, identity-sets. `null` when unauthenticated. | offchain only |
-| `@user.address` | A **real wallet**, only. **`null` for email/social logins** (email tokens omit the wallet claim). Use only for onchain/wallet semantics. | — |
+| `@user.address` | A **real wallet**. Present for wallet logins and, **by default, for supported email/social logins too** - Bounded eagerly provisions an embedded Turnkey wallet on first login and stamps its address into the session token. `null` only for a phone/text-only session (no verified email claim), an `auth.wallets: false` app, the legacy lazy `authMode: "bounded"` path before a wallet exists, and when the wallet-config lookup fails. Use for onchain/wallet semantics. | — |
 | `@user.email` | Verified, lowercased email; `null` for wallet/guest logins. | offchain only |
 | `@user.isAnonymous` | Strict boolean; `true` only for guest tokens. Gate with `== false` (no unary `!` on special vars). | offchain only |
 | `@origin.kind` | **Platform-set call provenance**, unforgeable and never supplied by the client. **Always set.** Common values include `'live'` for a live tick and `'user'` for a direct end-user/SDK call. | offchain only |
@@ -212,11 +212,16 @@ A direct policy query returns the deployed Bounded program ID.
 The `@AccountPlugin.getAccountAddress(@contract.address)` composition is unsupported on the current deployed Devnet runtime.
 For the current Devnet program, bind `openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6F` as the string argument instead, and see [policy-primitives.md](../../bounded-onchain/docs/policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address) before using the result in a raw CPI account meta.
 
-> **Identity: use `@user.id` for ownership, `@user.address` only for wallets.**
+> **Identity: use `@user.id` for ownership, `@user.address` for wallets.**
 > `@user.id` is the universal principal and is present for every authenticated
-> user; `@user.address` is `null` for email/social logins, so an ownership rule
-> keyed on it silently locks out email users. Always guard auth-required rules
-> with `@user.id != null` (not `@user.address`).
+> user, on every protocol, which is why it is the right key for ownership and
+> membership. `@user.address` is a wallet: an email/social login does get one by
+> default (an eagerly provisioned embedded Turnkey wallet), so an ownership rule
+> keyed on it is no longer an automatic lockout of email users - but it is still
+> `null` for a phone-only session, an `auth.wallets: false` app, the legacy lazy
+> `authMode: "bounded"` path, and on a wallet-config lookup failure. Guard
+> auth-required offchain rules with `@user.id != null`; inside `onchain: true`
+> collections `@user.address` is the only principal available, so use it there.
 
 > **There is no plural `@constants` variable.** Use a top-level `constants`
 > block and reference one value as `@const.NAME`; reusable rule fragments use

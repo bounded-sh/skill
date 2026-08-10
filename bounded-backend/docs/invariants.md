@@ -42,7 +42,9 @@ collection append-only.
 > is the account identity) — so the auth-guard, ownership, and membership rules in
 > the examples below use `@user.id` (e.g. `owner == @user.id`,
 > `get(/admins/@user.id)`, `@user.id != null`). `@user.address` is a **real
-> onchain wallet address** (null for email-only logins) and is reserved for
+> onchain wallet address** (present by default for supported email/social logins
+> too, but null for phone-only sessions, `auth.wallets: false` apps, and the legacy
+> lazy `authMode: "bounded"` path) and is reserved for
 > wallet/onchain semantics; `@user.email` is the verified, lowercased email (null
 > for wallet logins). Inside an `"onchain": true` collection, `@user.id`,
 > `@user.email`, and `@user.isAnonymous` are **forbidden** — only `@user.address` is allowed.

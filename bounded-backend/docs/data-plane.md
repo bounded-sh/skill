@@ -40,8 +40,11 @@ on-chain collection `"onchain": true`. The on-chain write path differs in ways t
 matter — a write is a **real Solana transaction**, reads come from an
 **eventually-consistent mirror** (no read-after-write), data is **public**, rules may
 reference **only `@user.address`** (`@user.id`/`@user.email`/`@user.isAnonymous` are
-rejected), and forgetting the flag on an on-chain-protocol app is a hard
-`AccountNotInitialized` (`0xbc4`) failure, not a silent off-chain fallback.
+rejected), and an unflagged collection is stored off-chain rather than on Solana.
+Unflagged collections are legal in an on-chain-protocol app and commit off-chain on
+their own; the hard `AccountNotInitialized` (`0xbc4`) failure applies when a *single*
+batch mixes an onchain path with an unflagged one, and to legacy apps carrying no
+policy at all.
 
 > **See [onchain.md](../../bounded-onchain/docs/onchain.md)** for the full on-chain story: field-type mapping,
 > client-signed transactions, `--protocol` values, the eventual-consistency mirror,

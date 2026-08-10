@@ -21,9 +21,12 @@ reloads and owns data keyed by its stable `@user.id`.
 > - `user.id` / `@user.id` — the **universal, stable identity**, always present.
 >   For a guest it's the keypair's address; for an email login it's the account id.
 >   Use this for ownership.
-> - `user.address` / `@user.address` — a real onchain wallet address (guest/wallet
->   logins); `null` for email-only logins **unless the app opts into embedded wallets**
->   (`auth.wallets`), which attaches a non-custodial wallet to email logins too — see
+> - `user.address` / `@user.address` — a real onchain wallet address. Present for
+>   guest and wallet logins, and **by default for email/social logins too**: an
+>   embedded Turnkey wallet is eagerly provisioned on first login with no
+>   `auth.wallets` block needed. It is `null` for phone-only sessions, apps that set
+>   `auth.wallets: false`, the legacy lazy `authMode: "bounded"` path, and on a
+>   wallet-config lookup failure - see
 >   [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 > - `user.email` / `@user.email` — verified lowercased email (email logins only).
 > - `user.isAnonymous` — **`true` for a guest, `false` for any real login** (Firebase

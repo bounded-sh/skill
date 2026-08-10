@@ -26,7 +26,7 @@ additive to the legacy bytecode and instruction ABI, but no agent may assume a
 deployed Solana program supports them merely because the local compiler does.
 
 - Treat function discovery, deployed-runtime support, and live-network verification as separate states.
-- The current Bounded program is recorded as runtime v3 on **devnet and mainnet-beta**.
+- The current Bounded program is recorded as **runtime v4** on **devnet and mainnet-beta** (since 2026-08-05).
   The deployed runtime version is tracked per cluster, not per program id, so an unknown
   program id or a cluster with no recorded deployment still fails closed to runtime v1 -
   which silently disables `rollingSum`, `tenantEdge`, and materialized invariants.

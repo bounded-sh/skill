@@ -99,8 +99,13 @@ counterexample is showing you a write that production would have accepted.
 > for email/social logins) — so ownership, membership, and auth-guard rules
 > should compare against `@user.id` (`ownerId == @user.id`,
 > `@user.id != null`, `get(/admins/@user.id)`). `@user.address` is a **real
-> onchain wallet address**: present for wallet logins, **null** for email-only
-> logins, and used only for onchain/wallet semantics. `@user.email` is the
+> onchain wallet address**: present for wallet logins and, by default, for
+> supported email/social logins too (Bounded eagerly provisions an embedded
+> Turnkey wallet on first login), and **null** for a phone-only session, an
+> `auth.wallets: false` app, the legacy lazy `authMode: "bounded"` path, or a
+> wallet-config lookup failure. Use it for onchain/wallet semantics.
+> Because it can still be null, a counterexample setting `@user.address = null`
+> against an offchain rule is a real caller, not an artifact. `@user.email` is the
 > verified, lowercased email (null for wallet logins), for email-gating. In
 > `onchain: true` collections only `@user.address` is allowed; `@user.id`,
 > `@user.email`, and `@user.isAnonymous` are forbidden there. When the verifier reports a

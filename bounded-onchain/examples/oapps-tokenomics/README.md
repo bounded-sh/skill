@@ -5,9 +5,9 @@ graduation) with the **55% treasury / 25% creator-of-record / 20% Poof** fee spl
 expressed as a Bounded policy and proven by Z3. **Verify-only - this deploys
 nothing** (`bounded.json` has no `appId`; never `--create`/deploy it).
 
-> **Current devnet status: blocked.**
-> The required Meteora config is bound to a retired Bounded program authority.
-> Keep this example verify-only until a Meteora operator provisions the replacement config and live acceptance closes.
+> **Current devnet status: unverified, not blocked.**
+> The earlier retired-authority blocker was cleared on 2026-07-29; the replacement DAMM v2 config is deployed on devnet and the deployed runtime targets it.
+> Keep this example verify-only until live acceptance closes, but nothing external prevents producing that evidence.
 
 Read [../../docs/oapps-tokenomics-fee-split.md](../../docs/oapps-tokenomics-fee-split.md)
 for the full walkthrough. This directory is the runnable artifact behind it.
@@ -33,7 +33,7 @@ bounded verify --policy policy.verify-today.json
   It does not prove that a Meteora transaction can execute on devnet.
 - **`policy.json` (16-arg):** current monorepo source accepts the four decay arguments through `paramCount: { min: 6, max: 16 }`.
   If a deployed verifier reports `expects 6-12 argument(s)`, that endpoint is older than the source contract.
-  Either verifier result remains separate from the blocked external config and live network verification.
+  Either verifier result remains separate from live network verification.
 
 ## The 11 collections (all proven)
 
@@ -53,12 +53,13 @@ bounded verify --policy policy.verify-today.json
 
 ## What's proven vs trusted
 
-See the doc's [PROVEN vs TRUSTED vs BLOCKED / NEEDS LIVE PROOF](../../docs/oapps-tokenomics-fee-split.md#proven-vs-trusted-vs-blocked--needs-live-proof)
+See the doc's [PROVEN vs TRUSTED vs NEEDS LIVE PROOF](../../docs/oapps-tokenomics-fee-split.md#proven-vs-trusted-vs-needs-live-proof)
 block. In short: Z3 proves **who may trigger** each write, that the **split bps are
 fixed literals**, and the **build-allowance cap**. Trusted (per design, no
 `conserve`): the plugin bodies and the caller-asserted claimed `amount`.
-Blocked today: the replacement Meteora config.
-After that blocker clears, live proof must confirm that the 45% creator leg actually lands in `feepool`
+Not derivable today: a fee-attributed total per recipient, because no primitive
+returns a per-mint claimed amount.
+Live proof must still confirm that the 45% creator leg actually lands in `feepool`
 (`createMeteoraVirtualPool` has no creator/source param).
 
 The placeholder base58 constants (`OAPP_MINT`, `CREATOR`, `POOF`, `KEEPER`) are

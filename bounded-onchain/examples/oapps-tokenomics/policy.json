@@ -37,8 +37,8 @@
       }
     },
     "queries": {
-      "treasuryAddress": { "returnType": "String", "query": "@AccountPlugin.getAccountAddress(\"treasury\")" },
-      "feepoolAddress": { "returnType": "String", "query": "@AccountPlugin.getAccountAddress(\"feepool\")" }
+      "treasuryAddress": { "returnType": "Address", "query": "@AccountPlugin.getAccountAddress(\"treasury\")" },
+      "feepoolAddress": { "returnType": "Address", "query": "@AccountPlugin.getAccountAddress(\"feepool\")" }
     }
   },
 

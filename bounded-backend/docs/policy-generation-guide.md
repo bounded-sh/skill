@@ -105,8 +105,10 @@ The expression language (full reference in
   fields: `@user.id` — the **universal stable identity**, always present for an
   authenticated user (for wallet logins it equals the wallet address; for
   email/social logins it is the account identity); `@user.address` — a **real
-  onchain wallet address**, present for wallet logins and `null` for email-only
-  logins; `@user.email` — the verified, lowercased email (email logins only;
+  onchain wallet address**, present for wallet logins and, by default, for
+  supported email/social logins too (an eagerly provisioned embedded Turnkey
+  wallet), but `null` for phone-only sessions, `auth.wallets: false` apps, and the
+  legacy lazy `authMode: "bounded"` path; `@user.email` — the verified, lowercased email (email logins only;
   `null` for wallet). **Use `@user.id` for ownership / membership / identity /
   auth guards.** Use `@user.address` only for onchain / wallet semantics
   (and in `onchain: true` collections it is the *only* user field allowed —

@@ -18,8 +18,8 @@ The catalog contains 157 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The current Bounded Solana program is recorded as runtime v3 on devnet.
-Runtime v3 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
+The current Bounded Solana program is recorded as **runtime v4**, live on both devnet and mainnet-beta since 2026-08-05, which is the version the lab catalog behind this page records.
+Runtime v4 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
 The current totals are 115 `unverified`, 42 `unsupported`, and 0 `blocked`.

@@ -38,6 +38,7 @@ Read only the row matching the current task or term.
 | Rule arithmetic overflow, int64, division-first pins, large-magnitude comparisons | [rule arithmetic](docs/policy-primitives.md#rule-arithmetic-is-bounded-on-chain---write-pins-division-first) |
 | Randomness, VRF, raffle/gacha/shuffle, `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [randomness](docs/randomness.md) |
 | Meteora token launch, DBC, anti-snipe fee decay, DAMM v2, `createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover` | [Meteora launch](docs/meteora-token-launch.md) |
+| Pump.fun, PumpSwap, `@PumpFunPlugin`, `createToken`/`createTokenV2`, `buyExactSolIn`, creator fees, fee sharing, `updateShareholders`, `distributeCreatorFees`, `pumpswapDeposit`/`pumpswapWithdraw`, argument names/units | [Pump.fun reference](docs/pump-fun.md) |
 | Multi-party fee split, `feepool`, `mulDivFloor`, keeper/scheduled onchain writes, `actAs`, `rollingSum` fee-funded build allowance | [oApps tokenomics](docs/oapps-tokenomics-fee-split.md) |
 | Embedded wallet for email/social users, `@user.address`, Turnkey, `auth.wallets` | [embedded wallets](docs/embedded-wallets.md) |
 | Bring-your-own Solana wallet login, `walletLogin`, Phantom / Wallet-Standard, SIWS | [wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |

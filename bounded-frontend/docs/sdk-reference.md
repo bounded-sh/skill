@@ -42,6 +42,39 @@ import { createWalletClient } from "@bounded-sh/server";
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 ```
 
+### `npm audit` reports a moderate `uuid` advisory - here is the fix
+
+Installing `@bounded-sh/client` pulls a **moderate** advisory that is not yours and
+has no upstream fix:
+
+```
+GHSA-w5hq-g745-h8pq  (uuid < 11.1.1)
+@solana/web3.js@1.98.x -> jayson -> uuid@8.3.2
+```
+
+`npm audit` reports `fixAvailable: false` accurately: web3.js 1.98.4 is the latest
+1.x, no jayson release ships a fixed `uuid`, and `@coral-xyz/anchor` pins the whole
+ecosystem to the web3.js 1.x line, so no dependency bump anywhere clears it.
+
+**The verified app-level fix** is to force the transitive version yourself:
+
+```jsonc
+// package.json (npm / pnpm)
+"overrides": { "jayson": { "uuid": "^11.1.1" } }
+
+// package.json (yarn)
+"resolutions": { "jayson/uuid": "^11.1.1" }
+```
+
+With that in place `npm audit --omit=dev` exits `0`.
+
+**The vulnerable code path was never reachable anyway.** The advisory concerns
+`uuid`'s v3/v5/v6 buffer-writing path; jayson only ever calls `uuid.v4()` with no
+buffer argument, so nothing in the SDK's dependency graph can reach it. The
+override is for a clean audit report, not for a live exposure. When jayson
+eventually ships a fixed `uuid`, fresh installs clear on their own and the override
+can be dropped.
+
 `init(config)` takes `{ appId, authMethod?, network?, authMode?, walletLogin?, requireEmail?, loginWidget? }`. **It points at Bounded
 production by default** - `init({ appId })` just works, no endpoints to set (the
 network is `'bounded-production'`). **Email + OAuth/social + text** work through
@@ -340,8 +373,22 @@ For `type: "storage"` collections (same path-scoped auth as data).
 ```ts
 // blob + declared fields in one atomic create; system meta auto-filled
 await setFile("users/u1/files/avatar", file, { metadata: { name: "avatar.png", owner: myId } });
-const { data } = await getFiles("users/u1/files"); // [{ path, url, metadata }] - signed download links + metadata
+const { data } = await getFiles("users/u1/files"); // [{ path, url, metadata }] - download URL + metadata
 ```
+
+`url` comes in two shapes, chosen by the collection's `read` rule, not by the
+caller:
+
+- **Gated collection** (the read rule does not authorize an anonymous caller) - a
+  **short-lived signed link**, valid about 60 seconds. Fetch it immediately; never
+  persist it in a document or hand it to a third party.
+- **Anonymous-readable collection** (`"read": "true"`, or any rule an anonymous
+  principal satisfies) - a **tokenless, permanent public URL**, with no token and
+  no expiry. This is the one to use for token metadata, share links, and anything
+  a third party fetches later. It stays revocable: the anonymous read rule is
+  re-evaluated on every GET, so tightening the rule or deleting the file kills
+  every published link. Public objects are served `Cache-Control: public, no-store`,
+  so each fetch bills as a request and nothing caches in front of it.
 
 `setFile(path, file, { metadata })` writes the blob, auto-fills system metadata
 (`contentType`/`size`/`status`/`uploadedBy`/`createdAt`), and sets your declared
@@ -516,10 +563,18 @@ The `user` object has four fields:
   Bounded Auth logins (email, text, OAuth/social) it is the account identity. Use
   this for ownership / membership / identity (e.g. doc keys, owner fields,
   `view/<myId>`).
-- `user.address` - a **real onchain wallet address**. Present for wallet logins
-  and browser guests; `null` for Bounded Auth logins unless `auth.wallets`
-  provisions or the user links a wallet. Guest auth itself remains offchain-only.
-  Use this only for onchain operations / wallet semantics.
+- `user.address` - a **real onchain wallet address**. Present for wallet logins,
+  for browser guests (the device keypair), and - **by default** - for supported
+  email/social logins too: Bounded eagerly provisions a Turnkey-native embedded
+  wallet on first login and stamps its address into the session, with no
+  `auth.wallets` block needed. It is `null` only when the app sets
+  `auth.wallets: false`, when the session carries no verified email claim (a
+  phone/text-only login), when the app kept the legacy `authMode: "bounded"` lazy
+  provisioning path and no wallet exists yet, or when the wallet-config lookup
+  fails - in which case the login still succeeds, without a wallet. Guest auth
+  itself remains offchain-only. Use this for onchain operations / wallet
+  semantics. See
+  [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 - `user.email` - the verified, lowercased email for email/OAuth accounts. It is
   `null` for wallet and phone-only text users. Use for email-gating.
 - `user.isAnonymous` - `true` for a browser guest and `false` for a real login.
@@ -527,8 +582,9 @@ The `user` object has four fields:
 
 `onAuthStateChanged(cb)` / `onAuthLoadingChanged(cb)` are the imperative
 equivalents. End-user identity surfaces in rules as `@user.id` (the universal
-identity); `@user.address` is the wallet address (null for non-wallet logins, and
-the **only** `@user.*` variable allowed inside `onchain:true` collections); and
+identity); `@user.address` is the wallet address (present by default for supported
+email/social logins as well as wallet logins, and the **only** `@user.*` variable
+allowed inside `onchain:true` collections); and
 `@user.email` is the verified email. Use `@user.id` for ownership/membership.
 Full flow, providers, and embedded wallets: [auth.md](auth.md).
 

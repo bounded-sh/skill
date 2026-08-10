@@ -212,7 +212,9 @@ Then:
    create rule, then seed the founder's `@user.id` from the founder identity — see
    the bootstrap flow above. A plain `bounded data set` without the clause 403s.
 5. Gate ownership/membership on `@user.id` (the always-present stable identity),
-   not `@user.address` — the wallet address is null for email logins and is only
+   not `@user.address`. An email/social login does get a wallet by default, but
+   `@user.address` is still null for phone-only sessions, `auth.wallets: false`
+   apps, and the legacy lazy `authMode: "bounded"` path, and it is only
    appropriate for onchain operations.
 
 If you catch yourself wanting "the owner can just do X," stop: write the rule

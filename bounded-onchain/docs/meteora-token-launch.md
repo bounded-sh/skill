@@ -8,17 +8,16 @@ oApps / pump-style launches. For plain spot swaps against an existing pool, and 
 `source`/custody model, read [onchain-trading.md](onchain-trading.md) first - this
 builds on the same server-signed `hooks.onchain` mechanism.
 
-> **Current devnet status: blocked.**
-> The existing Meteora dynamic config is bound to a retired Bounded program authority, so the current program cannot sign for it.
-> A Meteora operator must provision a replacement config for the current Bounded authority before these flows can run.
-> The tracked local shard failures are the exact stale-config authority failures and do not establish devnet support.
-> Registered proof contracts and matching manifests establish source shape only.
+> **Current devnet status: unverified, not blocked.**
+> The earlier blocker (a dynamic config bound to a retired Bounded program authority) was cleared on 2026-07-29: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` is deployed on devnet and the deployed runtime targets it.
+> Nothing in this guide is externally blocked; what is missing is retained live proof.
+> Registered proof contracts and matching manifests establish source shape only, and neither they nor a local shard run is live devnet evidence.
 > See [solana-capability-status.md](solana-capability-status.md).
 
 ## The two phases
 
-The lifecycle below documents the intended source contract.
-It is not a runnable current-devnet recipe while the replacement config is missing.
+The lifecycle below documents the source contract.
+It is runnable against the current devnet deployment; treat any run as the live proof it still needs, and confirm each transaction plus its expected Bounded postcondition rather than assuming it.
 
 ```
 createMeteoraConfig ──► createMeteoraVirtualPool ──► trades on the bonding curve
@@ -161,13 +160,47 @@ gives you a token with broken name/image everywhere downstream.
 }
 ```
 
-**Hosting it:** Bounded storage collections (`setFile`/`getFiles`) return
-*short-lived signed* download links - never use those as a token `uri`. Host the
-JSON as a static asset instead, e.g. ship `public/token.json` in your frontend and
-`bounded site deploy` it, then pass `https://<your-host>/token.json` as `uri`.
-Any other permanent public host (your domain, IPFS with a stable gateway) works
-too. Set it before mint: the metadata address is derived at creation and the JSON
-is fetched by third parties forever after.
+**Hosting it:** you have two workable options, and the choice turns on whether an
+end user (not just you at build time) needs to publish the metadata.
+
+1. **A static asset in your deployed frontend** - ship `public/token.json` and
+   `bounded site deploy` it, then pass `https://<your-host>/token.json`. Simplest
+   when the token set is known at build time. Any other permanent public host
+   (your domain, IPFS with a stable gateway) works too.
+2. **A Bounded storage collection whose read rule authorizes anonymous access** -
+   when an arbitrary end user mints, and the JSON therefore has to be created at
+   runtime. A storage collection whose `read` rule admits the anonymous principal
+   returns a **tokenless, non-expiring public URL** from `getFiles`, not a signed
+   link, so it is usable as a `uri`. Uploads stay policy-governed by your `create`
+   rule, so "any signed-in user may publish their own small metadata JSON" is
+   exactly expressible.
+
+```json
+"launches/$launchId/metadata/$fileId": {
+  "type": "storage",
+  "fields": { "owner": "String!" },
+  "rules": {
+    "read":   "true",
+    "create": "@newData.owner == @user.id",
+    "update": "false",
+    "delete": "false"
+  }
+}
+```
+
+`read: "true"` is what makes the URL public and permanent.
+Because the rule is re-evaluated on every GET, it is also **revocable**: tighten
+the rule or delete the file and the next fetch 403s - which for token metadata is
+a hazard, not a feature, since wallets and DEX frontends fetch the `uri` forever.
+Treat a published token `uri` as immutable and never narrow that collection's read
+rule afterwards. Public objects are also served `Cache-Control: public, no-store`,
+so every third-party fetch hits the worker and is billed as a request; that is fine
+for a small JSON, but do not point high-traffic image assets at it.
+See [files-and-search.md](../../bounded-backend/docs/files-and-search.md#reading-files-back)
+for both URL modes.
+
+Set the `uri` before mint either way: the metadata address is derived at creation
+and the JSON is fetched by third parties forever after.
 
 - `@DeFiPlugin.getMeteoraVirtualPoolAddress(tokenMintAddress, configId) -> Address`
   (pure) resolves the pool address for a token.
@@ -178,13 +211,36 @@ is fetched by third parties forever after.
 
 | Function | Signature | Does |
 |---|---|---|
-| `swapInMeteoraVirtualPool` | `(source, poolTokenMint, tokenMint, amount) -> Bool` | Buy/sell against the virtual pool. |
-| `getClaimableMeteoraPoolFees` | `(source, poolAddress) -> Int` (pure) | How much is claimable now. |
+| `swapInMeteoraVirtualPool` | `(source, poolTokenMint, tokenMint, amount, minimumAmountOut?) -> Bool` | Buy/sell against the virtual pool. The fifth argument is the slippage floor. |
+| `getClaimableMeteoraPoolFees` | `(source, poolAddress) -> Int` (pure) | Creator-side claimable, as ONE number summing two mints - read the caveat below. |
 | `claimMeteoraPoolFees` | `(source, poolAddress) -> Bool` | Claim accrued bonding-curve fees to `source`. |
 
 `source` follows the same custody rule as all trading calls - the `@contract.address`
 sentinel resolved by this built-in plugin to the server-signed app escrow PDA for an app-operated launch, or a user wallet for
 self-custody. See [onchain-trading.md → `source`](onchain-trading.md).
+
+### Pass the swap's slippage floor
+
+```
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?) -> Bool
+```
+
+`minimumAmountOut` is the minimum output in the output token's smallest units, and the swap fails instead of filling below it.
+It is optional only for backward compatibility, so **an omitted fifth argument means no slippage protection at all** on a bonding-curve trade, where the price moves with every fill.
+There is no deadline parameter (the underlying DBC `swap2` has none), and the call returns `Bool`, not the amount received.
+Full guidance, including how to size the floor when the quote getter is offchain-only: [onchain-trading.md → the slippage floor](onchain-trading.md#swapinmeteoravirtualpool-takes-a-slippage-floor---use-it).
+
+### What the fee surface cannot tell you yet (read before building fee accounting)
+
+Two honest gaps sit under any "how much did this launch earn" feature.
+
+- **The partner leg has no claim primitive.** Bounded exposes only the creator-side claim (`claimMeteoraPoolFees`, `claimDammV2PoolFees`). Meteora's partner-side `claim_trading_fee` - the leg a `feeAccount` reserve accrues to before migration - is not exposed at all today. Do not write policy that assumes a partner claim exists.
+- **No primitive yields a per-mint claimed amount.** The claims return `Bool(true)` even when nothing was claimed (a non-creator `source`, or a not-yet-graduated pool), and they discard the balance delta. So a fee-attributed total cannot be honestly derived from what Bounded returns today.
+
+**Do not reach for `getClaimableMeteoraPoolFees` to patch this.**
+It returns `creator_base_fee + creator_quote_fee` as a single `UInt`, adding two different mints with different decimals into one meaningless scalar, and it returns `0` for a non-creator `source` - so it cannot even distinguish "not the creator" from "no fees accrued".
+Reporting a total built on it is an accounting error, not an approximation.
+Until a claim primitive returns the amounts, report attributed fee totals as **unavailable** rather than deriving them, and keep any app-level ledger explicitly labelled as caller-asserted convention.
 
 ## Graduation to DAMM v2 + post-migration
 
@@ -257,10 +313,10 @@ honest PROVEN-vs-TRUSTED-vs-NEEDS-DEVNET breakdown - see
   txns (config creation, pool creation, swaps, fee claims, migration) - trusted like
   all plugin code. The fee schedule you declare is what the SDK receives; the proof
   does not model Meteora's on-chain fee math or that the chain executed the migration.
-- **RESIDUAL (needs a live fill after the blocker is cleared):** that a real curve trade under the decay schedule
+- **RESIDUAL (needs a live fill):** that a real curve trade under the decay schedule
   charges the expected fee, that migration triggers at `migrationMarketCap`, and that
   `withdrawLeftover` releases exactly `leftover` - confirm against a live pool
-  (devnet), not the prover.
+  (devnet), not the prover. Nothing external blocks that run today.
 
 ## Notes & gotchas
 
@@ -273,6 +329,7 @@ honest PROVEN-vs-TRUSTED-vs-NEEDS-DEVNET breakdown - see
 - **Positional optionals:** to reach the decay params you must also pass params 6–11
   (market caps, supply, decimals, leftover, leftoverReceiver) - pass their defaults
   explicitly.
-- **Eventual consistency:** after the blocker is cleared, confirm the transaction and then poll the expected Bounded postcondition.
-  The read functions are source-present but remain blocked with the rest of the current Meteora integration.
+- **Eventual consistency:** confirm the transaction, then poll for the expected Bounded postcondition.
+  A returned signature proves submission, not indexing.
+- **Slippage:** always pass `swapInMeteoraVirtualPool`'s fifth argument on a trade that carries value.
 - Function names have numeric-id aliases; always use the named form in policies.
