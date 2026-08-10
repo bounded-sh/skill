@@ -21,21 +21,33 @@ function section(source, heading) {
   return next === -1 ? rest : rest.slice(0, next)
 }
 
-test('1: backend-runtime fetch handler requires ctx.identity, and Boundaries mentions it', () => {
+test('1: backend-runtime fetch handler gates on ctx.identity.user (fails closed, not open), and Boundaries mentions it', () => {
   const doc = read('bounded-backend/docs/backend-runtime.md')
   const fetchExample = section(doc, '## Agent Entry') // the fetch handler lives just after the agent entry
   assert.ok(
     /async fetch\(req, ctx\)/.test(fetchExample),
     'backend-runtime must show a kind:"backend" fetch handler',
   )
+  // ctx.identity is ALWAYS a populated object in the shipping runtime, so a bare
+  // `if (!ctx.identity)` gate never fires and FAILS OPEN. The acting user lives
+  // in ctx.identity.user (the @user.id), which is absent/empty when unauthenticated.
   assert.ok(
-    fetchExample.includes('ctx.identity'),
-    'the fetch handler example must REQUIRE ctx.identity and fail closed, not return ok:true unconditionally',
+    /!\s*ctx\.identity\.user/.test(fetchExample),
+    'the fetch handler must gate on ctx.identity.user (the acting @user.id), which is absent for an unauthenticated caller',
+  )
+  assert.ok(
+    !/if\s*\(\s*!\s*ctx\.identity\s*\)/.test(fetchExample),
+    'the fetch handler must NOT gate on the bare !ctx.identity, which fails open (ctx.identity is always populated)',
   )
   const boundaries = section(doc, '## Boundaries')
   assert.ok(
-    boundaries.includes('ctx.identity'),
-    'the Boundaries section must call out gating public fetch handlers on ctx.identity',
+    boundaries.includes('ctx.identity.user'),
+    'the Boundaries section must call out gating public fetch handlers on ctx.identity.user',
+  )
+  // The doc must not repeat the false claim that ctx.identity is null when unauthenticated.
+  assert.ok(
+    !/ctx\.identity`?\s+is\s+null/i.test(doc),
+    'the doc must not claim ctx.identity is null for an unauthenticated request (it is always a populated object)',
   )
 })
 
