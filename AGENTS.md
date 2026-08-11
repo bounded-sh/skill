@@ -19,16 +19,47 @@ It also runs the contract tests under `scripts/tests/`, so that is the whole gat
 run them alone with `node --test "scripts/tests/*.test.mjs"` while iterating.
 
 For plugin-reference, policy-example, or policy-routing changes, also run the
-source and real-policy gates before pushing:
+two self-contained source gates:
 
 ```sh
 node scripts/extract-plugin-catalog.mjs --check
 node scripts/generate-plugin-catalog.mjs --check
-node scripts/policy-e2e/run.mjs
 ```
 
-The policy E2E gate requires the sibling `bounded-monorepo` local stack started
-with its `./dev` workflow. JSON parsing and link checks are not a substitute.
+JSON parsing and link checks alone do not qualify an example-policy change for
+publication: the real behavior evidence comes from the optional maintainer-only
+e2e suite below, which a maintainer runs with `--require` before example changes
+ship.
+
+## Generated plugin reference layer
+
+`bounded-onchain/docs/plugins.md`, `bounded-onchain/docs/plugin-signatures.md`, and
+`bounded-onchain/docs/plugins/*.md` are GENERATED from
+`bounded-onchain/data/plugin-catalog.json`; never hand-edit them.
+Curated prose lives in `bounded-onchain/docs/plugins/_fragments/`. When the
+monorepo changes a plugin manifest (or the capability table changes):
+
+```sh
+node scripts/extract-plugin-catalog.mjs    # refresh the snapshot from bounded-monorepo
+node scripts/generate-plugin-catalog.mjs   # re-render the pages
+```
+
+`node scripts/extract-plugin-catalog.mjs --check` fails when the snapshot is
+stale versus the monorepo; the contract tests fail when the pages drift from
+the snapshot or the capability table.
+
+## Example-policy e2e suite (optional, maintainer-only)
+
+Every page under `*/docs/examples/` embeds one deployable policy, exercised by
+`node scripts/policy-e2e/run.mjs` against the bounded-monorepo local platform.
+This is NOT part of the required gate: it depends on a sibling
+`bounded-monorepo` checkout with its local stack booted
+(`./dev fresh smoke --yes --profile full --detach`), which normal contributors
+do not have - without it the suite prints SKIPPED and exits 0. `node
+scripts/validate.mjs` stays fully self-contained and is the only required
+pre-push gate. Maintainers changing an example page (or releasing example
+changes) run the suite with `--require`, which turns a missing stack into a
+failure; specs live in `scripts/policy-e2e/specs/`.
 
 ## Content rules
 

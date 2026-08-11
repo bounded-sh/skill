@@ -1,6 +1,6 @@
 # Onchain example policies
 
-Complete, deployable policies indexed by what you are building. Every page carries one self-contained `policy.json` plus the operations and the reasoning; each one is deployed, formally verified, and behavior-tested against the local platform by `scripts/policy-e2e/run.mjs` before it ships here. Offchain-first examples live in the [backend examples index](../../bounded-backend/docs/examples.md).
+Complete, deployable policies indexed by what you are building. Every page carries one self-contained `policy.json` plus the operations and the reasoning; each one parses and passes this repo's policy fences, and a maintainer exercises it against the local platform (deploy, formal verification, allow/deny behavior) with `scripts/policy-e2e/run.mjs` when the example changes. Offchain-first examples live in the [backend examples index](../../bounded-backend/docs/examples.md).
 
 | You are building | Open |
 |---|---|

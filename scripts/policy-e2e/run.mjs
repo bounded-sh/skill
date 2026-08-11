@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// Maintainer-side end-to-end gate for the example policies.
+// OPTIONAL maintainer-side end-to-end suite for the example policies. Not part
+// of the required pre-push gate (`node scripts/validate.mjs` is, and stays
+// self-contained); without the external local platform this suite SKIPS.
 //
 // For every spec in scripts/policy-e2e/specs/*.json this runner:
 //   1. extracts the policy from the example page's "## Policy" fenced block
@@ -9,10 +11,11 @@
 //   3. runs `bounded verify`, then the spec's allow/deny/query steps.
 //
 // Usage:
-//   node scripts/policy-e2e/run.mjs             # all specs
-//   node scripts/policy-e2e/run.mjs escrow ...  # only the named specs
+//   node scripts/policy-e2e/run.mjs               # all specs (SKIPS if no stack)
+//   node scripts/policy-e2e/run.mjs escrow ...    # only the named specs
+//   node scripts/policy-e2e/run.mjs --require     # missing stack = failure (release use)
 //
-// Requires the monorepo checkout (BOUNDED_MONOREPO or sibling ../bounded-monorepo)
+// Uses the monorepo checkout (BOUNDED_MONOREPO or sibling ../bounded-monorepo)
 // with the local stack `ready`. Substitutions available in spec paths/data:
 //   RUN_ID              fresh per run (safe in ids: r<digits>)
 //   USER_ID / USER_ADDRESS   the local CLI identity (whoami)
@@ -23,7 +26,7 @@
 //   simulation lacks a model for a foreign program (failure is NOT policy_denied).
 
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -33,9 +36,47 @@ const monorepo = process.env.BOUNDED_MONOREPO ?? path.resolve(root, '..', 'bound
 const dev = path.join(monorepo, 'dev')
 const specsDir = path.join(root, 'scripts/policy-e2e/specs')
 
-const only = process.argv.slice(2)
+const required = process.argv.includes('--require')
+const only = process.argv.slice(2).filter((a) => a !== '--require')
 const specFiles = readdirSync(specsDir).filter((f) => f.endsWith('.json'))
   .filter((f) => only.length === 0 || only.includes(f.replace(/\.json$/, '')))
+
+// ---------------------------------------------------------------------------
+// Preflight: this suite is an OPTIONAL maintainer gate. It needs the sibling
+// bounded-monorepo checkout and its local platform running - dependencies a
+// normal contributor of this public repo does not have. Without them the suite
+// SKIPS (exit 0) so wrappers that run "all the tests" never break on the
+// external dependency; pass --require (used before releasing example changes)
+// to turn a missing stack into a hard failure instead. The check also keeps a
+// never-booted stack from crawling through the mid-run flap retries below.
+function preflightFailure() {
+  if (!existsSync(dev)) {
+    return `bounded-monorepo checkout not found at ${monorepo} (set BOUNDED_MONOREPO)`
+  }
+  // `./dev status` exits non-zero for failed/degraded states, so read its
+  // output from the error too and surface the actual state line either way.
+  let status = ''
+  try {
+    status = execFileSync(dev, ['status'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 60_000 })
+  } catch (error) {
+    status = `${error.stdout ?? ''}\n${error.stderr ?? ''}`
+  }
+  if (!/local stack: ready/.test(status)) {
+    const state = status.match(/local stack: [^\n]*/)?.[0] ?? 'local stack state unknown'
+    return `${state} - boot it with: cd ${monorepo} && ./dev fresh smoke --yes --profile full --detach`
+  }
+  return null
+}
+
+const blocked = preflightFailure()
+if (blocked) {
+  if (required) {
+    console.error(`policy-e2e: REQUIRED but unavailable: ${blocked}`)
+    process.exit(1)
+  }
+  console.log(`policy-e2e: SKIPPED (optional maintainer gate): ${blocked}`)
+  process.exit(0)
+}
 
 // The CLI caches its keypair session in ~/.bounded/tokens.json with an optimistic
 // TTL that can outlive the real JWT expiry; a stale cache surfaces as
@@ -55,8 +96,26 @@ function shOnce(args, cwd) {
   }
 }
 
+// The manager aggregates per-service readiness on every `./dev exec`; the
+// bounded-platform wrangler worker's /ready probe can read slow under load, so
+// a healthy stack intermittently reports "not ready" for stretches measured in
+// minutes while every service is in fact up. The preflight above proved the
+// stack was up, so a long retry budget here rides out mid-run flaps; a stack
+// that genuinely dies mid-run still fails once the budget is exhausted.
+const NOT_READY = /local stack is not ready/
+const NOT_READY_RETRIES = 30
+const NOT_READY_BACKOFF_MS = 10_000
+
+function sleep(ms) {
+  execFileSync(process.execPath, ['-e', `setTimeout(() => {}, ${ms})`])
+}
+
 function sh(args, { cwd, allowFailure = false } = {}) {
   let result = shOnce(args, cwd)
+  for (let attempt = 0; !result.ok && NOT_READY.test(result.output) && attempt < NOT_READY_RETRIES; attempt += 1) {
+    sleep(NOT_READY_BACKOFF_MS)
+    result = shOnce(args, cwd)
+  }
   if (!result.ok && STALE_SESSION.test(result.output)) {
     rmSync(path.join(homedir(), '.bounded', 'tokens.json'), { force: true })
     result = shOnce(args, cwd)

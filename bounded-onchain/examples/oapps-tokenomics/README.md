@@ -62,5 +62,7 @@ returns a per-mint claimed amount.
 Live proof must still confirm that the 45% creator leg actually lands in `feepool`
 (`createMeteoraVirtualPool` has no creator/source param).
 
-The placeholder base58 constants (`OAPP_MINT`, `CREATOR`, `POOF`, `KEEPER`) are
-swapped for the real mint + recipient wallets at launch.
+The placeholder constants (`OAPP_MINT`, `CREATOR`, `POOF`, `KEEPER`, `FOUNDER`) are
+swapped for the real mint, recipient wallets, and founder user id at launch.
+`FOUNDER` must stay a plain alphanumeric constant - the verifier rejects any
+other shape for the `authorityClosure` initial member.

@@ -1,6 +1,6 @@
 # Example policies
 
-Complete policies indexed by intent. Each page is one self-contained `policy.json` plus operations and reasoning, behavior-tested end to end before shipping here.
+Complete policies indexed by intent. Each page is one self-contained `policy.json` plus operations and reasoning, exercised end to end against the local platform by a maintainer when the example changes.
 
 | You are building | Open |
 |---|---|
