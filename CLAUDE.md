@@ -46,13 +46,18 @@ node scripts/generate-plugin-catalog.mjs   # re-render the pages
 stale versus the monorepo; the contract tests fail when the pages drift from
 the snapshot or the capability table.
 
-## Example-policy e2e gate
+## Example-policy e2e suite (optional, maintainer-only)
 
 Every page under `*/docs/examples/` embeds one deployable policy, exercised by
-`node scripts/policy-e2e/run.mjs` against the local platform
-(`bounded-monorepo ./dev fresh smoke --yes --profile full --detach` first).
-Run it after changing any example page or before releasing example changes;
-specs live in `scripts/policy-e2e/specs/`.
+`node scripts/policy-e2e/run.mjs` against the bounded-monorepo local platform.
+This is NOT part of the required gate: it depends on a sibling
+`bounded-monorepo` checkout with its local stack booted
+(`./dev fresh smoke --yes --profile full --detach`), which normal contributors
+do not have - without it the suite prints SKIPPED and exits 0. `node
+scripts/validate.mjs` stays fully self-contained and is the only required
+pre-push gate. Maintainers changing an example page (or releasing example
+changes) run the suite with `--require`, which turns a missing stack into a
+failure; specs live in `scripts/policy-e2e/specs/`.
 
 ## Content rules
 
