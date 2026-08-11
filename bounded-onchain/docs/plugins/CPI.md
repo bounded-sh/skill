@@ -26,7 +26,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4.
+- Status: **unverified** (not run); markers: LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -213,7 +213,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
+- Status: **unverified** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -235,7 +235,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
+- Status: **unverified** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -257,7 +257,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
+- Status: **unverified** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -279,7 +279,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4.
+- Status: **unverified** (not run); markers: LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -299,7 +299,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4.
+- Status: **unverified** (not run); markers: LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

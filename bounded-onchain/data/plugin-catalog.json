@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "72bf623efafe315627a6a2dd1b1bab63531e2cf8",
+  "monorepoCommit": "6a9597c4d755d64439f460dfc35034470327d75b",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -1485,7 +1485,7 @@
      ],
      "status": {
       "lane": "descriptor CPI",
-      "support": "unsupported",
+      "support": "unverified",
       "verification": "not run",
       "markers": "LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4"
      }
@@ -2317,7 +2317,7 @@
      ],
      "status": {
       "lane": "descriptor CPI",
-      "support": "unsupported",
+      "support": "unverified",
       "verification": "not run",
       "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
      }
@@ -2429,7 +2429,7 @@
      ],
      "status": {
       "lane": "descriptor CPI",
-      "support": "unsupported",
+      "support": "unverified",
       "verification": "not run",
       "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
      }
@@ -2541,7 +2541,7 @@
      ],
      "status": {
       "lane": "descriptor CPI",
-      "support": "unsupported",
+      "support": "unverified",
       "verification": "not run",
       "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
      }
@@ -2635,7 +2635,7 @@
      ],
      "status": {
       "lane": "descriptor CPI",
-      "support": "unsupported",
+      "support": "unverified",
       "verification": "not run",
       "markers": "LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4"
      }
@@ -2720,7 +2720,7 @@
      ],
      "status": {
       "lane": "descriptor CPI",
-      "support": "unsupported",
+      "support": "unverified",
       "verification": "not run",
       "markers": "LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4"
      }
@@ -8466,14 +8466,14 @@
   {
    "callName": "@Bytes.keccak256",
    "lane": "ext primitive",
-   "support": "unsupported",
+   "support": "unverified",
    "verification": "not run",
    "markers": "NEEDS-RUNTIME-V4"
   },
   {
    "callName": "@Bytes.sha256",
    "lane": "ext primitive",
-   "support": "unsupported",
+   "support": "unverified",
    "verification": "not run",
    "markers": "NEEDS-RUNTIME-V4"
   },
@@ -8487,7 +8487,7 @@
   {
    "callName": "@Solana.secp256k1Recover",
    "lane": "ext primitive",
-   "support": "unsupported",
+   "support": "unverified",
    "verification": "not run",
    "markers": "NEEDS-RUNTIME-V4"
   },
@@ -8501,7 +8501,7 @@
   {
    "callName": "@Solana.verifyEd25519",
    "lane": "ext primitive",
-   "support": "unsupported",
+   "support": "unverified",
    "verification": "not run",
    "markers": "NEEDS-RUNTIME-V4"
   },

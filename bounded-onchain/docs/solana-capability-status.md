@@ -235,7 +235,7 @@ Anonymous chain-query execution is admitted for identity-independent queries who
 
 Every live acceptance run must have a unique run ID.
 Browsing the catalog, validating forms, and preflighting must work without a wallet.
-That wallet-free requirement does not apply to current live chain named-query execution, which requires an authenticated `userAddress`.
+That wallet-free requirement also holds for live chain named-query execution when the query is identity-independent and the path read rule authorizes an anonymous caller; only a query reading `@user.address`/`@user.evmAddress` needs an authenticated wallet.
 Submission may use the funded global Bounded CLI keypair for automation or Phantom for the manual browser check.
 After submission, confirm the public devnet transaction at the required commitment.
 Then poll with bounded backoff for the exact expected Bounded mirror, query, reveal, account, or denied state.
