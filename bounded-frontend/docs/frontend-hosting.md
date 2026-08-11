@@ -61,12 +61,10 @@ bounded site deploy ./dist --app-id <id>
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it
   from the in-app Bounded widget's always-visible privacy toggle (cloud-backed;
   no local daemon required).
-  Launched oApps are the exception: a launched app is public by its own
-  constitution, so re-privatizing is refused (`oapp_launched`) and the widget's
-  privacy toggle does not exist on its launched face. The setting applies to every mapped static host
-  that resolves to the app: vanity slug and active custom domains. API hosts
-  are not gated. The private-site gate page itself tells owners and visitors
-  how to make the app public.
+  Completed-Open oApp workloads are the exception: Open publishes the exact workload app-id host, so re-privatizing is refused and the widget's privacy toggle does not exist on that governed face.
+  The setting applies to every mapped static host that resolves to the app: vanity slug and active custom domains.
+  API hosts are not gated.
+  The private-site gate page itself tells owners and visitors how to make the app public.
 - **Preview a private site in a browser without making it public:**
   `bounded site preview --app-id <id>` (add `--open` to launch it). As
   owner/admin you already pass the gate; this mints a short-lived, shareable
@@ -102,16 +100,18 @@ visible: a `visibility: "hidden"` frozen into the pre-launch policy neither
 hides the widget nor suppresses the declined-write card there. The explicit
 `declineCard: false` opt-out stays honored on every face.
 
-## Public source page for launched oApps
+## Public source page after completed Open
 
 `/__bounded/source` is the public browser for an oApp's synchronized source
 tree and change history. It serves the source revision the platform has synced (source rides the
 deploy). It does not reconstruct source from the hosted `dist` directory or
 read an unsynchronized local checkout.
 
-The launched-oApp gate applies before any source is returned. An unlaunched app
-gets `404` on every source route. After launch, the source page is public even
-when the normal hosted site is private.
+The oApp publication gate applies before any source is returned.
+A creator development app gets `404` on every public source route before Open completes.
+Completed Open publishes the governed workload site and source together at `https://<workloadAppId>.bounded.page`, even though the app has no oApps slug, listing, token, or running Gauntlet yet.
+Commence later adds those surfaces without changing the direct workload host's public source visibility.
+The stable venue page is `/l/<rootAppId>` before and after Commence.
 
 On a launched oApp the in-app widget also switches to a dedicated launched
 face: a public trust rundown (rules, source link, constitution, security,
@@ -152,11 +152,11 @@ sandbox) is not part of that diff at all.
 A launched app's declared boundaries are frozen for the same reason: they are
 what the app's public trust surface reports as its enforced rules.
 
-If the page says "Source is being prepared," the launch gate passed but the
-platform has no source manifest to show. Inspect the manifest response first:
+If the page says "Source is being prepared," the Open publication gate passed but the platform has no source manifest to show.
+Inspect the manifest response first:
 
 ```bash
-curl -i https://<slug>.bounded.page/__bounded/source/manifest.json
+curl -i https://<workloadAppId>.bounded.page/__bounded/source/manifest.json
 ```
 
 Its status and error body distinguish a missing synchronized repository from a
@@ -179,9 +179,9 @@ or exact redeploy command when appropriate; do not assume the nonzero exit
 rolled the site back. See
 [Cloud Source Sync](../../bounded-deploy/docs/source-sync.md#canonical-sites-also-establish-the-widget-editing-base).
 
-Download the published tree at `/__bounded/source.zip`. The archive also
-contains the published constitution and deployed policy at its root. It uses
-the same launched-oApp gate and fails instead of returning a partial archive.
+Download the published tree at `/__bounded/source.zip`.
+The archive also contains the published constitution and deployed policy at its root.
+It uses the same Open publication gate and fails instead of returning a partial archive.
 
 Frontend variants are optional preview branches:
 

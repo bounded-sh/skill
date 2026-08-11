@@ -1,10 +1,8 @@
 # Cloud Source Sync — source rides the deploy
 
-Bounded keeps an optional cloud copy of an app's source tree (the "Artifacts"
-repository). It powers `bounded clone` / `bounded pull`, the public source
-page of launched oApps (`/__bounded/source`), and the oApps launch integrity
-scan. There is no separate register/sync machinery: **a deploy either carries
-its source or it does not.**
+Bounded keeps an optional cloud copy of an app's source tree in the "Artifacts" repository.
+It powers `bounded clone` / `bounded pull` and the public source page of completed-Open oApps (`/__bounded/source`).
+There is no separate register/sync machinery: **a deploy either carries its source or it does not.**
 
 ## Enable it
 
@@ -89,8 +87,9 @@ editing base.
 
 ## What requires synced source
 
-- **oApps launches.** The launch integrity scan reads the synced source and
-  the public DYOR source page serves it. No synced source → no launch.
+- **oApp Open.** Open reads the synced source and publishes that exact tree at `https://<workloadAppId>.bounded.page/__bounded/source` when the opening completes.
+  No synced source means Open cannot complete.
+  Commence later adds the oApps slug, listing, token, and Gauntlet without changing that source publication or the stable `/l/<rootAppId>` venue page.
 - **`bounded clone` / `bounded pull`** - read the same repo (read-only
   tokens, `code:read` authority). Browser login is the default identity, and a
   cloned checkout keeps `account.keySource: web`; `--link` exists only for an
