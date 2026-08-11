@@ -110,6 +110,7 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
   An offchain `append_only_delete` can become valid only after a row with a trusted creation time falls strictly before every effective window; onchain rows and rows without a valid trusted time remain non-deletable.
   Correct other invariant failures instead of blindly retrying.
   A distinct `409 mutation_conflict` is an optimistic concurrency retry: HTTP `set`/`set-many`/`delete` already reran one bounded internal attempt, while a realtime WebSocket write can surface its first conflict directly.
+  Its optional stable `conflictKind` is `document_epoch`, `rule_clock`, or `rule_read_authority`; every value means that nothing committed.
   Reload exact state and retry the idempotent operation, never classify it as a cap hit.
   `403` means the rule denies the current actor, action, or state: inspect the rule or trace and wait only when the rule is intentionally time-dependent.
   Denied reads return `200` with empty data; verify read-denial cases with an identity you know is permitted instead of waiting for a read `403`.

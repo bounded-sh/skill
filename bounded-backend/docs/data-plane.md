@@ -78,7 +78,7 @@ unbounded storage or encode these numbers into application behavior.
 | What failed | Status | What you get back | What committed |
 |---|---|---|---|
 | Invariant violated | `409` `postcondition failed: invariant "<name>" ...` | the invariant's **declared name** (e.g. `spend_cap`), its type, and the arithmetic that failed | nothing |
-| Optimistic write snapshot changed | `409` `code: "mutation_conflict"`, `retryable: true` | HTTP data writes surface this after one bounded internal retry; realtime WebSocket writes may surface the first conflict | nothing |
+| Optimistic write authority changed | `409` `code: "mutation_conflict"`, `retryable: true` | optional stable `conflictKind`: `document_epoch`, `rule_clock`, or `rule_read_authority`; HTTP data writes surface this after one bounded internal retry, while realtime WebSocket writes may surface the first conflict | nothing |
 | **Write** rule denied (create/update/delete) | `403` | the failed action plus a **trace** of the predicate that evaluated false | nothing |
 | Function `invoke` auth rule denied | `403` `Forbidden: auth rule denied` | denied before the body runs | nothing |
 | **Read** rule denied | **`200`** with `{"data": null}` (single) or `{"data": []}` (list) | **no `403`** — denied reads are *hidden*, not errored (see below) | n/a |
@@ -107,6 +107,9 @@ unbounded storage or encode these numbers into application behavior.
 > retry one complete attempt internally; realtime WebSocket writes can return
 > the first conflict. A mutation conflict is never evidence that a cap was
 > exhausted.
+> When present, `conflictKind` is one of `document_epoch`, `rule_clock`, or `rule_read_authority`.
+> These distinguish a changed document snapshot, a rule evaluation that crossed its final logical-clock second, and lost rule-read authority.
+> All three mean that nothing committed and the caller may reload exact state before retrying an idempotent operation.
 
 > **Structured rolling-boundary cause.** An invariant rejection may also carry `decline.boundary.cause` with stable value `cap_exceeded`, `append_only_update`, or `append_only_delete`.
 > This cause remains available under minimal disclosure even when numeric cap details and the full message are withheld.
