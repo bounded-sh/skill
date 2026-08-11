@@ -572,6 +572,58 @@ The local-policy test does not replace that app's deployed policy.
 the dashboard's Policy tests tab and CI). `push` merges by fileName unless
 `--replace`; `pull` won't overwrite local files without `--force`.
 
+## Prompt-driven builds — `create`, `edit`, `builds`
+
+The same control plane the hosted create page and the in-app widget drive:
+a prompt creates the app and its first build, and later prompts iterate on it.
+A run started from the CLI is the same object the widget shows, and vice versa.
+
+| Command | Does | Key flags |
+|---|---|---|
+| `create <prompt>` | Create an app from a prompt, submit its first build, watch it to completion, and link the app into `bounded.json` | `--name`, `--no-watch`, `--timeout` (default 30m; `0` waits indefinitely) |
+| `edit <prompt>` (alias `iterate`) | Submit an edit prompt against the linked app and watch the build | `--app-id` (defaults to `bounded.json`), `--no-watch`, `--timeout` |
+| `builds list` | Recent runs with state, operation, and prompt | `--app-id`, `--limit` |
+| `builds watch [runId]` | Watch a run; with no run id, the newest unfinished one | `--app-id`, `--timeout` |
+| `builds cancel [runId]` | Cancel a run | `--app-id` |
+| `builds gate <runId> <gateId>` | Decide a gate that parked a run | `--approve` / `--reject` (exactly one), `--note`, `--app-id` |
+
+```bash
+bounded create "a notes app with tags and search"   # create + first build + watch
+bounded edit "add a dark mode toggle"               # iterate on the linked app
+bounded builds list --limit 5
+bounded builds watch                                # reattach to the newest live run
+```
+
+Each edit builds on the app's last published deployment, exactly like a widget edit.
+Watching is a poll, not a stream; interrupting a watch **detaches only** - the run
+keeps going server-side, and the message names the reattach and cancel commands.
+Cancelling is always explicit.
+
+Run states are `queued`, `admitted`, `executing`, `preview_ready`, `parked`
+(`parkReason` is `gate` or `funding`), `resuming`, `promoting`, `quarantined`,
+and the terminal `promoted`, `failed`, `canceled`, `rejected`, `expired`,
+`rebase_required`, `reported`. Only `promoted` published the app.
+
+`--json` emits exactly one document. Watching to completion emits the final run
+(`appId`, `runId`, `state`, `appUrl`, `previewUrl`, `gates`, `stageSummaries`,
+`usage`, plus `slug`/`url` for `create`); a run that ends anything other than
+`promoted` returns that same document as the error envelope with `ok: false` and
+`code` set to the failure reason. `--no-watch` emits the acknowledgement
+(`appId`, `runId`, `state: "queued"`) and exits 0, which is the shape to use when
+an agent wants to drive `bounded builds watch --json` itself. A detach or a
+`--timeout` expiry is likewise one document, with `detached: true` and the
+last-seen state.
+
+Refusals keep the server's own code and detail: `project_limit_exceeded` (with
+`planId`/`usage`/`limit`), `insufficient_funding`, `free_builds_exhausted`,
+`usage_settlement_pending`, `prompt_too_long`, `app_unknown`, `auth_required`.
+Creation is journaled by idempotency key, so a create that reports the prior
+attempt as still converging is waited out on the same key rather than creating a
+second app.
+
+After a promoted run, `bounded clone <appId>` brings the generated source down
+locally; `bounded pull` fast-forwards it afterwards.
+
 ## Cloud source sync
 
 Source rides the deploy: with `"sourcePush": true` in `bounded.json` (or
