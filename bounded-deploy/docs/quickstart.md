@@ -1,6 +1,10 @@
 # Deploy quickstart
 
-Use this path for a new project and for ordinary releases.
+Use this path for a new project and for ordinary releases: you author the policy
+and the client, and the CLI proves and ships them.
+
+To have Bounded's build agent write the app from a prompt instead, and to
+iterate on it with more prompts, see [Prompt-driven builds](cli-reference.md#prompt-driven-builds---create-edit-builds).
 
 ## Initialize
 

@@ -572,15 +572,20 @@ The local-policy test does not replace that app's deployed policy.
 the dashboard's Policy tests tab and CI). `push` merges by fileName unless
 `--replace`; `pull` won't overwrite local files without `--force`.
 
-## Prompt-driven builds — `create`, `edit`, `builds`
+## Prompt-driven builds - `create`, `edit`, `builds`
 
-The same control plane the hosted create page and the in-app widget drive:
-a prompt creates the app and its first build, and later prompts iterate on it.
-A run started from the CLI is the same object the widget shows, and vice versa.
+Bounded's own build agent writes the app from a prompt. The same control plane
+the hosted create page and the in-app widget drive: a prompt creates the app and
+its first build, and later prompts iterate on it. A run started from the CLI is
+the same object the widget shows, and vice versa.
+
+This is the alternative to authoring the app yourself. When YOU are writing the
+policy and the client, use `init` / `verify` / `deploy` instead - handing the
+work to the build agent is a different product, not a shortcut for the same one.
 
 | Command | Does | Key flags |
 |---|---|---|
-| `create <prompt>` | Create an app from a prompt, submit its first build, watch it to completion, and link the app into `bounded.json` | `--name`, `--no-watch`, `--timeout` (default 30m; `0` waits indefinitely) |
+| `create <prompt>` | Create an app from a prompt, submit its first build, watch it to completion, and link the app so the next command resolves it | `--name`, `--no-watch`, `--timeout` (default 30m; `0` waits indefinitely) |
 | `edit <prompt>` (alias `iterate`) | Submit an edit prompt against the linked app and watch the build | `--app-id` (defaults to `bounded.json`), `--no-watch`, `--timeout` |
 | `builds list` | Recent runs with state, operation, and prompt | `--app-id`, `--limit` |
 | `builds watch [runId]` | Watch a run; with no run id, the newest unfinished one | `--app-id`, `--timeout` |
@@ -592,6 +597,17 @@ bounded create "a notes app with tags and search"   # create + first build + wat
 bounded edit "add a dark mode toggle"               # iterate on the linked app
 bounded builds list --limit 5
 bounded builds watch                                # reattach to the newest live run
+```
+
+Either login lane works: a web session (`bounded login`) or a local signing key.
+`create` records the new app the same way `deploy --create` does, so `edit` and
+`builds` resolve it from the project with no `--app-id`.
+
+**A created app is private.** Genesis mints every app behind the Bounded site
+gate, so its url shows visitors the private-site page until you publish it:
+
+```bash
+bounded site privacy public --app-id <id>
 ```
 
 Each edit builds on the app's last published deployment, exactly like a widget edit.
@@ -613,6 +629,10 @@ and the terminal `promoted`, `failed`, `canceled`, `rejected`, `expired`,
 an agent wants to drive `bounded builds watch --json` itself. A detach or a
 `--timeout` expiry is likewise one document, with `detached: true` and the
 last-seen state.
+
+`--quiet` prints the one value the next command takes: the app id for `create`
+and `edit`, one run id per line for `builds list`, the resulting state for
+`cancel` and `gate`.
 
 Refusals keep the server's own code and detail: `project_limit_exceeded` (with
 `planId`/`usage`/`limit`), `insufficient_funding`, `free_builds_exhausted`,

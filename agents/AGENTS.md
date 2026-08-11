@@ -91,6 +91,10 @@ npm i @bounded-sh/client   # or @bounded-sh/server
 ### Notes
 
 - All packages are under `@bounded-sh/*`. Bare `bounded` on npm is unrelated.
+- `bounded create "<prompt>"` hands the whole app to Bounded's build agent and
+  `bounded edit "<prompt>"` iterates on it, with `bounded builds` to watch,
+  cancel, or decide a gate. That is a different path from the flow above: use it
+  when the user wants the platform to write the app, not when you are writing it.
 - Functions are the trusted escape hatch: `ctx.ai.run`, `ctx.services`,
   `ctx.secrets`, `ctx.bounded`.
 - Bounded-hosted web frontends are static or prerendered client apps. Use an
