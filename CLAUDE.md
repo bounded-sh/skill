@@ -18,16 +18,18 @@ It must pass; there is no CI here, and `main` is what users pull.
 It also runs the contract tests under `scripts/tests/`, so that is the whole gate;
 run them alone with `node --test "scripts/tests/*.test.mjs"` while iterating.
 
-For plugin-reference, policy-example, or policy-routing changes, also run:
+For plugin-reference, policy-example, or policy-routing changes, also run the
+two self-contained source gates:
 
 ```sh
 node scripts/extract-plugin-catalog.mjs --check
 node scripts/generate-plugin-catalog.mjs --check
-node scripts/policy-e2e/run.mjs
 ```
 
-The E2E gate uses the sibling `bounded-monorepo` local stack. JSON parsing and
-link checks alone do not qualify an example-policy change for publication.
+JSON parsing and link checks alone do not qualify an example-policy change for
+publication: the real behavior evidence comes from the optional maintainer-only
+e2e suite below, which a maintainer runs with `--require` before example changes
+ship.
 
 ## Generated plugin reference layer
 
