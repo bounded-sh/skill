@@ -9,6 +9,8 @@ Pure AMM/LSMR prediction-market math (quotes only, no mutation).
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Read-only
 
 ### `PredictionMarketPlugin.applyFee`
@@ -23,10 +25,10 @@ Calculates the fee amount from a given amount using basis points (bps). Formula:
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `amount` | u64 | yes | no | - | The amount to calculate fee from. |
-| `feeBps` | u64 | yes | no | - | The fee in basis points (e.g., 100 = 1%). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `amount` | u64 | yes | - | The amount to calculate fee from. |
+| `feeBps` | u64 | yes | - | The fee in basis points (e.g., 100 = 1%). |
 
 ### `PredictionMarketPlugin.getCollateralOutAmm`
 
@@ -40,11 +42,11 @@ Calculates the amount of collateral out for a given amount of YES tokens in, usi
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `yesIn` | u64 | yes | no | - | The amount of YES tokens being sold. |
-| `collateralReserve` | u64 | yes | no | - | The current collateral reserve in the market. |
-| `yesSupply` | u64 | yes | no | - | The current YES token supply in the market. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `yesIn` | u64 | yes | - | The amount of YES tokens being sold. |
+| `collateralReserve` | u64 | yes | - | The current collateral reserve in the market. |
+| `yesSupply` | u64 | yes | - | The current YES token supply in the market. |
 
 ### `PredictionMarketPlugin.getNoCollateralOutLsmr`
 
@@ -58,12 +60,12 @@ Calculates the amount of collateral out for a given amount of NO tokens in, usin
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `noIn` | u64 | yes | no | - | The amount of NO tokens being sold. |
-| `yesSupply` | u64 | yes | no | - | The current YES token supply in the market. |
-| `noSupply` | u64 | yes | no | - | The current NO token supply in the market. |
-| `b` | u64 | yes | no | - | The LMSR liquidity parameter (b). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `noIn` | u64 | yes | - | The amount of NO tokens being sold. |
+| `yesSupply` | u64 | yes | - | The current YES token supply in the market. |
+| `noSupply` | u64 | yes | - | The current NO token supply in the market. |
+| `b` | u64 | yes | - | The LMSR liquidity parameter (b). |
 
 ### `PredictionMarketPlugin.getNoTokensOutLsmr`
 
@@ -77,12 +79,12 @@ Calculates the number of NO tokens out for a given amount of collateral in, usin
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `amountIn` | u64 | yes | no | - | The amount of collateral being deposited. |
-| `yesSupply` | u64 | yes | no | - | The current YES token supply in the market. |
-| `noSupply` | u64 | yes | no | - | The current NO token supply in the market. |
-| `b` | u64 | yes | no | - | The LMSR liquidity parameter (b). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `amountIn` | u64 | yes | - | The amount of collateral being deposited. |
+| `yesSupply` | u64 | yes | - | The current YES token supply in the market. |
+| `noSupply` | u64 | yes | - | The current NO token supply in the market. |
+| `b` | u64 | yes | - | The LMSR liquidity parameter (b). |
 
 ### `PredictionMarketPlugin.getYesCollateralOutLsmr`
 
@@ -96,12 +98,12 @@ Calculates the amount of collateral out for a given amount of YES tokens in, usi
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `yesIn` | u64 | yes | no | - | The amount of YES tokens being sold. |
-| `yesSupply` | u64 | yes | no | - | The current YES token supply in the market. |
-| `noSupply` | u64 | yes | no | - | The current NO token supply in the market. |
-| `b` | u64 | yes | no | - | The LMSR liquidity parameter (b). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `yesIn` | u64 | yes | - | The amount of YES tokens being sold. |
+| `yesSupply` | u64 | yes | - | The current YES token supply in the market. |
+| `noSupply` | u64 | yes | - | The current NO token supply in the market. |
+| `b` | u64 | yes | - | The LMSR liquidity parameter (b). |
 
 ### `PredictionMarketPlugin.getYesTokenOutAmm`
 
@@ -115,11 +117,11 @@ Calculates the number of YES tokens out for a given amount of collateral in, usi
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `amountIn` | u64 | yes | no | - | The amount of collateral being deposited. |
-| `collateralReserve` | u64 | yes | no | - | The current collateral reserve in the market. |
-| `yesSupply` | u64 | yes | no | - | The current YES token supply in the market. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `amountIn` | u64 | yes | - | The amount of collateral being deposited. |
+| `collateralReserve` | u64 | yes | - | The current collateral reserve in the market. |
+| `yesSupply` | u64 | yes | - | The current YES token supply in the market. |
 
 ### `PredictionMarketPlugin.getYesTokensOutLsmr`
 
@@ -133,9 +135,9 @@ Calculates the number of YES tokens out for a given amount of collateral in, usi
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `amountIn` | u64 | yes | no | - | The amount of collateral being deposited. |
-| `yesSupply` | u64 | yes | no | - | The current YES token supply in the market. |
-| `noSupply` | u64 | yes | no | - | The current NO token supply in the market. |
-| `b` | u64 | yes | no | - | The LMSR liquidity parameter (b). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `amountIn` | u64 | yes | - | The amount of collateral being deposited. |
+| `yesSupply` | u64 | yes | - | The current YES token supply in the market. |
+| `noSupply` | u64 | yes | - | The current NO token supply in the market. |
+| `b` | u64 | yes | - | The LMSR liquidity parameter (b). |

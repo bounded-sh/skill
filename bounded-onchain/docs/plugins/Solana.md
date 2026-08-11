@@ -9,6 +9,8 @@ Extended Solana primitives: account reads, PDAs/ATAs, named signers, raw invoke.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Confinement contract
 
 These primitives carry the raw-CPI security rules documented in [policy-primitives.md](../policy-primitives.md#solana): static executable targets only, every meta address must resolve to a concrete pubkey at build time, `signer: true` never grants a signer, and only the current user or an app PDA named via `signerName` may remain a CPI signer. A PDA `name` is the signing capability - do not replace it with the resolved address. `@Solana.createAccount` spending from the app escrow must be paired with caller funding in the same hook.
@@ -26,11 +28,11 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `name` | string | yes | no | - | The app-scoped account name; the created account is Bounded_pda(appId, name), also addressable via @Solana.signerAccount(name). |
-| `space` | number | yes | no | - | The account data size in bytes (rent-exempt minimum computed on-chain via the Rent sysvar; see @Solana.rentExemption for budgeting). |
-| `ownerProgramId` | string | yes | no | - | The executable program that will own the account. Must be a literal or @Solana well-known program constant. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `name` | string | yes | - | The app-scoped account name; the created account is Bounded_pda(appId, name), also addressable via @Solana.signerAccount(name). |
+| `space` | number | yes | - | The account data size in bytes (rent-exempt minimum computed on-chain via the Rent sysvar; see @Solana.rentExemption for budgeting). |
+| `ownerProgramId` | string | yes | - | The executable program that will own the account. Must be a literal or @Solana well-known program constant. |
 
 ### `Solana.invoke`
 
@@ -41,11 +43,11 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: SAFE-TARGET-ONLY.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `programId` | string | yes | no | - | The executable target. Must be an address literal or @Solana well-known program constant; Bounded, loaders, and signature precompiles are denied. |
-| `metas` | array | yes | no | - | Account metas in exact callee order. signer:true may name only the current user; signerName ('@escrow' or a named app account) elevates only that app's recomputed PDA. |
-| `data` | bytes | yes | no | - | Instruction data as Bytes, built on-chain via @Bytes.* (e.g. @Bytes.concat(@Bytes.anchorDiscriminator('global','increment'), @Bytes.u64(@newData.amount))). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `programId` | string | yes | - | The executable target. Must be an address literal or @Solana well-known program constant; Bounded, loaders, and signature precompiles are denied. |
+| `metas` | array | yes | - | Account metas in exact callee order. signer:true may name only the current user; signerName ('@escrow' or a named app account) elevates only that app's recomputed PDA. |
+| `data` | bytes | yes | - | Instruction data as Bytes, built on-chain via @Bytes.* (e.g. @Bytes.concat(@Bytes.anchorDiscriminator('global','increment'), @Bytes.u64(@newData.amount))). |
 
 ## Read-only
 
@@ -59,9 +61,9 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `object`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `addr` | string | yes | no | - | The account address to read |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `addr` | string | yes | - | The account address to read |
 
 ### `Solana.ata`
 
@@ -73,10 +75,10 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `owner` | string | yes | no | - | The token account owner address |
-| `mint` | string | yes | no | - | The token mint address |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `owner` | string | yes | - | The token account owner address |
+| `mint` | string | yes | - | The token mint address |
 
 ### `Solana.data`
 
@@ -88,11 +90,11 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `addr` | string | yes | no | - | The account address to read data from |
-| `offset` | number | yes | no | - | Byte offset into the account data |
-| `len` | number | yes | no | - | Number of bytes to read |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `addr` | string | yes | - | The account address to read data from |
+| `offset` | number | yes | - | Byte offset into the account data |
+| `len` | number | yes | - | Number of bytes to read |
 
 ### `Solana.lamports`
 
@@ -104,9 +106,9 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `addr` | string | yes | no | - | The account address to read the lamport balance of |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `addr` | string | yes | - | The account address to read the lamport balance of |
 
 ### `Solana.pda`
 
@@ -118,10 +120,10 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `seedsArray` | array | yes | no | - | Array of seeds (string\|address\|bytes\|non-negative number), max 16; string seeds are utf8-encoded (max 32 bytes), numbers encode as 8-byte LE u64. |
-| `programId` | string | yes | no | - | The program id to derive the PDA for |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `seedsArray` | array | yes | - | Array of seeds (string\|address\|bytes\|non-negative number), max 16; string seeds are utf8-encoded (max 32 bytes), numbers encode as 8-byte LE u64. |
+| `programId` | string | yes | - | The program id to derive the PDA for |
 
 ### `Solana.pdaBump`
 
@@ -133,10 +135,10 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `seedsArray` | array | yes | no | - | Array of seeds (string\|address\|bytes\|non-negative number), max 16 - identical encoding rules to @Solana.pda. |
-| `programId` | string | yes | no | - | The program id to derive the PDA bump for |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `seedsArray` | array | yes | - | Array of seeds (string\|address\|bytes\|non-negative number), max 16 - identical encoding rules to @Solana.pda. |
+| `programId` | string | yes | - | The program id to derive the PDA bump for |
 
 ### `Solana.rentExemption`
 
@@ -148,9 +150,9 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `space` | number | yes | no | - | The account data size in bytes |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `space` | number | yes | - | The account data size in bytes |
 
 ### `Solana.signerAccount`
 
@@ -162,9 +164,9 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `name` | string | yes | no | - | The app-scoped account name |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `name` | string | yes | - | The app-scoped account name |
 
 ## Built-in values
 

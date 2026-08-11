@@ -41,7 +41,7 @@ test('high-value pre-reorganization guidance remains at full fidelity', () => {
     assert.ok(trading.includes(expected), `onchain-trading.md lost guidance: ${expected}`)
   }
   assert.ok(!trading.includes('every documented plugin `source`/owner argument'))
-  assert.ok(trading.includes("only when that function's argument contract lists"))
+  assert.ok(trading.includes("only when that function's existing manifest description lists"))
 
   const onchainSkill = read('bounded-onchain/SKILL.md')
   assert.ok(onchainSkill.includes('Do not recommend an `onchain: false` view for an offchain-only plugin read'))
@@ -57,7 +57,7 @@ test('high-value pre-reorganization guidance remains at full fidelity', () => {
 const FIXTURES = [
   // custody / PDA class (the CCA failure class)
   { router: 'bounded-onchain/SKILL.md', keywords: ['custody', 'named PDA'], target: 'docs/custody-and-pdas.md' },
-  { router: 'bounded-onchain/SKILL.md', keywords: ['signature', 'argument contract'], target: 'docs/plugins.md' },
+  { router: 'bounded-onchain/SKILL.md', keywords: ['signature', 'manifest argument'], target: 'docs/plugins.md' },
   { router: 'bounded-onchain/SKILL.md', keywords: ['escrow', 'vault', 'treasury'], target: 'docs/examples.md' },
   { router: 'bounded-onchain/SKILL.md', keywords: ['rent', 'transaction limits'], target: 'docs/onchain-troubleshooting.md' },
   { router: 'bounded-onchain/SKILL.md', keywords: ['Randomness', 'VRF'], target: 'docs/randomness.md' },

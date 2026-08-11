@@ -9,6 +9,8 @@ Pyth price reads by 64-hex feed id.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Read-only
 
 ### `PriceFeedPlugin.getPriceFeed`
@@ -21,10 +23,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PYTH-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `baseFeedId` | string | yes | no | - | The base asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.SOL) or a 64-character hex Pyth feed id. A plain symbol string like 'SOL' is not a valid feed id. |
-| `quoteFeedId` | string | no | no | - | Optional quote asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.BTC) or a 64-character hex Pyth feed id. Defaults to USD if not provided. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `baseFeedId` | string | yes | - | The base asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.SOL) or a 64-character hex Pyth feed id. A plain symbol string like 'SOL' is not a valid feed id. |
+| `quoteFeedId` | string | no | - | Optional quote asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.BTC) or a 64-character hex Pyth feed id. Defaults to USD if not provided. |
 
 ## Built-in values
 

@@ -46,16 +46,24 @@ test('snapshot status matches the capability table row for row', () => {
   }
 })
 
-test('every signer argument has classified accepted forms and page-level custody guidance', () => {
-  for (const ns of catalog.namespaces) {
-    const page = readFileSync(path.join(root, `bounded-onchain/docs/plugins/${ns.namespace}.md`), 'utf8')
-    for (const fn of ns.functions) {
-      for (const arg of fn.args) {
-        if (arg.signer !== true) continue
-        assert.ok(arg.forms?.length, `${fn.callName}.${arg.name}: signer arg with no accepted-forms classification`)
-      }
-      if (fn.args.some((a) => a.signer)) {
-        assert.ok(page.includes('custody-and-pdas.md'), `${ns.namespace}.md: signing functions must link the custody guide`)
+test('snapshot preserves only signer markers declared by existing manifests', () => {
+  const byCall = new Map(allFunctions.map((fn) => [fn.callName, fn]))
+  const signer = (callName, argName) =>
+    byCall.get(callName)?.args.find((arg) => arg.name === argName)?.signer
+
+  assert.equal(signer('@TokenPlugin.transfer', 'sourceAddress'), true)
+  assert.equal(signer('@CPI.memoNote', 'source'), true)
+  assert.equal(signer('@CPI.dlmmSwap', 'source'), null)
+  assert.equal(signer('@PumpFunPlugin.createToken', 'creator'), null)
+
+  for (const fn of allFunctions) {
+    for (const arg of fn.args) {
+      assert.ok(arg.signer === true || arg.signer === false || arg.signer === null,
+        `${fn.callName}.${arg.name}: invalid signer marker`)
+      assert.ok(!Object.hasOwn(arg, 'forms'), `${fn.callName}.${arg.name}: synthetic accepted forms leaked into catalog`)
+      for (const [fieldName, field] of Object.entries(arg.fields ?? {})) {
+        assert.ok(!Object.hasOwn(field, 'forms'),
+          `${fn.callName}.${arg.name}.${fieldName}: synthetic accepted forms leaked into catalog`)
       }
     }
   }
@@ -100,49 +108,28 @@ test('execution contexts match the production plane matrix', () => {
   ])
 })
 
-test('address and signer metadata is explicit and never inferred from prose', () => {
+test('extractor does not load or infer an argument-contract overlay', () => {
   const extractor = readFileSync(path.join(root, 'scripts/extract-plugin-catalog.mjs'), 'utf8')
   assert.ok(!extractor.includes('classifyForms'), 'extractor still classifies forms from descriptions')
-
-  const validForms = new Set(['wallet', 'escrow-sentinel', 'account-id', 'pubkey', 'account-id-only'])
-  for (const fn of allFunctions) {
-    for (const arg of fn.args) {
-      if (arg.forms) {
-        assert.equal(typeof arg.signer, 'boolean', `${fn.callName}.${arg.name}: forms need explicit signer metadata`)
-        assert.ok(['string', 'address'].includes(arg.type), `${fn.callName}.${arg.name}: non-address arg carries top-level forms`)
-        for (const form of arg.forms) assert.ok(validForms.has(form), `${fn.callName}.${arg.name}: unknown form ${form}`)
-      }
-      if (arg.signer === true) assert.ok(arg.forms?.length, `${fn.callName}.${arg.name}: signer has no forms`)
-      for (const [fieldName, field] of Object.entries(arg.fields ?? {})) {
-        if (!field.forms) continue
-        assert.equal(field.type, 'string', `${fn.callName}.${arg.name}.${fieldName}: forms require string field`)
-        assert.equal(typeof field.signer, 'boolean', `${fn.callName}.${arg.name}.${fieldName}: signer must be explicit`)
-      }
-    }
-  }
-
-  const create2022 = allFunctions.find((fn) => fn.callName === '@TokenPlugin.createToken2022')
-  const extensions = create2022.args.find((arg) => arg.name === 'extensions')
-  assert.equal(extensions.forms, null, 'Token-2022 extensions object must not inherit nested address forms')
-  for (const field of ['transferFeeAuthority', 'withdrawWithheldAuthority', 'interestRateAuthority', 'permanentDelegate']) {
-    assert.deepEqual(extensions.fields[field].forms, ['wallet', 'escrow-sentinel', 'account-id'])
-    assert.equal(extensions.fields[field].signer, false)
-  }
+  assert.ok(!extractor.includes('plugin-argument-contracts'), 'extractor still imports the removed overlay')
+  assert.ok(!extractor.includes('acceptedForms'), 'extractor still consumes synthetic accepted-form metadata')
 })
 
-test('generated custody prose is function-specific and has no fallback signer claim', () => {
+test('generated pages distinguish declared signers from missing metadata', () => {
   const index = readFileSync(path.join(root, 'bounded-onchain/docs/plugins.md'), 'utf8')
-  assert.ok(index.includes('Custody forms are function-specific.'))
-  assert.ok(!index.includes('Custody rule for every'))
+  assert.ok(index.includes('signer markers come directly from existing monorepo manifests'))
+  assert.ok(index.includes('means the manifest makes no claim'))
 
   const pages = catalog.namespaces.map((ns) =>
     readFileSync(path.join(root, `bounded-onchain/docs/plugins/${ns.namespace}.md`), 'utf8'))
   const combined = pages.join('\n')
-  assert.ok(!combined.includes('The manifest does not declare signer metadata'))
+  assert.ok(!combined.includes('| Signs |'))
+  assert.ok(!combined.includes('| Accepts |'))
+  assert.ok(!combined.includes('a wallet form requires that wallet\'s signature'))
 
   const token = readFileSync(path.join(root, 'bounded-onchain/docs/plugins/TokenPlugin.md'), 'utf8')
-  assert.match(token, /`destinationAddress`[^\n]+\| no \|/)
-  assert.ok(!token.includes('`destinationAddress` signs:'))
+  assert.match(token, /`sourceAddress`[^\n]+\| \*\*yes\*\* \|/)
+  assert.match(token, /`destinationAddress`[^\n]+\| - \|/)
 })
 
 test('the index lists every callable function and every capability-only row', () => {

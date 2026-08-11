@@ -9,6 +9,8 @@ Named app PDAs (per-entity escrow/vault accounts) - create them and read their a
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Custody in one paragraph
 
 `createAccount(id)` gives the app its own program-signed Solana account (a named PDA) per id. Any documented plugin `source`/`owner`/destination argument that receives a non-pubkey string resolves to that same PDA, and the Bounded program signs for it. This is the third custody model next to user wallets and the shared `@contract.address` escrow; use it whenever separate pots of funds must not share a balance. Full model: [custody and PDAs](../custody-and-pdas.md).
@@ -42,9 +44,9 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `accountId` | string | yes | no | account id only (non-pubkey string) | The id of the account to create. This should be a unique string within your entire application. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `accountId` | string | yes | - | The id of the account to create. This should be a unique string within your entire application. |
 
 ## Read-only
 
@@ -58,6 +60,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING; DEVNET-ESCROW-SENTINEL.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `accountId` | string | yes | no | account id only (non-pubkey string) | The id of the account to get the address of. Must be a string account id (the same unique string you passed to createAccount). Do not pass @contract.address here - it is an on-chain address, not a string, and the on-chain interpreter rejects it. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `accountId` | string | yes | - | The id of the account to get the address of. Must be a string account id (the same unique string you passed to createAccount). Do not pass @contract.address here - it is an on-chain address, not a string, and the on-chain interpreter rejects it. |

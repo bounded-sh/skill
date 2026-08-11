@@ -73,13 +73,11 @@ function parseCapabilityRows() {
 // ---------------------------------------------------------------------------
 const require_ = createRequire(path.join(solLayer, 'package.json'))
 const pluginDirs = readdirSync(path.join(solLayer, 'src')).filter((d) => d.endsWith('-plugin-stuff')).sort()
-const { applyPluginArgumentContracts } = require_(path.join(solLayer, 'src/plugin-argument-contracts.js'))
 
 const manifestEntries = pluginDirs.flatMap((dir) => {
   const manifestFile = readdirSync(path.join(solLayer, 'src', dir)).find((f) => f.includes('manifest'))
   return manifestFile ? [{ dir, manifest: require_(path.join(solLayer, 'src', dir, manifestFile)) }] : []
 })
-applyPluginArgumentContracts(manifestEntries.map(({ manifest }) => manifest))
 
 // Load the exact source objects exported by the two canonical offchain manifests.
 // These files are object literals with `export default`; evaluating that literal keeps
@@ -131,15 +129,14 @@ for (const { manifest } of manifestEntries) {
           name: arg.name,
           type: arg.type ?? null,
           optional: !!arg.optional,
-          // The production validator treats a missing signer marker as false.
-          signer: !!arg.signer,
-          forms: arg.acceptedForms ?? null,
+          // Preserve only metadata already declared by the owning manifest. Missing is
+          // not rendered as "no": it means the manifest does not make a signer claim.
+          signer: typeof arg.signer === 'boolean' ? arg.signer : null,
           description: publicText(arg.description),
           fields: arg.fields ? Object.fromEntries(Object.entries(arg.fields).map(([name, field]) => [name, {
             type: field.type ?? null,
             optional: typeof field.optional === 'boolean' ? field.optional : null,
-            signer: !!field.signer,
-            forms: field.acceptedForms ?? null,
+            signer: typeof field.signer === 'boolean' ? field.signer : null,
             description: field.description ? publicText(field.description) : null,
           }])) : null,
         })),
@@ -196,7 +193,7 @@ try {
 } catch { /* extraction still valid without git metadata */ }
 
 const catalog = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedBy: 'scripts/extract-plugin-catalog.mjs',
   source: {
     monorepoCommit,

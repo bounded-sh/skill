@@ -16,4 +16,4 @@ Complete, deployable policies indexed by what you are building. Every page carri
 | cp-AMM liquidity positions per user | [liquidity positions](examples/cp-amm-liquidity-positions.md) |
 | A marketplace with listings, orders, and a spend cap (offchain) | [marketplace](../../bounded-backend/docs/examples/marketplace.md) |
 
-Before adapting any example: the custody model behind every funds-moving hook is in [custody and PDAs](custody-and-pdas.md), exact plugin argument contracts are in the [plugin catalog](plugins.md), and the live support state of each function is in [solana-capability-status.md](solana-capability-status.md).
+Before adapting any example: the custody model behind every funds-moving hook is in [custody and PDAs](custody-and-pdas.md), manifest plugin argument details are in the [plugin catalog](plugins.md), and the live support state of each function is in [solana-capability-status.md](solana-capability-status.md).

@@ -60,7 +60,7 @@ path that Solana rejects.
 
 In Solana policy bytecode, `@contract.address` evaluates to the deployed Bounded Solana program ID.
 It is an internal sentinel that supported built-in plugin handlers recognize when their manifest documents an app-escrow source or authority.
-Those handlers replace the sentinel with the current app's escrow PDA and apply the plugin's signer contract.
+Those handlers replace the sentinel with the current app's escrow PDA and apply the plugin's existing authority handling.
 The value itself is not the escrow PDA.
 
 - A direct policy query whose expression is `@contract.address` returns the Bounded program ID.

@@ -9,6 +9,8 @@ SPL and Token-2022 tokens: transfers, mints, burns, balances, supply.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Conventions for every call
 
 - **Custody:** `sourceAddress`/`destinationAddress` follow the uniform rule - wallet address (that wallet signs), `@contract.address` (shared app escrow, program-signed), or an account id (named app PDA, program-signed). See [custody and PDAs](../custody-and-pdas.md).
@@ -30,14 +32,11 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `mintAddress` | string | yes | no | - | The mint address of the token to burn |
-| `amount` | number | yes | no | - | The amount of tokens to burn with decimals |
-
-- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `mintAddress` | string | yes | - | The mint address of the token to burn |
+| `amount` | number | yes | - | The amount of tokens to burn with decimals |
 
 ### `TokenPlugin.createToken`
 
@@ -48,13 +47,13 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
-| `name` | string | yes | no | - | The name of the token |
-| `symbol` | string | yes | no | - | The symbol of the token |
-| `uri` | string | yes | no | - | The URI of the token image |
-| `decimals` | number | yes | no | - | The number of decimals for the token |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenId` | string | yes | - | Unique identifier for the token within the app |
+| `name` | string | yes | - | The name of the token |
+| `symbol` | string | yes | - | The symbol of the token |
+| `uri` | string | yes | - | The URI of the token image |
+| `decimals` | number | yes | - | The number of decimals for the token |
 
 ### `TokenPlugin.createToken2022`
 
@@ -65,27 +64,27 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
-| `name` | string | yes | no | - | The name of the token |
-| `symbol` | string | yes | no | - | The symbol of the token |
-| `uri` | string | yes | no | - | The URI of the token metadata |
-| `decimals` | number | yes | no | - | The number of decimals for the token |
-| `extensions` | object | no | no | - | Optional extensions object. Fields: nonTransferable (true\|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenId` | string | yes | - | Unique identifier for the token within the app |
+| `name` | string | yes | - | The name of the token |
+| `symbol` | string | yes | - | The symbol of the token |
+| `uri` | string | yes | - | The URI of the token metadata |
+| `decimals` | number | yes | - | The number of decimals for the token |
+| `extensions` | object | no | - | Optional extensions object. Fields: nonTransferable (true\|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID. |
 
 Fields of `extensions`:
 
-| Field | Type | Required | Signs | Accepts |
+| Field | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `nonTransferable` | boolean | conditional | no | - |
-| `feeBasisPoints` | number | conditional | no | - |
-| `maxFee` | number | conditional | no | - |
-| `transferFeeAuthority` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
-| `withdrawWithheldAuthority` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
-| `interestRate` | number | conditional | no | - |
-| `interestRateAuthority` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
-| `permanentDelegate` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
+| `nonTransferable` | boolean | conditional | - |  |
+| `feeBasisPoints` | number | conditional | - |  |
+| `maxFee` | number | conditional | - |  |
+| `transferFeeAuthority` | string | conditional | - |  |
+| `withdrawWithheldAuthority` | string | conditional | - |  |
+| `interestRate` | number | conditional | - |  |
+| `interestRateAuthority` | string | conditional | - |  |
+| `permanentDelegate` | string | conditional | - |  |
 
 ### `TokenPlugin.mint`
 
@@ -96,13 +95,13 @@ Fields of `extensions`:
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
-| `name` | string | yes | no | - | The name of the token |
-| `symbol` | string | yes | no | - | The symbol of the token |
-| `destinationAddress` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `amount` | number | yes | no | - | The amount of tokens to mint with decimals |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenId` | string | yes | - | Unique identifier for the token within the app |
+| `name` | string | yes | - | The name of the token |
+| `symbol` | string | yes | - | The symbol of the token |
+| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `amount` | number | yes | - | The amount of tokens to mint with decimals |
 
 ### `TokenPlugin.transfer`
 
@@ -113,15 +112,12 @@ Fields of `extensions`:
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `destinationAddress` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `mintAddress` | string | yes | no | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
-| `amount` | number | yes | no | - | The amount of tokens to transfer with decimals |
-
-- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `mintAddress` | string | yes | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
+| `amount` | number | yes | - | The amount of tokens to transfer with decimals |
 
 ### `TokenPlugin.transferWholeTokens`
 
@@ -132,15 +128,12 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `destinationAddress` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `mintAddress` | string | yes | no | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
-| `amount` | number | yes | no | - | The amount of tokens to transfer without decimals |
-
-- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `mintAddress` | string | yes | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
+| `amount` | number | yes | - | The amount of tokens to transfer without decimals |
 
 ### `TokenPlugin.withdrawWithheldTokens`
 
@@ -151,15 +144,12 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `mintAddress` | string | yes | no | - | The mint address of the Token2022 token. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to derive it. |
-| `withdrawAuthority` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The withdraw withheld authority that will sign. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get this. Supports @contract.address, account ID, or external wallet. |
-| `feeReceiverOwner` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The owner address for the fee receiver token account (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID. |
-| `sourceOwner` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The owner address for the source token account to harvest withheld fees from (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID. |
-
-- `withdrawAuthority` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mintAddress` | string | yes | - | The mint address of the Token2022 token. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to derive it. |
+| `withdrawAuthority` | string | yes | **yes** | The withdraw withheld authority that will sign. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get this. Supports @contract.address, account ID, or external wallet. |
+| `feeReceiverOwner` | string | yes | - | The owner address for the fee receiver token account (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID. |
+| `sourceOwner` | string | yes | - | The owner address for the source token account to harvest withheld fees from (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID. |
 
 ## Read-only
 
@@ -173,10 +163,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `walletAddress` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the wallet, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) to get the balance of |
-| `mintAddress` | string | yes | no | - | The mint address of the token to get the balance of |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `walletAddress` | string | yes | - | The address of the wallet, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) to get the balance of |
+| `mintAddress` | string | yes | - | The mint address of the token to get the balance of |
 
 ### `TokenPlugin.getDecimals`
 
@@ -188,9 +178,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `mintAddress` | string | yes | no | - | The mint address of the token to get the decimals of |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mintAddress` | string | yes | - | The mint address of the token to get the decimals of |
 
 ### `TokenPlugin.getSupply`
 
@@ -202,9 +192,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `mintAddress` | string | yes | no | - | The mint address of the token to get the supply of |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mintAddress` | string | yes | - | The mint address of the token to get the supply of |
 
 ### `TokenPlugin.getTokenMintAddress`
 
@@ -217,11 +207,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Accepted argument counts: 1, 3
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
-| `name` | string | no | no | - | The name of the token (optional, omit for id-only seed mode) |
-| `symbol` | string | no | no | - | The symbol of the token (optional, omit for id-only seed mode) |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenId` | string | yes | - | Unique identifier for the token within the app |
+| `name` | string | no | - | The name of the token (optional, omit for id-only seed mode) |
+| `symbol` | string | no | - | The symbol of the token (optional, omit for id-only seed mode) |
 
 ### `TokenPlugin.getWithdrawWithheldAuthority`
 
@@ -233,9 +223,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `mintAddress` | string | yes | no | - | The mint address of the Token2022 token with TransferFee extension |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mintAddress` | string | yes | - | The mint address of the Token2022 token with TransferFee extension |
 
 ## Built-in values
 

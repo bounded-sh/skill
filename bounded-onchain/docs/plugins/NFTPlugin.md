@@ -9,6 +9,8 @@ Metaplex Core NFTs: collections, mints, transfers, burns, royalties.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Conventions for every call
 
 - **Custody:** `sourceAddress`/`destinationAddress` follow the uniform rule - wallet, `@contract.address` escrow, or account id (named app PDA). An escrowed NFT sale holds the asset in a named PDA exactly like an escrowed token balance. See [custody and PDAs](../custody-and-pdas.md).
@@ -28,14 +30,11 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `mintAddress` | string | yes | no | - | The mint address of the NFT to burn |
-| `collectionAddress` | string | no | no | - | Optional: The address of the collection to burn the NFT from. It is required if the NFT belongs to a collection. |
-
-- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `mintAddress` | string | yes | - | The mint address of the NFT to burn |
+| `collectionAddress` | string | no | - | Optional: The address of the collection to burn the NFT from. It is required if the NFT belongs to a collection. |
 
 ### `NFTPlugin.createCollection`
 
@@ -46,11 +45,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `collectionId` | string | yes | no | - | Unique identifier for the collection within the app |
-| `name` | string | yes | no | - | The name of the collection |
-| `metadataUri` | string | yes | no | - | The URI of the collection metadata |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `collectionId` | string | yes | - | Unique identifier for the collection within the app |
+| `name` | string | yes | - | The name of the collection |
+| `metadataUri` | string | yes | - | The URI of the collection metadata |
 
 ### `NFTPlugin.mintNFT`
 
@@ -61,13 +60,13 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `nftId` | string | yes | no | - | Unique identifier for the NFT within the app |
-| `name` | string | yes | no | - | The name of the NFT |
-| `metadataUri` | string | yes | no | - | The URI of the NFT metadata |
-| `destinationAddress` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `collectionAddress` | string | no | no | - | Optional: The address of the collection to create the NFT in. It is required if the NFT belongs to a collection. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `nftId` | string | yes | - | Unique identifier for the NFT within the app |
+| `name` | string | yes | - | The name of the NFT |
+| `metadataUri` | string | yes | - | The URI of the NFT metadata |
+| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `collectionAddress` | string | no | - | Optional: The address of the collection to create the NFT in. It is required if the NFT belongs to a collection. |
 
 ### `NFTPlugin.transfer`
 
@@ -78,15 +77,12 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `destinationAddress` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `mintAddress` | string | yes | no | - | The mint address of the NFT to transfer |
-| `collectionAddress` | string | no | no | - | Optional: The address of the collection to transfer the NFT to. It is required if the NFT belongs to a collection. |
-
-- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `mintAddress` | string | yes | - | The mint address of the NFT to transfer |
+| `collectionAddress` | string | no | - | Optional: The address of the collection to transfer the NFT to. It is required if the NFT belongs to a collection. |
 
 ### `NFTPlugin.updateCollectionRoyalties`
 
@@ -97,15 +93,12 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `collectionAddress` | string | yes | no | - | The address of the collection whose royalties are being updated |
-| `updateAuthority` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The update authority address. For Bounded-managed collections this is ignored (PDA signs). For externally-managed collections, pass the wallet/account that owns the update authority. |
-| `basisPoints` | number | yes | no | - | The new royalty amount in basis points (e.g. 500 = 5%, max 10000 = 100%) |
-| `creators` | array | no | no | - | Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved. |
-
-- `updateAuthority` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `collectionAddress` | string | yes | - | The address of the collection whose royalties are being updated |
+| `updateAuthority` | string | yes | **yes** | The update authority address. For Bounded-managed collections this is ignored (PDA signs). For externally-managed collections, pass the wallet/account that owns the update authority. |
+| `basisPoints` | number | yes | - | The new royalty amount in basis points (e.g. 500 = 5%, max 10000 = 100%) |
+| `creators` | array | no | - | Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved. |
 
 ### `NFTPlugin.updateRoyalties`
 
@@ -116,16 +109,13 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `nftAddress` | string | yes | no | - | The mint address of the NFT whose royalties are being updated |
-| `collectionAddress` | string | no | no | - | Optional: The address of the collection the NFT belongs to. Pass null for standalone NFTs. |
-| `updateAuthority` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The update authority address. For Bounded-managed assets this is ignored (PDA signs). For externally-managed assets, pass the wallet/account that owns the update authority. |
-| `basisPoints` | number | yes | no | - | The new royalty amount in basis points (e.g. 500 = 5%, max 10000 = 100%) |
-| `creators` | array | no | no | - | Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved. |
-
-- `updateAuthority` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `nftAddress` | string | yes | - | The mint address of the NFT whose royalties are being updated |
+| `collectionAddress` | string | no | - | Optional: The address of the collection the NFT belongs to. Pass null for standalone NFTs. |
+| `updateAuthority` | string | yes | **yes** | The update authority address. For Bounded-managed assets this is ignored (PDA signs). For externally-managed assets, pass the wallet/account that owns the update authority. |
+| `basisPoints` | number | yes | - | The new royalty amount in basis points (e.g. 500 = 5%, max 10000 = 100%) |
+| `creators` | array | no | - | Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved. |
 
 ## Read-only
 
@@ -139,10 +129,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `collectionId` | string | yes | no | - | Unique identifier for the collection within the app |
-| `name` | string | yes | no | - | The name of the collection |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `collectionId` | string | yes | - | Unique identifier for the collection within the app |
+| `name` | string | yes | - | The name of the collection |
 
 ### `NFTPlugin.getOwner`
 
@@ -154,9 +144,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `nftAddress` | string | yes | no | - | The mint/asset address of the NFT to look up the owner for |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `nftAddress` | string | yes | - | The mint/asset address of the NFT to look up the owner for |
 
 ### `NFTPlugin.getTokenMintAddress`
 
@@ -168,10 +158,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `nftId` | string | yes | no | - | Unique identifier for the NFT within the app |
-| `name` | string | yes | no | - | The name of the NFT |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `nftId` | string | yes | - | Unique identifier for the NFT within the app |
+| `name` | string | yes | - | The name of the NFT |
 
 ### `NFTPlugin.getUpdateAuthority`
 
@@ -183,6 +173,6 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `address` | string | yes | no | - | The address of an NFT asset or collection to look up the update authority for |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `address` | string | yes | - | The address of an NFT asset or collection to look up the update authority for |

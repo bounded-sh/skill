@@ -9,6 +9,8 @@ Phoenix leveraged perps: registration, collateral, positions.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Devnet status
 
 Phoenix is unsupported on current devnet (`NO-DEVNET-PHOENIX`); this page documents the discovered source contract, not a runnable devnet flow. The first argument to every trading function is the uniform custody `source` (wallet, `@contract.address` escrow, or account id); collateral is PhUSD bridged via the ember calls; sizes are base lots. The full trading model, reservation patterns, and risk invariants are in [onchain-trading.md](../onchain-trading.md).
@@ -26,16 +28,13 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `market` | string | yes | no | - | Market orderbook pubkey |
-| `sizeBaseLots` | number | yes | no | - | Size to close in base lots |
-| `side` | number | yes | no | - | Side: 0=Bid (close short position), 1=Ask (close long position) |
-| `subaccountIndex` | number | no | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
+| `market` | string | yes | - | Market orderbook pubkey |
+| `sizeBaseLots` | number | yes | - | Size to close in base lots |
+| `side` | number | yes | - | Side: 0=Bid (close short position), 1=Ask (close long position) |
+| `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
 
 ### `PhoenixPerpsPlugin.depositFunds`
 
@@ -46,14 +45,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `amount` | number | yes | no | - | Amount of Phoenix tokens to deposit (in smallest units) |
-| `subaccountIndex` | number | no | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
+| `amount` | number | yes | - | Amount of Phoenix tokens to deposit (in smallest units) |
+| `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
 
 ### `PhoenixPerpsPlugin.emberDeposit`
 
@@ -64,13 +60,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `usdcAmount` | number | yes | no | - | Amount of USDC to convert (in smallest units) |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
+| `usdcAmount` | number | yes | - | Amount of USDC to convert (in smallest units) |
 
 ### `PhoenixPerpsPlugin.emberWithdraw`
 
@@ -81,13 +74,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `amount` | number | no | no | - | Amount of Phoenix tokens to convert to USDC. Omit to withdraw all. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
+| `amount` | number | no | - | Amount of Phoenix tokens to convert to USDC. Omit to withdraw all. |
 
 ### `PhoenixPerpsPlugin.placeLong`
 
@@ -98,15 +88,12 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `market` | string | yes | no | - | Market orderbook pubkey |
-| `sizeBaseLots` | number | yes | no | - | Size of the order in base lots |
-| `subaccountIndex` | number | no | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
+| `market` | string | yes | - | Market orderbook pubkey |
+| `sizeBaseLots` | number | yes | - | Size of the order in base lots |
+| `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
 
 ### `PhoenixPerpsPlugin.placeShort`
 
@@ -117,15 +104,12 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `market` | string | yes | no | - | Market orderbook pubkey |
-| `sizeBaseLots` | number | yes | no | - | Size of the order in base lots |
-| `subaccountIndex` | number | no | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
+| `market` | string | yes | - | Market orderbook pubkey |
+| `sizeBaseLots` | number | yes | - | Size of the order in base lots |
+| `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
 
 ### `PhoenixPerpsPlugin.registerTrader`
 
@@ -136,13 +120,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader authority address (wallet, @contract.address for escrow, or account ID) |
-| `subaccountIndex` | number | no | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader authority address (wallet, @contract.address for escrow, or account ID) |
+| `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
 
 ### `PhoenixPerpsPlugin.syncParentToChild`
 
@@ -153,13 +134,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader authority address (wallet, @contract.address for escrow, or account ID) |
-| `subaccountIndex` | number | yes | no | - | Isolated subaccount index to activate. Must be 1-100. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader authority address (wallet, @contract.address for escrow, or account ID) |
+| `subaccountIndex` | number | yes | - | Isolated subaccount index to activate. Must be 1-100. |
 
 ### `PhoenixPerpsPlugin.transferToCross`
 
@@ -170,13 +148,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader authority address (wallet, @contract.address for escrow, or account ID) |
-| `subaccountIndex` | number | yes | no | - | Isolated subaccount index to drain back into cross. Must be 1-100. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader authority address (wallet, @contract.address for escrow, or account ID) |
+| `subaccountIndex` | number | yes | - | Isolated subaccount index to drain back into cross. Must be 1-100. |
 
 ### `PhoenixPerpsPlugin.transferToIsolated`
 
@@ -187,14 +162,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader authority address (wallet, @contract.address for escrow, or account ID) |
-| `amount` | number | yes | no | - | Amount of Phoenix tokens to move from cross to isolated (in smallest units) |
-| `subaccountIndex` | number | yes | no | - | Isolated subaccount index to fund. Must be 1-100. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader authority address (wallet, @contract.address for escrow, or account ID) |
+| `amount` | number | yes | - | Amount of Phoenix tokens to move from cross to isolated (in smallest units) |
+| `subaccountIndex` | number | yes | - | Isolated subaccount index to fund. Must be 1-100. |
 
 ### `PhoenixPerpsPlugin.withdrawFunds`
 
@@ -205,14 +177,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `amount` | number | yes | no | - | Amount of Phoenix tokens to withdraw (in smallest units) |
-| `subaccountIndex` | number | no | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
+| `amount` | number | yes | - | Amount of Phoenix tokens to withdraw (in smallest units) |
+| `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
 
 ## Read-only
 
@@ -226,10 +195,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | no | - | Trader authority address |
-| `subaccountIndex` | number | no | no | - | Subaccount index (default 0). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Trader authority address |
+| `subaccountIndex` | number | no | - | Subaccount index (default 0). |
 
 ### `PhoenixPerpsPlugin.getMarkPrice`
 
@@ -241,9 +210,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `market` | string | yes | no | - | Market orderbook pubkey |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `market` | string | yes | - | Market orderbook pubkey |
 
 ### `PhoenixPerpsPlugin.getPortfolioValue`
 
@@ -255,10 +224,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | no | - | Trader authority address |
-| `subaccountIndex` | number | no | no | - | Subaccount index (default 0). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Trader authority address |
+| `subaccountIndex` | number | no | - | Subaccount index (default 0). |
 
 ### `PhoenixPerpsPlugin.getPositionSize`
 
@@ -270,11 +239,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | no | - | Trader authority address |
-| `market` | string | yes | no | - | Market orderbook pubkey - e.g. 71Si24E4uc3oCaPbPZTozC1ptSNNqygjjebxSmErSsC2 for SOL-PERP. Pass the pubkey, not the symbol. |
-| `subaccountIndex` | number | no | no | - | Subaccount index (default 0). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Trader authority address |
+| `market` | string | yes | - | Market orderbook pubkey - e.g. 71Si24E4uc3oCaPbPZTozC1ptSNNqygjjebxSmErSsC2 for SOL-PERP. Pass the pubkey, not the symbol. |
+| `subaccountIndex` | number | no | - | Subaccount index (default 0). |
 
 ### `PhoenixPerpsPlugin.getUnrealizedPnl`
 
@@ -286,10 +255,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | no | - | Trader authority address |
-| `subaccountIndex` | number | no | no | - | Subaccount index (default 0). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Trader authority address |
+| `subaccountIndex` | number | no | - | Subaccount index (default 0). |
 
 ### `PhoenixPerpsPlugin.hasPosition`
 
@@ -301,11 +270,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `boolean`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | no | - | Trader authority address |
-| `market` | string | yes | no | - | Market orderbook pubkey |
-| `subaccountIndex` | number | no | no | - | Subaccount index (default 0). |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Trader authority address |
+| `market` | string | yes | - | Market orderbook pubkey |
+| `subaccountIndex` | number | no | - | Subaccount index (default 0). |
 
 ### `PhoenixPerpsPlugin.isRegistered`
 
@@ -317,7 +286,7 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `boolean`
 - Status: **unsupported** (not run); markers: NO-DEVNET-PHOENIX.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Trader authority address (wallet, @contract.address, or account ID) |
-| `subaccountIndex` | number | no | no | - | Subaccount index. 0 (default) = cross-margin. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Trader authority address (wallet, @contract.address, or account ID) |
+| `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin. |

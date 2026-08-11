@@ -9,6 +9,8 @@ Pump.fun token launches, buys, creator fees, and PumpSwap liquidity.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Conventions for every call
 
 The complete launch/buy/fee lifecycle, with the custody rule for `source`/`creator` arguments and worked policies, lives in [pump-fun.md](../pump-fun.md). Short version: `creator` is the fee recipient and follows the uniform custody rule (wallet, `@contract.address` escrow, or account id); `tokenId` is the app-scoped mint derivation input; every mutating call returns `Bool`, so read balances or the mirror for amounts.
@@ -26,15 +28,12 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
-| `mint` | string | yes | no | - | Token mint address |
-| `solAmount` | string | yes | no | - | Amount of SOL to spend (in lamports) |
-| `slippageBps` | string | yes | no | - | Slippage tolerance in basis points (e.g., 500 = 5%) |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
+| `mint` | string | yes | - | Token mint address |
+| `solAmount` | string | yes | - | Amount of SOL to spend (in lamports) |
+| `slippageBps` | string | yes | - | Slippage tolerance in basis points (e.g., 500 = 5%) |
 
 ### `PumpFunPlugin.collectCreatorFee`
 
@@ -45,12 +44,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `creator` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Creator address (wallet, @contract.address for escrow, or account ID) - validated against bonding curve on-chain |
-
-- `creator` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - validated against bonding curve on-chain |
 
 ### `PumpFunPlugin.createFeeSharingConfig`
 
@@ -61,13 +57,10 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - pays rent and becomes admin |
-| `mint` | string | yes | no | - | Token mint address |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - pays rent and becomes admin |
+| `mint` | string | yes | - | Token mint address |
 
 ### `PumpFunPlugin.createToken`
 
@@ -78,23 +71,20 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
-| `name` | string | yes | no | - |  |
-| `symbol` | string | yes | no | - |  |
-| `uri` | string | yes | no | - |  |
-| `creator` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
-| `config` | object | no | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenId` | string | yes | - | Unique identifier for the token within the app |
+| `name` | string | yes | - |  |
+| `symbol` | string | yes | - |  |
+| `uri` | string | yes | - |  |
+| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
+| `config` | object | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
 
 Fields of `config`:
 
-| Field | Type | Required | Signs | Accepts |
+| Field | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `seedMode` | string | conditional | no | - |
-
-- `creator` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| `seedMode` | string | conditional | - | Seed derivation mode. "idOnly" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation. |
 
 ### `PumpFunPlugin.createTokenV2`
 
@@ -105,24 +95,21 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
-| `name` | string | yes | no | - |  |
-| `symbol` | string | yes | no | - |  |
-| `uri` | string | yes | no | - |  |
-| `creator` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
-| `isMayhemMode` | boolean | yes | no | - | Enable mayhem mode for token (default: false) |
-| `config` | object | no | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenId` | string | yes | - | Unique identifier for the token within the app |
+| `name` | string | yes | - |  |
+| `symbol` | string | yes | - |  |
+| `uri` | string | yes | - |  |
+| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
+| `isMayhemMode` | boolean | yes | - | Enable mayhem mode for token (default: false) |
+| `config` | object | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
 
 Fields of `config`:
 
-| Field | Type | Required | Signs | Accepts |
+| Field | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `seedMode` | string | conditional | no | - |
-
-- `creator` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| `seedMode` | string | conditional | - | Seed derivation mode. "idOnly" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation. |
 
 ### `PumpFunPlugin.distributeCreatorFees`
 
@@ -133,9 +120,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `mint` | string | yes | no | - | Token mint address |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mint` | string | yes | - | Token mint address |
 
 ### `PumpFunPlugin.pumpswapDeposit`
 
@@ -146,16 +133,13 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - provides tokens and receives LP tokens |
-| `mint` | string | yes | no | - | Base token mint address (the graduated pump.fun token) |
-| `lpTokenAmountOut` | string | yes | no | - | Exact amount of LP tokens to mint (in smallest units) |
-| `maxBaseAmountIn` | string | yes | no | - | Maximum base tokens to deposit (slippage protection, in smallest units) |
-| `maxQuoteAmountIn` | string | yes | no | - | Maximum quote (SOL) to deposit (slippage protection, in lamports) |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides tokens and receives LP tokens |
+| `mint` | string | yes | - | Base token mint address (the graduated pump.fun token) |
+| `lpTokenAmountOut` | string | yes | - | Exact amount of LP tokens to mint (in smallest units) |
+| `maxBaseAmountIn` | string | yes | - | Maximum base tokens to deposit (slippage protection, in smallest units) |
+| `maxQuoteAmountIn` | string | yes | - | Maximum quote (SOL) to deposit (slippage protection, in lamports) |
 
 ### `PumpFunPlugin.pumpswapWithdraw`
 
@@ -166,16 +150,13 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - provides LP tokens and receives base/quote tokens |
-| `mint` | string | yes | no | - | Base token mint address (the graduated pump.fun token) |
-| `lpTokenAmountIn` | string | yes | no | - | Amount of LP tokens to burn (in smallest units) |
-| `minBaseAmountOut` | string | yes | no | - | Minimum base tokens to receive (slippage protection, in smallest units) |
-| `minQuoteAmountOut` | string | yes | no | - | Minimum quote (SOL) to receive (slippage protection, in lamports) |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides LP tokens and receives base/quote tokens |
+| `mint` | string | yes | - | Base token mint address (the graduated pump.fun token) |
+| `lpTokenAmountIn` | string | yes | - | Amount of LP tokens to burn (in smallest units) |
+| `minBaseAmountOut` | string | yes | - | Minimum base tokens to receive (slippage protection, in smallest units) |
+| `minQuoteAmountOut` | string | yes | - | Minimum quote (SOL) to receive (slippage protection, in lamports) |
 
 ### `PumpFunPlugin.transferCreatorFeesToPump`
 
@@ -186,9 +167,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `mint` | string | yes | no | - | Token mint address |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mint` | string | yes | - | Token mint address |
 
 ### `PumpFunPlugin.updateShareholders`
 
@@ -199,14 +180,11 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Authority address (wallet, @contract.address for escrow, or account ID) - must be admin |
-| `mint` | string | yes | no | - | Token mint address |
-| `shareholders` | array | yes | no | - | Array of {addr: address, bps: number} objects. Total BPS must equal 10000. Max 10 shareholders. |
-
-- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
-Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Authority address (wallet, @contract.address for escrow, or account ID) - must be admin |
+| `mint` | string | yes | - | Token mint address |
+| `shareholders` | array | yes | - | Array of {addr: address, bps: number} objects. Total BPS must equal 10000. Max 10 shareholders. |
 
 ## Read-only
 
@@ -220,9 +198,9 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `tokenAddress` | string | yes | no | - |  |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenAddress` | string | yes | - |  |
 
 ### `PumpFunPlugin.getCreatorFee`
 
@@ -234,6 +212,6 @@ Never pass a resolved `getAccountAddress(...)` string where a signing account id
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `mint` | string | yes | no | - | Token mint address |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mint` | string | yes | - | Token mint address |

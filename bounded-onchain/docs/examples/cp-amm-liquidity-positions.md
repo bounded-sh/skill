@@ -116,7 +116,7 @@ All documents are `"onchain": true` with `"read": "true"` (validator-enforced). 
 
 ## Related
 
-- [DeFiPlugin reference](../plugins/DeFiPlugin.md) - argument contracts for every cp-AMM call used here
+- [DeFiPlugin reference](../plugins/DeFiPlugin.md) - manifest argument details for every cp-AMM call used here
 - [Custody and PDAs](../custody-and-pdas.md) - the named-PDA idiom and account-id hygiene
 - [Plugin catalog](../plugins.md)
 - [Capability status](../solana-capability-status.md)

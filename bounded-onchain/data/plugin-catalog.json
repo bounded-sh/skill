@@ -1,8 +1,8 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "4f75c43c471b7bfc88a0225b1ee5cce2260ef500",
+  "monorepoCommit": "72bf623efafe315627a6a2dd1b1bab63531e2cf8",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -34,10 +34,7 @@
        "name": "accountId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "account-id-only"
-       ],
+       "signer": null,
        "description": "The id of the account to create. This should be a unique string within your entire application.",
        "fields": null
       }
@@ -68,10 +65,7 @@
        "name": "accountId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "account-id-only"
-       ],
+       "signer": null,
        "description": "The id of the account to get the address of. Must be a string account id (the same unique string you passed to createAccount). Do not pass @contract.address here - it is an on-chain address, not a string, and the on-chain interpreter rejects it.",
        "fields": null
       }
@@ -115,8 +109,7 @@
        "name": "appId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The TARGET app id to write into",
        "fields": null
       },
@@ -125,8 +118,7 @@
        "name": "path",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The document path in the TARGET app (e.g. 'scores/player1')",
        "fields": null
       },
@@ -135,8 +127,7 @@
        "name": "data",
        "type": "object",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Object of field values to write, validated against the target path's field type/required/readonly maps",
        "fields": null
       }
@@ -167,8 +158,7 @@
        "name": "appId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The TARGET app id to read from",
        "fields": null
       },
@@ -177,8 +167,7 @@
        "name": "path",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The document path in the TARGET app (e.g. 'scores/player1')",
        "fields": null
       }
@@ -222,8 +211,7 @@
        "name": "supply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current supply of the token.",
        "fields": null
       },
@@ -232,8 +220,7 @@
        "name": "virtualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual sol reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -242,8 +229,7 @@
        "name": "virtualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual token reserves in the bonding curve to compute the price.",
        "fields": null
       }
@@ -278,8 +264,7 @@
        "name": "virtualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual sol reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -288,8 +273,7 @@
        "name": "virtualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual token reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -298,8 +282,7 @@
        "name": "actualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of actual token reserves in the bonding curve. The actual balance of the token in the bonding curve.",
        "fields": null
       }
@@ -334,8 +317,7 @@
        "name": "virtualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual sol reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -344,8 +326,7 @@
        "name": "virtualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual token reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -354,8 +335,7 @@
        "name": "actualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of actual sol reserves in the bonding curve. The actual balance of the sol in the bonding curve.",
        "fields": null
       }
@@ -390,8 +370,7 @@
        "name": "tokenAmount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of tokens you want to put in the bonding curve.",
        "fields": null
       },
@@ -400,8 +379,7 @@
        "name": "virtualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual sol reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -410,8 +388,7 @@
        "name": "virtualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual token reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -420,8 +397,7 @@
        "name": "actualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of actual sol reserves in the bonding curve. The actual balance of the sol in the bonding curve.",
        "fields": null
       }
@@ -456,8 +432,7 @@
        "name": "solAmountOut",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Non-negative SOL amount to remove from the curve.",
        "fields": null
       },
@@ -466,8 +441,7 @@
        "name": "virtualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Current virtual SOL reserves.",
        "fields": null
       },
@@ -476,8 +450,7 @@
        "name": "virtualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Current virtual token reserves.",
        "fields": null
       },
@@ -486,8 +459,7 @@
        "name": "actualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Current actual SOL reserves.",
        "fields": null
       }
@@ -522,8 +494,7 @@
        "name": "solAmount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of sol you want to put in the bonding curve.",
        "fields": null
       },
@@ -532,8 +503,7 @@
        "name": "virtualSolReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual sol reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -542,8 +512,7 @@
        "name": "virtualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of virtual token reserves in the bonding curve to compute the price.",
        "fields": null
       },
@@ -552,8 +521,7 @@
        "name": "actualTokenReserves",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current amount of actual token reserves in the bonding curve. The actual balance of the token in the bonding curve.",
        "fields": null
       }
@@ -597,8 +565,7 @@
        "name": "namespace",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Anchor namespace (e.g. 'global' for instructions, 'account' for accounts)",
        "fields": null
       },
@@ -607,8 +574,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The instruction/account name (snake_case as declared by the program)",
        "fields": null
       }
@@ -643,8 +609,7 @@
        "name": "b",
        "type": "boolean",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Boolean value",
        "fields": null
       }
@@ -679,8 +644,7 @@
        "name": "a",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "First Bytes value",
        "fields": null
       },
@@ -689,8 +653,7 @@
        "name": "b",
        "type": "bytes",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Second Bytes value (optional; variadic)",
        "fields": null
       },
@@ -699,8 +662,7 @@
        "name": "c",
        "type": "bytes",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Additional Bytes value (optional)",
        "fields": null
       },
@@ -709,8 +671,7 @@
        "name": "d",
        "type": "bytes",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Additional Bytes value (optional)",
        "fields": null
       },
@@ -719,8 +680,7 @@
        "name": "e",
        "type": "bytes",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Additional Bytes value (optional)",
        "fields": null
       },
@@ -729,8 +689,7 @@
        "name": "f",
        "type": "bytes",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Additional Bytes value (optional)",
        "fields": null
       },
@@ -739,8 +698,7 @@
        "name": "g",
        "type": "bytes",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Additional Bytes value (optional)",
        "fields": null
       },
@@ -749,8 +707,7 @@
        "name": "h",
        "type": "bytes",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Additional Bytes value (optional)",
        "fields": null
       }
@@ -785,8 +742,7 @@
        "name": "n",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Signed integer in i64 range",
        "fields": null
       }
@@ -821,8 +777,7 @@
        "name": "bytes",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Bytes value to read from",
        "fields": null
       },
@@ -831,8 +786,7 @@
        "name": "offset",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Byte offset to read at",
        "fields": null
       }
@@ -867,8 +821,7 @@
        "name": "bytes",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Bytes value to measure",
        "fields": null
       }
@@ -903,8 +856,7 @@
        "name": "addr",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address to encode as 32 raw bytes",
        "fields": null
       }
@@ -939,8 +891,7 @@
        "name": "bytes",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Bytes value to read from",
        "fields": null
       },
@@ -949,8 +900,7 @@
        "name": "offset",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Byte offset to read at",
        "fields": null
       }
@@ -985,8 +935,7 @@
        "name": "hexString",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Hex-encoded bytes (with or without 0x prefix, even length)",
        "fields": null
       }
@@ -1021,8 +970,7 @@
        "name": "s",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The string to Borsh-encode",
        "fields": null
       }
@@ -1057,8 +1005,7 @@
        "name": "n",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Non-negative integer (u64-range policy number, widened to u128 LE)",
        "fields": null
       }
@@ -1093,8 +1040,7 @@
        "name": "n",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Non-negative integer in u16 range",
        "fields": null
       }
@@ -1129,8 +1075,7 @@
        "name": "bytes",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Bytes value to read from",
        "fields": null
       },
@@ -1139,8 +1084,7 @@
        "name": "offset",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Byte offset to read at",
        "fields": null
       }
@@ -1175,8 +1119,7 @@
        "name": "n",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Non-negative integer in u32 range",
        "fields": null
       }
@@ -1211,8 +1154,7 @@
        "name": "bytes",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Bytes value to read from",
        "fields": null
       },
@@ -1221,8 +1163,7 @@
        "name": "offset",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Byte offset to read at",
        "fields": null
       }
@@ -1257,8 +1198,7 @@
        "name": "n",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Non-negative integer in u64 range",
        "fields": null
       }
@@ -1293,8 +1233,7 @@
        "name": "bytes",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Bytes value to read from",
        "fields": null
       },
@@ -1303,8 +1242,7 @@
        "name": "offset",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Byte offset to read at",
        "fields": null
       }
@@ -1339,8 +1277,7 @@
        "name": "n",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Non-negative integer in u8 range",
        "fields": null
       }
@@ -1375,8 +1312,7 @@
        "name": "bytes",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Bytes value to read from",
        "fields": null
       },
@@ -1385,8 +1321,7 @@
        "name": "offset",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Byte offset to read at",
        "fields": null
       }
@@ -1421,8 +1356,7 @@
        "name": "s",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The string to utf8-encode",
        "fields": null
       }
@@ -1469,12 +1403,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Who signs and owns the token accounts: wallet, @contract.address escrow, or named account.",
        "fields": null
       },
@@ -1483,8 +1412,7 @@
        "name": "lbPair",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The DLMM pair account.",
        "fields": null
       },
@@ -1493,8 +1421,7 @@
        "name": "reserveX",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pair reserve for token X.",
        "fields": null
       },
@@ -1503,8 +1430,7 @@
        "name": "reserveY",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pair reserve for token Y.",
        "fields": null
       },
@@ -1513,8 +1439,7 @@
        "name": "inputMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint being sold.",
        "fields": null
       },
@@ -1523,8 +1448,7 @@
        "name": "outputMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint being bought.",
        "fields": null
       },
@@ -1533,8 +1457,7 @@
        "name": "oracle",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pair's oracle account.",
        "fields": null
       },
@@ -1543,8 +1466,7 @@
        "name": "amountIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Exact input amount, in base units.",
        "fields": null
       },
@@ -1553,8 +1475,7 @@
        "name": "minAmountOut",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Minimum output to accept; the swap fails below this.",
        "fields": null
       }
@@ -1586,9 +1507,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet"
-       ],
        "description": "The borrowing wallet (obligation owner)",
        "fields": null
       },
@@ -1597,8 +1515,7 @@
        "name": "obligationId",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "u8 obligation id used at init",
        "fields": null
       },
@@ -1607,8 +1524,7 @@
        "name": "lendingMarket",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Lending market address (bind via @const)",
        "fields": null
       },
@@ -1617,8 +1533,7 @@
        "name": "borrowReserve",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Borrow reserve address (bind via @const)",
        "fields": null
       },
@@ -1627,8 +1542,7 @@
        "name": "reserveLiquidityMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The borrow reserve's liquidity token mint",
        "fields": null
       },
@@ -1637,8 +1551,7 @@
        "name": "reserveSourceLiquidity",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The borrow reserve's liquidity supply vault (from reserve state)",
        "fields": null
       },
@@ -1647,8 +1560,7 @@
        "name": "borrowReserveLiquidityFeeReceiver",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The borrow reserve's fee receiver vault (from reserve state)",
        "fields": null
       },
@@ -1657,8 +1569,7 @@
        "name": "obligationFarmUserState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Obligation debt-farm user state, or the KLend program id when the reserve has no debt farm",
        "fields": null
       },
@@ -1667,8 +1578,7 @@
        "name": "reserveFarmState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Reserve debt farm state, or the KLend program id when the reserve has no debt farm",
        "fields": null
       },
@@ -1677,8 +1587,7 @@
        "name": "liquidityAmount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Borrow amount in token base units",
        "fields": null
       }
@@ -1710,9 +1619,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet"
-       ],
        "description": "The depositing wallet (obligation owner)",
        "fields": null
       },
@@ -1721,8 +1627,7 @@
        "name": "obligationId",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "u8 obligation id used at init",
        "fields": null
       },
@@ -1731,8 +1636,7 @@
        "name": "lendingMarket",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Lending market address (bind via @const)",
        "fields": null
       },
@@ -1741,8 +1645,7 @@
        "name": "reserve",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Deposit reserve address (bind via @const)",
        "fields": null
       },
@@ -1751,8 +1654,7 @@
        "name": "reserveLiquidityMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reserve's liquidity token mint",
        "fields": null
       },
@@ -1761,8 +1663,7 @@
        "name": "reserveLiquiditySupply",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reserve's liquidity supply vault (from reserve state)",
        "fields": null
       },
@@ -1771,8 +1672,7 @@
        "name": "reserveCollateralMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reserve's collateral (cToken) mint (from reserve state)",
        "fields": null
       },
@@ -1781,8 +1681,7 @@
        "name": "reserveDestinationDepositCollateral",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reserve's collateral supply vault (from reserve state)",
        "fields": null
       },
@@ -1791,8 +1690,7 @@
        "name": "obligationFarmUserState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Obligation farm user state, or the KLend program id when the reserve has no collateral farm",
        "fields": null
       },
@@ -1801,8 +1699,7 @@
        "name": "reserveFarmState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Reserve collateral farm state, or the KLend program id when the reserve has no collateral farm",
        "fields": null
       },
@@ -1811,8 +1708,7 @@
        "name": "liquidityAmount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Deposit amount in token base units",
        "fields": null
       }
@@ -1844,9 +1740,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet"
-       ],
        "description": "The obligation owner wallet",
        "fields": null
       },
@@ -1855,8 +1748,7 @@
        "name": "obligationId",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "u8 obligation id (0-255); 0 for the default obligation",
        "fields": null
       },
@@ -1865,8 +1757,7 @@
        "name": "lendingMarket",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Kamino lending market address (bind via @const)",
        "fields": null
       }
@@ -1898,9 +1789,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet"
-       ],
        "description": "The wallet onboarding to Kamino Lend (owner + fee payer identity)",
        "fields": null
       },
@@ -1909,8 +1797,7 @@
        "name": "userLookupTable",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "User lookup table address; pass 11111111111111111111111111111111 when none exists",
        "fields": null
       }
@@ -1941,12 +1828,7 @@
        "name": "sourceAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The obligation owner: wallet, @contract.address escrow, or named account.",
        "fields": null
       },
@@ -1955,8 +1837,7 @@
        "name": "obligationId",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "u8 obligation index for this owner/market (use 0 unless you hold several).",
        "fields": null
       },
@@ -1965,8 +1846,7 @@
        "name": "lendingMarket",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The Kamino lending market, bound via @const.",
        "fields": null
       }
@@ -1998,9 +1878,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet"
-       ],
        "description": "The acting wallet (framework source; not an instruction account)",
        "fields": null
       },
@@ -2009,8 +1886,7 @@
        "name": "reserve",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Reserve address to refresh (bind via @const)",
        "fields": null
       },
@@ -2019,8 +1895,7 @@
        "name": "lendingMarket",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Lending market the reserve belongs to (bind via @const)",
        "fields": null
       },
@@ -2029,8 +1904,7 @@
        "name": "pythOracle",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pyth price account, or the KLend program id if unused",
        "fields": null
       },
@@ -2039,8 +1913,7 @@
        "name": "switchboardPriceOracle",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Switchboard price aggregator, or the KLend program id if unused",
        "fields": null
       },
@@ -2049,8 +1922,7 @@
        "name": "switchboardTwapOracle",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Switchboard TWAP aggregator, or the KLend program id if unused",
        "fields": null
       },
@@ -2059,8 +1931,7 @@
        "name": "scopePrices",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Scope prices account (most reserves), or the KLend program id if unused",
        "fields": null
       }
@@ -2092,9 +1963,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet"
-       ],
        "description": "The repaying wallet (obligation owner)",
        "fields": null
       },
@@ -2103,8 +1971,7 @@
        "name": "obligationId",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "u8 obligation id used at init",
        "fields": null
       },
@@ -2113,8 +1980,7 @@
        "name": "lendingMarket",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Lending market address (bind via @const)",
        "fields": null
       },
@@ -2123,8 +1989,7 @@
        "name": "repayReserve",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Reserve whose debt is being repaid (bind via @const)",
        "fields": null
       },
@@ -2133,8 +1998,7 @@
        "name": "reserveLiquidityMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The repay reserve's liquidity token mint",
        "fields": null
       },
@@ -2143,8 +2007,7 @@
        "name": "reserveDestinationLiquidity",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The repay reserve's liquidity supply vault (from reserve state)",
        "fields": null
       },
@@ -2153,8 +2016,7 @@
        "name": "obligationFarmUserState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Obligation debt-farm user state, or the KLend program id when the reserve has no debt farm",
        "fields": null
       },
@@ -2163,8 +2025,7 @@
        "name": "reserveFarmState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Reserve debt farm state, or the KLend program id when the reserve has no debt farm",
        "fields": null
       },
@@ -2173,8 +2034,7 @@
        "name": "liquidityAmount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Repay amount in token base units; u64 max repays everything",
        "fields": null
       }
@@ -2206,9 +2066,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet"
-       ],
        "description": "The withdrawing wallet (obligation owner)",
        "fields": null
       },
@@ -2217,8 +2074,7 @@
        "name": "obligationId",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "u8 obligation id used at init",
        "fields": null
       },
@@ -2227,8 +2083,7 @@
        "name": "lendingMarket",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Lending market address (bind via @const)",
        "fields": null
       },
@@ -2237,8 +2092,7 @@
        "name": "withdrawReserve",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Reserve collateral is withdrawn from (bind via @const)",
        "fields": null
       },
@@ -2247,8 +2101,7 @@
        "name": "reserveLiquidityMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The withdraw reserve's liquidity token mint",
        "fields": null
       },
@@ -2257,8 +2110,7 @@
        "name": "reserveSourceCollateral",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reserve's collateral supply vault (from reserve state)",
        "fields": null
       },
@@ -2267,8 +2119,7 @@
        "name": "reserveCollateralMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reserve's collateral (cToken) mint (from reserve state)",
        "fields": null
       },
@@ -2277,8 +2128,7 @@
        "name": "reserveLiquiditySupply",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reserve's liquidity supply vault (from reserve state)",
        "fields": null
       },
@@ -2287,8 +2137,7 @@
        "name": "obligationFarmUserState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Obligation collateral-farm user state, or the KLend program id when the reserve has no collateral farm",
        "fields": null
       },
@@ -2297,8 +2146,7 @@
        "name": "reserveFarmState",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Reserve collateral farm state, or the KLend program id when the reserve has no collateral farm",
        "fields": null
       },
@@ -2307,8 +2155,7 @@
        "name": "collateralAmount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Withdraw amount in collateral (cToken) base units; u64 max withdraws all",
        "fields": null
       }
@@ -2340,11 +2187,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address attesting the memo: a wallet, @contract.address for the app escrow, or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -2353,8 +2195,7 @@
        "name": "note",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "UTF-8 memo text recorded on-chain",
        "fields": null
       }
@@ -2385,12 +2226,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Liquidity provider: wallet, @contract.address escrow, or named account.",
        "fields": null
       },
@@ -2399,8 +2235,7 @@
        "name": "poolState",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool state account.",
        "fields": null
       },
@@ -2409,8 +2244,7 @@
        "name": "token0Vault",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pool vault for token 0.",
        "fields": null
       },
@@ -2419,8 +2253,7 @@
        "name": "token1Vault",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pool vault for token 1.",
        "fields": null
       },
@@ -2429,8 +2262,7 @@
        "name": "vault0Mint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint of token 0.",
        "fields": null
       },
@@ -2439,8 +2271,7 @@
        "name": "vault1Mint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint of token 1.",
        "fields": null
       },
@@ -2449,8 +2280,7 @@
        "name": "lpMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool's LP token mint.",
        "fields": null
       },
@@ -2459,8 +2289,7 @@
        "name": "lpTokenAmount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "LP tokens to mint.",
        "fields": null
       },
@@ -2469,8 +2298,7 @@
        "name": "maximumToken0Amount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Most token 0 to spend; the deposit fails above this.",
        "fields": null
       },
@@ -2479,8 +2307,7 @@
        "name": "maximumToken1Amount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Most token 1 to spend; the deposit fails above this.",
        "fields": null
       }
@@ -2511,12 +2338,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Who signs and owns the token accounts: wallet, @contract.address escrow, or named account.",
        "fields": null
       },
@@ -2525,8 +2347,7 @@
        "name": "ammConfig",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool's AMM config account.",
        "fields": null
       },
@@ -2535,8 +2356,7 @@
        "name": "poolState",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool state account.",
        "fields": null
       },
@@ -2545,8 +2365,7 @@
        "name": "inputVault",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pool vault holding the input mint.",
        "fields": null
       },
@@ -2555,8 +2374,7 @@
        "name": "outputVault",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pool vault holding the output mint.",
        "fields": null
       },
@@ -2565,8 +2383,7 @@
        "name": "inputMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint being sold.",
        "fields": null
       },
@@ -2575,8 +2392,7 @@
        "name": "outputMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint being bought.",
        "fields": null
       },
@@ -2585,8 +2401,7 @@
        "name": "observationState",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool's oracle observation account.",
        "fields": null
       },
@@ -2595,8 +2410,7 @@
        "name": "amountIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Exact input amount, in base units.",
        "fields": null
       },
@@ -2605,8 +2419,7 @@
        "name": "minimumAmountOut",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Minimum output to accept; the swap fails below this.",
        "fields": null
       }
@@ -2637,12 +2450,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Liquidity provider: wallet, @contract.address escrow, or named account.",
        "fields": null
       },
@@ -2651,8 +2459,7 @@
        "name": "poolState",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool state account.",
        "fields": null
       },
@@ -2661,8 +2468,7 @@
        "name": "token0Vault",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pool vault for token 0.",
        "fields": null
       },
@@ -2671,8 +2477,7 @@
        "name": "token1Vault",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pool vault for token 1.",
        "fields": null
       },
@@ -2681,8 +2486,7 @@
        "name": "vault0Mint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint of token 0.",
        "fields": null
       },
@@ -2691,8 +2495,7 @@
        "name": "vault1Mint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Mint of token 1.",
        "fields": null
       },
@@ -2701,8 +2504,7 @@
        "name": "lpMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool's LP token mint.",
        "fields": null
       },
@@ -2711,8 +2513,7 @@
        "name": "lpTokenAmount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "LP tokens to burn.",
        "fields": null
       },
@@ -2721,8 +2522,7 @@
        "name": "minimumToken0Amount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Least token 0 to accept; the withdraw fails below this.",
        "fields": null
       },
@@ -2731,8 +2531,7 @@
        "name": "minimumToken1Amount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Least token 1 to accept; the withdraw fails below this.",
        "fields": null
       }
@@ -2763,12 +2562,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Who provides the lamports: wallet, @contract.address escrow, or named account.",
        "fields": null
       },
@@ -2777,8 +2571,7 @@
        "name": "stakePool",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The stake pool account.",
        "fields": null
       },
@@ -2787,8 +2580,7 @@
        "name": "reserveStake",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool's reserve stake account.",
        "fields": null
       },
@@ -2797,8 +2589,7 @@
        "name": "poolMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool token mint.",
        "fields": null
       },
@@ -2807,8 +2598,7 @@
        "name": "managerFeeAccount",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Account receiving the pool's fee tokens.",
        "fields": null
       },
@@ -2817,8 +2607,7 @@
        "name": "referralFeeAccount",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Account receiving referral fee tokens.",
        "fields": null
       },
@@ -2827,8 +2616,7 @@
        "name": "lamports",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Lamports to deposit.",
        "fields": null
       },
@@ -2837,8 +2625,7 @@
        "name": "minimumPoolTokensOut",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Minimum pool tokens to accept; the transaction fails below this.",
        "fields": null
       }
@@ -2869,8 +2656,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Who burns the pool tokens and receives lamports.",
        "fields": null
       },
@@ -2879,8 +2665,7 @@
        "name": "stakePool",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The stake pool account.",
        "fields": null
       },
@@ -2889,8 +2674,7 @@
        "name": "reserveStake",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool's reserve stake account.",
        "fields": null
       },
@@ -2899,8 +2683,7 @@
        "name": "poolMint",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool token mint.",
        "fields": null
       },
@@ -2909,8 +2692,7 @@
        "name": "managerFeeAccount",
        "type": "address",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Account receiving the pool's fee tokens.",
        "fields": null
       },
@@ -2919,8 +2701,7 @@
        "name": "poolTokens",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Pool tokens to burn.",
        "fields": null
       },
@@ -2929,8 +2710,7 @@
        "name": "minimumLamportsOut",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Minimum lamports to accept; the transaction fails below this.",
        "fields": null
       }
@@ -2962,11 +2742,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address lamports leave from: a wallet, @contract.address for the app escrow, or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -2975,8 +2750,7 @@
        "name": "recipient",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address receiving the lamports",
        "fields": null
       },
@@ -2985,8 +2759,7 @@
        "name": "lamports",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount in lamports (1 SOL = 1_000_000_000)",
        "fields": null
       }
@@ -3027,11 +2800,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The source providing liquidity - can be wallet address, @contract.address for escrow, or account ID for PDA",
        "fields": null
       },
@@ -3040,8 +2808,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora CP-AMM pool",
        "fields": null
       },
@@ -3050,8 +2817,7 @@
        "name": "positionMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The NFT mint address of the position to add liquidity to",
        "fields": null
       },
@@ -3060,8 +2826,7 @@
        "name": "tokenAAmount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of token A to deposit (in smallest units)",
        "fields": null
       },
@@ -3070,8 +2835,7 @@
        "name": "tokenBAmount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of token B to deposit (in smallest units)",
        "fields": null
       },
@@ -3080,8 +2844,7 @@
        "name": "slippageBps",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Slippage tolerance in basis points (100 = 1%). Allows extra tokens to be spent as buffer. Default: 0",
        "fields": null
       }
@@ -3113,11 +2876,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation",
        "fields": null
       },
@@ -3126,8 +2884,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the graduated DAMM v2 pool",
        "fields": null
       },
@@ -3136,8 +2893,7 @@
        "name": "positionMintAddress",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The NFT mint address of a specific position to claim fees from. The position address is derived from this mint. If omitted, claims from all positions owned by source in the pool.",
        "fields": null
       }
@@ -3169,11 +2925,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation",
        "fields": null
       },
@@ -3182,8 +2933,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora virtual pool",
        "fields": null
       }
@@ -3215,11 +2965,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The owner of the position - can be wallet address, @contract.address for escrow, or account ID for PDA. Also receives rent refund.",
        "fields": null
       },
@@ -3228,8 +2973,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora CP-AMM pool",
        "fields": null
       },
@@ -3238,8 +2982,7 @@
        "name": "positionMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The NFT mint address of the position to close (must be empty - no liquidity)",
        "fields": null
       }
@@ -3271,11 +3014,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The owner of the position - can be wallet address, @contract.address for escrow, or account ID for PDA",
        "fields": null
       },
@@ -3284,8 +3022,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora CP-AMM pool",
        "fields": null
       },
@@ -3294,8 +3031,7 @@
        "name": "positionId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for this position (e.g., document path $positionId)",
        "fields": null
       }
@@ -3326,8 +3062,7 @@
        "name": "configId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the config within the app",
        "fields": null
       },
@@ -3336,8 +3071,7 @@
        "name": "feeAccount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The account that will receive the fees",
        "fields": null
       },
@@ -3346,8 +3080,7 @@
        "name": "preMigratedFeeAmountBps",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The fee amount in basis points for the pre-migrated pool",
        "fields": null
       },
@@ -3356,8 +3089,7 @@
        "name": "preMigratedCreatorFeePercentage",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The creator fee percentage for the pre-migrated pool",
        "fields": null
       },
@@ -3366,8 +3098,7 @@
        "name": "postMigratedFeeAmountBps",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The fee amount in basis points for the post-migrated pool",
        "fields": null
       },
@@ -3376,8 +3107,7 @@
        "name": "creatorPermanentLockedLiquidityPercentage",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Percentage (0-100) of the migrated DAMM v2 creator liquidity that is PERMANENTLY LOCKED. This is an LP-lock split, not a fee share: the remaining 100 minus this value becomes ordinary creator liquidity the creator can withdraw. It does not change who receives post-migration trading fees. The partner legs are fixed at 0 today, so the creator holds 100 percent of the migrated position either way",
        "fields": null
       },
@@ -3386,8 +3116,7 @@
        "name": "initialMarketCap",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The initial market cap in SOL for the bonding curve. Default: 30",
        "fields": null
       },
@@ -3396,8 +3125,7 @@
        "name": "migrationMarketCap",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The market cap in SOL at which the pool migrates to DAMM v2. Default: 85",
        "fields": null
       },
@@ -3406,8 +3134,7 @@
        "name": "totalTokenSupply",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The total token supply (in base units). Default: 1000000000",
        "fields": null
       },
@@ -3416,8 +3143,7 @@
        "name": "tokenBaseDecimal",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The token decimal places (6 or 9). Default: 6",
        "fields": null
       },
@@ -3426,8 +3152,7 @@
        "name": "leftover",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The number of tokens to reserve as leftover (outside the bonding curve). These tokens are minted into the pool's base vault and can only be withdrawn by leftoverReceiver after migration to DAMM V2. Default: 0",
        "fields": null
       },
@@ -3436,12 +3161,7 @@
        "name": "leftoverReceiver",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Optional: The account that will receive leftover tokens after migration. Can be a wallet address, @contract.address for escrow, or an account id (a named app PDA; see the custody guide). Default: uses feeAccount",
        "fields": null
       },
@@ -3450,8 +3170,7 @@
        "name": "decayStartingFeeBps",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Anti-snipe opening fee in basis points for the pre-migrated pool. When set (with decayNumberOfPeriod/decayTotalDuration), the pre-migration fee starts here and decays linearly (Meteora FeeSchedulerLinear) toward decayEndingFeeBps. Example: 5000 (50%) decaying to 300 (3%). Default: preMigratedFeeAmountBps (flat fee, no decay)",
        "fields": null
       },
@@ -3460,8 +3179,7 @@
        "name": "decayEndingFeeBps",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The fee in basis points the pre-migration fee decays down to. Default: preMigratedFeeAmountBps",
        "fields": null
       },
@@ -3470,8 +3188,7 @@
        "name": "decayNumberOfPeriod",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Number of linear reduction periods over which the fee decays from decayStartingFeeBps to decayEndingFeeBps. Default: 0 (flat fee, no decay)",
        "fields": null
       },
@@ -3480,8 +3197,7 @@
        "name": "decayTotalDuration",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Total duration of the fee decay, in the pool's activation unit (slots). Default: 0 (flat fee, no decay)",
        "fields": null
       }
@@ -3512,8 +3228,7 @@
        "name": "configId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the config within the app",
        "fields": null
       },
@@ -3522,8 +3237,7 @@
        "name": "tokenId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the token within the app",
        "fields": null
       },
@@ -3532,8 +3246,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the token",
        "fields": null
       },
@@ -3542,8 +3255,7 @@
        "name": "symbol",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The symbol of the token",
        "fields": null
       },
@@ -3552,8 +3264,7 @@
        "name": "uri",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The URI of the json metadata",
        "fields": null
       },
@@ -3562,8 +3273,7 @@
        "name": "initialSolBuyAmount",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Initial SOL amount in lamports to buy tokens with (dev buy). If provided and > 0, executes a swap after pool creation.",
        "fields": null
       }
@@ -3595,11 +3305,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -3608,8 +3313,7 @@
        "name": "tokenMintAAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token A",
        "fields": null
       },
@@ -3618,8 +3322,7 @@
        "name": "tokenMintBAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token B",
        "fields": null
       },
@@ -3628,8 +3331,7 @@
        "name": "tokenAAmount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of token A to deposit",
        "fields": null
       },
@@ -3638,8 +3340,7 @@
        "name": "tokenBAmount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of token B to deposit",
        "fields": null
       },
@@ -3648,141 +3349,121 @@
        "name": "config",
        "type": "object",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Pool configuration object. If omitted, uses default config. If provided, ALL fields are REQUIRED (no partial configs).",
        "fields": {
         "baseFeeBps": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Base fee in basis points (0-10000)"
         },
         "numberOfPeriod": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Number of fee reduction periods"
         },
         "periodFrequency": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Frequency of fee reduction periods in seconds"
         },
         "reductionFactor": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Fee reduction factor per period"
         },
         "feeSchedulerMode": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Fee scheduler mode: 'linear' or 'exponential'"
         },
         "protocolFeePercent": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Protocol fee percentage (0-100)"
         },
         "referralFeePercent": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Referral fee percentage (0-100)"
         },
         "compoundingFeeBps": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Compounding fee in basis points (required when collectFeeMode is 'compounding', default 0)"
         },
         "dynamicFeeEnabled": {
          "type": "boolean",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Enable dynamic fee calculation"
         },
         "binStep": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Bin step for dynamic fee (if enabled)"
         },
         "filterPeriod": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Filter period for volatility (if dynamic fee enabled)"
         },
         "decayPeriod": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Decay period for volatility (if dynamic fee enabled)"
         },
         "dynamicFeeReductionFactor": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Dynamic fee reduction factor (if dynamic fee enabled)"
         },
         "maxVolatilityAccumulator": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Max volatility accumulator (if dynamic fee enabled)"
         },
         "variableFeeControl": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Variable fee control (if dynamic fee enabled)"
         },
         "collectFeeMode": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Fee collection mode: 'onlyB', 'both', or 'compounding'"
         },
         "activationType": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Activation type: 'timestamp' or 'slot'"
         },
         "activationPoint": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Activation point (timestamp or slot number), null for immediate"
         },
         "hasAlphaVault": {
          "type": "boolean",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Whether pool has alpha vault"
         }
        }
@@ -3815,11 +3496,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The source of the position - can be wallet address, @contract.address for escrow, or account ID for PDA",
        "fields": null
       },
@@ -3828,8 +3504,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora CP-AMM pool",
        "fields": null
       },
@@ -3838,8 +3513,7 @@
        "name": "positionMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The NFT mint address of the position to lock",
        "fields": null
       },
@@ -3848,8 +3522,7 @@
        "name": "periodFrequency",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Time in seconds between unlock periods",
        "fields": null
       },
@@ -3858,8 +3531,7 @@
        "name": "cliffUnlockLiquidity",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of liquidity unlocked at cliff (u128 as string)",
        "fields": null
       },
@@ -3868,8 +3540,7 @@
        "name": "liquidityPerPeriod",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of liquidity unlocked per period (u128 as string)",
        "fields": null
       },
@@ -3878,8 +3549,7 @@
        "name": "numberOfPeriod",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Total number of vesting periods",
        "fields": null
       },
@@ -3888,8 +3558,7 @@
        "name": "cliffPoint",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unix timestamp when cliff unlocking begins (optional, null for immediate)",
        "fields": null
       }
@@ -3921,11 +3590,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The source removing liquidity - can be wallet address, @contract.address for escrow, or account ID for PDA",
        "fields": null
       },
@@ -3934,8 +3598,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora CP-AMM pool",
        "fields": null
       },
@@ -3944,8 +3607,7 @@
        "name": "positionMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The NFT mint address of the position to remove liquidity from",
        "fields": null
       },
@@ -3954,8 +3616,7 @@
        "name": "tokenAAmount",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of token A to withdraw (in smallest units), or null to remove all",
        "fields": null
       },
@@ -3964,8 +3625,7 @@
        "name": "tokenBAmount",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of token B to withdraw (in smallest units), or null to remove all. Must match tokenAAmount: both specified or both null.",
        "fields": null
       },
@@ -3974,8 +3634,7 @@
        "name": "slippageBps",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Slippage tolerance in basis points (100 = 1%). Allows receiving fewer tokens. Default: 0",
        "fields": null
       }
@@ -4007,11 +3666,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -4020,8 +3674,7 @@
        "name": "tokenMintAAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token A",
        "fields": null
       },
@@ -4030,8 +3683,7 @@
        "name": "tokenMintBAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token B",
        "fields": null
       },
@@ -4040,8 +3692,7 @@
        "name": "tokenAAmount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of token A to swap",
        "fields": null
       },
@@ -4050,8 +3701,7 @@
        "name": "slippageBps",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Slippage tolerance in basis points (1 bps = 0.01%). Default: 500 (5%)",
        "fields": null
       }
@@ -4083,11 +3733,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The source account for the swap - can be @user.address, @contract.address for escrow, or a string ID for PDA",
        "fields": null
       },
@@ -4096,8 +3741,7 @@
        "name": "poolTokenMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the pool's base token (used to find the pool)",
        "fields": null
       },
@@ -4106,8 +3750,7 @@
        "name": "tokenMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to swap in (use @TokenPlugin.SOL for native SOL)",
        "fields": null
       },
@@ -4116,8 +3759,7 @@
        "name": "amount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of token to swap in (in smallest units)",
        "fields": null
       },
@@ -4126,8 +3768,7 @@
        "name": "minimumAmountOut",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional minimum output amount in smallest units. The swap fails if the quoted output is lower.",
        "fields": null
       }
@@ -4158,8 +3799,7 @@
        "name": "virtualPoolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora virtual pool",
        "fields": null
       }
@@ -4190,12 +3830,7 @@
        "name": "owner",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The owner of the position(s) - can be wallet address, @contract.address for escrow, or account ID for PDA",
        "fields": null
       },
@@ -4204,8 +3839,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the CP-AMM pool",
        "fields": null
       },
@@ -4214,8 +3848,7 @@
        "name": "tokenMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to get claimable fees for (use @TokenPlugin.SOL for SOL)",
        "fields": null
       },
@@ -4224,8 +3857,7 @@
        "name": "positionMintAddress",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The NFT mint address of a specific position. The position address is derived from this mint. If omitted, aggregates fees from all positions owned by owner in the pool.",
        "fields": null
       }
@@ -4260,12 +3892,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The source account to check claimable fees for - can be a wallet address, program ID for PDA, or any string for PDA derivation",
        "fields": null
       },
@@ -4274,8 +3901,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora virtual pool",
        "fields": null
       }
@@ -4310,8 +3936,7 @@
        "name": "tokenAMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of token A (use 'solana' or @constants.SOL for native SOL)",
        "fields": null
       },
@@ -4320,8 +3945,7 @@
        "name": "tokenBMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of token B (use 'solana' or @constants.SOL for native SOL)",
        "fields": null
       },
@@ -4330,8 +3954,7 @@
        "name": "configAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The pool config address. Use @constants.METEORA_DYNAMIC_POOL_CONFIG (BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG) for pools created via createPool, or @constants.METEORA_MIGRATION_CONFIG (A8gMrEPJkacWkcb3DGwtJwTe16HktSEfvwtuDh2MCtck) for graduated bonding curve pools",
        "fields": null
       }
@@ -4366,12 +3989,7 @@
        "name": "owner",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The owner address (wallet, escrow, or account ID)",
        "fields": null
       },
@@ -4380,8 +3998,7 @@
        "name": "poolAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the Meteora CP-AMM pool",
        "fields": null
       },
@@ -4390,8 +4007,7 @@
        "name": "positionId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the position (e.g., document path $positionId)",
        "fields": null
       }
@@ -4426,8 +4042,7 @@
        "name": "tokenMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token (same as used in createMeteoraVirtualPool)",
        "fields": null
       }
@@ -4462,8 +4077,7 @@
        "name": "tokenMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the pool's base token (used to find the pool)",
        "fields": null
       },
@@ -4472,8 +4086,7 @@
        "name": "tokenToSwapInMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to swap in (use 'solana' or @TokenPlugin.SOL for native SOL)",
        "fields": null
       },
@@ -4482,8 +4095,7 @@
        "name": "tokenAmount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of token to swap in (in smallest units)",
        "fields": null
       }
@@ -4515,8 +4127,7 @@
        "name": "tokenMintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token",
        "fields": null
       },
@@ -4525,8 +4136,7 @@
        "name": "configId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the config within the app",
        "fields": null
       }
@@ -4561,8 +4171,7 @@
        "name": "inputMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the input token (use 'solana' for native SOL)",
        "fields": null
       },
@@ -4571,8 +4180,7 @@
        "name": "outputMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the output token (use 'solana' for native SOL)",
        "fields": null
       },
@@ -4581,8 +4189,7 @@
        "name": "amount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of input token to swap (in smallest units, e.g., lamports for SOL)",
        "fields": null
       }
@@ -4624,11 +4231,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -4637,8 +4239,7 @@
        "name": "inputMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the input token",
        "fields": null
       },
@@ -4647,8 +4248,7 @@
        "name": "outputMint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the output token",
        "fields": null
       },
@@ -4657,8 +4257,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of input tokens to escrow",
        "fields": null
       },
@@ -4667,8 +4266,7 @@
        "name": "slippageBps",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Max allowed slippage in basis points (optional, defaults to 50 = 0.5%)",
        "fields": null
       }
@@ -4699,10 +4297,7 @@
        "name": "address",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet"
-       ],
+       "signer": null,
        "description": "The wallet address to check KYC status for",
        "fields": null
       }
@@ -4743,8 +4338,7 @@
        "name": "path",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The path of the document to create or replace.",
        "fields": null
       },
@@ -4753,8 +4347,7 @@
        "name": "data",
        "type": "any",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The document contents, as an object or a JSON string.",
        "fields": null
       }
@@ -4785,8 +4378,7 @@
        "name": "path",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The path of the document to update.",
        "fields": null
       },
@@ -4795,8 +4387,7 @@
        "name": "field",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The field to update.",
        "fields": null
       },
@@ -4805,8 +4396,7 @@
        "name": "value",
        "type": "any",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Any policy value to assign. Null deletes the field.",
        "fields": null
       }
@@ -4847,8 +4437,7 @@
        "name": "value",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The value to multiply (unsigned)",
        "fields": null
       },
@@ -4857,8 +4446,7 @@
        "name": "multiplier",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The multiplier (unsigned)",
        "fields": null
       },
@@ -4867,8 +4455,7 @@
        "name": "divisor",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The divisor (unsigned, must be non-zero)",
        "fields": null
       }
@@ -4903,8 +4490,7 @@
        "name": "value",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The value to multiply (unsigned)",
        "fields": null
       },
@@ -4913,8 +4499,7 @@
        "name": "multiplier",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The multiplier (unsigned)",
        "fields": null
       },
@@ -4923,8 +4508,7 @@
        "name": "divisor",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The divisor (unsigned, must be non-zero)",
        "fields": null
       }
@@ -4969,11 +4553,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -4982,8 +4561,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the NFT to burn",
        "fields": null
       },
@@ -4992,8 +4570,7 @@
        "name": "collectionAddress",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The address of the collection to burn the NFT from. It is required if the NFT belongs to a collection.",
        "fields": null
       }
@@ -5024,8 +4601,7 @@
        "name": "collectionId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the collection within the app",
        "fields": null
       },
@@ -5034,8 +4610,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the collection",
        "fields": null
       },
@@ -5044,8 +4619,7 @@
        "name": "metadataUri",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The URI of the collection metadata",
        "fields": null
       }
@@ -5076,8 +4650,7 @@
        "name": "nftId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the NFT within the app",
        "fields": null
       },
@@ -5086,8 +4659,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the NFT",
        "fields": null
       },
@@ -5096,8 +4668,7 @@
        "name": "metadataUri",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The URI of the NFT metadata",
        "fields": null
       },
@@ -5106,12 +4677,7 @@
        "name": "destinationAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -5120,8 +4686,7 @@
        "name": "collectionAddress",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The address of the collection to create the NFT in. It is required if the NFT belongs to a collection.",
        "fields": null
       }
@@ -5153,11 +4718,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -5166,12 +4726,7 @@
        "name": "destinationAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -5180,8 +4735,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the NFT to transfer",
        "fields": null
       },
@@ -5190,8 +4744,7 @@
        "name": "collectionAddress",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The address of the collection to transfer the NFT to. It is required if the NFT belongs to a collection.",
        "fields": null
       }
@@ -5222,8 +4775,7 @@
        "name": "collectionAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the collection whose royalties are being updated",
        "fields": null
       },
@@ -5233,11 +4785,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The update authority address. For Bounded-managed collections this is ignored (PDA signs). For externally-managed collections, pass the wallet/account that owns the update authority.",
        "fields": null
       },
@@ -5246,8 +4793,7 @@
        "name": "basisPoints",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The new royalty amount in basis points (e.g. 500 = 5%, max 10000 = 100%)",
        "fields": null
       },
@@ -5256,8 +4802,7 @@
        "name": "creators",
        "type": "array",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved.",
        "fields": null
       }
@@ -5288,8 +4833,7 @@
        "name": "nftAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the NFT whose royalties are being updated",
        "fields": null
       },
@@ -5298,8 +4842,7 @@
        "name": "collectionAddress",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: The address of the collection the NFT belongs to. Pass null for standalone NFTs.",
        "fields": null
       },
@@ -5309,11 +4852,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The update authority address. For Bounded-managed assets this is ignored (PDA signs). For externally-managed assets, pass the wallet/account that owns the update authority.",
        "fields": null
       },
@@ -5322,8 +4860,7 @@
        "name": "basisPoints",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The new royalty amount in basis points (e.g. 500 = 5%, max 10000 = 100%)",
        "fields": null
       },
@@ -5332,8 +4869,7 @@
        "name": "creators",
        "type": "array",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved.",
        "fields": null
       }
@@ -5364,8 +4900,7 @@
        "name": "collectionId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the collection within the app",
        "fields": null
       },
@@ -5374,8 +4909,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the collection",
        "fields": null
       }
@@ -5410,8 +4944,7 @@
        "name": "nftAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint/asset address of the NFT to look up the owner for",
        "fields": null
       }
@@ -5446,8 +4979,7 @@
        "name": "nftId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the NFT within the app",
        "fields": null
       },
@@ -5456,8 +4988,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the NFT",
        "fields": null
       }
@@ -5492,8 +5023,7 @@
        "name": "address",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of an NFT asset or collection to look up the update authority for",
        "fields": null
       }
@@ -5537,8 +5067,7 @@
        "name": "uniqueId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Th unique identifier for the random number, this must be globally unique in your app",
        "fields": null
       },
@@ -5547,8 +5076,7 @@
        "name": "revealPath",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The reveal path of the random number to be called after the randomness is fulfilled",
        "fields": null
       }
@@ -5579,8 +5107,7 @@
        "name": "uniqueId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "A unique identifier for the random number, this must be globally unique in your app",
        "fields": null
       },
@@ -5589,8 +5116,7 @@
        "name": "lowerBound",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The lower bound of the random number (inclusive)",
        "fields": null
       },
@@ -5599,8 +5125,7 @@
        "name": "upperBound",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The upper bound of the random number (exclusive)",
        "fields": null
       }
@@ -5635,8 +5160,7 @@
        "name": "randomId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The random ID to get the VRF address for",
        "fields": null
       }
@@ -5681,11 +5205,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -5694,8 +5213,7 @@
        "name": "market",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Market orderbook pubkey",
        "fields": null
       },
@@ -5704,8 +5222,7 @@
        "name": "sizeBaseLots",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Size to close in base lots",
        "fields": null
       },
@@ -5714,8 +5231,7 @@
        "name": "side",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Side: 0=Bid (close short position), 1=Ask (close long position)",
        "fields": null
       },
@@ -5724,8 +5240,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
        "fields": null
       }
@@ -5757,11 +5272,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -5770,8 +5280,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of Phoenix tokens to deposit (in smallest units)",
        "fields": null
       },
@@ -5780,8 +5289,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
        "fields": null
       }
@@ -5813,11 +5321,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -5826,8 +5329,7 @@
        "name": "usdcAmount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of USDC to convert (in smallest units)",
        "fields": null
       }
@@ -5859,11 +5361,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -5872,8 +5369,7 @@
        "name": "amount",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of Phoenix tokens to convert to USDC. Omit to withdraw all.",
        "fields": null
       }
@@ -5905,11 +5401,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -5918,8 +5409,7 @@
        "name": "market",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Market orderbook pubkey",
        "fields": null
       },
@@ -5928,8 +5418,7 @@
        "name": "sizeBaseLots",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Size of the order in base lots",
        "fields": null
       },
@@ -5938,8 +5427,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
        "fields": null
       }
@@ -5971,11 +5459,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -5984,8 +5467,7 @@
        "name": "market",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Market orderbook pubkey",
        "fields": null
       },
@@ -5994,8 +5476,7 @@
        "name": "sizeBaseLots",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Size of the order in base lots",
        "fields": null
       },
@@ -6004,8 +5485,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
        "fields": null
       }
@@ -6037,11 +5517,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader authority address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -6050,8 +5525,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
        "fields": null
       }
@@ -6083,11 +5557,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader authority address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -6096,8 +5565,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Isolated subaccount index to activate. Must be 1-100.",
        "fields": null
       }
@@ -6129,11 +5597,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader authority address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -6142,8 +5605,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Isolated subaccount index to drain back into cross. Must be 1-100.",
        "fields": null
       }
@@ -6175,11 +5637,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader authority address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -6188,8 +5645,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of Phoenix tokens to move from cross to isolated (in smallest units)",
        "fields": null
       },
@@ -6198,8 +5654,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Isolated subaccount index to fund. Must be 1-100.",
        "fields": null
       }
@@ -6231,11 +5686,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "Trader address (wallet, @contract.address for escrow, or account ID)",
        "fields": null
       },
@@ -6244,8 +5694,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of Phoenix tokens to withdraw (in smallest units)",
        "fields": null
       },
@@ -6254,8 +5703,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
        "fields": null
       }
@@ -6286,8 +5734,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Trader authority address",
        "fields": null
       },
@@ -6296,8 +5743,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index (default 0).",
        "fields": null
       }
@@ -6329,8 +5775,7 @@
        "name": "market",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Market orderbook pubkey",
        "fields": null
       }
@@ -6362,8 +5807,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Trader authority address",
        "fields": null
       },
@@ -6372,8 +5816,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index (default 0).",
        "fields": null
       }
@@ -6405,8 +5848,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Trader authority address",
        "fields": null
       },
@@ -6415,8 +5857,7 @@
        "name": "market",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Market orderbook pubkey - e.g. 71Si24E4uc3oCaPbPZTozC1ptSNNqygjjebxSmErSsC2 for SOL-PERP. Pass the pubkey, not the symbol.",
        "fields": null
       },
@@ -6425,8 +5866,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index (default 0).",
        "fields": null
       }
@@ -6458,8 +5898,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Trader authority address",
        "fields": null
       },
@@ -6468,8 +5907,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index (default 0).",
        "fields": null
       }
@@ -6501,8 +5939,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Trader authority address",
        "fields": null
       },
@@ -6511,8 +5948,7 @@
        "name": "market",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Market orderbook pubkey",
        "fields": null
       },
@@ -6521,8 +5957,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index (default 0).",
        "fields": null
       }
@@ -6554,12 +5989,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Trader authority address (wallet, @contract.address, or account ID)",
        "fields": null
       },
@@ -6568,8 +5998,7 @@
        "name": "subaccountIndex",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin.",
        "fields": null
       }
@@ -6610,8 +6039,7 @@
        "name": "amount",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount to calculate fee from.",
        "fields": null
       },
@@ -6620,8 +6048,7 @@
        "name": "feeBps",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The fee in basis points (e.g., 100 = 1%).",
        "fields": null
       }
@@ -6656,8 +6083,7 @@
        "name": "yesIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of YES tokens being sold.",
        "fields": null
       },
@@ -6666,8 +6092,7 @@
        "name": "collateralReserve",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current collateral reserve in the market.",
        "fields": null
       },
@@ -6676,8 +6101,7 @@
        "name": "yesSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current YES token supply in the market.",
        "fields": null
       }
@@ -6712,8 +6136,7 @@
        "name": "noIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of NO tokens being sold.",
        "fields": null
       },
@@ -6722,8 +6145,7 @@
        "name": "yesSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current YES token supply in the market.",
        "fields": null
       },
@@ -6732,8 +6154,7 @@
        "name": "noSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current NO token supply in the market.",
        "fields": null
       },
@@ -6742,8 +6163,7 @@
        "name": "b",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The LMSR liquidity parameter (b).",
        "fields": null
       }
@@ -6778,8 +6198,7 @@
        "name": "amountIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of collateral being deposited.",
        "fields": null
       },
@@ -6788,8 +6207,7 @@
        "name": "yesSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current YES token supply in the market.",
        "fields": null
       },
@@ -6798,8 +6216,7 @@
        "name": "noSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current NO token supply in the market.",
        "fields": null
       },
@@ -6808,8 +6225,7 @@
        "name": "b",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The LMSR liquidity parameter (b).",
        "fields": null
       }
@@ -6844,8 +6260,7 @@
        "name": "yesIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of YES tokens being sold.",
        "fields": null
       },
@@ -6854,8 +6269,7 @@
        "name": "yesSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current YES token supply in the market.",
        "fields": null
       },
@@ -6864,8 +6278,7 @@
        "name": "noSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current NO token supply in the market.",
        "fields": null
       },
@@ -6874,8 +6287,7 @@
        "name": "b",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The LMSR liquidity parameter (b).",
        "fields": null
       }
@@ -6910,8 +6322,7 @@
        "name": "amountIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of collateral being deposited.",
        "fields": null
       },
@@ -6920,8 +6331,7 @@
        "name": "collateralReserve",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current collateral reserve in the market.",
        "fields": null
       },
@@ -6930,8 +6340,7 @@
        "name": "yesSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current YES token supply in the market.",
        "fields": null
       }
@@ -6966,8 +6375,7 @@
        "name": "amountIn",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of collateral being deposited.",
        "fields": null
       },
@@ -6976,8 +6384,7 @@
        "name": "yesSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current YES token supply in the market.",
        "fields": null
       },
@@ -6986,8 +6393,7 @@
        "name": "noSupply",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The current NO token supply in the market.",
        "fields": null
       },
@@ -6996,8 +6402,7 @@
        "name": "b",
        "type": "u64",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The LMSR liquidity parameter (b).",
        "fields": null
       }
@@ -7058,8 +6463,7 @@
        "name": "baseFeedId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The base asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.SOL) or a 64-character hex Pyth feed id. A plain symbol string like 'SOL' is not a valid feed id.",
        "fields": null
       },
@@ -7068,8 +6472,7 @@
        "name": "quoteFeedId",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional quote asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.BTC) or a 64-character hex Pyth feed id. Defaults to USD if not provided.",
        "fields": null
       }
@@ -7113,12 +6516,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Source address (wallet, @contract.address for escrow, or account ID) - provides SOL",
        "fields": null
       },
@@ -7127,8 +6525,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Token mint address",
        "fields": null
       },
@@ -7137,8 +6534,7 @@
        "name": "solAmount",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of SOL to spend (in lamports)",
        "fields": null
       },
@@ -7147,8 +6543,7 @@
        "name": "slippageBps",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Slippage tolerance in basis points (e.g., 500 = 5%)",
        "fields": null
       }
@@ -7179,12 +6574,7 @@
        "name": "creator",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Creator address (wallet, @contract.address for escrow, or account ID) - validated against bonding curve on-chain",
        "fields": null
       }
@@ -7215,12 +6605,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Source address (wallet, @contract.address for escrow, or account ID) - pays rent and becomes admin",
        "fields": null
       },
@@ -7229,8 +6614,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Token mint address",
        "fields": null
       }
@@ -7261,8 +6645,7 @@
        "name": "tokenId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the token within the app",
        "fields": null
       },
@@ -7271,8 +6654,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "",
        "fields": null
       },
@@ -7281,8 +6663,7 @@
        "name": "symbol",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "",
        "fields": null
       },
@@ -7291,8 +6672,7 @@
        "name": "uri",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "",
        "fields": null
       },
@@ -7301,12 +6681,7 @@
        "name": "creator",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees",
        "fields": null
       },
@@ -7315,15 +6690,13 @@
        "name": "config",
        "type": "object",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional config object. Supports {seedMode: \"idOnly\"} to derive mint PDA from appId+tokenId only.",
        "fields": {
         "seedMode": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Seed derivation mode. \"idOnly\" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation."
         }
        }
@@ -7355,8 +6728,7 @@
        "name": "tokenId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the token within the app",
        "fields": null
       },
@@ -7365,8 +6737,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "",
        "fields": null
       },
@@ -7375,8 +6746,7 @@
        "name": "symbol",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "",
        "fields": null
       },
@@ -7385,8 +6755,7 @@
        "name": "uri",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "",
        "fields": null
       },
@@ -7395,12 +6764,7 @@
        "name": "creator",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees",
        "fields": null
       },
@@ -7409,8 +6773,7 @@
        "name": "isMayhemMode",
        "type": "boolean",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Enable mayhem mode for token (default: false)",
        "fields": null
       },
@@ -7419,15 +6782,13 @@
        "name": "config",
        "type": "object",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional config object. Supports {seedMode: \"idOnly\"} to derive mint PDA from appId+tokenId only.",
        "fields": {
         "seedMode": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": "Seed derivation mode. \"idOnly\" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation."
         }
        }
@@ -7459,8 +6820,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Token mint address",
        "fields": null
       }
@@ -7491,12 +6851,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Source address (wallet, @contract.address for escrow, or account ID) - provides tokens and receives LP tokens",
        "fields": null
       },
@@ -7505,8 +6860,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Base token mint address (the graduated pump.fun token)",
        "fields": null
       },
@@ -7515,8 +6869,7 @@
        "name": "lpTokenAmountOut",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Exact amount of LP tokens to mint (in smallest units)",
        "fields": null
       },
@@ -7525,8 +6878,7 @@
        "name": "maxBaseAmountIn",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Maximum base tokens to deposit (slippage protection, in smallest units)",
        "fields": null
       },
@@ -7535,8 +6887,7 @@
        "name": "maxQuoteAmountIn",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Maximum quote (SOL) to deposit (slippage protection, in lamports)",
        "fields": null
       }
@@ -7567,12 +6918,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Source address (wallet, @contract.address for escrow, or account ID) - provides LP tokens and receives base/quote tokens",
        "fields": null
       },
@@ -7581,8 +6927,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Base token mint address (the graduated pump.fun token)",
        "fields": null
       },
@@ -7591,8 +6936,7 @@
        "name": "lpTokenAmountIn",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Amount of LP tokens to burn (in smallest units)",
        "fields": null
       },
@@ -7601,8 +6945,7 @@
        "name": "minBaseAmountOut",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Minimum base tokens to receive (slippage protection, in smallest units)",
        "fields": null
       },
@@ -7611,8 +6954,7 @@
        "name": "minQuoteAmountOut",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Minimum quote (SOL) to receive (slippage protection, in lamports)",
        "fields": null
       }
@@ -7643,8 +6985,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Token mint address",
        "fields": null
       }
@@ -7675,12 +7016,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "Authority address (wallet, @contract.address for escrow, or account ID) - must be admin",
        "fields": null
       },
@@ -7689,8 +7025,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Token mint address",
        "fields": null
       },
@@ -7699,8 +7034,7 @@
        "name": "shareholders",
        "type": "array",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Array of {addr: address, bps: number} objects. Total BPS must equal 10000. Max 10 shareholders.",
        "fields": null
       }
@@ -7731,8 +7065,7 @@
        "name": "tokenAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "",
        "fields": null
       }
@@ -7767,8 +7100,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Token mint address",
        "fields": null
       }
@@ -7841,8 +7173,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The app-scoped account name; the created account is Bounded_pda(appId, name), also addressable via @Solana.signerAccount(name).",
        "fields": null
       },
@@ -7851,8 +7182,7 @@
        "name": "space",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The account data size in bytes (rent-exempt minimum computed on-chain via the Rent sysvar; see @Solana.rentExemption for budgeting).",
        "fields": null
       },
@@ -7861,8 +7191,7 @@
        "name": "ownerProgramId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The executable program that will own the account. Must be a literal or @Solana well-known program constant.",
        "fields": null
       }
@@ -7893,8 +7222,7 @@
        "name": "programId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The executable target. Must be an address literal or @Solana well-known program constant; Bounded, loaders, and signature precompiles are denied.",
        "fields": null
       },
@@ -7903,8 +7231,7 @@
        "name": "metas",
        "type": "array",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Account metas in exact callee order. signer:true may name only the current user; signerName ('@escrow' or a named app account) elevates only that app's recomputed PDA.",
        "fields": null
       },
@@ -7913,8 +7240,7 @@
        "name": "data",
        "type": "bytes",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Instruction data as Bytes, built on-chain via @Bytes.* (e.g. @Bytes.concat(@Bytes.anchorDiscriminator('global','increment'), @Bytes.u64(@newData.amount))).",
        "fields": null
       }
@@ -7945,8 +7271,7 @@
        "name": "addr",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The account address to read",
        "fields": null
       }
@@ -7981,8 +7306,7 @@
        "name": "owner",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The token account owner address",
        "fields": null
       },
@@ -7991,8 +7315,7 @@
        "name": "mint",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The token mint address",
        "fields": null
       }
@@ -8027,8 +7350,7 @@
        "name": "addr",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The account address to read data from",
        "fields": null
       },
@@ -8037,8 +7359,7 @@
        "name": "offset",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Byte offset into the account data",
        "fields": null
       },
@@ -8047,8 +7368,7 @@
        "name": "len",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Number of bytes to read",
        "fields": null
       }
@@ -8083,8 +7403,7 @@
        "name": "addr",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The account address to read the lamport balance of",
        "fields": null
       }
@@ -8119,8 +7438,7 @@
        "name": "seedsArray",
        "type": "array",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Array of seeds (string|address|bytes|non-negative number), max 16; string seeds are utf8-encoded (max 32 bytes), numbers encode as 8-byte LE u64.",
        "fields": null
       },
@@ -8129,8 +7447,7 @@
        "name": "programId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The program id to derive the PDA for",
        "fields": null
       }
@@ -8165,8 +7482,7 @@
        "name": "seedsArray",
        "type": "array",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Array of seeds (string|address|bytes|non-negative number), max 16 - identical encoding rules to @Solana.pda.",
        "fields": null
       },
@@ -8175,8 +7491,7 @@
        "name": "programId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The program id to derive the PDA bump for",
        "fields": null
       }
@@ -8211,8 +7526,7 @@
        "name": "space",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The account data size in bytes",
        "fields": null
       }
@@ -8247,8 +7561,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The app-scoped account name",
        "fields": null
       }
@@ -8292,8 +7605,7 @@
        "name": "str",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The string to get the length of",
        "fields": null
       }
@@ -8338,8 +7650,7 @@
        "name": "assetAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the NFT asset to buy",
        "fields": null
       },
@@ -8348,8 +7659,7 @@
        "name": "maxAmount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The maximum amount in lamports willing to pay for the NFT",
        "fields": null
       }
@@ -8380,8 +7690,7 @@
        "name": "assetAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The address of the NFT asset to list",
        "fields": null
       },
@@ -8390,8 +7699,7 @@
        "name": "amount",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The listing amount in lamports (optional, defaults to 0)",
        "fields": null
       },
@@ -8400,8 +7708,7 @@
        "name": "expireInSec",
        "type": "number",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Expiration time in seconds (optional)",
        "fields": null
       },
@@ -8410,8 +7717,7 @@
        "name": "currency",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Currency for the listing (optional)",
        "fields": null
       },
@@ -8420,8 +7726,7 @@
        "name": "privateTaker",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Private taker address (optional)",
        "fields": null
       },
@@ -8430,8 +7735,7 @@
        "name": "makerBroker",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Maker broker address (optional)",
        "fields": null
       }
@@ -8485,11 +7789,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -8498,8 +7797,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to burn",
        "fields": null
       },
@@ -8508,8 +7806,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of tokens to burn with decimals",
        "fields": null
       }
@@ -8540,8 +7837,7 @@
        "name": "tokenId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the token within the app",
        "fields": null
       },
@@ -8550,8 +7846,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the token",
        "fields": null
       },
@@ -8560,8 +7855,7 @@
        "name": "symbol",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The symbol of the token",
        "fields": null
       },
@@ -8570,8 +7864,7 @@
        "name": "uri",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The URI of the token image",
        "fields": null
       },
@@ -8580,8 +7873,7 @@
        "name": "decimals",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The number of decimals for the token",
        "fields": null
       }
@@ -8612,8 +7904,7 @@
        "name": "tokenId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the token within the app",
        "fields": null
       },
@@ -8622,8 +7913,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the token",
        "fields": null
       },
@@ -8632,8 +7922,7 @@
        "name": "symbol",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The symbol of the token",
        "fields": null
       },
@@ -8642,8 +7931,7 @@
        "name": "uri",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The URI of the token metadata",
        "fields": null
       },
@@ -8652,8 +7940,7 @@
        "name": "decimals",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The number of decimals for the token",
        "fields": null
       },
@@ -8662,80 +7949,55 @@
        "name": "extensions",
        "type": "object",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Optional extensions object. Fields: nonTransferable (true|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID.",
        "fields": {
         "nonTransferable": {
          "type": "boolean",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": null
         },
         "feeBasisPoints": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": null
         },
         "maxFee": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": null
         },
         "transferFeeAuthority": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": [
-          "wallet",
-          "escrow-sentinel",
-          "account-id"
-         ],
+         "signer": null,
          "description": null
         },
         "withdrawWithheldAuthority": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": [
-          "wallet",
-          "escrow-sentinel",
-          "account-id"
-         ],
+         "signer": null,
          "description": null
         },
         "interestRate": {
          "type": "number",
          "optional": null,
-         "signer": false,
-         "forms": null,
+         "signer": null,
          "description": null
         },
         "interestRateAuthority": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": [
-          "wallet",
-          "escrow-sentinel",
-          "account-id"
-         ],
+         "signer": null,
          "description": null
         },
         "permanentDelegate": {
          "type": "string",
          "optional": null,
-         "signer": false,
-         "forms": [
-          "wallet",
-          "escrow-sentinel",
-          "account-id"
-         ],
+         "signer": null,
          "description": null
         }
        }
@@ -8767,8 +8029,7 @@
        "name": "tokenId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the token within the app",
        "fields": null
       },
@@ -8777,8 +8038,7 @@
        "name": "name",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the token",
        "fields": null
       },
@@ -8787,8 +8047,7 @@
        "name": "symbol",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The symbol of the token",
        "fields": null
       },
@@ -8797,12 +8056,7 @@
        "name": "destinationAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -8811,8 +8065,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of tokens to mint with decimals",
        "fields": null
       }
@@ -8844,11 +8097,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -8857,12 +8105,7 @@
        "name": "destinationAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -8871,8 +8114,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC",
        "fields": null
       },
@@ -8881,8 +8123,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of tokens to transfer with decimals",
        "fields": null
       }
@@ -8914,11 +8155,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -8927,12 +8163,7 @@
        "name": "destinationAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
@@ -8941,8 +8172,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC",
        "fields": null
       },
@@ -8951,8 +8181,7 @@
        "name": "amount",
        "type": "number",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The amount of tokens to transfer without decimals",
        "fields": null
       }
@@ -8983,8 +8212,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the Token2022 token. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to derive it.",
        "fields": null
       },
@@ -8994,11 +8222,6 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
        "description": "The withdraw withheld authority that will sign. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get this. Supports @contract.address, account ID, or external wallet.",
        "fields": null
       },
@@ -9007,12 +8230,7 @@
        "name": "feeReceiverOwner",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The owner address for the fee receiver token account (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID.",
        "fields": null
       },
@@ -9021,12 +8239,7 @@
        "name": "sourceOwner",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The owner address for the source token account to harvest withheld fees from (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID.",
        "fields": null
       }
@@ -9057,12 +8270,7 @@
        "name": "walletAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "signer": null,
        "description": "The address of the wallet, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) to get the balance of",
        "fields": null
       },
@@ -9071,8 +8279,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to get the balance of",
        "fields": null
       }
@@ -9107,8 +8314,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to get the decimals of",
        "fields": null
       }
@@ -9143,8 +8349,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the token to get the supply of",
        "fields": null
       }
@@ -9182,8 +8387,7 @@
        "name": "tokenId",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "Unique identifier for the token within the app",
        "fields": null
       },
@@ -9192,8 +8396,7 @@
        "name": "name",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The name of the token (optional, omit for id-only seed mode)",
        "fields": null
       },
@@ -9202,8 +8405,7 @@
        "name": "symbol",
        "type": "string",
        "optional": true,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The symbol of the token (optional, omit for id-only seed mode)",
        "fields": null
       }
@@ -9238,8 +8440,7 @@
        "name": "mintAddress",
        "type": "string",
        "optional": false,
-       "signer": false,
-       "forms": null,
+       "signer": null,
        "description": "The mint address of the Token2022 token with TransferFee extension",
        "fields": null
       }

@@ -9,6 +9,8 @@ Borsh-style byte building and reading for raw instruction data.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Read-only
 
 ### `Bytes.anchorDiscriminator`
@@ -21,10 +23,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `namespace` | string | yes | no | - | The Anchor namespace (e.g. 'global' for instructions, 'account' for accounts) |
-| `name` | string | yes | no | - | The instruction/account name (snake_case as declared by the program) |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `namespace` | string | yes | - | The Anchor namespace (e.g. 'global' for instructions, 'account' for accounts) |
+| `name` | string | yes | - | The instruction/account name (snake_case as declared by the program) |
 
 ### `Bytes.bool`
 
@@ -36,9 +38,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `b` | boolean | yes | no | - | Boolean value |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `b` | boolean | yes | - | Boolean value |
 
 ### `Bytes.concat`
 
@@ -50,16 +52,16 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `a` | bytes | yes | no | - | First Bytes value |
-| `b` | bytes | no | no | - | Second Bytes value (optional; variadic) |
-| `c` | bytes | no | no | - | Additional Bytes value (optional) |
-| `d` | bytes | no | no | - | Additional Bytes value (optional) |
-| `e` | bytes | no | no | - | Additional Bytes value (optional) |
-| `f` | bytes | no | no | - | Additional Bytes value (optional) |
-| `g` | bytes | no | no | - | Additional Bytes value (optional) |
-| `h` | bytes | no | no | - | Additional Bytes value (optional) |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `a` | bytes | yes | - | First Bytes value |
+| `b` | bytes | no | - | Second Bytes value (optional; variadic) |
+| `c` | bytes | no | - | Additional Bytes value (optional) |
+| `d` | bytes | no | - | Additional Bytes value (optional) |
+| `e` | bytes | no | - | Additional Bytes value (optional) |
+| `f` | bytes | no | - | Additional Bytes value (optional) |
+| `g` | bytes | no | - | Additional Bytes value (optional) |
+| `h` | bytes | no | - | Additional Bytes value (optional) |
 
 ### `Bytes.i64`
 
@@ -71,9 +73,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `n` | number | yes | no | - | Signed integer in i64 range |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `n` | number | yes | - | Signed integer in i64 range |
 
 ### `Bytes.i64At`
 
@@ -85,10 +87,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `bytes` | bytes | yes | no | - | The Bytes value to read from |
-| `offset` | number | yes | no | - | Byte offset to read at |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `bytes` | bytes | yes | - | The Bytes value to read from |
+| `offset` | number | yes | - | Byte offset to read at |
 
 ### `Bytes.len`
 
@@ -100,9 +102,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `bytes` | bytes | yes | no | - | The Bytes value to measure |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `bytes` | bytes | yes | - | The Bytes value to measure |
 
 ### `Bytes.pubkey`
 
@@ -114,9 +116,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `addr` | string | yes | no | - | The address to encode as 32 raw bytes |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `addr` | string | yes | - | The address to encode as 32 raw bytes |
 
 ### `Bytes.pubkeyAt`
 
@@ -128,10 +130,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `bytes` | bytes | yes | no | - | The Bytes value to read from |
-| `offset` | number | yes | no | - | Byte offset to read at |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `bytes` | bytes | yes | - | The Bytes value to read from |
+| `offset` | number | yes | - | Byte offset to read at |
 
 ### `Bytes.raw`
 
@@ -143,9 +145,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `hexString` | string | yes | no | - | Hex-encoded bytes (with or without 0x prefix, even length) |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `hexString` | string | yes | - | Hex-encoded bytes (with or without 0x prefix, even length) |
 
 ### `Bytes.str`
 
@@ -157,9 +159,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `s` | string | yes | no | - | The string to Borsh-encode |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `s` | string | yes | - | The string to Borsh-encode |
 
 ### `Bytes.u128`
 
@@ -171,9 +173,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `n` | number | yes | no | - | Non-negative integer (u64-range policy number, widened to u128 LE) |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `n` | number | yes | - | Non-negative integer (u64-range policy number, widened to u128 LE) |
 
 ### `Bytes.u16`
 
@@ -185,9 +187,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `n` | number | yes | no | - | Non-negative integer in u16 range |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `n` | number | yes | - | Non-negative integer in u16 range |
 
 ### `Bytes.u16At`
 
@@ -199,10 +201,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `bytes` | bytes | yes | no | - | The Bytes value to read from |
-| `offset` | number | yes | no | - | Byte offset to read at |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `bytes` | bytes | yes | - | The Bytes value to read from |
+| `offset` | number | yes | - | Byte offset to read at |
 
 ### `Bytes.u32`
 
@@ -214,9 +216,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `n` | number | yes | no | - | Non-negative integer in u32 range |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `n` | number | yes | - | Non-negative integer in u32 range |
 
 ### `Bytes.u32At`
 
@@ -228,10 +230,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `bytes` | bytes | yes | no | - | The Bytes value to read from |
-| `offset` | number | yes | no | - | Byte offset to read at |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `bytes` | bytes | yes | - | The Bytes value to read from |
+| `offset` | number | yes | - | Byte offset to read at |
 
 ### `Bytes.u64`
 
@@ -243,9 +245,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `n` | number | yes | no | - | Non-negative integer in u64 range |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `n` | number | yes | - | Non-negative integer in u64 range |
 
 ### `Bytes.u64At`
 
@@ -257,10 +259,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `bytes` | bytes | yes | no | - | The Bytes value to read from |
-| `offset` | number | yes | no | - | Byte offset to read at |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `bytes` | bytes | yes | - | The Bytes value to read from |
+| `offset` | number | yes | - | Byte offset to read at |
 
 ### `Bytes.u8`
 
@@ -272,9 +274,9 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `n` | number | yes | no | - | Non-negative integer in u8 range |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `n` | number | yes | - | Non-negative integer in u8 range |
 
 ### `Bytes.u8At`
 
@@ -286,10 +288,10 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `bytes` | bytes | yes | no | - | The Bytes value to read from |
-| `offset` | number | yes | no | - | Byte offset to read at |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `bytes` | bytes | yes | - | The Bytes value to read from |
+| `offset` | number | yes | - | Byte offset to read at |
 
 ### `Bytes.utf8`
 
@@ -301,6 +303,6 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `s` | string | yes | no | - | The string to utf8-encode |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `s` | string | yes | - | The string to utf8-encode |

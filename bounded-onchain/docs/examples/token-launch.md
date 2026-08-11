@@ -115,7 +115,7 @@ Creator-fee custody options (pick one before launch - the `creator` argument of 
 
 ## Related
 
-- [Pump.fun plugin reference](../pump-fun.md) - argument contracts for every call used here
+- [Pump.fun plugin reference](../pump-fun.md) - manifest argument details for every call used here
 - [Custody and PDAs](../custody-and-pdas.md) - the wallet / escrow / named-account custody rule
 - [Plugin catalog](../plugins.md) - one-screen signature index
 - [Solana capability status](../solana-capability-status.md) - `LIVE-PUMP-PROOF` markers for this surface

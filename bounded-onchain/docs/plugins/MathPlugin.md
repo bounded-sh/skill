@@ -9,6 +9,8 @@ Overflow-safe mulDiv helpers for rule arithmetic.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Read-only
 
 ### `MathPlugin.mulDivCeil`
@@ -21,11 +23,11 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `value` | number | yes | no | - | The value to multiply (unsigned) |
-| `multiplier` | number | yes | no | - | The multiplier (unsigned) |
-| `divisor` | number | yes | no | - | The divisor (unsigned, must be non-zero) |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `value` | number | yes | - | The value to multiply (unsigned) |
+| `multiplier` | number | yes | - | The multiplier (unsigned) |
+| `divisor` | number | yes | - | The divisor (unsigned, must be non-zero) |
 
 ### `MathPlugin.mulDivFloor`
 
@@ -37,8 +39,8 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `value` | number | yes | no | - | The value to multiply (unsigned) |
-| `multiplier` | number | yes | no | - | The multiplier (unsigned) |
-| `divisor` | number | yes | no | - | The divisor (unsigned, must be non-zero) |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `value` | number | yes | - | The value to multiply (unsigned) |
+| `multiplier` | number | yes | - | The multiplier (unsigned) |
+| `divisor` | number | yes | - | The divisor (unsigned, must be non-zero) |

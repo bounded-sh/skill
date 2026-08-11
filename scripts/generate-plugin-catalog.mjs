@@ -68,30 +68,10 @@ function contextFor(fn) {
   })()).join(', ')
 }
 
-const FORM_LABELS = {
-  'wallet': 'wallet address',
-  'escrow-sentinel': '`@contract.address` (app escrow)',
-  'account-id': 'account id (named PDA)',
-  'pubkey': 'literal public key',
-  'account-id-only': 'account id only (non-pubkey string)',
-}
-
-function formsCell(arg) {
-  if (!arg.forms) return '-'
-  return arg.forms.map((f) => {
-    if (!FORM_LABELS[f]) throw new Error(`unknown accepted form ${f}`)
-    return FORM_LABELS[f]
-  }).join(' / ')
-}
-
-function signerExplanation(arg) {
-  const parts = []
-  if (arg.forms.includes('wallet')) parts.push('a wallet form requires that wallet\'s signature')
-  if (arg.forms.includes('pubkey')) parts.push('a literal public key must supply its required signature')
-  if (arg.forms.includes('escrow-sentinel')) parts.push('`@contract.address` is program-signed')
-  if (arg.forms.includes('account-id')) parts.push('an account-id source is program-signed')
-  if (arg.forms.includes('account-id-only')) parts.push('the named account is program-signed')
-  return `- \`${arg.name}\` signs: ${parts.join('; ')}.`
+function signerCell(value) {
+  if (value === true) return '**yes**'
+  if (value === false) return 'no'
+  return '-'
 }
 
 function statusLine(fn) {
@@ -119,28 +99,20 @@ function renderFunction(fn) {
   lines.push(`- ${statusLine(fn)}`)
   lines.push('')
   if (fn.args.length) {
-    lines.push('| Arg | Type | Required | Signs | Accepts | Description |')
-    lines.push('|---|---|---|---|---|---|')
+    lines.push('| Arg | Type | Required | Signer in manifest | Description |')
+    lines.push('|---|---|---|---|---|')
     for (const arg of fn.args) {
-      const signs = arg.signer === true ? '**yes**' : arg.signer === false ? 'no' : '-'
-      lines.push(`| \`${arg.name}\` | ${arg.type ?? '-'} | ${arg.optional ? 'no' : 'yes'} | ${signs} | ${formsCell(arg)} | ${esc(arg.description)} |`)
+      lines.push(`| \`${arg.name}\` | ${arg.type ?? '-'} | ${arg.optional ? 'no' : 'yes'} | ${signerCell(arg.signer)} | ${esc(arg.description)} |`)
     }
     lines.push('')
     for (const arg of fn.args.filter((a) => a.fields)) {
       lines.push(`Fields of \`${arg.name}\`:`, '')
-      lines.push('| Field | Type | Required | Signs | Accepts |')
+      lines.push('| Field | Type | Required | Signer in manifest | Description |')
       lines.push('|---|---|---|---|---|')
       for (const [name, field] of Object.entries(arg.fields)) {
-        const signs = field.signer === true ? '**yes**' : field.signer === false ? 'no' : '-'
         const required = field.optional === true ? 'no' : field.optional === false ? 'yes' : 'conditional'
-        lines.push(`| \`${name}\` | ${field.type ?? '-'} | ${required} | ${signs} | ${formsCell(field)} |`)
+        lines.push(`| \`${name}\` | ${field.type ?? '-'} | ${required} | ${signerCell(field.signer)} | ${esc(field.description)} |`)
       }
-      lines.push('')
-    }
-    const signerArgs = fn.args.filter((a) => a.signer === true)
-    if (signerArgs.length) {
-      lines.push(...signerArgs.map(signerExplanation))
-      lines.push('Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).')
       lines.push('')
     }
   }
@@ -156,6 +128,7 @@ function renderPage(ns) {
   const lines = [GENERATED_HEADER, '', `# \`@${ns.namespace}\``, '']
   lines.push(ROLES[ns.namespace] ?? '', '')
   lines.push('Check every function\'s row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.', '')
+  lines.push('Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.', '')
   if (fragment) lines.push(fragment, '')
   if (transactional.length) {
     lines.push('## Transactional', '')
@@ -178,8 +151,8 @@ function renderPage(ns) {
 
 function renderIndex() {
   const lines = [GENERATED_HEADER, '', '# Plugin catalog', '']
-  lines.push('Compact O(1) router for policy-callable plugins. Open one namespace page for exact argument contracts, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature. Check [solana-capability-status.md](solana-capability-status.md) before treating a function as deployed or live-verified.', '')
-  lines.push('Custody forms are function-specific. Only use wallet, `@contract.address`, or account-id forms when that argument declares them. Details: [custody and PDAs](custody-and-pdas.md).', '')
+  lines.push('Compact O(1) router for policy-callable plugins. Open one namespace page for manifest argument details, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature. Check [solana-capability-status.md](solana-capability-status.md) before treating a function as deployed or live-verified.', '')
+  lines.push('Argument descriptions and signer markers come directly from existing monorepo manifests. A `-` signer cell means the manifest makes no claim, not that no signature is required. Do not infer custody support from an argument name; follow its description and the [custody and PDAs guide](custody-and-pdas.md).', '')
   lines.push('| Namespace | Role | Function names | Detail |')
   lines.push('|---|---|---|---|')
   for (const ns of catalog.namespaces) {
@@ -200,7 +173,7 @@ function renderIndex() {
 
 function renderSignatures() {
   const lines = [GENERATED_HEADER, '', '# Complete plugin signatures', '']
-  lines.push('Every callable signature in one optional scan. Use the linked namespace page for argument forms and signer details; use the [compact plugin router](plugins.md) when you already know the namespace.', '')
+  lines.push('Every callable signature in one optional scan. Use the linked namespace page for manifest argument descriptions and existing signer markers; use the [compact plugin router](plugins.md) when you already know the namespace.', '')
   lines.push('| Function | Bare signature | Callable from | Detail |')
   lines.push('|---|---|---|---|')
   for (const ns of catalog.namespaces) {

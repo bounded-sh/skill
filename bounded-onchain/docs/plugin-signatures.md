@@ -5,7 +5,7 @@
 
 # Complete plugin signatures
 
-Every callable signature in one optional scan. Use the linked namespace page for argument forms and signer details; use the [compact plugin router](plugins.md) when you already know the namespace.
+Every callable signature in one optional scan. Use the linked namespace page for manifest argument descriptions and existing signer markers; use the [compact plugin router](plugins.md) when you already know the namespace.
 
 | Function | Bare signature | Callable from | Detail |
 |---|---|---|---|

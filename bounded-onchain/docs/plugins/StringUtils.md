@@ -9,6 +9,8 @@ String helpers usable in rules.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
+Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
+
 ## Read-only
 
 ### `StringUtils.length`
@@ -21,6 +23,6 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
-| Arg | Type | Required | Signs | Accepts | Description |
-|---|---|---|---|---|---|
-| `str` | string | yes | no | - | The string to get the length of |
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `str` | string | yes | - | The string to get the length of |

@@ -4,7 +4,7 @@ Who holds funds and who signs in an onchain policy. Read this before writing a h
 
 ## The one rule
 
-The following resolver applies only when a function's argument contract explicitly accepts wallet, escrow-sentinel, and account-id forms. It is not a global rule for every `source`, `owner`, `creator`, or destination argument.
+The following resolver applies only when the function's existing manifest description explicitly accepts wallet, escrow-sentinel, and account-id forms. It is not a global rule for every `source`, `owner`, `creator`, or destination argument.
 
 ```
 argument string
@@ -68,8 +68,9 @@ Guard payouts with the pot's real balance, not your bookkeeping alone:
 
 ## Signing and rent behavior
 
-- Named-PDA and escrow arguments marked `Signs: yes` are signed by the Bounded program via derived seeds; no user signature is needed for the move itself, so access rules and invariants on the collection are the only gate. Write them accordingly.
-- Wallet arguments marked `Signs: yes` require that wallet's signature on the transaction; a policy naming someone else's wallet as a signing source simply fails to sign.
+- For an argument whose manifest description accepts named-PDA or escrow custody and whose generated page shows `Signer in manifest: yes`, the Bounded program signs via derived seeds. No user signature is needed for the move itself, so access rules and invariants on the collection are the gate. Write them accordingly.
+- For a wallet argument whose generated page shows `Signer in manifest: yes`, that wallet must sign the transaction; a policy naming someone else's wallet as a signing source simply fails to sign.
+- `-` in the generated signer column means the existing manifest does not declare signer metadata. It is not evidence that the argument never requires a signature.
 - `createAccount` rent (and any first-ATA rent for token recipients) is paid by the transaction payer. Server-driven reveal writes (the no-user path used by randomness fulfillment) cannot use payer-funded calls such as `createAccount` - create accounts in a normal user write first.
 - A named PDA holds SOL directly and tokens in its ATAs; `@TokenPlugin.getBalance` explicitly accepts an account id, so balances are readable in rules through `@TokenPlugin.getBalance(id, mint)`.
 

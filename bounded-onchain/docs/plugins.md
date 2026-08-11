@@ -5,9 +5,9 @@
 
 # Plugin catalog
 
-Compact O(1) router for policy-callable plugins. Open one namespace page for exact argument contracts, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature. Check [solana-capability-status.md](solana-capability-status.md) before treating a function as deployed or live-verified.
+Compact O(1) router for policy-callable plugins. Open one namespace page for manifest argument details, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature. Check [solana-capability-status.md](solana-capability-status.md) before treating a function as deployed or live-verified.
 
-Custody forms are function-specific. Only use wallet, `@contract.address`, or account-id forms when that argument declares them. Details: [custody and PDAs](custody-and-pdas.md).
+Argument descriptions and signer markers come directly from existing monorepo manifests. A `-` signer cell means the manifest makes no claim, not that no signature is required. Do not infer custody support from an argument name; follow its description and the [custody and PDAs guide](custody-and-pdas.md).
 
 | Namespace | Role | Function names | Detail |
 |---|---|---|---|
