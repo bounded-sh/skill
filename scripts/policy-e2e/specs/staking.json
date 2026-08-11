@@ -1,0 +1,114 @@
+{
+  "page": "bounded-onchain/docs/examples/staking-lock-vault.md",
+  "name": "staking-lock-vault",
+  "appName": "staking-example",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_flex",
+      "data": {
+        "amount": 2000000,
+        "lockedUntil": 0
+      },
+      "expect": "ok",
+      "note": "deposit with no lock (lockedUntil 0); hook idempotently creates the vault, moves 2000000 lamports in, and stamps owner"
+    },
+    {
+      "kind": "get",
+      "path": "stakes/s_RUN_ID_flex",
+      "expectField": {
+        "field": "amount",
+        "equals": 2000000
+      },
+      "note": "stake recorded with its deposit amount"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_locked",
+      "data": {
+        "amount": 1500000,
+        "lockedUntil": "TIME_NOW_PLUS_3600"
+      },
+      "expect": "ok",
+      "note": "deposit locked one hour from now (within MAX_LOCK_SECONDS)"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_dust",
+      "data": {
+        "amount": 0,
+        "lockedUntil": 0
+      },
+      "expect": "denied",
+      "note": "amount 0 is below MIN_STAKE_LAMPORTS"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_past",
+      "data": {
+        "amount": 2000000,
+        "lockedUntil": 1000
+      },
+      "expect": "denied",
+      "note": "nonzero lockedUntil in the past fails the lockedUntil > @time.now bound"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_forge",
+      "data": {
+        "amount": 2000000,
+        "lockedUntil": 0,
+        "owner": "11111111111111111111111111111111"
+      },
+      "expect": "denied",
+      "note": "owner must be absent at create; it is hook-stamped from @user.address"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_locked",
+      "data": {
+        "amount": 0
+      },
+      "expect": "denied",
+      "note": "unstake before lockedUntil is denied by the @time.now comparison"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_flex",
+      "data": {
+        "amount": 0
+      },
+      "expect": "ok",
+      "note": "unstake the unlocked stake; hook pays 2000000 lamports from the vault back to the stamped owner"
+    },
+    {
+      "kind": "get",
+      "path": "stakes/s_RUN_ID_flex",
+      "expectField": {
+        "field": "amount",
+        "equals": 0
+      },
+      "note": "stake drained to a receipt"
+    },
+    {
+      "kind": "set",
+      "path": "stakes/s_RUN_ID_flex",
+      "data": {
+        "amount": 0
+      },
+      "expect": "denied",
+      "note": "double unstake denied: @data.amount > 0 no longer holds"
+    },
+    {
+      "kind": "query",
+      "path": "stakes/s_RUN_ID_locked",
+      "name": "vaultBalance",
+      "args": {},
+      "expect": "nonNull",
+      "note": "vault balance readable via the named query on the onchain path (authenticated caller)"
+    }
+  ]
+}

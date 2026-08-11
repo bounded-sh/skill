@@ -1,0 +1,14 @@
+{
+  "page": "bounded-onchain/docs/examples/isolated-vault.md",
+  "name": "isolated-vault",
+  "tests": [
+    { "kind": "verify" },
+    { "kind": "set", "path": "vaults/vRUN_ID", "data": { "owner": "USER_ADDRESS" }, "expect": "ok", "note": "owner registers their vault" },
+    { "kind": "set", "path": "vaults/vRUN_ID/deposits/d1", "data": { "amount": 1000000 }, "expect": "ok", "note": "first deposit creates the PDA idempotently and funds it" },
+    { "kind": "set", "path": "vaults/vRUN_ID/deposits/d2", "data": { "amount": 0 }, "expect": "denied", "note": "zero deposit fails amount > 0" },
+    { "kind": "set", "path": "vaults/vRUN_ID/withdrawals/w1", "data": { "amount": 999999999, "to": "USER_ADDRESS" }, "expect": "denied", "note": "overdraft blocked by the getBalance rule" },
+    { "kind": "set", "path": "vaults/vRUN_ID/withdrawals/w2", "data": { "amount": 100000, "to": "USER_ADDRESS" }, "expect": "ok", "note": "owner withdraws within balance; program signs for the PDA" },
+    { "kind": "set", "path": "vaults/vGHOST/deposits/d1", "data": { "amount": 5 }, "expect": "denied", "note": "deposit into a nonexistent vault fails the registry gate" },
+    { "kind": "query", "path": "vaults/vRUN_ID", "name": "vaultAddress", "args": {}, "expect": "nonNull", "note": "PDA address resolves", "acceptSimUnsupported": true }
+  ]
+}

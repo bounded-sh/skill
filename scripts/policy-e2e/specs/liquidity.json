@@ -1,0 +1,97 @@
+{
+  "page": "bounded-onchain/docs/examples/cp-amm-liquidity-positions.md",
+  "name": "cp-amm-liquidity-positions",
+  "appName": "cp-amm-liquidity",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "positions/pos_RUN_ID",
+      "data": {
+        "creator": "USER_ADDRESS"
+      },
+      "expect": "ok",
+      "note": "creator equals the authenticated wallet; creates the pos_RUN_ID PDA and the position NFT (USER_ADDRESS = harness-substituted wallet of the test identity)"
+    },
+    {
+      "kind": "set",
+      "path": "positions/pos_bad_RUN_ID",
+      "data": {
+        "creator": "11111111111111111111111111111112"
+      },
+      "expect": "denied",
+      "note": "wrong literal owner: creator is not the caller's wallet, create rule requires @newData.creator == @user.address"
+    },
+    {
+      "kind": "set",
+      "path": "positions/pos_RUN_ID/deposits/d1",
+      "data": {
+        "amountA": 1000000,
+        "amountB": 1000000
+      },
+      "expect": "ok",
+      "note": "funds the PDA from the caller's wallet and adds liquidity atomically"
+    },
+    {
+      "kind": "set",
+      "path": "positions/pos_RUN_ID/deposits/d0",
+      "data": {
+        "amountA": 0,
+        "amountB": 1000
+      },
+      "expect": "denied",
+      "note": "amount 0: create rule requires both amounts > 0"
+    },
+    {
+      "kind": "set",
+      "path": "positions/missing_RUN_ID/deposits/d1",
+      "data": {
+        "amountA": 1000,
+        "amountB": 1000
+      },
+      "expect": "denied",
+      "note": "missing prerequisite doc: parent position was never created, get(/positions/$positionId) is null"
+    },
+    {
+      "kind": "set",
+      "path": "positions/pos_RUN_ID/deposits/d1",
+      "data": {
+        "amountA": 2000000,
+        "amountB": 1000000
+      },
+      "expect": "denied",
+      "note": "readonly-field change on update: deposits are immutable, update rule is false"
+    },
+    {
+      "kind": "set",
+      "path": "positions/pos_RUN_ID/withdrawals/w1",
+      "data": {
+        "amountA": 100000,
+        "amountB": 100000
+      },
+      "expect": "ok",
+      "note": "removes part of the liquidity and pays it back to the caller's wallet"
+    },
+    {
+      "kind": "set",
+      "path": "positions/pos_RUN_ID/feeClaims/c0",
+      "data": {
+        "amountA": 0,
+        "amountB": 0
+      },
+      "expect": "denied",
+      "note": "zero total claim: rule requires amountA + amountB > 0"
+    },
+    {
+      "kind": "get",
+      "path": "positions/pos_RUN_ID/deposits/d1",
+      "expectField": {
+        "field": "amountA",
+        "equals": 1000000
+      },
+      "note": "the original immutable deposit amount survived the denied update attempt"
+    }
+  ]
+}

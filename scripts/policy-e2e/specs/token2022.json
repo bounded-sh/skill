@@ -1,0 +1,119 @@
+{
+  "page": "bounded-onchain/docs/examples/token2022-extensions.md",
+  "name": "token2022-extensions",
+  "appName": "token2022-extensions-test",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "feeTokens/fee_RUN_ID",
+      "data": {
+        "name": "Fee Token",
+        "symbol": "FEE",
+        "uri": "https://example.com/fee.json",
+        "supply": 1000000000,
+        "feeBps": 100,
+        "maxFee": 1000000
+      },
+      "expect": "ok",
+      "note": "create a transfer-fee token: 1% fee, maxFee 1 token, supply minted to creator"
+    },
+    {
+      "kind": "set",
+      "path": "feeTokens/fee2_RUN_ID",
+      "data": {
+        "name": "Bad Fee",
+        "symbol": "BAD",
+        "uri": "https://example.com/bad.json",
+        "supply": 1000000,
+        "feeBps": 100,
+        "maxFee": 0
+      },
+      "expect": "denied",
+      "note": "feeBps > 0 requires maxFee > 0"
+    },
+    {
+      "kind": "set",
+      "path": "feeTokens/fee3_RUN_ID",
+      "data": {
+        "name": "Zero Fee",
+        "symbol": "ZRO",
+        "uri": "https://example.com/zro.json",
+        "supply": 1000000,
+        "feeBps": 0,
+        "maxFee": 1000000
+      },
+      "expect": "denied",
+      "note": "fee-token collection requires feeBps > 0"
+    },
+    {
+      "kind": "get",
+      "path": "feeTokens/fee_RUN_ID",
+      "expectField": {
+        "field": "feeBps",
+        "equals": 100
+      },
+      "note": "fee token doc persisted with configured fee"
+    },
+    {
+      "kind": "set",
+      "path": "badges/badge_RUN_ID",
+      "data": {
+        "recipient": "11111111111111111111111111111111",
+        "name": "Founder Badge",
+        "symbol": "FNDR",
+        "uri": "https://example.com/badge.json"
+      },
+      "expect": "ok",
+      "note": "issue a soulbound badge (decimals 0, nonTransferable) to a literal recipient"
+    },
+    {
+      "kind": "set",
+      "path": "badges/badge_RUN_ID",
+      "data": {
+        "name": "Renamed Badge"
+      },
+      "expect": "denied",
+      "note": "update rule is false; badge metadata is immutable after create"
+    },
+    {
+      "kind": "set",
+      "path": "savingsTokens/sav_RUN_ID",
+      "data": {
+        "name": "Savings",
+        "symbol": "SAVE",
+        "uri": "https://example.com/save.json",
+        "supply": 5000000,
+        "interestBps": 500
+      },
+      "expect": "ok",
+      "note": "create an interest-bearing token at 5% annual"
+    },
+    {
+      "kind": "set",
+      "path": "savingsTokens/sav2_RUN_ID",
+      "data": {
+        "name": "Hyper",
+        "symbol": "HYP",
+        "uri": "https://example.com/hyp.json",
+        "supply": 5000000,
+        "interestBps": 20000
+      },
+      "expect": "denied",
+      "note": "interestBps above MAX_INTEREST_BPS bound"
+    },
+    {
+      "kind": "set",
+      "path": "feeWithdrawals/w_RUN_ID",
+      "data": {
+        "tokenId": "missing_RUN_ID",
+        "receiver": "11111111111111111111111111111111",
+        "source": "11111111111111111111111111111111"
+      },
+      "expect": "denied",
+      "note": "missing prerequisite doc: no /feeTokens/missing_RUN_ID exists, get(...) != null fails"
+    }
+  ]
+}

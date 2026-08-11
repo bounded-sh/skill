@@ -1,0 +1,219 @@
+<!-- GENERATED FILE. Do not hand-edit.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
+     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Regenerate: node scripts/generate-plugin-catalog.mjs -->
+
+# `@PumpFunPlugin`
+
+Pump.fun token launches, buys, creator fees, and PumpSwap liquidity.
+
+Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
+
+## Conventions for every call
+
+The complete launch/buy/fee lifecycle, with the custody rule for `source`/`creator` arguments and worked policies, lives in [pump-fun.md](../pump-fun.md). Short version: `creator` is the fee recipient and follows the uniform custody rule (wallet, `@contract.address` escrow, or account id); `tokenId` is the app-scoped mint derivation input; every mutating call returns `Bool`, so read balances or the mirror for amounts.
+
+## Transactional
+
+Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+
+### `PumpFunPlugin.buyExactSolIn`
+
+```
+@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps) - Buy tokens with exact SOL amount
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `source` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
+| `mint` | string | yes | no | - | Token mint address |
+| `solAmount` | string | yes | no | - | Amount of SOL to spend (in lamports) |
+| `slippageBps` | string | yes | no | - | Slippage tolerance in basis points (e.g., 500 = 5%) |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+### `PumpFunPlugin.collectCreatorFee`
+
+```
+@PumpFunPlugin.collectCreatorFee(creator) - Collect accumulated creator fees from vault to creator wallet (permissionless)
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `creator` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Creator address (wallet, @contract.address for escrow, or account ID) - validated against bonding curve on-chain |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+### `PumpFunPlugin.createFeeSharingConfig`
+
+```
+@PumpFunPlugin.createFeeSharingConfig(source, mint) - Create fee sharing config for a token (source pays rent and becomes admin)
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `source` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - pays rent and becomes admin |
+| `mint` | string | yes | no | - | Token mint address |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+### `PumpFunPlugin.createToken`
+
+```
+@PumpFunPlugin.createToken(tokenId, name, symbol, uri, creator, {seedMode: "idOnly"}) - Creates a new token on pump.fun with bonding curve. Optional config with seedMode: "idOnly" derives mint PDA from appId+tokenId only (enables vanity addresses).
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
+| `name` | string | yes | no | - |  |
+| `symbol` | string | yes | no | - |  |
+| `uri` | string | yes | no | - |  |
+| `creator` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
+| `config` | object | no | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+### `PumpFunPlugin.createTokenV2`
+
+```
+@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: "idOnly"}) - Creates a Token-2022 (SPL-22) token on pump.fun with optional mayhem mode and optional config.
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `tokenId` | string | yes | no | - | Unique identifier for the token within the app |
+| `name` | string | yes | no | - |  |
+| `symbol` | string | yes | no | - |  |
+| `uri` | string | yes | no | - |  |
+| `creator` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
+| `isMayhemMode` | boolean | yes | no | - | Enable mayhem mode for token (default: false) |
+| `config` | object | no | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+### `PumpFunPlugin.distributeCreatorFees`
+
+```
+@PumpFunPlugin.distributeCreatorFees(mint) - Distribute creator fees to shareholders (permissionless)
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `mint` | string | yes | no | - | Token mint address |
+
+### `PumpFunPlugin.pumpswapDeposit`
+
+```
+@PumpFunPlugin.pumpswapDeposit(source, mint, lpTokenAmountOut, maxBaseAmountIn, maxQuoteAmountIn) - Deposit liquidity into a PumpSwap AMM pool. Mints LP tokens in exchange for base (token) and quote (SOL) deposits.
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `source` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - provides tokens and receives LP tokens |
+| `mint` | string | yes | no | - | Base token mint address (the graduated pump.fun token) |
+| `lpTokenAmountOut` | string | yes | no | - | Exact amount of LP tokens to mint (in smallest units) |
+| `maxBaseAmountIn` | string | yes | no | - | Maximum base tokens to deposit (slippage protection, in smallest units) |
+| `maxQuoteAmountIn` | string | yes | no | - | Maximum quote (SOL) to deposit (slippage protection, in lamports) |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+### `PumpFunPlugin.pumpswapWithdraw`
+
+```
+@PumpFunPlugin.pumpswapWithdraw(source, mint, lpTokenAmountIn, minBaseAmountOut, minQuoteAmountOut) - Withdraw liquidity from a PumpSwap AMM pool. Burns LP tokens and returns proportional base (token) and quote (SOL).
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `source` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Source address (wallet, @contract.address for escrow, or account ID) - provides LP tokens and receives base/quote tokens |
+| `mint` | string | yes | no | - | Base token mint address (the graduated pump.fun token) |
+| `lpTokenAmountIn` | string | yes | no | - | Amount of LP tokens to burn (in smallest units) |
+| `minBaseAmountOut` | string | yes | no | - | Minimum base tokens to receive (slippage protection, in smallest units) |
+| `minQuoteAmountOut` | string | yes | no | - | Minimum quote (SOL) to receive (slippage protection, in lamports) |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+### `PumpFunPlugin.transferCreatorFeesToPump`
+
+```
+@PumpFunPlugin.transferCreatorFeesToPump(mint) - Transfer AMM creator fees to pump creator vault (permissionless, for graduated tokens)
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `mint` | string | yes | no | - | Token mint address |
+
+### `PumpFunPlugin.updateShareholders`
+
+```
+@PumpFunPlugin.updateShareholders(source, mint, [{addr: @wallet1, bps: 5000}, ...]) - Set all shareholders atomically
+```
+
+- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `source` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Authority address (wallet, @contract.address for escrow, or account ID) - must be admin |
+| `mint` | string | yes | no | - | Token mint address |
+| `shareholders` | array | yes | no | - | Array of {addr: address, bps: number} objects. Total BPS must equal 10000. Max 10 shareholders. |
+
+The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+
+## Read-only
+
+### `PumpFunPlugin.getBondingCurveProgress`
+
+```
+@PumpFunPlugin.getBondingCurveProgress(tokenAddress)
+```
+
+- Callable from: rules, named queries, and hooks (read-only)
+- Returns: `number`
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `tokenAddress` | string | yes | no | - |  |
+
+### `PumpFunPlugin.getCreatorFee`
+
+```
+@PumpFunPlugin.getCreatorFee(mint) - Get accumulated native SOL creator fees from bonding curve vault. Automatically resolves the correct vault from bonding curve creator (handles pre/post fee-sharing migration).
+```
+
+- Callable from: rules, named queries, and hooks (read-only)
+- Returns: `number`
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signs | Accepts | Description |
+|---|---|---|---|---|---|
+| `mint` | string | yes | no | - | Token mint address |

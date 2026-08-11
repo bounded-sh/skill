@@ -26,6 +26,10 @@ Read only the row matching the current task or term.
 
 | Task or term | Read |
 |---|---|
+| Any plugin function's signature, argument contract, accepted address forms, signer args, return type, hook context | [plugin catalog](docs/plugins.md) - one screen of signatures, then per-namespace pages under `docs/plugins/` |
+| Who holds funds, who signs, escrow vs named PDA vs user wallet, `@AccountPlugin.createAccount`, account-id hygiene, create-fund-use idiom | [custody and PDAs](docs/custody-and-pdas.md) |
+| A complete policy for an escrow, vault, treasury, staking, market, launch, NFT, Token-2022, randomness, or liquidity app | [examples index](docs/examples.md) |
+| A failing onchain write: error lookup, rent, ATA payer, transaction limits, confirmation, environment differences | [onchain troubleshooting](docs/onchain-troubleshooting.md) |
 | Onchain collections, `onchain:true`, `--protocol`, Solana, mainnet permit, patches, readonly `!`, `FieldReadOnly` | [onchain](docs/onchain.md) |
 | Compiler vs deployed support, devnet status, blocked or unverified integrations (Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor, SPL stake pool, liquid staking, Raydium CPMM, Meteora DLMM), runtime-v4 gating | [capability status](docs/solana-capability-status.md) |
 | Helius, mirror/indexer, missed transactions, eventual consistency, unmirrored writes; who owns webhooks, ingest queue/DLQ, recovery and reconciliation | [mirror completeness](docs/onchain.md#mirror-completeness) |

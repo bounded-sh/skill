@@ -1,0 +1,94 @@
+{
+  "page": "bounded-onchain/docs/examples/nft-collection.md",
+  "name": "nft-collection",
+  "appName": "nft-collection-example",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "collections/c_RUN_ID",
+      "data": {
+        "creator": "USER_ADDRESS",
+        "name": "Test Collection",
+        "uri": "https://example.com/collection.json",
+        "createdAt": 1755000000
+      },
+      "expect": "ok",
+      "note": "creator matches the authenticated wallet, so the collection is created and the onchain hook runs"
+    },
+    {
+      "kind": "set",
+      "path": "collections/cbad_RUN_ID",
+      "data": {
+        "creator": "11111111111111111111111111111111",
+        "name": "Forged Collection",
+        "uri": "https://example.com/forged.json",
+        "createdAt": 1755000000
+      },
+      "expect": "denied",
+      "note": "wrong literal creator: @newData.creator != @user.address"
+    },
+    {
+      "kind": "set",
+      "path": "collections/c_RUN_ID",
+      "data": {
+        "creator": "USER_ADDRESS",
+        "name": "Renamed Collection",
+        "uri": "https://example.com/collection.json",
+        "createdAt": 1755000000
+      },
+      "expect": "denied",
+      "note": "update rule is false: collection documents are immutable after create"
+    },
+    {
+      "kind": "set",
+      "path": "nfts/n_RUN_ID",
+      "data": {
+        "collectionId": "c_RUN_ID",
+        "owner": "USER_ADDRESS",
+        "name": "Test NFT 1",
+        "uri": "https://example.com/nft1.json",
+        "mintedAt": 1755000100
+      },
+      "expect": "ok",
+      "note": "caller is the stored creator of c_RUN_ID, so the mint is allowed"
+    },
+    {
+      "kind": "set",
+      "path": "nfts/norphan_RUN_ID",
+      "data": {
+        "collectionId": "missing_RUN_ID",
+        "owner": "USER_ADDRESS",
+        "name": "Orphan NFT",
+        "uri": "https://example.com/orphan.json",
+        "mintedAt": 1755000100
+      },
+      "expect": "denied",
+      "note": "missing prerequisite doc: get(/collections/missing_RUN_ID) is null"
+    },
+    {
+      "kind": "set",
+      "path": "nfts/n_RUN_ID",
+      "data": {
+        "collectionId": "c_RUN_ID",
+        "owner": "USER_ADDRESS",
+        "name": "Mutated NFT",
+        "uri": "https://example.com/nft1.json",
+        "mintedAt": 1755000100
+      },
+      "expect": "denied",
+      "note": "update rule is false: mint records are immutable"
+    },
+    {
+      "kind": "get",
+      "path": "collections/c_RUN_ID",
+      "expectField": {
+        "field": "name",
+        "equals": "Test Collection"
+      },
+      "note": "collection document is world-readable and holds the created name"
+    }
+  ]
+}
