@@ -1,0 +1,77 @@
+{
+  "page": "bounded-onchain/docs/examples/token-launch.md",
+  "name": "token-launch",
+  "appName": "token-launch-test",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "/tokens/t_RUN_ID",
+      "data": {
+        "name": "Test Token",
+        "symbol": "TST",
+        "uri": "https://example.com/meta.json"
+      },
+      "expect": "ok",
+      "note": "authenticated launch; hook creates the pump.fun token with the caller as creator"
+    },
+    {
+      "kind": "set",
+      "path": "/tokens/t_RUN_ID",
+      "data": {
+        "name": "Renamed Token"
+      },
+      "expect": "denied",
+      "note": "update rule is false; launch records are immutable (readonly-field change on update)"
+    },
+    {
+      "kind": "set",
+      "path": "/tokens/t_RUN_ID/buys/b1_RUN_ID",
+      "data": {
+        "solLamports": 100000000,
+        "slippageBps": 500
+      },
+      "expect": "ok",
+      "note": "buy 0.1 SOL on the curve with 5% slippage from the caller's own wallet"
+    },
+    {
+      "kind": "set",
+      "path": "/tokens/t_RUN_ID/buys/b2_RUN_ID",
+      "data": {
+        "solLamports": 0,
+        "slippageBps": 500
+      },
+      "expect": "denied",
+      "note": "zero-lamport buy fails the solLamports > 0 gate"
+    },
+    {
+      "kind": "set",
+      "path": "/tokens/t_RUN_ID/buys/b3_RUN_ID",
+      "data": {
+        "solLamports": 100000,
+        "slippageBps": 20000
+      },
+      "expect": "denied",
+      "note": "slippage above the 1000 bps cap is rejected"
+    },
+    {
+      "kind": "get",
+      "path": "/tokens/t_RUN_ID",
+      "expectField": {
+        "field": "name",
+        "equals": "Test Token"
+      },
+      "note": "launch record readable publicly and unchanged after the denied update"
+    },
+    {
+      "kind": "query",
+      "path": "/tokens/t_RUN_ID",
+      "name": "curveProgress",
+      "args": {},
+      "expect": "nonNull",
+      "note": "bonding-curve progress query resolves (0 means unreadable or no progress, both acceptable locally)"
+    }
+  ]
+}

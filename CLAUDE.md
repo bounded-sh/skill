@@ -18,6 +18,42 @@ It must pass; there is no CI here, and `main` is what users pull.
 It also runs the contract tests under `scripts/tests/`, so that is the whole gate;
 run them alone with `node --test "scripts/tests/*.test.mjs"` while iterating.
 
+For plugin-reference, policy-example, or policy-routing changes, also run:
+
+```sh
+node scripts/extract-plugin-catalog.mjs --check
+node scripts/generate-plugin-catalog.mjs --check
+node scripts/policy-e2e/run.mjs
+```
+
+The E2E gate uses the sibling `bounded-monorepo` local stack. JSON parsing and
+link checks alone do not qualify an example-policy change for publication.
+
+## Generated plugin reference layer
+
+`bounded-onchain/docs/plugins.md`, `bounded-onchain/docs/plugin-signatures.md`, and
+`bounded-onchain/docs/plugins/*.md` are GENERATED from
+`bounded-onchain/data/plugin-catalog.json`; never hand-edit them.
+Curated prose lives in `bounded-onchain/docs/plugins/_fragments/`. When the
+monorepo changes a plugin manifest (or the capability table changes):
+
+```sh
+node scripts/extract-plugin-catalog.mjs    # refresh the snapshot from bounded-monorepo
+node scripts/generate-plugin-catalog.mjs   # re-render the pages
+```
+
+`node scripts/extract-plugin-catalog.mjs --check` fails when the snapshot is
+stale versus the monorepo; the contract tests fail when the pages drift from
+the snapshot or the capability table.
+
+## Example-policy e2e gate
+
+Every page under `*/docs/examples/` embeds one deployable policy, exercised by
+`node scripts/policy-e2e/run.mjs` against the local platform
+(`bounded-monorepo ./dev fresh smoke --yes --profile full --detach` first).
+Run it after changing any example page or before releasing example changes;
+specs live in `scripts/policy-e2e/specs/`.
+
 ## Content rules
 
 - Behavior documented here is owned by `bounded-monorepo` and `bounded-cli`; changes originate there, and those repos require updating this one in the same task.

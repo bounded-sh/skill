@@ -1,0 +1,10 @@
+{
+  "page": "bounded-onchain/docs/examples/treasury.md",
+  "name": "treasury",
+  "tests": [
+    { "kind": "verify" },
+    { "kind": "set", "path": "treasuryDeposits/dRUN_ID", "data": { "amount": 500000, "memo": "seed" }, "expect": "ok", "note": "open deposit into the app_treasury PDA" },
+    { "kind": "set", "path": "treasuryDeposits/dzRUN_ID", "data": { "amount": 0 }, "expect": "denied", "note": "zero deposit denied" },
+    { "kind": "set", "path": "treasuryWithdrawals/wRUN_ID", "data": { "amount": 1000, "to": "USER_ADDRESS" }, "expect": "denied", "note": "caller is not the TREASURER constant" }
+  ]
+}

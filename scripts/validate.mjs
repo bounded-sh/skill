@@ -8,7 +8,10 @@ import { fileURLToPath } from 'node:url'
 import { isWithinRoot } from './lib/contained-path.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const ignoredDirectories = new Set(['.git', '.gstack', 'node_modules'])
+// _fragments holds inclusion sources for the generated plugin pages; their relative
+// links only resolve from the generated location, and the generated pages (which embed
+// the fragment content verbatim) are fully link-checked below.
+const ignoredDirectories = new Set(['.git', '.gstack', 'node_modules', '_fragments'])
 const textExtensions = new Set(['.md', '.mdc', '.mjs', '.json', '.txt'])
 const errors = []
 

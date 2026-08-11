@@ -69,10 +69,12 @@ program's own source resolver:
    `hash("tarobase_pda" + appId + accountId)`, and the program signs for it with those seeds.
 
 Branch 3 is the one people miss, because most examples only ever show branch 1.
-It applies to **every documented plugin `source`/owner argument** the same way -
+It applies only when that function's existing manifest description lists wallet,
+`@contract.address`, and account-id forms. Those descriptions confirm the forms for
 `@TokenPlugin.transfer`, `@DeFiPlugin.createPool`, `claimMeteoraPoolFees`,
-`claimDammV2PoolFees`, `swapInMeteoraVirtualPool`, `closeCpAmmPosition` - not just
-to transfers. Create the account once with
+`claimDammV2PoolFees`, `swapInMeteoraVirtualPool`, and `closeCpAmmPosition`; do
+not generalize the resolver to an unlisted source, owner, creator, or destination.
+Create the account once with
 `@AccountPlugin.createAccount("<id>")` and read its address with
 `@AccountPlugin.getAccountAddress("<id>")`.
 
@@ -84,17 +86,28 @@ reverting for insufficient funds. With a per-entity account id, isolation is
 **physical and chain-enforced** - a hook for entity A structurally cannot name
 entity B's account.
 
+`createAccount` is idempotent, so the safe idiom is one atomic hook that creates the
+account and funds it. Mutating plugin calls live only in `hooks.onchain` - `rules`
+stay pure boolean gates:
+
 ```json
 "hooks": { "onchain": {
-  "create": "@AccountPlugin.createAccount($marketId)"
+  "create": "@AccountPlugin.createAccount($marketId) && @TokenPlugin.transfer(@user.address, $marketId, @TokenPlugin.SOL, @newData.amount)"
 } }
 ```
 
+Paying out of that market only, from a later collection's hook (the program signs
+for the named PDA; gate the amount against the pot's real balance in the rule):
+
 ```json
-"create": "@TokenPlugin.transfer(@user.address, $marketId, @TokenPlugin.SOL, @newData.amount)",
-"...later, paying out of that market only...":
-  "@TokenPlugin.transfer($marketId, @newData.winner, @TokenPlugin.SOL, @newData.payout)"
+"rules": { "create": "@TokenPlugin.getBalance($marketId, @TokenPlugin.SOL) >= @newData.payout" },
+"hooks": { "onchain": {
+  "create": "@TokenPlugin.transfer($marketId, @newData.winner, @TokenPlugin.SOL, @newData.payout)"
+} }
 ```
+
+Account ids must not parse as a Solana pubkey, and the id namespace is app-global -
+see [custody and PDAs](custody-and-pdas.md) for the full hygiene rules.
 
 Choose the shared escrow when the app genuinely is one fund. Choose named
 accounts whenever separate pots of user money coexist in one app - escrows,
@@ -184,9 +197,9 @@ The Meteora and CP-AMM rows are unverified pending live proof; nothing about the
 | `getSwapQuote` | `(tokenInMint, tokenOutMint, amountIn)` | Expected out (size before you swap). |
 | `getMeteoraSwapQuote` | `(tokenMintAddress, tokenToSwapInMintAddress, tokenAmount)` | Quote against a Meteora pool. **Offchain-only** - the compiler rejects it inside an onchain hook. |
 | `swapInMeteoraVirtualPool` | `(source, poolTokenMint, tokenMint, amount, minimumAmountOut?)` | Swap against a Meteora virtual pool. **Pass the fifth argument** - it is the slippage floor (see below). |
-| `createPool` / `createMeteoraVirtualPool` | … | Create liquidity pools. |
-| `addCpAmmLiquidity` / `removeCpAmmLiquidity` | … | LP in/out of a cp-AMM. |
-| `getMeteoraVirtualPoolAddress` / `getDammV2PoolAddress` / `getCpAmmPoolAddress` | … | Resolve the corresponding pool address. |
+| `createPool` / `createMeteoraVirtualPool` | [full contracts](plugins/DeFiPlugin.md) | Create liquidity pools; `source` follows the uniform custody rule, so a per-entity account id gives each launch its own pot. |
+| `createCpAmmPosition` / `addCpAmmLiquidity` / `removeCpAmmLiquidity` / `lockCpAmmPosition` / `closeCpAmmPosition` | [full contracts](plugins/DeFiPlugin.md) | cp-AMM position lifecycle; `source`/`owner` follows the uniform custody rule. |
+| `getMeteoraVirtualPoolAddress` / `getDammV2PoolAddress` / `getCpAmmPoolAddress` | [full contracts](plugins/DeFiPlugin.md) | Resolve the corresponding pool address. |
 
 `@TokenPlugin.SOL` is the native-token alias.
 `@TokenPlugin.USDC` is mainnet-only and must not be used in a devnet TokenPlugin flow.

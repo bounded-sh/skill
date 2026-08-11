@@ -75,8 +75,13 @@ Chain effects with `&&`; a falsy result short-circuits later calls.
 > It can sequence `get()` pre-state and `getAfter()` staged state inside `hooks.onchain`; `@DocumentPlugin.putDocument` remains offchain-only.
 > Follow the [onchain staged document update contract](../../bounded-onchain/docs/policy-primitives.md#onchain-staged-document-updates) instead of applying this offchain section to a Solana hook.
 
-**Hooks never gate.** There is no throw-from-a-hook. If you want a write to fail,
-that is a `rules` predicate (`403`) or an `invariants` postcondition (`409`).
+**Offchain hooks never gate.** There is no throw-from-an-offchain-hook. If you want
+a write to fail, that is a `rules` predicate (`403`) or an `invariants`
+postcondition (`409`). **Onchain hooks are different**: a `hooks.onchain`
+create/update/delete expression that evaluates to `false` (or errors) aborts the
+entire Solana write - the transaction reverts atomically. That makes `&&`-sequenced
+conditional moves possible in an onchain hook, but keep authorization in `rules`;
+the hook plane is not proven by `bounded verify`.
 
 ## enforceRules — privileged vs. caller-bound hooks
 

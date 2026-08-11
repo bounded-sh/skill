@@ -18,6 +18,18 @@ It must pass; there is no CI here, and `main` is what users pull.
 It also runs the contract tests under `scripts/tests/`, so that is the whole gate;
 run them alone with `node --test "scripts/tests/*.test.mjs"` while iterating.
 
+For plugin-reference, policy-example, or policy-routing changes, also run the
+source and real-policy gates before pushing:
+
+```sh
+node scripts/extract-plugin-catalog.mjs --check
+node scripts/generate-plugin-catalog.mjs --check
+node scripts/policy-e2e/run.mjs
+```
+
+The policy E2E gate requires the sibling `bounded-monorepo` local stack started
+with its `./dev` workflow. JSON parsing and link checks are not a substitute.
+
 ## Content rules
 
 - Behavior documented here is owned by `bounded-monorepo` and `bounded-cli`; changes originate there, and those repos require updating this one in the same task.

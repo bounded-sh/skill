@@ -1,0 +1,179 @@
+{
+  "page": "bounded-onchain/docs/examples/prediction-market-amm.md",
+  "name": "prediction-market-amm",
+  "appName": "pm-amm",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "pmMarkets/m_RUN_ID",
+      "data": {
+        "question": "Will it rain in Lisbon on 2099-12-31?",
+        "expiryTs": 4102444800,
+        "claimWindowSec": 604800,
+        "collateralReserve": 10000000,
+        "yesSupply": 10000000,
+        "seedSupply": 10000000
+      },
+      "expect": "ok",
+      "note": "creator omitted (hook stages @user.address); pot seeded 0.01 SOL at 1:1"
+    },
+    {
+      "kind": "set",
+      "path": "pmMarkets/low_RUN_ID",
+      "data": {
+        "question": "underseeded market",
+        "expiryTs": 4102444800,
+        "claimWindowSec": 604800,
+        "collateralReserve": 1000,
+        "yesSupply": 1000,
+        "seedSupply": 1000
+      },
+      "expect": "denied",
+      "note": "seed below MIN_SEED_LAMPORTS"
+    },
+    {
+      "kind": "set",
+      "path": "pmMarkets/forge_RUN_ID",
+      "data": {
+        "creator": "11111111111111111111111111111111",
+        "question": "forged creator",
+        "expiryTs": 4102444800,
+        "claimWindowSec": 604800,
+        "collateralReserve": 10000000,
+        "yesSupply": 10000000,
+        "seedSupply": 10000000
+      },
+      "expect": "denied",
+      "note": "hook-derived creator must be null at create"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1",
+      "data": {
+        "yesBalance": 0
+      },
+      "expect": "ok",
+      "note": "open position; owner staged by hook"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p2",
+      "data": {
+        "yesBalance": 5
+      },
+      "expect": "denied",
+      "note": "positions must start at zero balance"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1/buys/b1",
+      "data": {
+        "amountIn": 1000000
+      },
+      "expect": "ok",
+      "note": "quote = floor(1000000*10000000/11000000) = 909090 YES"
+    },
+    {
+      "kind": "get",
+      "path": "pmMarkets/m_RUN_ID",
+      "expectField": {
+        "field": "collateralReserve",
+        "equals": 11000000
+      },
+      "note": "staged reserve update landed"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1/buys/b0",
+      "data": {
+        "amountIn": 0
+      },
+      "expect": "denied",
+      "note": "zero-collateral buy"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1/sells/s1",
+      "data": {
+        "yesIn": 2000000
+      },
+      "expect": "denied",
+      "note": "oversell: position holds only 909090"
+    },
+    {
+      "kind": "set",
+      "path": "pmResolves/m_RUN_ID",
+      "data": {
+        "outcome": "YES"
+      },
+      "expect": "ok",
+      "note": "creator resolves; hook stages winningSupply = 10000000 - 9090910 = 909090"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1/buys/b2",
+      "data": {
+        "amountIn": 1000000
+      },
+      "expect": "denied",
+      "note": "trading closed once the resolution document exists"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1/redeems/claim",
+      "data": {
+        "amount": 909090
+      },
+      "expect": "ok",
+      "note": "YES redemption at 1 lamport per share; the id is pinned to the literal claim"
+    },
+    {
+      "kind": "get",
+      "path": "pmPositions/m_RUN_ID/holders/p1",
+      "expectField": {
+        "field": "yesBalance",
+        "equals": 0
+      },
+      "note": "position zeroed by redeem hook"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1/redeems/claim",
+      "data": {
+        "amount": 909090
+      },
+      "expect": "denied",
+      "note": "second redeem hits the same pinned path, becomes an update, denied by update:false"
+    },
+    {
+      "kind": "set",
+      "path": "pmPositions/m_RUN_ID/holders/p1/redeems/other",
+      "data": {
+        "amount": 0
+      },
+      "expect": "denied",
+      "note": "non-pinned redeem id is denied by the $claimId == claim rule"
+    },
+    {
+      "kind": "set",
+      "path": "pmWithdrawals/m_RUN_ID",
+      "data": {
+        "amount": 10090910
+      },
+      "expect": "ok",
+      "note": "winningSupply exhausted (0); creator sweeps exact remaining reserve 11000000 - 909090"
+    },
+    {
+      "kind": "get",
+      "path": "pmMarkets/m_RUN_ID",
+      "expectField": {
+        "field": "collateralReserve",
+        "equals": 0
+      },
+      "note": "reserve zeroed after sweep"
+    }
+  ]
+}
