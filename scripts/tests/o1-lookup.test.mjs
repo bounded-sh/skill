@@ -15,6 +15,43 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 
 const read = (rel) => readFileSync(path.join(root, rel), 'utf8')
 
+test('all pre-reorganization router destinations remain directly reachable', () => {
+  const baseline = JSON.parse(read('scripts/router-baseline.json'))
+  assert.equal(baseline['bounded-backend/SKILL.md'].length, 36)
+  assert.equal(baseline['bounded-onchain/SKILL.md'].length, 13)
+  for (const [router, targets] of Object.entries(baseline)) {
+    const source = read(router)
+    for (const target of targets) {
+      assert.ok(source.includes(`](${target}`), `${router}: lost baseline route ${target}`)
+      assert.ok(existsSync(path.resolve(path.dirname(path.join(root, router)), target)), `${router}: missing ${target}`)
+    }
+  }
+})
+
+test('high-value pre-reorganization guidance remains at full fidelity', () => {
+  const trading = read('bounded-onchain/docs/onchain-trading.md')
+  for (const expected of [
+    '`@DeFiPlugin.getMeteoraSwapQuote` is offchain-only',
+    'quote in a function or on the client',
+    'write the resulting minimum as a document field',
+    'have `rules` constrain it',
+    'The Phoenix read helpers are offchain-only source functions',
+    'currently unsupported on devnet',
+  ]) {
+    assert.ok(trading.includes(expected), `onchain-trading.md lost guidance: ${expected}`)
+  }
+  assert.ok(!trading.includes('every documented plugin `source`/owner argument'))
+  assert.ok(trading.includes("only when that function's argument contract lists"))
+
+  const onchainSkill = read('bounded-onchain/SKILL.md')
+  assert.ok(onchainSkill.includes('Do not recommend an `onchain: false` view for an offchain-only plugin read'))
+  assert.ok(onchainSkill.includes('discovery, deployed-runtime support, and live-network verification as three independent states'))
+
+  const custody = read('bounded-onchain/docs/custody-and-pdas.md')
+  assert.ok(custody.includes('validator statically rejects `@AccountPlugin.getAccountAddress(id)` in signer-position arguments'))
+  assert.ok(custody.includes('The id string is the signing capability.'))
+})
+
 // task keywords -> the router file that must map them -> the one target page.
 // Keywords must appear in the SAME router row (a single table line) as the link.
 const FIXTURES = [
@@ -52,7 +89,7 @@ const BUDGETS = [
   ['bounded-backend/docs/policy-cheat-sheet.md', 110],
   ['bounded-onchain/docs/examples.md', 40],
   ['bounded-backend/docs/examples.md', 25],
-  ['bounded-onchain/docs/plugins.md', 320],
+  ['bounded-onchain/docs/plugins.md', 80],
   ['bounded-onchain/docs/custody-and-pdas.md', 120],
 ]
 
@@ -108,7 +145,14 @@ test('every example page has an e2e spec and every spec points at a real page', 
     specPages.add(spec.page)
   }
   assert.ok(specs.length >= 10, `expected at least 10 e2e specs, found ${specs.length}`)
-  for (const rel of specPages) {
-    assert.ok(rel.includes('/examples/'), `${rel}: spec page outside the examples library`)
+  const linkedPages = new Set()
+  for (const [index, base] of [
+    ['bounded-onchain/docs/examples.md', 'bounded-onchain/docs'],
+    ['bounded-backend/docs/examples.md', 'bounded-backend/docs'],
+  ]) {
+    for (const match of read(index).matchAll(/\]\((examples\/[^)]+\.md)\)/g)) {
+      linkedPages.add(path.join(base, match[1]))
+    }
   }
+  assert.deepEqual([...specPages].sort(), [...linkedPages].sort(), 'example pages and e2e specs must map one-to-one')
 })

@@ -5,7 +5,7 @@
 
 # `@DocumentPlugin`
 
-Staged document writes from hooks (the only plugin usable in offchain hooks).
+Staged document writes from hooks; check each function for its supported hook plane.
 
 Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
@@ -15,7 +15,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `DocumentPlugin.putDocument`
 
@@ -23,7 +23,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @DocumentPlugin.putDocument(path, data) - creates or replaces the document at `path`. Offchain hooks only.
 ```
 
-- Callable from: `hooks.offchain` only
+- Callable from: `hooks.offchain`
 - Status: **unsupported** (not applicable); markers: OFFCHAIN-ONLY.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -37,7 +37,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @DocumentPlugin.updateField(path, field, value)
 ```
 
-- Callable from: `hooks.onchain` and `hooks.offchain`
+- Callable from: `hooks.onchain`, `hooks.offchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |

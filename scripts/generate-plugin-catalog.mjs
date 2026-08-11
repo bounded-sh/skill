@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Renders the plugin reference layer from bounded-onchain/data/plugin-catalog.json:
 //
-//   bounded-onchain/docs/plugins.md               one-screen signatures index
+//   bounded-onchain/docs/plugins.md               compact namespace/function router
+//   bounded-onchain/docs/plugin-signatures.md     complete bare-signatures index
 //   bounded-onchain/docs/plugins/<Namespace>.md   one page per policy namespace
 //
 // Curated prose lives in bounded-onchain/docs/plugins/_fragments/<Namespace>.md and is
@@ -37,7 +38,7 @@ const ROLES = {
   CPI: 'Descriptor-bound CPI calls (memo, lamports, Kamino, DLMM, Raydium, stake pools).',
   DeFiPlugin: 'AMM pools, swaps, Meteora launches/fee claims, and cp-AMM liquidity positions.',
   DflowPlugin: 'DFlow prediction-market orders and KYC status.',
-  DocumentPlugin: 'Staged document writes from hooks (the only plugin usable in offchain hooks).',
+  DocumentPlugin: 'Staged document writes from hooks; check each function for its supported hook plane.',
   MathPlugin: 'Overflow-safe mulDiv helpers for rule arithmetic.',
   NFTPlugin: 'Metaplex Core NFTs: collections, mints, transfers, burns, royalties.',
   OraclePlugin: 'ORAO verifiable randomness (request + reveal reads).',
@@ -51,28 +52,46 @@ const ROLES = {
   TokenPlugin: 'SPL and Token-2022 tokens: transfers, mints, burns, balances, supply.',
 }
 
-// Verified execution-context exceptions (see bounded-backend hooks docs); everything else
-// derives from category + isOnlyOffchain.
-const CONTEXT_OVERRIDES = {
-  '@DocumentPlugin.updateField': '`hooks.onchain` and `hooks.offchain`',
+const CONTEXT_LABELS = {
+  'onchain.rules': 'onchain rules',
+  'onchain.queries': 'onchain named queries',
+  'onchain.hooks': '`hooks.onchain`',
+  'offchain.rules': 'offchain rules',
+  'offchain.queries': 'offchain named queries',
+  'offchain.hooks': '`hooks.offchain`',
 }
 
 function contextFor(fn) {
-  if (CONTEXT_OVERRIDES[fn.callName]) return CONTEXT_OVERRIDES[fn.callName]
-  if (fn.isOnlyOffchain) return '`hooks.offchain` only'
-  if (fn.category === 'transactional') return '`hooks.onchain` on an `"onchain": true` collection'
-  return 'rules, named queries, and hooks (read-only)'
+  if (!fn.contexts?.length) throw new Error(`${fn.callName}: no execution contexts in catalog`)
+  return fn.contexts.map((context) => CONTEXT_LABELS[context] ?? (() => {
+    throw new Error(`${fn.callName}: unknown execution context ${context}`)
+  })()).join(', ')
 }
 
 const FORM_LABELS = {
   'wallet': 'wallet address',
   'escrow-sentinel': '`@contract.address` (app escrow)',
   'account-id': 'account id (named PDA)',
+  'pubkey': 'literal public key',
+  'account-id-only': 'account id only (non-pubkey string)',
 }
 
 function formsCell(arg) {
   if (!arg.forms) return '-'
-  return arg.forms.map((f) => FORM_LABELS[f]).join(' / ')
+  return arg.forms.map((f) => {
+    if (!FORM_LABELS[f]) throw new Error(`unknown accepted form ${f}`)
+    return FORM_LABELS[f]
+  }).join(' / ')
+}
+
+function signerExplanation(arg) {
+  const parts = []
+  if (arg.forms.includes('wallet')) parts.push('a wallet form requires that wallet\'s signature')
+  if (arg.forms.includes('pubkey')) parts.push('a literal public key must supply its required signature')
+  if (arg.forms.includes('escrow-sentinel')) parts.push('`@contract.address` is program-signed')
+  if (arg.forms.includes('account-id')) parts.push('an account-id source is program-signed')
+  if (arg.forms.includes('account-id-only')) parts.push('the named account is program-signed')
+  return `- \`${arg.name}\` signs: ${parts.join('; ')}.`
 }
 
 function statusLine(fn) {
@@ -103,14 +122,25 @@ function renderFunction(fn) {
     lines.push('| Arg | Type | Required | Signs | Accepts | Description |')
     lines.push('|---|---|---|---|---|---|')
     for (const arg of fn.args) {
-      lines.push(`| \`${arg.name}\` | ${arg.type ?? '-'} | ${arg.optional ? 'no' : 'yes'} | ${arg.signer ? '**yes**' : 'no'} | ${formsCell(arg)} | ${esc(arg.description)} |`)
+      const signs = arg.signer === true ? '**yes**' : arg.signer === false ? 'no' : '-'
+      lines.push(`| \`${arg.name}\` | ${arg.type ?? '-'} | ${arg.optional ? 'no' : 'yes'} | ${signs} | ${formsCell(arg)} | ${esc(arg.description)} |`)
     }
     lines.push('')
-    if (fn.args.some((a) => a.signer)) {
-      lines.push('A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet\'s signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).')
+    for (const arg of fn.args.filter((a) => a.fields)) {
+      lines.push(`Fields of \`${arg.name}\`:`, '')
+      lines.push('| Field | Type | Required | Signs | Accepts |')
+      lines.push('|---|---|---|---|---|')
+      for (const [name, field] of Object.entries(arg.fields)) {
+        const signs = field.signer === true ? '**yes**' : field.signer === false ? 'no' : '-'
+        const required = field.optional === true ? 'no' : field.optional === false ? 'yes' : 'conditional'
+        lines.push(`| \`${name}\` | ${field.type ?? '-'} | ${required} | ${signs} | ${formsCell(field)} |`)
+      }
       lines.push('')
-    } else if (fn.category === 'transactional' && fn.args.some((a) => a.forms)) {
-      lines.push('The manifest does not declare signer metadata for this function\'s custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).')
+    }
+    const signerArgs = fn.args.filter((a) => a.signer === true)
+    if (signerArgs.length) {
+      lines.push(...signerArgs.map(signerExplanation))
+      lines.push('Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).')
       lines.push('')
     }
   }
@@ -129,7 +159,7 @@ function renderPage(ns) {
   if (fragment) lines.push(fragment, '')
   if (transactional.length) {
     lines.push('## Transactional', '')
-    lines.push('Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.', '')
+    lines.push('Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.', '')
     for (const fn of transactional) lines.push(renderFunction(fn))
   }
   if (readOnly.length) {
@@ -148,25 +178,15 @@ function renderPage(ns) {
 
 function renderIndex() {
   const lines = [GENERATED_HEADER, '', '# Plugin catalog', '']
-  lines.push('Every policy-callable plugin function, one screen. Open a namespace page only when you need argument contracts; open [solana-capability-status.md](solana-capability-status.md) for the live support state of anything you plan to ship.', '')
-  lines.push('Custody rule for every `source`/`owner`/`creator`/destination argument: a wallet address means that wallet signs, `@contract.address` means the shared app escrow (program-signed), and any non-pubkey string is an account id resolved to a named app PDA (program-signed). Details: [custody and PDAs](custody-and-pdas.md).', '')
-  lines.push('| Namespace | Role | Functions | Detail |')
+  lines.push('Compact O(1) router for policy-callable plugins. Open one namespace page for exact argument contracts, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature. Check [solana-capability-status.md](solana-capability-status.md) before treating a function as deployed or live-verified.', '')
+  lines.push('Custody forms are function-specific. Only use wallet, `@contract.address`, or account-id forms when that argument declares them. Details: [custody and PDAs](custody-and-pdas.md).', '')
+  lines.push('| Namespace | Role | Function names | Detail |')
   lines.push('|---|---|---|---|')
   for (const ns of catalog.namespaces) {
-    const t = ns.functions.filter((f) => f.category === 'transactional').length
-    const r = ns.functions.length - t
-    lines.push(`| \`@${ns.namespace}\` | ${esc(ROLES[ns.namespace] ?? '')} | ${t} transactional, ${r} read-only | [reference](plugins/${ns.namespace}.md) |`)
+    const names = ns.functions.map((fn) => `\`${fn.name}\``).join(', ')
+    lines.push(`| \`@${ns.namespace}\` | ${esc(ROLES[ns.namespace] ?? '')} | ${names} | [reference](plugins/${ns.namespace}.md) |`)
   }
   lines.push('')
-  for (const ns of catalog.namespaces) {
-    lines.push(`## \`@${ns.namespace}\``, '')
-    lines.push('```')
-    for (const fn of ns.functions) {
-      const gate = fn.status && fn.status.support !== 'unverified' ? `   # ${fn.status.support}: ${fn.status.markers}` : ''
-      lines.push(`${fn.usage}${gate}`)
-    }
-    lines.push('```', '')
-  }
   lines.push('## Capability-only entries', '')
   lines.push('Rows in the capability table with no callable manifest function today (disabled, runtime-gated, or core language forms):', '')
   lines.push('| Entry | Support | Markers |')
@@ -178,8 +198,23 @@ function renderIndex() {
   return `${lines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`
 }
 
+function renderSignatures() {
+  const lines = [GENERATED_HEADER, '', '# Complete plugin signatures', '']
+  lines.push('Every callable signature in one optional scan. Use the linked namespace page for argument forms and signer details; use the [compact plugin router](plugins.md) when you already know the namespace.', '')
+  lines.push('| Function | Bare signature | Callable from | Detail |')
+  lines.push('|---|---|---|---|')
+  for (const ns of catalog.namespaces) {
+    for (const fn of ns.functions) {
+      lines.push(`| \`${fn.callName}\` | \`${esc(fn.signature)}\` | ${contextFor(fn)} | [reference](plugins/${ns.namespace}.md) |`)
+    }
+  }
+  lines.push('')
+  return `${lines.join('\n').trimEnd()}\n`
+}
+
 const outputs = new Map()
 outputs.set(path.join(docsDir, 'plugins.md'), renderIndex())
+outputs.set(path.join(docsDir, 'plugin-signatures.md'), renderSignatures())
 for (const ns of catalog.namespaces) {
   outputs.set(path.join(pagesDir, `${ns.namespace}.md`), renderPage(ns))
 }

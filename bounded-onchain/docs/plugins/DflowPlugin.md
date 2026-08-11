@@ -11,7 +11,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `DflowPlugin.openPredictionMarketOrder`
 
@@ -19,7 +19,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @DflowPlugin.openPredictionMarketOrder(source, inputMint, outputMint, amount, slippageBps?)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-DFLOW.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -30,7 +30,8 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 | `amount` | number | yes | no | - | The amount of input tokens to escrow |
 | `slippageBps` | number | no | no | - | Max allowed slippage in basis points (optional, defaults to 50 = 0.5%) |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ## Read-only
 
@@ -40,7 +41,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DflowPlugin.getKycStatus(address) - Check KYC verification status for a wallet address
 ```
 
-- Callable from: `hooks.offchain` only
+- Callable from: offchain rules, offchain named queries
 - Returns: `boolean`
 - Status: **unsupported** (not run); markers: NO-DEVNET-DFLOW.
 

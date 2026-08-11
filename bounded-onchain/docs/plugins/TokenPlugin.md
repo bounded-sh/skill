@@ -19,7 +19,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `TokenPlugin.burn`
 
@@ -27,7 +27,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @TokenPlugin.burn(sourceAddress, mintAddress, amount)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -36,7 +36,8 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 | `mintAddress` | string | yes | no | - | The mint address of the token to burn |
 | `amount` | number | yes | no | - | The amount of tokens to burn with decimals |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `TokenPlugin.createToken`
 
@@ -44,7 +45,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.createToken(tokenId, name, symbol, uri, decimals)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -61,7 +62,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.createToken2022(tokenId, name, symbol, uri, decimals, extensions?) - Creates a Token2022 token with optional extensions object. Extension fields: nonTransferable (true|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). All address fields support: wallet addresses, @contract.address for escrow, or account IDs.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -71,9 +72,20 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `symbol` | string | yes | no | - | The symbol of the token |
 | `uri` | string | yes | no | - | The URI of the token metadata |
 | `decimals` | number | yes | no | - | The number of decimals for the token |
-| `extensions` | object | no | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | Optional extensions object. Fields: nonTransferable (true\|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID. |
+| `extensions` | object | no | no | - | Optional extensions object. Fields: nonTransferable (true\|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID. |
 
-The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
+Fields of `extensions`:
+
+| Field | Type | Required | Signs | Accepts |
+|---|---|---|---|---|
+| `nonTransferable` | boolean | conditional | no | - |
+| `feeBasisPoints` | number | conditional | no | - |
+| `maxFee` | number | conditional | no | - |
+| `transferFeeAuthority` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
+| `withdrawWithheldAuthority` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
+| `interestRate` | number | conditional | no | - |
+| `interestRateAuthority` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
+| `permanentDelegate` | string | conditional | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) |
 
 ### `TokenPlugin.mint`
 
@@ -81,7 +93,7 @@ The manifest does not declare signer metadata for this function's custody argume
 @TokenPlugin.mint(tokenId, name, symbol, destinationAddress, amount)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -92,15 +104,13 @@ The manifest does not declare signer metadata for this function's custody argume
 | `destinationAddress` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
 | `amount` | number | yes | no | - | The amount of tokens to mint with decimals |
 
-The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
-
 ### `TokenPlugin.transfer`
 
 ```
 @TokenPlugin.transfer(sourceAddress, destinationAddress, mintAddress, amount)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -110,7 +120,8 @@ The manifest does not declare signer metadata for this function's custody argume
 | `mintAddress` | string | yes | no | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
 | `amount` | number | yes | no | - | The amount of tokens to transfer with decimals |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `TokenPlugin.transferWholeTokens`
 
@@ -118,7 +129,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.transferWholeTokens(sourceAddress, destinationAddress, mintAddress, amount)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -128,7 +139,8 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `mintAddress` | string | yes | no | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
 | `amount` | number | yes | no | - | The amount of tokens to transfer without decimals |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `TokenPlugin.withdrawWithheldTokens`
 
@@ -136,17 +148,18 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.withdrawWithheldTokens(mintAddress, withdrawAuthority, feeReceiverOwner, sourceOwner) - Withdraws withheld transfer fees from a source token account to a fee receiver. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to get mintAddress. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get the withdrawAuthority.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
 |---|---|---|---|---|---|
 | `mintAddress` | string | yes | no | - | The mint address of the Token2022 token. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to derive it. |
-| `withdrawAuthority` | string | yes | **yes** | wallet address / account id (named PDA) | The withdraw withheld authority that will sign. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get this. Supports @contract.address, account ID, or external wallet. |
+| `withdrawAuthority` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The withdraw withheld authority that will sign. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get this. Supports @contract.address, account ID, or external wallet. |
 | `feeReceiverOwner` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The owner address for the fee receiver token account (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID. |
 | `sourceOwner` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The owner address for the source token account to harvest withheld fees from (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID. |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `withdrawAuthority` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ## Read-only
 
@@ -156,7 +169,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.getBalance(walletAddress, mintAddress)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -171,7 +184,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.getDecimals(mintAddress)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -185,7 +198,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.getSupply(mintAddress)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -199,7 +212,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Accepted argument counts: 1, 3
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
@@ -216,7 +229,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) - Returns the withdraw withheld authority from a Token2022 mint's TransferFeeConfig extension.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 

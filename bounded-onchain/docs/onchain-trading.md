@@ -69,10 +69,12 @@ program's own source resolver:
    `hash("tarobase_pda" + appId + accountId)`, and the program signs for it with those seeds.
 
 Branch 3 is the one people miss, because most examples only ever show branch 1.
-It applies to **every documented plugin `source`/owner argument** the same way -
+It applies only when that function's argument contract lists wallet,
+`@contract.address`, and account-id forms. The catalog confirms those forms for
 `@TokenPlugin.transfer`, `@DeFiPlugin.createPool`, `claimMeteoraPoolFees`,
-`claimDammV2PoolFees`, `swapInMeteoraVirtualPool`, `closeCpAmmPosition` - not just
-to transfers. Create the account once with
+`claimDammV2PoolFees`, `swapInMeteoraVirtualPool`, and `closeCpAmmPosition`; do
+not generalize the resolver to an unlisted source, owner, creator, or destination.
+Create the account once with
 `@AccountPlugin.createAccount("<id>")` and read its address with
 `@AccountPlugin.getAccountAddress("<id>")`.
 

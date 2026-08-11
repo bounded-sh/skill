@@ -2,9 +2,13 @@
  "schemaVersion": 1,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "0d03b0a8478b5d95bfb03534d075b2da140a6fd0",
+  "monorepoCommit": "4f75c43c471b7bfc88a0225b1ee5cce2260ef500",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
-  "capabilityTable": "bounded-onchain/docs/solana-capability-status.md"
+  "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
+  "canonicalOffchainPlugins": [
+   "DocumentPlugin",
+   "StringUtils"
+  ]
  },
  "namespaces": [
   {
@@ -31,10 +35,15 @@
        "type": "string",
        "optional": false,
        "signer": false,
-       "forms": null,
+       "forms": [
+        "account-id-only"
+       ],
        "description": "The id of the account to create. This should be a unique string within your entire application.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -61,11 +70,18 @@
        "optional": false,
        "signer": false,
        "forms": [
-        "account-id"
+        "account-id-only"
        ],
        "description": "The id of the account to get the address of. Must be a string account id (the same unique string you passed to createAccount). Do not pass @contract.address here - it is an on-chain address, not a string, and the on-chain interpreter rejects it.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -125,6 +141,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -163,6 +182,13 @@
        "description": "The document path in the TARGET app (e.g. 'scores/player1')",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -222,6 +248,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -271,6 +304,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -319,6 +359,13 @@
        "description": "The current amount of actual sol reserves in the bonding curve. The actual balance of the sol in the bonding curve.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -379,6 +426,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -437,6 +491,13 @@
        "description": "Current actual SOL reserves.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -497,6 +558,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -545,6 +613,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -573,6 +648,13 @@
        "description": "Boolean value",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -673,6 +755,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -701,6 +790,13 @@
        "description": "Signed integer in i64 range",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -741,6 +837,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -770,6 +873,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -798,6 +908,13 @@
        "description": "The address to encode as 32 raw bytes",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -838,6 +955,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -866,6 +990,13 @@
        "description": "Hex-encoded bytes (with or without 0x prefix, even length)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -896,6 +1027,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -925,6 +1063,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -953,6 +1098,13 @@
        "description": "Non-negative integer in u16 range",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -993,6 +1145,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -1021,6 +1180,13 @@
        "description": "Non-negative integer in u32 range",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -1061,6 +1227,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -1089,6 +1262,13 @@
        "description": "Non-negative integer in u64 range",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -1129,6 +1309,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -1157,6 +1344,13 @@
        "description": "Non-negative integer in u8 range",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -1197,6 +1391,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -1225,6 +1426,13 @@
        "description": "The string to utf8-encode",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -1261,7 +1469,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -1350,6 +1558,9 @@
        "description": "Minimum output to accept; the swap fails below this.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -1471,6 +1682,9 @@
        "description": "Borrow amount in token base units",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -1603,6 +1817,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unsupported",
@@ -1654,6 +1871,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unsupported",
@@ -1694,6 +1914,9 @@
        "description": "User lookup table address; pass 11111111111111111111111111111111 when none exists",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -1747,6 +1970,9 @@
        "description": "The Kamino lending market, bound via @const.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -1838,6 +2064,9 @@
        "description": "Scope prices account (most reserves), or the KLend program id if unused",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -1949,6 +2178,9 @@
        "description": "Repay amount in token base units; u64 max repays everything",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -2081,6 +2313,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unsupported",
@@ -2124,6 +2359,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unverified",
@@ -2147,7 +2385,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -2247,6 +2485,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unsupported",
@@ -2270,7 +2511,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -2370,6 +2611,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unsupported",
@@ -2393,7 +2637,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -2493,6 +2737,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unsupported",
@@ -2516,7 +2763,7 @@
        "name": "source",
        "type": "address",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -2595,6 +2842,9 @@
        "description": "Minimum pool tokens to accept; the transaction fails below this.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -2685,6 +2935,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "descriptor CPI",
       "support": "unsupported",
@@ -2737,6 +2990,9 @@
        "description": "Amount in lamports (1 SOL = 1_000_000_000)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "descriptor CPI",
@@ -2830,6 +3086,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -2856,6 +3115,7 @@
        "signer": true,
        "forms": [
         "wallet",
+        "escrow-sentinel",
         "account-id"
        ],
        "description": "The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation",
@@ -2881,6 +3141,9 @@
        "description": "Optional: The NFT mint address of a specific position to claim fees from. The position address is derived from this mint. If omitted, claims from all positions owned by source in the pool.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -2908,6 +3171,7 @@
        "signer": true,
        "forms": [
         "wallet",
+        "escrow-sentinel",
         "account-id"
        ],
        "description": "The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation",
@@ -2923,6 +3187,9 @@
        "description": "The address of the Meteora virtual pool",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -2977,6 +3244,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -3029,6 +3299,9 @@
        "description": "Unique identifier for this position (e.g., document path $positionId)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -3213,6 +3486,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -3291,6 +3567,9 @@
        "description": "Optional: Initial SOL amount in lamports to buy tokens with (dev buy). If provided and > 0, executes a swap after pool creation.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -3375,82 +3654,142 @@
        "fields": {
         "baseFeeBps": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Base fee in basis points (0-10000)"
         },
         "numberOfPeriod": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Number of fee reduction periods"
         },
         "periodFrequency": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Frequency of fee reduction periods in seconds"
         },
         "reductionFactor": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Fee reduction factor per period"
         },
         "feeSchedulerMode": {
          "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Fee scheduler mode: 'linear' or 'exponential'"
         },
         "protocolFeePercent": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Protocol fee percentage (0-100)"
         },
         "referralFeePercent": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Referral fee percentage (0-100)"
         },
         "compoundingFeeBps": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Compounding fee in basis points (required when collectFeeMode is 'compounding', default 0)"
         },
         "dynamicFeeEnabled": {
          "type": "boolean",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Enable dynamic fee calculation"
         },
         "binStep": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Bin step for dynamic fee (if enabled)"
         },
         "filterPeriod": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Filter period for volatility (if dynamic fee enabled)"
         },
         "decayPeriod": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Decay period for volatility (if dynamic fee enabled)"
         },
         "dynamicFeeReductionFactor": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Dynamic fee reduction factor (if dynamic fee enabled)"
         },
         "maxVolatilityAccumulator": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Max volatility accumulator (if dynamic fee enabled)"
         },
         "variableFeeControl": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Variable fee control (if dynamic fee enabled)"
         },
         "collectFeeMode": {
          "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Fee collection mode: 'onlyB', 'both', or 'compounding'"
         },
         "activationType": {
          "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Activation type: 'timestamp' or 'slot'"
         },
         "activationPoint": {
          "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Activation point (timestamp or slot number), null for immediate"
         },
         "hasAlphaVault": {
          "type": "boolean",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Whether pool has alpha vault"
         }
        }
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -3555,6 +3894,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -3638,6 +3980,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -3710,6 +4055,9 @@
        "description": "Optional: Slippage tolerance in basis points (1 bps = 0.01%). Default: 500 (5%)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -3784,6 +4132,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -3812,6 +4163,9 @@
        "description": "The address of the Meteora virtual pool",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -3876,6 +4230,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -3902,6 +4263,7 @@
        "signer": false,
        "forms": [
         "wallet",
+        "escrow-sentinel",
         "account-id"
        ],
        "description": "The source account to check claimable fees for - can be a wallet address, program ID for PDA, or any string for PDA derivation",
@@ -3917,6 +4279,13 @@
        "description": "The address of the Meteora virtual pool",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -3967,6 +4336,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -3993,6 +4369,7 @@
        "signer": false,
        "forms": [
         "wallet",
+        "escrow-sentinel",
         "account-id"
        ],
        "description": "The owner address (wallet, escrow, or account ID)",
@@ -4018,6 +4395,13 @@
        "description": "Unique identifier for the position (e.g., document path $positionId)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4047,6 +4431,13 @@
        "description": "The mint address of the token (same as used in createMeteoraVirtualPool)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4097,6 +4488,10 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy offchain-only",
       "support": "unverified",
@@ -4135,6 +4530,13 @@
        "description": "Unique identifier for the config within the app",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4184,6 +4586,10 @@
        "description": "The amount of input token to swap (in smallest units, e.g., lamports for SOL)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy offchain-only",
@@ -4267,6 +4673,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -4297,6 +4706,10 @@
        "description": "The wallet address to check KYC status for",
        "fields": null
       }
+     ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy offchain-only",
@@ -4346,6 +4759,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "offchain.hooks"
+     ],
      "status": {
       "lane": "legacy offchain-only",
       "support": "unsupported",
@@ -4394,6 +4810,10 @@
        "description": "Any policy value to assign. Null deletes the field.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks",
+      "offchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4453,6 +4873,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -4501,6 +4928,13 @@
        "description": "The divisor (unsigned, must be non-zero)",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4564,6 +4998,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -4612,6 +5049,9 @@
        "description": "The URI of the collection metadata",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4686,6 +5126,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -4753,6 +5196,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -4788,7 +5234,9 @@
        "optional": false,
        "signer": true,
        "forms": [
-        "wallet"
+        "wallet",
+        "escrow-sentinel",
+        "account-id"
        ],
        "description": "The update authority address. For Bounded-managed collections this is ignored (PDA signs). For externally-managed collections, pass the wallet/account that owns the update authority.",
        "fields": null
@@ -4813,6 +5261,9 @@
        "description": "Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4859,7 +5310,9 @@
        "optional": false,
        "signer": true,
        "forms": [
-        "wallet"
+        "wallet",
+        "escrow-sentinel",
+        "account-id"
        ],
        "description": "The update authority address. For Bounded-managed assets this is ignored (PDA signs). For externally-managed assets, pass the wallet/account that owns the update authority.",
        "fields": null
@@ -4884,6 +5337,9 @@
        "description": "Optional: Array of {address: string, percentage: number} objects. Percentages must sum to 100. If omitted or null, existing on-chain creators are preserved.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4924,6 +5380,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -4952,6 +5415,13 @@
        "description": "The mint/asset address of the NFT to look up the owner for",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -4992,6 +5462,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -5020,6 +5497,13 @@
        "description": "The address of an NFT asset or collection to look up the update authority for",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -5068,6 +5552,9 @@
        "description": "The reveal path of the random number to be called after the randomness is fulfilled",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -5118,6 +5605,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -5146,6 +5640,13 @@
        "description": "The random ID to get the VRF address for",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -5229,6 +5730,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5282,6 +5786,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5325,6 +5832,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5367,6 +5877,9 @@
        "description": "Amount of Phoenix tokens to convert to USDC. Omit to withdraw all.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -5431,6 +5944,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5494,6 +6010,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5536,6 +6055,9 @@
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -5580,6 +6102,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5622,6 +6147,9 @@
        "description": "Isolated subaccount index to drain back into cross. Must be 1-100.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -5676,6 +6204,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5729,6 +6260,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unsupported",
@@ -5768,6 +6302,10 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy offchain-only",
       "support": "unsupported",
@@ -5796,6 +6334,10 @@
        "description": "Market orderbook pubkey",
        "fields": null
       }
+     ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy offchain-only",
@@ -5835,6 +6377,10 @@
        "description": "Subaccount index (default 0).",
        "fields": null
       }
+     ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy offchain-only",
@@ -5885,6 +6431,10 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy offchain-only",
       "support": "unsupported",
@@ -5923,6 +6473,10 @@
        "description": "Subaccount index (default 0).",
        "fields": null
       }
+     ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy offchain-only",
@@ -5973,6 +6527,10 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy offchain-only",
       "support": "unsupported",
@@ -6015,6 +6573,10 @@
        "description": "Subaccount index. 0 (default) = cross-margin.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy offchain-only",
@@ -6064,6 +6626,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -6112,6 +6681,13 @@
        "description": "The current YES token supply in the market.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6172,6 +6748,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -6230,6 +6813,13 @@
        "description": "The LMSR liquidity parameter (b).",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6290,6 +6880,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -6338,6 +6935,13 @@
        "description": "The current YES token supply in the market.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6397,6 +7001,13 @@
        "description": "The LMSR liquidity parameter (b).",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6463,6 +7074,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -6495,7 +7113,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -6535,6 +7153,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -6558,7 +7179,7 @@
        "name": "creator",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -6567,6 +7188,9 @@
        "description": "Creator address (wallet, @contract.address for escrow, or account ID) - validated against bonding curve on-chain",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6591,7 +7215,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -6610,6 +7234,9 @@
        "description": "Token mint address",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6674,7 +7301,7 @@
        "name": "creator",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -6694,10 +7321,16 @@
        "fields": {
         "seedMode": {
          "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Seed derivation mode. \"idOnly\" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation."
         }
        }
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6762,7 +7395,7 @@
        "name": "creator",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -6792,10 +7425,16 @@
        "fields": {
         "seedMode": {
          "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": null,
          "description": "Seed derivation mode. \"idOnly\" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation."
         }
        }
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -6826,6 +7465,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -6849,7 +7491,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -6899,6 +7541,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -6922,7 +7567,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -6972,6 +7617,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -7001,6 +7649,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -7024,7 +7675,7 @@
        "name": "source",
        "type": "string",
        "optional": false,
-       "signer": false,
+       "signer": true,
        "forms": [
         "wallet",
         "escrow-sentinel",
@@ -7053,6 +7704,9 @@
        "description": "Array of {addr: address, bps: number} objects. Total BPS must equal 10000. Max 10 shareholders.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -7083,6 +7737,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -7111,6 +7772,13 @@
        "description": "Token mint address",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -7199,6 +7867,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -7248,6 +7919,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -7276,6 +7950,13 @@
        "description": "The account address to read",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -7315,6 +7996,13 @@
        "description": "The token mint address",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -7365,6 +8053,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -7393,6 +8088,13 @@
        "description": "The account address to read the lamport balance of",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -7433,6 +8135,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -7472,6 +8181,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -7501,6 +8217,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "extended runtime",
       "support": "unverified",
@@ -7529,6 +8252,13 @@
        "description": "The app-scoped account name",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "extended runtime",
@@ -7567,6 +8297,14 @@
        "description": "The string to get the length of",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries",
+      "offchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -7615,6 +8353,9 @@
        "description": "The maximum amount in lamports willing to pay for the NFT",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -7695,6 +8436,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -7770,6 +8514,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -7838,6 +8585,9 @@
        "description": "The number of decimals for the token",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -7913,39 +8663,86 @@
        "type": "object",
        "optional": true,
        "signer": false,
-       "forms": [
-        "wallet",
-        "escrow-sentinel",
-        "account-id"
-       ],
+       "forms": null,
        "description": "Optional extensions object. Fields: nonTransferable (true|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID.",
        "fields": {
         "nonTransferable": {
-         "type": "boolean"
+         "type": "boolean",
+         "optional": null,
+         "signer": false,
+         "forms": null,
+         "description": null
         },
         "feeBasisPoints": {
-         "type": "number"
+         "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
+         "description": null
         },
         "maxFee": {
-         "type": "number"
+         "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
+         "description": null
         },
         "transferFeeAuthority": {
-         "type": "string"
+         "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": [
+          "wallet",
+          "escrow-sentinel",
+          "account-id"
+         ],
+         "description": null
         },
         "withdrawWithheldAuthority": {
-         "type": "string"
+         "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": [
+          "wallet",
+          "escrow-sentinel",
+          "account-id"
+         ],
+         "description": null
         },
         "interestRate": {
-         "type": "number"
+         "type": "number",
+         "optional": null,
+         "signer": false,
+         "forms": null,
+         "description": null
         },
         "interestRateAuthority": {
-         "type": "string"
+         "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": [
+          "wallet",
+          "escrow-sentinel",
+          "account-id"
+         ],
+         "description": null
         },
         "permanentDelegate": {
-         "type": "string"
+         "type": "string",
+         "optional": null,
+         "signer": false,
+         "forms": [
+          "wallet",
+          "escrow-sentinel",
+          "account-id"
+         ],
+         "description": null
         }
        }
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -8020,6 +8817,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -8086,6 +8886,9 @@
        "description": "The amount of tokens to transfer with decimals",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -8154,6 +8957,9 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.hooks"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -8190,6 +8996,7 @@
        "signer": true,
        "forms": [
         "wallet",
+        "escrow-sentinel",
         "account-id"
        ],
        "description": "The withdraw withheld authority that will sign. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get this. Supports @contract.address, account ID, or external wallet.",
@@ -8223,6 +9030,9 @@
        "description": "The owner address for the source token account to harvest withheld fees from (ATA will be derived). Supports wallet address, @contract.address for escrow, or account ID.",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.hooks"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -8267,6 +9077,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -8296,6 +9113,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -8324,6 +9148,13 @@
        "description": "The mint address of the token to get the supply of",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",
@@ -8377,6 +9208,13 @@
        "fields": null
       }
      ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
      "status": {
       "lane": "legacy runtime",
       "support": "unverified",
@@ -8405,6 +9243,13 @@
        "description": "The mint address of the Token2022 token with TransferFee extension",
        "fields": null
       }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
      ],
      "status": {
       "lane": "legacy runtime",

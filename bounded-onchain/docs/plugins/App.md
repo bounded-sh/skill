@@ -11,7 +11,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `App.set`
 
@@ -19,7 +19,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @App.set(appId, path, data) - Cross-app write. Evaluates the target app's create/update rule with the current user and enforces its field maps. Fails closed for target hooks, target onchain invariants, or nested write effects until those transitions can be enforced atomically. Rent is funded by the calling app's escrow.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-CROSS-APP-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -36,7 +36,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @App.get(appId, path) - Reads another app's document (or null if missing). Read-only; the document PDA is derived with the TARGET app id.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `object`
 - Status: **unverified** (source parity only); markers: LIVE-CROSS-APP-PROOF.
 

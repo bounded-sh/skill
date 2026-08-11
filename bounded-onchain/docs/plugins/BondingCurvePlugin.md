@@ -17,7 +17,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @BondingCurvePlugin.getMarketCapInSol(supply, virtualSolReserves, virtualTokenReserves)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -33,7 +33,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @BondingCurvePlugin.getMaxSolInProduct(virtualSolReserves, virtualTokenReserves, actualTokenReserves)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -49,7 +49,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @BondingCurvePlugin.getMaxTokensInProduct(virtualSolReserves, virtualTokenReserves, actualSolReserves)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -65,7 +65,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @BondingCurvePlugin.getSolOutProduct(tokenAmount, virtualSolReserves, virtualTokenReserves, actualSolReserves)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -82,7 +82,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @BondingCurvePlugin.getTokensInProduct(solAmountOut, virtualSolReserves, virtualTokenReserves, actualSolReserves)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -99,7 +99,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @BondingCurvePlugin.getTokensOutProduct(solAmount, virtualSolReserves, virtualTokenReserves, actualTokenReserves)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 

@@ -11,7 +11,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `TensorPlugin.buyNft`
 
@@ -19,7 +19,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @TensorPlugin.buyNft(assetAddress, maxAmount)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-TENSOR-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -33,7 +33,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @TensorPlugin.listNft(assetAddress, amount?, expireInSec?, currency?, privateTaker?, makerBroker?)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-TENSOR-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |

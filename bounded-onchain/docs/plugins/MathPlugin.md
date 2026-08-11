@@ -17,7 +17,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @MathPlugin.mulDivCeil(value, multiplier, divisor) - Computes ceil(value * multiplier / divisor) with full precision intermediate product
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -33,7 +33,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @MathPlugin.mulDivFloor(value, multiplier, divisor) - Computes floor(value * multiplier / divisor) with full precision intermediate product
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 

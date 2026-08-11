@@ -26,7 +26,9 @@ Read only the row matching the current task or term.
 
 | Task or term | Read |
 |---|---|
-| Any plugin function's signature, argument contract, accepted address forms, signer args, return type, hook context | [plugin catalog](docs/plugins.md) - one screen of signatures, then per-namespace pages under `docs/plugins/` |
+| Find a plugin namespace or function quickly | [plugin catalog](docs/plugins.md) - compact namespace/function router |
+| Scan every bare signature and callable context | [complete signatures index](docs/plugin-signatures.md) |
+| One plugin function's exact signature, argument contract/forms, signer args, return type, and callable context | [plugin catalog](docs/plugins.md), then its per-namespace page under `docs/plugins/` |
 | Who holds funds, who signs, escrow vs named PDA vs user wallet, `@AccountPlugin.createAccount`, account-id hygiene, create-fund-use idiom | [custody and PDAs](docs/custody-and-pdas.md) |
 | A complete policy for an escrow, vault, treasury, staking, market, launch, NFT, Token-2022, randomness, or liquidity app | [examples index](docs/examples.md) |
 | A failing onchain write: error lookup, rent, ATA payer, transaction limits, confirmation, environment differences | [onchain troubleshooting](docs/onchain-troubleshooting.md) |
@@ -54,7 +56,7 @@ Read only the row matching the current task or term.
 
 - **Default onchain login = default Turnkey email/social auth + optional wallet login, side by side.** Do not add `authMode` or `auth.wallets` for the normal path. Turnkey is the sole embedded-wallet implementation, and Turnkey-native auth with eager provisioning is already the default. Supported email/social users have `@user.address` when login completes. Add bring-your-own **wallet login** (`walletLogin`) only for users who already hold a Solana wallet. Use explicit auth policy only to opt out or retain the legacy hosted login mode. See [docs/embedded-wallets.md -> recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app).
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
-- **A plugin `source` that is not a pubkey is an ACCOUNT ID**, resolved to its own program-signed PDA. `@contract.address` is ONE shared fund for the whole app; a named id is a separate fund per name. When separate pots of user money coexist (escrows, auctions, prize pools, per-tenant balances), use named accounts - isolation is then chain-enforced instead of trusted to your accounting. Decide before the first deposit; retrofitting means migrating live balances.
+- **When a function's argument contract accepts account IDs**, a non-pubkey string resolves to its own program-signed PDA. `@contract.address` is ONE shared fund for the whole app; a named id is a separate fund per name. Do not assume every source, owner, creator, or destination accepts all three custody forms - check that function's page. When separate pots of user money coexist (escrows, auctions, prize pools, per-tenant balances), use named accounts where accepted. Decide before the first deposit; retrofitting means migrating live balances.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
 - Mainnet is a real target, not a placeholder: the program is live on mainnet-beta. Creating a mainnet app requires a paid account plan (no API key or shared secret), and the app is owned on-chain by the creator's wallet **immutably** - so it must be created from the machine holding that wallet's key, and it can never be ownership-transferred. See [docs/onchain.md](docs/onchain.md).
 - `@contract.address` is the Solana program-ID sentinel, not the app escrow address returned by a direct query.

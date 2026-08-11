@@ -51,19 +51,6 @@ function publicText(value) {
   return out.replace(/\s+$/g, '')
 }
 
-// Accepted-address-forms classifier. Only explicit positive manifest wording counts; no
-// inference, and negated mentions ("do not pass @contract.address") never classify. An
-// arg with no marker keeps forms: null and the docs fall back to the description.
-function classifyForms(description) {
-  const d = String(description ?? '')
-  const forms = []
-  if (/wallet|@user\.address|user's wallet|address of the (source|destination|wallet)/i.test(d)) forms.push('wallet')
-  if (/(?:using|or|,)\s*(?:the\s*)?`?@contract\.address`?|@contract\.address\s*(?:as|for)\s|escrow sentinel|for the app escrow|@contract\.address escrow/i.test(d)
-    && !/do not pass @contract\.address|not @contract\.address/i.test(d)) forms.push('escrow-sentinel')
-  if (/account[- ]?id|named account|string id for pda|any string for pda/i.test(d)) forms.push('account-id')
-  return forms.length ? forms : null
-}
-
 // ---------------------------------------------------------------------------
 // Capability table: `| `id` | lane | support | verification | markers |`
 function parseCapabilityRows() {
@@ -86,14 +73,35 @@ function parseCapabilityRows() {
 // ---------------------------------------------------------------------------
 const require_ = createRequire(path.join(solLayer, 'package.json'))
 const pluginDirs = readdirSync(path.join(solLayer, 'src')).filter((d) => d.endsWith('-plugin-stuff')).sort()
+const { applyPluginArgumentContracts } = require_(path.join(solLayer, 'src/plugin-argument-contracts.js'))
+
+const manifestEntries = pluginDirs.flatMap((dir) => {
+  const manifestFile = readdirSync(path.join(solLayer, 'src', dir)).find((f) => f.includes('manifest'))
+  return manifestFile ? [{ dir, manifest: require_(path.join(solLayer, 'src', dir, manifestFile)) }] : []
+})
+applyPluginArgumentContracts(manifestEntries.map(({ manifest }) => manifest))
+
+// Load the exact source objects exported by the two canonical offchain manifests.
+// These files are object literals with `export default`; evaluating that literal keeps
+// this maintainer extractor independent of a built schema dist while still deriving the
+// plane membership from production-owned source rather than a duplicated test fixture.
+const schemaManifests = path.join(monorepo, 'packages/cdk/layers/schema/nodejs/src/manifests')
+function loadSourceManifest(file) {
+  const source = readFileSync(path.join(schemaManifests, file), 'utf8')
+  return Function(source.replace(/^export default\s+/m, 'return '))()
+}
+const canonicalOffchainManifests = [
+  loadSourceManifest('document-offchain-plugin-manifest.ts'),
+  loadSourceManifest('string-utils-offchain-plugin-manifest.ts'),
+]
+const canonicalOffchainCalls = new Set(canonicalOffchainManifests.flatMap((manifest) =>
+  Object.values(manifest.functions ?? {}).flatMap((functions) =>
+    Object.keys(functions).map((name) => `@${manifest.name}.${name}`))))
 
 const capability = parseCapabilityRows()
 const namespaces = new Map() // namespace -> { namespace, sourcePlugins, variables, functions }
 
-for (const dir of pluginDirs) {
-  const manifestFile = readdirSync(path.join(solLayer, 'src', dir)).find((f) => f.includes('manifest'))
-  if (!manifestFile) continue
-  const manifest = require_(path.join(solLayer, 'src', dir, manifestFile))
+for (const { manifest } of manifestEntries) {
 
   for (const [category, fns] of Object.entries(manifest.functions ?? {})) {
     for (const [fnName, fn] of Object.entries(fns)) {
@@ -123,11 +131,38 @@ for (const dir of pluginDirs) {
           name: arg.name,
           type: arg.type ?? null,
           optional: !!arg.optional,
+          // The production validator treats a missing signer marker as false.
           signer: !!arg.signer,
-          forms: classifyForms(arg.description),
+          forms: arg.acceptedForms ?? null,
           description: publicText(arg.description),
-          fields: arg.fields ?? null,
+          fields: arg.fields ? Object.fromEntries(Object.entries(arg.fields).map(([name, field]) => [name, {
+            type: field.type ?? null,
+            optional: typeof field.optional === 'boolean' ? field.optional : null,
+            signer: !!field.signer,
+            forms: field.acceptedForms ?? null,
+            description: field.description ? publicText(field.description) : null,
+          }])) : null,
         })),
+        contexts: (() => {
+          const contexts = new Set()
+          const inCanonicalOffchain = canonicalOffchainCalls.has(callName)
+          if (category === 'transactional') {
+            if (!fn.isOnlyOffchain) contexts.add('onchain.hooks')
+            if (inCanonicalOffchain) contexts.add('offchain.hooks')
+          } else {
+            if (!fn.isOnlyOffchain) {
+              contexts.add('onchain.rules')
+              contexts.add('onchain.queries')
+              contexts.add('onchain.hooks')
+            }
+            // Production rules/queries fall back to the onchain read-only map even for
+            // offchain-only functions. The transactional hook path has no such fallback.
+            contexts.add('offchain.rules')
+            contexts.add('offchain.queries')
+            if (inCanonicalOffchain) contexts.add('offchain.hooks')
+          }
+          return [...contexts]
+        })(),
         status,
       })
     }
@@ -167,6 +202,7 @@ const catalog = {
     monorepoCommit,
     solLayerPath: 'packages/cdk/layers/sol-helper/nodejs/sol-layer',
     capabilityTable: 'bounded-onchain/docs/solana-capability-status.md',
+    canonicalOffchainPlugins: canonicalOffchainManifests.map((manifest) => manifest.name),
   },
   namespaces: [...namespaces.values()]
     .map((ns) => ({

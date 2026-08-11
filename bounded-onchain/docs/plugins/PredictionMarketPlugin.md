@@ -19,7 +19,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 Calculates the fee amount from a given amount using basis points (bps). Formula: (amount * feeBps) // 10000
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -36,7 +36,7 @@ Calculates the fee amount from a given amount using basis points (bps). Formula:
 
 Calculates the amount of collateral out for a given amount of YES tokens in, using constant product AMM formula: (collateralReserve * yesIn) // (yesSupply + yesIn)
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -54,7 +54,7 @@ Calculates the amount of collateral out for a given amount of YES tokens in, usi
 
 Calculates the amount of collateral out for a given amount of NO tokens in, using LMSR (Logarithmic Market Scoring Rule) formula.
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -73,7 +73,7 @@ Calculates the amount of collateral out for a given amount of NO tokens in, usin
 
 Calculates the number of NO tokens out for a given amount of collateral in, using LMSR (Logarithmic Market Scoring Rule) formula.
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -92,7 +92,7 @@ Calculates the number of NO tokens out for a given amount of collateral in, usin
 
 Calculates the amount of collateral out for a given amount of YES tokens in, using LMSR (Logarithmic Market Scoring Rule) formula.
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -111,7 +111,7 @@ Calculates the amount of collateral out for a given amount of YES tokens in, usi
 
 Calculates the number of YES tokens out for a given amount of collateral in, using constant product AMM formula: (amountIn * yesSupply) // (collateralReserve + amountIn)
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -129,7 +129,7 @@ Calculates the number of YES tokens out for a given amount of collateral in, usi
 
 Calculates the number of YES tokens out for a given amount of collateral in, using LMSR (Logarithmic Market Scoring Rule) formula.
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 

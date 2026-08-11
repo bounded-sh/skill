@@ -31,7 +31,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `AccountPlugin.createAccount`
 
@@ -39,12 +39,12 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @AccountPlugin.createAccount(accountId)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
 |---|---|---|---|---|---|
-| `accountId` | string | yes | no | - | The id of the account to create. This should be a unique string within your entire application. |
+| `accountId` | string | yes | no | account id only (non-pubkey string) | The id of the account to create. This should be a unique string within your entire application. |
 
 ## Read-only
 
@@ -54,10 +54,10 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @AccountPlugin.getAccountAddress(accountId)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING; DEVNET-ESCROW-SENTINEL.
 
 | Arg | Type | Required | Signs | Accepts | Description |
 |---|---|---|---|---|---|
-| `accountId` | string | yes | no | account id (named PDA) | The id of the account to get the address of. Must be a string account id (the same unique string you passed to createAccount). Do not pass @contract.address here - it is an on-chain address, not a string, and the on-chain interpreter rejects it. |
+| `accountId` | string | yes | no | account id only (non-pubkey string) | The id of the account to get the address of. Must be a string account id (the same unique string you passed to createAccount). Do not pass @contract.address here - it is an on-chain address, not a string, and the on-chain interpreter rejects it. |

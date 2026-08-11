@@ -17,7 +17,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `DeFiPlugin.addCpAmmLiquidity`
 
@@ -25,7 +25,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @DeFiPlugin.addCpAmmLiquidity(source, poolAddress, positionMintAddress, tokenAAmount, tokenBAmount, slippageBps?) - Adds liquidity to a Meteora CP-AMM position
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -37,7 +37,8 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 | `tokenBAmount` | string | yes | no | - | Amount of token B to deposit (in smallest units) |
 | `slippageBps` | number | no | no | - | Optional: Slippage tolerance in basis points (100 = 1%). Allows extra tokens to be spent as buffer. Default: 0 |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.claimDammV2PoolFees`
 
@@ -45,16 +46,17 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.claimDammV2PoolFees(source, poolAddress, positionMintAddress?) - If positionMintAddress is provided, claims fees from only that position; otherwise claims from all positions owned by source in the pool.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
 |---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / account id (named PDA) | The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation |
+| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation |
 | `poolAddress` | string | yes | no | - | The address of the graduated DAMM v2 pool |
 | `positionMintAddress` | string | no | no | - | Optional: The NFT mint address of a specific position to claim fees from. The position address is derived from this mint. If omitted, claims from all positions owned by source in the pool. |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.claimMeteoraPoolFees`
 
@@ -62,15 +64,16 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.claimMeteoraPoolFees(source, poolAddress)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
 |---|---|---|---|---|---|
-| `source` | string | yes | **yes** | wallet address / account id (named PDA) | The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation |
+| `source` | string | yes | **yes** | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The source account claiming fees - can be a wallet address, program ID for PDA, or any string for PDA derivation |
 | `poolAddress` | string | yes | no | - | The address of the Meteora virtual pool |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.closeCpAmmPosition`
 
@@ -78,7 +81,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.closeCpAmmPosition(source, poolAddress, positionMintAddress) - Closes an empty Meteora CP-AMM position and recovers rent
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -87,7 +90,8 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `poolAddress` | string | yes | no | - | The address of the Meteora CP-AMM pool |
 | `positionMintAddress` | string | yes | no | - | The NFT mint address of the position to close (must be empty - no liquidity) |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.createCpAmmPosition`
 
@@ -95,7 +99,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.createCpAmmPosition(owner, poolAddress, positionId) - Creates a new liquidity position (NFT) in a Meteora CP-AMM pool
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -104,7 +108,8 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `poolAddress` | string | yes | no | - | The address of the Meteora CP-AMM pool |
 | `positionId` | string | yes | no | - | Unique identifier for this position (e.g., document path $positionId) |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `owner` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.createMeteoraConfig`
 
@@ -112,7 +117,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.createMeteoraConfig(configId, feeAccount, preMigratedFeeAmountBps, preMigratedCreatorFeePercentage, postMigratedFeeAmountBps, creatorPermanentLockedLiquidityPercentage, initialMarketCap?, migrationMarketCap?, totalTokenSupply?, tokenBaseDecimal?, leftover?, leftoverReceiver?, decayStartingFeeBps?, decayEndingFeeBps?, decayNumberOfPeriod?, decayTotalDuration?)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -134,15 +139,13 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `decayNumberOfPeriod` | number | no | no | - | Optional: Number of linear reduction periods over which the fee decays from decayStartingFeeBps to decayEndingFeeBps. Default: 0 (flat fee, no decay) |
 | `decayTotalDuration` | number | no | no | - | Optional: Total duration of the fee decay, in the pool's activation unit (slots). Default: 0 (flat fee, no decay) |
 
-The manifest does not declare signer metadata for this function's custody arguments; the custody rule still applies - a wallet source must sign the transaction, while `@contract.address` and account-id sources are program-signed. See [custody and PDAs](../custody-and-pdas.md).
-
 ### `DeFiPlugin.createMeteoraVirtualPool`
 
 ```
 @DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -160,7 +163,7 @@ The manifest does not declare signer metadata for this function's custody argume
 @DeFiPlugin.createPool(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, tokenBAmount, config?)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF; CPAMM-SCENARIO.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -172,7 +175,32 @@ The manifest does not declare signer metadata for this function's custody argume
 | `tokenBAmount` | string | yes | no | - | The amount of token B to deposit |
 | `config` | object | no | no | - | Optional: Pool configuration object. If omitted, uses default config. If provided, ALL fields are REQUIRED (no partial configs). |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+Fields of `config`:
+
+| Field | Type | Required | Signs | Accepts |
+|---|---|---|---|---|
+| `baseFeeBps` | number | conditional | no | - |
+| `numberOfPeriod` | number | conditional | no | - |
+| `periodFrequency` | number | conditional | no | - |
+| `reductionFactor` | number | conditional | no | - |
+| `feeSchedulerMode` | string | conditional | no | - |
+| `protocolFeePercent` | number | conditional | no | - |
+| `referralFeePercent` | number | conditional | no | - |
+| `compoundingFeeBps` | number | conditional | no | - |
+| `dynamicFeeEnabled` | boolean | conditional | no | - |
+| `binStep` | number | conditional | no | - |
+| `filterPeriod` | number | conditional | no | - |
+| `decayPeriod` | number | conditional | no | - |
+| `dynamicFeeReductionFactor` | number | conditional | no | - |
+| `maxVolatilityAccumulator` | number | conditional | no | - |
+| `variableFeeControl` | number | conditional | no | - |
+| `collectFeeMode` | string | conditional | no | - |
+| `activationType` | string | conditional | no | - |
+| `activationPoint` | number | conditional | no | - |
+| `hasAlphaVault` | boolean | conditional | no | - |
+
+- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.lockCpAmmPosition`
 
@@ -180,7 +208,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.lockCpAmmPosition(source, poolAddress, positionMintAddress, periodFrequency, cliffUnlockLiquidity, liquidityPerPeriod, numberOfPeriod, cliffPoint?) - Locks liquidity in a position with vesting schedule
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -194,7 +222,8 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `numberOfPeriod` | number | yes | no | - | Total number of vesting periods |
 | `cliffPoint` | number | no | no | - | Unix timestamp when cliff unlocking begins (optional, null for immediate) |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.removeCpAmmLiquidity`
 
@@ -202,7 +231,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.removeCpAmmLiquidity(source, poolAddress, positionMintAddress, tokenAAmount, tokenBAmount, slippageBps?) - Removes liquidity from a Meteora CP-AMM position. Pass null for both token amounts to remove all unlocked liquidity.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -214,7 +243,8 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `tokenBAmount` | string | no | no | - | Amount of token B to withdraw (in smallest units), or null to remove all. Must match tokenAAmount: both specified or both null. |
 | `slippageBps` | number | no | no | - | Optional: Slippage tolerance in basis points (100 = 1%). Allows receiving fewer tokens. Default: 0 |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.swap`
 
@@ -222,7 +252,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.swap(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, slippageBps?)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unsupported** (not run); markers: NO-DEVNET-JUPITER.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -233,7 +263,8 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `tokenAAmount` | string | yes | no | - | The amount of token A to swap |
 | `slippageBps` | number | no | no | - | Optional: Slippage tolerance in basis points (1 bps = 0.01%). Default: 500 (5%) |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `sourceAddress` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.swapInMeteoraVirtualPool`
 
@@ -241,7 +272,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?)
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -252,7 +283,8 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 | `amount` | string | yes | no | - | The amount of token to swap in (in smallest units) |
 | `minimumAmountOut` | string | no | no | - | Optional minimum output amount in smallest units. The swap fails if the quoted output is lower. |
 
-A `Signs: yes` argument is the transaction authority: a wallet form requires that wallet's signature, while `@contract.address` and account-id forms are program-signed. Never pass a resolved `getAccountAddress(...)` string where a signing source is expected - the id string IS the signing capability. See [custody and PDAs](../custody-and-pdas.md).
+- `source` signs: a wallet form requires that wallet's signature; `@contract.address` is program-signed; an account-id source is program-signed.
+Never pass a resolved `getAccountAddress(...)` string where a signing account id is expected - the id string is the signing capability. See [custody and PDAs](../custody-and-pdas.md).
 
 ### `DeFiPlugin.withdrawLeftover`
 
@@ -260,7 +292,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.withdrawLeftover(virtualPoolAddress) - Withdraws leftover tokens from a migrated Meteora virtual pool to the leftoverReceiver set in the config. Can only be called after migration.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -275,7 +307,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getClaimableCpAmmPositionFee(owner, poolAddress, tokenMint, positionMintAddress?) - Gets the claimable fees for a specific token from a CP-AMM position. If positionMintAddress is omitted, aggregates fees from all positions owned by owner in the pool.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `uint`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
@@ -292,12 +324,12 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getClaimableMeteoraPoolFees(source, poolAddress)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
 |---|---|---|---|---|---|
-| `source` | string | yes | no | wallet address / account id (named PDA) | The source account to check claimable fees for - can be a wallet address, program ID for PDA, or any string for PDA derivation |
+| `source` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The source account to check claimable fees for - can be a wallet address, program ID for PDA, or any string for PDA derivation |
 | `poolAddress` | string | yes | no | - | The address of the Meteora virtual pool |
 
 ### `DeFiPlugin.getCpAmmPoolAddress`
@@ -306,7 +338,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getCpAmmPoolAddress(tokenAMint, tokenBMint, configAddress) - Derives the CP-AMM pool address from token mints and config. configAddress is REQUIRED - use METEORA_DYNAMIC_POOL_CONFIG for createPool pools or METEORA_MIGRATION_CONFIG for graduated pools.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
@@ -322,13 +354,13 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getCpAmmPositionNftMintAddress(owner, poolAddress, positionId) - Derives the position NFT mint address. Use this mint address in addCpAmmLiquidity, removeCpAmmLiquidity, lockCpAmmPosition, and closeCpAmmPosition.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
 |---|---|---|---|---|---|
-| `owner` | string | yes | no | wallet address / account id (named PDA) | The owner address (wallet, escrow, or account ID) |
+| `owner` | string | yes | no | wallet address / `@contract.address` (app escrow) / account id (named PDA) | The owner address (wallet, escrow, or account ID) |
 | `poolAddress` | string | yes | no | - | The address of the Meteora CP-AMM pool |
 | `positionId` | string | yes | no | - | Unique identifier for the position (e.g., document path $positionId) |
 
@@ -338,7 +370,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getDammV2PoolAddress(tokenMintAddress)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
@@ -352,7 +384,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getMeteoraSwapQuote(tokenMintAddress, tokenToSwapInMintAddress, tokenAmount)
 ```
 
-- Callable from: `hooks.offchain` only
+- Callable from: offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (not run); markers: LIVE-METEORA-PROOF.
 
@@ -368,7 +400,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getMeteoraVirtualPoolAddress(tokenMintAddress, configId)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -382,7 +414,7 @@ A `Signs: yes` argument is the transaction authority: a wallet form requires tha
 @DeFiPlugin.getSwapQuote(inputMint, outputMint, amount)
 ```
 
-- Callable from: `hooks.offchain` only
+- Callable from: offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unsupported** (not run); markers: NO-DEVNET-JUPITER.
 

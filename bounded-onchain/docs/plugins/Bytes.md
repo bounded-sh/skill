@@ -17,7 +17,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.anchorDiscriminator(namespace, name) - sha256(namespace + ':' + name)[..8], e.g. @Bytes.anchorDiscriminator('global', 'increment') for an Anchor instruction discriminator.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -32,7 +32,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.bool(b) - Encodes b as 1 byte (0 or 1).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -46,7 +46,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.concat(a, b, ...) - Concatenates Bytes values (variadic).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -67,7 +67,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.i64(n) - Encodes n as 8 bytes little-endian two's complement (range-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -81,7 +81,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.i64At(bytes, offset) - Reads a little-endian i64 (two's complement) at offset (bounds-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -96,7 +96,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.len(bytes) - Returns the byte length of a Bytes value.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -110,7 +110,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.pubkey(addr) - Encodes an address as its raw 32 bytes.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -124,7 +124,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.pubkeyAt(bytes, offset) - Reads a 32-byte pubkey at offset and returns it as an address (bounds-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -139,7 +139,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.raw(hexString) - Hex string to Bytes (e.g. @Bytes.raw('deadbeef')); constant-folded to a Bytes literal when the argument is a string literal.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -153,7 +153,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.str(s) - Borsh string encoding: u32 LE length prefix + utf8 bytes.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -167,7 +167,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u128(n) - Encodes n as 16 bytes little-endian (input is a u64-range policy number).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -181,7 +181,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u16(n) - Encodes n as 2 bytes little-endian (range-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -195,7 +195,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u16At(bytes, offset) - Reads a little-endian u16 at offset (bounds-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -210,7 +210,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u32(n) - Encodes n as 4 bytes little-endian (range-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -224,7 +224,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u32At(bytes, offset) - Reads a little-endian u32 at offset (bounds-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -239,7 +239,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u64(n) - Encodes n as 8 bytes little-endian (range-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -253,7 +253,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u64At(bytes, offset) - Reads a little-endian u64 at offset (bounds-checked). Combined with @Solana.data this reads any field of any account whose layout you know.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -268,7 +268,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u8(n) - Encodes n as 1 byte (range-checked 0..255).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -282,7 +282,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.u8At(bytes, offset) - Reads a u8 at offset (bounds-checked).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -297,7 +297,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @Bytes.utf8(s) - Bare utf8 bytes (no length prefix).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 

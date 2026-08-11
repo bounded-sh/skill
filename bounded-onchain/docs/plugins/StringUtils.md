@@ -17,7 +17,7 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 @StringUtils.length(str)
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries, `hooks.offchain`
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 

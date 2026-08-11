@@ -15,7 +15,7 @@ These primitives carry the raw-CPI security rules documented in [policy-primitiv
 
 ## Transactional
 
-Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions noted per function). A `false` return or thrown error aborts the entire Solana write.
+Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
 ### `Solana.createAccount`
 
@@ -23,7 +23,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.createAccount(name, space, ownerProgramId) - Creates the app-scoped named PDA (Bounded_pda(appId, name)) as a fresh account with `space` bytes owned by ownerProgramId; rent-exempt minimum is funded by the app escrow.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -38,7 +38,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.invoke(programId, metas, data) - Generic CPI to an arbitrary executable program. metas is an array of {address, writable?, signer?, signerName?} objects in callee order; signer:true is allowed only for the current user and signerName elevates only app-derived PDAs. data is Bytes built on-chain via @Bytes.*. programId must be a literal or @Solana well-known constant; Bounded, loaders, and signature precompiles are denied.
 ```
 
-- Callable from: `hooks.onchain` on an `"onchain": true` collection
+- Callable from: `hooks.onchain`
 - Status: **unverified** (source parity only); markers: SAFE-TARGET-ONLY.
 
 | Arg | Type | Required | Signs | Accepts | Description |
@@ -55,7 +55,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.account(addr) - Returns {lamports, owner, executable, dataLen} for the account, or null if the account is absent/empty (composes with the `!= null` idiom).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `object`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -69,7 +69,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.ata(owner, mint) - Returns the associated token account address for owner + mint.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -84,7 +84,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.data(addr, offset, len) - Returns a raw slice of the account's data as Bytes; errors if the slice is out of range. Combine with @Bytes.u64At/pubkeyAt/... to read any field of any account whose layout you know.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `bytes`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -100,7 +100,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.lamports(addr) - Returns the account's lamport balance (0 if the account is missing).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -114,7 +114,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.pda(seedsArray, programId) - find_program_address over the seeds for programId. Seed elements: string (utf8, max 32 bytes), address (32 bytes), bytes (raw, max 32), non-negative number (8-byte LE u64); max 16 seeds.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -129,7 +129,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.pdaBump(seedsArray, programId) - Returns the bump of the same derivation as @Solana.pda(seedsArray, programId).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -144,7 +144,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.rentExemption(space) - Returns the rent-exempt minimum lamports for an account with `space` data bytes (useful for budgeting checks before @Solana.createAccount).
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
@@ -158,7 +158,7 @@ Callable only from `hooks.onchain` on `"onchain": true` collections (exceptions 
 @Solana.signerAccount(name) - Returns the app-scoped named PDA (Bounded_pda(appId, name)); usable as a signerName-elevated meta in @Solana.invoke and as the account created by @Solana.createAccount.
 ```
 
-- Callable from: rules, named queries, and hooks (read-only)
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
