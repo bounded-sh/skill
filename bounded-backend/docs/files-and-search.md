@@ -78,7 +78,11 @@ wallet-only.
 
 `setFile`'s `metadata` applies on **create** only. To change an existing file's
 declared fields, `set(path, {...})` it like any doc (an update — your `update` rule
-must allow it). To replace just the bytes, `setFile(path, file)` again.
+must allow it). To replace just the bytes, `setFile(path, file)` again - but only
+where the collection permits updates. If you pinned immutability with
+`"update": "false"` (the pattern recommended below for anything a third party
+fetches later, such as a token `uri`), a byte replacement is refused by design;
+write a new path instead.
 
 ### Reading files back
 

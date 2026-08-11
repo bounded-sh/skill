@@ -84,16 +84,16 @@
     "description": "Trading passthrough. Buy: mint=SOL. Sell: mint=OAPP_MINT.",
     "onchain": true,
     "isPassthrough": true,
-    "fields": { "mint": "Address", "amount": "UInt" },
+    "fields": { "mint": "Address", "amount": "UInt", "minimumAmountOut": "UInt!" },
     "rules": {
       "read": "true",
-      "create": "@user.address != null",
+      "create": "@user.address != null && @newData.minimumAmountOut > 0",
       "update": "false",
       "delete": "false"
     },
     "hooks": {
       "onchain": {
-        "create": "@DeFiPlugin.swapInMeteoraVirtualPool(@user.address, @const.OAPP_MINT, @newData.mint, @newData.amount)"
+        "create": "@DeFiPlugin.swapInMeteoraVirtualPool(@user.address, @const.OAPP_MINT, @newData.mint, @newData.amount, @newData.minimumAmountOut)"
       }
     }
   },

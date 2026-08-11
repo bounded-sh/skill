@@ -435,7 +435,7 @@ Parity is a release gate, not a best-effort convenience:
 2. Current chain-backed named queries must be declared on an `onchain: true` path.
    The executor does not currently activate standalone chain execution for an `onchain: false` path.
    Offchain-only plugin reads therefore have no working chain-query placement until the runtime is fixed.
-   Actual chain-query execution also requires an authenticated `userAddress`, even when the read rule is public.
+   Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller; a query reading `@user.address`/`@user.evmAddress` requires that identity. The anonymous surface is the browser SDK, not the CLI.
 3. Onchain Documents are readable through the offchain mirror/read-through path.
 4. A mutating primitive succeeds on Poofnet only after a deterministic model,
    target-aware host handler, or explicit policy-test mock applies its effect.

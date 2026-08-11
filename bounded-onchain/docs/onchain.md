@@ -320,9 +320,9 @@ A policy that verifies on Poofnet still needs every called function checked agai
   per-row `error` alongside `result: null` - `runQuery` (client ≥0.0.42) throws
   it; the CLI (≥0.0.56) prints it verbatim.
 - **Current chain-backed named queries must be declared on an `onchain: true` path.**
-  They never sign or submit, but current chain execution still requires an authenticated `userAddress` even when the path's read rule is public.
-  Catalog browsing, form validation, and local preflight remain wallet-free.
-  Actual chain-query execution does not.
+  They never sign or submit. Anonymous execution IS admitted for identity-independent queries whose owning path's read rule authorizes the caller, and on this route that read rule must itself be document-independent.
+  A query whose bytecode reads `@user.address`/`@user.evmAddress` requires that chain identity; a query may read its OWN document, while other-document and cross-app reads are refused.
+  The anonymous surface is the browser SDK - the CLI always needs a keypair session.
   `queryArgs` are staged into `@newData` for the query expression.
   Preserve the same result/error shape on Poofnet and Solana, subject to mirror finality.
 - **Extended mutation primitives are capability-gated.** Runtime-v2 source adds

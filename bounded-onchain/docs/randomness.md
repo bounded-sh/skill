@@ -85,8 +85,8 @@ const roll = await client.runQuery(`draws/${id}`, 'roll', {});
 
 `getRandomNumber(id, min, max)` returns a uniform value in `[min, max)`. The
 range is yours to choose at request time - see §3 for why you may want it large.
-Current live chain named-query execution requires an authenticated `userAddress` even though the reveal path's read rule is public.
-Catalog browsing and preflight may remain wallet-free.
+Anonymous live chain named-query execution is admitted when the reveal path's read rule authorizes the caller and the query is identity-independent; a query reading `@user.address` requires that identity.
+The anonymous surface is the browser SDK - the CLI always needs a keypair session.
 
 Fulfilment is asynchronous and an immediate read is not acceptance evidence.
 Give the attempt a unique run ID.

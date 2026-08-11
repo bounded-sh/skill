@@ -236,6 +236,8 @@ Two honest gaps sit under any "how much did this launch earn" feature.
 
 - **The partner leg has no claim primitive.** Bounded exposes only the creator-side claim (`claimMeteoraPoolFees`, `claimDammV2PoolFees`). Meteora's partner-side `claim_trading_fee` - the leg a `feeAccount` reserve accrues to before migration - is not exposed at all today. Do not write policy that assumes a partner claim exists.
 - **No primitive yields a per-mint claimed amount.** The claims return `Bool(true)` even when nothing was claimed (a non-creator `source`, or a not-yet-graduated pool), and they discard the balance delta. So a fee-attributed total cannot be honestly derived from what Bounded returns today.
+- **`claimMeteoraPoolFees` sweeps BOTH sides at max.** It claims the base and quote legs with no per-asset control (`u64::MAX` for each), sends them to the creator's ATAs, and unwraps wSOL to native SOL afterwards. You cannot claim one asset without the other, and you cannot observe the split from the return value.
+- **The pool creator is pinned to the create-time payer.** `createMeteoraVirtualPool` has no creator argument; the program uses the transaction payer as the creator. Post-graduation creator fees therefore follow whichever wallet paid the create call, and policy cannot route them to an escrow or a chosen wallet.
 
 **Do not reach for `getClaimableMeteoraPoolFees` to patch this.**
 It returns `creator_base_fee + creator_quote_fee` as a single `UInt`, adding two different mints with different decimals into one meaningless scalar, and it returns `0` for a non-creator `source` - so it cannot even distinguish "not the creator" from "no fees accrued".

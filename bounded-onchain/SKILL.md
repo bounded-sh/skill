@@ -66,7 +66,7 @@ Read only the row matching the current task or term.
   Require the JSON field itself for staging evidence instead of copying a human-rendered hostname.
   `bounded apps inspect` proves the active policy/runtime publication and carries no hosted URL.
 - Never emit runtime-v2 primitives for a runtime-v1 deployment; follow [docs/policy-primitives.md](docs/policy-primitives.md).
-- Current chain-backed named queries belong on `onchain: true` paths and require an authenticated `userAddress` at execution time.
+- Current chain-backed named queries belong on `onchain: true` paths. Anonymous execution is admitted for identity-independent queries whose path read rule authorizes the caller; a query reading `@user.address`/`@user.evmAddress` requires that identity. The anonymous surface is the browser SDK, not the CLI.
 - Do not recommend an `onchain: false` view for an offchain-only plugin read until standalone chain-query execution is fixed.
 - Treat runtime-v3 governance the same way: enroll only after the deployed capability registry reports v3, and publish governance from observed chain state rather than policy intent.
 - Keep Poofnet and Solana behavior paired.

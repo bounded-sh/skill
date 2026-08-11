@@ -360,8 +360,9 @@ The essentials:
 
 - **Images land as normal Bounded files** in the storage collection you name —
   queryable, read-rule governed. `filePath` is the durable reference; **persist
-  that, not `url`** (a public file's url is a permanent CDN link, but a private
-  file's url is a ~60-second signed link). Resolve fresh URLs via `getFiles`.
+  that, not `url`** (a file in an anonymous-readable collection has a tokenless
+  permanent URL; a gated file's url is a ~60-second signed link). Resolve fresh
+  URLs via `getFiles`.
 - **Video completes through a job doc**: `status` walks pending → running →
   succeeded/failed; on success the mp4 is at `filePath`. Declare
   `aiJobs/$jobId` (any non-storage collection) in policy and the frontend gets

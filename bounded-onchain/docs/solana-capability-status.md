@@ -22,7 +22,7 @@ The current Bounded Solana program is recorded as **runtime v4**, live on both d
 Runtime v4 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 115 `unverified`, 42 `unsupported`, and 0 `blocked`.
+The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`, generated from `catalog.generated.json`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -95,16 +95,16 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
 | `@CPI.memoNote` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.transferLamports` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
-| `@CPI.stakePoolDepositSol` | descriptor CPI | unsupported | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.stakePoolWithdrawSol` | descriptor CPI | unsupported | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.raydiumSwapBaseInput` | descriptor CPI | unsupported | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.raydiumDeposit` | descriptor CPI | unsupported | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.raydiumWithdraw` | descriptor CPI | unsupported | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.dlmmSwap` | descriptor CPI | unsupported | not run | LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4 |
-| `@Solana.verifyEd25519` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
-| `@Solana.secp256k1Recover` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
-| `@Bytes.sha256` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
-| `@Bytes.keccak256` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V4 |
+| `@CPI.stakePoolDepositSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.stakePoolWithdrawSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.raydiumSwapBaseInput` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.raydiumDeposit` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.raydiumWithdraw` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
+| `@CPI.dlmmSwap` | descriptor CPI | unverified | not run | LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4 |
+| `@Solana.verifyEd25519` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
+| `@Solana.secp256k1Recover` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
+| `@Bytes.sha256` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
+| `@Bytes.keccak256` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
 | `@DeFiPlugin.addCpAmmLiquidity` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.claimDammV2PoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.claimMeteoraPoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
@@ -229,7 +229,7 @@ It remains unverified on devnet until a retained Pyth read proves the string val
 Named-query `queryArgs` populate staged `@newData` for the query expression.
 Current chain-backed named queries must be declared on an `onchain: true` path.
 The current executor does not activate standalone chain execution for an `onchain: false` path.
-Actual chain-query execution requires an authenticated `userAddress` even when the path read rule is public.
+Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller; a query reading `@user.address`/`@user.evmAddress` requires that identity, and the anonymous surface is the browser SDK rather than the CLI.
 
 ## Acceptance contract
 

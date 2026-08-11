@@ -389,6 +389,33 @@ caller:
   re-evaluated on every GET, so tightening the rule or deleting the file kills
   every published link. Public objects are served `Cache-Control: public, no-store`,
   so each fetch bills as a request and nothing caches in front of it.
+  The public URL is served from the realtime origin (`realtime.bounded.sh`), not from your app's own domain.
+
+### What `setFile` returns
+
+`setFile` resolves to a `FileUploadResult`. Handle all THREE branches - the two
+uncertain ones have opposite, data-loss-sensitive handling:
+
+```ts
+type FileUploadResult =
+  | { status: "uploaded"; path: string; url: string | null;
+      visibility: "public" | "private" | "unknown" }
+  | { status: "unknown"; path: string; reason: string; retrySafe: false };
+```
+
+- **`status: "uploaded"`** - committed. `url` is the permanent public URL when the
+  collection admits anonymous reads, and **`null` otherwise**, so only a public
+  upload with a non-null `url` can skip the follow-up `getFiles`. A private
+  committed upload still needs `getFiles` for its caller-bound signed URL.
+- **`visibility: "unknown"`** - the object DEFINITELY committed; only the
+  anonymous-read evaluation failed. Never re-upload on this.
+- **`status: "unknown"`** - the PUT's outcome is ambiguous and the upload nonce is
+  already consumed. **Never blind-retry**: calling `setFile` again on a collection
+  path mints a SECOND path and orphans the first while still billing it. Reconcile
+  using the returned `path`.
+
+The returned `path` is the server-generated storage path; keep it rather than
+reconstructing one.
 
 `setFile(path, file, { metadata })` writes the blob, auto-fills system metadata
 (`contentType`/`size`/`status`/`uploadedBy`/`createdAt`), and sets your declared
@@ -411,8 +438,10 @@ The arguments do not write or persist a document.
 
 Current Solana named-query behavior has two important limits.
 A chain-backed named query must be declared on an `onchain: true` path because the current executor does not activate standalone chain execution for an `onchain: false` path.
-Actual chain-query execution requires an authenticated `userAddress` even when the path read rule is public.
-Catalog browsing, typed-form validation, and local preflight can remain wallet-free, but a live chain query cannot.
+Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller.
+A query whose bytecode reads `@user.address` or `@user.evmAddress` still requires that chain identity, and on the onchain route the read rule must itself be document-independent.
+A query may read its OWN document; other-document reads and cross-app `@App.get` are refused.
+The anonymous surface is the browser SDK - the CLI always needs a keypair session.
 Offchain-only plugin reads have no working chain-query placement until the runtime is fixed.
 Check the [Solana devnet capability catalog](../../bounded-onchain/docs/solana-capability-status.md) before calling a plugin query.
 

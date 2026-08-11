@@ -272,7 +272,7 @@ if (!solanaInventory) {
     counts[row.support] = (counts[row.support] ?? 0) + 1
     return counts
   }, {})
-  for (const [state, count] of Object.entries({ unverified: 115, unsupported: 42, blocked: 0 })) {
+  for (const [state, count] of Object.entries({ unverified: 125, unsupported: 32, blocked: 0 })) {
     // `supportCounts` is reduced from {} and only gains keys for states that occur,
     // so a legitimately-zero state is `undefined` here and a strict !== 0 would fire.
     if ((supportCounts[state] ?? 0) !== count) {
@@ -329,7 +329,7 @@ for (const expected of [
   '| `@Solana.invokeAttested` | extended disabled | unsupported | not applicable | DISABLED |',
   '`@TokenPlugin.USDC` is mainnet-only',
   '`@PriceFeedPlugin.getPriceFeed` returns a decimal `String`',
-  'Actual chain-query execution requires an authenticated `userAddress`',
+  'Anonymous chain-query execution is admitted for identity-independent queries',
 ]) {
   if (!solanaCapabilityStatus.includes(expected)) {
     fail(`Solana capability status: missing required boundary ${expected}`)
@@ -460,7 +460,7 @@ for (const expected of [
 const sdkReference = readFileSync(path.join(root, 'bounded-frontend/docs/sdk-reference.md'), 'utf8')
 for (const expected of [
   'The runtime stages those fields into `@newData`',
-  'requires an authenticated `userAddress`',
+  'Anonymous chain-query execution is admitted for identity-independent queries',
   'returns a decimal `String`',
   'does not activate standalone chain execution for an `onchain: false` path',
 ]) {
