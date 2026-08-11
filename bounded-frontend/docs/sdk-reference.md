@@ -725,17 +725,41 @@ identity and evaluates the function's `auth` policy rule before it runs:
 ```ts
 import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 
-const res = await functions.invoke("syncStripe", { customerId, userId });
+// Invoke carries only the ACTION intent, never the caller's identity. Bounded
+// attaches the session token, so the function already knows who called from
+// `ctx.user` - it does not need (and must not trust) a customerId/userId argument.
+const res = await functions.invoke("syncStripe", {});
 // → the function's JSON return value.
-// `invokeFunction("syncStripe", { customerId, userId })` is the same call as a plain fn.
 // Optional 3rd arg: { timeoutMs, headers }. Throws FunctionInvokeError on
 // 401/403/404/503 (see .statusCode). Top-level uses the ambient session
-// (BOUNDED_PRIVATE_KEY on server). To invoke as a specific keypair with no env
-// var: `await vault.invoke("syncStripe", { customerId, userId })` on a createWalletClient.
+// (BOUNDED_PRIVATE_KEY on server); `await vault.invoke("syncStripe", {})` invokes
+// as a specific keypair with no env var, on a createWalletClient.
+```
+
+> **Arguments are untrusted; resolve the customer server-side.** A caller can pass
+> **any** `customerId`/`userId` in the args object, so a function that trusts a
+> caller-supplied id will sync, charge, or read the **wrong** account. Resolve the
+> acting customer from the authenticated identity (`ctx.user`) - never from an
+> argument. Reserve arguments for non-identity intent (which item, which page).
+
+```ts
+// functions/syncStripe.ts - resolve the customer from ctx.user, not from args.
+export default async function syncStripe(_args, ctx) {
+  // Gate on the ID, not on the object: `ctx.user` is ALWAYS present, and a system
+  // principal (queued/scheduled run) is `{ id: null, ... , system: true }`, so a
+  // truthiness check on the object never fires and reads `stripeCustomers/null`.
+  if (!ctx.user?.id) throw new Error("unauthorized"); // fail closed
+  // Server-owned mapping keyed by the authenticated user; the caller can't forge it.
+  const mapping = await ctx.bounded.get(`stripeCustomers/${ctx.user.id}`);
+  const customerId = mapping?.customerId;
+  if (!customerId) throw new Error("no Stripe customer for this user");
+  // ... use customerId; ignore any customerId/userId the caller passed.
+}
 ```
 
 Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the
-proof boundary): [functions.md](../../bounded-backend/docs/functions.md).
+proof boundary): [functions.md](../../bounded-backend/docs/functions.md). See its
+safe sync example for the same server-side resolution in policy.
 
 ## Related
 

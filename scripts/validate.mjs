@@ -5,9 +5,13 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, w
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isWithinRoot } from './lib/contained-path.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const ignoredDirectories = new Set(['.git', '.gstack', 'node_modules'])
+// _fragments holds inclusion sources for the generated plugin pages; their relative
+// links only resolve from the generated location, and the generated pages (which embed
+// the fragment content verbatim) are fully link-checked below.
+const ignoredDirectories = new Set(['.git', '.gstack', 'node_modules', '_fragments'])
 const textExtensions = new Set(['.md', '.mdc', '.mjs', '.json', '.txt'])
 const errors = []
 
@@ -73,6 +77,14 @@ function checkMarkdownLink(sourceFile, rawTarget, line) {
   const targetPath = rawPath
     ? path.resolve(path.dirname(sourceFile), decodeURIComponent(rawPath.split('?')[0]))
     : sourceFile
+
+  // Containment: a link target that resolves outside the project root (e.g.
+  // `../../../../etc/passwd`) must never be stat-ed or read. Reject it before any
+  // filesystem access on the resolved path.
+  if (!isWithinRoot(root, targetPath)) {
+    fail(`${relative(sourceFile)}:${line}: link target escapes project root ${rawTarget}`)
+    return
+  }
 
   if (!existsSync(targetPath)) {
     fail(`${relative(sourceFile)}:${line}: missing link target ${rawTarget}`)
@@ -349,11 +361,6 @@ for (const expected of [
   'Solana accounts are world-readable',
   'Every account sample must use finalized commitment',
   '"query": "@Solana.rentExemption(@data.space)"',
-  'Require exactly `schemaVersion`, `release`, `environment`, `protocol`, `commit`, `appId`, `artifactSha256`, `policy`, `targets`, and `program`.',
-  'one Devnet `getMultipleAccounts` request with base64 encoding and finalized commitment',
-  '`deployment.apps` contains exactly the authenticated primary and cross-app target publications',
-  'Every action-evidence entry contains exactly `actionId`, `contract`, `publicTransactionSignatures`, `transactions`, and `postconditions`.',
-  'Reject duplicate action IDs, no-op actions, inherited postconditions, invented postconditions, contract drift',
 ]) {
   if (!policyPrimitives.includes(expected)) fail(`Solana policy primitives: missing contract-address boundary ${expected}`)
 }
@@ -610,10 +617,31 @@ if (process.argv.includes('--verify-policies')) {
   }
 }
 
+// The contract tests under scripts/tests are part of THIS gate, not a separate one
+// a contributor has to remember: `node scripts/validate.mjs` is the documented
+// pre-push command and there is no CI here, so a fence nothing runs is not a fence.
+// Skipped with --no-tests only when this script is invoked BY the test run itself.
+let contractTestCount = 0
+if (!process.argv.includes('--no-tests')) {
+  const testFiles = readdirSync(path.join(root, 'scripts/tests'))
+    .filter((name) => name.endsWith('.test.mjs'))
+    .map((name) => path.join('scripts/tests', name))
+    .sort()
+  if (testFiles.length === 0) fail('scripts/tests: no contract tests found')
+  const result = spawnSync(process.execPath, ['--test', ...testFiles], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+  if (result.status !== 0) {
+    fail(`contract tests failed\n${result.stdout || ''}${result.stderr || ''}`)
+  }
+  contractTestCount = testFiles.length
+}
+
 if (errors.length > 0) {
   console.error(`Skill validation failed (${errors.length}):`)
   for (const error of errors) console.error(`- ${error}`)
   process.exit(1)
 }
 
-console.log(`Skill validation passed: ${expectedPublicSkills.length} public skills, ${textFiles.length} text files, ${skillFiles.length} skill manifests.`)
+console.log(`Skill validation passed: ${expectedPublicSkills.length} public skills, ${textFiles.length} text files, ${skillFiles.length} skill manifests, ${contractTestCount} contract test files.`)

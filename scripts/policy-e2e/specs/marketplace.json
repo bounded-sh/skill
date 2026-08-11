@@ -1,0 +1,139 @@
+{
+  "page": "bounded-backend/docs/examples/marketplace.md",
+  "name": "marketplace-listings-orders-spend-cap",
+  "appName": "marketplace-example",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "sellers/USER_ID/listings/l_RUN_ID",
+      "data": {
+        "seller": "USER_ID",
+        "title": "Vintage lamp",
+        "priceUsd": 120,
+        "active": true
+      },
+      "expect": "ok",
+      "note": "seller creates a listing under their own seller id"
+    },
+    {
+      "kind": "set",
+      "path": "sellers/USER_ID/listings/l_RUN_ID",
+      "data": {
+        "seller": "USER_ID",
+        "title": "Vintage brass lamp",
+        "priceUsd": 120,
+        "active": true
+      },
+      "expect": "ok",
+      "note": "seller updates their own listing, preserving the readonly seller field"
+    },
+    {
+      "kind": "get",
+      "path": "sellers/USER_ID/listings/l_RUN_ID",
+      "expectField": {
+        "field": "priceUsd",
+        "equals": 120
+      },
+      "note": "listing is publicly readable with the real price"
+    },
+    {
+      "kind": "set",
+      "path": "sellers/someone_else/listings/l2_RUN_ID",
+      "data": {
+        "seller": "someone_else",
+        "title": "Stolen shelf",
+        "priceUsd": 10,
+        "active": true
+      },
+      "expect": "denied",
+      "note": "wrong literal owner: cannot create a listing under another seller's path"
+    },
+    {
+      "kind": "set",
+      "path": "sellers/USER_ID/listings/l_RUN_ID",
+      "data": {
+        "seller": "mallory",
+        "title": "Vintage brass lamp",
+        "priceUsd": 120,
+        "active": true
+      },
+      "expect": "denied",
+      "note": "readonly-field change on update: seller must be preserved (and tenantTag pins it to the path)"
+    },
+    {
+      "kind": "set",
+      "path": "buyers/USER_ID/orders/o1_RUN_ID",
+      "data": {
+        "buyer": "USER_ID",
+        "listingRef": "l_RUN_ID",
+        "seller": "USER_ID",
+        "amountUsd": 120
+      },
+      "expect": "ok",
+      "note": "buyer places an order at the listing's real price while it is active"
+    },
+    {
+      "kind": "set",
+      "path": "buyers/USER_ID/orders/o2_RUN_ID",
+      "data": {
+        "buyer": "USER_ID",
+        "listingRef": "l_RUN_ID",
+        "seller": "USER_ID",
+        "amountUsd": 1
+      },
+      "expect": "denied",
+      "note": "amountUsd must equal the listing's priceUsd; a self-priced order would hollow out the cap"
+    },
+    {
+      "kind": "set",
+      "path": "buyers/USER_ID/orders/o3_RUN_ID",
+      "data": {
+        "buyer": "USER_ID",
+        "listingRef": "l_missing",
+        "seller": "USER_ID",
+        "amountUsd": 120
+      },
+      "expect": "denied",
+      "note": "missing prerequisite doc: the referenced listing does not exist, so active == true fails"
+    },
+    {
+      "kind": "set",
+      "path": "buyers/USER_ID/orders/o1_RUN_ID",
+      "data": {
+        "buyer": "USER_ID",
+        "listingRef": "l_RUN_ID",
+        "seller": "USER_ID",
+        "amountUsd": 0
+      },
+      "expect": "denied",
+      "note": "orders are immutable: update rule is false, spend history cannot be rewritten"
+    },
+    {
+      "kind": "set",
+      "path": "sellers/USER_ID/listings/big_RUN_ID",
+      "data": {
+        "seller": "USER_ID",
+        "title": "Grand piano",
+        "priceUsd": 6000,
+        "active": true
+      },
+      "expect": "ok",
+      "note": "a listing priced above the daily cap is legal to list"
+    },
+    {
+      "kind": "set",
+      "path": "buyers/USER_ID/orders/o4_RUN_ID",
+      "data": {
+        "buyer": "USER_ID",
+        "listingRef": "big_RUN_ID",
+        "seller": "USER_ID",
+        "amountUsd": 6000
+      },
+      "expect": "denied",
+      "note": "daily_spend_cap rollingSum: 6000 breaches the 5000/day per-buyer limit"
+    }
+  ]
+}

@@ -125,12 +125,23 @@ Content-Security-Policy: frame-ancestors 'self' https://oapps.fun https://*.oapp
 
 Two consequences worth knowing before you debug a blank page.
 
-**Framing.** Your app may be embedded by itself and by a Bounded venue, and by
-nobody else.
+**Framing.** Your app may be embedded from inside Bounded, and by nobody outside
+it.
 That is what lets an oApps room show your live app inside its own page while a
 random third-party site cannot frame it to phish your users.
-If you need another embedder, that is a platform change, not something an app can
-declare today.
+Read the allow-list literally: the platform default carries the
+`https://*.bounded.page` wildcard, so any OTHER Bounded app - on its own
+`<slug>.bounded.page` - is a permitted embedder of your pages too.
+A page served on a second venue's host also gets that venue's apex and its
+wildcard added, because the venue front door frames its own apps.
+If that is too wide for your app, narrow it yourself: declare
+`boundaries.browser` with an `embeddedBy` list.
+The declared list REPLACES this allow-list rather than adding to it, so name the
+venue hosts you actually want (`oapps.fun`, `*.oapps.fun`) and leave the rest out.
+Declaring `boundaries.browser` while omitting `embeddedBy` is the strictest
+setting: `frame-ancestors 'none'` plus `X-Frame-Options: DENY`, which means no
+venue can embed you either.
+See [`boundaries.browser`](../../bounded-backend/docs/browser-boundary.md).
 
 **`nosniff`.** A browser will refuse an asset whose `Content-Type` does not match
 how the page uses it, instead of guessing.

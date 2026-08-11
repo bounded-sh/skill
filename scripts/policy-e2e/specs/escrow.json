@@ -1,0 +1,118 @@
+{
+  "page": "bounded-onchain/docs/examples/escrow.md",
+  "name": "escrow-per-escrow-pda",
+  "appName": "escrow-example",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_bad_zero",
+      "data": {
+        "seller": "11111111111111111111111111111111",
+        "amount": 0,
+        "released": false
+      },
+      "expect": "denied",
+      "note": "create with amount 0 is denied by @newData.amount > 0"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_bad_released",
+      "data": {
+        "seller": "11111111111111111111111111111111",
+        "amount": 1000,
+        "released": true
+      },
+      "expect": "denied",
+      "note": "cannot create an already-released escrow"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_bad_forge",
+      "data": {
+        "seller": "11111111111111111111111111111111",
+        "amount": 1000,
+        "released": false,
+        "buyer": "11111111111111111111111111111111"
+      },
+      "expect": "denied",
+      "note": "client-supplied buyer is denied; only the create hook stamps buyer"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_RUN_ID",
+      "data": {
+        "seller": "11111111111111111111111111111111",
+        "amount": 1000,
+        "released": false
+      },
+      "expect": "ok",
+      "note": "buyer funds the per-escrow named PDA; hook stamps buyer = caller wallet atomically"
+    },
+    {
+      "kind": "get",
+      "path": "escrows/esc_RUN_ID",
+      "expectField": {
+        "field": "released",
+        "equals": false
+      },
+      "note": "escrow is live and unreleased"
+    },
+    {
+      "kind": "query",
+      "path": "escrows/esc_RUN_ID",
+      "name": "getEscrowAddress",
+      "args": {},
+      "expect": "nonNull",
+      "note": "resolved PDA address, display only"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_RUN_ID",
+      "data": {
+        "released": true,
+        "amount": 999
+      },
+      "expect": "denied",
+      "note": "release patch touching readonly amount is denied by the preservation clause"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_missing_RUN_ID",
+      "data": {
+        "released": true
+      },
+      "expect": "rejected",
+      "note": "release-shaped write against an escrow that was never created: evaluated as a create and rejected (required fields missing)"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_RUN_ID",
+      "data": {
+        "released": true
+      },
+      "expect": "ok",
+      "note": "buyer releases; hook pays the seller from the raw $escrowId pot, balance-gated"
+    },
+    {
+      "kind": "get",
+      "path": "escrows/esc_RUN_ID",
+      "expectField": {
+        "field": "released",
+        "equals": true
+      },
+      "note": "released flag flipped"
+    },
+    {
+      "kind": "set",
+      "path": "escrows/esc_RUN_ID",
+      "data": {
+        "released": true
+      },
+      "expect": "denied",
+      "note": "second release is denied - released flips exactly once"
+    }
+  ]
+}

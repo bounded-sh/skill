@@ -26,9 +26,15 @@ Read only the row matching the current task or term.
 
 | Task or term | Read |
 |---|---|
+| Find a plugin namespace or function quickly | [plugin catalog](docs/plugins.md) - compact namespace/function router |
+| Scan every bare signature and callable context | [complete signatures index](docs/plugin-signatures.md) |
+| One plugin function's exact signature, manifest argument descriptions and signer markers, return type, and callable context | [plugin catalog](docs/plugins.md), then its per-namespace page under `docs/plugins/` |
+| Who holds funds, who signs, escrow vs named PDA vs user wallet, `@AccountPlugin.createAccount`, account-id hygiene, create-fund-use idiom | [custody and PDAs](docs/custody-and-pdas.md) |
+| A complete policy for an escrow, vault, treasury, staking, market, launch, NFT, Token-2022, randomness, or liquidity app | [examples index](docs/examples.md) |
+| A failing onchain write: error lookup, rent, ATA payer, transaction limits, confirmation, environment differences | [onchain troubleshooting](docs/onchain-troubleshooting.md) |
 | Onchain collections, `onchain:true`, `--protocol`, Solana, mainnet permit, patches, readonly `!`, `FieldReadOnly` | [onchain](docs/onchain.md) |
 | Compiler vs deployed support, devnet status, blocked or unverified integrations (Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor, SPL stake pool, liquid staking, Raydium CPMM, Meteora DLMM), runtime-v4 gating | [capability status](docs/solana-capability-status.md) |
-| Helius, mirror/indexer, missed transactions, replay, reconciliation, cursor, tombstone, DLQ | [mirror completeness](docs/onchain.md#mirror-completeness) |
+| Helius, mirror/indexer, missed transactions, eventual consistency, unmirrored writes; who owns webhooks, ingest queue/DLQ, recovery and reconciliation | [mirror completeness](docs/onchain.md#mirror-completeness) |
 | Transaction too large, 413, 1182/1232-byte packet limit, oversized hook, lookup tables | [transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | `governance.upgrade`, immutable/controller policy, manifest root, governed session, recovery, extend, cancel | [runtime-v3 governance](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
 | `@CPI`, `@Solana`, `@Bytes`, `@App`, `@DocumentPlugin.updateField`, `@PredictionMarketPlugin`, PDAs, `get`/`getAfter`, ProgramData, `shouldSubmitTx`, `skipPreflight`, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, cross-app, prediction-market arithmetic, runtime parity, `@Solana.verifyEd25519`, `@Solana.secp256k1Recover`, `@Bytes.sha256`, `@Bytes.keccak256`, signature verification, EVM signer recovery | [policy primitives](docs/policy-primitives.md) |
@@ -50,7 +56,7 @@ Read only the row matching the current task or term.
 
 - **Default onchain login = default Turnkey email/social auth + optional wallet login, side by side.** Do not add `authMode` or `auth.wallets` for the normal path. Turnkey is the sole embedded-wallet implementation, and Turnkey-native auth with eager provisioning is already the default. Supported email/social users have `@user.address` when login completes. Add bring-your-own **wallet login** (`walletLogin`) only for users who already hold a Solana wallet. Use explicit auth policy only to opt out or retain the legacy hosted login mode. See [docs/embedded-wallets.md -> recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app).
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.
-- **A plugin `source` that is not a pubkey is an ACCOUNT ID**, resolved to its own program-signed PDA. `@contract.address` is ONE shared fund for the whole app; a named id is a separate fund per name. When separate pots of user money coexist (escrows, auctions, prize pools, per-tenant balances), use named accounts - isolation is then chain-enforced instead of trusted to your accounting. Decide before the first deposit; retrofitting means migrating live balances.
+- **When a function's existing manifest description accepts account IDs**, a non-pubkey string resolves to its own program-signed PDA. `@contract.address` is ONE shared fund for the whole app; a named id is a separate fund per name. Do not assume every source, owner, creator, or destination accepts all three custody forms - check that argument's manifest description on the function page. When separate pots of user money coexist (escrows, auctions, prize pools, per-tenant balances), use named accounts where accepted. Decide before the first deposit; retrofitting means migrating live balances.
 - For onchain writes, use explicit network/RPC configuration and devnet by default; do not treat immediate read-after-write as confirmation.
 - Mainnet is a real target, not a placeholder: the program is live on mainnet-beta. Creating a mainnet app requires a paid account plan (no API key or shared secret), and the app is owned on-chain by the creator's wallet **immutably** - so it must be created from the machine holding that wallet's key, and it can never be ownership-transferred. See [docs/onchain.md](docs/onchain.md).
 - `@contract.address` is the Solana program-ID sentinel, not the app escrow address returned by a direct query.
@@ -72,6 +78,6 @@ Read only the row matching the current task or term.
 - Keep Poofnet and Solana behavior paired.
 - Pure/read primitives must return the same shape in runtimes where they are actually executable, and mutating primitives must apply a modeled effect or fail closed.
 - Validation-only success is a parity bug.
-- Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. Do not ask app builders to create webhook URLs or supply provider secrets; follow the operator checklist in [docs/onchain.md](docs/onchain.md#mirror-completeness).
+- Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. App builders never create webhook URLs or supply provider secrets, and the operator runbook (webhook, secrets, queue/DLQ, recovery) lives in the monorepo, not this skill. See [mirror completeness](docs/onchain.md#mirror-completeness) for the app-facing caveats.
 - Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.

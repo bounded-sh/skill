@@ -32,12 +32,18 @@ a function acts as (`runAs`/`actAs`), and where authorization comes from
 
 ## Reference Router
 
-Read only the row matching the current task or term.
+Building one of the five most common app shapes? Take the
+[quick path](docs/quick-path.md) - one target page per build - instead of
+scanning this table. Otherwise read only the row matching the current task or
+term.
 
 | Task or term | Read |
 |---|---|
+| One-screen syntax: field types, tiers, variables, operators, where logic goes | [policy cheat sheet](docs/policy-cheat-sheet.md) |
 | Generate or repair a policy from an app description | [policy generation](docs/policy-generation-guide.md) |
-| Complete policy examples | [examples](docs/policy-examples.md) |
+| Complete policy examples by intent (marketplace, escrow, vaults, staking, tokens, ...) | [examples index](docs/examples.md) |
+| Worked multi-collection policies (team SaaS, marketplace, realtime game) | [examples](docs/policy-examples.md) |
+| Rule recipes: owner-only, admin-or-owner, membership, time windows, validation, immutable fields, atomic batches | [access patterns](docs/access-patterns.md) |
 | Rules, fields, expressions, `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()`, `transferAuthority` | [policy reference](docs/policy-reference.md) |
 | Caps, balances, supply, tenant isolation, hard bounds; `rollingSum`, `windowSum`, `flowBound`, `conserve`, `tenantTag`, `tenantEdge`, `bound` | [invariants](docs/invariants.md) |
 | Trending feeds, leaderboards, ranked `windowSum` reads | [trending feeds](docs/trending-feeds.md) |

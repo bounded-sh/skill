@@ -177,7 +177,7 @@ export default async function (args, ctx) {
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](#ctxai--real-ai-no-api-keys) and [§media](#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](#ctxservices--managed-api-discovery-and-invoke). |
-| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **null system principal** (`ctx.user == null`), never as the enqueuer, so the target must opt in with `queueCallable: true` in policy; it receives `payload` as its `args` and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
+| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **null system principal** (`ctx.user.id == null`, `ctx.user.system == true`), never as the enqueuer, so the target must opt in with `queueCallable: true` in policy; it receives `payload` as its `args` and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](#ctxenqueue--background-jobs). |
 | `ctx.build` | **Governed app builds — `create` / `edit` / `fork` / `get` / `cancel`.** Present only when the function's policy declares a `build` capability; otherwise every method returns `{ ok: false, reason: "build_capability_missing" }` with no network call. Originates AI app builds through the unified Build control plane, funded and governed by the named build profile. See [§ctx.build](#ctxbuild--governed-app-builds). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
@@ -625,13 +625,14 @@ export default async function placeOrder(args, ctx) {
   return { ok: true, jobId };
 }
 
-// Runs LATER as the null SYSTEM principal (ctx.user == null, ctx.auth.system == true) —
+// Runs LATER as the null SYSTEM principal (ctx.user.id == null, ctx.auth.system == true) -
 // a queued replay is NEVER deputized as the enqueuer. The target must opt in with
 // `queueCallable: true` in policy (below); pass any identity the job needs through the
 // payload (it arrives as `args`), not via ctx.user.
 export default async function fulfillOrder(args, ctx) {
-  // ctx.user is the null system principal here; args.orderId + args.buyer came from
-  // the enqueuer's payload. Do NOT read the caller from ctx.user on a queued run.
+  // ctx.user is the null system principal here - the OBJECT is still there, with
+  // `id: null`, so gate on `ctx.user.id`, never on `ctx.user` itself. args.orderId +
+  // args.buyer came from the enqueuer's payload; do NOT read the caller from ctx.user.
   const order = await ctx.bounded.get(`orders/${args.orderId}`);
   // ... do the slow work, write results through ctx.bounded (as system) ...
   await ctx.bounded.set(`orders/${args.orderId}`, { ...order, status: "fulfilled" });
@@ -658,7 +659,7 @@ that has not opted in has its queued replay dropped (fail-closed):
 - **Contract:** `ctx.enqueue(functionName: string, payload?: unknown, opts?: { delaySeconds?: number }): Promise<{ jobId }>`.
 - **What it runs:** `functionName` must be a **deployed function in this app** (a
   function may enqueue another function or itself; validated at enqueue time).
-- **How it runs:** a queued replay is **never deputized as the enqueuer** — it runs as the **null system principal** (`ctx.user == null`, `ctx.auth.system == true`, and every `@user.*` resolves to null), regardless of who enqueued it.
+- **How it runs:** a queued replay is **never deputized as the enqueuer** — it runs as the **null system principal** (`ctx.user` is `{ id: null, address: null, email: null, system: true }`, `ctx.auth.system == true`, and every `@user.*` resolves to null), regardless of who enqueued it.
   Because the human `auth` rule is written against a real caller, it cannot authorize a null-user run, so the queued lane instead requires the **target** to opt in with `queueCallable: true` in its policy `functions` entry.
   A target that has not opted in is **rejected fail-closed**: the queued message is dropped (a `function_failed` analytics event is emitted for operators) and the human `auth` rule is never evaluated under a null user.
   Pass any caller identity or context the job needs through the `payload` (it arrives as `args`); do **not** expect the enqueuer in `ctx.user`.

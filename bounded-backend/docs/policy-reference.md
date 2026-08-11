@@ -304,11 +304,14 @@ full treatment in [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md):
 }
 ```
 
-**Hooks never gate.** There is no throw-from-a-hook. Authorization lives in
-`rules`; cross-transaction correctness lives in `invariants`. By default a hook
-bypasses the per-actor rules (it is privileged server logic); set `enforceRules`
-to hold a hook to the same rules an external caller faces. A hook can never break
-a proven invariant.
+**Offchain hooks never gate.** There is no throw-from-an-offchain-hook.
+Authorization lives in `rules`; cross-transaction correctness lives in
+`invariants`. By default a hook bypasses the per-actor rules (it is privileged
+server logic); set `enforceRules` to hold a hook to the same rules an external
+caller faces. A hook can never break a proven invariant. On `"onchain": true`
+collections the hook plane differs: a false or erroring `hooks.onchain`
+expression aborts the whole Solana write atomically (see
+[hooks and webhooks](hooks-scheduled-webhooks.md)).
 
 ## Every accepted config key
 

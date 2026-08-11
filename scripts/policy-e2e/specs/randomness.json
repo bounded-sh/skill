@@ -1,0 +1,81 @@
+{
+  "page": "bounded-onchain/docs/examples/randomness-coin-flip.md",
+  "name": "randomness-coin-flip",
+  "appName": "randomness-coinflip",
+  "tests": [
+    {
+      "kind": "verify"
+    },
+    {
+      "kind": "set",
+      "path": "houseDeposits/dep_RUN_ID",
+      "data": {
+        "amount": 200000000
+      },
+      "expect": "ok",
+      "note": "first deposit: idempotent createAccount builds the house PDA and funds it atomically"
+    },
+    {
+      "kind": "set",
+      "path": "houseDeposits/dep2_RUN_ID",
+      "data": {
+        "amount": 50000000
+      },
+      "expect": "ok",
+      "note": "second deposit tops up the existing pot (createAccount is idempotent)"
+    },
+    {
+      "kind": "get",
+      "path": "houseDeposits/dep_RUN_ID",
+      "expectField": {
+        "field": "amount",
+        "equals": 200000000
+      },
+      "note": "funding history is publicly readable"
+    },
+    {
+      "kind": "set",
+      "path": "houseDeposits/depzero_RUN_ID",
+      "data": {
+        "amount": 0
+      },
+      "expect": "denied",
+      "note": "amount must be > 0"
+    },
+    {
+      "kind": "set",
+      "path": "flips/flip_owner_RUN_ID",
+      "data": {
+        "player": "11111111111111111111111111111112",
+        "choice": 0,
+        "stake": 10000000,
+        "settled": false
+      },
+      "expect": "denied",
+      "note": "wrong literal owner: player is a fixed system address that cannot equal the caller wallet"
+    },
+    {
+      "kind": "set",
+      "path": "flips/flip_low_RUN_ID",
+      "data": {
+        "player": "11111111111111111111111111111112",
+        "choice": 1,
+        "stake": 1,
+        "settled": false
+      },
+      "expect": "denied",
+      "note": "stake below MIN_BET (and player not caller); create denied"
+    },
+    {
+      "kind": "set",
+      "path": "flips/flip_missing_RUN_ID",
+      "data": {
+        "settled": true,
+        "roll": 0,
+        "payout": 0
+      },
+      "expect": "rejected",
+      "note": "settle-shaped write against a flip that was never created: evaluated as a create and rejected (required fields missing)"
+    }
+  ]
+}
