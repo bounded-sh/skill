@@ -38,6 +38,7 @@ Read only the row matching the current task or term.
 | Transaction too large, 413, 1182/1232-byte packet limit, oversized hook, lookup tables | [transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
 | `governance.upgrade`, immutable/controller policy, manifest root, governed session, recovery, extend, cancel | [runtime-v3 governance](docs/onchain.md#policy-upgrade-governance-runtime-v3) |
 | `@CPI`, `@Solana`, `@Bytes`, `@App`, `@DocumentPlugin.updateField`, `@PredictionMarketPlugin`, PDAs, `get`/`getAfter`, ProgramData, `shouldSubmitTx`, `skipPreflight`, `@contract.address`, `@AccountPlugin.getAccountAddress`, generic CPI, cross-app, prediction-market arithmetic, runtime parity, `@Solana.verifyEd25519`, `@Solana.secp256k1Recover`, `@Bytes.sha256`, `@Bytes.keccak256`, signature verification, EVM signer recovery | [policy primitives](docs/policy-primitives.md) |
+| Auction, order book, multi-transaction financial state machine, aggregate buckets, permissionless crank, lazy claim/settlement, fixed-point units, independent arithmetic oracle, operation receipt retry, `_hook_completed`, `_error_message` | [policy-native financial state machines](docs/policy-native-state-machines.md) |
 | Anchor/custom errors or stale numeric decoding | [custom-error diagnosis](docs/onchain.md#diagnose-custom-errors-by-the-live-anchor-log-name) |
 | Trading, Phoenix perps, DEX swaps, server-signed execution | [onchain trading](docs/onchain-trading.md) |
 | Escrow custody, `source` argument, per-entity funds, named PDA accounts, `@AccountPlugin.createAccount` | [named escrow accounts](docs/onchain-trading.md#named-escrow-accounts---the-third-custody-model-read-this-before-pooling-funds) |
@@ -80,6 +81,7 @@ Read only the row matching the current task or term.
 - Keep Poofnet and Solana behavior paired.
 - Pure/read primitives must return the same shape in runtimes where they are actually executable, and mutating primitives must apply a modeled effect or fail closed.
 - Validation-only success is a parity bug.
+- For a Poofnet onchain hook, application-side success means `_hook_completed == _transaction_hash`. Row existence and `_error_message == null` are only pending state. Gate cross-protocol policy progress on the hook-derived state change, and give every semantic operation id a policy-legal failed-attempt retry path. See [policy-native financial state machines](docs/policy-native-state-machines.md#onchain-receipt-success-and-retry).
 - Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. App builders never create webhook URLs or supply provider secrets, and the operator runbook (webhook, secrets, queue/DLQ, recovery) lives in the monorepo, not this skill. See [mirror completeness](docs/onchain.md#mirror-completeness) for the app-facing caveats.
 - Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.

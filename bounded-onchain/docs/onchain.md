@@ -304,14 +304,22 @@ A policy that verifies on Poofnet still needs every called function checked agai
   with the failure reason - read it back or subscribe to surface trade errors in UI.
   **A record existing is NOT proof the onchain action succeeded.**
   `_error_message` being present means the action **FAILED**; it is a failure signal
-  to gate on, not merely UI text.
-  Any rule, hook, subscription, or UI that represents "successful onchain execution"
-  MUST branch on the *absence* of `_error_message` (or an explicit success marker)
-  and **fail closed** otherwise - never grant a mint, unlock, claim, or downstream
-  write just because the row appeared or a post-commit hook fired.
+  to gate on, not merely UI text. The exact positive success condition is
+  `_hook_completed == _transaction_hash`. Absence of `_error_message` alone is
+  only pending state because a reader can observe the primary commit before the
+  hook finishes.
+  Any Poofnet subscription, function, or UI that represents "successful onchain
+  execution" MUST require that matching completion marker and **fail closed**
+  otherwise. A cross-protocol policy transition should instead require the
+  hook-derived head/cursor state that advances atomically with the simulated
+  side effects. Never grant a mint, unlock, claim, or downstream write just
+  because the receipt row appeared or a post-commit hook fired.
   On a real chain a failed transaction would not commit the success state, so
   treating record-existence as success is a sandbox-only mistake that breaks on
   mainnet.
+  A create-only row with a semantic id and no failed-attempt retry path can be
+  permanently poisoned by one transient Poofnet hook failure. Use the retryable
+  receipt patterns in [policy-native financial state machines](policy-native-state-machines.md#onchain-receipt-success-and-retry).
 - **Both hooks run.** A collection declaring `hooks.onchain` **and**
   `hooks.offchain` runs both on poofnet - onchain first (as the chain program
   would, inside the tx), then offchain (post-commit) - matching real-network

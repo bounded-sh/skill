@@ -60,6 +60,7 @@ const FIXTURES = [
   { router: 'bounded-onchain/SKILL.md', keywords: ['signature', 'manifest argument'], target: 'docs/plugins.md' },
   { router: 'bounded-onchain/SKILL.md', keywords: ['escrow', 'vault', 'treasury'], target: 'docs/examples.md' },
   { router: 'bounded-onchain/SKILL.md', keywords: ['rent', 'transaction limits'], target: 'docs/onchain-troubleshooting.md' },
+  { router: 'bounded-onchain/SKILL.md', keywords: ['Auction', 'permissionless crank', 'lazy claim'], target: 'docs/policy-native-state-machines.md' },
   { router: 'bounded-onchain/SKILL.md', keywords: ['Randomness', 'VRF'], target: 'docs/randomness.md' },
   { router: 'bounded-onchain/SKILL.md', keywords: ['Pump.fun'], target: 'docs/pump-fun.md' },
   // policy authoring class
@@ -98,6 +99,24 @@ test('compact-layer pages stay within their line budgets', () => {
     const lines = read(rel).split('\n').length
     assert.ok(lines <= budget, `${rel}: ${lines} lines exceeds its ${budget}-line budget`)
   }
+})
+
+test('policy-native financial state-machine guidance retains its cross-layer safety contract', () => {
+  const page = read('bounded-onchain/docs/policy-native-state-machines.md')
+  for (const expected of [
+    'policy owns truth; functions and keepers',
+    '`getAfter(/x)` reads final staged state',
+    '`requiresInBatch`',
+    '`requiresInBatch` is enforced by the realtime/client data plane',
+    'bounded cursor',
+    'independent differential oracle',
+    'success is `_hook_completed == _transaction_hash`',
+    'Every failed semantic receipt has a legal retry path',
+    'retained target-network execution',
+  ]) {
+    assert.ok(page.includes(expected), `policy-native-state-machines.md lost guidance: ${expected}`)
+  }
+  assert.ok(page.split('\n').length <= 400, 'policy-native-state-machines.md exceeds the 400-line module budget')
 })
 
 test('the quick path names five builds and links only existing targets', () => {
