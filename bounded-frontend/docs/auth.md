@@ -138,8 +138,16 @@ non-custodial wallet provisioning. Keep the defaults in the majority of apps:
 omit both `authMode` in client initialization and `auth.wallets` in policy.
 After a supported email/social login completes, the user has a stable account
 identity (`@user.id`) and a real wallet (`@user.address`). Add explicit auth
-configuration only to opt out (`auth.wallets: false`) or retain the legacy
-hosted login mode. Browser guests and phone-only sessions are separate cases.
+configuration to opt out (`auth.wallets: false`), to retain the legacy hosted
+login mode, or to opt IN to wallet login.
+
+That last one is a different switch from the provisioning default above.
+**Signing in WITH a wallet or a keypair** - SIWS/SIWE, `BOUNDED_PRIVATE_KEY`,
+CI, an agent seeding a QA session - is OFF unless the policy sets
+`auth: { wallets: true }` (or an enabling object) explicitly, and is otherwise
+refused with `403 wallet_login_disabled`. A valid signature alone mints a real
+session, so an app has to declare that lane rather than inherit it. Browser
+guests and phone-only sessions are separate cases.
 See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md).
 
 There are **two issuers**: wallet/guest auth (Phantom / anonymous,
