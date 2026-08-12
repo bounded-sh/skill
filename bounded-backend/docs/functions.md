@@ -329,6 +329,7 @@ your own key — this is built in.**
 export default async function makeAvatar(args, ctx) {
   const img = await ctx.ai.generateImage({
     prompt: args.prompt,                    // required
+    idempotencyKey: `avatar:${ctx.user.id}`, // REQUIRED — a stable app-global key; a retry with the same key never re-bills
     destinationPath: "avatars",             // a policy-declared type:"storage" collection
     // model?: "@cf/black-forest-labs/flux-2-klein-4b" (the default, FLUX.2, ~1¢)
     // size?, steps?, seed?, negativePrompt?, metadata? (declared fields)
@@ -347,6 +348,7 @@ export default async function makeClip(args, ctx) {
   const { jobId, jobPath } = await ctx.ai.generateVideo({
     model: "replicate/wan-video/wan-2.7-t2v",  // always explicit for video
     prompt: args.prompt,
+    idempotencyKey: `clip:${ctx.user.id}:${args.prompt}`, // REQUIRED — a stable app-global key
     durationSeconds: 8,                        // clamped to the model's max
     destinationPath: "clips",                  // policy-declared storage collection
     // jobPath?: "aiJobs" — declare aiJobs/$jobId in policy and the job status
