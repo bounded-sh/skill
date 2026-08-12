@@ -210,6 +210,12 @@ A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
 composition, and failure codes: [data-plane.md](../../bounded-backend/docs/data-plane.md).
 
+Across SDK transports, a structured Bounded write decline carries the bundle-safe discriminator `error.isBoundedDecline === true` and an `error.decline` object.
+HTTP `set` and `setMany` throw `BoundedDeclineError`; realtime live-intent and WebSocket write paths retain their transport-specific error class while attaching the same discriminator and decline object.
+For a `rollingSum` invariant, optional `error.decline.boundary.cause` is a stable machine-readable value: `cap_exceeded`, `append_only_update`, or `append_only_delete`.
+The cause remains available under minimal error disclosure, while cap details such as `cap`, `current`, and `attempted` are disclosure-gated and can be JSON numbers or exact decimal strings when the integer is not safely representable as a JavaScript number.
+Branch on the cause before deciding whether to wait for a window: `cap_exceeded` means the cap comparison rejected the attempt but does not prove the same payload can ever fit, while either `append_only_*` value identifies a history mutation rather than cap exhaustion.
+
 For a Solana wallet UI that deliberately needs a failed transaction to land as denial evidence, pass `{ shouldSubmitTx: false }`:
 
 ```ts

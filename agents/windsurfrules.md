@@ -74,6 +74,11 @@ Flow:
 Runtime rejections are fail-closed: 409 for a violated invariant, 403 for a denied
 write or invoke rule.
 
+`bounded create "<prompt>"` hands the whole app to Bounded's build agent and
+`bounded edit "<prompt>"` iterates on it; `bounded builds list|watch|cancel|gate`
+steers the run. Use that path when the user wants the platform to write the app,
+not when you are writing it.
+
 SDKs:
 
 - `@bounded-sh/client` for web and React Native.

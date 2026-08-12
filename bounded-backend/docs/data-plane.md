@@ -81,7 +81,7 @@ unbounded storage or encode these numbers into application behavior.
 | What failed | Status | What you get back | What committed |
 |---|---|---|---|
 | Invariant violated | `409` `postcondition failed: invariant "<name>" ...` | the invariant's **declared name** (e.g. `spend_cap`), its type, and the arithmetic that failed | nothing |
-| Optimistic write snapshot changed | `409` `code: "mutation_conflict"`, `retryable: true` | HTTP data writes surface this after one bounded internal retry; realtime WebSocket writes may surface the first conflict | nothing |
+| Optimistic write authority changed | `409` `code: "mutation_conflict"`, `retryable: true` | optional stable `conflictKind`: `document_epoch`, `rule_clock`, or `rule_read_authority`; HTTP data writes surface this after one bounded internal retry, while realtime WebSocket writes may surface the first conflict | nothing |
 | **Write** rule denied (create/update/delete) | `403` | the failed action plus a **trace** of the predicate that evaluated false | nothing |
 | Function `invoke` auth rule denied | `403` `Forbidden: auth rule denied` | denied before the body runs | nothing |
 | **Read** rule denied | **`200`** with `{"data": null}` (single) or `{"data": []}` (list) | **no `403`** — denied reads are *hidden*, not errored (see below) | n/a |
@@ -90,11 +90,13 @@ unbounded storage or encode these numbers into application behavior.
 | Policy fails verification at deploy | deploy fails | the proof report with counterexamples | previous-good policy stays active |
 
 > **How much detail you get back is governed by `errorDisclosure`.** The
-> message *detail* in the rows above (the invariant name/formula, the failed
-> rule trace) is sent to the client only under **full** disclosure. The default
-> in production is **minimal** — a generic message plus a stable `code`, with the
-> invariant name/formula and rule expression withheld. Enforcement is identical
-> either way, and the **full** reason is always written to the decision log
+> detailed formula, numeric limits, raw message, and failed-rule trace in the
+> rows above are sent to the client only under **full** disclosure. The default
+> in production is **minimal**: a generic message plus stable `code` and
+> invariant name, available both at the top level and as `decline.invariant`.
+> A structured `decline.boundary.cause` also remains available when present,
+> while the formula, limits, raw message, and rule expression stay withheld.
+> Enforcement is identical either way, and the **full** reason is always written to the decision log
 > (`bounded decisions --denied-only`). Set per-collection or policy-global; see
 > [policy-reference.md](policy-reference.md#error-disclosure).
 
@@ -108,6 +110,19 @@ unbounded storage or encode these numbers into application behavior.
 > retry one complete attempt internally; realtime WebSocket writes can return
 > the first conflict. A mutation conflict is never evidence that a cap was
 > exhausted.
+> When present, `conflictKind` is one of `document_epoch`, `rule_clock`, or `rule_read_authority`.
+> These distinguish a changed document snapshot, a rule evaluation that crossed its final logical-clock second, and lost rule-read authority.
+> All three mean that nothing committed and the caller may reload exact state before retrying an idempotent operation.
+
+> **Structured rolling-boundary cause.** An invariant rejection may also carry `decline.boundary.cause` with stable value `cap_exceeded`, `append_only_update`, or `append_only_delete`.
+> This cause remains available under minimal disclosure even when numeric cap details and the full message are withheld.
+> Only `cap_exceeded` says a value crossed the rolling cap.
+> The two `append_only_*` causes identify a history mutation, not cap exhaustion; use the operation-specific rules below before deciding whether a later delete can become eligible.
+
+The raw HTTP response body exposes this field at `decline.boundary.cause`.
+The JavaScript SDK attaches it to the thrown or transport-specific error at `error.decline.boundary.cause`.
+Inside a Bounded Function, `ctx.bounded` wraps the server body at `error.details`, so use `error.details.decline.boundary.cause`.
+`bounded data ... --json` exposes the root error document with the cause at `decline.boundary.cause` in CLI releases that include structured decline propagation.
 
 > **Read denials never return `403`.** A read your `read` rule denies comes back
 > with HTTP `200` and an **empty payload** — `{"data": null}` for a single
@@ -119,16 +134,26 @@ unbounded storage or encode these numbers into application behavior.
 
 Agent rule of thumb:
 
-- `409 invariant_violation` means the **state** forbids it. Backing off is correct; retrying the
-  same capped write will keep failing until enough of the window ages out.
-  Poll cheaply (read the collection, sum the window) or schedule — don't
-  hammer the write path.
+- `409 invariant_violation` means the **state** forbids it. Inspect
+  `decline.boundary.cause` before deciding whether to retry. `cap_exceeded`
+  proves only that the cap comparison rejected the attempt. Retry the unchanged
+  payload later only when trusted local state or full-disclosure details show
+  that existing in-window usage caused the rejection and the attempt can fit
+  after it ages out; otherwise reduce or correct the payload. `append_only_update` never becomes
+  eligible by waiting. For `append_only_delete`, only a policy-authorized
+  offchain row with a trusted creation time can become deletable after it is
+  strictly older than every effective window. A trusted future creation time
+  must first pass and then age beyond every window; onchain rows and rows with a
+  missing or invalid trusted timestamp stay non-deletable. For another
+  invariant, correct the payload or prerequisite state.
 - `409 mutation_conflict` means concurrent state changed during evaluation.
   HTTP data writes already retried once; realtime WebSocket writes may not have.
   Reload exact state and retry only the idempotent operation. Do not stamp a
   wall/cap receipt from this response.
-- `403` means **you** may not do it. Fix the caller or the payload, not the
-  timing.
+- `403` means the rule denies the current actor, action, payload, or state.
+  Inspect the rule or available trace and do not retry blindly; wait only when
+  the rule is intentionally time-dependent, otherwise fix the caller, payload,
+  or prerequisite state.
 
 A non-zero exit code from `bounded data set`/`set-many` plus the structured
 error is the whole contract — there is nothing to roll back, because nothing
@@ -184,11 +209,11 @@ $ bounded data set --path "agents/a1/spend/s4" --data '{"amount": 1}'
 ✗ 409 postcondition failed: invariant "spend_cap" requires rolling sum(agents/$agentId/spend/$spendId.amount) <= 100   # 100+1=101   [full disclosure]
 ```
 
-> The full invariant message above (name + formula) is sent only under **full**
+> The formula-bearing invariant message above is sent only under **full**
 > disclosure. In **minimal** mode (the prod default) the same `409` returns a
-> generic message — "This change was rejected because it would violate a data
-> constraint." — plus `code: "invariant_violation"`; the name/formula stays in
-> the decision log. See [policy-reference.md](policy-reference.md#error-disclosure).
+> generic message, `code: "invariant_violation"`, and the stable invariant name
+> at the top level and as `decline.invariant`. The formula and full raw message
+> stay in the decision log. See [policy-reference.md](policy-reference.md#error-disclosure).
 
 ## Atomic `set-many`
 

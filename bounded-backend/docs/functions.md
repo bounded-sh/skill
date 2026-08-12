@@ -972,8 +972,8 @@ A function's `console.*` output is **captured** and viewable; **who** may view i
 is the per-function `logsAuth` policy rule (defaults to app managers; declared
 secret values are redacted). Set a fixed backend identity with `actAs`. In a
 policy file these are `logsAuth` and `actAs`; on standalone function deploys,
-pass `--logs-auth` and `--act-as` every time so the complete-entry update
-preserves them. See [identity-and-logs.md](identity-and-logs.md) and
+explicit flags replace those fields and omitted optional metadata is preserved
+by the deploy service. See [identity-and-logs.md](identity-and-logs.md) and
 [service-keys.md](service-keys.md).
 
 Remove or replace a function with the Bounded CLI when you no longer want it
@@ -1200,8 +1200,8 @@ them as `ctx.env.K` **or** `await ctx.secrets.get("K")`. Only declared names are
 exposed — an undeclared key never reaches the function. Secret values are never written into
 the policy and never returned by `functions list` / `secret list`.
 
-On every standalone function redeploy, repeat each bare `--secret NAME` because
-the command writes the complete entry. A legacy `--secret NAME=VALUE` deploy-time
+Standalone function redeploy preserves omitted secret grants, while an explicit
+bare `--secret NAME` updates the declared names. A legacy `--secret NAME=VALUE` deploy-time
 override exists and takes precedence over the app-store value for that one
 function version. Prefer bare `--secret NAME` plus `secret put --value-stdin` so
 values do not appear in argv, process listings, or shell history.

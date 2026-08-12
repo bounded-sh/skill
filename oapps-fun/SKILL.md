@@ -5,8 +5,9 @@ description: >-
   why every capability must be steward-owned ("if Bounded can't do it, you
   can't do it"), how to call out unsupported capabilities honestly, the
   x402 relay fallback for services Bounded doesn't natively provide, and the
-  lifecycle: private bounded.page development, graduation (source and
-  boundaries go public), and the <slug>.oapps.fun address at token launch. Use
+  lifecycle: private bounded.page development, completed Open publication at
+  the exact workload app-id host, and explicit Commence for the oApps slug,
+  listing, token, and Gauntlet. Use
   whenever a user says the app will launch on oapps.fun, become an oApp,
   be community-owned / token-governed, or "outlive its creator". Part of the
   Bounded skill family; the mechanics live in bounded-backend / bounded-onchain.
@@ -38,31 +39,33 @@ token says. So for oApps:
 - **If Bounded can't do it, you can't do it.** This is the rule, and it is a
   feature: a smaller app nobody can kill beats a bigger app with a kill switch.
 
-## The lifecycle: local → bounded → oapps.fun
+## The lifecycle: local → Bounded → Open → Commence
 
-An oApp passes through three addresses. Know which one you are at.
+An oApp passes through four states.
+Keep its direct app address separate from its stable venue page and its later oApps slug.
 
-**1. Local.** You build in a normal repo. Nothing is deployed, nothing is
-public.
+**1. Local.** You build in a normal repo.
+Nothing is deployed or public.
 
-**2. Bounded (development).** Promote the app: `bounded init`,
-`bounded verify`, `bounded deploy`, `bounded site deploy dist`. At creation
-the app claims a slug derived from its name plus a random suffix, e.g.
-`myapp-x7k2.bounded.page`. That is a development address, not an oapps.fun
-address. There is no oapps.fun URL until the token launches.
+**2. Bounded (development).** Promote the creator app with `bounded init`, `bounded verify`, `bounded deploy`, and `bounded site deploy dist`.
+At creation the app claims a slug derived from its name plus a random suffix, such as `myapp-x7k2.bounded.page`.
+That is a development address, not an oapps.fun address.
+There is no oapps.fun URL until Commence.
 
-While building, keep the site **private** (`sitePrivate`, set via the
-dashboard or API). The platform serves a sign-in gate to everyone else, and
-`bounded site preview` mints short-lived view links when you need to show
-someone. Do not flip it public yourself: the graduation ritual seals the site
-private, and its "let go" step is what makes it public.
+While building, keep the creator site **private** (`sitePrivate`, set through the dashboard or API).
+The platform serves a sign-in gate to everyone else, and `bounded site preview` mints short-lived view links when you need to show someone.
+Do not flip it public yourself.
+Open publishes a separate governed workload only after the full opening completes.
 
-**3. oapps.fun (launched).** At token launch the app's slug becomes its
-canonical public address: `<slug>.oapps.fun`. One token, one URL. The
-bounded.page slug stays live forever as the always-works fallback. The slug
-is renameable BEFORE launch (slug API or dashboard), so pick the name you
-want the token to live at while you still can. After launch the pointer is
-governance-controlled, not yours.
+**3. Open (public, awaiting Commence).** Completed Open creates the venue-owned root and workload, then makes the exact workload site and source public at `https://<workloadAppId>.bounded.page`.
+It also publishes the stable venue page at `/l/<rootAppId>`.
+The app is real and usable, but it has no oApps slug, venue listing, token, or running Gauntlet yet.
+The creator app remains a disconnected development sandbox.
+
+**4. Commenced.** An explicit Commence action claims `<slug>.oapps.fun`, writes the venue listing, creates the token sale, and starts the Gauntlet.
+Commence does not create the app or make its source public because Open already did both.
+The direct workload app-id host remains public, and `/l/<rootAppId>` remains the canonical venue page before and after Commence.
+Choose the requested slug before Commence because its pointer becomes governance-controlled once Commence completes.
 
 ### Community code contributions while exact patches are closed
 
@@ -120,36 +123,29 @@ honest one for an app that talks to nothing.
 
 ### What shape the app can take, and what visitors get
 
-oApps are framework-independent: launch does not require Vite, React, a
-`package.json`, or any particular layout. What it requires is honesty between
-three artifacts — the synced source, the deployed frontend (if any), and the
-policy. There are two shapes, and both are first-class launches; they differ
-in what a visitor sees at `<slug>.oapps.fun`:
+oApps are framework-independent: Open does not require Vite, React, a `package.json`, or any particular layout.
+What it requires is honesty between three artifacts: the synced source, the deployed frontend (if any), and the policy.
+There are two shapes, and both are first-class openings.
+They differ in what a visitor sees first at `https://<workloadAppId>.bounded.page` and, after Commence, at `<slug>.oapps.fun`:
 
-**An app with a web frontend.** Deploy the exact static files users should
-see (`bounded site deploy dist --with-source`); the platform serves those
-bytes as-is, forever, and governed edits keep the human source and the
-deployed `dist/` in sync. For anything beyond hand-written HTML, build with a
-real bundler — **Vite is the recommended default** (and if the frontend uses
-`@bounded-sh/client` a real bundler is effectively required; CDN imports break
-it at runtime — see **bounded-frontend**). Plain static HTML with no
-JavaScript is equally valid: what you deploy is what visitors use.
+**An app with a web frontend.** Deploy the exact static files users should see with `bounded site deploy dist --with-source`.
+The platform serves those bytes as-is forever, and governed edits keep the human source and the deployed `dist/` in sync.
+For anything beyond hand-written HTML, build with a real bundler.
+**Vite is the recommended default**, and a real bundler is effectively required when the frontend uses `@bounded-sh/client` because CDN imports break it at runtime; see **bounded-frontend**.
+Plain static HTML with no JavaScript is equally valid: what you deploy is what visitors use.
 
-**An app with no web frontend** — a CLI, an agent, a pure backend. Still a
-real oApp: the backend runs, the boundaries hold, the token launches. Its
-home page becomes the public repo view: visitors landing on
-`<slug>.oapps.fun`'s host see the app's source browser — files, history,
-`Download .zip`, `bounded clone` — with a link to the app's page on oapps.fun
-for history, reports and governance. They read and take the project rather
-than using it in the browser. Say this plainly to the user before launch so
-nobody expects a web app to appear.
+**An app with no web frontend** can be a CLI, an agent, or a pure backend.
+It is still a real oApp: the backend runs and the boundaries hold.
+Its home page becomes the public repo view.
+Visitors landing on the direct workload app-id host, or the oApps slug after Commence, see the app's source browser with files, history, `Download .zip`, and `bounded clone`, plus a link to the stable `/l/<rootAppId>` venue page for history, reports, and governance.
+They read and take the project rather than using it in the browser.
+Say this plainly before Open so nobody expects a web app to appear.
 
-Either way, the synced source must be the real, complete project — if the
-deployed frontend is compiled output, the source that compiles into it rides
-along in the same tree. Never add a framework, a bundler, or an unused
-`init()` call merely to change shape: launch does not ask for them.
+Either way, the synced source must be the real, complete project.
+If the deployed frontend is compiled output, the source that compiles into it rides along in the same tree.
+Never add a framework, a bundler, or an unused `init()` call merely to change shape because Open does not ask for them.
 
-**The dist must be reproducible.** A deployed frontend classifies at launch,
+**The dist must be reproducible.** A deployed frontend classifies at Open,
 and an unclassifiable one refuses (`dist_not_reproducible`):
 
 - **static** — every file you deploy is byte-identical to a file in your source
@@ -159,16 +155,17 @@ and an unclassifiable one refuses (`dist_not_reproducible`):
   deployed as-is land here automatically.
 - **built** — your source declares how the frontend is produced: a `"build"`
   object in `bounded.json` (`{"command": "npm run build", "output": "dist"}`)
-  or a `package.json` `build` script. **The launch builds your source itself,
-  in an isolated network-less sandbox, and serves THAT output.** The bytes you
-  uploaded are not what the community gets — your own source is. Your build
-  must succeed and produce `<output>/index.html`.
+  or a `package.json` `build` script. **Open builds your source itself in an
+  isolated network-less sandbox and serves THAT output from the governed
+  workload.** The bytes you uploaded are not what the public workload gets -
+  your own source is. Your build must succeed and produce
+  `<output>/index.html`.
   This is deliberate: if the launched site were your upload while only your
   source was checked, the two could say different things, which is exactly the
-  hole the standard exists to close. Your bounded.page development address
-  keeps serving your uploads as always; only the launched oApp is rebuilt.
+  hole the standard exists to close. Your creator development address keeps
+  serving your uploads as always; only the opened workload is rebuilt.
 - A dist that matches nothing in source and has no working declared build is
-  dead weight the community could never maintain, so it cannot launch. Fix it
+  dead weight the community could never maintain, so it cannot Open. Fix it
   by declaring a real build, or by deploying your source files directly.
 
 Because the rehearsal sandbox has no network, a build that fetches things at
@@ -183,7 +180,7 @@ What the ritual still refuses:
 | every app-id literal names THIS app | yes (repeats of your own id are fine) | `app_id_literal_foreign` |
 | text-only tree (binaries cannot ride the source lane) | yes | `source_not_text` |
 | if the source `init()`s the Bounded client, the DEPLOYED site embeds that literal id | yes — rebuild + redeploy if stale | `clone_app_id_not_rewritten` |
-| a recorded site deployment must actually be found at launch | platform-checked | `clone_site_missing_expected` |
+| a recorded site deployment must actually be found at Open | platform-checked | `clone_site_missing_expected` |
 
 The refusal body carries the specific `rejections`, so read them rather than
 guessing.
@@ -224,41 +221,27 @@ block unless the build prompt asks for one. If you are commissioning an app that
 is meant to launch, put the four fields above plus the egress allow-list in the
 prompt, or the app will build cleanly and then be refused at the gate.
 
-## What graduation publishes (read before you let go)
+## What Open publishes (read before you let go)
 
-Graduation is the point of no return. Spell these implications out, in this
-order, before starting the graduation ritual. This is what you are agreeing
-to:
+Completed Open is the publication boundary and is separate from Commence.
+Spell these implications out before starting Open:
 
-1. **Your source code becomes public.** Anyone can read it at
-   `<your-host>/__bounded/source` and download the whole tree as
-   `source.zip`. Forever.
-2. **Your boundaries are published.** The `policy.json` rules, proven before
-   every deploy, appear at `/__bounded/boundaries`. They are part of your
-   public safety story, and the first thing a careful buyer reads.
-3. **What launches is a venue-owned COPY of your app, not your app.** Launch
-   clones the whole thing - source, site, policy - into a fresh app the venue
-   owns, rewrites the Bounded app id so the copy talks to its own backend, and
-   moves your slug onto it. From then on the copy accepts NO interactive deploy
-   of any kind (`oapp_launched`, 403), forever: only a community-governed build
-   can change it. Your original app stays yours, keeps its policy authority, and
-   becomes a disconnected sandbox - editing it no longer affects the launched
-   oApp, and the launched oApp starts with an EMPTY backend (no data is copied).
-4. **A public DYOR window precedes the token launch.** Anyone can inspect the
-   source, ask questions, and REPORT the app. 5 distinct reports hold the
-   launch at T-0 for steward review, with a public halt log.
-5. **The fee split is fixed:** 50 app reserve / 20 creator / 20 steward /
-   10 platform. The app reserve is the launch's treasury ledger; the platform
-   leg is what older docs call the "venue" — same 10% recipient. Nobody gets
-   pre-launch tokens. Not you, not the steward, not the platform.
-6. **Automated integrity scans run** at submission and over time. A failed
-   scan halts the launch, publicly.
+1. **Your workload site and source become public.** Anyone can use the site at `https://<workloadAppId>.bounded.page`, read its source at `https://<workloadAppId>.bounded.page/__bounded/source`, and download the whole tree as `source.zip`.
+2. **Your boundaries are published.** The governed workload's `policy.json` appears at `/__bounded/boundaries` on that same exact app-id host.
+   The rules are part of the public safety story and the first thing a careful participant should read.
+3. **Open creates a venue-owned root and workload copy.** The workload receives the source, site, and policy under its own app id.
+   It accepts no creator-driven interactive deploy after Open; governed builds are the only update lane.
+   Your original creator app remains your disconnected sandbox, and editing it no longer changes the public workload.
+4. **The canonical venue page is stable.** `/l/<rootAppId>` exists when Open completes and remains the same page before and after Commence.
+   People can inspect and participate in the public app while it is `awaiting_commence`.
+5. **Commence is a later, explicit boundary.** It claims the requested oApps slug, writes the venue listing, creates the token sale, and starts the Gauntlet.
+   It does not clone or publish the app again.
+   The fee split is fixed as part of that token launch: 50 app reserve / 20 creator / 20 steward / 10 platform.
 
-The DYOR window makes source sync load-bearing: the public source page serves
-what the platform has synced, and the launch integrity scan reads the same
-synced source (no synced source → the launch cannot complete). Source rides
-the deploy — there is no separate register/sync machinery. Enable it once in
-`bounded.json`:
+Source sync is load-bearing because completed Open publishes the synchronized tree rather than an unsynchronized checkout.
+No synced source means Open cannot complete.
+Source rides the deploy; there is no separate register or sync machinery.
+Enable it once in `bounded.json`:
 
 ```json
 { "sourcePush": true }
@@ -411,13 +394,11 @@ and the platform deletes it; it can never launch as an oApp; rerunning is
 cheap and expected. Backend-only apps rehearse fine — with no built dist
 there is simply no site deploy.
 
-## Practical checklist before launch
+## Practical checklist before Open and Commence
 
-- The app uses the human owner's normal Bounded web account (`bounded init`
-  opens login when needed; confirm with `bounded whoami`). Launch is owner-only
-  and needs an email-backed account. If this is an intentionally legacy
-  key-owned app, use the advanced deploy account-recovery reference before
-  launch rather than inventing a new owner.
+- The app uses the human owner's normal Bounded web account (`bounded init` opens login when needed; confirm with `bounded whoami`).
+  Open is owner-only and needs an email-backed account.
+  If this is an intentionally legacy key-owned app, use the advanced deploy account-recovery reference before Open rather than inventing a new owner.
 - Boundaries were written early and cover the app's money and state rules as
   proven invariants, not ad-hoc checks. They are the trust artifact buyers
   read alongside your source.
@@ -427,20 +408,21 @@ there is simply no site deploy.
   key-authenticated endpoints.
 - Every external egress is declared and either credential-free, native, or
   relay-eligible.
-- The site is private (`sitePrivate`) and stays that way; graduation's
-  "let go" step does the public flip, not you.
-- Source rode the deploy (`sourcePush: true` in bounded.json, or the last
-  deploy ran `--with-source`): `/__bounded/source` shows the current tree,
-  not an empty page.
-- The slug is the name the token should live at (`<slug>.oapps.fun`); rename
-  it before launch if it isn't. Launch MOVES the slug onto the venue-owned
-  clone, so it is the last moment the name is yours to change.
+- Keep the creator site private (`sitePrivate`) while you build.
+  Do not flip it public yourself.
+  Completed Open publishes the separate governed workload at the exact workload app-id host.
+- Make source ride the deploy with `sourcePush: true` in `bounded.json` or `--with-source` on the last deploy.
+  After Open, verify the synchronized tree at `https://<workloadAppId>.bounded.page/__bounded/source`.
+- The slug is the name the token should live at (`<slug>.oapps.fun`), so rename it before Commence if it is wrong.
+  Open already created the venue-owned root and workload; Commence claims the requested slug for that opening.
+- Save `/l/<rootAppId>` as the canonical venue page.
+  Do not replace it with a slug-derived venue route after Commence.
 - The synced tree is the real, complete project and every `init({ appId })`
-  literal names this app (see "What shape the app can take"). If the app has a
-  frontend, the deployed site was built from THIS tree — a stale dist that no
-  longer embeds the app id refuses at launch (`clone_app_id_not_rewritten`).
+  literal names this app (see "What shape the app can take").
+  If the app has a frontend, the deployed site was built from THIS tree.
+  A stale dist that no longer embeds the app id refuses at Open (`clone_app_id_not_rewritten`).
 - If the app has NO web frontend, the user knows its home page will be the
-  public repo view (source browser + oapps.fun link), not a web app.
+  public repo view at the direct workload host, not a web app.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
   sane against the app's expected build-fund inflow — out of budget means
   frozen, and you should be able to say at what usage level that happens.

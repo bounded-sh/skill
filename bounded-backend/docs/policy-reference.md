@@ -446,13 +446,15 @@ Apps provisioned through the create flow with `oapp: true` start in oApp mode, a
 `errorDisclosure` controls **how much of a policy-rejection reason reaches the
 client**. It never changes enforcement, and never hides anything from the owner.
 
-- **`"full"`** — the client gets the full reason: the failed rule trace, and the
-  violated invariant's **name + formula + limit** (e.g. `postcondition failed:
+- **`"full"`**: the client gets the stable fields plus the full reason: the
+  failed rule trace and the violated invariant's **formula + limit** (e.g. `postcondition failed:
   invariant "spend_cap" requires rolling sum(agents/$agentId/spend/$spendId.amount) <= 100`).
-- **`"minimal"`** — the client gets a generic message plus a stable `code`:
+- **`"minimal"`**: the client gets a generic message plus a stable `code`:
   "Access denied by policy." (`403`) or "This change was rejected because it
-  would violate a data constraint." (`409`). The invariant name/formula/limit
-  and the rule expression are **not** sent.
+  would violate a data constraint." (`409`). An invariant rejection still
+  includes its stable name at the top level and as `decline.invariant`, plus
+  `decline.boundary.cause` when present. The formula, numeric limit, raw message,
+  failed-rule trace, and rule expression are **not** sent.
 
 **Resolution — most specific wins:** per-collection `errorDisclosure` > policy-global
 `errorDisclosure` > **env default**. The env default is **`minimal` in production**

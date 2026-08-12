@@ -38,7 +38,7 @@ family.
 |---|---|
 | Policy, rules, invariants, functions, data, realtime, actor model, proofs, policy tests | **bounded-backend** |
 | Client SDK, web/mobile UI, subscriptions, hosted frontend, app-user authentication | **bounded-frontend** |
-| CLI, verify/deploy, environments, source sync, domains, project config, collaborators | **bounded-deploy** |
+| CLI, verify/deploy, environments, source sync, domains, project config, collaborators, prompt-driven builds | **bounded-deploy** |
 | Embedded wallets, Solana/EVM, tokens, onchain transactions, onramp | **bounded-onchain** |
 | Organization-wide observation, boundaries, custody, governance | **bounded-teams** |
 | An app specifically destined for oapps.fun | **oapps-fun** |
@@ -71,6 +71,7 @@ Load these only when the task calls for them:
 - Denied reads return an empty `200`; denied writes normally return `403`;
   invariant conflicts return `409` with the invariant name.
 - `bounded verify` is the proof loop. Fix every blocking result before deploy.
+- Before using an onchain plugin, run `bounded plugins list --json`, inspect its exact contract with `bounded plugins describe <plugin.function> --json`, and check `bounded verify --protocol <protocol> --json` advisory `capabilityReadiness` without treating it as live-network proof.
 - Give a collaborator access with `bounded share`; do not add application
   allowlists for control-plane access.
 - Never put provider secrets in frontend code or commit credentials.

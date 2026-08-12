@@ -22,8 +22,10 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
 ```
 
 - Values may be **string, number, or boolean**.
-- Reference anywhere a value appears: rule strings, role members, invariant
-  limits, field defaults.
+- Reference anywhere an authored policy value appears except within a reserved `constants` or `defs` block: rule strings, role members, invariant limits, field defaults, and a function's `actAs` service identity.
+  In those fields, an exact `@const.NAME` in a non-expression (data) position, `functions.<name>.actAs` included, is replaced by the constant's value.
+  Constant values are literals and are not recursively macro-resolved, so do not define one constant as another `@const` token.
+  (`@def` is a rule fragment and is rejected in a data position.)
 - **Type is preserved when the whole value is one `@const`**: `"limit": "@const.DAILY_CAP"`
   compiles to the number `5000`, not the string `"5000"`.
 - **Embedded in a rule, strings are quoted, numbers/bools are raw** (matching the
@@ -141,6 +143,35 @@ The live room acts as `@const.SETTLER`, only that identity may invoke
 `settleMatch`, and only it may write settlement rows — change the wallet in
 one place. See [live-runtime.md](live-runtime.md) §"Authorization and identity"
 for `runAs`/`actAs` precedence.
+
+### Per-environment service identity (`actAs`)
+
+`actAs` is a data field, so a function can name the constant instead of
+hardcoding the address, and an
+[`environments`](../../bounded-deploy/docs/environments.md) entry can then
+select a different service identity per environment:
+
+```jsonc
+"constants":    { "STEWARD": "PrdSteward111..." },
+"environments": {
+  "staging":    { "appId": "<staging-app-id>", "constants": { "STEWARD": "StgSteward222..." } },
+  "production": { "appId": "<production-app-id>" }
+},
+"functions": {
+  "sweep": {
+    "auth":  "get(/admins/@user.id) != null",
+    "entry": "functions/sweep.ts",
+    "actAs": "@const.STEWARD"
+  }
+}
+```
+
+`bounded deploy ./policy.json --environment staging` overlays the staging
+constants, so the deployed policy carries `"actAs": "StgSteward222..."`.
+The production entry overrides nothing, so it resolves the top-level default
+and the production-resolved policy is byte-for-byte what it was.
+Rotating the staging key is then a one-line constant edit that cannot touch
+the production identity.
 
 ## `@const` vs `@constants` vs `--constants` (don't confuse them)
 
