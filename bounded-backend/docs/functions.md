@@ -329,6 +329,11 @@ your own key — this is built in.**
 export default async function makeAvatar(args, ctx) {
   const img = await ctx.ai.generateImage({
     prompt: args.prompt,                    // required
+    // REQUIRED, and app-global FOREVER: include a per-request discriminator
+    // (here args.requestId), or this user's SECOND avatar - a new prompt under
+    // the same key - is refused 409 ai_operation_idempotency_conflict rather
+    // than generated. Only a genuine RETRY of the same request should reuse it.
+    idempotencyKey: `avatar:${ctx.user.id}:${args.requestId}`,
     destinationPath: "avatars",             // a policy-declared type:"storage" collection
     // model?: "@cf/black-forest-labs/flux-2-klein-4b" (the default, FLUX.2, ~1¢)
     // size?, steps?, seed?, negativePrompt?, metadata? (declared fields)
@@ -347,6 +352,10 @@ export default async function makeClip(args, ctx) {
   const { jobId, jobPath } = await ctx.ai.generateVideo({
     model: "replicate/wan-video/wan-2.7-t2v",  // always explicit for video
     prompt: args.prompt,
+    // REQUIRED, app-global forever, and capped at 256 UTF-8 BYTES - never
+    // interpolate a raw user prompt (a long one fails
+    // ai_idempotency_key_required). Key the business operation instead.
+    idempotencyKey: `clip:${ctx.user.id}:${args.clipId}`,
     durationSeconds: 8,                        // clamped to the model's max
     destinationPath: "clips",                  // policy-declared storage collection
     // jobPath?: "aiJobs" — declare aiJobs/$jobId in policy and the job status
