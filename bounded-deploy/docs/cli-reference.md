@@ -392,8 +392,12 @@ Every ambiguous deploy or recovery outcome now emits the documented object with
 `code`, `state`, `operationId`, and - only when the outcome is actually
 resumable - `recoveryCommand`:
 
-- **Resumable** (`unknown`, `processing`): run the emitted `recoveryCommand`
-  verbatim, under the same verified owner identity.
+- **Resumable** (`unknown`, `processing`, `recoverable`): run the emitted
+  `recoveryCommand` verbatim, under the same verified owner identity.
+  `409 policy_preflight_status_conflict` is resumable in this sense: a
+  server-side authority fence refused that exact write, so retrying immediately
+  is pointless, but the operation itself is intact and the same operation id
+  still resumes it once the platform-side defect is fixed.
 - **Definitive** (`410 policy_operation_unrecoverable`, plus abandoned,
   superseded, target-mismatch, permission, invalid-input, and manual-intervention
   outcomes): NO `recoveryCommand` is emitted, because re-running the operation
