@@ -30,8 +30,7 @@ onchain program. Nothing is ported between runtimes, so nothing can drift.
 above are the base forms, which the validator accepts for `onchainSupported` on
 Solana. Specific advanced variants are still rejected and fail closed if a policy
 claims onchain support for them: `tenantEdge.targetPathVariable`,
-`rollingSum.resetAtMs`, cross-scope forms, and any EVM-chain target (the
-onchain-enforced set above is Solana). Claiming onchain support for one of these
+`rollingSum.resetAtMs`, and cross-scope forms. Claiming onchain support for one of these
 is rejected at verification and refused by the onchain runtime.
 
 Runtime enforcement and formal proof are separate claims. In particular, a

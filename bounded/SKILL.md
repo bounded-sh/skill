@@ -39,7 +39,7 @@ family.
 | Policy, rules, invariants, functions, data, realtime, actor model, proofs, policy tests | **bounded-backend** |
 | Client SDK, web/mobile UI, subscriptions, hosted frontend, app-user authentication | **bounded-frontend** |
 | CLI, verify/deploy, environments, source sync, domains, project config, collaborators | **bounded-deploy** |
-| Embedded wallets, Solana/EVM, tokens, onchain transactions, onramp | **bounded-onchain** |
+| Embedded wallets, Solana, tokens, onchain transactions, onramp | **bounded-onchain** |
 | Organization-wide observation, boundaries, custody, governance | **bounded-teams** |
 | An app specifically destined for oapps.fun | **oapps-fun** |
 
