@@ -76,12 +76,16 @@ source remains an intentional wallet-mode selection.
 Deleting an app destroys everything it owns: documents and files, realtime
 state, the hosted site and its history, vanity slug and custom domains,
 functions and their schedules, runtime secrets, cloud-edit source, build
-state, and the app record itself. There is no undo and no recovery command.
+state, and the app record itself.
+Its sign-in records go too: the app's OAuth client, every session and refresh
+token issued for it, and the app-scoped identity links.
+There is no undo and no recovery command.
 
 Some records deliberately survive, and none of them can serve the app or be
 read through it: your ACCOUNT's billing and ledger history (an account
-outlives its apps), and short-lived operational logs that expire on their own
-(function invocation logs age out within 30 days).
+outlives its apps), the PEOPLE who signed in (their Bounded user account and
+wallet, which are theirs and span every app), and short-lived operational logs
+that expire on their own (function invocation logs age out within 30 days).
 
 One exception is worth knowing: if you enabled **Observe** for the app, its
 observability org and the sensor key you were issued are NOT torn down by app
