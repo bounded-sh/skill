@@ -1,8 +1,8 @@
 # Solana devnet capability status
 
 **Scope: devnet only.** The Bounded Solana program is live on mainnet-beta as well, with
-bytes identical to devnet, but this table is generated from the Devnet lab and classifies
-devnet alone. Mainnet capability is **not** established here: an external protocol being
+bytes identical to devnet, but this table classifies devnet alone. Mainnet capability is
+**not** established here: an external protocol being
 usable on devnet says nothing about its mainnet deployment or configuration, and vice
 versa. Do not read a devnet row as a mainnet guarantee.
 
@@ -18,11 +18,11 @@ The catalog contains 157 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The current Bounded Solana program is recorded as **runtime v4**, live on both devnet and mainnet-beta since 2026-08-05, which is the version the lab catalog behind this page records.
+The current Bounded Solana program is recorded as **runtime v4**, live on both devnet and mainnet-beta since 2026-08-05, which is the version this snapshot classifies against.
 Runtime v4 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`, generated from `catalog.generated.json`.
+The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -36,14 +36,14 @@ A function moves to `supported` only after a retained live run confirms both its
 | `SAFE-TARGET-ONLY` | Generic invoke may be claimed only for an explicitly modeled safe program and account flow. |
 | `LIVE-PUMP-PROOF` | Pump.fun or PumpSwap stays unverified until live proof exists. |
 | `LIVE-TENSOR-PROOF` | Tensor stays unverified until live proof exists. |
-| `LIVE-CROSS-APP-PROOF` | A distinct target fixture and source scenario are present, but the finalized source transaction, both mirrors, exact target-field match, and `@App.get` existence query still require retained live proof. |
+| `LIVE-CROSS-APP-PROOF` | A cross-app claim needs a distinct target app plus a source scenario, and the finalized source transaction, both mirrors, exact target-field match, and `@App.get` existence query still require retained live proof. |
 | `DEVNET-ESCROW-SENTINEL` | `@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime; bind the current Devnet program ID as a string argument when resolving the escrow. |
 | `NO-DEVNET-JUPITER` | Jupiter is unavailable on devnet. |
 | `NO-DEVNET-PHOENIX` | Phoenix is unavailable on devnet. |
 | `NO-DEVNET-DFLOW` | DFlow is unavailable on devnet. |
 | `NO-USABLE-DEVNET-KAMINO-MARKET` | The KLend program IS deployed and executable on devnet at the same address as mainnet (verified on chain 2026-08-05); what has not been established is a usable market and reserve set there. Treat Kamino as untestable on devnet for that reason, not because the program is missing. |
 | `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
-| `CPAMM-SCENARIO` | A devnet acceptance scenario exercises this function, so a retained passing receipt can promote it. |
+| `CPAMM-SCENARIO` | A devnet acceptance run of this function is straightforward to construct, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
 | `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4. Runtime v4 is live on both devnet and mainnet-beta as of 2026-08-05, so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
@@ -249,5 +249,5 @@ Never store private keys, credentials, secret RPC URLs, access tokens, or signed
 
 ## Updating this snapshot
 
-A Solana compiler, runtime, manifest, descriptor, deployment, or external configuration change must update this table and its corresponding acceptance scenario in the same change.
+A Solana compiler, runtime, manifest, descriptor, deployment, or external configuration change must update this table in the same change.
 Do not promote a row from `unverified`, `blocked`, or `unsupported` without retained evidence that matches the deployed revision.

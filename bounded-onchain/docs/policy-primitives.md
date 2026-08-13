@@ -501,7 +501,7 @@ Before enabling a new primitive or runtime version:
   Every mirror sample must show the exact pre-denial collection unchanged and the forbidden path absent.
   Every account sample must use finalized commitment, set `minContextSlot` to at least the denial slot, and return `null` for the denied document PDA.
   Fail the acceptance run if a forbidden row or account appears in any later sample within that window.
-  The canonical Devnet lab uses four observations spanning at least 12 measured monotonic seconds and rejects a declared duration that did not actually elapse.
+  Four observations spanning at least 12 measured monotonic seconds is the minimum window; reject a declared duration that did not actually elapse.
   If the command or RPC fails before returning a public signature, the run has no landed-denial evidence and must remain unverified.
   For a Phantom UI, `setMany(writes, { shouldSubmitTx: false })` returns the signed transaction without submitting it.
   Serialize it only in memory, call the configured Devnet connection's `sendRawTransaction(bytes, { skipPreflight: true, maxRetries: 3 })`, discard every byte reference immediately, and retain only the public signature.
@@ -519,7 +519,7 @@ Before enabling a new primitive or runtime version:
   A `UInt` result is either a nonnegative safe integer, a nonnegative bigint, or a canonical decimal string matching `^(0|[1-9][0-9]*)$`.
   A Pyth decimal is a string matching `^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$`; reject exponential notation, `NaN`, infinities, and JavaScript numeric coercion.
   Known-vector booleans must equal `true`, Solana addresses must decode as public keys, and an ORAO result must satisfy `0 <= roll < span`.
-- The end-to-end live-acceptance release proof - the staging lab's release marker
+- The end-to-end live-acceptance release proof - a hosted release marker
   and sanitized run receipt, the artifact and program-account hashing, and the
   per-scenario acceptance definitions - is **Bounded-operated release evidence** kept
   in the monorepo's internal runbooks, not in this public skill. As an app builder,
