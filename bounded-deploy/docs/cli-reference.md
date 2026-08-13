@@ -91,6 +91,11 @@ If you enabled **Observe** for the app, deletion revokes its sensor keys and
 removes its observe org, so the token you were issued stops working and no
 further events or evidence are recorded for it.
 
+If the app was deployed onchain (devnet), its **onchain accounts remain onchain**.
+Deletion removes everything Bounded runs and bills you for, but the deployed
+program has no instruction that closes an app account, so nothing offchain can
+retract it. Its rent stays where it is, and the address keeps resolving.
+
 The flow is deliberately two-step so a single mistyped command can never
 delete an app:
 
