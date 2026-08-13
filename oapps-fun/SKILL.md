@@ -261,7 +261,7 @@ skip to a workaround:
 1. **Native first.** Does the runtime provide it? `ctx.ai` (LLMs, images,
    video — no keys), `ctx.services` (Bounded-managed third-party APIs; list
    them with `bounded services`), payments (Bounded Pay, crypto rails),
-   onchain (Solana/EVM collections, embedded wallets, DEX/token plugins),
+   onchain (Solana collections, embedded wallets, DEX/token plugins),
    data/auth/realtime/files/functions. Route to **bounded-backend**,
    **bounded-frontend**, **bounded-onchain** for the mechanics.
 2. **x402 relay second.** No native integration, but the counterparty prices

@@ -1,7 +1,7 @@
 ---
 name: bounded-onchain
 description: >-
-  Add onchain to a Bounded app: Solana and EVM collections, embedded
+  Add onchain to a Bounded app: Solana collections, embedded
   non-custodial wallets for email/social users (@user.address, Turnkey by default),
   client- and server-signed transactions, DEX/perps trading patterns, and crypto payments
   (accept USDC/crypto non-custodially, Bounded Pay for card/fiat). Use for wallet,
