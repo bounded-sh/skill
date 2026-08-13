@@ -75,8 +75,13 @@ source remains an intentional wallet-mode selection.
 
 Deleting an app destroys everything it owns: documents and files, realtime
 state, the hosted site and its history, vanity slug and custom domains,
-functions and their schedules, runtime secrets, and the app record itself.
-There is no undo and no recovery command.
+functions and their schedules, runtime secrets, cloud-edit source, build
+state, and the app record itself. There is no undo and no recovery command.
+
+Two classes of record deliberately survive, and neither can serve the app or
+be read through it: your ACCOUNT's billing and ledger history (an account
+outlives its apps), and short-lived operational logs that expire on their own
+(function invocation logs age out within 30 days).
 
 The flow is deliberately two-step so a single mistyped command can never
 delete an app:
