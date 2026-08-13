@@ -88,8 +88,10 @@ wallet, which are theirs and span every app), and short-lived operational logs
 that expire on their own (function invocation logs age out within 30 days).
 
 If you enabled **Observe** for the app, deletion revokes its sensor keys and
-removes its observe org, so the token you were issued stops working and no
-further events or evidence are recorded for it.
+removes its observe org, so the token you were issued stops working and no NEW
+events are accepted. Evidence already recorded is retained: events accepted
+before revocation still drain from the queue, and stored evidence, rollups, and
+the sensor-key records themselves are audit history rather than app state.
 
 If the app sold anything through **Bounded Pay**, deletion removes its checkout
 configuration and fence state, but it does NOT reach into Stripe: an open
