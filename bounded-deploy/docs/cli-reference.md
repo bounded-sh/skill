@@ -87,12 +87,9 @@ outlives its apps), the PEOPLE who signed in (their Bounded user account and
 wallet, which are theirs and span every app), and short-lived operational logs
 that expire on their own (function invocation logs age out within 30 days).
 
-One exception is worth knowing: if you enabled **Observe** for the app, its
-observability org and the sensor key you were issued are NOT torn down by app
-deletion. Platform-side emission stops (the app's hosted runtime config is
-destroyed with everything else), but a sensor key you still hold keeps working
-until you revoke it from the Observe dashboard. Revoke it there if you want
-the app's observability trail fully closed.
+If you enabled **Observe** for the app, deletion revokes its sensor keys and
+removes its observe org, so the token you were issued stops working and no
+further events or evidence are recorded for it.
 
 The flow is deliberately two-step so a single mistyped command can never
 delete an app:
