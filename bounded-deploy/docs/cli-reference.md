@@ -64,11 +64,55 @@ source remains an intentional wallet-mode selection.
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
 | `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
+| `apps delete` | Permanently delete an owned app: its data, realtime state, hosted site, addresses, functions, secrets, and schedules. Owner only (non-delegable; no collaborator role or grant can reach it) and NEVER one-shot: the command creates a short-lived delete request, opens a hosted confirmation page in the browser where the human types the app name, and polls until the deletion completes. There is no `--yes`. See the `apps delete` section below for the exact flow, refusal codes, and JSON mode. | `bounded apps delete --app-id <id>` |
 | `dashboard [page]` | Open the hosted dashboard. In a linked project it opens that app directly; optional pages include `data/<path>`, `policy/tests`, `boundaries/change`, and `activity/logs`. `--app-id` overrides the project, `--no-open` prints guidance without launching, and `--print` emits only the URL. Staging opens the staging dashboard. The app-ID handoff is replaced by the dashboard's readable app-name URL after load. | `bounded dashboard data/orders` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
 | `unshare <wallet\|email> --app-id <id>` | Remove a wallet or canonical email collaborator (owner only) | `bounded unshare teammate@example.com --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 | `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
+
+### `apps delete` - permanent, browser-confirmed app deletion
+
+Deleting an app destroys everything it owns: documents and files, realtime
+state, the hosted site and its history, vanity slug and custom domains,
+functions and their schedules, runtime secrets, and the app record itself.
+There is no undo and no recovery command.
+
+The flow is deliberately two-step so a single mistyped command can never
+delete an app:
+
+```bash
+bounded apps delete --app-id <id>
+```
+
+1. The CLI creates a delete request (10-minute lifetime) and prints a
+   security fingerprint plus a one-time confirmation URL.
+2. It opens that hosted page in the browser (`--no-browser` to print only).
+   The page shows the SAME fingerprint - the human should confirm it matches
+   the terminal before proceeding - then requires typing the exact app name.
+3. The CLI polls until the deletion completes, fails, or the request expires
+   (`--timeout`, default 10m).
+
+Owner only, and the authority is non-delegable: no collaborator role, grant,
+or admin seat can delete an app (`app:delete` is an owner-boundary
+capability). Agents must never attempt to complete the confirmation page
+themselves - the browser step exists to put a human in the loop.
+
+Refusals worth recognizing (409 with a `code`):
+
+- `oapp_launched` - an open/launched oApp belongs to its venue and holders;
+  it cannot be deleted.
+- `app_delete_blocked_mainnet` - apps deployed to Solana mainnet keep their
+  record (it is the only pointer to their on-chain state).
+- `app_delete_blocked_deploy_in_flight` - retry after the active policy
+  deploy settles.
+- `app_delete_in_progress` - a confirmed deletion is already executing.
+
+JSON mode never opens a browser. `bounded apps delete --json` creates the
+request and returns `requiresConfirmation:true` with the `confirmUrl`,
+`fingerprint`, and ready-to-run `confirmationArgs`; after the human confirms
+in the browser, `bounded apps delete --app-id <id> --watch --request-id <rid>
+--json` polls to the terminal state.
 
 ### `update` — native CLI upgrades
 
