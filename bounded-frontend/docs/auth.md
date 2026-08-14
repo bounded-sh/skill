@@ -314,6 +314,16 @@ loginWithRedirect({ provider: "google" });   // "apple" / "github" when configur
 loginWithRedirect({ methods: ["email", "google", "apple"] }); // add "text" only when text OTP is explicitly enabled
 ```
 
+A **social `provider` jump always offers the account chooser** (0.0.69+): it
+defaults the standard OIDC `prompt` to `select_account`, so "Continue with
+Google" shows Google's account picker every time instead of silently reusing a
+live hosted session - signing out and back in lets the user pick a different
+account.
+The identifier-first flows (`email` / `text` / `phone`) and plain `methods`
+lists keep deliberate silent SSO.
+Pass an explicit `prompt` to override, or `prompt: ""` to opt a social jump
+back into silent SSO.
+
 **One completion call covers both UXes.** Call `completeLoginFromRedirect()` once on
 app load (or page mount): it finishes a full-page redirect *or* a popup login (it
 auto-detects the popup internally) and is a no-op when there's nothing to finish.

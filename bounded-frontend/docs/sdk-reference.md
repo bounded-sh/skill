@@ -573,7 +573,11 @@ revokes the refresh-token family, clears local state, then does a top-level
 bounce through the issuer's `/logout` so the hosted session cookie dies too -
 the next `loginWithRedirect` shows a fresh account choice instead of silently
 re-signing in the same user. Expect a page reload on sign-out. Pass
-`logout({ keepIssuerSession: true })` for the old local-only behavior. The
+`logout({ keepIssuerSession: true })` for the old local-only behavior.
+Since 0.0.69 the returned promise stays pending until that bounce navigation
+actually commits (with a capped fallback if it is blocked), so
+`await logout(); location.reload()` is safe - the reload can no longer cancel
+the in-flight bounce and resurrect the issuer session. The
 bounce only runs on issuer-trusted origins (`*.bounded.sh` / `*.bounded.page` /
 `*.oapps.fun` / https localhost); on custom domains logout stays local-only.
 The SDK sends an `id_token_hint` on the bounce, and the issuer returns you to
