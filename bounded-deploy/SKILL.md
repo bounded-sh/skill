@@ -42,6 +42,7 @@ Read only the reference needed for the current task.
 | Source sync, `--with-source`, clone, pull | [docs/source-sync.md](docs/source-sync.md) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
 | Share, access, owner mismatch, `401`/`403` | [docs/access-playbook.md](docs/access-playbook.md) |
+| Delete an app permanently (browser-confirmed, owner only) | [docs/cli-reference.md](docs/cli-reference.md) (`apps delete`) |
 | Uncommon command or exact flag lookup | [docs/cli-reference.md](docs/cli-reference.md) |
 | Local signing keys, profiles, CI key auth, legacy key-owned apps | [docs/key-and-account-safety.md](docs/key-and-account-safety.md) |
 
@@ -66,7 +67,9 @@ account profile, or recovery of an existing key-owned app.
   `bounded whoami` and `bounded access --app-id <id>` before changing identity.
   See [access playbook](docs/access-playbook.md).
 - `project_limit_exceeded`: inventory apps; never delete or repurpose one
-  automatically. See [billing](../bounded/docs/billing.md).
+  automatically. If the user decides an app should go, `bounded apps delete`
+  exists but always requires the human to confirm in the browser. See
+  [billing](../bounded/docs/billing.md).
 - `boundary_violation`: changing accounts will not bypass an app boundary. Use
   the boundary-lock section of the access playbook.
 
