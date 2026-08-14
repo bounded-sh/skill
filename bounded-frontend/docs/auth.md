@@ -314,11 +314,14 @@ loginWithRedirect({ provider: "google" });   // "apple" / "github" when configur
 loginWithRedirect({ methods: ["email", "google", "apple"] }); // add "text" only when text OTP is explicitly enabled
 ```
 
-A **social `provider` jump always offers the account chooser** (0.0.69+): it
-defaults the standard OIDC `prompt` to `select_account`, so "Continue with
-Google" shows Google's account picker every time instead of silently reusing a
-live hosted session - signing out and back in lets the user pick a different
-account.
+A **social `provider` jump always forces a fresh hosted sign-in** (0.0.69+): it
+defaults the standard OIDC `prompt` to `select_account`, so the jump never
+silently reuses a live Bounded hosted session - after signing out, signing back
+in really does start a new sign-in rather than dropping the user straight back
+into the previous account.
+With **Google** that also reaches Google's own account picker every time, because
+Bounded asks Google for `select_account` too; other providers re-run their own
+sign-in, which may still auto-approve if the user has a live session there.
 The identifier-first flows (`email` / `text` / `phone`) and plain `methods`
 lists keep deliberate silent SSO.
 Pass an explicit `prompt` to override, or `prompt: ""` to opt a social jump
