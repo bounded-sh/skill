@@ -4,7 +4,7 @@ description: >-
   Build and use Bounded (bounded.sh), the full-stack app platform and
   policy-enforced realtime runtime for coding agents. Start here for a complete
   app, then load the focused Bounded skill for backend, frontend, deployment,
-  onchain, or team governance work.
+  or onchain work.
 ---
 
 # Bounded
@@ -40,11 +40,10 @@ family.
 | Client SDK, web/mobile UI, subscriptions, hosted frontend, app-user authentication | **bounded-frontend** |
 | CLI, verify/deploy, environments, source sync, domains, project config, collaborators, prompt-driven builds | **bounded-deploy** |
 | Embedded wallets, Solana/EVM, tokens, onchain transactions, onramp | **bounded-onchain** |
-| Organization-wide observation, boundaries, custody, governance | **bounded-teams** |
 | An app specifically destined for oapps.fun | **oapps-fun** |
 
-For a complete app, work through backend, frontend, then deploy. Add onchain or
-teams only when requested.
+For a complete app, work through backend, frontend, then deploy. Add onchain
+only when requested.
 
 ```text
 design policy + functions -> build client -> bounded verify -> fix blockers -> deploy -> test happy path and a denied boundary
@@ -56,7 +55,6 @@ Load these only when the task calls for them:
 
 - Billing, plan limits, credits, top-ups: [docs/billing.md](docs/billing.md)
 - Product analytics and web vitals: [docs/analytics.md](docs/analytics.md)
-- Observe or limit external agent actions: [docs/observe.md](docs/observe.md)
 - Capability boundaries: [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md)
 
 ## Core rules

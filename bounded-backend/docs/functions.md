@@ -433,7 +433,7 @@ export default async function sports(args, ctx) {
   `503 service_invoke_in_flight`. Provider/charge/result-persistence ambiguity
   becomes permanent `503 service_invoke_outcome_unknown` and never calls the
   provider again. `entityId` defaults to the account id, is part of the
-  fingerprint, and is also the provider/Observe entity.
+  fingerprint, and is also the provider billing entity.
 - **CLI discovery:** during build, agents can run
   `bounded services search "<query>" --json` and
   `bounded services describe <toolkit-or-tool-slug> --json` to inspect the same

@@ -30,10 +30,8 @@ per account.
   AI/external-services credit. Pro accounts can run up to two Builds at a time
   and can top up.
 - Team includes everything in Pro plus roles (builders, reviewers, admins),
-  Enforced boundary promotion (25 per app), approvals, the audit trail, the
-  weekly action report, $20/month AI/external-services credit, and $100/month
-  Bounded infra credit. Team accounts can run up to five Builds at a time and
-  can top up.
+  $20/month AI/external-services credit, and $100/month Bounded infra credit.
+  Team accounts can run up to five Builds at a time and can top up.
 
 Pro-or-better accounts can top up eligible buckets from the public billing
 checkout flow (`kind: "pro" | "team" | "services_topup" | "infra_topup"`).
