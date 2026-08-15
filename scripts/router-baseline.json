@@ -40,7 +40,6 @@
   "bounded-onchain/SKILL.md": [
     "../bounded-frontend/docs/auth.md",
     "docs/accept-crypto.md",
-    "docs/bounded-pay.md",
     "docs/embedded-wallets.md",
     "docs/meteora-token-launch.md",
     "docs/oapps-tokenomics-fee-split.md",

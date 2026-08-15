@@ -18,7 +18,7 @@ const read = (rel) => readFileSync(path.join(root, rel), 'utf8')
 test('all pre-reorganization router destinations remain directly reachable', () => {
   const baseline = JSON.parse(read('scripts/router-baseline.json'))
   assert.equal(baseline['bounded-backend/SKILL.md'].length, 36)
-  assert.equal(baseline['bounded-onchain/SKILL.md'].length, 13)
+  assert.equal(baseline['bounded-onchain/SKILL.md'].length, 12)
   for (const [router, targets] of Object.entries(baseline)) {
     const source = read(router)
     for (const target of targets) {

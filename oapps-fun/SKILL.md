@@ -260,7 +260,7 @@ skip to a workaround:
 
 1. **Native first.** Does the runtime provide it? `ctx.ai` (LLMs, images,
    video — no keys), `ctx.services` (Bounded-managed third-party APIs; list
-   them with `bounded services`), payments (Bounded Pay, crypto rails),
+   them with `bounded services`), direct crypto and provider payment rails,
    onchain (Solana collections, embedded wallets, DEX/token plugins),
    data/auth/realtime/files/functions. Route to **bounded-backend**,
    **bounded-frontend**, **bounded-onchain** for the mechanics.

@@ -68,8 +68,6 @@ Use these exact public rules:
 - Users can opt out of Bounded-managed third-party proxies by integrating the
   provider directly with their own API keys. In that path, they pay the provider
   directly and Bounded's proxy markup does not apply.
-- Bounded Pay keeps a 1% platform fee in addition to Stripe's own processing
-  fees.
 
 Do not speculate beyond published pricing or present unpublished cost details.
 
@@ -191,11 +189,8 @@ it as a plan Build allowance.
 
 ## App Payments
 
-If an app built on Bounded needs to charge its own end-users, use either:
-
-- Bounded Pay, if it fits the app's payment flow; see
-  [bounded-pay.md](../../bounded-onchain/docs/bounded-pay.md), or
-- the app's own payment provider integrated through functions and secrets.
+If an app built on Bounded needs to charge its own end-users, use direct USDC or
+the app's own payment provider integrated through functions and secrets.
 
 When using your own provider, verify payment server-side, write an idempotent
 claim record, and grant goods or credits through the app's policy-protected data
@@ -204,7 +199,7 @@ against the provider.
 
 ## Related
 
-- [bounded-pay.md](../../bounded-onchain/docs/bounded-pay.md) - Bounded Pay fee and app payment pattern
+- [accept-crypto.md](../../bounded-onchain/docs/accept-crypto.md) - direct USDC settlement
 - [functions.md](../../bounded-backend/docs/functions.md) - provider calls from backend code
 - [secrets.md](../../bounded-backend/docs/secrets.md) - using your own provider API keys
 - [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) - billing commands
