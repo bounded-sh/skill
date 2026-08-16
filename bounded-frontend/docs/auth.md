@@ -254,11 +254,37 @@ Advanced: pass an object instead of `true` to point at a specific wallet or brid
 custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
 `authMethod: "wallet"` is an alias for `"phantom"`, and so is `"mobile-wallet-adapter"`.
 
-**Solana Mobile (Seeker/Saga) works out of the box.**
-On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet shows up in the connect-wallet list alongside Phantom - same SIWS login, same signing surface, nothing to configure.
-Like every wallet, it is part of the opt-in wallet lane: an app that never passes `walletLogin` still shows no wallet button on a phone.
-Optional tuning goes through `init({ mobileWalletConfig })`: `appIdentity` (name/uri plus an `icon` path relative to `uri`) is what the wallet app displays in its approval sheet, `remoteHostAuthority` (a reflector authority) additionally enables the desktop QR-code "connect your phone" lane, and `cluster` (`"mainnet-beta"` / `"devnet"`) lets a chainless, login-only app say which cluster to authorize on.
-The mobile wallet authorizes per cluster but signs on the app's `chain`, so a `cluster` that contradicts `chain` throws at init rather than failing later as a wallet rejection.
+### Solana Mobile (Seeker / Saga)
+
+On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet appears in the connect-wallet list alongside Phantom, with the same SIWS login and the same signing surface.
+It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
+
+**One thing you must wire yourself: a fresh tap per wallet action.**
+The mobile wallet lives in a separate app, so every operation leaves the page through an Android intent, and Chrome only allows that navigation while the page holds a transient user activation.
+The tap that started an action is already spent by the time the SDK has fetched a nonce or a blockhash, so the SDK awaits `confirmWalletAction` immediately before each wallet call and lets you collect a new one; reject it to abort with nothing signed.
+The login widget supplies this for the login signature itself, so `openBoundedWidget` needs nothing extra - but anything your own UI drives (`signMessage`, `signTransaction`, `signAndSubmitTransaction`, and the `set()` writes that sign onchain) needs the hook:
+
+```ts
+await init({
+  appId: "<appId>",
+  authMethod: "phantom",
+  chain: "solana_devnet",
+  walletLogin: {
+    // Only where the mobile wallet can be active; injected wallets sign
+    // in-page and need no extra tap.
+    confirmWalletAction: /android/i.test(navigator.userAgent) && window.isSecureContext
+      ? (action) => showTapToContinue(action)   // resolve from a real click
+      : undefined,
+  },
+});
+```
+
+Optional tuning goes through `init({ mobileWalletConfig })`: `appIdentity` (name/uri plus an `icon` path resolved relative to `uri`) is what the wallet app displays in its approval sheet, `remoteHostAuthority` (a reflector authority) additionally enables the desktop QR-code "connect your phone" lane, and `cluster` (`"mainnet-beta"` / `"devnet"`) lets a chainless, login-only app say which cluster to authorize on.
+The mobile wallet authorizes per cluster and signs on the app's network, so a `cluster` - or a `walletLogin.network` - that contradicts `chain` throws at init rather than failing later as a wallet rejection.
+
+Two limits worth knowing.
+The wallet is reached over loopback (`http://localhost` and a `ws://localhost:<port>` socket to the wallet app), so an app that declares a `boundaries.browser` block cannot use it: that grammar compiles to https hosts only and has no loopback token.
+And a page can register the mobile wallet for one cluster only - switching the app's Solana network afterwards throws and asks for a reload, because the registration cannot be withdrawn.
 
 > **Wallet login vs the default embedded wallet - don't confuse them.**
 >
