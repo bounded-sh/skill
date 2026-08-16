@@ -54,7 +54,7 @@ design policy + functions -> build client -> bounded verify -> fix blockers -> d
 
 Load these only when the task calls for them:
 
-- Billing, plan limits, credits, top-ups: [docs/billing.md](docs/billing.md)
+- Billing, plan limits, credits, and upgrades: [docs/billing.md](docs/billing.md)
 - Product analytics and web vitals: [docs/analytics.md](docs/analytics.md)
 - Observe or limit external agent actions: [docs/observe.md](docs/observe.md)
 - Capability boundaries: [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md)

@@ -855,17 +855,17 @@ It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `
 
 ## Billing
 
-`bounded billing ...` manages the caller's own Bounded account: Pro
-subscription, bucket top-ups, and Stripe Customer Portal.
+`bounded billing ...` manages the caller's own Bounded account: monthly Pro or
+Team subscription and Stripe Customer Portal.
 
 | Command | Does | Example |
 |---|---|---|
 | `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
-| `billing checkout` | Start Bounded Pro or top up a Bounded bucket | `bounded billing checkout --plan pro` |
+| `billing checkout` | Start monthly Bounded Pro or Team | `bounded billing checkout --plan pro` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |
 | `upgrade` | Alias for `billing checkout --plan pro` | `bounded upgrade` |
 
-`billing checkout --plan pro` creates Bounded's own subscription.
+`billing checkout --plan pro|team` creates Bounded's own monthly subscription.
 It does not create subscriptions for an app's end users.
 
 ### `verify --operation`
