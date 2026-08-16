@@ -102,7 +102,7 @@ requires the app's Turnkey organization to have email OTP configured
 not a client parameter. `walletLogin` (`true | false | { getProvider, network,
 rpcUrl, confirmWalletAction }`) turns on bring-your-own Solana wallet login (full detail:
 [auth.md](auth.md#solana-wallet-login-bring-your-own)).
-`confirmWalletAction(action)` is awaited immediately before every wallet operation so you can collect a fresh user gesture; Solana Mobile (Seeker/Saga) requires it for anything your own UI drives, since each operation leaves the page through an Android intent that Chrome blocks without one. `requireEmail: true` is
+`confirmWalletAction(action)` is awaited immediately before every wallet operation so you can collect a fresh user gesture; Solana Mobile (Seeker/Saga) requires it for anything your own UI drives, since each operation leaves the page through an Android intent that Chrome blocks without one. `action` is `"connect"`, `"login"`, `"signMessage"`, `"signTransaction"` or `"signAndSubmitTransaction"` - `"connect"` is the re-authorization a restored session needs when its cached wallet authorization is gone, and it takes its own tap before the operation's. `requireEmail: true` is
 a site policy - every user must have an email on file - and suppresses the
 widget's wallet lane. `loginWidget?: { title?, subtitle? }` sets the unified
 widget's text app-wide: `title` replaces the default "Sign in" heading,
