@@ -42,8 +42,11 @@ console.log(user.address); // Turnkey address for email/social,
 `wallet: true` adds the optional bring-your-own wallet button. It is not needed
 for Turnkey wallet provisioning. Use it when users who already hold a Solana
 wallet should be able to sign in with that wallet.
+**That button needs a policy opt-in of its own**: the issuer refuses to mint a
+session for an external wallet unless the app deployed `"auth": { "wallets": true }`.
+The client knob alone fails with "wallet login is not enabled for this app".
 
-No auth block is required in `policy.json`:
+No auth block is required in `policy.json` for the DEFAULT (Turnkey, embedded) path:
 
 ```json
 {
@@ -60,9 +63,11 @@ No auth block is required in `policy.json`:
 }
 ```
 
-This omission is intentional. The platform fills in the Turnkey, eager-wallet
-defaults. Do not generate a redundant `auth.wallets: true` block for a normal
-app.
+This omission is intentional for a normal app: the platform fills in the
+Turnkey, eager-wallet defaults, so do not generate a redundant block.
+The one exception is bring-your-own wallet login (`wallet: true` /
+`walletLogin`), which the issuer gates on a deployed
+`"auth": { "wallets": true }`. Add it only for that.
 
 ## What the user gets
 
@@ -173,7 +178,12 @@ in frontend code.
 
 ## Bring-your-own wallet is a companion path
 
-Users who already have a Solana wallet can connect it through wallet login:
+Users who already have a Solana wallet can connect it through wallet login.
+This path needs `"auth": { "wallets": true }` deployed in `policy.json` - the
+issuer refuses an external-wallet session without it - and, if the app runs on a
+host that is not first-party (a tunnel, a preview URL), that origin registered
+with `bounded domains origins add https://<host> --app-id <id> --env <env>`,
+because the SIWS proof is bound to the browser origin.
 
 ```ts
 import { init, login } from "@bounded-sh/client";
@@ -181,7 +191,13 @@ import { init, login } from "@bounded-sh/client";
 await init({
   appId: "<APP_ID>",
   authMethod: "phantom",
-  walletLogin: true,
+  walletLogin: {
+    // Solana Mobile (Seeker/Saga) reaches its wallet by leaving the page, so
+    // each operation needs a fresh tap. The SDK awaits this only for such a
+    // wallet; an in-page wallet is unaffected. The Bounded login widget
+    // supplies its own for the login signature.
+    confirmWalletAction: (action) => showTapToContinue(action),
+  },
 });
 
 const user = await login();
@@ -207,7 +223,7 @@ change.
 ## Checklist
 
 - Keep default Turnkey auth for most apps.
-- Omit redundant `authMode: 'turnkey'` and `auth.wallets: true` configuration.
+- Omit redundant `authMode: 'turnkey'` configuration, and `auth.wallets: true` UNLESS the app offers bring-your-own wallet login - that path requires it.
 - Expect an address after supported email/social login completes.
 - Use `@user.id` for identity and `@user.address` for wallet semantics.
 - Add `walletLogin` only when users should connect an existing wallet.

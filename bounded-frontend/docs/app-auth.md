@@ -30,6 +30,11 @@ const user = getCurrentUser()
 The widget is the normal in-app login UI. `wallet: true` adds bring-your-own
 wallet as another lane; it does not enable embedded wallets, which are already
 the email/social default.
+That lane also needs `"auth": { "wallets": true }` deployed in `policy.json`:
+the issuer refuses to mint a session for an external wallet without it. On a
+capable Android browser the lane additionally lists the phone's own Solana
+Mobile wallet, with no extra client work - see
+[auth.md](auth.md#solana-mobile-seeker--saga).
 
 For a fully hosted presentation, use `loginWithRedirect({ methods })` or
 `loginWithPopup({ methods })`. On web, the redirect URI defaults to the current
