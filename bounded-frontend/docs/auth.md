@@ -261,12 +261,27 @@ await signAndSubmitTransaction(tx);               // wallet signs, SDK verifies 
 Both transaction calls verify, before handing the transaction back or putting it on the network, that the message is the one you passed and that **the account your session was authenticated with actually signed it**.
 That check exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
 One consequence: a wallet that can ONLY sign-and-send cannot be used through `signAndSubmitTransaction`, because it broadcasts before anything can be checked; it refuses and tells you so.
-If you want that wallet's own broadcast anyway, drive it yourself - outside the guarantee, knowingly:
+If you want that wallet's own broadcast anyway, drive it yourself - outside the guarantee, knowingly.
+Doing that means doing by hand everything the SDK was doing for you, in this order; skip a step and it fails on a phone rather than on your desk:
 
 ```ts
 import { getAuthProvider } from "@bounded-sh/client";
 const wallet = await (await getAuthProvider()).getNativeMethods();   // the signed-in provider
-await wallet.signAndSendTransaction(tx);
+
+// 1. CONNECT. A restored session has an address but no live wallet connection,
+//    so a signing call on a cold page fails with "Wallet not connected".
+if (!wallet.isConnected) await wallet.connect();
+// 2. PREPARE, before you enable the button. The adapter's transaction codec is
+//    code-split; loading it inside the call spends the activation the wallet's
+//    intent navigation needs.
+await wallet.prepare?.("signAndSubmitTransaction");
+// 3. Collect a FRESH tap, and do nothing else on it.
+await tapToContinue();
+// 4. Re-read the account: the wallet can move accounts during that tap, and
+//    nothing after this point can refuse.
+if (wallet.publicKey?.toString() !== user.address) throw new Error("wallet switched account");
+// 5. Send. Nobody can check what it signed - that is the trade you are making.
+const { signature } = await wallet.signAndSendTransaction(tx);
 ```
 
 Advanced: pass an object instead of `true` to point at a specific wallet or bridge a
