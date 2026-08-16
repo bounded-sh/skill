@@ -256,7 +256,9 @@ custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider,
 
 **Solana Mobile (Seeker/Saga) works out of the box.**
 On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet shows up in the connect-wallet list alongside Phantom - same SIWS login, same signing surface, nothing to configure.
-Optional tuning goes through `init({ mobileWalletConfig })`: `appIdentity` (name/uri plus an `icon` path relative to `uri`) is what the wallet app displays in its approval sheet, `cluster` overrides the chain-derived network, and `remoteHostAuthority` (a reflector authority) additionally enables the desktop QR-code "connect your phone" lane.
+Like every wallet, it is part of the opt-in wallet lane: an app that never passes `walletLogin` still shows no wallet button on a phone.
+Optional tuning goes through `init({ mobileWalletConfig })`: `appIdentity` (name/uri plus an `icon` path relative to `uri`) is what the wallet app displays in its approval sheet, `remoteHostAuthority` (a reflector authority) additionally enables the desktop QR-code "connect your phone" lane, and `cluster` (`"mainnet-beta"` / `"devnet"`) lets a chainless, login-only app say which cluster to authorize on.
+The mobile wallet authorizes per cluster but signs on the app's `chain`, so a `cluster` that contradicts `chain` throws at init rather than failing later as a wallet rejection.
 
 > **Wallet login vs the default embedded wallet - don't confuse them.**
 >
