@@ -252,7 +252,11 @@ await signAndSubmitTransaction(tx);               // signs + submits, returns th
 
 Advanced: pass an object instead of `true` to point at a specific wallet or bridge a
 custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
-`authMethod: "wallet"` is an alias for `"phantom"`.
+`authMethod: "wallet"` is an alias for `"phantom"`, and so is `"mobile-wallet-adapter"`.
+
+**Solana Mobile (Seeker/Saga) works out of the box.**
+On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet shows up in the connect-wallet list alongside Phantom - same SIWS login, same signing surface, nothing to configure.
+Optional tuning goes through `init({ mobileWalletConfig })`: `appIdentity` (name/uri plus an `icon` path relative to `uri`) is what the wallet app displays in its approval sheet, `cluster` overrides the chain-derived network, and `remoteHostAuthority` (a reflector authority) additionally enables the desktop QR-code "connect your phone" lane.
 
 > **Wallet login vs the default embedded wallet - don't confuse them.**
 >
