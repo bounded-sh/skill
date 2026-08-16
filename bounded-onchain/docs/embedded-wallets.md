@@ -226,7 +226,8 @@ change.
 - Omit redundant `authMode: 'turnkey'` configuration, and `auth.wallets: true` UNLESS the app offers bring-your-own wallet login - that path requires it.
 - Expect an address after supported email/social login completes.
 - Use `@user.id` for identity and `@user.address` for wallet semantics.
-- Add `walletLogin` only when users should connect an existing wallet.
-- Use explicit policy only to disable wallets or retain the legacy hosted login
-  mode.
+- Add `walletLogin` only when users should connect an existing wallet - and
+  deploy `"auth": { "wallets": true }` alongside it, which that path requires.
+- Otherwise use explicit policy only to disable wallets or retain the legacy
+  hosted login mode.
 - Register every deployed or custom frontend origin against the correct app ID.
