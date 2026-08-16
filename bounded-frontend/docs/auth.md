@@ -291,8 +291,9 @@ connectAnyWalletButton.disabled = mobileWallet === "failed";
 The mobile wallet lives in a separate app, so every operation leaves the page through an Android intent, and Chrome only allows that navigation while the page holds a transient user activation.
 The tap that started an action is already spent by the time the SDK has fetched a nonce or a blockhash, so the SDK awaits `confirmWalletAction` immediately before each wallet call and lets you collect a new one; reject it to abort with nothing signed.
 The login widget supplies this for the login signature itself, so `openBoundedWidget` needs nothing extra - but anything your own UI drives (`signMessage`, `signTransaction`, `signAndSubmitTransaction`, and the `set()` writes that sign onchain) needs the hook.
-It is called with the action it is about to take, and `"connect"` is one of them: a restored session holds the user's address but no live wallet authorization, and when the cached one is gone (it expired, or the user cleared it) re-opening the wallet app is its own round trip.
-So after a reload your hook is called twice for one signature - once with `"connect"`, once with the action - and both taps are real.
+It is called with the action it is about to take, and `"connect"` is one of them: a restored session holds the user's address but no live wallet authorization, so signing reconnects first - silently while the wallet still trusts the page.
+When that cached authorization is gone (it expired, or the user cleared it) reconnecting means re-opening the wallet app, which is its own round trip and needs its own tap.
+Your hook is then called twice for one signature, `"connect"` first; in the ordinary case it is called once.
 
 ```ts
 await init({
