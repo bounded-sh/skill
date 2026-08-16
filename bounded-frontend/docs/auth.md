@@ -267,9 +267,19 @@ custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider,
 On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet appears in the connect-wallet list alongside Phantom, with the same SIWS login and the same signing surface.
 It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
 
-**Building your own wallet button?** Await `preloadWalletLogin()` before you enable it.
-It warms the wallet-login chunk and registers the mobile wallet; doing that work after the tap puts a network fetch between the gesture and the wallet handoff, which is exactly what costs the activation.
+**Building your own wallet button?** Await `ensureWalletLoginReady()` before you enable it (after `init()`).
+It resolves config, loads the wallet-login chunk and registers the mobile wallet; doing that work after the tap puts a network fetch between the gesture and the wallet handoff, which is exactly what costs the activation.
 The built-in widget does this for you.
+
+It REJECTS only when there is no wallet login at all (config or the provider chunk failed) - leave your control disabled in that case.
+A phone wallet that could not be prepared instead resolves as `{ mobileWallet: "failed" }`, because every injected wallet still works; `"not-applicable"` simply means this device has no mobile wallet to offer.
+A failure there stays retryable, so calling again later can succeed.
+
+```ts
+const { mobileWallet } = await ensureWalletLoginReady();
+walletButton.disabled = false;                       // injected wallets are ready
+if (mobileWallet === "failed") showPhoneWalletUnavailableHint();
+```
 
 **One thing you must wire yourself: a fresh tap per wallet action.**
 The mobile wallet lives in a separate app, so every operation leaves the page through an Android intent, and Chrome only allows that navigation while the page holds a transient user activation.

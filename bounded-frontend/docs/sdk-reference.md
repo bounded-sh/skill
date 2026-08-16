@@ -543,8 +543,8 @@ const user = await openBoundedWidget({ methods: ["email", "google"], wallet: tru
 in `policy.json` - the issuer refuses to mint a session for an external wallet
 without it (`wallet_login_disabled`). On a capable Android browser that lane
 additionally lists the phone's own Solana Mobile wallet; building your own
-wallet button instead of the widget means awaiting `preloadWalletLogin()` before
-enabling it and supplying `walletLogin.confirmWalletAction` - see
+wallet button instead of the widget means awaiting `ensureWalletLoginReady()`
+before enabling it and supplying `walletLogin.confirmWalletAction` - see
 [auth.md](auth.md#solana-mobile-seeker--saga).
 
 Options: `methods` (default `["email", "google"]`), `wallet` (enable the native
