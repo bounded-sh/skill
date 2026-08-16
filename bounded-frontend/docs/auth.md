@@ -275,10 +275,16 @@ It REJECTS only when there is no wallet login at all (config or the provider chu
 A phone wallet that could not be prepared instead resolves as `{ mobileWallet: "failed" }`, because every injected wallet still works; `"not-applicable"` simply means this device has no mobile wallet to offer.
 A failure there stays retryable, so calling again later can succeed.
 
+Mind WHICH control you enable on `"failed"`.
+A control that calls `loginWithWallet()` without pinning a wallet can still resolve to the phone wallet, so preparing it after the tap is exactly the failure to avoid: leave that one disabled and retry readiness.
+A control that passes a specific injected wallet's `getProvider` is unaffected and may be enabled.
+
 ```ts
 const { mobileWallet } = await ensureWalletLoginReady();
-walletButton.disabled = false;                       // injected wallets are ready
-if (mobileWallet === "failed") showPhoneWalletUnavailableHint();
+// Pinned to an injected wallet: safe either way.
+phantomButton.disabled = false;
+// Unpinned - its resolution can fall through to the phone wallet.
+connectAnyWalletButton.disabled = mobileWallet === "failed";
 ```
 
 **One thing you must wire yourself: a fresh tap per wallet action.**
