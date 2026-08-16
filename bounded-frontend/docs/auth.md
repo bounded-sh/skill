@@ -261,7 +261,13 @@ await signAndSubmitTransaction(tx);               // wallet signs, SDK verifies 
 Both transaction calls verify, before handing the transaction back or putting it on the network, that the message is the one you passed and that **the account your session was authenticated with actually signed it**.
 That check exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
 One consequence: a wallet that can ONLY sign-and-send cannot be used through `signAndSubmitTransaction`, because it broadcasts before anything can be checked; it refuses and tells you so.
-If you want that wallet's own broadcast anyway, drive it yourself with `const wallet = await (await getAuthProvider(config)).getNativeMethods()` - outside the guarantee, knowingly.
+If you want that wallet's own broadcast anyway, drive it yourself - outside the guarantee, knowingly:
+
+```ts
+import { getAuthProvider } from "@bounded-sh/client";
+const wallet = await (await getAuthProvider()).getNativeMethods();   // the signed-in provider
+await wallet.signAndSendTransaction(tx);
+```
 
 Advanced: pass an object instead of `true` to point at a specific wallet or bridge a
 custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
