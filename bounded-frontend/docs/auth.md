@@ -233,6 +233,14 @@ fetches a nonce, the wallet signs the canonical challenge locally, and the sessi
 minted by `wallet-auth.bounded.sh`. It rides the injected wallet provider — **no heavy
 wallet SDK, no React dependency, no popup**.
 
+**Two knobs, not one.** `walletLogin` is the CLIENT opt-in; the issuer additionally refuses to mint an external-wallet session unless the app's policy allows it, so a deployed `"auth": { "wallets": true }` is a prerequisite (without it login fails with "wallet login is not enabled for this app").
+The browser origin matters too: SIWS binds to it, so a non-first-party host (a tunnel, a preview domain) must be registered with `bounded domains origins add https://<host> --app-id <id> --env <env>`.
+
+```jsonc
+// policy.json
+{ "auth": { "wallets": true } }
+```
+
 ```ts
 import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
 

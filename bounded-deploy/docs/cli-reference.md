@@ -1024,6 +1024,9 @@ The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) 
 | `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + environment-qualified `slugUrl` fields in `--json`) | `bounded domains list --app-id <id> --env <environment> --json` |
 | `domains add <domain>` | Add a custom frontend domain you own (Pro); prints the DNS records to create | `bounded domains add app.yourdomain.com --app-id <id>` |
 | `domains remove <domain>` | Remove a **custom domain** and its routing/origin entry. Does NOT free a vanity slug — that is `domains slug --release`; using it on a slug 404s `domain_not_found` | `bounded domains remove app.yourdomain.com --app-id <id>` |
+| `domains origins` | List extra allowed auth/CORS origins for the app | `bounded domains origins --app-id <id>` |
+| `domains origins add <origin>` | Allow an extra origin to sign in and call the app (https anywhere; http only for localhost). Needed for any host that is not first-party or a registered domain - a tunnel, a preview URL - because wallet sign-in (SIWS) is bound to the browser origin and an unregistered one fails with `relying party not allowed for app`. Register it on the environment the app runs in | `bounded domains origins add https://abc123.ngrok.app --app-id <id> --env staging` |
+| `domains origins remove <origin>` | Remove an extra allowed origin | `bounded domains origins remove https://abc123.ngrok.app --app-id <id>` |
 
 Vanity slugs are free. Custom domains are Pro-gated on the app owner's account.
 If the owner later loses Pro, Bounded may remove or disable custom domain links;
