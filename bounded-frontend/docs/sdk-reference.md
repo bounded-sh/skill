@@ -539,6 +539,14 @@ import { openBoundedWidget } from "@bounded-sh/client";
 const user = await openBoundedWidget({ methods: ["email", "google"], wallet: true });
 ```
 
+`wallet: true` also needs the app to have deployed `"auth": { "wallets": true }`
+in `policy.json` - the issuer refuses to mint a session for an external wallet
+without it (`wallet_login_disabled`). On a capable Android browser that lane
+additionally lists the phone's own Solana Mobile wallet; building your own
+wallet button instead of the widget means awaiting `preloadWalletLogin()` before
+enabling it and supplying `walletLogin.confirmWalletAction` - see
+[auth.md](auth.md#solana-mobile-seeker--saga).
+
 Options: `methods` (default `["email", "google"]`), `wallet` (enable the native
 Solana wallet lane - Wallet Standard enumeration: Phantom, Solflare, Backpack,
 etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,

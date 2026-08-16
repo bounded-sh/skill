@@ -267,6 +267,10 @@ custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider,
 On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet appears in the connect-wallet list alongside Phantom, with the same SIWS login and the same signing surface.
 It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
 
+**Building your own wallet button?** Await `preloadWalletLogin()` before you enable it.
+It warms the wallet-login chunk and registers the mobile wallet; doing that work after the tap puts a network fetch between the gesture and the wallet handoff, which is exactly what costs the activation.
+The built-in widget does this for you.
+
 **One thing you must wire yourself: a fresh tap per wallet action.**
 The mobile wallet lives in a separate app, so every operation leaves the page through an Android intent, and Chrome only allows that navigation while the page holds a transient user activation.
 The tap that started an action is already spent by the time the SDK has fetched a nonce or a blockhash, so the SDK awaits `confirmWalletAction` immediately before each wallet call and lets you collect a new one; reject it to abort with nothing signed.
