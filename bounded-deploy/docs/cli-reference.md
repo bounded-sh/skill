@@ -558,17 +558,24 @@ Every ambiguous deploy or recovery outcome now emits the documented object with
 `code`, `state`, `operationId`, and - only when the outcome is actually
 resumable - `recoveryCommand`:
 
-- **Resumable** (`unknown`, `processing`, `recoverable`): run the emitted
-  `recoveryCommand` verbatim, under the same verified owner identity.
+- **Resumable** (`unknown`, `processing`, `recoverable`, `auth_expired`): run
+  the emitted `recoveryCommand` verbatim, under the same verified owner
+  identity.
   `409 policy_preflight_status_conflict` is resumable in this sense: a
   server-side authority fence refused that exact write, so retrying immediately
   is pointless, but the operation itself is intact and the same operation id
   still resumes it once the platform-side defect is fixed.
+  `auth_expired` (a `401`) means YOUR login died mid-reconciliation and could
+  not be refreshed without a prompt - the operation itself is untouched. Sign
+  in again (`bounded login`), then run the recovery command.
+  The client re-resolves its bearer before every polling request, so this
+  outcome normally appears only when the session is truly gone (for example a
+  revoked refresh token).
 - **Definitive** (`410 policy_operation_unrecoverable`, plus abandoned,
-  superseded, target-mismatch, permission, invalid-input, and manual-intervention
-  outcomes): NO `recoveryCommand` is emitted, because re-running the operation
-  can never commit. The message says whether to run a fresh `bounded deploy` or
-  to escalate for operator review.
+  superseded, target-mismatch, permission (`403`), invalid-input, and
+  manual-intervention outcomes): NO `recoveryCommand` is emitted, because
+  re-running the operation can never commit. The message says whether to run a
+  fresh `bounded deploy` or to escalate for operator review.
 
 The operation id the CLI minted stays authoritative: a response carrying a
 different id is refused rather than followed, so a recovery can never be bound to
