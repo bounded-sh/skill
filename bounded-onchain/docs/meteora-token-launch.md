@@ -130,8 +130,9 @@ transaction size, read the fix ladder in
   target when `decayEndingFeeBps` is left at its default.
 - `decayStartingFeeBps = 5000` (50%) → `decayEndingFeeBps = 300` (3%) over
   `decayNumberOfPeriod = 60` steps across `decayTotalDuration = 300` slots.
-- A ~25% opener is just `2500` instead of `5000`. The published oApps default is a
-  25–50% opening decaying to 3%.
+- A ~25% opener is just `2500` instead of `5000`. The historical oApps DBC default was a
+  25–50% opening decaying to 3%; the current OpenApps (openapps.xyz) venue launches
+  via a 24h CCA that seeds a Meteora CP-AMM pool (1% flat fee), not a DBC curve.
 
 ## `createMeteoraVirtualPool` - mint + open the pool
 
@@ -287,9 +288,10 @@ Meteora's config is **2-party**: on the curve, each trade's fee splits between t
 `postMigratedCreatorFeePercentage` slice is permanently locked (earns LP fees
 forever) and the rest is unlocked; fees are claimed with `claimDammV2PoolFees`.
 
-There is **no native 3-way split**. A multi-party split (e.g. the oApps **55%
-treasury / 25% creator / 20% Poof** model) is *composed in Bounded policy* on top of
-this 2-party primitive. The mapping is direct: point `feeAccount` at the treasury
+There is **no native 3-way split**. A multi-party split is *composed in Bounded
+policy* on top of this 2-party primitive. The historical oApps DBC model (**55%
+treasury / 25% creator / 20% Poof**, now retired) is the worked example. The
+mapping is direct: point `feeAccount` at the treasury
 PDA - that pays the **55%** partner leg natively - and set
 `preMigratedCreatorFeePercentage` to the **combined creator+platform share (45)** so
 that leg accrues to a shared `feepool` PDA. A permissionless onchain write then
@@ -298,6 +300,12 @@ claims `feepool` and splits it by **fixed bps literals in policy**
 sizing each `@TokenPlugin.transfer` leg. Post-graduation the native partner leg
 zeroes, so the whole 55/25/20 becomes a 3-way policy split of the `claimDammV2PoolFees`
 claim (`5500/2500/2000`).
+
+Note the 55/25/20 example is the retired DBC model. The current OpenApps
+(openapps.xyz) venue (fee model v2) launches via a 24h CCA onto a Meteora CP-AMM
+pool whose 1% flat fee claims split **50% app reserve / 20% creator / 20% app fuel
+/ 10% OpenApps** - the mechanics below (policy-composed splits, fixed bps literals,
+permissionless claims) are what carry over.
 
 For the full worked example - every collection copied from the Z3-verified reference
 policy, the keeper that turns the crank, the fee-funded build allowance, and an

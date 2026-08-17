@@ -236,7 +236,7 @@ Spell these implications out before starting Open:
    People can inspect and participate in the public app while it is `awaiting_commence`.
 5. **Commence is a later, explicit boundary.** It claims the requested oApps slug, writes the venue listing, creates the token sale, and starts the Gauntlet.
    It does not clone or publish the app again.
-   The fee split is fixed as part of that token launch: 50 app reserve / 20 creator / 20 steward / 10 platform.
+   The fee model is fixed as part of that token launch. The sale is a 24h continuous clearing auction of 65% of supply: each bid pays 3% admission plus a 0.9% gauntlet fee, win or lose, and escrows the rest. At settlement the raise pays out of escrow in a fixed waterfall: 2% creator, 1% OpenApps, a tiered gauntlet draw, a fuel tank, locked liquidity, and the remainder to the app reserve. Pool trading fees are 1% flat, claimed split 50 app reserve / 20 creator / 20 app fuel / 10 OpenApps.
 
 Source sync is load-bearing because completed Open publishes the synchronized tree rather than an unsynchronized checkout.
 No synced source means Open cannot complete.
