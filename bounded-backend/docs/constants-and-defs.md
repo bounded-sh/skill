@@ -186,7 +186,7 @@ keep `@const.NAME` and supply the values from an `environments` block —
 [environments.md](../../bounded-deploy/docs/environments.md).
 
 ## Related
-- [environments.md](../../bounded-deploy/docs/environments.md) — per-environment `@const` values + appId targeting
+- [environments.md](../../bounded-deploy/docs/environments.md) — per-environment `@const` values and appId targeting, plus the other two axes an entry can vary: schedule cadence and which functions deploy
 - [roles.md](roles.md) — `@const.ADMIN` in role members
 - [invariants.md](invariants.md) — `@const` for caps/limits
 - [policy-reference.md](policy-reference.md) — all top-level blocks

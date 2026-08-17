@@ -157,6 +157,10 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
 - `every` is a duration string: `<n>s|m|h|d`, between `1s` and `366d`.
 - `schedule` may be one object or an array of them (several cadences, one
   collection).
+- `every` — and only `every` — can be **retuned per environment** from an
+  `environments.<name>.schedules` block, so a test venue can run a production
+  sweep at a slower cadence without a second policy file. `run` never varies.
+  See [environments.md](../../bounded-deploy/docs/environments.md#per-environment-schedule-cadence).
 - **Schedules are offchain-only** — a scheduled mutation needs a server signer,
   which an onchain collection lacks. Declaring `schedule` on `"onchain": true` is
   rejected.
