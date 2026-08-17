@@ -271,7 +271,9 @@ Two real hazards remain.
 > `0xbc4` applies.
 
 So: flag `onchain: true` on the collections that must live on Solana, leave the rest unflagged, and keep each batch on one side of the line.
-`bounded deploy` still prints a warning naming any unflagged collection on an onchain protocol; that warning restates the older every-collection rule and overstates the risk - it is not an error, and an intentionally offchain collection is fine.
+`bounded deploy` prints an advisory (`onchain_protocol_collections_not_registered`) naming any unflagged collection on an onchain protocol.
+The advisory states exactly the per-batch semantics above: writes to unflagged collections commit offchain, and mixing them with an onchain collection in a single batch fails the whole batch.
+It is not an error, and an intentionally offchain collection is fine.
 (On the off-chain `realtime_offchain` protocol it is the reverse: `onchain: true` collections are simulated/stored off-chain - deploy prints that warning too.)
 
 ### Diagnose custom errors by the live Anchor log name

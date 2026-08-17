@@ -27,6 +27,28 @@ EOF
 bounded data set-many --from-json bundle.json
 ```
 
+## Which identity runs a data command
+
+Data commands run as the CLI's selected account, and both account kinds work:
+
+- **Web login (the default identity, `bounded login`)** - works as-is.
+  The CLI exchanges your platform web session for an app-pinned session
+  server-side, so `@user.id` in rules is the SAME id you have when you sign in
+  to the app's site with that email.
+  This is the owner/founder seed path: rows gated on the founder's web user id
+  can be written directly from the CLI.
+  No wallet and no `auth` block are involved.
+  The one thing a web session cannot do is SIGN a Solana transaction, so a
+  write to an `onchain: true` collection that needs a client signature fails
+  closed with a message pointing at the keypair lane.
+- **CLI keypair (`bounded account use --global`)** - opens a
+  sign-in-with-Solana session, so the app's deployed policy must enable wallet
+  login: `"auth": { "wallets": true }`.
+  Without it every keypair `data` command fails with "wallet login is not
+  enabled" before any rule runs.
+  `@user.id` is the keypair's wallet address - a DIFFERENT principal from your
+  web login even when both are yours.
+
 ## On-chain vs off-chain collections
 
 By default every collection is **off-chain** (Bounded's durable store) and `set`/

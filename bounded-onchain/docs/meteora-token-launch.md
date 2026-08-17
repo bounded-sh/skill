@@ -12,6 +12,7 @@ builds on the same server-signed `hooks.onchain` mechanism.
 > The earlier blocker (a dynamic config bound to a retired Bounded program authority) was cleared on 2026-07-29: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` is deployed on devnet and the deployed runtime targets it.
 > Nothing in this guide is externally blocked; what is missing is retained live proof.
 > Registered proof contracts and matching manifests establish source shape only, and neither they nor a local shard run is live devnet evidence.
+> If a live write fails today it typically fails on PLATFORM configuration - the environment's devnet signing/RPC secrets (errors naming `ATTESTATION_KEYPAIR` / `SOLANA_DEVNET_RPC_URL`) - not on anything Meteora-specific; that failure class is a platform provisioning gap, and `bounded plugins describe` remains the compile-time source of truth.
 > See [solana-capability-status.md](solana-capability-status.md).
 
 ## The two phases

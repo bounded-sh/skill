@@ -44,6 +44,14 @@ bounded data get --app-id <appId> --path agents/<agent-id>/spend
 > That per-agent key *owns every app the agent creates* — lose it and the apps
 > are unrecoverable. Link or back it up: [../docs/key-and-account-safety.md](../../bounded-deploy/docs/key-and-account-safety.md).
 
+> **Keypair data commands need a policy opt-in.** A keypair `bounded data`
+> call opens a sign-in-with-Solana session, and the issuer only mints one when
+> the app's deployed policy carries `"auth": { "wallets": true }` — include it
+> in the generated policy for this flow, or the step-4 writes fail with
+> "wallet login is not enabled". A human driving the CLI under a web login
+> (`bounded login`) needs no such block: web sessions run the data plane
+> as-is (see [data-plane.md](data-plane.md)).
+
 ## Designing the policy for an agent
 
 The one step agents (and the humans prompting them) skip is **the

@@ -65,9 +65,17 @@ No auth block is required in `policy.json` for the DEFAULT (Turnkey, embedded) p
 
 This omission is intentional for a normal app: the platform fills in the
 Turnkey, eager-wallet defaults, so do not generate a redundant block.
-The one exception is bring-your-own wallet login (`wallet: true` /
-`walletLogin`), which the issuer gates on a deployed
-`"auth": { "wallets": true }`. Add it only for that.
+The one exception is any EXTERNAL-keypair session - the issuer gates every one
+of them on a deployed `"auth": { "wallets": true }`.
+That covers more than the browser button: bring-your-own wallet login
+(`wallet: true` / `walletLogin`), a server SDK authenticating with a keypair,
+and the CLI's keypair lane (`bounded data` / `functions invoke` under
+`bounded account use --global`) all open the same sign-in-with-Solana session
+and all hit the same gate.
+Add the block only when one of those lanes is in play.
+The CLI's DEFAULT identity (web login via `bounded login`) does not need it:
+data commands under a web session exchange the platform login for an app
+session server-side, with no wallet involved.
 
 ## What the user gets
 

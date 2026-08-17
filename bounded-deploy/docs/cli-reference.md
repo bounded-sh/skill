@@ -244,7 +244,9 @@ Explicit flags still win for app/environment routing: `--app-id` and `--env`
 override project defaults.
 For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` overrides `account.keySource:"global"`, `"project"`, and `"profile"`.
 Check `bounded whoami --json` before an identity-sensitive deploy instead of assuming the public project config selected the active key.
-An explicit project `account.keySource:"web"`, and projectless control-plane commands, use the web session. Exact app-bound data-plane operations such as `data`, `subscribe`, `functions invoke`, and `runtime invoke` still require a selected local signer until the platform exposes a browser-session token exchange for those services.
+An explicit project `account.keySource:"web"`, and projectless control-plane commands, use the web session.
+App-bound data-plane operations (`data`, `subscribe`, `functions invoke`, `runtime invoke`) also run under the web session: the CLI exchanges the platform login for an app-pinned session server-side, so `@user.id` matches the same email's identity on the app's own site.
+A web session cannot SIGN, so writes to `onchain: true` collections that need a client-signed Solana transaction still require a local keypair (`bounded account use --global`, with `"auth": { "wallets": true }` deployed).
 Older projects with only `.bounded/app.json` still work; the CLI falls back to that marker when `bounded.json` is absent.
 
 `bounded whoami --json` separates the stable machine value from the descriptive location:
