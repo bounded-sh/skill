@@ -1052,7 +1052,9 @@ state.
 ### `subscribe` — realtime watch from the CLI
 
 `bounded subscribe <path> --app-id <id>` opens a realtime subscription (same
-`ws/v2` protocol and auth as the SDK — your `~/.bounded/credentials` identity)
+`ws/v2` protocol and auth as the SDK, under the selected account — a web login
+on cloud apps, or your `~/.bounded/credentials` keypair; see the account
+section above)
 and prints each update as one JSON line. The first line is
 `{"type":"subscribed","data":[...]}` (the initial snapshot); every later change
 is `{"type":"data","data":[...]}` carrying the full current view (control frames:

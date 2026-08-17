@@ -103,10 +103,23 @@ retrying or concluding failure.**
 A **web-login session is platform-scoped**, and the CLI uses it for deploy,
 access, domains, site, source clone, and other control-plane operations. If an
 older CLI refuses one of those with `requires a keypair`, that is a CLI version
-bug, not a permissions wall. Exact app-bound data-plane operations (`data`,
-`subscribe`, `functions invoke`, `runtime invoke`) are different: their deployed
-services currently require an app-bound signer. Fix outdated management-command
-behavior in this order:
+bug, not a permissions wall.
+
+App-bound data-plane operations (`data`, `subscribe`, `functions invoke`,
+`runtime invoke`) also run under a web login on **cloud** apps: the CLI
+exchanges your platform session for an app-pinned session, so `@user.id` is the
+same identity that email has on the app's own site. Two exceptions, and both say
+so plainly rather than looking like a permissions wall:
+
+- **Bounded Local** apps are keypair-only (a local app cannot be minted for by
+  the shared staging issuer) - use `bounded account use --global`.
+- **Writes that need a client-signed Solana transaction** (an `onchain: true`
+  collection) need a wallet key, since a web session cannot sign.
+
+The keypair lane additionally needs `"auth": { "wallets": true }` deployed on
+the app, because it opens a sign-in-with-Solana session.
+
+Fix outdated management-command behavior in this order:
 
 ```bash
 bounded version                                          # confirm what build you're on
