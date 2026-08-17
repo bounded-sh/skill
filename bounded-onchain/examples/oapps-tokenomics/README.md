@@ -1,9 +1,16 @@
 # oApps tokenomics - verified reference policy
 
-The policy a **launched oApp runs**: a Meteora DBC launch (bonding-curve → DAMM v2
+The policy a **launched oApp ran** under the retired DBC model: a Meteora DBC launch (bonding-curve → DAMM v2
 graduation) with the **55% treasury / 25% creator-of-record / 20% Poof** fee split,
 expressed as a Bounded policy and proven by Z3. **Verify-only - this deploys
 nothing** (`bounded.json` has no `appId`; never `--create`/deploy it).
+
+> **HISTORICAL MODEL.** This example encodes the retired DBC 55/25/20 fee model.
+> The current OpenApps (openapps.xyz) venue uses fee model v2: a 24h CCA launch
+> with a fixed settlement waterfall on the raise, then a Meteora CP-AMM pool
+> whose 1% flat fee claims split 50% app reserve / 20% creator / 20% app fuel /
+> 10% OpenApps. See the current-model header in
+> [../../docs/oapps-tokenomics-fee-split.md](../../docs/oapps-tokenomics-fee-split.md).
 
 > **Current devnet status: unverified, not blocked.**
 > The earlier retired-authority blocker was cleared on 2026-07-29; the replacement DAMM v2 config is deployed on devnet and the deployed runtime targets it.
@@ -15,7 +22,7 @@ for the full walkthrough. This directory is the runnable artifact behind it.
 ## Files
 
 - `policy.json` - the **design-correct** policy (16-arg `createMeteoraConfig` with
-  the 4 anti-snipe decay params). What a launched oApp actually runs.
+  the 4 anti-snipe decay params). What a launched oApp ran under this historical model.
 - `policy.verify-today.json` - byte-identical **except** the launch config drops the
   4 trailing decay params (12-arg form). It is a compatibility verification fixture, not devnet support evidence.
 - `keeper.js` - the scheduled keeper function body (fires the permissionless claim;

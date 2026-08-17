@@ -1,15 +1,24 @@
 # HISTORICAL worked example: the oApps 55/25/20 fee split
 
-> **HISTORICAL WORKED EXAMPLE.** This document preserves the superseded 55%
-> treasury / 25% creator / 20% Poof reference policy. The current canonical,
-> shipped split is **10% platform / 20% creator / 20% steward / 50% app
-> reserve**. Label mapping across docs: the platform leg is the "venue" and the
-> app reserve is the "treasury" - same recipients, and the shipped oapps.fun
-> policy (`treasury/$slug`) states the same split reserve-first as
-> 50/20/20/10.
-> The shipped model uses a treasury ledger with transitions proven at the rule
-> layer, plus a permissionless `distribute` update. Port the mechanics below, not
-> its recipients or percentages.
+> **CURRENT MODEL - OpenApps fee model v2 (2026-08-17).** The OpenApps venue
+> (openapps.xyz) launches each token through a 24h continuous clearing auction
+> (CCA) of 65% of supply. Every bid pays 3% admission plus a 0.9% gauntlet fee,
+> win or lose; the other 99.1% is escrowed and unspent escrow refunds at
+> settlement. The raise R is then paid out of escrow by a fixed waterfall at
+> activation: 2% creator, 1% OpenApps, a tiered gauntlet draw (1% of R capped at
+> the Mega tier cap, $30k at launch pinning), a fuel tank (10% of R capped at
+> $30k), locked liquidity (30% of R with a $10k floor, LP locked), and the app
+> reserve takes the remainder. Pool fees are 1% flat on volume, claimed split
+> **50% app reserve / 20% creator / 20% app fuel / 10% OpenApps** - reserve and
+> fuel stay in the app root escrow, and only the 10% OpenApps leg is paid out
+> (to `FEE_WALLET`). The fuel leg was previously labeled "steward" and paid to
+> the venue wallet; the intermediate shipped model (10% platform / 20% creator /
+> 20% steward / 50% app reserve, reserve-first 50/20/20/10) is superseded by
+> this same change.
+>
+> **HISTORICAL WORKED EXAMPLE below.** The rest of this document preserves the
+> retired Meteora DBC reference policy (55% treasury / 25% creator / 20% Poof).
+> Port the mechanics below, not its recipients or percentages.
 >
 > **Current devnet status: unverified, not blocked.**
 > The earlier retired-authority blocker was cleared on 2026-07-29: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` is deployed on devnet and the deployed runtime targets it.
