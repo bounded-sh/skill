@@ -27,6 +27,14 @@ rule for direct invocation and for the privileged function declaration.
 
 Deploy the function before, or with, the policy that schedules it.
 
+Across several environments, the cadence and the function can each be varied per
+environment from the policy's `environments` block: an entry's `schedules`
+retunes `every` (a test venue need not sweep at the production rate), and a
+function's own `environments` allowlist keeps it out of the environments it does
+not list. The two interact fail-closed — scheduling a function this environment
+strips is refused at resolve time, not shipped as a dangling `run`. See
+[environments.md](../../bounded-deploy/docs/environments.md).
+
 This is a compact policy shape. Replace both service-address placeholders with
 the same address — the address of a **service identity whose key the platform
 holds**, never a person's wallet. The sweeper keypair is provisioned for the

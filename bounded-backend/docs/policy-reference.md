@@ -329,7 +329,7 @@ rejected):
 | `onchain` | boolean | [proof-coverage.md](proof-coverage.md) |
 | `hooks` | `{ offchain, onchain, tick, scheduled, enforceRules }` | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
 | `enforceRules` | boolean (collection-level) | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
-| `schedule` | `{ every, run }` or an array of them | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
+| `schedule` | `{ every, run }` or an array of them. `every` (never `run`) can be retuned per environment | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md), [environments.md](../../bounded-deploy/docs/environments.md) |
 | `dueRows` | `{ run, onComplete?, doneField? }` | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
 | `webhooks` | `[{ url, on: [...] }]` | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
 | `indexes` | `["field", ["f1","f2"], [["score",-1]]]` — pre-build ranked-query indexes at deploy (auto-indexing covers undeclared ones lazily) | [trending-feeds.md](trending-feeds.md) |
@@ -351,7 +351,7 @@ never treated as path templates:
 |---|---|---|
 | `links` | array of link definitions | [queries.md](queries.md) |
 | `auth` | `{ anonymous: bool, wallets: bool \| { provisioning?: "lazy" \| "eager", authMode?: "bounded" \| "turnkey" } }` - app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. `wallets` covers two distinct things and the default differs for each. **Embedded-wallet provisioning** for an already-authenticated email/social user: Turnkey is the sole implementation, eager provisioning is the default, so omit `wallets` for the normal path and set `wallets: false` only to opt out. **Wallet LOGIN** (SIWS/SIWE sign-in, and any keypair client - `BOUNDED_PRIVATE_KEY`, CI, an agent's QA session): **OFF by default**, so it is refused with a `403 wallet_login_disabled` until the app sets `wallets: true` (or an enabling object) EXPLICITLY. Minting a session from a bare signature is the security-sensitive lane, so an app must declare it. If anything signs into this app with a wallet or a keypair, set it. See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md). | [auth.md](../../bounded-frontend/docs/auth.md), [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md) |
-| `functions` | `{ name: { auth, entry, timeout, secrets } }` | [functions.md](functions.md) |
+| `functions` | `{ name: { auth, entry, timeout, secrets, environments } }` — `environments` is **CLI-only**: an allowlist naming the only environments this function deploys to | [functions.md](functions.md), [environments.md](../../bounded-deploy/docs/environments.md) |
 | `oapp` | Optional literal `true` only. Enables the v1 oApp static restrictions from the first verify/deploy; omit the key for a regular app. | [oapps-fun](../../oapps-fun/SKILL.md) |
 | `boundaries` | App boundary metadata, including locked egress allow-list entries. | [§ oApp mode and closed egress](#oapp-mode-and-closed-egress) |
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
@@ -360,10 +360,11 @@ never treated as path templates:
 | `proofs` | `{ transferAuthority?, publicReads?, attestations? }` - proof-only declarations for conditional transfer authority, exact conditional public-read posture, and global attestations | [invariants.md](invariants.md#proofspublicreads-exact-conditional-public-read-posture), [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
 | `attestations` | legacy alias for `proofs.attestations` | [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
 | `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
-| `environments` | `{ name: { appId, constants } }` — **CLI-only**, resolved client-side | [environments.md](../../bounded-deploy/docs/environments.md) |
+| `environments` | `{ name: { appId, constants, schedules } }` — **CLI-only**, resolved client-side | [environments.md](../../bounded-deploy/docs/environments.md) |
 
 `constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
-only literals; `environments` is stripped by the CLI before the policy is sent.
+only literals; the top-level `environments` block and each function's own
+`environments` allowlist are both stripped by the CLI before the policy is sent.
 
 ### oApp mode and closed egress
 

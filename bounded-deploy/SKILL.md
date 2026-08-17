@@ -37,7 +37,7 @@ Read only the reference needed for the current task.
 | First setup, normal verify/deploy, publish a site | [docs/quickstart.md](docs/quickstart.md) |
 | Normal web account login, session refresh, headless OTP, account switching | [docs/accounts.md](docs/accounts.md) |
 | Hosted web frontend, preview, private/public access | [frontend-hosting.md](../bounded-frontend/docs/frontend-hosting.md) |
-| Multi-environment policies | [docs/environments.md](docs/environments.md) |
+| Multi-environment policies: per-env app id, constants, schedule cadence, function scoping | [docs/environments.md](docs/environments.md) |
 | Build an app from a prompt, iterate with `edit`, watch/cancel/gate a run | [docs/cli-reference.md](docs/cli-reference.md) (Prompt-driven builds) |
 | Source sync, `--with-source`, clone, pull | [docs/source-sync.md](docs/source-sync.md) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
