@@ -73,9 +73,11 @@ and the CLI's keypair lane (`bounded data` / `functions invoke` under
 `bounded account use --global`) all open the same sign-in-with-Solana session
 and all hit the same gate.
 Add the block only when one of those lanes is in play.
-The CLI's DEFAULT identity (web login via `bounded login`) does not need it:
-data commands under a web session exchange the platform login for an app
-session server-side, with no wallet involved.
+The CLI's DEFAULT identity (web login via `bounded login`) does not need it on
+a CLOUD app: data commands under a web session exchange the platform login for
+an app session server-side, with no wallet involved.
+A Bounded Local app is the exception - it can only be reached over the keypair
+lane, so it does need the block.
 
 ## What the user gets
 

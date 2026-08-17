@@ -49,8 +49,9 @@ bounded data get --app-id <appId> --path agents/<agent-id>/spend
 > the app's deployed policy carries `"auth": { "wallets": true }` — include it
 > in the generated policy for this flow, or the step-4 writes fail with
 > "wallet login is not enabled". A human driving the CLI under a web login
-> (`bounded login`) needs no such block: web sessions run the data plane
-> as-is (see [data-plane.md](data-plane.md)).
+> (`bounded login`) needs no such block on a CLOUD app: web sessions run the
+> data plane as-is there (see [data-plane.md](data-plane.md)). A Bounded Local
+> app is keypair-only, so it needs the block either way.
 
 ## Designing the policy for an agent
 
