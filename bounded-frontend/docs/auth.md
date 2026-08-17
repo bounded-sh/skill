@@ -233,6 +233,14 @@ fetches a nonce, the wallet signs the canonical challenge locally, and the sessi
 minted by `wallet-auth.bounded.sh`. It rides the injected wallet provider — **no heavy
 wallet SDK, no React dependency, no popup**.
 
+**Two knobs, not one.** `walletLogin` is the CLIENT opt-in; the issuer additionally refuses to mint an external-wallet session unless the app's policy allows it, so a deployed `"auth": { "wallets": true }` is a prerequisite (without it login fails with "wallet login is not enabled for this app").
+The browser origin matters too: SIWS binds to it, so a non-first-party host (a tunnel, a preview domain) must be registered with `bounded domains origins add https://<host> --app-id <id> --env <env>`.
+
+```jsonc
+// policy.json
+{ "auth": { "wallets": true } }
+```
+
 ```ts
 import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
 
@@ -247,12 +255,93 @@ console.log(user.address);           // e.g. "H9CAN…jdNCUE" — the REAL walle
 // Full LOCAL signing surface — the wallet's OWN keypair (not a popup):
 await signMessage("hello");                       // base58 ed25519 signature
 await signTransaction(tx);                        // returns the signed tx
-await signAndSubmitTransaction(tx);               // signs + submits, returns the tx hash
+await signAndSubmitTransaction(tx);               // wallet signs, SDK verifies + submits, returns the tx hash
+```
+
+Both transaction calls verify, before handing the transaction back or putting it on the network, that the message is the one you passed and that **the account your session was authenticated with actually signed it**.
+That check exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
+One consequence: a wallet that can ONLY sign-and-send cannot be used through `signAndSubmitTransaction`, because it broadcasts before anything can be checked; it refuses and tells you so.
+If you want that wallet's own broadcast anyway, drive it yourself - outside the guarantee, knowingly.
+Doing that means doing by hand everything the SDK was doing for you, in this order; skip a step and it fails on a phone rather than on your desk:
+
+```ts
+import { getAuthProvider } from "@bounded-sh/client";
+const wallet = await (await getAuthProvider()).getNativeMethods();   // the signed-in provider
+
+// 1. CONNECT. A restored session has an address but no live wallet connection,
+//    so a signing call on a cold page fails with "Wallet not connected".
+if (!wallet.isConnected) await wallet.connect();
+// 2. PREPARE, before you enable the button. The adapter's transaction codec is
+//    code-split; loading it inside the call spends the activation the wallet's
+//    intent navigation needs.
+await wallet.prepare?.("signAndSubmitTransaction");
+// 3. Collect a FRESH tap, and do nothing else on it.
+await tapToContinue();
+// 4. Re-read the account: the wallet can move accounts during that tap, and
+//    nothing after this point can refuse.
+if (wallet.publicKey?.toString() !== user.address) throw new Error("wallet switched account");
+// 5. Send. Nobody can check what it signed - that is the trade you are making.
+const { signature } = await wallet.signAndSendTransaction(tx);
 ```
 
 Advanced: pass an object instead of `true` to point at a specific wallet or bridge a
 custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
-`authMethod: "wallet"` is an alias for `"phantom"`.
+`authMethod: "wallet"` is an alias for `"phantom"`, and so is `"mobile-wallet-adapter"`.
+
+### Solana Mobile (Seeker / Saga)
+
+On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet appears in the connect-wallet list alongside Phantom, with the same SIWS login and the same signing surface.
+It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
+
+**Building your own wallet button?** Await `ensureWalletLoginReady()` before you enable it (after `init()`).
+It resolves config, loads the wallet-login chunk and registers the mobile wallet; doing that work after the tap puts a network fetch between the gesture and the wallet handoff, which is exactly what costs the activation.
+The built-in widget does this for you.
+
+It REJECTS only when there is no wallet login at all (config or the provider chunk failed) - leave your control disabled in that case.
+A phone wallet that could not be prepared instead resolves as `{ mobileWallet: "failed" }`, because every injected wallet still works; `"not-applicable"` simply means this device has no mobile wallet to offer.
+A failure there stays retryable, so calling again later can succeed.
+
+Mind WHICH control you enable on `"failed"`.
+A control that calls `loginWithWallet()` without pinning a wallet can still resolve to the phone wallet, so preparing it after the tap is exactly the failure to avoid: leave that one disabled and retry readiness.
+A control that passes a specific injected wallet's `getProvider` is unaffected and may be enabled.
+
+```ts
+const { mobileWallet } = await ensureWalletLoginReady();
+// Pinned to an injected wallet: safe either way.
+phantomButton.disabled = false;
+// Unpinned - its resolution can fall through to the phone wallet.
+connectAnyWalletButton.disabled = mobileWallet === "failed";
+```
+
+**One thing you must wire yourself: a fresh tap per wallet action.**
+The mobile wallet lives in a separate app, so every operation leaves the page through an Android intent, and Chrome only allows that navigation while the page holds a transient user activation.
+The tap that started an action is already spent by the time the SDK has fetched a nonce or a blockhash, so the SDK awaits `confirmWalletAction` immediately before each wallet call and lets you collect a new one; reject it to abort with nothing signed.
+The login widget supplies this for the login signature itself, so `openBoundedWidget` needs nothing extra - but anything your own UI drives (`signMessage`, `signTransaction`, `signAndSubmitTransaction`, and the `set()` writes that sign onchain) needs the hook.
+It is called with the action it is about to take, and `"connect"` is one of them: a restored session holds the user's address but no live wallet authorization, so signing reconnects first - silently while the wallet still trusts the page.
+When that cached authorization is gone (it expired, or the user cleared it) reconnecting means re-opening the wallet app, which is its own round trip and needs its own tap.
+Your hook is then called twice for one signature, `"connect"` first; in the ordinary case it is called once.
+
+```ts
+await init({
+  appId: "<appId>",
+  authMethod: "phantom",
+  chain: "solana_devnet",
+  walletLogin: {
+    // Only where the mobile wallet can be active; injected wallets sign
+    // in-page and need no extra tap.
+    confirmWalletAction: /android/i.test(navigator.userAgent) && window.isSecureContext
+      ? (action) => showTapToContinue(action)   // resolve from a real click
+      : undefined,
+  },
+});
+```
+
+Optional tuning goes through `init({ mobileWalletConfig })`: `appIdentity` (name/uri plus an `icon` path resolved relative to `uri`) is what the wallet app displays in its approval sheet, `remoteHostAuthority` (a reflector authority) additionally enables the desktop QR-code "connect your phone" lane, and `cluster` (`"mainnet-beta"` / `"devnet"`) lets a chainless, login-only app say which cluster to authorize on.
+The mobile wallet authorizes per cluster and signs on the app's network, so a `cluster` - or a `walletLogin.network` - that contradicts `chain` throws at init rather than failing later as a wallet rejection.
+
+Two limits worth knowing.
+The wallet is reached over loopback (`http://localhost` and a `ws://localhost:<port>` socket to the wallet app), so an app that declares a `boundaries.browser` block cannot use it: that grammar compiles to https hosts only and has no loopback token.
+And a page can register the mobile wallet for one cluster only - switching the app's Solana network afterwards throws and asks for a reload, because the registration cannot be withdrawn.
 
 > **Wallet login vs the default embedded wallet - don't confuse them.**
 >
@@ -313,6 +402,19 @@ loginWithRedirect({ provider: "google" });   // "apple" / "github" when configur
 // Or expose only the choices you want for this service:
 loginWithRedirect({ methods: ["email", "google", "apple"] }); // add "text" only when text OTP is explicitly enabled
 ```
+
+A **social `provider` jump always forces a fresh hosted sign-in** (0.0.69+): it
+defaults the standard OIDC `prompt` to `select_account`, so the jump never
+silently reuses a live Bounded hosted session - after signing out, signing back
+in really does start a new sign-in rather than dropping the user straight back
+into the previous account.
+With **Google** that also reaches Google's own account picker every time, because
+Bounded asks Google for `select_account` too; other providers re-run their own
+sign-in, which may still auto-approve if the user has a live session there.
+The identifier-first flows (`email` / `text` / `phone`) and plain `methods`
+lists keep deliberate silent SSO.
+Pass an explicit `prompt` to override, or `prompt: ""` to opt a social jump
+back into silent SSO.
 
 **One completion call covers both UXes.** Call `completeLoginFromRedirect()` once on
 app load (or page mount): it finishes a full-page redirect *or* a popup login (it

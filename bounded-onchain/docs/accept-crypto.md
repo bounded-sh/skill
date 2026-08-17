@@ -39,7 +39,7 @@ Use an app-created devnet mint for TokenPlugin labs, but do not substitute that 
 > address directly with USDC, then your app submits the transaction to Bounded,
 > which verifies it on-chain and records a settlement. **Fee is 0** on this rail
 > (a direct transfer can't be split). For card payments with fiat settlement,
-> use [Bounded Pay](bounded-pay.md).
+> integrate a card provider directly from a Function.
 
 `payments` is a **control-plane** policy block, like `openApps` / `boundaries`. It
 adds **zero prover obligations** and does not change any of your collections or
@@ -206,24 +206,13 @@ Returns `{ status: "pending" | "settled", intent, settlement? }`. The seller's
 
 ---
 
-## 4. Crypto vs. Bounded Pay (Stripe) - two separate, coexisting pipelines
+## 4. Crypto and direct card providers
 
-Bounded has **two independent payment pipelines**. They never touch each other's
-money or config, and **the same app can enable both**.
-
-| | **Accept crypto** (this doc) | **Bounded Pay** ([bounded-pay.md](bounded-pay.md)) |
-|---|---|---|
-| Policy / setup | `payments.acceptCrypto` block; paste a wallet address | `/connect/*`; seller onboards a Stripe account |
-| Money | Buyer pays **USDC** on Solana **directly to the seller's wallet** | Buyer pays by **card**; Stripe processes and pays out fiat |
-| Bounded's role | **Verifies on-chain only** - never in the money path | **Platform** on a Stripe destination charge |
-| Custody | **Non-custodial** (Bounded never holds funds/keys) | Stripe is money transmitter + merchant of record |
-| Fee | **0** (direct transfer can't split) | **1%** platform fee + Stripe processing fees |
-| Routes | `/crypto/*` | `/connect/*` |
-
-**When to use which:** want to be paid in **stablecoin to a wallet you own**, with
-zero fee and no onboarding → **accept crypto**. Want **card checkout with fiat
-payouts** and are OK with Stripe onboarding + a 1% fee → **Bounded Pay**. Enabling
-one has **no effect** on the other.
+The managed crypto rail verifies direct USDC transfers to the seller's wallet.
+For card payments or fiat payouts, integrate the chosen provider directly from
+a Function using app secrets.
+Keep provider settlement idempotent and grant app value only after trusted
+server-side verification.
 
 ---
 

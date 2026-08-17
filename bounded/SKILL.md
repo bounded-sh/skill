@@ -39,7 +39,7 @@ family.
 | Policy, rules, invariants, functions, data, realtime, actor model, proofs, policy tests | **bounded-backend** |
 | Client SDK, web/mobile UI, subscriptions, hosted frontend, app-user authentication | **bounded-frontend** |
 | CLI, verify/deploy, environments, source sync, domains, project config, collaborators, prompt-driven builds | **bounded-deploy** |
-| Embedded wallets, Solana/EVM, tokens, onchain transactions, onramp | **bounded-onchain** |
+| Embedded wallets, Solana, tokens, onchain transactions, onramp | **bounded-onchain** |
 | An app specifically destined for oapps.fun | **oapps-fun** |
 
 For a complete app, work through backend, frontend, then deploy. Add onchain
@@ -53,7 +53,7 @@ design policy + functions -> build client -> bounded verify -> fix blockers -> d
 
 Load these only when the task calls for them:
 
-- Billing, plan limits, credits, top-ups: [docs/billing.md](docs/billing.md)
+- Billing, plan limits, credits, and upgrades: [docs/billing.md](docs/billing.md)
 - Product analytics and web vitals: [docs/analytics.md](docs/analytics.md)
 - Capability boundaries: [guides/capabilities-and-limits.md](guides/capabilities-and-limits.md)
 

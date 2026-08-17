@@ -64,11 +64,69 @@ source remains an intentional wallet-mode selection.
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
 | `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
+| `apps delete` | Permanently delete an owned app: its data, realtime state, hosted site, addresses, functions, secrets, and schedules. Owner only (non-delegable; no collaborator role or grant can reach it) and NEVER one-shot: the command creates a short-lived delete request, opens a hosted confirmation page in the browser where the human types the app name, and polls until the deletion completes. There is no `--yes`. See the `apps delete` section below for the exact flow, refusal codes, and JSON mode. | `bounded apps delete --app-id <id>` |
 | `dashboard [page]` | Open the hosted dashboard. In a linked project it opens that app directly; optional pages include `data/<path>`, `policy/tests`, `boundaries/change`, and `activity/logs`. `--app-id` overrides the project, `--no-open` prints guidance without launching, and `--print` emits only the URL. Staging opens the staging dashboard. The app-ID handoff is replaced by the dashboard's readable app-name URL after load. | `bounded dashboard data/orders` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
 | `unshare <wallet\|email> --app-id <id>` | Remove a wallet or canonical email collaborator (owner only) | `bounded unshare teammate@example.com --app-id <id>` |
 | `collaborators --app-id <id>` | List collaborators (alias: `shares`) | `bounded collaborators --app-id <id>` |
 | `access --app-id <id>` | Show the access roster: your effective role, the app's external-widget setting, and every member grouped by role with per-role counts (the member list is shown only to the owner or an `access:manage` role). | `bounded access --app-id <id>` |
+
+### `apps delete` - permanent, browser-confirmed app deletion
+
+Deleting an app destroys everything it owns: documents and files, realtime
+state, the hosted site and its history, vanity slug and custom domains,
+functions and their schedules, runtime secrets, cloud-edit source, build
+state, and the app record itself.
+Its sign-in records go too: the app's OAuth client, every session and refresh
+token issued for it, and the app-scoped identity links.
+There is no undo and no recovery command.
+
+Some records deliberately survive, and none of them can serve the app or be
+read through it: your ACCOUNT's billing and ledger history (an account
+outlives its apps), the PEOPLE who signed in (their Bounded user account and
+wallet, which are theirs and span every app), and short-lived operational logs
+that expire on their own (function invocation logs age out within 30 days).
+
+If the app was deployed onchain (devnet), its **onchain accounts remain onchain**.
+Deletion removes everything Bounded runs and bills you for, but the deployed
+program has no instruction that closes an app account, so nothing offchain can
+retract it. Its rent stays where it is, and the address keeps resolving.
+
+The flow is deliberately two-step so a single mistyped command can never
+delete an app:
+
+```bash
+bounded apps delete --app-id <id>
+```
+
+1. The CLI creates a delete request (10-minute lifetime) and prints a
+   security fingerprint plus a one-time confirmation URL.
+2. It opens that hosted page in the browser (`--no-browser` to print only).
+   The page shows the SAME fingerprint - the human should confirm it matches
+   the terminal before proceeding - then requires typing the exact app name.
+3. The CLI polls until the deletion completes, fails, or the request expires
+   (`--timeout`, default 10m).
+
+Owner only, and the authority is non-delegable: no collaborator role, grant,
+or admin seat can delete an app (`app:delete` is an owner-boundary
+capability). Agents must never attempt to complete the confirmation page
+themselves - the browser step exists to put a human in the loop.
+
+Refusals worth recognizing (409 with a `code`):
+
+- `oapp_launched` - an open/launched oApp belongs to its venue and holders;
+  it cannot be deleted.
+- `app_delete_blocked_mainnet` - apps deployed to Solana mainnet keep their
+  record (it is the only pointer to their on-chain state).
+- `app_delete_blocked_deploy_in_flight` - retry after the active policy
+  deploy settles.
+- `app_delete_in_progress` - a confirmed deletion is already executing.
+
+JSON mode never opens a browser. `bounded apps delete --json` creates the
+request and returns `requiresConfirmation:true` with the `confirmUrl`,
+`fingerprint`, and ready-to-run `confirmationArgs`; after the human confirms
+in the browser, `bounded apps delete --app-id <id> --watch --request-id <rid>
+--json` polls to the terminal state.
 
 ### `update` — native CLI upgrades
 
@@ -494,17 +552,24 @@ Every ambiguous deploy or recovery outcome now emits the documented object with
 `code`, `state`, `operationId`, and - only when the outcome is actually
 resumable - `recoveryCommand`:
 
-- **Resumable** (`unknown`, `processing`, `recoverable`): run the emitted
-  `recoveryCommand` verbatim, under the same verified owner identity.
+- **Resumable** (`unknown`, `processing`, `recoverable`, `auth_expired`): run
+  the emitted `recoveryCommand` verbatim, under the same verified owner
+  identity.
   `409 policy_preflight_status_conflict` is resumable in this sense: a
   server-side authority fence refused that exact write, so retrying immediately
   is pointless, but the operation itself is intact and the same operation id
   still resumes it once the platform-side defect is fixed.
+  `auth_expired` (a `401`) means YOUR login died mid-reconciliation and could
+  not be refreshed without a prompt - the operation itself is untouched. Sign
+  in again (`bounded login`), then run the recovery command.
+  The client re-resolves its bearer before every polling request, so this
+  outcome normally appears only when the session is truly gone (for example a
+  revoked refresh token).
 - **Definitive** (`410 policy_operation_unrecoverable`, plus abandoned,
-  superseded, target-mismatch, permission, invalid-input, and manual-intervention
-  outcomes): NO `recoveryCommand` is emitted, because re-running the operation
-  can never commit. The message says whether to run a fresh `bounded deploy` or
-  to escalate for operator review.
+  superseded, target-mismatch, permission (`403`), invalid-input, and
+  manual-intervention outcomes): NO `recoveryCommand` is emitted, because
+  re-running the operation can never commit. The message says whether to run a
+  fresh `bounded deploy` or to escalate for operator review.
 
 The operation id the CLI minted stays authoritative: a response carrying a
 different id is refused rather than followed, so a recovery can never be bound to
@@ -789,53 +854,20 @@ Until the exact-patch lane is available, submit the intended outcome as a normal
 `bounded proposals [slug]` remains a read-only venue command for listing existing proposals newest-first.
 It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `propose --dry-run`, it opens a venue data-plane session to read the backlog.
 
-## Billing and Bounded Pay
+## Billing
 
-These are two different payment surfaces:
-
-- `bounded billing ...` manages the caller's own Bounded account: Pro
-  subscription, bucket top-ups, and Stripe Customer Portal.
-- `bounded connect ...` manages Bounded Pay seller onboarding and one-off app
-  checkout links through Stripe Connect. Use it for manual smoke tests and
-  operator debugging; real apps should call `/connect/*` programmatically with
-  the seller or buyer Bounded JWT.
+`bounded billing ...` manages the caller's own Bounded account: monthly Pro or
+Team subscription and Stripe Customer Portal.
 
 | Command | Does | Example |
 |---|---|---|
 | `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
-| `billing checkout` | Start Bounded Pro or top up a Bounded bucket | `bounded billing checkout --plan pro` |
+| `billing checkout` | Start monthly Bounded Pro or Team | `bounded billing checkout --plan pro` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |
 | `upgrade` | Alias for `billing checkout --plan pro` | `bounded upgrade` |
-| `connect onboard` | Create/resume Stripe Connect onboarding for this Bounded identity | `bounded connect onboard` |
-| `connect status` | Show `stripeAccountId`, `chargesEnabled`, payouts, and details state | `bounded connect status` |
-| `connect checkout` | Create a one-off Bounded Pay Checkout link for a manual test | `bounded connect checkout --merchant <seller-user-id> --amount 1000 --product "Creator sale"` |
 
-`billing checkout --plan pro` creates Bounded's own subscription. It does not
-create subscriptions for an app's end users.
-
-`connect onboard/status` is per Bounded identity, not per app.
-
-`connect checkout` is one-off checkout (`mode=payment`). For split checkout, keep
-the Bounded seller id separate from Stripe account ids:
-
-```bash
-bounded connect checkout \
-  --merchant <seller-bounded-user-id> \
-  --amount 10000 \
-  --product "Creator sale" \
-  --user-account acct_seller --user-bps 8000 \
-  --platform-account acct_platform --platform-bps 1900 \
-  --bounded-bps 100 \
-  --project-id <bounded-app-id> \
-  --platform-id <platform-id>
-```
-
-`--merchant` is the Bounded seller/user id recorded by app policy. `--user-account`
-and `--platform-account` are Stripe connected account ids. A successful checkout
-does not automatically mutate app policy and Bounded Pay does not fan out app
-webhooks. The app should store/receive the `sessionId`, verify it with
-`/connect/session`, and write entitlements, credits, or ledgers through trusted
-functions.
+`billing checkout --plan pro|team` creates Bounded's own monthly subscription.
+It does not create subscriptions for an app's end users.
 
 ### `verify --operation`
 
@@ -953,6 +985,9 @@ The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) 
 | `domains list` | List custom domains and refresh pending SSL/ownership status; also includes the app's vanity slug (`slug` + environment-qualified `slugUrl` fields in `--json`) | `bounded domains list --app-id <id> --env <environment> --json` |
 | `domains add <domain>` | Add a custom frontend domain you own (Pro); prints the DNS records to create | `bounded domains add app.yourdomain.com --app-id <id>` |
 | `domains remove <domain>` | Remove a **custom domain** and its routing/origin entry. Does NOT free a vanity slug — that is `domains slug --release`; using it on a slug 404s `domain_not_found` | `bounded domains remove app.yourdomain.com --app-id <id>` |
+| `domains origins` | List extra allowed auth/CORS origins for the app | `bounded domains origins --app-id <id>` |
+| `domains origins add <origin>` | Allow an extra origin to sign in and call the app (https anywhere; http only for localhost). Needed for any host that is not first-party or a registered domain - a tunnel, a preview URL - because wallet sign-in (SIWS) is bound to the browser origin and an unregistered one fails with `relying party not allowed for app`. Register it on the environment the app runs in | `bounded domains origins add https://abc123.ngrok.app --app-id <id> --env staging` |
+| `domains origins remove <origin>` | Remove an extra allowed origin | `bounded domains origins remove https://abc123.ngrok.app --app-id <id>` |
 
 Vanity slugs are free. Custom domains are Pro-gated on the app owner's account.
 If the owner later loses Pro, Bounded may remove or disable custom domain links;

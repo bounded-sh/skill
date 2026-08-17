@@ -100,8 +100,9 @@ redirect for email, while the social and wallet lanes are unchanged. It
 requires the app's Turnkey organization to have email OTP configured
 (application brand + email OTP enabled) - an issuer/platform-side prerequisite,
 not a client parameter. `walletLogin` (`true | false | { getProvider, network,
-rpcUrl }`) turns on bring-your-own Solana wallet login (full detail:
-[auth.md](auth.md#solana-wallet-login-bring-your-own)). `requireEmail: true` is
+rpcUrl, confirmWalletAction }`) turns on bring-your-own Solana wallet login (full detail:
+[auth.md](auth.md#solana-wallet-login-bring-your-own)).
+`confirmWalletAction(action)` is awaited immediately before every wallet operation so you can collect a fresh user gesture; Solana Mobile (Seeker/Saga) requires it for anything your own UI drives, since each operation leaves the page through an Android intent that Chrome blocks without one. `action` is `"connect"`, `"login"`, `"signMessage"`, `"signTransaction"` or `"signAndSubmitTransaction"` - `"connect"` is the re-authorization a restored session needs when its cached wallet authorization is gone, and it takes its own tap before the operation's. `requireEmail: true` is
 a site policy - every user must have an email on file - and suppresses the
 widget's wallet lane. `loginWidget?: { title?, subtitle? }` sets the unified
 widget's text app-wide: `title` replaces the default "Sign in" heading,
@@ -538,6 +539,14 @@ import { openBoundedWidget } from "@bounded-sh/client";
 const user = await openBoundedWidget({ methods: ["email", "google"], wallet: true });
 ```
 
+`wallet: true` also needs the app to have deployed `"auth": { "wallets": true }`
+in `policy.json` - the issuer refuses to mint a session for an external wallet
+without it (`wallet_login_disabled`). On a capable Android browser that lane
+additionally lists the phone's own Solana Mobile wallet; building your own
+wallet button instead of the widget means awaiting `ensureWalletLoginReady()`
+before enabling it and supplying `walletLogin.confirmWalletAction` - see
+[auth.md](auth.md#solana-mobile-seeker--saga).
+
 Options: `methods` (default `["email", "google"]`), `wallet` (enable the native
 Solana wallet lane - Wallet Standard enumeration: Phantom, Solflare, Backpack,
 etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,
@@ -573,7 +582,11 @@ revokes the refresh-token family, clears local state, then does a top-level
 bounce through the issuer's `/logout` so the hosted session cookie dies too -
 the next `loginWithRedirect` shows a fresh account choice instead of silently
 re-signing in the same user. Expect a page reload on sign-out. Pass
-`logout({ keepIssuerSession: true })` for the old local-only behavior. The
+`logout({ keepIssuerSession: true })` for the old local-only behavior.
+Since 0.0.69 the returned promise stays pending until that bounce navigation
+actually commits (with a capped fallback if it is blocked), so
+`await logout(); location.reload()` is safe - the reload can no longer cancel
+the in-flight bounce and resurrect the issuer session. The
 bounce only runs on issuer-trusted origins (`*.bounded.sh` / `*.bounded.page` /
 `*.oapps.fun` / https localhost); on custom domains logout stays local-only.
 The SDK sends an `id_token_hint` on the bounce, and the issuer returns you to

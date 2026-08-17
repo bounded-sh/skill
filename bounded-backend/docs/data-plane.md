@@ -72,8 +72,7 @@ hydration corpus requires operator action.
 The current implementation envelopes are operational limits, **not permanent
 public API promises**: hydration is capped at 25,000 rows and 32 MiB of serialized
 documents; the pending outbox at 25,000 rows and 64 MiB; and one replay page at
-256 rows / 4 MiB. The internal migration is resumable and write-fenced, and live
-EVM collections remain SQLite-only. Do not market the current Postgres path as
+256 rows / 4 MiB. The internal migration is resumable and write-fenced. Do not market the current Postgres path as
 unbounded storage or encode these numbers into application behavior.
 
 ## Failure semantics
