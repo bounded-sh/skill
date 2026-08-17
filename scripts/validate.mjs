@@ -146,7 +146,6 @@ const expectedPublicSkills = [
   'bounded-deploy',
   'bounded-frontend',
   'bounded-onchain',
-  'bounded-teams',
   'oapps-fun',
 ]
 if (publicSkills.sort().join('\n') !== expectedPublicSkills.join('\n')) {
@@ -154,10 +153,7 @@ if (publicSkills.sort().join('\n') !== expectedPublicSkills.join('\n')) {
 }
 
 const publicText = textFiles
-  .filter((file) =>
-    !relative(file).startsWith('bounded-observe/') &&
-    ['.md', '.mdc', '.txt'].includes(path.extname(file)),
-  )
+  .filter((file) => ['.md', '.mdc', '.txt'].includes(path.extname(file)))
   .map((file) => `${relative(file)}\n${readFileSync(file, 'utf8')}`)
   .join('\n')
 
@@ -187,7 +183,7 @@ for (const [pattern, label] of forbidden) {
   if (pattern.test(publicText)) fail(`forbidden public guidance: ${label}`)
 }
 if (/\bbounded-observe\b/.test(publicText)) {
-  fail('public guidance must not route to the repository-internal bounded-observe skill')
+  fail('public guidance must not route to the retired bounded-observe skill')
 }
 
 // Runtime-semantics pins for high-risk guidance. This repository is released

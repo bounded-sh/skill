@@ -87,12 +87,6 @@ outlives its apps), the PEOPLE who signed in (their Bounded user account and
 wallet, which are theirs and span every app), and short-lived operational logs
 that expire on their own (function invocation logs age out within 30 days).
 
-If you enabled **Observe** for the app, deletion revokes its sensor keys and
-removes its observe org, so the token you were issued stops working and no NEW
-events are accepted. Evidence already recorded is retained: events accepted
-before revocation still drain from the queue, and stored evidence, rollups, and
-the sensor-key records themselves are audit history rather than app state.
-
 If the app was deployed onchain (devnet), its **onchain accounts remain onchain**.
 Deletion removes everything Bounded runs and bills you for, but the deployed
 program has no instruction that closes an app account, so nothing offchain can

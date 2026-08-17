@@ -29,9 +29,8 @@ per account.
   the Bounded infra bucket. AI Build and runtime calls consume the same metered
   AI/external-services credit. Pro accounts can run up to two Builds concurrently.
 - Team includes everything in Pro plus roles (builders, reviewers, admins),
-  Enforced boundary promotion (25 per app), approvals, the audit trail, the
-  weekly action report, $20/month AI/external-services credit, and $100/month
-  Bounded infra credit. Team accounts can run up to five Builds concurrently.
+  $20/month AI/external-services credit, and $100/month Bounded infra credit.
+  Team accounts can run up to five Builds concurrently and can top up.
 
 The public checkout flow starts only monthly Pro or Team subscriptions
 (`kind: "pro" | "team"`).
