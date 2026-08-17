@@ -18,6 +18,25 @@ Real-network failure lookup for `"onchain": true` collections: what broke, why, 
 | Plugin call rejected at compile for the onchain target | Offchain-only construct (`@user.id`, `@origin.*`, `@StringUtils` in an onchain rule), an address atom where a string account id is required, or an unsupported composition such as `getAccountAddress(@contract.address)`. | Use `@user.address`; pass string account ids; resolve the escrow with the program-ID string literal ([policy-primitives.md](policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address)). |
 | Deploy refuses a function with `NEEDS-RUNTIME-V4` | The function's runtime is newer than the deployed program's recorded runtime version. | Check [solana-capability-status.md](solana-capability-status.md); do not ship that path until the runtime is live. |
 | Write succeeds but the mirror shows nothing yet | Mirror ingestion is eventually consistent. | Poll the mirror for the exact expected postcondition; never treat an immediate read (or its absence) as proof. |
+| `validate pre-built transaction: SOLANA_DEVNET_RPC_URL is required for pre-built transaction network "solana_devnet"` | The CLI submits onchain writes itself and has no RPC endpoint configured. The platform built the transaction correctly; submission never started. | Set `SOLANA_DEVNET_RPC_URL` (or `SOLANA_MAINNET_RPC_URL`) in the shell running `bounded`. See [CLI submission needs an explicit RPC endpoint](#cli-submission-needs-an-explicit-rpc-endpoint). |
+
+## CLI submission needs an explicit RPC endpoint
+
+On an onchain write the platform builds and returns a pre-built transaction.
+The CLI signs it locally with your credential and submits it to Solana itself, so the CLI needs its own RPC endpoint, and it reads one only from the environment:
+
+```sh
+export SOLANA_DEVNET_RPC_URL="https://<your-devnet-endpoint>"    # solana_devnet apps
+export SOLANA_MAINNET_RPC_URL="https://<your-mainnet-endpoint>"  # solana_mainnet apps
+```
+
+There is no `--rpc-url` flag, no config-file setting, and no fallback to a public Solana RPC.
+That is deliberate: confirmation and simulation results are only as trustworthy as the endpoint returning them, so the endpoint has to be one you chose.
+The check runs before signing, so an unset variable fails the write with `validate pre-built transaction: ...` and never reaches the network.
+
+Set it in whatever shell runs `bounded`; it applies per shell, so add it to your shell profile if you want it to persist.
+A public endpoint such as `https://api.devnet.solana.com` is enough to get a development write through, but it is rate-limited and is not a trusted source for the evidence described in [Confirmation behavior](#confirmation-behavior); use a dedicated provider endpoint for anything you intend to rely on.
+Never echo, log, commit, or retain a secret RPC URL.
 
 ## Confirmation behavior
 
