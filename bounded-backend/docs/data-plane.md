@@ -31,7 +31,8 @@ bounded data set-many --from-json bundle.json
 
 Data commands run as the CLI's selected account, and both account kinds work:
 
-- **Web login (the default identity, `bounded login`)** - works as-is.
+- **Web login (the default identity, `bounded login`)** - works as-is on
+  **cloud apps** (staging and production).
   The CLI exchanges your platform web session for an app-pinned session
   server-side, so `@user.id` in rules is the SAME id you have when you sign in
   to the app's site with that email.
@@ -41,6 +42,10 @@ Data commands run as the CLI's selected account, and both account kinds work:
   The one thing a web session cannot do is SIGN a Solana transaction, so a
   write to an `onchain: true` collection that needs a client signature fails
   closed with a message pointing at the keypair lane.
+  **Bounded Local is the exception:** a local app exists only in your stack
+  while web login is brokered by the shared staging issuer, so no app session
+  can be minted for it. Local data commands use the keypair lane, and the CLI
+  says so rather than looking retryable.
 - **CLI keypair (`bounded account use --global`)** - opens a
   sign-in-with-Solana session, so the app's deployed policy must enable wallet
   login: `"auth": { "wallets": true }`.

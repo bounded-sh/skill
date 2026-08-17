@@ -245,8 +245,9 @@ override project defaults.
 For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` overrides `account.keySource:"global"`, `"project"`, and `"profile"`.
 Check `bounded whoami --json` before an identity-sensitive deploy instead of assuming the public project config selected the active key.
 An explicit project `account.keySource:"web"`, and projectless control-plane commands, use the web session.
-App-bound data-plane operations (`data`, `subscribe`, `functions invoke`, `runtime invoke`) also run under the web session: the CLI exchanges the platform login for an app-pinned session server-side, so `@user.id` matches the same email's identity on the app's own site.
+App-bound data-plane operations (`data`, `subscribe`, `functions invoke`, `runtime invoke`) also run under the web session **on cloud apps**: the CLI exchanges the platform login for an app-pinned session server-side, so `@user.id` matches the same email's identity on the app's own site.
 A web session cannot SIGN, so writes to `onchain: true` collections that need a client-signed Solana transaction still require a local keypair (`bounded account use --global`, with `"auth": { "wallets": true }` deployed).
+On a **Bounded Local** connection the web lane is refused outright: the app lives only in your stack while web login is brokered by the shared staging issuer, so local data commands use the keypair lane.
 Older projects with only `.bounded/app.json` still work; the CLI falls back to that marker when `bounded.json` is absent.
 
 `bounded whoami --json` separates the stable machine value from the descriptive location:
