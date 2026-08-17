@@ -56,7 +56,7 @@ source remains an intentional wallet-mode selection.
 | Command | Does | Example |
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
-| `update` | Update this release build to the latest CLI from its configured HTTPS release host. Downloads the immutable binary for this OS/architecture, verifies its SHA-256 checksum and Go build metadata, then atomically replaces the running executable. Reads no project config, account, or credentials. | `bounded update` |
+| `update` | Update this release build to the latest CLI from its configured HTTPS release host. Downloads the immutable binary for this OS/architecture, verifies the version-bound release signature against the public key compiled into the CLI, then checks the SHA-256 checksum and Go build metadata, and atomically replaces the running executable. Reads no project config, account, or credentials. Builds before `0.0.99` have no trust anchor and must reinstall with the curl installer. | `bounded update` |
 | `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. Wallet mode may create the selected key on first run. | `bounded whoami` |
 | `login` | Log the CLI into your Bounded **web account** (the canonical identity; no key involved). By default it opens the hosted sign-in page, completes Authorization Code + PKCE through a temporary loopback callback, stores refreshable credentials in `~/.bounded/web-session.json`, and selects `account.keySource:"web"` for the current project. Use `--email <addr>` or `--no-browser` for terminal OTP when a browser is unavailable. **Headless agents:** run `bounded login --email <email>` with stdin held open, relay the 6-digit code from the user, then feed it to stdin. Never ask for or embed a reusable credential. | `bounded login` |
 | `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
@@ -151,10 +151,11 @@ not recognize `update`, run
 
 `BOUNDED_BASE_URL` is a security-sensitive release-host override shared with the
 installer. Leave it unset for canonical `https://get.bounded.sh`, or point it
-only at a trusted HTTPS mirror with the same release layout. The checksum
-manifest and binary come from that same host, so this is integrity checking
-inside one distribution trust boundary, not independent signing. `--env` and
-`BOUNDED_ENV` do not select a CLI update channel.
+only at a trusted HTTPS mirror with the same release layout. The updater
+fetches `SHA256SUMS` and `SHA256SUMS.sig` from that host and verifies the
+signature against a public key compiled into the CLI, so a compromised or
+spoofed origin cannot forge an update. `--env` and `BOUNDED_ENV` do not select
+a CLI update channel.
 
 `bounded update` updates only the CLI component and its normal update-check
 cache. Re-run the installer when the Bounded agent skill should be refreshed
