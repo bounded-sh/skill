@@ -93,13 +93,6 @@ events are accepted. Evidence already recorded is retained: events accepted
 before revocation still drain from the queue, and stored evidence, rollups, and
 the sensor-key records themselves are audit history rather than app state.
 
-If the app sold anything through **Bounded Pay**, deletion removes its checkout
-configuration and fence state, but it does NOT reach into Stripe: an open
-checkout session can still complete, and an existing subscription keeps renewing
-until someone cancels it. Those belong to a buyer who paid, so ending them is
-your call, not a side effect of deleting your app - wind down paying customers in
-Stripe BEFORE you delete.
-
 If the app was deployed onchain (devnet), its **onchain accounts remain onchain**.
 Deletion removes everything Bounded runs and bills you for, but the deployed
 program has no instruction that closes an app account, so nothing offchain can
@@ -565,17 +558,24 @@ Every ambiguous deploy or recovery outcome now emits the documented object with
 `code`, `state`, `operationId`, and - only when the outcome is actually
 resumable - `recoveryCommand`:
 
-- **Resumable** (`unknown`, `processing`, `recoverable`): run the emitted
-  `recoveryCommand` verbatim, under the same verified owner identity.
+- **Resumable** (`unknown`, `processing`, `recoverable`, `auth_expired`): run
+  the emitted `recoveryCommand` verbatim, under the same verified owner
+  identity.
   `409 policy_preflight_status_conflict` is resumable in this sense: a
   server-side authority fence refused that exact write, so retrying immediately
   is pointless, but the operation itself is intact and the same operation id
   still resumes it once the platform-side defect is fixed.
+  `auth_expired` (a `401`) means YOUR login died mid-reconciliation and could
+  not be refreshed without a prompt - the operation itself is untouched. Sign
+  in again (`bounded login`), then run the recovery command.
+  The client re-resolves its bearer before every polling request, so this
+  outcome normally appears only when the session is truly gone (for example a
+  revoked refresh token).
 - **Definitive** (`410 policy_operation_unrecoverable`, plus abandoned,
-  superseded, target-mismatch, permission, invalid-input, and manual-intervention
-  outcomes): NO `recoveryCommand` is emitted, because re-running the operation
-  can never commit. The message says whether to run a fresh `bounded deploy` or
-  to escalate for operator review.
+  superseded, target-mismatch, permission (`403`), invalid-input, and
+  manual-intervention outcomes): NO `recoveryCommand` is emitted, because
+  re-running the operation can never commit. The message says whether to run a
+  fresh `bounded deploy` or to escalate for operator review.
 
 The operation id the CLI minted stays authoritative: a response carrying a
 different id is refused rather than followed, so a recovery can never be bound to
@@ -860,53 +860,20 @@ Until the exact-patch lane is available, submit the intended outcome as a normal
 `bounded proposals [slug]` remains a read-only venue command for listing existing proposals newest-first.
 It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `propose --dry-run`, it opens a venue data-plane session to read the backlog.
 
-## Billing and Bounded Pay
+## Billing
 
-These are two different payment surfaces:
-
-- `bounded billing ...` manages the caller's own Bounded account: Pro
-  subscription, bucket top-ups, and Stripe Customer Portal.
-- `bounded connect ...` manages Bounded Pay seller onboarding and one-off app
-  checkout links through Stripe Connect. Use it for manual smoke tests and
-  operator debugging; real apps should call `/connect/*` programmatically with
-  the seller or buyer Bounded JWT.
+`bounded billing ...` manages the caller's own Bounded account: monthly Pro or
+Team subscription and Stripe Customer Portal.
 
 | Command | Does | Example |
 |---|---|---|
 | `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
-| `billing checkout` | Start Bounded Pro or top up a Bounded bucket | `bounded billing checkout --plan pro` |
+| `billing checkout` | Start monthly Bounded Pro or Team | `bounded billing checkout --plan pro` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |
 | `upgrade` | Alias for `billing checkout --plan pro` | `bounded upgrade` |
-| `connect onboard` | Create/resume Stripe Connect onboarding for this Bounded identity | `bounded connect onboard` |
-| `connect status` | Show `stripeAccountId`, `chargesEnabled`, payouts, and details state | `bounded connect status` |
-| `connect checkout` | Create a one-off Bounded Pay Checkout link for a manual test | `bounded connect checkout --merchant <seller-user-id> --amount 1000 --product "Creator sale"` |
 
-`billing checkout --plan pro` creates Bounded's own subscription. It does not
-create subscriptions for an app's end users.
-
-`connect onboard/status` is per Bounded identity, not per app.
-
-`connect checkout` is one-off checkout (`mode=payment`). For split checkout, keep
-the Bounded seller id separate from Stripe account ids:
-
-```bash
-bounded connect checkout \
-  --merchant <seller-bounded-user-id> \
-  --amount 10000 \
-  --product "Creator sale" \
-  --user-account acct_seller --user-bps 8000 \
-  --platform-account acct_platform --platform-bps 1900 \
-  --bounded-bps 100 \
-  --project-id <bounded-app-id> \
-  --platform-id <platform-id>
-```
-
-`--merchant` is the Bounded seller/user id recorded by app policy. `--user-account`
-and `--platform-account` are Stripe connected account ids. A successful checkout
-does not automatically mutate app policy and Bounded Pay does not fan out app
-webhooks. The app should store/receive the `sessionId`, verify it with
-`/connect/session`, and write entitlements, credits, or ledgers through trusted
-functions.
+`billing checkout --plan pro|team` creates Bounded's own monthly subscription.
+It does not create subscriptions for an app's end users.
 
 ### `verify --operation`
 

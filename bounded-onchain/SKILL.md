@@ -4,8 +4,8 @@ description: >-
   Add onchain to a Bounded app: Solana collections, embedded
   non-custodial wallets for email/social users (@user.address, Turnkey by default),
   client- and server-signed transactions, DEX/perps trading patterns, and crypto payments
-  (accept USDC/crypto non-custodially, Bounded Pay for card/fiat). Use for wallet,
-  token, on-chain transaction, or crypto/fiat payment work. Part of the Bounded
+  (accept USDC/crypto non-custodially). Use for wallet, token, on-chain
+  transaction, or crypto payment work. Part of the Bounded
   skill family; policy and the actor model live in bounded-backend.
 ---
 
@@ -51,7 +51,6 @@ Read only the row matching the current task or term.
 | Bring-your-own Solana wallet login, `walletLogin`, Phantom / Wallet-Standard, SIWS | [wallet login](../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own) |
 | `onramp()`, buy SOL/USDC by card, Coinbase Onramp, wallet top-up | [onramp](docs/onramp.md) |
 | Accept crypto/USDC, `payments.acceptCrypto`, seller settlement, direct-transfer rail | [accept crypto](docs/accept-crypto.md) |
-| Card/fiat payments, Stripe Connect, checkout, subscriptions, `/connect/onboard`, `/connect/status`, `/connect/checkout`, `/connect/session`, Bounded Pay | [Bounded Pay](docs/bounded-pay.md) |
 
 ## Rules Of Thumb
 
@@ -83,5 +82,4 @@ Read only the row matching the current task or term.
 - Validation-only success is a parity bug.
 - For a Poofnet onchain hook, application-side success means `_hook_completed == _transaction_hash`. Row existence and `_error_message == null` are only pending state. Gate cross-protocol policy progress on the hook-derived state change, and give every semantic operation id a policy-legal failed-attempt retry path. See [policy-native financial state machines](docs/policy-native-state-machines.md#onchain-receipt-success-and-retry).
 - Helius mirroring is environment-level Bounded infrastructure: one raw program webhook per environment/network, never one per app. App builders never create webhook URLs or supply provider secrets, and the operator runbook (webhook, secrets, queue/DLQ, recovery) lives in the monorepo, not this skill. See [mirror completeness](docs/onchain.md#mirror-completeness) for the app-facing caveats.
-- Bounded Pay's 1% platform fee is in addition to Stripe's own processing fees.
 - Crypto is accepted non-custodially; sellers settle to their own wallet.

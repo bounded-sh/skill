@@ -1,6 +1,6 @@
 # Billing & Usage
 
-What's in here: public plan/bucket behavior, usage warnings, upgrade/top-up
+What's in here: public plan/bucket behavior, usage warnings, upgrade
 guidance, project-limit recovery, and transparent pass-through fee language.
 
 ## Public Model
@@ -23,20 +23,19 @@ per account.
 
 - Free includes **up to $3 of metered AI/external-services usage per rolling 30
   days**, shared by AI Build, `ctx.ai`, and `ctx.services`. It allows one Build
-  at a time and has no daily Build entitlement. Free accounts cannot top up;
+  at a time and has no daily Build entitlement;
   when the allowance is exhausted, upgrade.
 - Pro includes $5/month for the AI/external-services bucket and $30/month for
   the Bounded infra bucket. AI Build and runtime calls consume the same metered
-  AI/external-services credit. Pro accounts can run up to two Builds at a time
-  and can top up.
+  AI/external-services credit. Pro accounts can run up to two Builds concurrently.
 - Team includes everything in Pro plus roles (builders, reviewers, admins),
   Enforced boundary promotion (25 per app), approvals, the audit trail, the
   weekly action report, $20/month AI/external-services credit, and $100/month
-  Bounded infra credit. Team accounts can run up to five Builds at a time and
-  can top up.
+  Bounded infra credit. Team accounts can run up to five Builds concurrently.
 
-Pro-or-better accounts can top up eligible buckets from the public billing
-checkout flow (`kind: "pro" | "team" | "services_topup" | "infra_topup"`).
+The public checkout flow starts only monthly Pro or Team subscriptions
+(`kind: "pro" | "team"`).
+Annual and bucket-specific top-up products are not sold.
 
 Custom domains are also a Pro feature. Creating a custom domain link is blocked
 unless the app owner has Pro-or-better billing, and existing custom domain links
@@ -48,7 +47,7 @@ that global free pool is paused or exhausted, free accounts see a clear
 normal bucket ledger.
 
 Paid included credit is granted once per UTC calendar month while the purchased
-monthly or annual term remains paid through. Build reserves only a bounded AI
+monthly term remains paid through. Build reserves only a bounded AI
 amount before starting, settles the measured AI cost, and releases the unused
 reservation. Confirmed platform failures release the full reservation.
 Infrastructure is not charged as an estimate when no authoritative cost receipt
@@ -56,7 +55,7 @@ exists.
 
 Do not explain pricing with unpublished provider costs, margin targets, private
 payment details, or non-public service details. Use the public plan, usage
-snapshot, and checkout/top-up flows.
+snapshot and checkout flow.
 
 ## Transparent Fees
 
@@ -68,8 +67,6 @@ Use these exact public rules:
 - Users can opt out of Bounded-managed third-party proxies by integrating the
   provider directly with their own API keys. In that path, they pay the provider
   directly and Bounded's proxy markup does not apply.
-- Bounded Pay keeps a 1% platform fee in addition to Stripe's own processing
-  fees.
 
 Do not speculate beyond published pricing or present unpublished cost details.
 
@@ -80,13 +77,9 @@ Use the public surfaces:
 ```bash
 bounded billing status
 bounded billing checkout --plan pro
-bounded billing checkout --plan services_topup
-bounded billing checkout --plan infra_topup
+bounded billing checkout --plan team
 bounded billing portal
 ```
-
-`services_topup` funds the AI/external-services bucket. `infra_topup` funds the
-Bounded infra bucket. Top-ups require Pro-or-better.
 
 `bounded billing status` reports the account's effective project cap.
 In JSON, read `.limits.maxProjects`; `-1` means unlimited.
@@ -123,7 +116,7 @@ Treat alert levels as user-facing severity:
 | Level | Meaning |
 |---|---|
 | `warn` | approaching a plan limit |
-| `critical` | urgent upgrade, top-up, reduce-volume, or cap-adjustment action |
+| `critical` | urgent upgrade, reduce-volume, or cap-adjustment action |
 | `exceeded` | blocked until usage drops or the plan/cap changes |
 
 Do not invent thresholds. Use the values returned in the usage snapshot.
@@ -165,7 +158,7 @@ When an operation returns `402` or a usage error with `dimension`, `usage`,
 1. Do not retry blindly.
 2. Name the exact exhausted axis.
 3. Explain whether the user should reduce volume, delete/export data, upgrade to
-   Pro, top up the relevant bucket, or adjust an allowed Pro app cap.
+   Pro, reduce the relevant usage, or adjust an allowed Pro app cap.
 4. If a batch write failed, suggest splitting only when the smaller batch would
    fit the remaining quota.
 
@@ -179,9 +172,9 @@ Common axes:
 | file writes/reads | reduce file traffic, delete/export old data, or upgrade |
 | storage | delete/export data or upgrade; reads may still work while new writes are blocked |
 | resident compute | reduce live/runtime duration or upgrade |
-| AI/external-services bucket | top up the bucket, reduce calls, or lower app caps |
+| AI/external-services bucket | reduce calls, lower app caps, or upgrade if the current plan is Free |
 | free AI/external-services pool | free trial usage is paused or exhausted; upgrade to Pro to continue |
-| Bounded infra bucket | top up the bucket, reduce usage, or adjust allowed caps |
+| Bounded infra bucket | reduce usage or adjust allowed caps |
 
 A `429` is separate from funded usage. It can mean either a short operational
 burst/shared-capacity guard or an app-authored daily, monthly, or participant
@@ -191,11 +184,8 @@ it as a plan Build allowance.
 
 ## App Payments
 
-If an app built on Bounded needs to charge its own end-users, use either:
-
-- Bounded Pay, if it fits the app's payment flow; see
-  [bounded-pay.md](../../bounded-onchain/docs/bounded-pay.md), or
-- the app's own payment provider integrated through functions and secrets.
+If an app built on Bounded needs to charge its own end-users, use direct USDC or
+the app's own payment provider integrated through functions and secrets.
 
 When using your own provider, verify payment server-side, write an idempotent
 claim record, and grant goods or credits through the app's policy-protected data
@@ -204,7 +194,7 @@ against the provider.
 
 ## Related
 
-- [bounded-pay.md](../../bounded-onchain/docs/bounded-pay.md) - Bounded Pay fee and app payment pattern
+- [accept-crypto.md](../../bounded-onchain/docs/accept-crypto.md) - direct USDC settlement
 - [functions.md](../../bounded-backend/docs/functions.md) - provider calls from backend code
 - [secrets.md](../../bounded-backend/docs/secrets.md) - using your own provider API keys
 - [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) - billing commands
