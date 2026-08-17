@@ -45,7 +45,15 @@ my-agent/
 - `kind`: `"agent"` for `onInvoke`/`onSchedule`, or `"backend"` for a `fetch`
   handler served at the app's backend URL.
 - `dependencies`: npm packages bundled for the backend runtime.
-- `allowedHosts`: outbound `ctx.fetch` allowlist. Other hosts are denied.
+- `allowedHosts`: the outbound `ctx.fetch` allowlist. Egress is deny-by-default,
+  so a host you do not list is refused (`egress_denied`) - declare every host the
+  backend calls up front rather than discovering the block at runtime.
+  Each entry is a bare hostname such as `api.example.com`, which also covers its
+  subdomains; an IP literal, a full URL, or a `host:port` is never a valid
+  declaration.
+  Loopback, private, `*.local`/`*.internal`, and cloud-metadata hosts are always
+  rejected, and a redirect to any undeclared or internal host is refused at the
+  hop rather than followed.
 - `aiCapUSD`: app-level spend cap for `ctx.ai`.
 - `secrets`: names declared in the manifest. Set values with
   `bounded secret put`.
@@ -159,6 +167,12 @@ Use it for "who is calling this backend route", and let policy rules on
 - Writes through `ctx.bounded` still pass the app's policy rules and invariants.
 - `allowedHosts` and `ctx.secrets` keep provider credentials out of frontend
   code.
+  Egress is deny-by-default: `ctx.fetch` reaches only the hostnames in
+  `allowedHosts`, and every redirect hop is re-checked against that same
+  allowlist.
+  Loopback, private, link-local, `*.internal`/`*.local`, IP-literal, and
+  cloud-metadata targets are refused whether you declared them or a redirect
+  tried to reach them.
 - `ctx.ai` spends against the AI/external-services bucket and app-level caps.
   When a cap or bucket is exhausted, calls fail closed.
 - `ctx.services.invoke` spends against the same AI/external-services bucket and

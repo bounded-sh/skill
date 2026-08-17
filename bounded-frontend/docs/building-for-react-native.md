@@ -148,6 +148,11 @@ setPlatform({
 
 **3. Register the https callback origin** in your app's `allowedOrigins` (owner
 setting, same place web origins go) — e.g. `https://yourapp.com`.
+For local development against a localhost dev server (Expo web or a locally
+served build), also register that exact loopback origin - `http://localhost:<port>`,
+including the port - in `allowedOrigins`, or sign-in from it is refused.
+A loopback origin authorizes only the app that registered it; the hosted native
+redirect still needs an https universal link, not a localhost origin.
 
 **4. Configure the universal / associated link** in `app.json` so the OS routes the
 callback URL back into your app:
