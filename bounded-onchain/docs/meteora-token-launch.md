@@ -224,11 +224,12 @@ self-custody. See [onchain-trading.md → `source`](onchain-trading.md).
 ### Pass the swap's slippage floor
 
 ```
-@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?) -> Bool
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) -> Bool
 ```
 
 `minimumAmountOut` is the minimum output in the output token's smallest units, and the swap fails instead of filling below it.
-It is optional only for backward compatibility, so **an omitted fifth argument means no slippage protection at all** on a bonding-curve trade, where the price moves with every fill.
+Omitting it does **not** leave the trade unprotected: the builder derives the floor from a fresh on-chain quote using `slippageBps`, which **defaults to 500 (5%)**.
+On a bonding curve, where the price moves with every fill, still pass an explicit floor whenever you can quote one.
 There is no deadline parameter (the underlying DBC `swap2` has none), and the call returns `Bool`, not the amount received.
 Full guidance, including how to size the floor when the quote getter is offchain-only: [onchain-trading.md → the slippage floor](onchain-trading.md#swapinmeteoravirtualpool-takes-a-slippage-floor---use-it).
 

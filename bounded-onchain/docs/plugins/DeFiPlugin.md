@@ -244,7 +244,7 @@ Fields of `config`:
 ### `DeFiPlugin.swapInMeteoraVirtualPool`
 
 ```
-@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?)
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?)
 ```
 
 - Callable from: `hooks.onchain`
@@ -256,7 +256,8 @@ Fields of `config`:
 | `poolTokenMint` | string | yes | - | The mint address of the pool's base token (used to find the pool) |
 | `tokenMint` | string | yes | - | The mint address of the token to swap in (use @TokenPlugin.SOL for native SOL) |
 | `amount` | string | yes | - | The amount of token to swap in (in smallest units) |
-| `minimumAmountOut` | string | no | - | Optional minimum output amount in smallest units. The swap fails if the quoted output is lower. |
+| `minimumAmountOut` | string | no | - | Optional explicit minimum output amount in smallest units. When omitted, the builder derives the floor from a fresh on-chain quote using slippageBps, which defaults to 500 (5%). |
+| `slippageBps` | number | no | - | Optional slippage tolerance in basis points (1 bps = 0.01%). Used when minimumAmountOut is omitted: the builder pulls a fresh on-chain quote and derives the protected minimum-output floor. Defaults to 500 (5%). |
 
 ### `DeFiPlugin.withdrawLeftover`
 

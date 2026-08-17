@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "6a9597c4d755d64439f460dfc35034470327d75b",
+  "monorepoCommit": "e31ec87f05a0f4cc5af66129520b33375326ac1d",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -3720,8 +3720,8 @@
      "name": "swapInMeteoraVirtualPool",
      "callName": "@DeFiPlugin.swapInMeteoraVirtualPool",
      "category": "transactional",
-     "signature": "swapInMeteoraVirtualPool(string, string, string, string, string?)",
-     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?)",
+     "signature": "swapInMeteoraVirtualPool(string, string, string, string, string?, number?)",
+     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?)",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3769,7 +3769,16 @@
        "type": "string",
        "optional": true,
        "signer": null,
-       "description": "Optional minimum output amount in smallest units. The swap fails if the quoted output is lower.",
+       "description": "Optional explicit minimum output amount in smallest units. When omitted, the builder derives the floor from a fresh on-chain quote using slippageBps, which defaults to 500 (5%).",
+       "fields": null
+      },
+      {
+       "index": 5,
+       "name": "slippageBps",
+       "type": "number",
+       "optional": true,
+       "signer": null,
+       "description": "Optional slippage tolerance in basis points (1 bps = 0.01%). Used when minimumAmountOut is omitted: the builder pulls a fresh on-chain quote and derives the protected minimum-output floor. Defaults to 500 (5%).",
        "fields": null
       }
      ],
@@ -5192,8 +5201,8 @@
      "name": "closePosition",
      "callName": "@PhoenixPerpsPlugin.closePosition",
      "category": "transactional",
-     "signature": "closePosition(source, market, sizeBaseLots, side, subaccountIndex?)",
-     "usage": "@PhoenixPerpsPlugin.closePosition(source, market, sizeBaseLots, side, subaccountIndex?) - Closes an existing position via a ReduceOnly market order. side: 0=Bid (close short), 1=Ask (close long). subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.",
+     "signature": "closePosition(source, market, sizeBaseLots, side, subaccountIndex?, slippageBps?)",
+     "usage": "@PhoenixPerpsPlugin.closePosition(source, market, sizeBaseLots, side, subaccountIndex?, slippageBps?) - Closes with a bounded ReduceOnly IOC order. side: 0=Bid, 1=Ask. slippageBps defaults to 500 (5%).",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -5242,6 +5251,15 @@
        "optional": true,
        "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
+       "fields": null
+      },
+      {
+       "index": 5,
+       "name": "slippageBps",
+       "type": "number",
+       "optional": true,
+       "signer": null,
+       "description": "Maximum adverse movement from the size-aware Phoenix orderbook quote, in basis points. Defaults to 500 (5%).",
        "fields": null
       }
      ],
@@ -5388,8 +5406,8 @@
      "name": "placeLong",
      "callName": "@PhoenixPerpsPlugin.placeLong",
      "category": "transactional",
-     "signature": "placeLong(source, market, sizeBaseLots, subaccountIndex?)",
-     "usage": "@PhoenixPerpsPlugin.placeLong(source, market, sizeBaseLots, subaccountIndex?) - Opens a long position via a market buy order (ImmediateOrCancel, Side::Bid). subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.",
+     "signature": "placeLong(source, market, sizeBaseLots, subaccountIndex?, slippageBps?)",
+     "usage": "@PhoenixPerpsPlugin.placeLong(source, market, sizeBaseLots, subaccountIndex?, slippageBps?) - Opens a bounded IOC long. slippageBps defaults to 500 (5%); the builder derives a finite price, positive minimum fill, and short validity fence from a fresh size-aware orderbook snapshot.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -5429,6 +5447,15 @@
        "optional": true,
        "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
+       "fields": null
+      },
+      {
+       "index": 4,
+       "name": "slippageBps",
+       "type": "number",
+       "optional": true,
+       "signer": null,
+       "description": "Maximum adverse movement from the size-aware Phoenix orderbook quote, in basis points. Defaults to 500 (5%).",
        "fields": null
       }
      ],
@@ -5446,8 +5473,8 @@
      "name": "placeShort",
      "callName": "@PhoenixPerpsPlugin.placeShort",
      "category": "transactional",
-     "signature": "placeShort(source, market, sizeBaseLots, subaccountIndex?)",
-     "usage": "@PhoenixPerpsPlugin.placeShort(source, market, sizeBaseLots, subaccountIndex?) - Opens a short position via a market sell order (ImmediateOrCancel, Side::Ask). subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.",
+     "signature": "placeShort(source, market, sizeBaseLots, subaccountIndex?, slippageBps?)",
+     "usage": "@PhoenixPerpsPlugin.placeShort(source, market, sizeBaseLots, subaccountIndex?, slippageBps?) - Opens a bounded IOC short. slippageBps defaults to 500 (5%); the builder derives a finite price, positive minimum fill, and short validity fence from a fresh size-aware orderbook snapshot.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -5487,6 +5514,15 @@
        "optional": true,
        "signer": null,
        "description": "Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin.",
+       "fields": null
+      },
+      {
+       "index": 4,
+       "name": "slippageBps",
+       "type": "number",
+       "optional": true,
+       "signer": null,
+       "description": "Maximum adverse movement from the size-aware Phoenix orderbook quote, in basis points. Defaults to 500 (5%).",
        "fields": null
       }
      ],

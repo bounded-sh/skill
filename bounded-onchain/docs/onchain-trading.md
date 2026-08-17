@@ -208,12 +208,13 @@ Create an app-owned devnet mint for token scenarios.
 ### `swapInMeteoraVirtualPool` takes a slippage floor - use it
 
 ```
-@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?) -> Bool
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) -> Bool
 ```
 
 `minimumAmountOut` is the **minimum output in the output token's smallest units**.
 The swap fails rather than filling when the pool would return less, which is the slippage protection for a bonding-curve trade.
-It is optional only for backward compatibility: **an omitted floor means no slippage protection at all**, so pass it on any trade carrying value.
+Omitting it does **not** leave the trade unprotected: the builder then derives the floor from a fresh on-chain quote using `slippageBps`, which **defaults to 500 (5%)**.
+Still pass an explicit floor on any trade carrying value - a derived 5% band is a backstop, not a price you chose.
 Compute the floor where you can quote - `@DeFiPlugin.getMeteoraSwapQuote` is offchain-only, so quote in a function or on the client, write the resulting minimum as a document field, and have `rules` constrain it (for example `@newData.minOut >= @MathPlugin.mulDivFloor(@newData.quotedOut, 9900, 10000)`) before the hook passes `@newData.minOut` through.
 
 Two limits worth knowing before you design around it:

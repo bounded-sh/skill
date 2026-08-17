@@ -66,7 +66,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@DeFiPlugin.lockCpAmmPosition` | `lockCpAmmPosition(string, string, string, number, string, string, number, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.removeCpAmmLiquidity` | `removeCpAmmLiquidity(string, string, string, string?, string?, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.swap` | `swap(string, string, string, string, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
-| `@DeFiPlugin.swapInMeteoraVirtualPool` | `swapInMeteoraVirtualPool(string, string, string, string, string?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
+| `@DeFiPlugin.swapInMeteoraVirtualPool` | `swapInMeteoraVirtualPool(string, string, string, string, string?, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.withdrawLeftover` | `withdrawLeftover(string)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.getClaimableCpAmmPositionFee` | `getClaimableCpAmmPositionFee(string, string, string, string?)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.getClaimableMeteoraPoolFees` | `getClaimableMeteoraPoolFees(string, string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
@@ -95,12 +95,12 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@OraclePlugin.requestRandomness` | `requestRandomness(string, string)` | `hooks.onchain` | [reference](plugins/OraclePlugin.md) |
 | `@OraclePlugin.getRandomNumber` | `getRandomNumber(string, number, number)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/OraclePlugin.md) |
 | `@OraclePlugin.getVRFAddress` | `getVRFAddress(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/OraclePlugin.md) |
-| `@PhoenixPerpsPlugin.closePosition` | `closePosition(source, market, sizeBaseLots, side, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
+| `@PhoenixPerpsPlugin.closePosition` | `closePosition(source, market, sizeBaseLots, side, subaccountIndex?, slippageBps?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.depositFunds` | `depositFunds(source, amount, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.emberDeposit` | `emberDeposit(source, usdcAmount)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.emberWithdraw` | `emberWithdraw(source, amount?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
-| `@PhoenixPerpsPlugin.placeLong` | `placeLong(source, market, sizeBaseLots, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
-| `@PhoenixPerpsPlugin.placeShort` | `placeShort(source, market, sizeBaseLots, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
+| `@PhoenixPerpsPlugin.placeLong` | `placeLong(source, market, sizeBaseLots, subaccountIndex?, slippageBps?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
+| `@PhoenixPerpsPlugin.placeShort` | `placeShort(source, market, sizeBaseLots, subaccountIndex?, slippageBps?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.registerTrader` | `registerTrader(source, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.syncParentToChild` | `syncParentToChild(source, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.transferToCross` | `transferToCross(source, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |

@@ -22,7 +22,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `PhoenixPerpsPlugin.closePosition`
 
 ```
-@PhoenixPerpsPlugin.closePosition(source, market, sizeBaseLots, side, subaccountIndex?) - Closes an existing position via a ReduceOnly market order. side: 0=Bid (close short), 1=Ask (close long). subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.
+@PhoenixPerpsPlugin.closePosition(source, market, sizeBaseLots, side, subaccountIndex?, slippageBps?) - Closes with a bounded ReduceOnly IOC order. side: 0=Bid, 1=Ask. slippageBps defaults to 500 (5%).
 ```
 
 - Callable from: `hooks.onchain`
@@ -35,6 +35,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `sizeBaseLots` | number | yes | - | Size to close in base lots |
 | `side` | number | yes | - | Side: 0=Bid (close short position), 1=Ask (close long position) |
 | `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
+| `slippageBps` | number | no | - | Maximum adverse movement from the size-aware Phoenix orderbook quote, in basis points. Defaults to 500 (5%). |
 
 ### `PhoenixPerpsPlugin.depositFunds`
 
@@ -82,7 +83,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `PhoenixPerpsPlugin.placeLong`
 
 ```
-@PhoenixPerpsPlugin.placeLong(source, market, sizeBaseLots, subaccountIndex?) - Opens a long position via a market buy order (ImmediateOrCancel, Side::Bid). subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.
+@PhoenixPerpsPlugin.placeLong(source, market, sizeBaseLots, subaccountIndex?, slippageBps?) - Opens a bounded IOC long. slippageBps defaults to 500 (5%); the builder derives a finite price, positive minimum fill, and short validity fence from a fresh size-aware orderbook snapshot.
 ```
 
 - Callable from: `hooks.onchain`
@@ -94,11 +95,12 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `market` | string | yes | - | Market orderbook pubkey |
 | `sizeBaseLots` | number | yes | - | Size of the order in base lots |
 | `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
+| `slippageBps` | number | no | - | Maximum adverse movement from the size-aware Phoenix orderbook quote, in basis points. Defaults to 500 (5%). |
 
 ### `PhoenixPerpsPlugin.placeShort`
 
 ```
-@PhoenixPerpsPlugin.placeShort(source, market, sizeBaseLots, subaccountIndex?) - Opens a short position via a market sell order (ImmediateOrCancel, Side::Ask). subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.
+@PhoenixPerpsPlugin.placeShort(source, market, sizeBaseLots, subaccountIndex?, slippageBps?) - Opens a bounded IOC short. slippageBps defaults to 500 (5%); the builder derives a finite price, positive minimum fill, and short validity fence from a fresh size-aware orderbook snapshot.
 ```
 
 - Callable from: `hooks.onchain`
@@ -110,6 +112,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `market` | string | yes | - | Market orderbook pubkey |
 | `sizeBaseLots` | number | yes | - | Size of the order in base lots |
 | `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
+| `slippageBps` | number | no | - | Maximum adverse movement from the size-aware Phoenix orderbook quote, in basis points. Defaults to 500 (5%). |
 
 ### `PhoenixPerpsPlugin.registerTrader`
 
