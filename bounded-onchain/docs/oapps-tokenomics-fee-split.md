@@ -4,7 +4,11 @@
 > (openapps.xyz) launches each token through a 24h continuous clearing auction
 > (CCA) of 65% of supply. Every bid pays 3% admission plus a 0.9% gauntlet fee,
 > win or lose; the other 99.1% is escrowed and unspent escrow refunds at
-> settlement. The raise R is then paid out of escrow by a fixed waterfall at
+> settlement. A launch MAY instead run operator-funded: the venue steward can
+> waive the gauntlet fee once, only before any demand lands (the head's
+> `gauntletFeeBps` goes from absent to `0`), after which bids escrow 100%, a
+> failed sale refunds 100%, and the graduation gauntlet draw is zero - the
+> gauntlet then runs on fuel top-ups only. The raise R is then paid out of escrow by a fixed waterfall at
 > activation: 2% creator, 1% OpenApps, a tiered gauntlet draw (1% of R capped at
 > the Mega tier cap, $30k at launch pinning), a fuel tank (10% of R capped at
 > $30k), locked liquidity (30% of R with a $10k floor, LP locked), and the app
