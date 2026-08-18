@@ -249,10 +249,46 @@ Poofnet, the primary onchain-flagged row commits before its simulated hook:
 
 Therefore never treat row existence or merely `_error_message == null` as
 success. A Poofnet subscriber, client, or function must wait for the matching
-completion marker. A cross-protocol downstream policy transition should gate on
-the hook-derived head/cursor state that advances atomically with the simulated
-side effects, not on receipt existence or Poofnet-only reserved fields. On real
-Solana, confirm the transaction and then poll the exact mirror postcondition.
+completion marker. On real Solana, confirm the transaction and then poll the
+exact mirror postcondition.
+
+### Reserved receipt stamps are Poofnet-only. Never read them in a rule.
+
+This deserves its own hard line, because the failure mode is permanent fund
+lockup and it survives every proof and test you will run before the target
+network.
+
+`_transaction_hash`, `_hook_completed`, and `_error_message` are written by
+the SIMULATOR. On a real chain the program stores none of them - a failed
+onchain hook reverts the whole write, so document existence is itself the
+completion proof there, and the chain mirror carries different metadata
+(`_txSignature`/`_txSlot`) that arrives asynchronously and is not readable at
+rule-evaluation time. A policy rule that requires
+`_transaction_hash != null && _hook_completed == _transaction_hash` is
+therefore correct on Poofnet and PERMANENTLY UNSATISFIABLE on a real-chain
+protocol: it can never pass, for anyone, ever.
+
+The trap is asymmetric in the worst way. Deposit rules rarely carry receipt
+gates, and payout rules attract them - the strict stamp check FEELS like extra
+safety on exactly the legs that move money out. Ship that and the deployed
+app becomes a one-way valve: bids, deposits, and pool seeds go in; no claim,
+refund, or payout can ever pass. Nothing catches it early, because the formal
+proof models the stamps as ordinary nullable fields and every test lane runs
+on the simulator, where they exist. The first thing that notices is a real
+user on the real chain who cannot withdraw.
+
+The portable pattern: the hook writes a DECLARED field (`bidderPaidAt`,
+`settledAt`) as one of its own atomic effects, and downstream rules gate on
+that field or on the hook-maintained head/cursor state. A declared field
+written inside the hook commits atomically with the money movement on both
+planes, so the same rule text is correct everywhere. Reserved `_` stamps are
+for Poofnet clients and subscribers; client code that inspects them must
+branch per protocol (existence-is-success on real chains).
+
+Before real funds, run the full lifecycle - in, progress, and every money-OUT
+leg - once against the target network semantics: either a test lane that
+never writes the simulator stamps, or a devnet end-to-end. A green simulator
+corpus proves nothing about receipt-gated rules on the chain.
 
 For a semantic operation that must survive transient failure, choose one of
 these policy shapes:

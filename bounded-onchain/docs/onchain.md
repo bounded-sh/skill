@@ -316,6 +316,11 @@ A policy that verifies on Poofnet still needs every called function checked agai
   hook-derived head/cursor state that advances atomically with the simulated
   side effects. Never grant a mint, unlock, claim, or downstream write just
   because the receipt row appeared or a post-commit hook fired.
+  **And never put the stamp check in a policy RULE**: the stamps are
+  simulator-only, so a rule requiring `_transaction_hash != null` is
+  permanently unsatisfiable on a real-chain protocol - on a payout leg that is
+  a fund-locking one-way valve that no sim-side proof or test will catch. See
+  [reserved receipt stamps are Poofnet-only](policy-native-state-machines.md#reserved-receipt-stamps-are-poofnet-only-never-read-them-in-a-rule).
   On a real chain a failed transaction would not commit the success state, so
   treating record-existence as success is a sandbox-only mistake that breaks on
   mainnet.
