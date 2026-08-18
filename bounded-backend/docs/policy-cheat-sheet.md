@@ -24,7 +24,7 @@ Paths alternate collection/`$variable` (always an even number of segments). An o
 
 ## Field types
 
-Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain only), `Address`; suffixes `?` optional, `!` readonly-after-create, `!?` both. No arrays or objects - use sub-collections. No `Timestamp` - use `UInt` seconds. Every `!` field needs `@newData.x == @data.x` in the update rule (or `update: "false"`). Leading `_` names are reserved system fields.
+Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain only), `Address`; suffixes `?` optional, `!` readonly-after-create, `!?` both. No arrays or objects - use sub-collections. No `Timestamp` - use `UInt` seconds. Every `!` field needs `@newData.x == @data.x` in the update rule (or `update: "false"`). Leading `_` names are reserved system fields. `fields` may be omitted, but then each field's type is inferred from the rules, so declare a field's type whenever rules compare it as more than one type - a fieldless collection whose rules compare one field to both a string and a number is refused at deploy and named.
 
 ## Rule variables
 

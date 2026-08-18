@@ -97,13 +97,19 @@ following, so these are requirements and not advice.
 | `boundaries` | present at all | `no_boundaries` |
 | `boundaries.posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
 | `boundaries.binding` | `"all"` - applies to everyone including you | `binding_not_all` |
-| `boundaries.amend` | `"none"` (permanent) or `"creator"` (until renounced) | `amend_invalid` |
 | `boundaries.egress` | declared (an empty `allow` IS a declaration) | `egress_missing` |
-| `boundaries.policy` | a `"mode": "locked"` freeze covering `openApps` | `policy_freeze_missing_openapps` |
-| `boundaries.policy` | a `"mode": "locked"` freeze covering `boundaries` | `policy_freeze_missing_boundaries` |
+| `boundaries.policy` | a `"mode": "locked"` freeze covering `openApps` (NOT over `boundaries` - see below) | `policy_freeze_missing_openapps` |
 | `openApps.activity` | `"public"` - every prompt and change on the record | `activity_not_public` |
 | a deployed policy | the app must have one to launch | `no_deployed_policy` |
 | accepted terms | current version, accepted | `terms_not_accepted`, `terms_version_unsupported` |
+
+Do NOT choose `boundaries.amend` or add a freeze over the `boundaries` section on
+your creator app.
+Neither is a launch requirement, and both are DERIVED by the platform on the
+launched clone: graduation sets `amend: "none"` and seals `boundaries` there
+(`lockGraduatedPolicy`), replacing any freeze you tried to pre-declare.
+Sealing `boundaries` on your own creator app is what used to wedge a launch (see
+the next section), so leave it to the platform.
 
 Launching is ONE-WAY. A second `publish-oapp` on an app that already launched
 answers `409 already_launched` and carries the launched app's id as `appId` -
@@ -185,36 +191,36 @@ What the ritual still refuses:
 The refusal body carries the specific `rejections`, so read them rather than
 guessing.
 
-### The seal is irreversible, and it happens BEFORE validation
+### The `gov-frozen` freeze covers `openApps` only - never `boundaries`
 
-This is the sharpest edge in the whole ritual. The launch wizard writes your
-boundaries block **and** the `gov-frozen` lock over `openApps` + `boundaries` in
-the SAME policy deploy, and `publish-oapp` checks the table above only AFTER that
-deploy has landed.
+The launch preset writes a single `mode: "locked"` freeze (`gov-frozen`) over
+`openApps` - the token and prompt settings - and nothing else.
+It deliberately does NOT freeze the `boundaries` section on your creator app,
+because a freeze over `boundaries` would lock its own escape hatch: if any later
+step of the ritual failed, you could no longer edit `boundaries` to fix it and
+the app would be permanently unlaunchable.
 
-So a policy that misses any row above is sealed first and refused second - and
-the lock now covers `boundaries`, which is the section you would have to edit to
-fix it. The documented three-step recovery (loosen, deploy, re-apply) is itself a
-write to `boundaries`. It is self-sealing, and `amend: "creator"` does not save
-you:
+The permanence you want lands on the launched CLONE, not on you.
+When graduation runs, the platform seals `boundaries` and sets `amend: "none"`
+on the venue-owned clone (`lockGraduatedPolicy`), and replaces any governance
+lock you tried to pre-declare with the canonical one.
+So the rules become genuinely unchangeable on the public app, while your creator
+app's `boundaries` stay editable.
 
-```
-seal rules (403): boundary_violation, gate G2, boundaryId gov-frozen,
-                  section boundaries, bindingAll true
-```
-
-Two test apps were made permanently unlaunchable this way in one afternoon.
-
-**Therefore: build the COMPLETE block and check it against every row above before
-you seal.** If you are writing tooling around this, validate locally first and
-refuse to seal on any missing row - a tool that can create an unrecoverable state
-should not be able to.
+That is why a refused or partly-completed launch is always recoverable: read the
+`rejections` the gate returned, fix the named row in your creator app's policy,
+re-deploy, and launch again.
+Launch is idempotent and converges on the same clone, so retrying a launch you
+are unsure landed is never an error.
+Do not add a `boundaries` freeze or an `amend` choice to "help" - it is not
+required and only reintroduces the self-sealing wedge.
 
 A related trap if you script it: read the app's current policy from
 `/app/:id/details` (`GET /app/:id` is not a route and 404s), and remember a
 Bounded policy is FLAT - collections are top-level keys, there is no
-`collections` wrapper. Swallowing that 404 and merging onto `null` replaces the
-app's whole policy with the preset alone, and then locks it.
+`collections` wrapper.
+Swallowing that 404 and merging onto `null` replaces the app's whole policy with
+the preset alone.
 
 A caution worth internalizing: an AI-generated app does NOT produce a boundaries
 block unless the build prompt asks for one. If you are commissioning an app that

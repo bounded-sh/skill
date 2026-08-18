@@ -63,6 +63,11 @@ the eval rubrics that grade generated policies; it catches the difference betwee
   proven, not hoped.
 - [ ] **Optional fields used in numeric/comparison rules are null-guarded** — or
   made required. Otherwise the `null` counterexample appears.
+- [ ] **A field compared as more than one type is declared in `fields`.** A
+  fieldless collection infers each field's type from its rules, so a field
+  compared to a string in one rule and a number in another is ambiguous.
+  `bounded verify` / deploy refuses it and names the field; declare that field's
+  type to resolve it.
 
 ### Tiers justified
 
