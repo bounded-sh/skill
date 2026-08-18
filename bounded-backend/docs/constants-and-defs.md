@@ -33,6 +33,24 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
   `@user.id == 'acct_...admin'`; `"@data.n > @const.DAILY_CAP"` →
   `@data.n > 5000`.
 
+## Platform-injected constants (`@const.BOUNDED_*`)
+
+Every app can reference platform-computed constants without declaring them.
+They are computed from the target app id and merged into the policy's `constants` block at deploy and verify time (before macro resolution), so proofs and the runtime see the platform's value, never an author-supplied one.
+
+| Name | Value |
+|---|---|
+| `BOUNDED_APP_ID` | The app's own 24-hex id. |
+| `BOUNDED_TREASURY_PDA` | The app's treasury address: the PDA of its `treasury` named account (the same address `@AccountPlugin.getAccountAddress("treasury")` resolves to). Point revenue directions here. |
+
+Rules:
+- A policy MAY declare a `BOUNDED_*` name to self-document, but only with the exact platform value — a divergent value fails deploy and verify closed.
+  Never hand-write a different address; that is exactly the smuggle the injection exists to prevent.
+- Verify without a target app (no appId, pre-create) cannot derive them, so a policy referencing `BOUNDED_*` must be verified with the app id or after creation.
+- Local apps get the same treatment automatically: the local control plane derives from the local app id, so a local policy's `BOUNDED_TREASURY_PDA` is the local app's own treasury PDA.
+  Policy-test fixtures may declare any `BOUNDED_*` value (the sandbox is the mock lane); real deploys recompute and reject a mismatch.
+- On graduation the treasury constant is frozen (`constants.BOUNDED_TREASURY_PDA` joins the lock), so a graduated app's revenue destination cannot be repointed by a later policy edit.
+
 ## defs — reusable rule fragments
 
 ```json
@@ -57,8 +75,7 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
 
 - A def is a **rule-fragment string**. Reference it as `@def.name`.
 - Defs are inlined **wrapped in parens** so they compose safely inside larger
-  boolean expressions: `@def.canEdit` above becomes
-  `((@user.id == @data.owner) || (@user.id == 'acct_...admin'))`.
+  boolean expressions: `@def.canEdit` above becomes  `((@user.id == @data.owner) || (@user.id == 'acct_...admin'))`.
 - Defs may reference **other defs and constants** (resolved recursively). A
   **cycle is a compile error**.
 
