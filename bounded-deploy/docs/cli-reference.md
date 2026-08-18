@@ -896,12 +896,14 @@ bounded verify ./policy.json --app-id <id> \
 ### `--constants`
 
 CLI-side substitution for the **legacy** `@constants.NAME` token: supply values
-at deploy/verify with `--constants NAME=value` (repeatable or comma-separated).
-Digit-only values ≤15 chars inline as numbers; everything else is wrapped as a
-string literal.
+at deploy/verify with `--constants NAME=value`. Pass several with **separate,
+repeated `--constants` flags** - commas are NOT separators, so a comma is part of
+the value (e.g. `--constants MSG=hello,world` sets one constant). A value with no
+`=` is rejected, never silently dropped. Digit-only values ≤15 chars inline as
+numbers; everything else is wrapped as a string literal.
 
 ```bash
-bounded deploy ./policy.json --app-id <id> --constants CAP=5000,ADMIN=8xY...
+bounded deploy ./policy.json --app-id <id> --constants CAP=5000 --constants ADMIN=8xY...
 ```
 
 > Prefer an in-policy `constants` block + `@const.NAME` (resolved server-side) for
