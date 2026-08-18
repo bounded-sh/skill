@@ -594,6 +594,16 @@ that origin only when it is one your app's owner registered (bound to your live
 session) - otherwise it safely lands on the issuer's own page rather than
 trusting a bare suffix match.
 
+**Only the hosted email issuer returns you automatically.** That return leg
+exists because `auth.bounded.sh` owns the browser cookie it is clearing, so it
+can bind the destination to a live session on its own origin. A sign-out that
+bounces to the **wallet issuer** (`wallet-auth.bounded.sh`) instead lands on a
+plain "You're signed out" page with a link back to your origin: no automatic
+redirect, and no revocation there (the SDK already revoked the refresh family
+over `/session/revoke` before navigating, so the session really is dead). Sign-out
+is complete either way - just do not build UX that assumes the browser returns to
+your app on its own from that host.
+
 > **Warning - custom domains and iframes get local-only logout.** On a custom
 > domain (or embedded in an iframe, where the top-level issuer bounce cannot
 > run), `logout()` clears local state but the hosted session cookie survives:
