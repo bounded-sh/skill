@@ -35,7 +35,7 @@ await init({
   // TOP-LEVEL rpcUrl the first onchain set() fails AFTER the user has signed,
   // with "Pre-built Solana transaction submission requires init({ rpcUrl })".
   // A nested walletLogin.rpcUrl configures wallet login only - it is not a
-  // substitute. See ../onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint
+  // substitute. See onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint
   chain: "solana_devnet",
   rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
   walletLogin: true,                             // offering the wallet lane below
