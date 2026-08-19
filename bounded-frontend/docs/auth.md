@@ -301,6 +301,16 @@ custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider,
 On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet appears in the connect-wallet list alongside Phantom, with the same SIWS login and the same signing surface.
 It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
 
+**Install the adapter to use it.** `@solana-mobile/wallet-standard-mobile` is an OPTIONAL PEER dependency of `@bounded-sh/client`, so it is not installed for you:
+
+```sh
+npm install @solana-mobile/wallet-standard-mobile
+```
+
+That keeps React Native and the metro toolchain out of web-only apps, which never need them.
+Without it the phone wallet simply does not register, and a wallet flow that would have used it throws `WalletConfigError` naming the package.
+Every other wallet, and the whole rest of the wallet lane, is unaffected.
+
 **Building your own wallet button?** Await `ensureWalletLoginReady()` before you enable it (after `init()`).
 It resolves config, loads the wallet-login chunk and registers the mobile wallet; doing that work after the tap puts a network fetch between the gesture and the wallet handoff, which is exactly what costs the activation.
 The built-in widget does this for you.
