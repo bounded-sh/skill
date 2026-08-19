@@ -173,6 +173,17 @@ What to do instead:
      the site with the three-step dance: ① deploy a policy with the boundary loosened
      (e.g. posture `"open"`, `ui: []`) via `bounded deploy` → ② `bounded site deploy
      <dist>` → ③ re-apply the locked boundaries block with another `bounded deploy`.
+     **Steps ①-③ are an OPEN WINDOW: loosening the boundary turns the lock off, so for
+     the length of the dance every author can deploy again** — the lock refuses every
+     author, owner included, only while it is applied (see the boundary-lock description
+     above).
+     Do the whole dance in one sitting and never leave the boundary loosened between
+     steps.
+     Before ③, confirm the served site is still yours — re-run `bounded site deploy
+     <dist>` with your own build: a byte-identical no-op (the content-hash nuance in
+     step 2 below) means nothing landed in the window, while a reported change means a
+     collaborator deployed and re-applying the lock now would protect THEIR code, so
+     re-deploy your build before you re-lock.
    - **`amend: "none"`** — a one-way renouncement you may ENCOUNTER (the launch flow
      sets it for apps whose rules were deliberately renounced). Gate G2 refuses any
      change to the `boundaries`/`openApps` sections from anyone, owner included, and
