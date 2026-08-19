@@ -46,13 +46,28 @@ custody model that every call here inherits, read
 | `name` | `String` | Token name. |
 | `symbol` | `String` | Token symbol. |
 | `uri` | `String` | The Metaplex metadata JSON URL. It must be permanent and public - see [the metadata hosting note](meteora-token-launch.md#the-uri-must-be-a-metaplex-metadata-json-not-an-image), which applies identically here. |
-| `creator` | `Address` | **The address that RECEIVES creator fees.** A wallet, the `@contract.address` sentinel (the app escrow PDA), or an account id. This is the only place the fee recipient is chosen. |
+| `creator` | `Address` | **The address that RECEIVES creator fees - and the account that PAYS the whole `Create`.** A wallet, the `@contract.address` sentinel (the app escrow PDA), or an account id. This is the only place the fee recipient is chosen, and Pump.fun's `Create` bills this same account for mint rent (1,461,600 lamports), metadata rent (~5,616,720), and bonding-curve/ATA setup - about 0.025 SOL total. |
 | `isMayhemMode` | `Bool` | `createTokenV2` only. Enables Pump.fun mayhem mode. Pass `false` for the ordinary launch. |
 | `config?` | object | Optional. `{seedMode: "idOnly"}` derives the mint PDA from `appId + tokenId` alone (no name/symbol), which is what enables vanity addresses. Omit for the legacy derivation. |
 
 `creator` is genuinely a parameter here, unlike Meteora's virtual-pool creator,
 which is hardwired to the pool-creation signer. Point it at an escrow or a named
 account when the app, not an individual, should collect the fees.
+
+Because `creator` also pays, an app-custody creator (a named account id) must
+already hold the whole `Create` cost when the hook runs - `createAccount` alone
+leaves only its own rent minimum (~0.00089 SOL), and the signing user's wallet
+balance is irrelevant to this transfer.
+Fund it in the same hook, before `createToken`:
+
+```
+"create": "@AccountPlugin.createAccount('launch_fee_pot') && @TokenPlugin.transfer(@user.address, 'launch_fee_pot', @TokenPlugin.SOL, 25000000) && @PumpFunPlugin.createToken($tokenId, @newData.name, @newData.symbol, @newData.uri, 'launch_fee_pot', {seedMode: 'idOnly'})"
+```
+
+An underfunded creator fails after the user signs, with `Transfer: insufficient
+lamports ... need 1461600` (the mint) or a shortfall under `IX: Create Metadata
+Accounts v3` - both rows are in the
+[troubleshooting table](onchain-troubleshooting.md#error-to-cause-to-fix).
 
 ## Buying on the curve
 

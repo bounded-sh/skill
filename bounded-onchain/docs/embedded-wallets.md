@@ -45,6 +45,12 @@ wallet should be able to sign in with that wallet.
 **That button needs a policy opt-in of its own**: the issuer refuses to mint a
 session for an external wallet unless the app deployed `"auth": { "wallets": true }`.
 The client knob alone fails with "wallet login is not enabled for this app".
+When you offer the wallet lane, also pass `walletLogin: true` to `init()` so the
+app declares the lane it offers; `init()` then restores a wallet session across
+reloads through the recorded login method.
+On `@bounded-sh/client` 0.0.72 and earlier, wallet sessions were wiped on every
+reload regardless - see the workaround in
+[wallet login -> "Wallet sessions survive reloads"](../../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own).
 
 No auth block is required in `policy.json` for the DEFAULT (Turnkey, embedded) path:
 
