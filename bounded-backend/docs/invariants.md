@@ -137,15 +137,22 @@ example above — `create: balance == 0` **and** `update: balance >= 0` — is a
 the sum can never move off 0, so nothing can ever hold value. That schema is a
 *transfer* schema, not a complete one. Pick a genesis model:
 
-- **Seed, then conserve (positive balances — validated).** Deploy the policy
-  *without* the `conserve` invariant, write your opening supply
-  (`set accounts/treasury {balance: 1_000_000}`), then redeploy *with*
-  `conserve` added. The total is now frozen at 1,000,000 and every later
-  transfer is checked against it. (Verified e2e: seed `alice=100` pre-conserve,
-  add conserve, `setMany [alice=70, bob=30]` → ✅ conserved at 100, a later
-  `set alice=200` → `409`.) This is the normal way to launch a fixed-supply
-  system. The seeding window is owner-only by virtue of the create/update rules,
-  not the invariant.
+- **Seed, then conserve (positive balances — validated).** Two deploys, and the
+  seeding window **must be gated on a mint authority**, not on the row owner. The
+  transfer rules above bind the *document* owner (`@newData.owner == @user.id`), so if
+  you deploy them without `conserve`, **any** signed-in user can create a row they own
+  and raise its balance — minting themselves supply that `conserve` then freezes into
+  the total. Instead, deploy first with a mint-authority write rule so only the app's
+  minting identity may write the opening supply — e.g. `create`/`update` gated on
+  `@user.id == @const.MINT_AUTHORITY` — write the opening supply
+  (`set accounts/treasury {balance: 1_000_000}`), then in a **single** redeploy add
+  `conserve` **and** switch to the public transfer rule below. Enabling `conserve` and
+  opening transfers in the *same* transition leaves no window in which a non-authority
+  can mint. (The `conserve` freeze itself is validated e2e: seed a balance pre-conserve,
+  add `conserve`, a balanced `setMany` conserves, a later lone mint → `409`.) The seeding
+  window is authority-only because the **write rule names the mint authority** — the
+  document-owner `create`/`update` rules do not restrict it, since they bind every user's
+  own row.
 - **Credit/debt (sum stays 0 — validated).** Drop `>= 0` from the update rule so
   balances may go negative. Every account starts at 0; a transfer is a balanced
   `set-many` that debits one and credits another (`[alice: -30, bob: +30]`), and
@@ -637,9 +644,12 @@ path variable — there is no payload that tags a document with the wrong tenant
 >
 > (Keep the `@user.id != null &&` guard — a bare `get(/.../@user.id) != null` can't yet
 > be *proven* auth-requiring by the verifier, so the guard makes the auth obligation
-> pass.) Members self-join with `"create": "@user.id != null && $memberId == @user.id"`
-> to bootstrap. So: `tenantTag` + `tenantEdge` = nothing is mis-tagged or cross-linked;
-> the membership read rule = nobody reads another tenant. You need **both**.
+> pass.) Membership must **not** be self-service: gate the members `create` rule on a
+> tenant-issued invite (`... && get(/tenants/$tenantId/invites/@user.id) != null`), never
+> on `$memberId == @user.id` alone — that lets anyone join any tenant and read its data.
+> See the `tenantEdge` example below for the invite-gated members + invites collections.
+> So: `tenantTag` + `tenantEdge` = nothing is mis-tagged or cross-linked; the membership
+> read rule = nobody reads another tenant. You need **both**.
 
 ## `tenantEdge` — references stay inside the tenant
 
@@ -668,7 +678,18 @@ paths, or bare ids resolved via `targetPathVariable`.
     "fields": { "tenant": "String" },
     "rules": {
       "read":   "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
-      "create": "@user.id != null && $memberId == @user.id",
+      "create": "@user.id != null && $memberId == @user.id && get(/tenants/$tenantId/invites/@user.id) != null",
+      "update": "false", "delete": "false"
+    },
+    "invariants": [
+      { "type": "tenantTag", "field": "tenant", "pathVariable": "$tenantId" }
+    ]
+  },
+  "tenants/$tenantId/invites/$inviteeId": {
+    "fields": { "tenant": "String" },
+    "rules": {
+      "read":   "@user.id != null && (get(/tenants/$tenantId/members/@user.id) != null || $inviteeId == @user.id)",
+      "create": "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
       "update": "false", "delete": "false"
     },
     "invariants": [
@@ -678,11 +699,18 @@ paths, or bare ids resolved via `targetPathVariable`.
 }
 ```
 
-Reads + member-only writes are gated on tenant membership (so no cross-tenant leak);
-the `members` collection self-joins (`$memberId == @user.id`) to bootstrap. Validated
-end-to-end: tenant B's user is rejected reading tenant A's task, the wrong-tenant tag is
-rejected `409`, and a cross-tenant reference is rejected `409` — while a member reads
-their own tenant fine.
+Reads + member-only writes are gated on tenant membership (so no cross-tenant leak).
+Membership is **not** self-service: a user may only add themselves (`$memberId ==
+@user.id`) **and only if the tenant issued them an invite**
+(`get(/tenants/$tenantId/invites/@user.id) != null`), and invites can only be created
+by an existing member. Without the invite gate, `create: "@user.id != null && $memberId
+== @user.id"` lets **anyone enroll themselves into any tenant** - which then satisfies
+the membership read gate above, so the tenant's data leaks. **Bootstrap:** the tenant's
+first member has no inviter, so seed it when the tenant is created (an owner/admin-scoped
+write), the same way the `@const.FOUNDER` branch bootstraps the flat admin set below;
+after that, existing members invite others. Dogfooded for the leak paths: tenant B's user
+is rejected reading tenant A's task, the wrong-tenant tag is rejected `409`, and a
+cross-tenant reference is rejected `409` - while a member reads their own tenant fine.
 
 | Key | Required | Meaning |
 |---|---|---|
@@ -855,9 +883,9 @@ tenant data:
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id).active == true",
-      "delete": "@user.id != null && get(/admins/@user.id).active == true"
+      "create": "@user.id != null && ((get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @newData.tenant) || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant && @newData.tenant == @data.tenant",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant"
     }
   },
   "proofs": {
@@ -870,11 +898,19 @@ tenant data:
 }
 ```
 
-Keep tenant scoping for that admin as an ordinary field (`tenant`) gated in
-rules; the *closure* proof rides the flat `admins/$userId` scope. Use nested
-typed `roleGatedRead.actors` (above) for the per-tenant read isolation.
+Tenant scoping is enforced **in the rules**, not by the attestation: `create` and
+`update` require `get(/admins/@user.id).tenant == @newData.tenant` /
+`== @data.tenant`, so an active admin of one tenant cannot create or edit an admin
+of another (and `update` also pins `@newData.tenant == @data.tenant` so a row cannot
+be relocated to a foreign tenant). The `authorityClosure` proof rides the flat
+`admins/$userId` scope and proves only that the admin set **grows through existing
+admins** - it is silent on tenant scope, so that tenant-equality clause is the check
+that confines an admin to its own tenant, not the attestation. Keep the
+`@const.FOUNDER` branch **outside** the tenant-equality so genesis can still seed the
+first admin of any tenant. Use nested typed `roleGatedRead.actors` (above) for the
+per-tenant read isolation.
 
-Every privileged rule gates on `get(/admins/@user.id).active == true`, not on
+Every privileged rule also gates on `get(/admins/@user.id).active == true`, not on
 mere existence, so `active: false` is a real off-switch (revoke a misbehaving
 admin by writing it; `update` also requires `.active == true`, so they cannot
 reactivate themselves). `.active == true` implies the row exists, so the

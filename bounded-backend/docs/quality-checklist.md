@@ -19,6 +19,15 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Ownership / role is actually checked**, not just referenced. "Only the
   owner updates" → `@data.owner == @user.id`. "Only an admin" →
   `get(/.../members/@user.id).role == "admin"`.
+- [ ] **Membership is not self-service.** A `create` rule for a membership / roster
+  collection gates on a tenant-issued invite or an existing member, never on
+  `$memberId == @user.id` alone — self-enrollment lets anyone join any tenant and
+  read its data.
+- [ ] **A declared scope field is actually read in the rules.** If an admin / role row
+  declares a `tenant` (or org / team) field, every privileged `create` / `update` /
+  `delete` compares it (`get(/.../@user.id).tenant == @newData.tenant`); a
+  declared-but-ignored scope field lets an admin of one tenant act on another.
+  `authorityClosure` proves the set grows through existing admins, not tenant scope.
 - [ ] **Sensitive reads are scoped.** A user's private data uses `$userId ==
   @user.id` or a membership `get()`, not `read: "true"`.
 - [ ] **Identity uses `@user.id`, not `@user.address`.** `@user.id` is the
@@ -46,6 +55,11 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Every money / balance / supply field is under a `conserve`** if its total
   must be preserved. A balance field with no conservation invariant means any write
   can mint value.
+- [ ] **Fixed-supply genesis is seeded under a mint authority.** To launch a `conserve`d
+  supply, gate the pre-`conserve` seeding writes on a mint authority (`@user.id ==
+  @const.MINT_AUTHORITY`), not the document-owner `create` / `update` rule — otherwise any
+  user mints into their own row before `conserve` freezes the total. Enable `conserve` and
+  open public transfers in the same deploy.
 - [ ] **Every quota / budget / rate field is under a `rollingSum`** with the right
   window and limit; add `scopeVariable` for per-actor caps.
 - [ ] **Every multi-tenant collection has a `tenantTag`**, and every cross-tenant
