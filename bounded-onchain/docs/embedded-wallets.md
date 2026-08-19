@@ -27,7 +27,19 @@ Use the shared widget with no auth-mode override:
 ```ts
 import { init, openBoundedWidget } from "@bounded-sh/client";
 
-await init({ appId: "<APP_ID>" });
+await init({
+  appId: "<APP_ID>",
+  // An ONCHAIN app must also declare the network it writes on and the endpoint
+  // the SDK submits through: the platform builds the transaction, the user's
+  // wallet signs it, and the SDK broadcasts it from the browser. Without a
+  // TOP-LEVEL rpcUrl the first onchain set() fails AFTER the user has signed,
+  // with "Pre-built Solana transaction submission requires init({ rpcUrl })".
+  // A nested walletLogin.rpcUrl configures wallet login only - it is not a
+  // substitute. See ../onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint
+  chain: "solana_devnet",
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
+  walletLogin: true,                             // offering the wallet lane below
+});
 
 const user = await openBoundedWidget({
   methods: ["email", "google"],

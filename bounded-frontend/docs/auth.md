@@ -273,7 +273,18 @@ first signing call reconnects (that is `confirmWalletAction`'s `"connect"`).
 import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
 
 // Add bring-your-own wallet login alongside the canonical email/social login.
-await init({ appId: "<appId>", authMethod: "phantom", walletLogin: true });
+// `chain` + a TOP-LEVEL `rpcUrl` are what let the signed transaction actually
+// be submitted below; a nested walletLogin.rpcUrl is not a substitute, and
+// without them signAndSubmitTransaction / an onchain set() throws
+// "Pre-built Solana transaction submission requires init({ rpcUrl })" AFTER
+// the user has signed.
+await init({
+  appId: "<appId>",
+  authMethod: "phantom",
+  walletLogin: true,
+  chain: "solana_devnet",
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
+});
 
 // Right next to the login call — connects the injected wallet, signs the SIWS
 // challenge, and mints the session. user.address === the user's real wallet.
@@ -369,6 +380,10 @@ await init({
   appId: "<appId>",
   authMethod: "phantom",
   chain: "solana_devnet",
+  // Required for the `set()` writes and signAndSubmitTransaction calls named
+  // above: the SDK submits the signed transaction itself. Top-level, never
+  // nested under walletLogin.
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,
   walletLogin: {
     // Only where the mobile wallet can be active; injected wallets sign
     // in-page and need no extra tap.
