@@ -90,13 +90,13 @@ that debits one document must credit another **in the same batch**.
 
 ```json
 {
-  "accounts/$accountId": {
-    "fields": { "balance": "Int", "owner": "String!" },
+  "accounts/$userId": {
+    "fields": { "balance": "Int" },
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && @newData.owner == @user.id && @newData.balance == 0",
-      "update": "@user.id != null && @data.owner == @user.id && @newData.owner == @data.owner && @newData.balance >= 0",
+      "create": "@user.id != null && $userId == @user.id && @newData.balance == 0",
+      "update": "@user.id != null && @newData.balance >= 0 && ($userId == @user.id || @newData.balance > @data.balance)",
       "delete": "false"
     },
     "invariants": [
@@ -106,11 +106,20 @@ that debits one document must credit another **in the same batch**.
 }
 ```
 
+> **Key on the caller, not a chosen name.** The ledger is keyed on `$userId`, so an
+> account **is** its owner and needs no separate `owner` field. Keying on a
+> caller-chosen `$accountId` (with an `owner` field) is a name-squat: whoever creates
+> `accounts/alice` first owns it, and since ownership is immutable and `delete` is
+> `false`, every credit meant for alice lands in the squatter's row **permanently** -
+> and `conserve` freezes the money there, all while the proof passes cleanly because
+> conservation holds perfectly. If you want friendly handles, add a separate
+> `handles/$handle -> userId` directory so squatting a handle costs a nickname, not money.
+
 > **Demo vs production reads:** the `read: "@user.id != null"` rule above lets any
 > signed-in user read every account's balance. This example keeps reads permissive
 > so a client-side cross-owner transfer can read the recipient's balance before
 > crediting it. A production ledger should move transfers into a server-side function
-> with elevated read and owner-scope the read rule (`@data.owner == @user.id`) so
+> with elevated read and owner-scope the read rule (`$userId == @user.id`) so
 > users cannot enumerate every balance.
 
 | Key | Required | Meaning |
@@ -137,15 +146,25 @@ example above — `create: balance == 0` **and** `update: balance >= 0` — is a
 the sum can never move off 0, so nothing can ever hold value. That schema is a
 *transfer* schema, not a complete one. Pick a genesis model:
 
-- **Seed, then conserve (positive balances — validated).** Deploy the policy
-  *without* the `conserve` invariant, write your opening supply
-  (`set accounts/treasury {balance: 1_000_000}`), then redeploy *with*
-  `conserve` added. The total is now frozen at 1,000,000 and every later
-  transfer is checked against it. (Verified e2e: seed `alice=100` pre-conserve,
-  add conserve, `setMany [alice=70, bob=30]` → ✅ conserved at 100, a later
-  `set alice=200` → `409`.) This is the normal way to launch a fixed-supply
-  system. The seeding window is owner-only by virtue of the create/update rules,
-  not the invariant.
+- **Seed, then conserve (positive balances — validated).** Two deploys, and the
+  seeding window **must be gated on a mint authority**, not on the caller. The
+  transfer rules above bind the caller's own row (`$userId == @user.id`), so if you
+  deploy them without `conserve`, **any** signed-in user can create the row keyed to
+  them and raise its balance — minting themselves supply that `conserve` then freezes
+  into the total. Instead, deploy first with a mint-authority write rule so only the app's
+  minting identity may write the opening supply — e.g. `create`/`update` gated on
+  `@user.id == @const.MINT_AUTHORITY` — and seed the supply into that identity's **own**
+  `$userId` row (`set accounts/<the MINT_AUTHORITY user id> {balance: 1_000_000}`), then in
+  a **single** redeploy add `conserve` **and** switch to the public transfer rule below.
+  Seed a *real* user id, not a made-up name like `accounts/treasury`: under `accounts/$userId`
+  the post-cutover rule only lets a user debit the row keyed to them (`$userId == @user.id`),
+  so a fabricated key would freeze the whole opening supply permanently. Enabling `conserve` and
+  opening transfers in the *same* transition leaves no window in which a non-authority
+  can mint. (The `conserve` freeze itself is validated e2e: seed a balance pre-conserve,
+  add `conserve`, a balanced `setMany` conserves, a later lone mint → `409`.) The seeding
+  window is authority-only because the **write rule names the mint authority** — the
+  caller-keyed `create`/`update` rules do not restrict it, since they bind every user's
+  own row.
 - **Credit/debt (sum stays 0 — validated).** Drop `>= 0` from the update rule so
   balances may go negative. Every account starts at 0; a transfer is a balanced
   `set-many` that debits one and credits another (`[alice: -30, bob: +30]`), and
@@ -162,25 +181,26 @@ The takeaway: there is no "admin mint" escape hatch — that is the entire point
 `conserve`. Decide genesis by *deploy order* (seed before the invariant) or by
 *model* (credit/debt nets to 0), not by trying to write past the proof.
 
-**Authorizing a transfer — the simple owner rule blocks cross-owner credits.** A peer
-transfer debits one account and credits *another owner's* account in the same batch. But
-`"update": "@data.owner == @user.id"` only lets you change accounts **you own** — so the
-credit leg is rejected `403`, and a real transfer between two different owners is
+**Authorizing a transfer — the simple self-only rule blocks cross-owner credits.** A peer
+transfer debits one account and credits *another user's* account in the same batch. But
+`"update": "$userId == @user.id"` only lets you change the account **keyed to you** — so the
+credit leg is rejected `403`, and a real transfer between two different users is
 *impossible*, even though `conserve` is satisfied. (Validated by dogfooding: a Treasury→Alice
 transfer under that rule failed `403`; nothing partial applied.) To allow transfers without
-allowing theft, let the owner change their own account **OR** let anyone *increase* (credit)
-any account — and never let a non-owner *decrease* one:
+allowing theft, let you change your own account **OR** let anyone *increase* (credit) any
+account — and never let anyone *decrease* an account that isn't theirs:
 
 ```json
-"update": "@user.id != null && @newData.owner == @data.owner && @newData.balance >= 0 && (@data.owner == @user.id || @newData.balance > @data.balance)"
+"update": "@user.id != null && @newData.balance >= 0 && ($userId == @user.id || @newData.balance > @data.balance)"
 ```
 
-`@data.owner == @user.id` = you may move your own balance (the debit leg); `@newData.balance
-> @data.balance` = anyone may *credit* (the credit leg); a non-owner *decrease* matches
-neither clause, so theft is rejected `403`. `conserve` then forces every credit to be
-matched by a debit in the same `set-many`. Validated end-to-end: cross-owner transfer ✅,
-stealing from another account → `403`, a lone mint → `409`, total supply unchanged. (For a
-ledger/IOU you'd drop `>= 0`; for hold-then-release flows, gate the credit clause further.)
+`$userId == @user.id` = you may move your own balance (the debit leg); `@newData.balance
+> @data.balance` = anyone may *credit* (the credit leg); a *decrease* of an account that
+isn't yours matches neither clause, so theft is rejected `403`. `conserve` then forces every
+credit to be matched by a debit in the same `set-many`. Validated end-to-end: cross-owner
+transfer ✅, stealing from another account → `403`, a lone mint → `409`, total supply
+unchanged. (For a ledger/IOU you'd drop `>= 0`; for hold-then-release flows, gate the credit
+clause further.)
 
 ## `rollingSum` — caps over time windows
 
@@ -637,9 +657,12 @@ path variable — there is no payload that tags a document with the wrong tenant
 >
 > (Keep the `@user.id != null &&` guard — a bare `get(/.../@user.id) != null` can't yet
 > be *proven* auth-requiring by the verifier, so the guard makes the auth obligation
-> pass.) Members self-join with `"create": "@user.id != null && $memberId == @user.id"`
-> to bootstrap. So: `tenantTag` + `tenantEdge` = nothing is mis-tagged or cross-linked;
-> the membership read rule = nobody reads another tenant. You need **both**.
+> pass.) Membership must **not** be self-service: gate the members `create` rule on a
+> tenant-issued invite (`... && get(/tenants/$tenantId/invites/@user.id) != null`), never
+> on `$memberId == @user.id` alone — that lets anyone join any tenant and read its data.
+> See the `tenantEdge` example below for the invite-gated members + invites collections.
+> So: `tenantTag` + `tenantEdge` = nothing is mis-tagged or cross-linked; the membership
+> read rule = nobody reads another tenant. You need **both**.
 
 ## `tenantEdge` — references stay inside the tenant
 
@@ -668,7 +691,18 @@ paths, or bare ids resolved via `targetPathVariable`.
     "fields": { "tenant": "String" },
     "rules": {
       "read":   "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
-      "create": "@user.id != null && $memberId == @user.id",
+      "create": "@user.id != null && $memberId == @user.id && get(/tenants/$tenantId/invites/@user.id) != null",
+      "update": "false", "delete": "false"
+    },
+    "invariants": [
+      { "type": "tenantTag", "field": "tenant", "pathVariable": "$tenantId" }
+    ]
+  },
+  "tenants/$tenantId/invites/$inviteeId": {
+    "fields": { "tenant": "String" },
+    "rules": {
+      "read":   "@user.id != null && (get(/tenants/$tenantId/members/@user.id) != null || $inviteeId == @user.id)",
+      "create": "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null",
       "update": "false", "delete": "false"
     },
     "invariants": [
@@ -678,11 +712,18 @@ paths, or bare ids resolved via `targetPathVariable`.
 }
 ```
 
-Reads + member-only writes are gated on tenant membership (so no cross-tenant leak);
-the `members` collection self-joins (`$memberId == @user.id`) to bootstrap. Validated
-end-to-end: tenant B's user is rejected reading tenant A's task, the wrong-tenant tag is
-rejected `409`, and a cross-tenant reference is rejected `409` — while a member reads
-their own tenant fine.
+Reads + member-only writes are gated on tenant membership (so no cross-tenant leak).
+Membership is **not** self-service: a user may only add themselves (`$memberId ==
+@user.id`) **and only if the tenant issued them an invite**
+(`get(/tenants/$tenantId/invites/@user.id) != null`), and invites can only be created
+by an existing member. Without the invite gate, `create: "@user.id != null && $memberId
+== @user.id"` lets **anyone enroll themselves into any tenant** - which then satisfies
+the membership read gate above, so the tenant's data leaks. **Bootstrap:** the tenant's
+first member has no inviter, so seed it when the tenant is created (an owner/admin-scoped
+write), the same way the `@const.FOUNDER` branch bootstraps the flat admin set below;
+after that, existing members invite others. Dogfooded for the leak paths: tenant B's user
+is rejected reading tenant A's task, the wrong-tenant tag is rejected `409`, and a
+cross-tenant reference is rejected `409` - while a member reads their own tenant fine.
 
 | Key | Required | Meaning |
 |---|---|---|
@@ -855,9 +896,9 @@ tenant data:
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id).active == true",
-      "delete": "@user.id != null && get(/admins/@user.id).active == true"
+      "create": "@user.id != null && ((get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @newData.tenant) || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant && @newData.tenant == @data.tenant",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant"
     }
   },
   "proofs": {
@@ -870,11 +911,19 @@ tenant data:
 }
 ```
 
-Keep tenant scoping for that admin as an ordinary field (`tenant`) gated in
-rules; the *closure* proof rides the flat `admins/$userId` scope. Use nested
-typed `roleGatedRead.actors` (above) for the per-tenant read isolation.
+Tenant scoping is enforced **in the rules**, not by the attestation: `create` and
+`update` require `get(/admins/@user.id).tenant == @newData.tenant` /
+`== @data.tenant`, so an active admin of one tenant cannot create or edit an admin
+of another (and `update` also pins `@newData.tenant == @data.tenant` so a row cannot
+be relocated to a foreign tenant). The `authorityClosure` proof rides the flat
+`admins/$userId` scope and proves only that the admin set **grows through existing
+admins** - it is silent on tenant scope, so that tenant-equality clause is the check
+that confines an admin to its own tenant, not the attestation. Keep the
+`@const.FOUNDER` branch **outside** the tenant-equality so genesis can still seed the
+first admin of any tenant. Use nested typed `roleGatedRead.actors` (above) for the
+per-tenant read isolation.
 
-Every privileged rule gates on `get(/admins/@user.id).active == true`, not on
+Every privileged rule also gates on `get(/admins/@user.id).active == true`, not on
 mere existence, so `active: false` is a real off-switch (revoke a misbehaving
 admin by writing it; `update` also requires `.active == true`, so they cannot
 reactivate themselves). `.active == true` implies the row exists, so the
