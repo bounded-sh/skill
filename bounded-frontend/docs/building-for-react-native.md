@@ -385,6 +385,11 @@ useEffect(() => {
 - **Optional peer deps for hosted login**: `expo-web-browser` (system auth session)
   and `expo-crypto` *or* `react-native-get-random-values` (PKCE randomness). They're
   imported lazily, so apps that don't use hosted login never need them.
+- **Optional peer dep for the Solana Mobile wallet** (0.0.72+):
+  `@solana-mobile/wallet-standard-mobile`. Also lazy, and also not installed for
+  you - without it the phone-wallet registration throws `WalletConfigError`
+  naming the package. See
+  [../docs/auth.md](../docs/auth.md#solana-mobile-seeker--saga).
 - **Polyfills**: RN needs the same Buffer/crypto shims the Solana libs require;
   add them in your Metro/babel config.
 

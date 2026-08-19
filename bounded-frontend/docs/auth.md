@@ -301,13 +301,16 @@ custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider,
 On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet appears in the connect-wallet list alongside Phantom, with the same SIWS login and the same signing surface.
 It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
 
-**Install the adapter to use it.** `@solana-mobile/wallet-standard-mobile` is an OPTIONAL PEER dependency of `@bounded-sh/client`, so it is not installed for you:
+**Install the adapter to use it (0.0.72+).**
+`@solana-mobile/wallet-standard-mobile` is an OPTIONAL PEER dependency of `@bounded-sh/client`, so it is not installed for you:
 
 ```sh
 npm install @solana-mobile/wallet-standard-mobile
 ```
 
-That keeps React Native and the metro toolchain out of web-only apps, which never need them.
+It is not a hard dependency because that one edge pulls React Native and the metro toolchain into every install, including web-only apps that will never see a phone wallet.
+The SDK loads it lazily, on the one path that registers the phone's wallet, so an app that never offers a mobile wallet never pays for it.
+This applies to a plain web app too, not just React Native: the mobile lane runs in the Android browser.
 Without it the phone wallet simply does not register, and a wallet flow that would have used it throws `WalletConfigError` naming the package.
 Every other wallet, and the whole rest of the wallet lane, is unaffected.
 
@@ -317,7 +320,9 @@ The built-in widget does this for you.
 
 It REJECTS only when there is no wallet login at all (config or the provider chunk failed) - leave your control disabled in that case.
 A phone wallet that could not be prepared instead resolves as `{ mobileWallet: "failed" }`, because every injected wallet still works; `"not-applicable"` simply means this device has no mobile wallet to offer.
-A failure there stays retryable, so calling again later can succeed.
+A failure there stays retryable, so calling again later can succeed - with one exception that never heals on its own.
+When the optional peer above is missing, registration throws `WalletConfigError` naming the package (logged as `[Bounded] Solana Mobile wallet registration failed:`) and `mobileWallet` is `"failed"` on every call until you install it.
+So read the console once before you treat a `"failed"` as transient and retry forever.
 
 Mind WHICH control you enable on `"failed"`.
 A control that calls `loginWithWallet()` without pinning a wallet can still resolve to the phone wallet, so preparing it after the tap is exactly the failure to avoid: leave that one disabled and retry readiness.

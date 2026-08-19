@@ -67,6 +67,11 @@ Commence does not create the app or make its source public because Open already 
 The direct workload app-id host remains public, and `/l/<rootAppId>` remains the canonical venue page before and after Commence.
 Choose the requested slug before Commence because its pointer becomes governance-controlled once Commence completes.
 
+**One creator app launches exactly once.**
+Commence claims the slug on the creator app itself, and that name becomes the oApp's permanent public address, so the platform freezes it and keeps the app alive forever.
+Re-opening BEFORE Commence is fine and expected, but once any opening from this app has commenced, a further opening is refused at the door with `oapp_creator_already_launched` (409), naming the launch that already exists.
+To launch a second oApp, start from a different app.
+
 ### Community code contributions while exact patches are closed
 
 Do not tell a contributor that `bounded propose` submitted code or created a voteable proposal.
@@ -242,8 +247,7 @@ Spell these implications out before starting Open:
    People can inspect and participate in the public app while it is `awaiting_commence`.
 5. **Commence is a later, explicit boundary.** It claims the requested oApps slug, writes the venue listing, creates the token sale, and starts the Gauntlet.
    It does not clone or publish the app again.
-   The fee model is fixed as part of that token launch. The sale is a 24h continuous clearing auction of 65% of supply: each bid pays 3% admission plus a 0.9% gauntlet fee, win or lose, and escrows the rest. At settlement the raise pays out of escrow in a fixed waterfall: 2% creator, 1% OpenApps, a tiered gauntlet draw, a fuel tank, locked liquidity, and the remainder to the app reserve. Pool trading fees are 1% flat, claimed split 50 app reserve / 20 creator / 20 app fuel / 10 OpenApps.
-   The venue may waive the gauntlet fee for select launches (operator-funded gauntlet): set once, before any demand lands, after which bids escrow and refund 100% and the graduation gauntlet draw is zero.
+   The fee model is fixed as part of that token launch. The sale is a 24h continuous clearing auction of 65% of supply: each bid pays 3% admission plus the launch's gauntlet fee (0.9% by default), win or lose, and escrows the rest. The gauntlet fee is the one rate that can differ per launch: the operator may waive it to 0% while the sale still has zero demand, which zeroes both the per-bid fee and the gauntlet's slice of the waterfall (the gauntlet then runs on fuel top-ups, and a failed sale refunds 100%). The waiver is one-way and steward-only - a creator cannot set it, and it is never raised. At settlement the raise pays out of escrow in a fixed waterfall: 2% creator, 1% OpenApps, a tiered gauntlet draw, a fuel tank, locked liquidity, and the remainder to the app reserve. Pool trading fees are 1% flat, claimed split 50 app reserve / 20 creator / 20 app fuel / 10 OpenApps.
 
 Source sync is load-bearing because completed Open publishes the synchronized tree rather than an unsynchronized checkout.
 No synced source means Open cannot complete.
@@ -422,6 +426,8 @@ there is simply no site deploy.
   After Open, verify the synchronized tree at `https://<workloadAppId>.bounded.page/__bounded/source`.
 - The slug is the name the token should live at (`<slug>.oapps.fun`), so rename it before Commence if it is wrong.
   Open already created the venue-owned root and workload; Commence claims the requested slug for that opening.
+- This app has NOT already commenced an oApp.
+  A creator app launches exactly once, so a second Open is refused with `oapp_creator_already_launched`; start a different app instead.
 - Save `/l/<rootAppId>` as the canonical venue page.
   Do not replace it with a slug-derived venue route after Commence.
 - The synced tree is the real, complete project and every `init({ appId })`
