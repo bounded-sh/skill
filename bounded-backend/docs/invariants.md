@@ -90,13 +90,13 @@ that debits one document must credit another **in the same batch**.
 
 ```json
 {
-  "accounts/$accountId": {
-    "fields": { "balance": "Int", "owner": "String!" },
+  "accounts/$userId": {
+    "fields": { "balance": "Int" },
     "tier": "durable",
     "rules": {
       "read": "@user.id != null",
-      "create": "@user.id != null && @newData.owner == @user.id && @newData.balance == 0",
-      "update": "@user.id != null && @data.owner == @user.id && @newData.owner == @data.owner && @newData.balance >= 0",
+      "create": "@user.id != null && $userId == @user.id && @newData.balance == 0",
+      "update": "@user.id != null && @newData.balance >= 0 && ($userId == @user.id || @newData.balance > @data.balance)",
       "delete": "false"
     },
     "invariants": [
@@ -106,11 +106,20 @@ that debits one document must credit another **in the same batch**.
 }
 ```
 
+> **Key on the caller, not a chosen name.** The ledger is keyed on `$userId`, so an
+> account **is** its owner and needs no separate `owner` field. Keying on a
+> caller-chosen `$accountId` (with an `owner` field) is a name-squat: whoever creates
+> `accounts/alice` first owns it, and since ownership is immutable and `delete` is
+> `false`, every credit meant for alice lands in the squatter's row **permanently** -
+> and `conserve` freezes the money there, all while the proof passes cleanly because
+> conservation holds perfectly. If you want friendly handles, add a separate
+> `handles/$handle -> userId` directory so squatting a handle costs a nickname, not money.
+
 > **Demo vs production reads:** the `read: "@user.id != null"` rule above lets any
 > signed-in user read every account's balance. This example keeps reads permissive
 > so a client-side cross-owner transfer can read the recipient's balance before
 > crediting it. A production ledger should move transfers into a server-side function
-> with elevated read and owner-scope the read rule (`@data.owner == @user.id`) so
+> with elevated read and owner-scope the read rule (`$userId == @user.id`) so
 > users cannot enumerate every balance.
 
 | Key | Required | Meaning |
@@ -138,20 +147,23 @@ the sum can never move off 0, so nothing can ever hold value. That schema is a
 *transfer* schema, not a complete one. Pick a genesis model:
 
 - **Seed, then conserve (positive balances — validated).** Two deploys, and the
-  seeding window **must be gated on a mint authority**, not on the row owner. The
-  transfer rules above bind the *document* owner (`@newData.owner == @user.id`), so if
-  you deploy them without `conserve`, **any** signed-in user can create a row they own
-  and raise its balance — minting themselves supply that `conserve` then freezes into
-  the total. Instead, deploy first with a mint-authority write rule so only the app's
+  seeding window **must be gated on a mint authority**, not on the caller. The
+  transfer rules above bind the caller's own row (`$userId == @user.id`), so if you
+  deploy them without `conserve`, **any** signed-in user can create the row keyed to
+  them and raise its balance — minting themselves supply that `conserve` then freezes
+  into the total. Instead, deploy first with a mint-authority write rule so only the app's
   minting identity may write the opening supply — e.g. `create`/`update` gated on
-  `@user.id == @const.MINT_AUTHORITY` — write the opening supply
-  (`set accounts/treasury {balance: 1_000_000}`), then in a **single** redeploy add
-  `conserve` **and** switch to the public transfer rule below. Enabling `conserve` and
+  `@user.id == @const.MINT_AUTHORITY` — and seed the supply into that identity's **own**
+  `$userId` row (`set accounts/<the MINT_AUTHORITY user id> {balance: 1_000_000}`), then in
+  a **single** redeploy add `conserve` **and** switch to the public transfer rule below.
+  Seed a *real* user id, not a made-up name like `accounts/treasury`: under `accounts/$userId`
+  the post-cutover rule only lets a user debit the row keyed to them (`$userId == @user.id`),
+  so a fabricated key would freeze the whole opening supply permanently. Enabling `conserve` and
   opening transfers in the *same* transition leaves no window in which a non-authority
   can mint. (The `conserve` freeze itself is validated e2e: seed a balance pre-conserve,
   add `conserve`, a balanced `setMany` conserves, a later lone mint → `409`.) The seeding
   window is authority-only because the **write rule names the mint authority** — the
-  document-owner `create`/`update` rules do not restrict it, since they bind every user's
+  caller-keyed `create`/`update` rules do not restrict it, since they bind every user's
   own row.
 - **Credit/debt (sum stays 0 — validated).** Drop `>= 0` from the update rule so
   balances may go negative. Every account starts at 0; a transfer is a balanced
@@ -169,25 +181,26 @@ The takeaway: there is no "admin mint" escape hatch — that is the entire point
 `conserve`. Decide genesis by *deploy order* (seed before the invariant) or by
 *model* (credit/debt nets to 0), not by trying to write past the proof.
 
-**Authorizing a transfer — the simple owner rule blocks cross-owner credits.** A peer
-transfer debits one account and credits *another owner's* account in the same batch. But
-`"update": "@data.owner == @user.id"` only lets you change accounts **you own** — so the
-credit leg is rejected `403`, and a real transfer between two different owners is
+**Authorizing a transfer — the simple self-only rule blocks cross-owner credits.** A peer
+transfer debits one account and credits *another user's* account in the same batch. But
+`"update": "$userId == @user.id"` only lets you change the account **keyed to you** — so the
+credit leg is rejected `403`, and a real transfer between two different users is
 *impossible*, even though `conserve` is satisfied. (Validated by dogfooding: a Treasury→Alice
 transfer under that rule failed `403`; nothing partial applied.) To allow transfers without
-allowing theft, let the owner change their own account **OR** let anyone *increase* (credit)
-any account — and never let a non-owner *decrease* one:
+allowing theft, let you change your own account **OR** let anyone *increase* (credit) any
+account — and never let anyone *decrease* an account that isn't theirs:
 
 ```json
-"update": "@user.id != null && @newData.owner == @data.owner && @newData.balance >= 0 && (@data.owner == @user.id || @newData.balance > @data.balance)"
+"update": "@user.id != null && @newData.balance >= 0 && ($userId == @user.id || @newData.balance > @data.balance)"
 ```
 
-`@data.owner == @user.id` = you may move your own balance (the debit leg); `@newData.balance
-> @data.balance` = anyone may *credit* (the credit leg); a non-owner *decrease* matches
-neither clause, so theft is rejected `403`. `conserve` then forces every credit to be
-matched by a debit in the same `set-many`. Validated end-to-end: cross-owner transfer ✅,
-stealing from another account → `403`, a lone mint → `409`, total supply unchanged. (For a
-ledger/IOU you'd drop `>= 0`; for hold-then-release flows, gate the credit clause further.)
+`$userId == @user.id` = you may move your own balance (the debit leg); `@newData.balance
+> @data.balance` = anyone may *credit* (the credit leg); a *decrease* of an account that
+isn't yours matches neither clause, so theft is rejected `403`. `conserve` then forces every
+credit to be matched by a debit in the same `set-many`. Validated end-to-end: cross-owner
+transfer ✅, stealing from another account → `403`, a lone mint → `409`, total supply
+unchanged. (For a ledger/IOU you'd drop `>= 0`; for hold-then-release flows, gate the credit
+clause further.)
 
 ## `rollingSum` — caps over time windows
 

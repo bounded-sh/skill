@@ -45,6 +45,26 @@ test('F-002: fixed-supply genesis seeds under a mint authority, not the document
   )
 })
 
+test('name-squat: the conserve ledger example keys on the caller (accounts/$userId), not a squattable $accountId', () => {
+  // The conserve accounts example agents copy must key on accounts/$userId so an account
+  // IS its owner. accounts/$accountId is a caller-chosen name: anyone pre-creates
+  // accounts/alice and every credit meant for alice lands in their row forever - and the
+  // proof passes cleanly because conservation holds while the wrong person holds the money.
+  assert.ok(
+    /"accounts\/\$userId"/.test(invariants),
+    'the conserve accounts example must key on accounts/$userId (the caller), not a caller-chosen $accountId anyone can squat',
+  )
+  assert.ok(
+    !/"accounts\/\$accountId"/.test(invariants),
+    'no ledger example may key on accounts/$accountId (squattable); key on the caller (accounts/$userId)',
+  )
+  // The path is the owner, so the example must not declare/gate on a separate owner field.
+  assert.ok(
+    !/"balance": "Int", "owner": "String!"/.test(invariants),
+    'the accounts/$userId ledger must drop the separate owner field - the path already binds the owner',
+  )
+})
+
 test('F-003: membership creation is gated on a tenant-issued invite, not bare self-enroll', () => {
   // The bare self-enroll create rule (anyone enrolls themselves into any tenant) must be
   // gone from BOTH the example policy and the prose that recommends it.
