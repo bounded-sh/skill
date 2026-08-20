@@ -1,0 +1,138 @@
+{
+  "filePath": "bounded-backend/docs/scheduled-sweeps.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.596Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "732aa7a74f933e7441a200882c690813a4ae8532002c45ca304c12aed778a0ee",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-race-condition",
+      "title": "Backdated dirty updates defeat delete-if-unchanged",
+      "description": "Any authenticated user can update any dirty/<slug> flag and choose an at value up to 120 seconds in the past. The deletion guard assumes every mid-pass refresh has a timestamp newer than the pass-start stamp. An attacker can wait for legitimate activity after T0, overwrite that slug's flag with an allowed backdated value at or before T0, and make the sweeper's final delete succeed. If the entity was already processed before the legitimate activity, the new work is silently lost until the round-robin cursor returns, which the page states may take hours. Atomic batching of the legitimate activity and flag does not prevent the later hostile overwrite.",
+      "lineNumbers": [
+        101,
+        103,
+        104,
+        105,
+        142,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        159,
+        169,
+        170,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265
+      ],
+      "recommendation": "Require serverTimestamp() and an exact server-clock rule for at, prevent timestamps from moving backward, and bind updates to the actor authorized for the underlying activity. Prefer making dirty flags service- or hook-owned so arbitrary users cannot overwrite another entity's pending marker.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_fa5d43fb5b6db0ac"
+    },
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "rate-limit-bypass",
+      "title": "Unbounded public dirty writes permit queue starvation",
+      "description": "Every signed-in identity may create arbitrary dirty slug documents without an ownership check, existence check, or per-principal rate cap. The sweeper consumes only 40 oldest flags per minute and performs an additional launch lookup for each named slug. An attacker can create more than 40 nonexistent or irrelevant slugs per minute, using the permitted backdated timestamps so their flags sort ahead of legitimate work. The backlog and storage then grow indefinitely, legitimate recomputations are delayed to the slow round-robin fallback, and the attacker consumes the application's write and scheduled-function budget.",
+      "lineNumbers": [
+        96,
+        101,
+        102,
+        103,
+        104,
+        142,
+        143,
+        144,
+        185,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        227,
+        246,
+        247,
+        248,
+        265,
+        344,
+        345,
+        346
+      ],
+      "recommendation": "Make dirty flags writable only through the authorized activity path or a trusted hook/function. If clients must write them, require a real authorized entity, pair the flag with the activity using an enforced atomic-batch contract, and add per-user plus global durable rolling caps so creation cannot outpace the sweep.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_f9a482d8d1c19f35"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:20:22.359Z",
+      "durationMs": 96206.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e3a-5355-7be2-8c8a-2fdad82ad277",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 46345.2,
+        "outputTokens": 3939,
+        "cacheReadInputTokens": 802508.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T17:23:24-04:00"
+      },
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:39:01Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T19:48:24+05:30"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:20:22.370Z"
+  }
+}

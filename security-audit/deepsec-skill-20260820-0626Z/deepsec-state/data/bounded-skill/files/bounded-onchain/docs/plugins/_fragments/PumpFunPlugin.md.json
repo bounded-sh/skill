@@ -1,0 +1,50 @@
+{
+  "filePath": "bounded-onchain/docs/plugins/_fragments/PumpFunPlugin.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.088Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "6a41ec23256cf2bab9316b65832fc0bdb1588bf4224cb035b5a125c6e9646f6d",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:43:40.582Z",
+      "durationMs": 64262.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e52-1fa1-7e51-a2b7-9b26c0e6f2f5",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 36825.8,
+        "outputTokens": 2456.8,
+        "cacheReadInputTokens": 534681.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:43:40.593Z"
+  }
+}

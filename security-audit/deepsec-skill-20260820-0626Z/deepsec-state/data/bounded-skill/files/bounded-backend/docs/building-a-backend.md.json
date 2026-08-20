@@ -1,0 +1,78 @@
+{
+  "filePath": "bounded-backend/docs/building-a-backend.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.585Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "774d45fdd750ccc0ef99af44acf57260b28d0b6d8182e3eea871b6853ef0844b",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-webhook-delivery-loss",
+      "title": "Replay reservation occurs before webhook processing and can permanently lose deliveries",
+      "description": "The example passes a shared replay store into verifyWebhook and maps every WebhookVerificationError to HTTP 401. In the traced server SDK, verifyWebhook atomically calls replayStore.checkAndRecord before returning the event to application code. A process crash, cancellation, or failure after verification but before the business side effect or 200 response therefore leaves the delivery marked as seen even though it was not processed. Bounded's durable outbox retries the same deliveryId, but the retry is classified as a replay, receives 401 from this example, and is treated as a permanent 4xx failure. This converts an at-least-once durable webhook into an at-most-once flow with a data-loss crash window.",
+      "lineNumbers": [
+        101,
+        105,
+        107,
+        110,
+        113,
+        114,
+        118,
+        119,
+        120,
+        121
+      ],
+      "recommendation": "Document and provide a durable inbox pattern that atomically couples delivery state with the business mutation. The replay store should distinguish claimed, completed, and recoverable/incomplete deliveries rather than permanently recording the ID inside verification. Completed duplicates should return a successful no-op response, while an incomplete claim must remain retryable. Retain completed delivery IDs for the platform's full retry horizon.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_7662f2e6de2c2805"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:13:41.190Z",
+      "durationMs": 107488.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-57cd-7150-a78d-c99ec1c5cbe2",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48972.2,
+        "outputTokens": 4088,
+        "cacheReadInputTokens": 864460.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-07-10T12:51:51-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-07T06:57:20-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:13:41.197Z"
+  }
+}

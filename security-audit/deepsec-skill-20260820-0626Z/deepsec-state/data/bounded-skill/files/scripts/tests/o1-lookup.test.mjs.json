@@ -1,0 +1,76 @@
+{
+  "filePath": "scripts/tests/o1-lookup.test.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.407Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "ce7444ba87b5ac5a8e90f93dd7d1c679050a96b888da7b4186e0c414222f623e",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-incomplete-test-coverage",
+      "title": "Unlinked example policies bypass policy and E2E validation",
+      "description": "Both example tests derive their authoritative page set exclusively from links in the two index files. They never enumerate the files under bounded-backend/docs/examples and bounded-onchain/docs/examples. A new, renamed, or accidentally unlinked policy page therefore receives no JSON parsing, required-heading checks, line budget, or E2E-spec requirement, yet remains published and directly discoverable in the repository. The minimum count assertion does not close this gap.",
+      "lineNumbers": [
+        132,
+        139,
+        143,
+        145,
+        156,
+        168,
+        172,
+        176
+      ],
+      "recommendation": "Enumerate Markdown files in both example directories as the authoritative set. Assert exact equality among directory pages, index links, and E2E spec page references before validating each policy.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_2a7dabb8c1651127"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:58:08.559Z",
+      "durationMs": 115775.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-6640-72d1-bfc3-4b50dad65ea8",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 39845,
+        "outputTokens": 4915.2,
+        "cacheReadInputTokens": 706304,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-14T22:25:03-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T17:40:32+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:58:08.565Z"
+  }
+}

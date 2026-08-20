@@ -1,0 +1,50 @@
+{
+  "filePath": "scripts/policy-e2e/specs/staking.json",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.405Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "8853577f0359929f7e7feec5994bd3ab5ee42b343199daa094fc7593e6af055f",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:56:29.412Z",
+      "durationMs": 96351.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-65a6-7980-885f-52b177b38d97",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 46908.8,
+        "outputTokens": 3730,
+        "cacheReadInputTokens": 550553.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:56:29.421Z"
+  }
+}

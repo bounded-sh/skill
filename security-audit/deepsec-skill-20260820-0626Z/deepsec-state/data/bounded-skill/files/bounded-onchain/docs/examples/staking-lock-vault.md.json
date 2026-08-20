@@ -1,0 +1,69 @@
+{
+  "filePath": "bounded-onchain/docs/examples/staking-lock-vault.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.068Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "9fe9c4b7d12f21309a20ebfd98de64cd7a85128dd749fb9ce2897add22d3cc58",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-nonretryable-receipt",
+      "title": "A failed Poofnet unstake irreversibly zeroes the position",
+      "description": "The unstake update changes amount to zero before the payout hook executes. Contrary to the page's atomic-revert claim, Poofnet persists the primary document update when a simulated hook fails and stamps the receipt with _error_message. A transient transfer failure therefore leaves amount=0 while the SOL remains in the vault. The update rule requires the prior amount to be positive, so the owner has no retry or refund path and the position's funds remain locked.",
+      "lineNumbers": [
+        31,
+        37,
+        42,
+        57,
+        66,
+        68
+      ],
+      "recommendation": "Represent unstaking as retryable attempt rows whose effects are derived from the immutable stake, and mark the stake drained only through declared hook-maintained state after the transfer succeeds. Test an injected hook failure and a subsequent retry under Poofnet semantics.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_4a3e2de38d800446"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:45:12.629Z",
+      "durationMs": 117932.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4f-622c-7cc1-b392-b739b44d802c",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 45149.8,
+        "outputTokens": 4572.6,
+        "cacheReadInputTokens": 668774.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:45:12.636Z"
+  }
+}

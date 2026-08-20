@@ -1,0 +1,50 @@
+{
+  "filePath": "bounded-onchain/docs/examples/isolated-vault.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.065Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "e1b185c91a54edf41a5416f9d01ba1d385865110f4b6e03a2f9ea08b146d39eb",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:39:32.493Z",
+      "durationMs": 92719.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2aab-7290-9baa-720f30adafe7",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42715.2,
+        "outputTokens": 3682.8,
+        "cacheReadInputTokens": 666726.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:39:32.501Z"
+  }
+}

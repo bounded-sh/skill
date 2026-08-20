@@ -1,0 +1,166 @@
+{
+  "filePath": "bounded-deploy/docs/source-sync.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.887Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "0181bb2d064450763b99a6310dc056be29e1dbe04600c1d422ebec045450958b",
+  "findings": [
+    {
+      "findingId": "finding_5ee7beb3d6a09f94",
+      "severity": "HIGH",
+      "vulnSlug": "secrets-exposure",
+      "title": "Source publication can expose unsynced secret-bearing Git ancestors",
+      "description": "The page characterizes repository history as a ledger of trees that were synced and says Open publishes the exact synced tree. For a checkout produced by `bounded clone`, however, the CLI preserves local branch ancestry when pushing. Its historical validation uses `git ls-tree` metadata and never inspects blob contents. A credential stored under an innocuous name such as `config.ts`, committed locally, and later deleted can therefore become reachable in cloud Git even though it was never in a synced snapshot. This is particularly dangerous because current-tree packaging does inspect several private-key content shapes, while historical blobs bypass that inspection. `code:read` collaborators receive the Git history, and a completed-Open oApp exposes public history and revision-pinned source reads, turning the deleted credential into a public secret. This revisits FP-010 under its stated conditions because the current snapshot has stronger content inspection and the launched source surface is public.",
+      "lineNumbers": [
+        15,
+        16,
+        81,
+        82,
+        83,
+        90,
+        93,
+        94
+      ],
+      "recommendation": "Publish a snapshot-only commit on top of the cloud head. If ancestry must be retained, content-scan every newly reachable historical blob with the same or stronger rules as the current snapshot and explicitly document that local commits and public revision history are included.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The current CLI preserves local ancestry when a source push originates from a repository whose origin matches the cloud source remote, which is the layout created by `bounded clone`. The in-place publication path builds the filtered current snapshot but creates its commit with the local branch head as its parent, making local-only ancestors reachable from the pushed branch. Historical validation walks new commits with `git ls-tree` and checks paths, object types, sizes, and counts, but never applies the current-tree content scanner to historical blobs. Consequently, a recognized private key committed as `config.ts` and deleted in a later local commit passes publication even though the same content in the current tree would be rejected. A concrete attacker with `code:read` can inspect the uploaded history and retrieve the deleted file by its old revision; after completed Open, the unauthenticated public source handler also accepts revision-pinned file reads. Push-token authentication and normal source authorization do not mitigate the disclosure because the maintainer legitimately initiates the deploy while the unsafe ancestry is incorporated automatically. This matches FP-010's explicit reactivation conditions: current snapshots now receive stronger content inspection, and completed-Open source and revision history are publicly readable. The relevant history changes added current-tree private-key detection and public Open source access, while the current source-push and historical validation code still contains no corresponding ancestor-content scan.",
+        "revalidatedAt": "2026-08-20T10:53:57.745Z",
+        "runId": "20260820104625-19d5effea18801dd",
+        "model": "gpt-5.6-sol"
+      }
+    },
+    {
+      "findingId": "finding_f089cbe20db7be8b",
+      "severity": "HIGH",
+      "vulnSlug": "secrets-exposure",
+      "title": "The advertised secret-safe filter can upload files Git considers ignored",
+      "description": "The page calls packaged source secret-safe and tells users that enabling `sourcePush` makes every deploy upload the project tree. The CLI does not use Git's ignore engine; it implements a subset with Go `path.Match`. Valid Git patterns have different semantics, including `[!e]` character-class negation. A malicious contributor can commit a plausible rule such as `local.[!e]*` so Git ignores a maintainer's `local.prod` credential file while the source collector treats it as included. Ordinary API tokens in such a file are not caught by the narrow private-key content detector or filename denylist. The file is then uploaded to collaborators and can become unauthenticated public source after Open.",
+      "lineNumbers": [
+        12,
+        15,
+        16,
+        37,
+        38,
+        54,
+        90
+      ],
+      "recommendation": "Use Git's own ignore decisions or a standards-complete Git wildmatch implementation, fail closed on unsupported patterns, and content-scan the final upload manifest for general credentials. Replace the blanket `secret-safe` claim with the exact filtering guarantees and require manifest review before public Open.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The source collector parses `.gitignore` and `.boundedignore` through a deliberately limited custom matcher rather than Git's ignore engine. Its basename matching uses Go `path.Match`, where bracket-class negation uses `^`, while Git accepts `!`; therefore a valid Git rule such as `local.[!e]*` ignores `local.prod` in Git but does not exclude it from source collection. The collector then reads and packages that file because `local.prod` is not on the filename denylist. The content scanner only recognizes several private-key formats and does not detect ordinary API tokens or generic credential assignments. A malicious contributor can commit the mismatched rule and `sourcePush: true`, induce a maintainer to store a deployment credential in `local.prod`, and have the credential included during an otherwise authorized deploy despite Git reporting it as ignored. The resulting blob is available to `code:read` collaborators and becomes unauthenticated public source after completed Open. Authentication, CORS, and request middleware do not prevent this because the security boundary fails during the local construction of the upload manifest. No current change replaces this matcher with Git-compatible wildmatch behavior, fails closed on unsupported syntax, or generally scans the final manifest for credentials.",
+        "revalidatedAt": "2026-08-20T10:53:57.745Z",
+        "runId": "20260820104625-19d5effea18801dd",
+        "model": "gpt-5.6-sol"
+      }
+    },
+    {
+      "findingId": "finding_6d87aa0c03c81526",
+      "severity": "MEDIUM",
+      "vulnSlug": "other-algorithmic-dos",
+      "title": "Documented archive limits do not bound ignore-file parsing",
+      "description": "The page states that source-backed deploys are rejected before upload when archive size, entry, or path limits are exceeded, and otherwise describes source failure as a warning. Those limits apply only after source collection. Before that, the CLI reads every repository-controlled `.gitignore` and `.boundedignore` without a byte cap and recursively expands each `**` pattern without memoization, a complexity budget, or context cancellation. A contributor can commit an oversized ignore file or a small pattern containing many `**` segments plus a deep path and exhaust memory or hang every deploy when committed `sourcePush: true` enables automatic source packaging.",
+      "lineNumbers": [
+        12,
+        15,
+        30,
+        31,
+        37,
+        39,
+        41,
+        42,
+        43,
+        44
+      ],
+      "recommendation": "Bound ignore-file bytes, rule count, pattern length, and path depth. Replace recursive glob expansion with memoized bounded matching, honor cancellation, and apply these checks before any source-backed deploy work.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "Ignore processing occurs before the documented archive entry, path, compressed-size, and unpacked-size limits are evaluated. Each repository-controlled ignore file is loaded with an unbounded `os.ReadFile` and split into rules without byte, line, rule-count, or pattern-length limits. The matcher handles every `**` segment by recursively trying all remaining target suffixes, with no memoization, operation budget, context cancellation, or path-depth bound. Repeated `**` segments followed by a nonmatching literal therefore create combinatorial work against a sufficiently deep committed path, while an oversized ignore file independently permits excessive allocation before source limits run. A contributor can commit such an ignore rule together with `sourcePush: true`, causing a maintainer's ordinary source-backed deploy to consume excessive CPU or memory and potentially hang on every attempt. In the site deployment path this collection happens during build-base preparation before the archive is finalized, so none of the advertised archive limits can stop the attack. In the post-deploy source-sync path, the documented warning behavior also does not help if matching never returns. The relevant matcher remains materially unchanged since introduction, and later containment and whitespace fixes did not add parsing caps or bounded matching.",
+        "revalidatedAt": "2026-08-20T10:53:57.745Z",
+        "runId": "20260820104625-19d5effea18801dd",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:31:36.304Z",
+      "durationMs": 165009,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-607c-7890-aa40-f34fbfda868b",
+      "findingCount": 3,
+      "numTurns": 0.3333333333333333,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 69250,
+        "outputTokens": 5165,
+        "cacheReadInputTokens": 687957.3333333334,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820104625-19d5effea18801dd",
+      "investigatedAt": "2026-08-20T10:53:57.745Z",
+      "durationMs": 447257,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01ec7-7fd0-7c61-ba47-5a0a5887e65f",
+      "findingCount": 3,
+      "numTurns": 1,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 279149,
+        "outputTokens": 15683,
+        "cacheReadInputTokens": 4778240,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-11T10:22:42-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-08T12:29:09-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:53:57.763Z"
+  },
+  "status": "analyzed"
+}

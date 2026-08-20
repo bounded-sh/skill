@@ -1,0 +1,83 @@
+{
+  "filePath": "oapps-fun/SKILL.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T07:26:07.869Z",
+  "lastScannedRunId": "20260820072607-00628138e8d2ad86",
+  "fileHash": "da395092b48f7c9fd75fd286aab57d76f731982e44d6e8ea9429e56acf7566d4",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "The x402 relay example omits its mandatory idempotency options",
+      "description": "The only `X402_FETCH` example calls `ctx.services.invoke` with two arguments. The functions runtime requires a third options object containing a 1-to-256-byte `idempotencyKey`; without it, the call throws `services_idempotency_key_required` before contacting the provider. Direct function invocations also require replay-safe outer invocation provenance. Consequently, an agent copying the documented escape-hatch example produces an x402 integration that always fails.",
+      "lineNumbers": [
+        370,
+        372,
+        374,
+        375,
+        379
+      ],
+      "recommendation": "Pass a stable business-operation key as the third argument, for example `{ idempotencyKey: `x402:${entityId}:${requestId}:v1` }`, and document that direct function invocations must also carry an HTTP `Idempotency-Key`. Explain that retries must reuse the same key and immutable request arguments.",
+      "confidence": "high",
+      "producedByRunId": "20260820072607-57c5db42e0cdadf1",
+      "findingId": "finding_5b83a66425a15e4a"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820072607-57c5db42e0cdadf1",
+      "investigatedAt": "2026-08-20T07:34:13.483Z",
+      "durationMs": 119371.75,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e10-2c5d-7221-ab49-edca141db72e",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 67001,
+        "outputTokens": 4348,
+        "cacheReadInputTokens": 1475456,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T22:40:52-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-18T23:40:55-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-18T01:07:31-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-18T01:37:34+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T07:34:13.489Z"
+  }
+}

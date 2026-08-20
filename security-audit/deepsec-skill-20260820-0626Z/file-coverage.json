@@ -1,0 +1,2468 @@
+{
+  "generatedAt": "2026-08-20T11:19:19.876Z",
+  "root": "/Users/athar/Desktop/workspace/poof-new/bounded-skill-deepsec.kf3zFH",
+  "total": 161,
+  "files": [
+    {
+      "path": ".gitignore",
+      "sha256": "754130d9ebb11ca3186c5e6be4e411bf459e04624c51a567b9b41b63ca698a18",
+      "bytes": 35,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "71405b114ed6530c4820afcc17a1d0ce3dbd6a1110786f9284a68b2bce99f994",
+      "bytes": 3158,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "71405b114ed6530c4820afcc17a1d0ce3dbd6a1110786f9284a68b2bce99f994",
+      "bytes": 3158,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "README.md",
+      "sha256": "206fab548af410b84153a84d4220a8ef7870b3c31d66ecda86df75f64f7fe616",
+      "bytes": 5372,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "agents/AGENTS.md",
+      "sha256": "1a4ba9e5f895ac1be1af992ae05dab2b4c4b073f7085c58b0e342c7a1c914b89",
+      "bytes": 5480,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "agents/cursor-bounded.mdc",
+      "sha256": "b7cda96df74ea38199dbce5b5e4777a88ccd697a1919060abff491b0cd04f0d1",
+      "bytes": 4264,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "agents/windsurfrules.md",
+      "sha256": "610e87dd66a26e81b29b478e622527389e5bee3c9a66bd3033ac938039812f16",
+      "bytes": 4425,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/SKILL.md",
+      "sha256": "c8fc64ae04b24c571d254d53684d7cbe3f89355ade53f8ec4879f2421077a316",
+      "bytes": 7712,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/access-control.md",
+      "sha256": "de54b91db4d2993f84c143fff901dd0db34c6fe4d64b83c881a9e8ceec9dc1d0",
+      "bytes": 18838,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/access-patterns.md",
+      "sha256": "d648845b9782a00f57b6803a9dd7bed0d9459b826947ef64e03ed0770fb45c65",
+      "bytes": 4899,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/admin-and-ownership.md",
+      "sha256": "1a99f1e1e2bc75a1e478a1200515cf46b58ea67563628404dfd68e961ddf14ce",
+      "bytes": 13605,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/agents-flue.md",
+      "sha256": "6936e81db51b86a50d0abe55e08758909f741f019f9a5094c10a8f8a7300df48",
+      "bytes": 5541,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-008"
+      ]
+    },
+    {
+      "path": "bounded-backend/docs/ai-npcs.md",
+      "sha256": "6ee11114079909c173c94fb6c199928417aef2117058ccfcc2cfe4cec0b638d6",
+      "bytes": 13647,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/backend-runtime.md",
+      "sha256": "4a0fe2989479701a6ec3b655fd72bd02e71eca3cf5ca114c1954f3d66ccc0f63",
+      "bytes": 8735,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-008"
+      ]
+    },
+    {
+      "path": "bounded-backend/docs/browser-boundary.md",
+      "sha256": "d5bb09377996dae1415b6a4981c216227ba42e99e0687ac37f2180bf2469d20c",
+      "bytes": 3719,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/building-a-backend.md",
+      "sha256": "774d45fdd750ccc0ef99af44acf57260b28d0b6d8182e3eea871b6853ef0844b",
+      "bytes": 6330,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/building-for-agents.md",
+      "sha256": "e02ac8b714a3cd34a8495addb95ce4f3d29e1b13bcf6284f637413175c06b7df",
+      "bytes": 9153,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/constants-and-defs.md",
+      "sha256": "213f1554e8bcbe99b28d509a66604df1687b59c14c20dfaaa9cd24185fadc259",
+      "bytes": 10978,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/data-plane.md",
+      "sha256": "46f413fbaf72771e723e55d8368c8cc03805dd0a369ea3bc96ccdd92c5a1a003",
+      "bytes": 28602,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/examples.md",
+      "sha256": "0ef642cc29981fc16881c1a8a7b1d09976a2023ef8b937cdd903210e4ef2b007",
+      "bytes": 905,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/examples/marketplace.md",
+      "sha256": "b98a3edda27dff9e9120b6eb2d01c68f92e53d25faceeb1b345889be162920cb",
+      "bytes": 5795,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/files-and-search.md",
+      "sha256": "0f2b3d79a83b9956d197bbeb38b199b6671380f6ae5a8f447225c762db608459",
+      "bytes": 10145,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/functions-graduation.md",
+      "sha256": "f94e706e171bb614ad2eced9de1c596aa1b06e7736d970bdbce732c74a6b0576",
+      "bytes": 4857,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-008"
+      ]
+    },
+    {
+      "path": "bounded-backend/docs/functions-when-to-use.md",
+      "sha256": "10df06d5378a344cf12c439bda6b1e5fafe25ff42c10d0a225c38eb3a038378c",
+      "bytes": 6725,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/functions.md",
+      "sha256": "2d1f0fe4726961be2cc85f07ccb689eb0b2bb53f852a7b4c95174a5a2f0efef7",
+      "bytes": 75859,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/hooks-and-anti-cheat.md",
+      "sha256": "7d25ca21a384095ffd8ebf83f7516c23ce2967606e344dc0df8040e716076809",
+      "bytes": 12854,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/hooks-scheduled-webhooks.md",
+      "sha256": "e212f5186a819ca9f2ff178b32e69b453b4ec74ef62fd7f68beb07171d03e47e",
+      "bytes": 18830,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/identity-and-logs.md",
+      "sha256": "bab5859c3303205f8aef8a1f2a898a73a3af7778e1f89637d1091e4178ddeb09",
+      "bytes": 5425,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/invariants.md",
+      "sha256": "689970021446915c92438123a1283ac309606400baaae07bdf187e063545cb1f",
+      "bytes": 53164,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/live-runtime.md",
+      "sha256": "0a799167d29b124c4027090af3f9858caaddba8f789e3d5609c557d21238f8c6",
+      "bytes": 41283,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/policy-cheat-sheet.md",
+      "sha256": "745aaa9ebb93e6ea9aa4d3137a2023607f273c0504b722d6ca52e651a27e8469",
+      "bytes": 4584,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/policy-examples.md",
+      "sha256": "75b0c68acf78c6210d0fbf6702f73269fc2a0f610ae3a7f992d321128c084b1d",
+      "bytes": 12930,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/policy-generation-guide.md",
+      "sha256": "381fed65a2e3fc7c9dcd9920dd8ea9c7c1d4ac61d44930382b0c94353941d7e6",
+      "bytes": 18889,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/policy-reference.md",
+      "sha256": "d2b9f0e325badfab4b8c8778e24ad438f28d7075fb3880c2b4aac8808c494ce6",
+      "bytes": 29606,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/policy-tests.md",
+      "sha256": "7b1ff6cc3eb00f3b0fee128ddb131bbe7cff66bb6c95996c7b77d3cdd693219a",
+      "bytes": 13068,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/principals-and-origins.md",
+      "sha256": "abf4f35194ccaf1f1c0af385f03f4a081dcb406e047fe67c915e490b2c44be60",
+      "bytes": 10779,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/proof-coverage.md",
+      "sha256": "bc1f08e2166feed0fb49827a30e2e00c60a3b8f599da3caca46eec68d00e3142",
+      "bytes": 8841,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/quality-checklist.md",
+      "sha256": "1651f317a2dec2815f8c15b10e7b2eabddfe93b59050c760bf7182d40daf1889",
+      "bytes": 9152,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/queries.md",
+      "sha256": "4b763b1f02edb6eaac85d416dae200e9aa49ac64e26f4a6864463bf4cc33d5b4",
+      "bytes": 12625,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/quick-path.md",
+      "sha256": "fe194689b55b64bc8836000515abcbb5c5a794e7f99afcc904f3885c93538ae5",
+      "bytes": 1218,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/realtime-and-games.md",
+      "sha256": "9eb67a14d426c931cc14702e48c2eb7d2b7dee09363ee7e93088cdf691c7b312",
+      "bytes": 14380,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/realtime-netcode.md",
+      "sha256": "2998e709561d6ef9b9213c483160b158f82e592163c2a0cb1eeb341d2868329c",
+      "bytes": 20828,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/roles.md",
+      "sha256": "b4375b7b79eae061c82ddac7429649dfa5f2255b8bc6b54aea416ca72e6b8653",
+      "bytes": 7153,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/scheduled-sweeps.md",
+      "sha256": "732aa7a74f933e7441a200882c690813a4ae8532002c45ca304c12aed778a0ee",
+      "bytes": 13758,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/secrets.md",
+      "sha256": "becc4d9b9f32945c68399e729385d1690bcc38c48b367fd8466275c2b2f103d5",
+      "bytes": 8198,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/service-keys.md",
+      "sha256": "2ca5902425b8ebfab051da30aabf688e47d6b4a6c204b9feb5ea9e6367417c1b",
+      "bytes": 18324,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/testing-authed-apps.md",
+      "sha256": "89d3290f6409c0f1548d5e253bdb6290735ab9070de8ce410a11a66c96e2d449",
+      "bytes": 6220,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/trending-feeds.md",
+      "sha256": "844569f6b7be3d7e9cca01676a6e73d80d86e4478792462b2c8ca0a5ad7da1a8",
+      "bytes": 5804,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/docs/verify-and-counterexamples.md",
+      "sha256": "e9be01b8769d189970d3b9301e9b847ab2316460ad1b2c911c5c98ee21b4e84a",
+      "bytes": 16502,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-backend/examples/ownership.policy.json",
+      "sha256": "3677183a573ed24b49aa5195f77e271acbac4acec704b7b38cfee839f547cf95",
+      "bytes": 758,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-deploy/SKILL.md",
+      "sha256": "6d81c2183b491a2ad0e14867b22a48af4b237b64bda517a126ca874b8fc178b7",
+      "bytes": 4700,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-deploy/docs/access-playbook.md",
+      "sha256": "099abb3033be7165dde9d6b7dc2c25dbe89ca165258982546e2531f4ab7ebd3e",
+      "bytes": 14482,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-deploy/docs/accounts.md",
+      "sha256": "d28025594122b07c3472dcde45a0d4ce298e1ac25929590e966c1cab82917fb8",
+      "bytes": 1853,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-deploy/docs/cli-reference.md",
+      "sha256": "f68d90c85c4c588894998fdebc6760a35c169fbc3b4a268dd26cbc186800cf7a",
+      "bytes": 85688,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-deploy/docs/domains.md",
+      "sha256": "2998b24f66fab82e4dd3b5887b7ba2cce18951a8254bf7592250b249e0994726",
+      "bytes": 8346,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-001"
+      ]
+    },
+    {
+      "path": "bounded-deploy/docs/environments.md",
+      "sha256": "59e6d0554d357c23adccdc968f4044ad0843c8e764efb7f225e791efa4c89906",
+      "bytes": 10869,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-002"
+      ]
+    },
+    {
+      "path": "bounded-deploy/docs/key-and-account-safety.md",
+      "sha256": "f64aa8c9ee33c3a6564ad59d37b22bca8dca01c76766c896d63945642c2b1c8e",
+      "bytes": 22322,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-deploy/docs/quickstart.md",
+      "sha256": "bf23b0c379f800e8d3ecb3d96a0e473068f6b01927a0fa5803848559382f6ec5",
+      "bytes": 1886,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-deploy/docs/source-sync.md",
+      "sha256": "0181bb2d064450763b99a6310dc056be29e1dbe04600c1d422ebec045450958b",
+      "bytes": 5080,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-003"
+      ]
+    },
+    {
+      "path": "bounded-frontend/SKILL.md",
+      "sha256": "25b337361cb7899a34b625086073c7ee3ea08c7a1a92010f83af27e57f335725",
+      "bytes": 4352,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-frontend/docs/anonymous-accounts.md",
+      "sha256": "34fb7a4e6429dc49df0c81f8ed01416ec70f015f3456c830026df70b3a449a3f",
+      "bytes": 15922,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-frontend/docs/app-auth.md",
+      "sha256": "a3b8d2fe26ec44ef5254dc18a583f71b145359cbb4e7b58c17be26dc75109329",
+      "bytes": 3482,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-frontend/docs/auth.md",
+      "sha256": "4a5a5d411ad71192090c4b01272c1444983898a382f9198b1e2a7da6908a5eab",
+      "bytes": 48631,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-frontend/docs/building-a-webapp.md",
+      "sha256": "18b735a709257a26df8cd9cc9fa766768ba5c6a9be7b46109d6b54d321bcbad8",
+      "bytes": 7434,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-frontend/docs/building-for-react-native.md",
+      "sha256": "8c1a284853e2cdab5d2f4106d6da1d4e33153f2eb6c3ed13cf76a6ec963a6a25",
+      "bytes": 17932,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-frontend/docs/frontend-hosting.md",
+      "sha256": "291929eb1c70256b7337e333431b47daf3f0d3142089619fcde2f32347623504",
+      "bytes": 15545,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-frontend/docs/sdk-reference.md",
+      "sha256": "f054cfe0ff1cb6d4ae61b3ece1864c6bd1c0d9249372f954dec7066a3ce82603",
+      "bytes": 44180,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/SKILL.md",
+      "sha256": "49fadaf4ab92d3ff516b68972a3c33c17ae96af286b79d8c3f0bd1802793f054",
+      "bytes": 14289,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/data/plugin-catalog.json",
+      "sha256": "5510416f22779af664a75ce8dfaff1f61071fc2ac1d817b83045f840f0b014e4",
+      "bytes": 254385,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-009"
+      ]
+    },
+    {
+      "path": "bounded-onchain/docs/accept-crypto.md",
+      "sha256": "de8472f6718600321ce9a829a37a7d3a7d2946bc380db14020b3144a3fe457bb",
+      "bytes": 10653,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/chain-data.md",
+      "sha256": "dfd532f5010c526043ce7f87c27db3d37ce37fdb6eb85d6f99088173aba1e8d1",
+      "bytes": 4176,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/custody-and-pdas.md",
+      "sha256": "0bfca5ca6fa54ecbef2feec670bc7c9a440eeeb762af86b89a1210b073fccb15",
+      "bytes": 6284,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/embedded-wallets.md",
+      "sha256": "1de28e844023ec50f889aaf269ce017f89fc7d50fec4cf792279851a75bfafa7",
+      "bytes": 9817,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples.md",
+      "sha256": "6575f8455afeb69881b53d2916d1c061445a35dde6900eff2344c12277cc0557",
+      "bytes": 1988,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/cp-amm-liquidity-positions.md",
+      "sha256": "a645885e353e036ee1a0ac97a7502b8332fe368582481a53f54d2c9866f1b4e1",
+      "bytes": 8698,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/escrow.md",
+      "sha256": "c752264f268cb6a15058284ddce9c7668e8e2724cdfab3770934d520f323970f",
+      "bytes": 6190,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/isolated-vault.md",
+      "sha256": "e1b185c91a54edf41a5416f9d01ba1d385865110f4b6e03a2f9ea08b146d39eb",
+      "bytes": 4246,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/nft-collection.md",
+      "sha256": "9b9b00b2e6de7ea78a35f0bff1baef1386f59941010622ac3cd5251f2fd0237a",
+      "bytes": 4811,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/prediction-market-amm.md",
+      "sha256": "59d405e253ab7b5fb848d972f0f0fc09a174e9faa9ee0e38e662721df248c885",
+      "bytes": 14844,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-004",
+        "BSK-H-005"
+      ]
+    },
+    {
+      "path": "bounded-onchain/docs/examples/randomness-coin-flip.md",
+      "sha256": "883d7886206105868e30ba985b7e0c528bc3594f2977af88eae2423858b71881",
+      "bytes": 8883,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/staking-lock-vault.md",
+      "sha256": "9fe9c4b7d12f21309a20ebfd98de64cd7a85128dd749fb9ce2897add22d3cc58",
+      "bytes": 6660,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/token-launch.md",
+      "sha256": "671cb700d63f6e5fac37a81f149d0151a140f5a4f0c2bfdd0ada0a5f1cfed8c3",
+      "bytes": 7961,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-006"
+      ]
+    },
+    {
+      "path": "bounded-onchain/docs/examples/token2022-extensions.md",
+      "sha256": "c025312b7e2c30ed47b12cf834c6c61934ef397beef886a595254cd025a5d82f",
+      "bytes": 7946,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/examples/treasury.md",
+      "sha256": "adf6a0db134e414dbcd03dab070b959dee2a3cf99ef8a2abb15fef492b85f2b7",
+      "bytes": 3960,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/meteora-token-launch.md",
+      "sha256": "625abaf25938f8c79f9e53a577c24d93e2d620c969c78f62336ce59962ab44b0",
+      "bytes": 22000,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/oapps-tokenomics-fee-split.md",
+      "sha256": "eb729ea3a1fc38cff4039eacff4052d68565f51ae5c4e909fc148a844e45ea31",
+      "bytes": 19840,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/onchain-trading.md",
+      "sha256": "b46956c0460244ba6e0a156c36621f71074362885fe29d152455af8f2f416415",
+      "bytes": 22837,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/onchain-troubleshooting.md",
+      "sha256": "3a8bdec41198224807fc0b15eeb013fb5ec7f23b4c31d5c72dd2d673d7a222ce",
+      "bytes": 11826,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/onchain.md",
+      "sha256": "add46efe364e92bd5380b172f73c386902d3e1f1b4233f8fb18f6298e0f3e5ae",
+      "bytes": 37214,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/onramp.md",
+      "sha256": "39cf2da7710e9baf853078a4631223d5053241727ae4632e5ba2ffc9d9046ccd",
+      "bytes": 4750,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugin-signatures.md",
+      "sha256": "bf793a1dcf68ad289edebdf1e8ab3dea6cdce1169d9af90784cde7290439c3b4",
+      "bytes": 26775,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins.md",
+      "sha256": "111a618ea0721d2ac32e95593fa3fdd3025607a95fe5797f78b75e249285ad39",
+      "bytes": 6603,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/AccountPlugin.md",
+      "sha256": "2bb39aecd09d90a84c23b4381ab4a59b64651d44fd3faf1e3981cacaedd4b6cb",
+      "bytes": 4338,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/App.md",
+      "sha256": "4c3273e6ba1f2b330f83260adb673e84ff4a9973f583f6cb95732f169973af54",
+      "bytes": 2298,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/BondingCurvePlugin.md",
+      "sha256": "e6097ec66fee5d460ab99e698ed6cc3abf07fca85ab7b64cd455447b01dd319c",
+      "bytes": 5927,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/Bytes.md",
+      "sha256": "57606c50613f71773d31aa21f6134d43a427dcba91849f316db57deb26b3df18",
+      "bytes": 10929,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/CPI.md",
+      "sha256": "cdda4362412f2d1544b3c0b0a5e6c426b8ed7167fc633a8dc4414e4811964f6a",
+      "bytes": 23327,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/DeFiPlugin.md",
+      "sha256": "69b1023e602b51965ba306a0136c819f1ca9e7677d9ee65b50cb800a98105bbd",
+      "bytes": 24323,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/DflowPlugin.md",
+      "sha256": "b239de1a2ca1f21c0b23209cb2940466f7d3d038bd2946308ee217618dfff043",
+      "bytes": 2161,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/DocumentPlugin.md",
+      "sha256": "fa847e6f776900a58f78b57987adf0f7847dafe026ec58f2c1ca3b4844e6eab7",
+      "bytes": 2467,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/MathPlugin.md",
+      "sha256": "0d56f49a2c736806cebfb14b6317cb9365e62db4d1f0940db17bca0d466fbc78",
+      "bytes": 2055,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/NFTPlugin.md",
+      "sha256": "a83f435e76aeed740de8a48c2edadb053b9154d1c250067d5b27abeafea94ec5",
+      "bytes": 10664,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-009"
+      ]
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/OraclePlugin.md",
+      "sha256": "115377f5d1d1f886a3ccd92105f91c00cea06714914c08de3b68f97df9dd0ae2",
+      "bytes": 2980,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/PhoenixPerpsPlugin.md",
+      "sha256": "f2d48596b8ae50532820d659fbde39f1b8fc0f5c797d86c95bd1e49d30776830",
+      "bytes": 14507,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/PredictionMarketPlugin.md",
+      "sha256": "505d1503957314feaa76587d23f2aca333db3f33d36f023dea27801f53194395",
+      "bytes": 6395,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/PriceFeedPlugin.md",
+      "sha256": "93a6ce3794f4cbdda244ec044934b5a90e4ce588d3802f627d61336f59c8a22c",
+      "bytes": 1997,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/PumpFunPlugin.md",
+      "sha256": "691f9dbc2d6275b7fea5c41a77e4cccd8d8a50cc20c7200ce0e3d12d336b32c7",
+      "bytes": 10033,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/Solana.md",
+      "sha256": "22c15372cafd41a48114f367e1669adc523c0dfbc71f91a81f920aae2b433c99",
+      "bytes": 8891,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/StringUtils.md",
+      "sha256": "76b62b1f7f4cb5261918aa0363f76865f2283a33acae37334d119399485c69fe",
+      "bytes": 1126,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/TensorPlugin.md",
+      "sha256": "cc68ce044be45b2ebd7151bd2fc5446befda3f9901b068bb32247ff4853498e6",
+      "bytes": 2063,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/TokenPlugin.md",
+      "sha256": "94c3b09f030afe0ece1b1434be1041d89fd5586c489583b3c791a2695249a688",
+      "bytes": 12656,
+      "disposition": "Generated artifact verified against its authoritative source and hash",
+      "reason": "Generated plugin reference; canonical source is bounded-onchain/data/plugin-catalog.json plus curated _fragments.",
+      "active": true,
+      "reviewStatus": "parity-verified",
+      "validation": [
+        "Canonical plugin catalog and curated fragments reviewed",
+        "Extractor and generator check gates passed",
+        "Generated page hashes matched authoritative inputs"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/AccountPlugin.md",
+      "sha256": "f0c1fb7137f4dbf0c5690b07e120474cdddae03fc85c5d460ded0c472941008e",
+      "bytes": 2352,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/CPI.md",
+      "sha256": "177642c3b41a21a5e484653267ff007f936bccd660b307b6d3c44b78a4d6ac26",
+      "bytes": 662,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/DeFiPlugin.md",
+      "sha256": "833e3d04dceed2ae49a49fb70878d012d2b1b73fa0b7cbb16619b7e240e99dda",
+      "bytes": 860,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/DocumentPlugin.md",
+      "sha256": "5930017f52ebba91c8c36d5a38e580e83a181ff0d4a13e919572c98e763de913",
+      "bytes": 589,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/NFTPlugin.md",
+      "sha256": "b835a7b82ce9877757de42d586d4e586e58628ebb89bf3166eaadec0d7b40be6",
+      "bytes": 739,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-009"
+      ]
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/OraclePlugin.md",
+      "sha256": "df8b05e7248723a1a2fca0010cedb6a049fe4308e9cb804eb432d06e7dc17187",
+      "bytes": 488,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/PhoenixPerpsPlugin.md",
+      "sha256": "4a6048f559fdf57d27f51d4782017a485d19a9e53e404212f14123b9a61dffc9",
+      "bytes": 480,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/PumpFunPlugin.md",
+      "sha256": "6a41ec23256cf2bab9316b65832fc0bdb1588bf4224cb035b5a125c6e9646f6d",
+      "bytes": 453,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/Solana.md",
+      "sha256": "1b778ea7aa706e0c162ab36c5b79293419be445be1ae061696efc8d7ca423df4",
+      "bytes": 563,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/plugins/_fragments/TokenPlugin.md",
+      "sha256": "9b9b5cfd8e36da613935c17289df2736464954401a106a1c8abbb3e8bad9dcd8",
+      "bytes": 971,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/policy-native-state-machines.md",
+      "sha256": "16497b2c3dbe919f70fb4523176b2e4e94d67708d1152b237566d0fe2aec4b40",
+      "bytes": 17389,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/policy-primitives.md",
+      "sha256": "60b99a4a5be0a1f9b891950372c95a4f463a7ae100ea619be15574d593ac2264",
+      "bytes": 32224,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/pump-fun.md",
+      "sha256": "051ba73e44255dc503a7c17079e7f8e5ff68a33ecfb30e4bc47580fc396625e6",
+      "bytes": 10026,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/randomness.md",
+      "sha256": "88baca2c99b5baf541a42d1e207333a632d3608fdf9179b31e091e5ae0c2d660",
+      "bytes": 15616,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/docs/solana-capability-status.md",
+      "sha256": "35fa828558cb0cfeef4eb21b432e30c499bbeeb31b5c49ba5ae400ba3656625a",
+      "bytes": 24261,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/examples/oapps-tokenomics/README.md",
+      "sha256": "d26bf2cdbb5ffb6b9b371b8ae0f12eeebe8a1dffec37d9f09eb8827865beb17a",
+      "bytes": 4566,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/examples/oapps-tokenomics/bounded.json",
+      "sha256": "e82a07510cd11077f636acb55a5ab6de1dcb34e2ea9504c42031ac91cdcceaf9",
+      "bytes": 241,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/examples/oapps-tokenomics/keeper.js",
+      "sha256": "69e72fecadecda9578ceb328a9eedf678f92cb6159532914d45bff21318f4e65",
+      "bytes": 1298,
+      "disposition": "Supported-language DeepSec scan",
+      "reason": "Executable JavaScript module included in a dedicated DeepSec partition.",
+      "active": true,
+      "reviewStatus": "deepsec-analyzed",
+      "validation": [
+        "Official DeepSec Codex discovery scan at high reasoning",
+        "Manual contextual review and deterministic syntax check"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/examples/oapps-tokenomics/policy.json",
+      "sha256": "4b5e779642b1f2f835ba1d74f3ef3615a7f3e1ee9fd388582fcfc6656053047b",
+      "bytes": 9000,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded-onchain/examples/oapps-tokenomics/policy.verify-today.json",
+      "sha256": "cc868efa6d419ea141ae70fa6c7187a66a32fc2a5bcb363ba0eadea3c42809d1",
+      "bytes": 8980,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded/SKILL.md",
+      "sha256": "8f24be2eae228df5fb6793b915fcef77c7e01a442490dccd573b0fdc0d88c47d",
+      "bytes": 3638,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded/docs/analytics.md",
+      "sha256": "f77eca3e83c1d7e5d947242524ae4d31aca2976fe951fb055b30545b4d1ba194",
+      "bytes": 4114,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": [
+        "BSK-H-007"
+      ]
+    },
+    {
+      "path": "bounded/docs/billing.md",
+      "sha256": "c0ef3ec3a88b1ebe80d6ac410774e8e5f5f1ee90f0a386bba63f674cc392ade6",
+      "bytes": 8442,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "bounded/guides/capabilities-and-limits.md",
+      "sha256": "fde3cf8fab348c97f948f91e7a4d207c95e3bfbd0509b60372aeac7ec2e5256a",
+      "bytes": 9120,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "oapps-fun/SKILL.md",
+      "sha256": "da395092b48f7c9fd75fd286aab57d76f731982e44d6e8ea9429e56acf7566d4",
+      "bytes": 29826,
+      "disposition": "Forced-format security review",
+      "reason": "Agent-facing Markdown, JSON, rules, or configuration reviewed in full context outside language matcher coverage.",
+      "active": true,
+      "reviewStatus": "forced-format-reviewed",
+      "validation": [
+        "Full-file forced-format review in its non-overlapping DeepSec partition",
+        "Containing-page context and linked security prerequisites reviewed"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/extract-plugin-catalog.mjs",
+      "sha256": "06bef3f139661ce3ee196315f2da942417d61cccb2323a82aafbc2a6b9411912",
+      "bytes": 10815,
+      "disposition": "Supported-language DeepSec scan",
+      "reason": "Executable JavaScript module included in a dedicated DeepSec partition.",
+      "active": true,
+      "reviewStatus": "deepsec-analyzed",
+      "validation": [
+        "Official DeepSec Codex discovery scan at high reasoning",
+        "Manual contextual review and deterministic syntax check"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/generate-plugin-catalog.mjs",
+      "sha256": "9411f69975f8f3d1aa5818f82d6c656c4537f30ac87472981815fff4d7123d93",
+      "bytes": 10777,
+      "disposition": "Supported-language DeepSec scan",
+      "reason": "Executable JavaScript module included in a dedicated DeepSec partition.",
+      "active": true,
+      "reviewStatus": "deepsec-analyzed",
+      "validation": [
+        "Official DeepSec Codex discovery scan at high reasoning",
+        "Manual contextual review and deterministic syntax check"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/lib/contained-path.mjs",
+      "sha256": "f36ae26eadf0dc5538de1bddeb149dc3df58d5738e93f7ca1ed9e92689d0797f",
+      "bytes": 721,
+      "disposition": "Supported-language DeepSec scan",
+      "reason": "Executable JavaScript module included in a dedicated DeepSec partition.",
+      "active": true,
+      "reviewStatus": "deepsec-analyzed",
+      "validation": [
+        "Official DeepSec Codex discovery scan at high reasoning",
+        "Manual contextual review and deterministic syntax check"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/run.mjs",
+      "sha256": "c6eb2692a8c7b7221877f22430b304d339ad342e82dadd01d94e66cfe1553d31",
+      "bytes": 13461,
+      "disposition": "Supported-language DeepSec scan",
+      "reason": "Executable JavaScript module included in a dedicated DeepSec partition.",
+      "active": true,
+      "reviewStatus": "deepsec-analyzed",
+      "validation": [
+        "Official DeepSec Codex discovery scan at high reasoning",
+        "Manual contextual review and deterministic syntax check"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/escrow.json",
+      "sha256": "9330e5fcac7de4a417b79504129823849bbeeb69efe31711c48a3dbb2ac268c3",
+      "bytes": 3046,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/isolated-vault.json",
+      "sha256": "b8212a7468d203fa9fa2af6626213132a3e586bd3de61f8b53e72517f6581edb",
+      "bytes": 1333,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/liquidity.json",
+      "sha256": "7d7f8b9cfe3ddcefb46cb238cda59501980049bdbb0f573d8400b609462c5977",
+      "bytes": 2716,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/marketplace.json",
+      "sha256": "81ecf3bf6d5abe36ea8d08d69f6ce065cf72c0d83239ef060ee3d5f9f3464b7f",
+      "bytes": 3822,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/nft-collection.json",
+      "sha256": "ecaffe6d4a8982e049ea90feaa80992b55293f316322a253792bd878fb8259e1",
+      "bytes": 2681,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/prediction-market.json",
+      "sha256": "db0f8985f24698fe6edbdcc1c81c4dc3e295bf0e6d15934030f2542668433372",
+      "bytes": 4626,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/randomness.json",
+      "sha256": "9303493308969fc84f856026073845f0bced9b488fd4536b98ff849f9eed6b3b",
+      "bytes": 2092,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/staking.json",
+      "sha256": "8853577f0359929f7e7feec5994bd3ab5ee42b343199daa094fc7593e6af055f",
+      "bytes": 2912,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/token-launch.json",
+      "sha256": "9ea9b1bf4f27c7ddbbb900e1944cba7433fabc8412ade46a94e3b46cfc0e93a7",
+      "bytes": 2027,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/token2022.json",
+      "sha256": "8cbe3ca18c391d637f91a66886567a08f2a1cc451ec8ae4c12176b401d252343",
+      "bytes": 3160,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/policy-e2e/specs/treasury.json",
+      "sha256": "01ead644ffd4211dbce5960b58086aef626073437a2408f92534201e897a63ad",
+      "bytes": 610,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/router-baseline.json",
+      "sha256": "77c58919f067f7758b67dea9b2ec4f9dba96f170474a412eb5ec4f75adc8132f",
+      "bytes": 1584,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/tests/cp9311-policy-examples.test.mjs",
+      "sha256": "96a69d416c276686a393278d7ba776a4a2d4e058d59d27b3197a4f441ccf8091",
+      "bytes": 5599,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/tests/o1-lookup.test.mjs",
+      "sha256": "ce7444ba87b5ac5a8e90f93dd7d1c679050a96b888da7b4186e0c414222f623e",
+      "bytes": 9346,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/tests/plugin-catalog.test.mjs",
+      "sha256": "9841da2f0f2de36cb73eb9bed90735378acce11eeeadde642822462a143bf8f8",
+      "bytes": 8887,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/tests/skill-e-no-operator-material.test.mjs",
+      "sha256": "522b4c6aae28d9f78c71de19522d270e4981e4c39fac9bc2d6052b7eaa835052",
+      "bytes": 7695,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/tests/skill-f-sweep-cap.test.mjs",
+      "sha256": "f512140505dfc597349116dafd7d67f2dc43984baea7d5dfa609dd5cd73e9e05",
+      "bytes": 1877,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/tests/skill-g-containment.test.mjs",
+      "sha256": "2e48c3892527c18aa43e378fcb05c6ca87b06277d755a16456180e4f8398dbed",
+      "bytes": 4975,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/tests/skill-h-identity-gate.test.mjs",
+      "sha256": "6e6944bc94cf7312b1ab2959ca75076ccb48e0b18020e81d625ab53adc0cd1d3",
+      "bytes": 4821,
+      "disposition": "Test or fixture reviewed as security-contract evidence",
+      "reason": "Repository gate, policy E2E, or publication contract evidence.",
+      "active": true,
+      "reviewStatus": "evidence-reviewed",
+      "validation": [
+        "Reviewed as a security contract, fixture, or repository publication gate",
+        "Executed by the repository validation gate where applicable"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/validate.mjs",
+      "sha256": "40cfe7e7b35556cb4c7ff8f8b09c5c38088c3882ff80d79a582c3f63c6da626a",
+      "bytes": 30468,
+      "disposition": "Supported-language DeepSec scan",
+      "reason": "Executable JavaScript module included in a dedicated DeepSec partition.",
+      "active": true,
+      "reviewStatus": "deepsec-analyzed",
+      "validation": [
+        "Official DeepSec Codex discovery scan at high reasoning",
+        "Manual contextual review and deterministic syntax check"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    },
+    {
+      "path": "scripts/verify-admin-active-gate.mjs",
+      "sha256": "6c6f915e51b9a1efe10d7558b5f23b3145d5af6af3ec72196c338153f65dc821",
+      "bytes": 17583,
+      "disposition": "Supported-language DeepSec scan",
+      "reason": "Executable JavaScript module included in a dedicated DeepSec partition.",
+      "active": true,
+      "reviewStatus": "deepsec-analyzed",
+      "validation": [
+        "Official DeepSec Codex discovery scan at high reasoning",
+        "Manual contextual review and deterministic syntax check"
+      ],
+      "result": "covered",
+      "confirmedFindingIds": []
+    }
+  ]
+}

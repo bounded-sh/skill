@@ -1,0 +1,112 @@
+{
+  "filePath": "bounded-backend/docs/hooks-scheduled-webhooks.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.590Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "e212f5186a819ca9f2ff178b32e69b453b4ec74ef62fd7f68beb07171d03e47e",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "acl-check",
+      "title": "Quota example lets any authenticated user modify any owner's quota",
+      "description": "The quota update rule only requires authentication and that owner remain unchanged. It never requires @data.owner to equal the caller. Any authenticated user can therefore update the mutable used field on another user's quota while preserving its owner, allowing quota exhaustion or reset across users.",
+      "lineNumbers": [
+        147,
+        148,
+        150
+      ],
+      "recommendation": "Require @data.owner == @user.id in the update rule, pin @newData.owner == @data.owner, and reserve server-owned quota fields such as used for a trusted service or invariant-bound mutation path.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_ed3d17c9f343b0d5"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-type-mismatch",
+      "title": "Scheduled quota reset writes a string into a UInt field",
+      "description": "The page states that quoted strings persist as strings, but resetQuota passes the quoted value \"0\" to updateField while quotas.used is declared UInt. The scheduled reset is therefore rejected or skipped by schema enforcement instead of resetting the numeric quota.",
+      "lineNumbers": [
+        46,
+        48,
+        148,
+        151
+      ],
+      "recommendation": "Pass the numeric literal 0 without quotes and include a valid declared target document for the reset.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_1e66ae63ecb36256"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "Contradictory dueRows function guidance describes unsupported behavior",
+      "description": "The schedule section says dueRows.run naming a function fires, while the dueRows table correctly says that the validator accepts such a target but it does not fire yet. The owning runtime confirms the latter: dueRows collection only includes entries backed by hooks.scheduled bytecode. Users following the earlier statement can deploy silent, non-running one-shot work.",
+      "lineNumbers": [
+        168,
+        173,
+        174,
+        180,
+        181,
+        182,
+        223,
+        225
+      ],
+      "recommendation": "Remove the claim that dueRows can run functions and consistently document dueRows as hook-only until runtime support exists. Reject unsupported targets during validation.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_3aa9641c61901399"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:12:13.605Z",
+      "durationMs": 90152.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-591a-7b51-9f17-ec879089860a",
+      "findingCount": 3,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42457.2,
+        "outputTokens": 3148,
+        "cacheReadInputTokens": 669696,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T17:23:24-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:12:13.611Z"
+  }
+}

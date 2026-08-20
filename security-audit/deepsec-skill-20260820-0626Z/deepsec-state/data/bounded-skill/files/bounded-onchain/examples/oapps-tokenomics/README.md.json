@@ -1,0 +1,91 @@
+{
+  "filePath": "bounded-onchain/examples/oapps-tokenomics/README.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.098Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "d26bf2cdbb5ffb6b9b371b8ae0f12eeebe8a1dffec37d9f09eb8827865beb17a",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "acl-check",
+      "title": "Documented build allowance is exhaustible by anonymous guests",
+      "description": "The README presents `builds` as a fee-funded allowance with a proven rolling burn cap, but the referenced policies authorize every identity with a non-null `@user.id` to append an attacker-selected amount, while anonymous accounts are enabled. A guest can submit one record equal to `BUILD_ALLOWANCE`, consuming the global 24-hour window and causing every legitimate build-spend record to fail the rollingSum invariant. The attacker can repeat this daily and also poison the usage accounting. The proof only establishes that the sum cannot exceed the limit; it does not authenticate the writer or validate that the amount represents a real build.",
+      "lineNumbers": [
+        58,
+        64,
+        65,
+        66
+      ],
+      "recommendation": "Gate build-spend creation to a trusted service or administrator identity, derive the amount server-side, and atomically couple the spend record to the actual governed build operation. Update the README to explain this required authorization boundary.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_015667b2d251dfed"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-configuration-mismatch",
+      "title": "Replacing the documented KEEPER constant does not rotate the keeper",
+      "description": "The README instructs users to replace the `KEEPER` placeholder at launch, but both policies hardcode the original address in `functions.keeper.actAs` instead of referencing `@const.KEEPER`. Replacing the constant therefore has no effect, leaving scheduled writes attributed to the example identity and making per-environment keeper configuration ineffective.",
+      "lineNumbers": [
+        72,
+        73
+      ],
+      "recommendation": "Change both policies to use `\"actAs\": \"@const.KEEPER\"` and retain the instruction to replace or override that constant.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_3d2cb166fc02dbe4"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:38:00.343Z",
+      "durationMs": 73918.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2aee-7010-86c9-b6e931093ebe",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 30677.2,
+        "outputTokens": 2862.2,
+        "cacheReadInputTokens": 364083.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T14:41:32-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T21:27:26+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:38:00.356Z"
+  }
+}

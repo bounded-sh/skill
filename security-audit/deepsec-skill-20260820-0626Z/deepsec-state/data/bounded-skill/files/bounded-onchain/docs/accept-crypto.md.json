@@ -1,0 +1,110 @@
+{
+  "filePath": "bounded-onchain/docs/accept-crypto.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.060Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "de8472f6718600321ce9a829a37a7d3a7d2946bc380db14020b3144a3fe457bb",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "expensive-api-abuse",
+      "title": "Public verification endpoint permits unbounded Solana RPC calls",
+      "description": "The page documents the intent ID as the only capability, states that there are no secrets, and exposes POST /crypto/intents/:id/verify. The owning implementation accepts any syntactically valid, previously unused base58 signature and performs getTransaction against the configured Solana RPC. Although intent creation is now rate-limited, verification has no authentication, per-client limit, per-intent attempt budget, or provider-wide admission check. An attacker can create one valid intent and repeatedly submit unique random signatures for its one-hour lifetime, forcing paid RPC calls and potentially degrading settlement availability for every app using the shared provider.",
+      "lineNumbers": [
+        67,
+        68,
+        73,
+        77,
+        103,
+        107,
+        121,
+        128
+      ],
+      "recommendation": "Apply a durable per-IP and per-intent verification-attempt limit before any RPC call, add a provider-wide ceiling, and consider binding verification to an authenticated buyer or a separate one-time capability. Invalid or unfinalized signatures should consume the attempt budget.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_c0e81e61d26283fc"
+    },
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-stale-payment-reference-guidance",
+      "title": "Documented payment flow omits the now-mandatory intent reference",
+      "description": "The response example omits the platform-generated reference and paymentUrl, and the payment instructions tell buyers to transfer directly to settleTo. The owning implementation now generates a unique reference for every intent and rejects a transaction that does not contain that exact key with payment_reference_missing. The later recipe instead generates a separate app-side reference, which is not the reference stored in the platform intent. A client following this page can therefore transfer USDC irreversibly to the seller but be unable to verify the payment or receive the purchased entitlement.",
+      "lineNumbers": [
+        77,
+        79,
+        88,
+        97,
+        100,
+        121,
+        130,
+        139,
+        149,
+        155,
+        157,
+        184
+      ],
+      "recommendation": "Update the create-intent response to show reference and paymentUrl, require buyers to submit the transaction described by paymentUrl, and remove the separate app-generated reference recipe. State clearly that the platform-generated intent reference is mandatory and must be present before funds are sent.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_711731a51348e511"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:38:13.090Z",
+      "durationMs": 76702.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2b25-7b13-be94-73520bcdfc97",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42801,
+        "outputTokens": 2881.2,
+        "cacheReadInputTokens": 699750.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-14T22:25:03-04:00"
+      },
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:39:01Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T19:42:14+05:30"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:38:13.106Z"
+  }
+}

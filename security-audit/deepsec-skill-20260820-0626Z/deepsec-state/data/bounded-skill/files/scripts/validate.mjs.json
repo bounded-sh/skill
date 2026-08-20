@@ -1,0 +1,77 @@
+{
+  "filePath": "scripts/validate.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.411Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "40cfe7e7b35556cb4c7ff8f8b09c5c38088c3882ff80d79a582c3f63c6da626a",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "acl-check",
+      "title": "Required publication gate omits the admin revocation regression check",
+      "description": "The required pre-push validator claims its contract tests are the complete gate, but it only executes files ending in .test.mjs under scripts/tests. scripts/verify-admin-active-gate.mjs is neither invoked directly nor located there, and no other caller exists. Consequently insecure active-admin guidance can be published. A concrete current example exists in bounded-backend/docs/functions.md: the policy declares admins with an active field at lines 92-99, but the stripeCustomer read rule at line 85 authorizes get(/admins/@user.id) != null. A deactivated former admin therefore retains access to customer-to-user mappings. The standalone regression script would detect this, but the documented publication gate does not run it.",
+      "lineNumbers": [
+        616,
+        621,
+        622,
+        627
+      ],
+      "recommendation": "Make the admin active-gate check part of the mandatory validation path, preferably as a contract test under scripts/tests, and fail validation on any error. Correct the existing stripeCustomer rule to require get(/admins/@user.id).active == true.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_893ad50ca0dd4e6d"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:56:19.831Z",
+      "durationMs": 94473.4,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-650f-75d1-ab8a-2fc0a54a8f19",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 37010.4,
+        "outputTokens": 3714.2,
+        "cacheReadInputTokens": 553420.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-14T11:57:23+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-11T11:39:07-04:00"
+      },
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:39:01Z"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:56:19.840Z"
+  }
+}

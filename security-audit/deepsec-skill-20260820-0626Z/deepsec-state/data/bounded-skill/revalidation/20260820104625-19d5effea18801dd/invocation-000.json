@@ -1,0 +1,77 @@
+{
+  "batchIndex": 0,
+  "label": "initial",
+  "timestamp": "2026-08-20T10:53:57.745Z",
+  "files": [
+    "bounded-deploy/docs/source-sync.md"
+  ],
+  "requested": [
+    {
+      "findingId": "finding_5ee7beb3d6a09f94",
+      "filePath": "bounded-deploy/docs/source-sync.md",
+      "title": "Source publication can expose unsynced secret-bearing Git ancestors",
+      "alias": "F1"
+    },
+    {
+      "findingId": "finding_f089cbe20db7be8b",
+      "filePath": "bounded-deploy/docs/source-sync.md",
+      "title": "The advertised secret-safe filter can upload files Git considers ignored",
+      "alias": "F2"
+    },
+    {
+      "findingId": "finding_6d87aa0c03c81526",
+      "filePath": "bounded-deploy/docs/source-sync.md",
+      "title": "Documented archive limits do not bound ignore-file parsing",
+      "alias": "F3"
+    }
+  ],
+  "rawResponses": [
+    {
+      "kind": "initial",
+      "rawText": "```json\n[\n  {\n    \"findingId\": \"F1\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The current CLI preserves local ancestry when a source push originates from a repository whose origin matches the cloud source remote, which is the layout created by `bounded clone`. The in-place publication path builds the filtered current snapshot but creates its commit with the local branch head as its parent, making local-only ancestors reachable from the pushed branch. Historical validation walks new commits with `git ls-tree` and checks paths, object types, sizes, and counts, but never applies the current-tree content scanner to historical blobs. Consequently, a recognized private key committed as `config.ts` and deleted in a later local commit passes publication even though the same content in the current tree would be rejected. A concrete attacker with `code:read` can inspect the uploaded history and retrieve the deleted file by its old revision; after completed Open, the unauthenticated public source handler also accepts revision-pinned file reads. Push-token authentication and normal source authorization do not mitigate the disclosure because the maintainer legitimately initiates the deploy while the unsafe ancestry is incorporated automatically. This matches FP-010's explicit reactivation conditions: current snapshots now receive stronger content inspection, and completed-Open source and revision history are publicly readable. The relevant history changes added current-tree private-key detection and public Open source access, while the current source-push and historical validation code still contains no corresponding ancestor-content scan.\"\n  },\n  {\n    \"findingId\": \"F2\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The source collector parses `.gitignore` and `.boundedignore` through a deliberately limited custom matcher rather than Git's ignore engine. Its basename matching uses Go `path.Match`, where bracket-class negation uses `^`, while Git accepts `!`; therefore a valid Git rule such as `local.[!e]*` ignores `local.prod` in Git but does not exclude it from source collection. The collector then reads and packages that file because `local.prod` is not on the filename denylist. The content scanner only recognizes several private-key formats and does not detect ordinary API tokens or generic credential assignments. A malicious contributor can commit the mismatched rule and `sourcePush: true`, induce a maintainer to store a deployment credential in `local.prod`, and have the credential included during an otherwise authorized deploy despite Git reporting it as ignored. The resulting blob is available to `code:read` collaborators and becomes unauthenticated public source after completed Open. Authentication, CORS, and request middleware do not prevent this because the security boundary fails during the local construction of the upload manifest. No current change replaces this matcher with Git-compatible wildmatch behavior, fails closed on unsupported syntax, or generally scans the final manifest for credentials.\"\n  },\n  {\n    \"findingId\": \"F3\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"Ignore processing occurs before the documented archive entry, path, compressed-size, and unpacked-size limits are evaluated. Each repository-controlled ignore file is loaded with an unbounded `os.ReadFile` and split into rules without byte, line, rule-count, or pattern-length limits. The matcher handles every `**` segment by recursively trying all remaining target suffixes, with no memoization, operation budget, context cancellation, or path-depth bound. Repeated `**` segments followed by a nonmatching literal therefore create combinatorial work against a sufficiently deep committed path, while an oversized ignore file independently permits excessive allocation before source limits run. A contributor can commit such an ignore rule together with `sourcePush: true`, causing a maintainer's ordinary source-backed deploy to consume excessive CPU or memory and potentially hang on every attempt. In the site deployment path this collection happens during build-base preparation before the archive is finalized, so none of the advertised archive limits can stop the attack. In the post-deploy source-sync path, the documented warning behavior also does not help if matching never returns. The relevant matcher remains materially unchanged since introduction, and later containment and whitespace fixes did not add parsing caps or bounded matching.\"\n  }\n]\n```",
+      "parsedCount": 3
+    }
+  ],
+  "repairAttempts": 0,
+  "parsedVerdicts": [
+    {
+      "findingId": "F1",
+      "verdict": "true-positive",
+      "reasoning": "The current CLI preserves local ancestry when a source push originates from a repository whose origin matches the cloud source remote, which is the layout created by `bounded clone`. The in-place publication path builds the filtered current snapshot but creates its commit with the local branch head as its parent, making local-only ancestors reachable from the pushed branch. Historical validation walks new commits with `git ls-tree` and checks paths, object types, sizes, and counts, but never applies the current-tree content scanner to historical blobs. Consequently, a recognized private key committed as `config.ts` and deleted in a later local commit passes publication even though the same content in the current tree would be rejected. A concrete attacker with `code:read` can inspect the uploaded history and retrieve the deleted file by its old revision; after completed Open, the unauthenticated public source handler also accepts revision-pinned file reads. Push-token authentication and normal source authorization do not mitigate the disclosure because the maintainer legitimately initiates the deploy while the unsafe ancestry is incorporated automatically. This matches FP-010's explicit reactivation conditions: current snapshots now receive stronger content inspection, and completed-Open source and revision history are publicly readable. The relevant history changes added current-tree private-key detection and public Open source access, while the current source-push and historical validation code still contains no corresponding ancestor-content scan."
+    },
+    {
+      "findingId": "F2",
+      "verdict": "true-positive",
+      "reasoning": "The source collector parses `.gitignore` and `.boundedignore` through a deliberately limited custom matcher rather than Git's ignore engine. Its basename matching uses Go `path.Match`, where bracket-class negation uses `^`, while Git accepts `!`; therefore a valid Git rule such as `local.[!e]*` ignores `local.prod` in Git but does not exclude it from source collection. The collector then reads and packages that file because `local.prod` is not on the filename denylist. The content scanner only recognizes several private-key formats and does not detect ordinary API tokens or generic credential assignments. A malicious contributor can commit the mismatched rule and `sourcePush: true`, induce a maintainer to store a deployment credential in `local.prod`, and have the credential included during an otherwise authorized deploy despite Git reporting it as ignored. The resulting blob is available to `code:read` collaborators and becomes unauthenticated public source after completed Open. Authentication, CORS, and request middleware do not prevent this because the security boundary fails during the local construction of the upload manifest. No current change replaces this matcher with Git-compatible wildmatch behavior, fails closed on unsupported syntax, or generally scans the final manifest for credentials."
+    },
+    {
+      "findingId": "F3",
+      "verdict": "true-positive",
+      "reasoning": "Ignore processing occurs before the documented archive entry, path, compressed-size, and unpacked-size limits are evaluated. Each repository-controlled ignore file is loaded with an unbounded `os.ReadFile` and split into rules without byte, line, rule-count, or pattern-length limits. The matcher handles every `**` segment by recursively trying all remaining target suffixes, with no memoization, operation budget, context cancellation, or path-depth bound. Repeated `**` segments followed by a nonmatching literal therefore create combinatorial work against a sufficiently deep committed path, while an oversized ignore file independently permits excessive allocation before source limits run. A contributor can commit such an ignore rule together with `sourcePush: true`, causing a maintainer's ordinary source-backed deploy to consume excessive CPU or memory and potentially hang on every attempt. In the site deployment path this collection happens during build-base preparation before the archive is finalized, so none of the advertised archive limits can stop the attack. In the post-deploy source-sync path, the documented warning behavior also does not help if matching never returns. The relevant matcher remains materially unchanged since introduction, and later containment and whitespace fixes did not add parsing caps or bounded matching."
+    }
+  ],
+  "reconciliation": {
+    "matches": [
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F1",
+        "resolvedFindingId": "finding_5ee7beb3d6a09f94"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F2",
+        "resolvedFindingId": "finding_f089cbe20db7be8b"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F3",
+        "resolvedFindingId": "finding_6d87aa0c03c81526"
+      }
+    ],
+    "missingFindingIds": [],
+    "unknownVerdicts": [],
+    "ambiguousVerdicts": []
+  },
+  "persistedCount": 3,
+  "unresolvedFindingIds": []
+}

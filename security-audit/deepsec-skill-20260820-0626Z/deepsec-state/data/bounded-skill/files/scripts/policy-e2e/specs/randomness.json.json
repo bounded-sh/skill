@@ -1,0 +1,87 @@
+{
+  "filePath": "scripts/policy-e2e/specs/randomness.json",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.405Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "9303493308969fc84f856026073845f0bced9b488fd4536b98ff849f9eed6b3b",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-insolvency",
+      "title": "Outstanding coin-flip liabilities are not reserved",
+      "description": "The referenced policy admits each bet whenever the current house balance is at least twice that single stake, but it records no aggregate liability for unsettled bets. Stakes increase the visible pot, allowing an unbounded sequence of individually valid bets even when their combined maximum payouts exceed the pot. With the 250000000 lamports funded by this spec, three sequential 100000000-lamport bets all pass: balances before admission are 250000000, 350000000, and 450000000, but their combined possible payout is 600000000 while the final pot is only 550000000. If all win, the last winner cannot settle. Attackers can accumulate outstanding flips and race their winning settlements ahead of other players, leaving later winners with unrecoverable stakes.",
+      "lineNumbers": [
+        10,
+        13,
+        19,
+        22
+      ],
+      "recommendation": "Track aggregate unsettled payout liability in authoritative state. On admission, atomically require post-deposit house balance to cover existing liability plus the new maximum payout, then increment the liability; decrement it on either winning or losing settlement. Use getAfter or an onchain-supported invariant and serialize concurrent liability mutations.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_341752164424fcec"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-test-coverage",
+      "title": "The coin-flip E2E spec never creates or settles a valid flip",
+      "description": "Every flip step is intentionally rejected: both create attempts use a fixed address that cannot equal the harness identity, and the last step targets a nonexistent flip with missing required fields. Consequently the spec can pass even if randomness requests, reveal fulfillment, oracle reads, settlement authorization, or payout hooks are completely broken. This defeats the maintainer E2E suite's purpose for the page's central operation.",
+      "lineNumbers": [
+        46,
+        49,
+        54,
+        58,
+        61,
+        66,
+        70,
+        77
+      ],
+      "recommendation": "Add a valid bet using USER_ADDRESS, wait for or poll the reveal, query and validate an in-range roll, and submit the corresponding settlement with the exact required payout. Extend the runner with bounded polling if necessary, while retaining the existing negative cases.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_f794c129e89d4589"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:56:29.402Z",
+      "durationMs": 96351.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-65a6-7980-885f-52b177b38d97",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 46908.8,
+        "outputTokens": 3730,
+        "cacheReadInputTokens": 550553.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:56:29.412Z"
+  }
+}

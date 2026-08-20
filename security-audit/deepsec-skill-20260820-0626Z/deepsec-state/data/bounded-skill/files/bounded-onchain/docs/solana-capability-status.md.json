@@ -1,0 +1,50 @@
+{
+  "filePath": "bounded-onchain/docs/solana-capability-status.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.097Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "35fa828558cb0cfeef4eb21b432e30c499bbeeb31b5c49ba5ae400ba3656625a",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:35:13.638Z",
+      "durationMs": 205040,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2afc-7433-8680-5b8dde900dbc",
+      "findingCount": 0,
+      "numTurns": 1,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 120059,
+        "outputTokens": 8923,
+        "cacheReadInputTokens": 768256,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-12T23:32:02-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:35:13.652Z"
+  }
+}

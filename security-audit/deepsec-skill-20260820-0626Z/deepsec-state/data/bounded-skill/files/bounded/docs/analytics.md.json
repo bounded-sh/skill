@@ -1,0 +1,105 @@
+{
+  "filePath": "bounded/docs/analytics.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T07:26:07.867Z",
+  "lastScannedRunId": "20260820072607-00628138e8d2ad86",
+  "fileHash": "f77eca3e83c1d7e5d947242524ae4d31aca2976fe951fb055b30545b4d1ba194",
+  "findings": [
+    {
+      "findingId": "finding_c4bf0d86b113087a",
+      "severity": "MEDIUM",
+      "vulnSlug": "other-info-disclosure",
+      "title": "Incomplete scrubbing can expose path identifiers and secrets to collaborators",
+      "description": "The guide claims that PII-like path values never enter analytics and that errors are scrubbed on both client and edge. The underlying bucketPath implementation only redacts numeric segments, long hexadecimal or 20-plus-character tokens, and values containing `@`. Usernames, names, short invitation or reset codes, and many mixed-format identifiers remain verbatim. Error scrubbing only recognizes emails, Base58-like strings, and a few keywords immediately followed by `:` or `=`. Common forms such as `Authorization: Bearer ...`, JWTs, cloud access keys, and secrets embedded in URLs can survive. These values are stored as path and diagnostic dimensions and returned through `topPages` and `errors` to every collaborator with app-view access. A lower-privileged collaborator could therefore recover sensitive identifiers or usable credentials emitted by the application.",
+      "lineNumbers": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        45,
+        60
+      ],
+      "recommendation": "Do not store raw error-message prefixes. Retain a keyed hash and an allowlisted error class instead. Replace heuristic path handling with explicit route templates or redact all variable segments, including segments following sensitive route names such as reset, invite, verify, callback, and token. Expand defense-in-depth secret detection, and ensure analytics responses cannot expose unredacted dimensions to viewer-level collaborators.",
+      "confidence": "high",
+      "producedByRunId": "20260820072607-57c5db42e0cdadf1",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The documentation promises that PII-like path values never enter the dataset and that error prefixes are scrubbed on both client and edge, but the owning implementation only provides heuristic coverage. bucketPath redacts numeric segments, hexadecimal strings of at least eight characters, alphanumeric tokens of at least twenty characters, and segments containing @; shorter usernames, names, invitation codes, and mixed-format reset identifiers remain verbatim. For example, a route such as /reset/AB12-CD34 survives bucketing and is stored in blob3. Both message scrubbers only recognize bearer, token, secret, password, or key when immediately followed by : or =, so a short usable value in Authorization: Bearer sk_live_ABC123 survives, as do many JWT, cloud-key, and URL-secret formats. The RUM agent captures uncaught JavaScript errors and unhandled rejections, and buildDiagnostic stores the scrubbed prefix itself in blob18 rather than retaining only its hash. The analytics read queries select blob3 and blob18 directly and return them as topPages and errors without further output redaction. The framework correctly strips spoofed identity headers, verifies the Bounded JWT, and applies a fresh app:view capability check, but the viewer preset and other lower-privilege app:view collaborators are intentionally authorized to read this endpoint. Such a collaborator can therefore recover a user's short path identifier or a credential exposed by a genuine application error; HMAC beacon tokens, rate limiting, CORS, and CSRF considerations prevent unrelated collection attacks but do not protect data from an authorized analytics reader. The implementation has not been patched, and the analytics-beacon poisoning entry in the false-positive register concerns a different integrity issue rather than this confidentiality exposure.",
+        "revalidatedAt": "2026-08-20T10:11:53.783Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820072607-57c5db42e0cdadf1",
+      "investigatedAt": "2026-08-20T07:34:13.453Z",
+      "durationMs": 119371.75,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e10-2c5d-7221-ab49-edca141db72e",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 67001,
+        "outputTokens": 4348,
+        "cacheReadInputTokens": 1475456,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:11:53.783Z",
+      "durationMs": 207618.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-1f7d-73e1-b8f8-0613646726b5",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 112193.25,
+        "outputTokens": 6897.25,
+        "cacheReadInputTokens": 2353600,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-06-30T16:08:38-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:11:53.823Z"
+  },
+  "status": "analyzed"
+}

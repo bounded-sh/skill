@@ -1,0 +1,55 @@
+{
+  "filePath": "bounded-deploy/docs/quickstart.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.886Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "bf23b0c379f800e8d3ecb3d96a0e473068f6b01927a0fa5803848559382f6ec5",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:31:36.281Z",
+      "durationMs": 165009,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-607c-7890-aa40-f34fbfda868b",
+      "findingCount": 0,
+      "numTurns": 0.3333333333333333,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 69250,
+        "outputTokens": 5165,
+        "cacheReadInputTokens": 687957.3333333334,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-11T12:39:55-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-05T01:40:00-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:31:36.304Z"
+  }
+}

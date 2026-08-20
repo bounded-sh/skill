@@ -1,0 +1,50 @@
+{
+  "filePath": "bounded-onchain/examples/oapps-tokenomics/bounded.json",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.100Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "e82a07510cd11077f636acb55a5ab6de1dcb34e2ea9504c42031ac91cdcceaf9",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:38:00.356Z",
+      "durationMs": 73918.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2aee-7010-86c9-b6e931093ebe",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 30677.2,
+        "outputTokens": 2862.2,
+        "cacheReadInputTokens": 364083.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-08T14:08:00-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:38:00.372Z"
+  }
+}

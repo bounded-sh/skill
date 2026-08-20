@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2026-08-20T11:14:10.983Z",
+  "required": true,
+  "pinnedCli": "755dd6b1cdf2d810fd119c0d95616f1ff7871730",
+  "pinnedMonorepo": "8e7f1e25b53e8f0575ea0f2336640d68761d60a9",
+  "specCount": 11,
+  "totals": {
+    "passed": 72,
+    "failed": 49,
+    "skipped": 0,
+    "steps": 121
+  },
+  "specs": [
+    {
+      "name": "escrow-per-escrow-pda",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "isolated-vault",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "cp-amm-liquidity-positions",
+      "passed": 2,
+      "failed": 9,
+      "skipped": 0
+    },
+    {
+      "name": "marketplace-listings-orders-spend-cap",
+      "passed": 2,
+      "failed": 11,
+      "skipped": 0
+    },
+    {
+      "name": "nft-collection",
+      "passed": 2,
+      "failed": 7,
+      "skipped": 0
+    },
+    {
+      "name": "prediction-market-amm",
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "randomness-coin-flip",
+      "passed": 3,
+      "failed": 6,
+      "skipped": 0
+    },
+    {
+      "name": "staking-lock-vault",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "token-launch",
+      "passed": 2,
+      "failed": 7,
+      "skipped": 0
+    },
+    {
+      "name": "token2022-extensions",
+      "passed": 2,
+      "failed": 9,
+      "skipped": 0
+    },
+    {
+      "name": "treasury",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    }
+  ]
+}

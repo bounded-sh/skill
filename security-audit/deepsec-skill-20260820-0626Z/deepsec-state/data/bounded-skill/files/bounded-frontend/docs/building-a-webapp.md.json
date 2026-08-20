@@ -1,0 +1,75 @@
+{
+  "filePath": "bounded-frontend/docs/building-a-webapp.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:20:23.896Z",
+  "lastScannedRunId": "20260820082023-e8473e6a97137ae7",
+  "fileHash": "18b735a709257a26df8cd9cc9fa766768ba5c6a9be7b46109d6b54d321bcbad8",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-resource-leak",
+      "title": "Async subscription setup can leak after component unmount",
+      "description": "The effect assigns the unsubscribe function only after subscribe() resolves. If the component unmounts first, cleanup sees stop as undefined and does nothing; the later resolution installs a live subscription that can no longer be reached or stopped. Repeated fast mount/unmount cycles can accumulate listeners and trigger state updates on unmounted components. A rejection of the initial subscribe promise is also not handled by the shown code.",
+      "lineNumbers": [
+        151,
+        159
+      ],
+      "recommendation": "Track a cancelled flag. When subscribe resolves, immediately invoke the returned unsubscribe function if cleanup already ran; otherwise save it. Also attach a catch handler for setup failures.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_4090a5506b6e219e"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082023-71b34e159c890b44",
+      "investigatedAt": "2026-08-20T08:27:31.094Z",
+      "durationMs": 83965.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e41-cf24-7a71-934a-e571aa42fc85",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40024.4,
+        "outputTokens": 3498.8,
+        "cacheReadInputTokens": 546918.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T14:37:05-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-07-10T12:51:51-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-07T06:57:20-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:27:31.119Z"
+  }
+}

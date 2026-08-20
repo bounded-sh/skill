@@ -1,0 +1,88 @@
+{
+  "filePath": "bounded-deploy/SKILL.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.878Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "6d81c2183b491a2ad0e14867b22a48af4b237b64bda517a126ca874b8fc178b7",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "secrets-exposure",
+      "title": "Source-sync guidance can publish secrets from current files and Git history",
+      "description": "Line 42 routes agents to source-sync guidance, while line 90 provides only a generic warning not to commit secrets. The linked documentation describes the uploaded tree as \"secret-safe,\" but the owning CLI's collectSourceArtifactFiles and verifySourceArtifactCommitTree implementations filter by path, type, and size without scanning blob contents. For a checkout created by bounded clone, source sync also preserves local commit ancestry. Consequently, a credential embedded in an ordinarily named file such as config.ts can be uploaded even if it was later deleted. After Open or launch, the platform exposes source history and historical file revisions through unauthenticated /__bounded/source endpoints. An attacker can retrieve the old revision and steal the credential. Named secret paths such as .env, *.key, and *.pem are blocked and are not part of this finding. KNOWN_FALSE_POSITIVES.md FP-010 explicitly says to reclassify this residual when source becomes readable beyond the owner, which the current public-source implementation now does.",
+      "lineNumbers": [
+        42,
+        90
+      ],
+      "recommendation": "Fix the owning CLI first: inspect current and historical blob contents for likely credentials, or publish a filtered snapshot without local history. Before any source becomes public, require an explicit secret-audit gate that clearly identifies the exact revisions and files being published. Update this router and source-sync documentation to state that sourcePush includes non-gitignored working-tree content and, for bounded clones, local history. Tell users to rewrite contaminated history and rotate exposed credentials before Open.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "findingId": "finding_754c215754812b31"
+    },
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-domain-takeover",
+      "title": "Vanity-slug migration guidance creates a takeover race",
+      "description": "Line 43 routes agents to domains.md, whose cross-app migration sequence promises to preserve a stable URL by releasing the slug from the old app and then claiming it on the new app. These are separate operations. The owning platform explicitly describes release as freeing the label for takeover, while the claim endpoint awards the globally unique label to whichever app claims it first. An attacker can continuously attempt to claim a known public slug and win between the two documented commands, causing the trusted application URL to serve attacker-controlled content and enabling phishing or brand impersonation.",
+      "lineNumbers": [
+        43
+      ],
+      "recommendation": "Add an atomic cross-app slug-transfer operation that authenticates authorization over both source and destination apps and updates ownership, routing, and allowed origins as one transaction. Route migration guidance exclusively through that operation. Until it exists, remove the release-then-claim recipe and clearly warn that a vanity slug cannot be safely migrated while preserving ownership; use a user-controlled custom domain or keep the old app mapped instead.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "findingId": "finding_8d08bc6ee7a79022"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:29:05.565Z",
+      "durationMs": 346795,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-5f40-74a2-9025-cf8b5191d613",
+      "findingCount": 2,
+      "numTurns": 1,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 177947,
+        "outputTokens": 12582,
+        "cacheReadInputTokens": 2363904,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T17:23:24-04:00"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-13T11:36:37-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-11T12:10:24-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:29:05.580Z"
+  }
+}

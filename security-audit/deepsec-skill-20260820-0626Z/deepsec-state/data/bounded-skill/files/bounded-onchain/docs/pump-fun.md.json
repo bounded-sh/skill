@@ -1,0 +1,50 @@
+{
+  "filePath": "bounded-onchain/docs/pump-fun.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.095Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "051ba73e44255dc503a7c17079e7f8e5ff68a33ecfb30e4bc47580fc396625e6",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:40:32.824Z",
+      "durationMs": 104627,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2c36-7a10-8496-61cd20fd334a",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40734.4,
+        "outputTokens": 3827,
+        "cacheReadInputTokens": 956467.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T14:37:05-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:40:32.831Z"
+  }
+}

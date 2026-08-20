@@ -1,0 +1,146 @@
+{
+  "filePath": "bounded-deploy/docs/domains.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.885Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "2998b24f66fab82e4dd3b5887b7ba2cce18951a8254bf7592250b249e0994726",
+  "findings": [
+    {
+      "findingId": "finding_c9d6b734fc80501d",
+      "severity": "HIGH",
+      "vulnSlug": "auth-bypass",
+      "title": "Released slug can remain a trusted authentication origin after attacker reclamation",
+      "description": "The documentation states that changing or releasing a slug immediately frees it and that Bounded automatically maintains allowedOrigins. In the current owning platform implementation, the release route first clears the slug and deletes its host mapping, then attempts to revoke the origin from allowedOrigins. Failure of that revocation is caught while the operation still returns success. Positive allowed-origin decisions are also cached. An attacker can claim the newly freed slug while the victim app still trusts its origin, host malicious content there, and initiate authentication against the victim app. Users visiting the old hostname can then have victim-app authentication credentials delivered to an attacker-controlled page.",
+      "lineNumbers": [
+        32,
+        36,
+        44,
+        50,
+        57,
+        60,
+        61,
+        62
+      ],
+      "recommendation": "Revoke and verify the old allowed origin before making the slug reusable. Keep the slug tombstoned if revocation fails, persist a durable repair job, invalidate authentication caches, and treat a host mapping to another app as an explicit denial instead of falling back to the stale allowlist.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The current domains page states that releasing a slug immediately frees it and that Bounded automatically maintains `allowedOrigins`. The owning release route first clears the database slug and deletes the `slug:<label>` host mapping, then attempts to persist the reduced origin list inside a caught, non-fatal `try` block. Consequently, the release returns success even when the victim app continues to store the old origin as allowed. Both authentication implementations cache registered origins for 30 seconds, while host-map reads may be edge-cached for 60 seconds. When the attacker claims the freed slug, the host map correctly returns the attacker's app, but the victim-app origin resolver treats that mismatch as a miss and falls through to the victim's stale allowlist instead of denying explicitly. The browser Origin, OIDC, signing-capability, SIWE, and SIWS gates all rely on these resolvers, so ordinary CSRF and origin protections do not help when the malicious page is itself considered a trusted victim-app origin. A concrete attacker can claim the old label, serve JavaScript there, initiate authentication for the known victim app ID, and receive victim-app credentials after a user follows an old link or bookmark. Launched oApps and route-managed build children cannot release their slugs, but ordinary applications remain exposed. Current source after the recent authentication hardening still contains the non-fatal revocation and fallback behavior, and the false-positive register contains no matching mitigation.",
+        "revalidatedAt": "2026-08-20T10:12:12.663Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    },
+    {
+      "findingId": "finding_0af67c5530ef54bc",
+      "severity": "MEDIUM",
+      "vulnSlug": "other-domain-takeover",
+      "title": "Immediate slug reuse enables stale hostname and API endpoint takeover",
+      "description": "Released slugs become immediately available to unrelated accounts, and the documented move procedure releases the old binding before claiming the new one. An attacker monitoring desirable labels can win that interval or claim a deliberately abandoned slug. Existing links, bookmarks, QR codes, and references to both <slug>.bounded.page and <slug>-api.bounded.page then resolve to the attacker's application. This enables convincing phishing and can redirect stale API clients to an attacker-controlled backend. Current platform restrictions reduce exposure for launched oApps but do not protect ordinary applications.",
+      "lineNumbers": [
+        32,
+        38,
+        52,
+        57,
+        60,
+        61,
+        62
+      ],
+      "recommendation": "Quarantine released slugs for a meaningful recovery period, permit immediate rebinding only to the same account, and provide an atomic transfer operation that never exposes the slug to third-party claims between release and claim.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The page explicitly documents that release frees a slug and instructs a move as two separate operations: release it from the old app, then claim it on the new app. `clearSlug` simply sets the owning database column to null, and the ordinary claim path has no tombstone, quarantine period, or same-account preference. The only temporary reservation is for an unsettled oApp launch, while launched oApps are separately prevented from releasing their names; neither mechanism protects ordinary applications. The router resolves both `<slug>.bounded.page` and `<slug>-api.bounded.page` from the same `slug:<slug>` mapping, with the `-api` form forwarded to the runtime using the newly mapped app ID. An attacker who wins the move interval or claims an abandoned label therefore controls the content shown by stale links and the backend reached by stale API URLs. App-scoped credentials may still be rejected by the attacker's runtime, but that does not prevent platform-domain phishing, unauthenticated endpoint substitution, or clients operating against the wrong application. The owning repository has an atomic internal slug move for the special launch workflow, which confirms that the public release-then-claim flow lacks equivalent protection. No recent change adds quarantine or atomic ordinary-app transfer, and this is distinct from F1 because perfect origin revocation would not stop stale hostname takeover.",
+        "revalidatedAt": "2026-08-20T10:12:12.663Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:30:51.787Z",
+      "durationMs": 90880.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-5f5a-7200-a2d4-7e9d651c16f5",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 53776.6,
+        "outputTokens": 2620.8,
+        "cacheReadInputTokens": 759296,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:12:12.663Z",
+      "durationMs": 212408,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-1f75-72d2-9bc8-62285332ea40",
+      "findingCount": 2,
+      "numTurns": 0.25,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 107815.75,
+        "outputTokens": 6777,
+        "cacheReadInputTokens": 2353536,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:39:01Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T19:51:28+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-07-28T04:25:30-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-26T13:03:30-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:12:12.672Z"
+  },
+  "status": "analyzed"
+}

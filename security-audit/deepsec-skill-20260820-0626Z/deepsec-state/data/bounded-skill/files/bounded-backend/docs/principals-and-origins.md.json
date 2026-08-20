@@ -1,0 +1,98 @@
+{
+  "filePath": "bounded-backend/docs/principals-and-origins.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.593Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "abf4f35194ccaf1f1c0af385f03f4a081dcb406e047fe67c915e490b2c44be60",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-origin-model-mismatch",
+      "title": "The documented origin set omits the live function-write origin",
+      "description": "The page says only live and user are currently produced and that function is reserved and never matches. In the current realtime worker, a direct function's ctx.bounded mutation is authenticated with a dispatcher-minted capability containing the function name, and deriveWriteOrigin returns kind function with the function path and module. Live-invoked function writes instead preserve kind live. The page also conflates this data-plane write provenance with ctx.origin, which remains live-only or null inside the function body. This can make copied collection rules fail unexpectedly and understates that a rule such as @origin.kind != 'user' already admits direct function-originated writes today.",
+      "lineNumbers": [
+        113,
+        114,
+        115,
+        116,
+        117,
+        133,
+        139,
+        140
+      ],
+      "recommendation": "Document function as a current collection-rule origin and clearly separate function invocation auth provenance, downstream ctx.bounded write provenance, and the function body's ctx.origin value.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_c6b71faf08fedcc2"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-undeployable-example",
+      "title": "The live actAs recipe cannot pass the deploy verifier",
+      "description": "The page presents function actAs as a live-call override and gives npcBrain an origin-only auth rule. The owning verifier requires every actAs function's auth expression to imply the app admin predicate. Live-call auth is evaluated before actAs under the null system principal, so an auth rule limited to @origin.kind == 'live' cannot imply an authenticated admin. The documented example is therefore rejected by bounded verify and deploy, making the advertised per-function live override unusable as shown.",
+      "lineNumbers": [
+        22,
+        28,
+        75,
+        76,
+        77,
+        78,
+        81,
+        85,
+        87,
+        93
+      ],
+      "recommendation": "Use session.live.runAs for the supported live service-identity pattern. Remove the origin-only actAs example unless the owning verifier is changed to safely recognize live-only actAs authorization.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_3da2ae75295080d1"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:20:48.153Z",
+      "durationMs": 106141,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e39-f6cb-7181-9386-b0ee77bb138e",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48645,
+        "outputTokens": 4236.6,
+        "cacheReadInputTokens": 878182.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-07-28T21:12:01+05:30"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-06T22:10:42-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:20:48.169Z"
+  }
+}

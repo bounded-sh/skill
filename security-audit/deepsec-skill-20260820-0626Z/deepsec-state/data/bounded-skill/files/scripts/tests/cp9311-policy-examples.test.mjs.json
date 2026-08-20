@@ -1,0 +1,72 @@
+{
+  "filePath": "scripts/tests/cp9311-policy-examples.test.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.407Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "96a69d416c276686a393278d7ba776a4a2d4e058d59d27b3197a4f441ccf8091",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-incomplete-security-regression",
+      "title": "Authorization regression tests only count textual occurrences",
+      "description": "The F-003 test merely requires an invite path to occur somewhere, without verifying that only a tenant authority can issue invites. A policy with publicly creatable invites would therefore pass while still allowing self-enrollment. Similarly, F-006 counts tenant-gate strings anywhere in the entire section and accepts any count of two. The current example has gates in create, update, and delete, so removing the update gate still leaves two matches and passes, despite allowing an admin to modify a foreign tenant's administrators. The checks do not bind the required predicates to the individual policy rules they claim to protect.",
+      "lineNumbers": [
+        68,
+        72,
+        80,
+        81,
+        86,
+        89,
+        90,
+        92,
+        93
+      ],
+      "recommendation": "Extract and parse the relevant policy JSON, then assert the create, update, invite-create, and membership-create rules individually. Verify that invite issuance requires existing membership, both admin create and update enforce tenant equality, and update preserves the stored tenant.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_0c7e5c87604b3b5c"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:58:08.547Z",
+      "durationMs": 115775.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-6640-72d1-bfc3-4b50dad65ea8",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 39845,
+        "outputTokens": 4915.2,
+        "cacheReadInputTokens": 706304,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-19T19:48:01+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:58:08.559Z"
+  }
+}

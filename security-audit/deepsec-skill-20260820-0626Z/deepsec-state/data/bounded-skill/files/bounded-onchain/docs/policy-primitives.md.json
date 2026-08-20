@@ -1,0 +1,110 @@
+{
+  "filePath": "bounded-onchain/docs/policy-primitives.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.093Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "60b99a4a5be0a1f9b891950372c95a4f463a7ae100ea619be15574d593ac2264",
+  "findings": [
+    {
+      "findingId": "finding_c61998a8025eb129",
+      "severity": "HIGH",
+      "vulnSlug": "other-financial-authorization-bypass",
+      "title": "Recommended overflow rewrite weakens the financial bound",
+      "description": "The recommended replacement for `spent * SCALE <= tokens * price` is not algebraically equivalent and admits values rejected by the intended constraint. For example, with `SCALE=100`, `tokens=50`, `price=1`, and `spent=1`, the original expression rejects `100 <= 50`, but the replacement accepts `1 // (50 // 100 + 1) <= 1`. A copied policy can therefore authorize an excessive debit, payout, or charge. Because `bounded verify` proves the replacement as written rather than the intended equation, verification does not detect this specification error. An attacker who controls the transaction amounts can repeatedly extract or redirect value within the weakened bound.",
+      "lineNumbers": [
+        107,
+        109,
+        127
+      ],
+      "recommendation": "Remove this rewrite. Use a mathematically proven quotient-and-remainder comparison or a full-precision `mulDivFloor`/`mulDivCeil` primitive after confirming its deployed capability. Add independent differential tests proving the replacement implies the intended financial bound across zero, sub-scale, boundary, and maximum values.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The current policy-primitives page presents spent // (tokens // SCALE + 1) <= price as the recommended replacement for spent * SCALE <= tokens * price. These expressions are not algebraically equivalent under the documented integer-division semantics. With SCALE=100, tokens=50, price=1, and spent=1, the intended comparison evaluates as 100 <= 50 and rejects, while the replacement evaluates as 1 // 1 <= 1 and accepts. More generally, whenever tokens is below SCALE, the replacement's denominator becomes one and largely disconnects the allowed spend from the token quantity. A financial policy copied from this table can therefore admit an attacker-controlled debit or payout that exceeds the intended proportional bound. bounded verify proves the replacement exactly as authored using unbounded integers, so it cannot detect that the specification itself was weakened. The surrounding advice about floor-and-remainder pairs does not repair this table entry, and the full-precision MathPlugin alternatives remain classified as unverified rather than serving as an automatic mitigation. Git history shows the faulty rewrite remains unchanged, and the false-positive register contains no matching exception.",
+        "revalidatedAt": "2026-08-20T10:11:53.783Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:40:32.818Z",
+      "durationMs": 104627,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2c36-7a10-8496-61cd20fd334a",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40734.4,
+        "outputTokens": 3827,
+        "cacheReadInputTokens": 956467.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:11:53.783Z",
+      "durationMs": 207618.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-1f7d-73e1-b8f8-0613646726b5",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 112193.25,
+        "outputTokens": 6897.25,
+        "cacheReadInputTokens": 2353600,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-12T23:01:30-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-12T11:53:53-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T17:40:32+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:11:53.816Z"
+  },
+  "status": "analyzed"
+}

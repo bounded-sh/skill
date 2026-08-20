@@ -1,0 +1,91 @@
+{
+  "auditStartedAt": "2026-08-20T06:26:53Z",
+  "auditDeadline": "2026-08-20T12:26:53Z",
+  "lastUpdatedAt": "2026-08-20T11:42:05Z",
+  "phase": "report-finalization",
+  "discoveryStoppedAt": "2026-08-20T09:57:42Z",
+  "validationStoppedAt": "2026-08-20T11:41:53Z",
+  "baseline": {
+    "repositoryPath": "/Users/athar/Desktop/workspace/poof-new/skill",
+    "remoteUrl": "git@github.com:bounded-sh/skill.git",
+    "commit": "54b05647169d6ed8b011db0c7a7cc9cc91cc0c53",
+    "tree": "8dc36e42d1123ce3643fefe61b1e66088c2a3e99",
+    "worktreePath": "/Users/athar/Desktop/workspace/poof-new/bounded-skill-deepsec.kf3zFH",
+    "branch": "audit/deepsec-skill-20260820-0626Z",
+    "cleanAtStart": true
+  },
+  "supportingRepositories": {
+    "boundedMonorepo": {
+      "remoteUrl": "git@github.com:poofdotnew/bounded-monorepo.git",
+      "commit": "8e7f1e25b53e8f0575ea0f2336640d68761d60a9",
+      "tree": "532d8765ebbd1622cac3fb48d8d604579a52046c",
+      "worktreePath": "/Users/athar/Desktop/workspace/poof-new/bounded-monorepo-audit.2CUS9x",
+      "used": true
+    },
+    "boundedCli": {
+      "remoteUrl": "git@github.com:poofdotnew/bounded-cli.git",
+      "commit": "755dd6b1cdf2d810fd119c0d95616f1ff7871730",
+      "tree": "c84818b32cb40ed1308f6d75c8124a869dec9d3a",
+      "worktreePath": "/Users/athar/Desktop/workspace/poof-new/bounded-cli-audit.CyUPDL",
+      "used": true
+    }
+  },
+  "counts": {
+    "trackedFiles": 161,
+    "fileDispositionsAssigned": 161,
+    "fencedBlocksInventoried": 641,
+    "downloadableExamplesInventoried": 5,
+    "kfpExclusions": 1,
+    "rejectedCandidates": 17,
+    "confirmedCritical": 0,
+    "confirmedHigh": 9,
+    "exampleClassifications": {
+      "complete": 111,
+      "partial": 66,
+      "executable": 267,
+      "conceptual": 52,
+      "generated": 150
+    }
+  },
+  "commands": [
+    { "command": "node scripts/validate.mjs", "result": "PASS" },
+    { "command": "node scripts/extract-plugin-catalog.mjs --check", "result": "PASS" },
+    { "command": "node scripts/generate-plugin-catalog.mjs --check", "result": "PASS" },
+    { "command": "./dev doctor --profile full", "result": "PASS after deterministic dependency installation in pinned worktree" },
+    { "command": "BOUNDED_MONOREPO=<pinned> node scripts/policy-e2e/run.mjs --require", "result": "INVALID initial environment run: non-pinned sibling CLI" },
+    { "command": "BOUNDED_CLI_BIN=<pinned> BOUNDED_MONOREPO=<pinned> node scripts/policy-e2e/run.mjs --require", "result": "COMPLETED: 11 specs, 121 steps, 72 passed, 49 failed, 0 skipped; all failures were fail-closed wallet-auth preconditions in six examples" },
+    { "command": "deepsec run (six non-overlapping partitions)", "result": "COMPLETED: 140 supported-language analyses; publication partition added 25 analyses and 23 raw findings" },
+    { "command": "node security-audit/deepsec-skill-20260820-0626Z/tools/policy-cross-user-e2e.mjs", "result": "PASS: 10/10 applicable victim/attacker checks" },
+    { "command": "Codex agent-behavior evaluations", "result": "COMPLETED: 12/12 high-risk tasks, gpt-5.6-sol, high reasoning; all first policy fences parsed and outputs were retained" },
+    { "command": "./dev doctor --profile full", "result": "PASS: latest health check reported 79 checks passed" },
+    { "command": "deepsec revalidate prospective High set", "result": "COMPLETED: gpt-5.6-sol xhigh, 19/19 verdicts persisted; harness labels were 17 true-positive, 1 false-positive, 1 fixed" },
+    { "command": "required policy E2E capture rerun", "result": "COMPLETED consistently: 11 specs, 121 steps, 72 passed, 49 failed closed, 0 skipped; all step output retained" },
+    { "command": "distinct-identity runtime agent reproduction", "result": "PASS: unrelated authenticated app user reached onInvoke and mutated app-scoped runtime store" },
+    { "command": "standalone mintNFT policy verify", "result": "PASS: safeToDeploy with 0 schema failures and 0 proof failures under solana_devnet" },
+    { "command": "final DeepSec analyzed-path reconciliation", "result": "PASS: the report's 140 unique paths exactly equal all 140 non-generated baseline paths" },
+    { "command": "focused source-proof rerun", "result": "PASS: onchain boundary arithmetic, analytics scrubbing, and reclaimed-origin acceptance reproduced against pinned source" },
+    { "command": "focused bounded-cli regression rerun", "result": "PASS: both audit-only Go regression tests reproduced against the pinned CLI, then the temporary overlay was removed" },
+    { "command": "deepsec revalidate bounded-deploy/docs/source-sync.md", "result": "COMPLETED: gpt-5.6-sol xhigh, 3/3 verdicts persisted; the independently reproduced High received a true-positive verdict" },
+    { "command": "fresh local-stack fund-loss and runtime-agent reruns", "result": "PASS: early resolution, distinct-path double sell, and lower-privileged runtime-agent admission reproduced on fresh local apps; downstream policy writes remained denied" },
+    { "command": "baseline and example SHA-256 reconciliation", "result": "PASS: all 161 file hashes match the pinned commit and all 646 example hashes match current pinned source extraction" },
+    { "command": "fresh distinct-identity policy authorization regression", "result": "PASS: 10/10 applicable victim/attacker checks; denied private reads returned no document and all unauthorized writes were rejected" },
+    { "command": "post-validation local platform doctor", "result": "PASS: 79 checks passed after all fresh local reproductions" },
+    { "command": "node security-audit/deepsec-skill-20260820-0626Z/tools/verify-audit-artifacts.mjs", "result": "PASS: 161 baseline hashes, 646 example dispositions, exact 140-path DeepSec set, 10 cross-user checks, policy totals, and all confirmed DeepSec verdict IDs reconciled" },
+    { "command": "publication gates preflight", "result": "PASS: validate, plugin extraction check, and plugin generation check all passed after report assembly" },
+    { "command": "final publication gates", "result": "PASS: node scripts/validate.mjs; node scripts/extract-plugin-catalog.mjs --check; node scripts/generate-plugin-catalog.mjs --check" }
+  ],
+  "errors": [
+    { "at": "2026-08-20T06:30:00Z", "operation": "initial local stack boot", "error": "Clean pinned worktree lacked installed Wrangler and built layer artifacts", "resolution": "Installed lockfile-pinned worker dependencies and built CDK layers; subsequent 79-check doctor passed" },
+    { "at": "2026-08-20T08:13:51Z", "operation": "first required policy E2E pass", "error": "The local dev wrapper selected the non-pinned sibling bounded-cli and several extracted policies lacked wallet auth required by the runner identity", "resolution": "Preserved as an invalid environment run; pinning the CLI and using fresh isolated app and session state before rerunning every spec" },
+    { "at": "2026-08-20T08:22:11Z", "operation": "first deploy-guidance DeepSec attempt", "error": "Cancelled immediately after launch to keep aggregate Codex discovery concurrency at six; three interrupted batches emitted non-JSON partial output", "resolution": "No analysis was credited; the entire deploy manifest was rerun cleanly" },
+    { "at": "2026-08-20T08:44:00Z", "operation": "first publication-supply-chain DeepSec attempt", "error": "Started at concurrency one while onchain batches drained, then cancelled when five discovery slots became available; interrupted output was not credited", "resolution": "Reran the complete non-overlapping publication manifest at concurrency five" },
+    { "at": "2026-08-20T10:03:00Z", "operation": "DeepSec xhigh event stream", "error": "The in-process app-server event stream reported that 464 events were dropped while all three batches continued", "resolution": "The harness persisted 19/19 requested verdicts; raw invocation state and the warning are retained, and every reported High was independently checked" },
+    { "at": "2026-08-20T10:18:00Z", "operation": "direct TypeScript source reproduction", "error": "Node could not resolve source-style .js and extensionless TypeScript imports", "resolution": "Bundled the exact pinned source and audit entrypoint with the monorepo's installed esbuild; both focused proofs then passed" }
+  ],
+  "limitations": [
+    "Several xhigh validation agents consulted dirty sibling supporting repositories or globally installed skill copies despite the manifest instruction. Their cross-repository claims were not trusted; every confirmed path was independently retraced against the pinned support worktrees.",
+    "DeepSec status lists four pending audit bookkeeping files created after baseline capture. They are not tracked by the pinned commit and were not credited; the final report's 140 analyzed paths exactly match the 140 non-generated baseline paths, with the remaining 21 baseline paths handled by generated parity.",
+    "Live-network acceptance was not attempted. Unverified onchain surfaces were evaluated only through the local platform, deploy verifier, exact pinned runtime code, and locked dependency contracts.",
+    "The audit confirms only the listed High boundaries at the pinned commits and does not guarantee the repository or generated applications are vulnerability-free."
+  ]
+}

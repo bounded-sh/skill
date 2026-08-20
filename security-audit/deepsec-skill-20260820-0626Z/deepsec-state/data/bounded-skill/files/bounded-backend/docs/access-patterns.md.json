@@ -1,0 +1,67 @@
+{
+  "filePath": "bounded-backend/docs/access-patterns.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.584Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "d648845b9782a00f57b6803a9dd7bed0d9459b826947ef64e03ed0770fb45c65",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Admin-or-owner recipe lets an admin seize document ownership",
+      "description": "The copyable admin-or-owner update predicate authorizes an admin without requiring `@newData.ownerId == @data.ownerId`. An admin can therefore update `ownerId` to itself or an accomplice and subsequently exercise permissions reserved for the owner, such as owner-gated reads or deletes. Although the page later gives general immutable-field advice, the concrete ownership recipe does not apply that protection and is unsafe when copied as written.",
+      "lineNumbers": [
+        54,
+        57,
+        91,
+        93
+      ],
+      "recommendation": "Preserve ownership specifically on the admin branch. If owners may transfer, use a rule shaped like `@user.id != null && ((@data.ownerId == @user.id) || (get(/admins/@user.id) != null && @newData.ownerId == @data.ownerId))`. If transfers are not required, preserve ownerId for every update.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_2e612383c3354035"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:12:41.514Z",
+      "durationMs": 95816.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-578f-7780-9f0b-2380cda403e5",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40174.2,
+        "outputTokens": 3658.2,
+        "cacheReadInputTokens": 586342.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:12:41.523Z"
+  }
+}

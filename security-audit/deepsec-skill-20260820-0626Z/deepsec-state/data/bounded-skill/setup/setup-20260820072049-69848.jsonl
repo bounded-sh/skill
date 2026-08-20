@@ -1,0 +1,26 @@
+{"sequence":1,"timestamp":"2026-08-20T07:20:49.305Z","event":{"type":"phase-start","phase":"scaffold","label":"Workspace"}}
+{"sequence":2,"timestamp":"2026-08-20T07:20:49.306Z","event":{"type":"phase-complete","phase":"scaffold","durationMs":1}}
+{"sequence":3,"timestamp":"2026-08-20T07:20:49.306Z","event":{"type":"phase-start","phase":"install","label":"Install"}}
+{"sequence":4,"timestamp":"2026-08-20T07:20:49.502Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm"}}
+{"sequence":5,"timestamp":"2026-08-20T07:20:49.704Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout:  WARN  using --force I sure hope you know what you are doing"}}
+{"sequence":6,"timestamp":"2026-08-20T07:20:49.708Z","event":{"type":"log","phase":"install","level":"debug","message":"stderr: (node:69895) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities."}}
+{"sequence":7,"timestamp":"2026-08-20T07:20:49.708Z","event":{"type":"log","phase":"install","level":"debug","message":"stderr: (Use `node --trace-deprecation ...` to show where the warning was created)"}}
+{"sequence":8,"timestamp":"2026-08-20T07:20:49.721Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Lockfile is up to date, resolution step is skipped"}}
+{"sequence":9,"timestamp":"2026-08-20T07:20:49.726Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 1, reused 0, downloaded 0, added 0"}}
+{"sequence":10,"timestamp":"2026-08-20T07:20:49.726Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":0}}
+{"sequence":11,"timestamp":"2026-08-20T07:20:49.756Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Packages: +306"}}
+{"sequence":12,"timestamp":"2026-08-20T07:20:49.756Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"}}
+{"sequence":13,"timestamp":"2026-08-20T07:20:50.727Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 306, reused 286, downloaded 0, added 188"}}
+{"sequence":14,"timestamp":"2026-08-20T07:20:50.728Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":188,"total":306}}
+{"sequence":15,"timestamp":"2026-08-20T07:20:51.727Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 306, reused 286, downloaded 3, added 287"}}
+{"sequence":16,"timestamp":"2026-08-20T07:20:51.727Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":287,"total":306}}
+{"sequence":17,"timestamp":"2026-08-20T07:20:52.727Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 306, reused 286, downloaded 6, added 292"}}
+{"sequence":18,"timestamp":"2026-08-20T07:20:52.728Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":292,"total":306}}
+{"sequence":19,"timestamp":"2026-08-20T07:20:53.727Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 306, reused 286, downloaded 7, added 293"}}
+{"sequence":20,"timestamp":"2026-08-20T07:20:53.728Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":293,"total":306}}
+{"sequence":21,"timestamp":"2026-08-20T07:20:54.727Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 306, reused 286, downloaded 8, added 294"}}
+{"sequence":22,"timestamp":"2026-08-20T07:20:54.727Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":294,"total":306}}
+{"sequence":23,"timestamp":"2026-08-20T07:23:04.571Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 306, reused 286, downloaded 9, added 294"}}
+{"sequence":24,"timestamp":"2026-08-20T07:23:04.578Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":294,"total":306}}
+{"sequence":25,"timestamp":"2026-08-20T07:23:05.569Z","event":{"type":"log","phase":"install","level":"debug","message":"stdout: Progress: resolved 306, reused 286, downloaded 9, added 295"}}
+{"sequence":26,"timestamp":"2026-08-20T07:23:05.570Z","event":{"type":"progress","phase":"install","message":"Installing dependencies with pnpm","current":295,"total":306}}

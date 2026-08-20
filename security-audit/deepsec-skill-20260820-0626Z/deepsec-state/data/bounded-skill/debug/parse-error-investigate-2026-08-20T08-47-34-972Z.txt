@@ -1,0 +1,13 @@
+# deepsec parse-failure debug dump
+# phase: investigate
+# agentType: codex
+# timestamp: 2026-08-20T08:47:34.972Z
+# error: Error: Agent produced output that wasn't a parseable JSON findings array: Unexpected token 'T', "The backen"... is not valid JSON. Tolerant jsonrepair failed: Unexpected character "`" at position 51. First 400 chars: The backend guidance routes the admin semantics to `access-control.md` and `admin-and-ownership.md`. I’m reading those complete pages and comparing their actual policy blocks with what the standalone scanner recognizes, so any reported gap is grounded in present guidance rather than a hypothetical regex bypass.
+# batch (5 files):
+  - scripts/extract-plugin-catalog.mjs
+  - scripts/generate-plugin-catalog.mjs
+  - scripts/router-baseline.json
+  - scripts/validate.mjs
+  - scripts/verify-admin-active-gate.mjs
+# --- raw agent output begins on next line ---
+The backend guidance routes the admin semantics to `access-control.md` and `admin-and-ownership.md`. I’m reading those complete pages and comparing their actual policy blocks with what the standalone scanner recognizes, so any reported gap is grounded in present guidance rather than a hypothetical regex bypass.

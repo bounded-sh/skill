@@ -1,0 +1,83 @@
+{
+  "filePath": "scripts/tests/skill-h-identity-gate.test.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.409Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "6e6944bc94cf7312b1ab2959ca75076ccb48e0b18020e81d625ab53adc0cd1d3",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-ineffective-auth-regression-test",
+      "title": "Identity assertions do not verify the executed authorization gates",
+      "description": "The tests search sections for security-related substrings without binding them to executable conditions. The fetch check accepts a comment containing !ctx.identity.user and even accepts an inverted condition such as if (!!ctx.identity.user). The runPayouts test only rejects the exact auth:\"true\" spelling and accepts __owners__ or __managers__ anywhere in a 400-character window; the current __owners__ reference in logsAuth would let an auth rule allowing every signed-in user pass. Likewise, the SDK test can find ctx.user?.id in a comment while executable code trusts a caller-supplied customer ID. The current documentation examples are secure, but unsafe auth-bypass and cross-user examples can pass the repository's required publication gate.",
+      "lineNumbers": [
+        16,
+        17,
+        20,
+        35,
+        39,
+        44,
+        58,
+        60,
+        64,
+        73,
+        77,
+        83,
+        87,
+        97,
+        101
+      ],
+      "recommendation": "Extract exact fenced examples and parse their JavaScript/TypeScript or JSONC. Assert that the executed fetch condition rejects a missing identity, that functions.runPayouts.auth conjunctively requires a non-null user and the intended reserved membership set, and that the invoked function derives its lookup key exclusively from ctx.user.id. Add unsafe mutated examples as negative test fixtures.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_03609546a894e70b"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:58:27.234Z",
+      "durationMs": 155833.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5f-ca27-7422-8510-390a9ca7494e",
+      "findingCount": 1,
+      "numTurns": 0.5,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 58003.5,
+        "outputTokens": 6089.5,
+        "cacheReadInputTokens": 666368,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:39:01Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T20:50:15+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:58:27.243Z"
+  }
+}

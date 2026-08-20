@@ -1,0 +1,50 @@
+{
+  "filePath": "bounded-onchain/docs/embedded-wallets.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.063Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "1de28e844023ec50f889aaf269ce017f89fc7d50fec4cf792279851a75bfafa7",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:38:13.130Z",
+      "durationMs": 76702.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2b25-7b13-be94-73520bcdfc97",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42801,
+        "outputTokens": 2881.2,
+        "cacheReadInputTokens": 699750.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T18:18:51-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:38:13.140Z"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-08-20T08:38:43.847Z",
+  "pass": 10,
+  "total": 10,
+  "transportAdjustment": "Wallet authentication was injected into extracted policies only so two local authenticated identities could exercise existing rules. No rule, hook, invariant, signer, destination, source, amount, or authority condition was changed.",
+  "results": [
+    { "name": "attacker cannot rewrite victim listing", "page": "bounded-backend/docs/examples/marketplace.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot consume victim spend cap", "page": "bounded-backend/docs/examples/marketplace.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot read victim order", "page": "bounded-backend/docs/examples/marketplace.md", "result": "PASS", "evidence": "denied read returned no document" },
+    { "name": "attacker cannot release victim escrow", "page": "bounded-onchain/docs/examples/escrow.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot withdraw victim vault", "page": "bounded-onchain/docs/examples/isolated-vault.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot withdraw victim position", "page": "bounded-onchain/docs/examples/cp-amm-liquidity-positions.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot mint into victim collection", "page": "bounded-onchain/docs/examples/nft-collection.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot resolve victim market", "page": "bounded-onchain/docs/examples/prediction-market-amm.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot unstake victim position", "page": "bounded-onchain/docs/examples/staking-lock-vault.md", "result": "PASS", "evidence": "403 policy_denied" },
+    { "name": "attacker cannot select victim fee-withdrawal authority", "page": "bounded-onchain/docs/examples/token2022-extensions.md", "result": "PASS", "evidence": "403 policy_denied" }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "filePath": "bounded-onchain/docs/onchain-trading.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.072Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "b46956c0460244ba6e0a156c36621f71074362885fe29d152455af8f2f416415",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Server-custody example lets any wallet trade pooled app funds",
+      "description": "The first complete trading collection allows every authenticated wallet to create a trade, then passes caller-controlled market and size directly to placeLong with @contract.address as source. The page defines that source as the shared app escrow under server custody, with the backend signing autonomously. An attacker can therefore submit arbitrary leveraged orders against pooled app funds. The later prose recommending owner-only rules and field caps does not apply those controls to the primary copyable example.",
+      "lineNumbers": [
+        32,
+        34,
+        39,
+        42,
+        44,
+        57,
+        237,
+        238
+      ],
+      "recommendation": "Replace the example with an owner, admin, or dedicated desk-service authorization rule. Policy-pin or allowlist the market, side and isolated subaccount, cap size and slippage, and bind every trade to the applicable loss reservation before its hook can fire.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_152f50d85e85fde5"
+    },
+    {
+      "severity": "HIGH",
+      "vulnSlug": "other-invariant-bypass",
+      "title": "Reserve-at-open policy does not bind the loss reservation to the trade",
+      "description": "The page claims that the rollingSum reservation proves realized onchain loss cannot exceed the cap, but the displayed policy governs only lossReservations. It permits the desk owner to choose any reservedMicro, makes positionId optional, and contains no rule requiring a position write to create a fresh matching reservation or requiring reservedMicro to equal the isolated collateral committed by the hook. An authorized autonomous trading principal can write the position alone or reserve zero while opening a large order, so the hook executes without consuming the claimed loss budget. The documented batch is also not valid on a real onchain protocol as shown: positions fires an onchain hook while lossReservations is an unflagged durable collection, and the repository's onchain batching contract rejects mixed onchain/offchain setMany batches. Consequently, the asserted realized <= reserved <= cap guarantee is not enforced by the policy.",
+      "lineNumbers": [
+        267,
+        275,
+        277,
+        282,
+        283,
+        306,
+        310,
+        314,
+        318,
+        340,
+        345
+      ],
+      "recommendation": "Put the reservation and trade on one compatible atomic enforcement plane. Require a fresh reservation transition in the position rule using pre-state and getAfter checks, bind positionId and deskId, require a fixed positive reservation equal to the exact collateral transferred into a fresh isolated subaccount, and derive the hook's collateral and order parameters from those immutable fields.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_e7cfab9b21480221"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:40:17.485Z",
+      "durationMs": 101166.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-29ff-7303-999a-f0a4eb07b3bb",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 55231.2,
+        "outputTokens": 3892.8,
+        "cacheReadInputTokens": 1065523.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-17T15:21:23-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T17:40:32+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:40:17.491Z"
+  }
+}

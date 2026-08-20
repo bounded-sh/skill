@@ -1,0 +1,14 @@
+[
+  ".gitignore",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "README.md",
+  "agents/AGENTS.md",
+  "agents/cursor-bounded.mdc",
+  "agents/windsurfrules.md",
+  "bounded/SKILL.md",
+  "bounded/docs/analytics.md",
+  "bounded/docs/billing.md",
+  "bounded/guides/capabilities-and-limits.md",
+  "oapps-fun/SKILL.md"
+]

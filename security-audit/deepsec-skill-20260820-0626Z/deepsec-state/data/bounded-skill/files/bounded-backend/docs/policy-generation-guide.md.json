@@ -1,0 +1,81 @@
+{
+  "filePath": "bounded-backend/docs/policy-generation-guide.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.592Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "381fed65a2e3fc7c9dcd9920dd8ea9c7c1d4ac61d44930382b0c94353941d7e6",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-payment-flow-corruption",
+      "title": "Token hook remediation can silently remove the intended transfer",
+      "description": "The guide correctly says onchain side effects belong in hooks.onchain, but its common-mistakes table tells users to fix TokenPlugin.transfer in hooks.offchain by replacing it with DocumentPlugin.putDocument or updateField. If the intended operation is payment or custody, that substitution removes the token movement while allowing an offchain status or receipt write to succeed. A copied purchase or settlement flow can therefore record success and release goods even though no funds moved.",
+      "lineNumbers": [
+        284,
+        285,
+        333
+      ],
+      "recommendation": "Make the remediation conditional on intent: move an actual token transfer into hooks.onchain on an onchain collection, with the required custody and invariant checks. Recommend DocumentPlugin only when the desired effect is explicitly an offchain document mutation, never as a replacement for value movement.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_d77211ea9cca1804"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:13:33.467Z",
+      "durationMs": 105993,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-59b8-74c0-92e8-1ebfe465e04a",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48681.4,
+        "outputTokens": 4089.2,
+        "cacheReadInputTokens": 1086668.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-04T13:42:30+05:30"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-29T13:52:43-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:13:33.472Z"
+  }
+}

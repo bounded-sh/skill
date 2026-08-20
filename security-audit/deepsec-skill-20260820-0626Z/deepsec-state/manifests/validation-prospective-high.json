@@ -1,0 +1,17 @@
+[
+  "bounded/docs/analytics.md",
+  "bounded-backend/docs/agents-flue.md",
+  "bounded-backend/docs/backend-runtime.md",
+  "bounded-backend/docs/functions-graduation.md",
+  "bounded-backend/docs/functions.md",
+  "bounded-backend/docs/policy-generation-guide.md",
+  "bounded-backend/docs/secrets.md",
+  "bounded-deploy/docs/domains.md",
+  "bounded-deploy/docs/environments.md",
+  "bounded-onchain/docs/examples/prediction-market-amm.md",
+  "bounded-onchain/docs/examples/randomness-coin-flip.md",
+  "bounded-onchain/docs/examples/token-launch.md",
+  "bounded-onchain/docs/plugins/_fragments/NFTPlugin.md",
+  "bounded-onchain/docs/plugins/_fragments/TokenPlugin.md",
+  "bounded-onchain/docs/policy-primitives.md"
+]

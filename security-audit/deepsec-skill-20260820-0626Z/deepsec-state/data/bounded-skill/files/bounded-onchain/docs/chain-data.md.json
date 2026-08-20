@@ -1,0 +1,80 @@
+{
+  "filePath": "bounded-onchain/docs/chain-data.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.062Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "dfd532f5010c526043ce7f87c27db3d37ce37fdb6eb85d6f99088173aba1e8d1",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "rate-limit-bypass",
+      "title": "Advertised per-app rate isolation is only per Worker isolate",
+      "description": "The page states that calls are rate-isolated per app and return 429 on bursts. The owning direct-provider implementation stores token buckets in a module-level Map inside each stateless Cloudflare Worker isolate. Every isolate and point of presence therefore starts with an independent full bucket, and recycling resets the state. A geographically distributed attacker can obtain roughly configuredRps multiplied by the number of active isolates, consuming the shared Helius or Alchemy quota and degrading service for other tenants despite each isolate considering the app within its limit.",
+      "lineNumbers": [
+        53,
+        63
+      ],
+      "recommendation": "Move per-app admission to a strongly consistent shared limiter such as a Durable Object and add a provider-account-wide ceiling. Until that is enforced, document that the current limit is per isolate rather than a platform-wide per-app guarantee.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_1ffbcbb8af9ee94d"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-billing-documentation-drift",
+      "title": "Provider failures are not automatically refunded as documented",
+      "description": "The billing section promises an automatic refund whenever the provider errors. The owning implementation retains the charge once provider work starts unless the provider tariff explicitly proves that failure class is free. For chain data, only HTTP 429 is refunded for both providers and HTTP 403 is additionally refunded for Alchemy; network failures, most 4xx/5xx responses, and JSON-RPC error envelopes retain the charge. Applications may build retry loops under the false assumption that failed calls cost nothing and unexpectedly exhaust their services bucket.",
+      "lineNumbers": [
+        55,
+        58,
+        59
+      ],
+      "recommendation": "Document the actual tariff-aware behavior: charges are retained after provider work starts unless the response is a documented zero-cost failure. Explain the billingDisposition field so callers can distinguish retained and refunded failures.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_631c19680ac06667"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:38:13.106Z",
+      "durationMs": 76702.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2b25-7b13-be94-73520bcdfc97",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42801,
+        "outputTokens": 2881.2,
+        "cacheReadInputTokens": 699750.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-11T08:18:56-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:38:13.119Z"
+  }
+}

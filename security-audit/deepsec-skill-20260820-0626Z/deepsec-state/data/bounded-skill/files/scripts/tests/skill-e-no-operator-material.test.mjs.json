@@ -1,0 +1,95 @@
+{
+  "filePath": "scripts/tests/skill-e-no-operator-material.test.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.408Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "522b4c6aae28d9f78c71de19522d270e4981e4c39fac9bc2d6052b7eaa835052",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-info-disclosure",
+      "title": "Public test discloses internal operator and release identifiers",
+      "description": "The public repository embeds the exact internal recovery header name, secret environment-variable names, webhook route, staging host, release marker filename, and release-evidence schema identifiers that its own boundary says belong only in private monorepo runbooks. An external attacker can use these identifiers for targeted endpoint discovery, credential hunting, phishing, and spoofing attempts. No credential value is disclosed, so this is information disclosure rather than hardcoded-secret exposure.",
+      "lineNumbers": [
+        25,
+        27,
+        28,
+        29,
+        30,
+        31,
+        33,
+        34,
+        35,
+        36,
+        37
+      ],
+      "recommendation": "Remove concrete internal identifiers from the public repository. Move the exact-literal regression check to the private owning monorepo or another private publication gate, leaving only non-sensitive generic boundary checks here.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_2961f39ebfbb65c6"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-incomplete-public-content-scan",
+      "title": "Public Cursor drop-in is excluded from the operator-material scan",
+      "description": "The recursive collector accepts only filenames ending in .md. The repository explicitly publishes agents/cursor-bounded.mdc as a paste-ready editor drop-in, but this file is never scanned. Internal operator material could therefore be added to a public agent instruction file while the guard remains green.",
+      "lineNumbers": [
+        14,
+        16,
+        20,
+        21
+      ],
+      "recommendation": "Scan all published instruction formats, including .mdc, and define the public corpus from explicit tracked roots or a manifest rather than a single filename extension.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_6c2c1cb8490914a7"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:58:08.573Z",
+      "durationMs": 115775.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-6640-72d1-bfc3-4b50dad65ea8",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 39845,
+        "outputTokens": 4915.2,
+        "cacheReadInputTokens": 706304,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-12T23:32:02-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T19:46:35+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:58:08.581Z"
+  }
+}

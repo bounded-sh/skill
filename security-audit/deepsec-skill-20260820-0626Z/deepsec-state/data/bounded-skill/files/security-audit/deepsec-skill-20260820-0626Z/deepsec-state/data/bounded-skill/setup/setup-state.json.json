@@ -1,0 +1,22 @@
+{
+  "filePath": "security-audit/deepsec-skill-20260820-0626Z/deepsec-state/data/bounded-skill/setup/setup-state.json",
+  "projectId": "bounded-skill",
+  "candidates": [
+    {
+      "vulnSlug": "secrets-exposure",
+      "lineNumbers": [
+        8,
+        11,
+        16
+      ],
+      "snippet": "    \"scaffold\": {\n      \"status\": \"complete\",\n      \"inputDigest\": \"3c24ac6501ce7453d35fb835d55273d72c2249ee752e05b1978a4c640ff7c2f4\",\n      \"operationKey\": \"bounded-skill:scaffold:3c24ac6501ce\",\n      \"startedAt\": \"2026-08-20T07:20:49.305Z\",",
+      "matchedPattern": "potential 256-bit hex secret"
+    }
+  ],
+  "lastScannedAt": "2026-08-20T07:25:57.680Z",
+  "lastScannedRunId": "20260820072557-0bfb703de0d97b84",
+  "fileHash": "e481a1da0343cdb99c516ad7b44aafcc3fd106a50516060fc774fbc72e3b237f",
+  "findings": [],
+  "analysisHistory": [],
+  "status": "pending"
+}

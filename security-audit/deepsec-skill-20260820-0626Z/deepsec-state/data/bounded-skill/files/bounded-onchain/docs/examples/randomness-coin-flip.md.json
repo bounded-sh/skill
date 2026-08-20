@@ -1,0 +1,103 @@
+{
+  "filePath": "bounded-onchain/docs/examples/randomness-coin-flip.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.067Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "883d7886206105868e30ba985b7e0c528bc3594f2977af88eae2423858b71881",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-insufficient-collateralization",
+      "title": "Outstanding flip liabilities are not reserved",
+      "description": "Each bet only checks that the current house balance covers that individual flip's maximum payout. The bet then adds one stake to the shared pot while creating a potential liability of two stakes. No aggregate state or invariant reserves liabilities across unsettled flips. An attacker or burst of users can therefore open enough concurrent flips that all creates pass while the combined possible payouts exceed the pot. Settlement rechecks only the remaining balance, so earlier winners can drain the pot and later winning flips become unpayable despite having been accepted and funded.",
+      "lineNumbers": [
+        51,
+        52,
+        57,
+        58,
+        102
+      ],
+      "recommendation": "Track total reserved liability in authoritative state and update it atomically with every bet and settlement. Admit a bet only when the post-bet pot covers all existing reservations plus the new maximum payout, or isolate each flip's collateral in a separate PDA.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_b92508067295d0c0"
+    },
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-fund-lockout",
+      "title": "A missing oracle fulfillment permanently locks the stake",
+      "description": "The create hook transfers the player's stake before the asynchronous ORAO request can ever be known to fulfill. The only state transition afterward is settlement, whose rule calls getRandomNumber and cannot pass while the request remains pending or never fulfills. The operations section tells clients to stop polling at a deadline, but the policy has no timeout, retirement, or refund transition. An accepted request that ORAO never fulfills therefore leaves real SOL permanently trapped in the house PDA.",
+      "lineNumbers": [
+        51,
+        52,
+        57,
+        68,
+        92,
+        93
+      ],
+      "recommendation": "Record a request timestamp bound to @time.now and add a permissionless timeout transition that, after a fixed deadline and while no reveal exists, atomically refunds the recorded stake and marks the flip retired. Ensure fulfillment, settlement, and refund are mutually exclusive.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_c6bab5125ebc5c61"
+    },
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-nonretryable-receipt",
+      "title": "A failed Poofnet payout permanently marks a winning flip settled",
+      "description": "On Poofnet, the primary document update commits before the simulated onchain hook, and a failed hook persists the updated document with _error_message. A winning settlement therefore records settled=true and payout before the transfer hook completes. If that transfer fails transiently, the stored flip can never be retried because every later update fails the requirement that the old settled value be false. The player has already paid the stake but can no longer receive the payout.",
+      "lineNumbers": [
+        52,
+        58,
+        68,
+        93,
+        103
+      ],
+      "recommendation": "Use an immutable flip intent plus retryable settlement-attempt rows, deriving every attempt's amount and destination from the flip. Alternatively, move the successful settled transition into hook-maintained declared state and provide a policy-legal retry path that preserves all economic inputs.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_b1356543284dc12b"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:45:12.604Z",
+      "durationMs": 117932.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4f-622c-7cc1-b392-b739b44d802c",
+      "findingCount": 3,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 45149.8,
+        "outputTokens": 4572.6,
+        "cacheReadInputTokens": 668774.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:45:12.628Z"
+  }
+}

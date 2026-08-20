@@ -1,0 +1,96 @@
+{
+  "batchIndex": 2,
+  "label": "initial",
+  "timestamp": "2026-08-20T10:11:53.783Z",
+  "files": [
+    "bounded-onchain/docs/plugins/_fragments/NFTPlugin.md",
+    "bounded-onchain/docs/plugins/_fragments/TokenPlugin.md",
+    "bounded-onchain/docs/policy-primitives.md",
+    "bounded/docs/analytics.md"
+  ],
+  "requested": [
+    {
+      "findingId": "finding_20aefcc965bde502",
+      "filePath": "bounded-onchain/docs/plugins/_fragments/NFTPlugin.md",
+      "title": "Standalone NFTs are payer-controlled despite being documented as program-managed",
+      "alias": "F1"
+    },
+    {
+      "findingId": "finding_fd6160f17f3b296c",
+      "filePath": "bounded-onchain/docs/plugins/_fragments/TokenPlugin.md",
+      "title": "Universal base-unit guidance dangerously misdocuments transferWholeTokens",
+      "alias": "F2"
+    },
+    {
+      "findingId": "finding_c61998a8025eb129",
+      "filePath": "bounded-onchain/docs/policy-primitives.md",
+      "title": "Recommended overflow rewrite weakens the financial bound",
+      "alias": "F3"
+    },
+    {
+      "findingId": "finding_c4bf0d86b113087a",
+      "filePath": "bounded/docs/analytics.md",
+      "title": "Incomplete scrubbing can expose path identifiers and secrets to collaborators",
+      "alias": "F4"
+    }
+  ],
+  "rawResponses": [
+    {
+      "kind": "initial",
+      "rawText": "```json\n[\n  {\n    \"findingId\": \"F1\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The fragment and its generated NFTPlugin page categorically treat both createCollection and mintNFT outputs as program-signed Bounded-managed assets. In the owning runtime, handle_create_nft sets the invoking user as payer and the requested destination as owner, but the standalone branch supplies neither authority nor update_authority to Metaplex. The pinned mpl-core contract test confirms that omitting those fields makes the payer the update authority. The runtime also installs TransferDelegate and BurnDelegate plugins whose authority is PluginAuthority::UpdateAuthority. Collection-backed assets derive and sign with an app-scoped collection-authority PDA, while the standalone branch signs only with the asset PDA and the royalty mutation path falls back to a supplied authority rather than deriving a standalone Bounded authority. Consequently, a lower-trust wallet allowed to mint a standalone NFT to a victim, escrow, or named PDA becomes its update authority and can directly update, transfer, or burn it through Metaplex. Bounded policy checks cannot mediate those direct Solana instructions, and the catalog's unverified status only records missing retained live acceptance evidence rather than providing an authorization mitigation. The vulnerable source and documentation remain present at the current revisions, and the known-false-positive register contains no matching trust assumption or mitigation.\"\n  },\n  {\n    \"findingId\": \"F2\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The TokenPlugin fragment states without exception that every amount is expressed in base units, while the generated transferWholeTokens entry describes its amount as being without decimals. The owning Rust handler uses the use_whole_tokens branch to multiply SOL values by 10^9 and SPL values by 10^mintDecimals before transferring. The Poofnet bytecode implementation independently performs the same conversion from wholeAmount to base units. For a six-decimal mint, a policy author following the universal guidance could permit amount <= 1000000 as a one-token base-unit cap. If a funded program-signed escrow holds 100 tokens, an attacker can submit amount 100, which is far below that apparent cap but causes transferWholeTokens to move all 100 whole tokens rather than 100 base units. Bounded verification evaluates the documented input comparison and has no way to infer or constrain the later decimal multiplication. Insufficient source balance may stop an oversized request, but it does not protect a realistically funded escrow or named-PDA payout source. The contradictory guidance and scaling behavior are still present in the current documentation, catalog, and owning implementations, so HIGH severity is justified.\"\n  },\n  {\n    \"findingId\": \"F3\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The current policy-primitives page presents spent // (tokens // SCALE + 1) <= price as the recommended replacement for spent * SCALE <= tokens * price. These expressions are not algebraically equivalent under the documented integer-division semantics. With SCALE=100, tokens=50, price=1, and spent=1, the intended comparison evaluates as 100 <= 50 and rejects, while the replacement evaluates as 1 // 1 <= 1 and accepts. More generally, whenever tokens is below SCALE, the replacement's denominator becomes one and largely disconnects the allowed spend from the token quantity. A financial policy copied from this table can therefore admit an attacker-controlled debit or payout that exceeds the intended proportional bound. bounded verify proves the replacement exactly as authored using unbounded integers, so it cannot detect that the specification itself was weakened. The surrounding advice about floor-and-remainder pairs does not repair this table entry, and the full-precision MathPlugin alternatives remain classified as unverified rather than serving as an automatic mitigation. Git history shows the faulty rewrite remains unchanged, and the false-positive register contains no matching exception.\"\n  },\n  {\n    \"findingId\": \"F4\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The documentation promises that PII-like path values never enter the dataset and that error prefixes are scrubbed on both client and edge, but the owning implementation only provides heuristic coverage. bucketPath redacts numeric segments, hexadecimal strings of at least eight characters, alphanumeric tokens of at least twenty characters, and segments containing @; shorter usernames, names, invitation codes, and mixed-format reset identifiers remain verbatim. For example, a route such as /reset/AB12-CD34 survives bucketing and is stored in blob3. Both message scrubbers only recognize bearer, token, secret, password, or key when immediately followed by : or =, so a short usable value in Authorization: Bearer sk_live_ABC123 survives, as do many JWT, cloud-key, and URL-secret formats. The RUM agent captures uncaught JavaScript errors and unhandled rejections, and buildDiagnostic stores the scrubbed prefix itself in blob18 rather than retaining only its hash. The analytics read queries select blob3 and blob18 directly and return them as topPages and errors without further output redaction. The framework correctly strips spoofed identity headers, verifies the Bounded JWT, and applies a fresh app:view capability check, but the viewer preset and other lower-privilege app:view collaborators are intentionally authorized to read this endpoint. Such a collaborator can therefore recover a user's short path identifier or a credential exposed by a genuine application error; HMAC beacon tokens, rate limiting, CORS, and CSRF considerations prevent unrelated collection attacks but do not protect data from an authorized analytics reader. The implementation has not been patched, and the analytics-beacon poisoning entry in the false-positive register concerns a different integrity issue rather than this confidentiality exposure.\"\n  }\n]\n```",
+      "parsedCount": 4
+    }
+  ],
+  "repairAttempts": 0,
+  "parsedVerdicts": [
+    {
+      "findingId": "F1",
+      "verdict": "true-positive",
+      "reasoning": "The fragment and its generated NFTPlugin page categorically treat both createCollection and mintNFT outputs as program-signed Bounded-managed assets. In the owning runtime, handle_create_nft sets the invoking user as payer and the requested destination as owner, but the standalone branch supplies neither authority nor update_authority to Metaplex. The pinned mpl-core contract test confirms that omitting those fields makes the payer the update authority. The runtime also installs TransferDelegate and BurnDelegate plugins whose authority is PluginAuthority::UpdateAuthority. Collection-backed assets derive and sign with an app-scoped collection-authority PDA, while the standalone branch signs only with the asset PDA and the royalty mutation path falls back to a supplied authority rather than deriving a standalone Bounded authority. Consequently, a lower-trust wallet allowed to mint a standalone NFT to a victim, escrow, or named PDA becomes its update authority and can directly update, transfer, or burn it through Metaplex. Bounded policy checks cannot mediate those direct Solana instructions, and the catalog's unverified status only records missing retained live acceptance evidence rather than providing an authorization mitigation. The vulnerable source and documentation remain present at the current revisions, and the known-false-positive register contains no matching trust assumption or mitigation."
+    },
+    {
+      "findingId": "F2",
+      "verdict": "true-positive",
+      "reasoning": "The TokenPlugin fragment states without exception that every amount is expressed in base units, while the generated transferWholeTokens entry describes its amount as being without decimals. The owning Rust handler uses the use_whole_tokens branch to multiply SOL values by 10^9 and SPL values by 10^mintDecimals before transferring. The Poofnet bytecode implementation independently performs the same conversion from wholeAmount to base units. For a six-decimal mint, a policy author following the universal guidance could permit amount <= 1000000 as a one-token base-unit cap. If a funded program-signed escrow holds 100 tokens, an attacker can submit amount 100, which is far below that apparent cap but causes transferWholeTokens to move all 100 whole tokens rather than 100 base units. Bounded verification evaluates the documented input comparison and has no way to infer or constrain the later decimal multiplication. Insufficient source balance may stop an oversized request, but it does not protect a realistically funded escrow or named-PDA payout source. The contradictory guidance and scaling behavior are still present in the current documentation, catalog, and owning implementations, so HIGH severity is justified."
+    },
+    {
+      "findingId": "F3",
+      "verdict": "true-positive",
+      "reasoning": "The current policy-primitives page presents spent // (tokens // SCALE + 1) <= price as the recommended replacement for spent * SCALE <= tokens * price. These expressions are not algebraically equivalent under the documented integer-division semantics. With SCALE=100, tokens=50, price=1, and spent=1, the intended comparison evaluates as 100 <= 50 and rejects, while the replacement evaluates as 1 // 1 <= 1 and accepts. More generally, whenever tokens is below SCALE, the replacement's denominator becomes one and largely disconnects the allowed spend from the token quantity. A financial policy copied from this table can therefore admit an attacker-controlled debit or payout that exceeds the intended proportional bound. bounded verify proves the replacement exactly as authored using unbounded integers, so it cannot detect that the specification itself was weakened. The surrounding advice about floor-and-remainder pairs does not repair this table entry, and the full-precision MathPlugin alternatives remain classified as unverified rather than serving as an automatic mitigation. Git history shows the faulty rewrite remains unchanged, and the false-positive register contains no matching exception."
+    },
+    {
+      "findingId": "F4",
+      "verdict": "true-positive",
+      "reasoning": "The documentation promises that PII-like path values never enter the dataset and that error prefixes are scrubbed on both client and edge, but the owning implementation only provides heuristic coverage. bucketPath redacts numeric segments, hexadecimal strings of at least eight characters, alphanumeric tokens of at least twenty characters, and segments containing @; shorter usernames, names, invitation codes, and mixed-format reset identifiers remain verbatim. For example, a route such as /reset/AB12-CD34 survives bucketing and is stored in blob3. Both message scrubbers only recognize bearer, token, secret, password, or key when immediately followed by : or =, so a short usable value in Authorization: Bearer sk_live_ABC123 survives, as do many JWT, cloud-key, and URL-secret formats. The RUM agent captures uncaught JavaScript errors and unhandled rejections, and buildDiagnostic stores the scrubbed prefix itself in blob18 rather than retaining only its hash. The analytics read queries select blob3 and blob18 directly and return them as topPages and errors without further output redaction. The framework correctly strips spoofed identity headers, verifies the Bounded JWT, and applies a fresh app:view capability check, but the viewer preset and other lower-privilege app:view collaborators are intentionally authorized to read this endpoint. Such a collaborator can therefore recover a user's short path identifier or a credential exposed by a genuine application error; HMAC beacon tokens, rate limiting, CORS, and CSRF considerations prevent unrelated collection attacks but do not protect data from an authorized analytics reader. The implementation has not been patched, and the analytics-beacon poisoning entry in the false-positive register concerns a different integrity issue rather than this confidentiality exposure."
+    }
+  ],
+  "reconciliation": {
+    "matches": [
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F1",
+        "resolvedFindingId": "finding_20aefcc965bde502"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F2",
+        "resolvedFindingId": "finding_fd6160f17f3b296c"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F3",
+        "resolvedFindingId": "finding_c61998a8025eb129"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F4",
+        "resolvedFindingId": "finding_c4bf0d86b113087a"
+      }
+    ],
+    "missingFindingIds": [],
+    "unknownVerdicts": [],
+    "ambiguousVerdicts": []
+  },
+  "persistedCount": 4,
+  "unresolvedFindingIds": []
+}

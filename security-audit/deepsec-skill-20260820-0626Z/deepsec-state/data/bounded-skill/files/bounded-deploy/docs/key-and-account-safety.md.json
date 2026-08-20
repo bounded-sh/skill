@@ -1,0 +1,104 @@
+{
+  "filePath": "bounded-deploy/docs/key-and-account-safety.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.886Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "f64aa8c9ee33c3a6564ad59d37b22bca8dca01c76766c896d63945642c2b1c8e",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-data-loss",
+      "title": "Recovery command can overwrite the only copy of another owning key",
+      "description": "The new-machine recovery example copies the old global credentials directly over `~/.bounded/credentials` without first checking for or backing up an existing key. `scp` overwrites the destination. If the newly generated key already owns any apps, replacing its only unbacked-up copy permanently orphans those apps under the ownership model documented earlier in this file.",
+      "lineNumbers": [
+        394,
+        398,
+        399,
+        400
+      ],
+      "recommendation": "Refuse to proceed when the destination exists. Copy the recovered key to a temporary mode-0600 file, verify its public address, back up the existing credentials under a distinct path, and only then atomically install the recovered key after explicit confirmation.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "findingId": "finding_2a89e03fda796063"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "Linked replacement key cannot satisfy the documented owner-address check",
+      "description": "Option B links the new machine's distinct wallet as an admin collaborator; linking does not replace the key or change its public address. The subsequent instruction nevertheless says that after A, B, or C, `bounded whoami` should match the original wallet owner recorded in `.bounded/app.json`. That is impossible for Option B and can make a successful recovery appear invalid.",
+      "lineNumbers": [
+        403,
+        404,
+        416,
+        417
+      ],
+      "recommendation": "For Option B, state that a different wallet address is expected and verify recovery with `bounded access --app-id <id> --json`, requiring the intended admin/deploy capabilities. Reserve owner-address equality for Options A and C.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "findingId": "finding_18609ba3217c9010"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-documentation-drift",
+      "title": "Account-switching guidance incorrectly says prior web sessions are replaced",
+      "description": "The page says there is one web session and that a second login replaces the first. The current CLI instead stores refreshable sessions per environment, platform app, and account under `~/.bounded/web-sessions/`; `~/.bounded/web-session.json` is only the most-recent compatibility copy. Previous accounts therefore remain usable and can be selected again by project context or `loginHint`. The stale guidance gives users and agents an incorrect credential inventory and cleanup model.",
+      "lineNumbers": [
+        118,
+        119,
+        120,
+        121
+      ],
+      "recommendation": "Document the scoped session directory and explain that account switching preserves earlier sessions. Direct users to the CLI logout operation when they intend to remove every persisted web credential.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "findingId": "finding_b7dc868b0f781d99"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:31:36.260Z",
+      "durationMs": 165009,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-607c-7890-aa40-f34fbfda868b",
+      "findingCount": 3,
+      "numTurns": 0.3333333333333333,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 69250,
+        "outputTokens": 5165,
+        "cacheReadInputTokens": 687957.3333333334,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-06T23:51:32-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-07-28T21:27:17+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:31:36.281Z"
+  }
+}

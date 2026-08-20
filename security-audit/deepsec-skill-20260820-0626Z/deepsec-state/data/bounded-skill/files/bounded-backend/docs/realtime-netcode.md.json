@@ -1,0 +1,79 @@
+{
+  "filePath": "bounded-backend/docs/realtime-netcode.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.595Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "2998e709561d6ef9b9213c483160b158f82e592163c2a0cb1eeb341d2868329c",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-denial-of-service",
+      "title": "Unchecked intent data lets a participant repeatedly abort ticks",
+      "description": "The authoritative command loop dereferences intent.type, players[address], p.lastSeq, and p.budget without validating the payload or confirming that the principal has joined the live state. session.intentRule is only a coarse membership gate and does not validate intent shape or live player existence. The shipping runtime accepts arbitrary JSON intent values, including null, and invokes the developer reducer over the entire drained batch. It catches exceptions only around the whole tick. An authorized participant can therefore send null, a malformed input, or an input before joining so the reducer throws; repeating this each cadence discards every tick and freezes the room for all players.",
+      "lineNumbers": [
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        244,
+        263,
+        265,
+        266
+      ],
+      "recommendation": "Treat every intent as hostile. Verify it is an object with an allowed type, require an existing player for input commands, validate seq as a bounded safe integer, clamp all movement fields, and isolate malformed records so one bad intent is dropped without throwing out the entire tick.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_72a8be0fc403c70f"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:20:22.334Z",
+      "durationMs": 96206.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e3a-5355-7be2-8c8a-2fdad82ad277",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 46345.2,
+        "outputTokens": 3939,
+        "cacheReadInputTokens": 802508.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-06T22:10:42-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:20:22.347Z"
+  }
+}

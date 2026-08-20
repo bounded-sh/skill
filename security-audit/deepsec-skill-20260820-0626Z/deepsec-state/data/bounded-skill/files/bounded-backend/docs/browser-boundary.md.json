@@ -1,0 +1,73 @@
+{
+  "filePath": "bounded-backend/docs/browser-boundary.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.585Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "d5bb09377996dae1415b6a4981c216227ba42e99e0687ac37f2180bf2469d20c",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-missing-csp",
+      "title": "Documentation falsely claims the undeclared browser default is restricted",
+      "description": "Lines 62-64 state that an app without boundaries.browser receives the platform default and that neither declared nor undeclared configurations are unrestricted. The owning router implementation explicitly does the opposite for undeclared apps: its default headers deliberately omit default-src, script-src, connect-src, and form-action so pages may load scripts and send requests anywhere. An agent relying on this statement can omit boundaries.browser while believing browser egress and script sources remain constrained. A content-injection flaw or compromised dependency can then load remote code or beacon browser-accessible data to an arbitrary host without CSP interference.",
+      "lineNumbers": [
+        60,
+        62,
+        63,
+        64,
+        66
+      ],
+      "recommendation": "Correct the documentation to state that the current undeclared default restricts framing but does not restrict fetch, script, form, image, or other destination sources. Require an explicit boundaries.browser declaration whenever browser destination confinement is needed. If a restrictive default is intended as a product guarantee, implement it in the owning monorepo before documenting it here.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_ad42652f856aff14"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:13:41.181Z",
+      "durationMs": 107488.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-57cd-7150-a78d-c99ec1c5cbe2",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48972.2,
+        "outputTokens": 4088,
+        "cacheReadInputTokens": 864460.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-07-27T04:20:35-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-25T04:22:27-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:13:41.189Z"
+  }
+}

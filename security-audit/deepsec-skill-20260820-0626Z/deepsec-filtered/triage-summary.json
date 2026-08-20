@@ -1,0 +1,27 @@
+{
+  "rawDeepsec": {
+    "filesAnalyzed": 140,
+    "totalFindings": 130,
+    "critical": 0,
+    "high": 28,
+    "medium": 34,
+    "highBug": 16,
+    "bug": 52
+  },
+  "xhighValidation": {
+    "verdicts": 22,
+    "truePositive": 20,
+    "falsePositive": 1,
+    "fixed": 1,
+    "uncertain": 0
+  },
+  "normalizedFinal": {
+    "critical": 0,
+    "high": 9,
+    "rejected": 17,
+    "fixed": 1,
+    "uncertain": 0,
+    "knownFalsePositiveExclusions": 1
+  },
+  "note": "Multiple raw findings can map to one normalized root cause. Only manual independent confirmation controls normalizedFinal. Known-false-positive details are intentionally omitted."
+}

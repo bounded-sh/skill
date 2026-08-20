@@ -1,0 +1,88 @@
+{
+  "filePath": "scripts/tests/plugin-catalog.test.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.407Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "9841da2f0f2de36cb73eb9bed90735378acce11eeeadde642822462a143bf8f8",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-incomplete-integrity-check",
+      "title": "Row-for-row status test ignores verification and constraint fields",
+      "description": "Despite its title, the test extracts and compares only the capability table's support column. It does not compare discovery/lane, live-verification status, or constraint markers. The generator publishes verification and marker values from the snapshot, so a stale or altered snapshot could falsely claim live evidence or omit a safety constraint while this test passes. The separate maintainer extractor gate can catch this when it is run, but the self-contained contract test itself does not enforce the stated row-for-row property.",
+      "lineNumbers": [
+        39,
+        41,
+        43,
+        45,
+        46
+      ],
+      "recommendation": "Parse every capability-table column and deep-compare lane, support, verification, and markers against each snapshot status object.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_b7cec27d361e6c4e"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-stale-generated-output",
+      "title": "Removed plugin namespaces can leave stale generated pages",
+      "description": "The generator check and subsequent page scans only visit namespaces currently present in the catalog. They never enumerate the generated plugins directory for unexpected files. If a namespace is removed, its old generated Markdown page remains published, is not checked for drift or forbidden content, and can continue giving agents obsolete callable-function guidance.",
+      "lineNumbers": [
+        19,
+        20,
+        21,
+        123,
+        124,
+        148,
+        149,
+        151
+      ],
+      "recommendation": "Enumerate generated namespace pages, excluding the curated _fragments directory, and assert that their filenames exactly equal the current catalog namespace set. The generator should also remove or reject stale pages.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_5914839bec2c4866"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:58:08.565Z",
+      "durationMs": 115775.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-6640-72d1-bfc3-4b50dad65ea8",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 39845,
+        "outputTokens": 4915.2,
+        "cacheReadInputTokens": 706304,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T17:40:32+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:58:08.573Z"
+  }
+}

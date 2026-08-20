@@ -1,0 +1,81 @@
+{
+  "filePath": "bounded/docs/billing.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T07:26:07.868Z",
+  "lastScannedRunId": "20260820072607-00628138e8d2ad86",
+  "fileHash": "c0ef3ec3a88b1ebe80d6ac410774e8e5f5f1ee90f0a386bba63f674cc392ade6",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "Free project limit is documented as 3 instead of the enforced 10",
+      "description": "The guide states that Free accounts can create three projects. The owning platform defines `PLANS.free.limits.maxProjects` as 10 and the project-creation gate explicitly raises stale Free metadata to at least 10. An agent relying on this guide may incorrectly tell a user they are at capacity or recommend a paid upgrade after the third project even though seven additional projects are available.",
+      "lineNumbers": [
+        123,
+        125,
+        126
+      ],
+      "recommendation": "Update the documented Free limit to 10 and derive or validate published plan limits against the owning plan configuration so future entitlement changes cannot silently drift.",
+      "confidence": "high",
+      "producedByRunId": "20260820072607-57c5db42e0cdadf1",
+      "findingId": "finding_05e70c1323b5398a"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820072607-57c5db42e0cdadf1",
+      "investigatedAt": "2026-08-20T07:34:13.470Z",
+      "durationMs": 119371.75,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e10-2c5d-7221-ab49-edca141db72e",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 67001,
+        "outputTokens": 4348,
+        "cacheReadInputTokens": 1475456,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-17T11:37:53Z"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-16T15:51:03-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-14T11:57:23+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-07-27T22:22:32-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T07:34:13.476Z"
+  }
+}

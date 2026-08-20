@@ -1,0 +1,118 @@
+{
+  "filePath": "bounded-onchain/docs/examples/token2022-extensions.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.069Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "c025312b7e2c30ed47b12cf834c6c61934ef397beef886a595254cd025a5d82f",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "other-unconfined-onchain-authority",
+      "title": "Wallet authorities can mutate supposedly immutable token parameters outside Bounded",
+      "description": "The fee token assigns transferFeeAuthority to the creating wallet, and the savings token assigns interestRateAuthority to that wallet. Those are real SPL Token-2022 authorities, so the creator can invoke Token-2022 directly without using this policy. A creator can advertise a low transfer fee or bounded interest rate in the immutable Bounded row, then change the live mint's fee, maximum fee, or interest rate afterward. The document remains unchanged and falsely appears to prove the live parameters, directly contradicting the page's immutability and rate-bound claims.",
+      "lineNumbers": [
+        29,
+        35,
+        39,
+        101,
+        107,
+        111,
+        139,
+        140
+      ],
+      "recommendation": "Assign mutable extension authorities to an app-scoped program-controlled PDA, not the creator wallet, and expose only explicitly policy-gated update operations if changes are required. Otherwise revoke or effectively freeze those authorities after initialization. Clearly distinguish recorded initial parameters from live onchain state.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_d21679f6f89d02a0"
+    },
+    {
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Any wallet can issue app-authenticated achievement badges",
+      "description": "The badges collection describes its tokens as soulbound achievement badges, but creation requires only a non-null wallet. The caller freely selects the recipient, badge ID, name, symbol, and metadata URI. An unrelated user can therefore mint an app-scoped, non-transferable badge to themselves with official-looking achievement or role metadata. Consumers treating this collection as the application's authoritative achievement registry cannot distinguish attacker-issued badges from legitimate ones.",
+      "lineNumbers": [
+        65,
+        69,
+        70,
+        71,
+        72,
+        76,
+        82,
+        86,
+        121
+      ],
+      "recommendation": "Restrict badge creation to a fixed issuer, admin registry, or trusted function. Bind the badge type and recipient to immutable eligibility state rather than caller-selected metadata. If issuance is intentionally self-service, state that clearly and do not describe the tokens as authoritative achievements.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_760eabb6609e3e91"
+    },
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-state-divergence",
+      "title": "Failed Poofnet token creation leaves immutable records without mints",
+      "description": "All three token-creation collections deny updates and deletes, while their mutating Token-2022 calls run in create hooks. On Poofnet, a failed hook persists the primary document with _error_message rather than reverting the row. A transient createToken2022 or mint failure can therefore leave an immutable fee token, badge, or savings-token record for a mint that does not exist or has no issued supply. This contradicts the page's explicit claim that failed calls revert the whole write atomically.",
+      "lineNumbers": [
+        29,
+        30,
+        31,
+        35,
+        76,
+        77,
+        78,
+        82,
+        101,
+        102,
+        103,
+        107,
+        139,
+        141
+      ],
+      "recommendation": "Separate immutable token intents from retryable attempt rows, or allow a tightly constrained retry when the prior Poofnet receipt failed. Clients must require the matching completion marker before treating the record as a created token, while real-chain clients should confirm the transaction and mint postcondition.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_178d12b9eaa534cc"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:45:12.646Z",
+      "durationMs": 117932.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4f-622c-7cc1-b392-b739b44d802c",
+      "findingCount": 3,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 45149.8,
+        "outputTokens": 4572.6,
+        "cacheReadInputTokens": 668774.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:45:12.653Z"
+  }
+}

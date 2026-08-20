@@ -1,0 +1,91 @@
+{
+  "filePath": "bounded-frontend/docs/building-for-react-native.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:20:23.896Z",
+  "lastScannedRunId": "20260820082023-e8473e6a97137ae7",
+  "fileHash": "8c1a284853e2cdab5d2f4106d6da1d4e33153f2eb6c3ed13cf76a6ec963a6a25",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-api-contract-mismatch",
+      "title": "Privy signIn returns a User without the documented universal id",
+      "description": "The guide says user.id is always present and exposes a signIn helper that directly returns loginWithPrivy(). In the owning SDK, PrivyExpoProvider.login() returns an object containing provider and address but no id. setCurrentUser() enriches a separate global object from the token, while loginWithPrivy() returns a spread of the raw result. Code using the documented signIn return for ownership or membership therefore receives undefined for user.id even though getCurrentUser() holds the normalized identity.",
+      "lineNumbers": [
+        26,
+        31,
+        332,
+        335
+      ],
+      "recommendation": "Fix loginWithPrivy() to return the normalized current-user object, or include id in every PrivyExpoProvider return. Until then, make the helper await loginWithPrivy() and return getCurrentUser() after validating that it is non-null.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_eddfbde0763459ef"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-resource-leak",
+      "title": "React Native subscription can survive effect cleanup",
+      "description": "The subscription example has the same async cleanup race as the web guide. If the effect is cleaned up before subscribe() resolves, stop remains undefined during cleanup and the subsequently created subscription is never cancelled. It can continue delivering data and retaining component state after unmount.",
+      "lineNumbers": [
+        364,
+        371
+      ],
+      "recommendation": "Use a cancellation flag and immediately call the resolved unsubscribe function when setup finishes after cleanup. Handle initial promise rejection separately from the subscription's onError callback.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_39fe8739b7a7bae3"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082023-71b34e159c890b44",
+      "investigatedAt": "2026-08-20T08:27:31.120Z",
+      "durationMs": 83965.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e41-cf24-7a71-934a-e571aa42fc85",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40024.4,
+        "outputTokens": 3498.8,
+        "cacheReadInputTokens": 546918.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-18T23:40:55-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-18T01:37:34+05:30"
+      },
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:40:46Z"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:27:31.158Z"
+  }
+}

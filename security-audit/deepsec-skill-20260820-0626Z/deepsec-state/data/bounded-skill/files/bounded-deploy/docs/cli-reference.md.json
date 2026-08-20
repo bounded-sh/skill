@@ -1,0 +1,55 @@
+{
+  "filePath": "bounded-deploy/docs/cli-reference.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.884Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "f68d90c85c4c588894998fdebc6760a35c169fbc3b4a268dd26cbc186800cf7a",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:30:51.769Z",
+      "durationMs": 90880.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-5f5a-7200-a2d4-7e9d651c16f5",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 53776.6,
+        "outputTokens": 2620.8,
+        "cacheReadInputTokens": 759296,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T17:23:24-04:00"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-17T14:50:40-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:30:51.786Z"
+  }
+}

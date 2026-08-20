@@ -1,0 +1,371 @@
+
+=== escrow-per-escrow-pda ===
+  PASS  deploy  - 4a2d3d5dc3e7bef1c82be0a5
+  PASS  verify
+  PASS  set escrows/esc_bad_zero  - create with amount 0 is denied by @newData.amount > 0
+  PASS  set escrows/esc_bad_released  - cannot create an already-released escrow
+  PASS  set escrows/esc_bad_forge  - client-supplied buyer is denied; only the create hook stamps buyer
+  PASS  set escrows/esc_rmt1f3khg7263  - buyer funds the per-escrow named PDA; hook stamps buyer = caller wallet atomically
+  PASS  get escrows/esc_rmt1f3khg7263  - escrow is live and unreleased
+  PASS  query escrows/esc_rmt1f3khg7263  - resolved PDA address, display only
+  PASS  set escrows/esc_rmt1f3khg7263  - release patch touching readonly amount is denied by the preservation clause
+  PASS  set escrows/esc_missing_rmt1f3khg7263  - release-shaped write against an escrow that was never created: evaluated as a create and rejected (required fields missing)
+  PASS  set escrows/esc_rmt1f3khg7263  - buyer releases; hook pays the seller from the raw $escrowId pot, balance-gated
+  PASS  get escrows/esc_rmt1f3khg7263  - released flag flipped
+  PASS  set escrows/esc_rmt1f3khg7263  - second release is denied - released flips exactly once
+
+=== isolated-vault ===
+  PASS  deploy  - c88c9bbb0c6340d7cc4053bc
+  PASS  verify
+  PASS  set vaults/vrmt1f4aoa9567  - owner registers their vault
+  PASS  set vaults/vrmt1f4aoa9567/deposits/d1  - first deposit creates the PDA idempotently and funds it
+  PASS  set vaults/vrmt1f4aoa9567/deposits/d2  - zero deposit fails amount > 0
+  PASS  set vaults/vrmt1f4aoa9567/withdrawals/w1  - overdraft blocked by the getBalance rule
+  PASS  set vaults/vrmt1f4aoa9567/withdrawals/w2  - owner withdraws within balance; program signs for the PDA
+  PASS  set vaults/vGHOST/deposits/d1  - deposit into a nonexistent vault fails the registry gate
+  PASS  query vaults/vrmt1f4aoa9567  - PDA address resolves
+
+=== cp-amm-liquidity-positions ===
+  PASS  deploy  - c38bb651b8485632e69e743b
+  PASS  verify
+  FAIL  set positions/pos_rmt1f4ugl5435  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set positions/pos_bad_rmt1f4ugl5435  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set positions/pos_rmt1f4ugl5435/deposits/d1  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set positions/pos_rmt1f4ugl5435/deposits/d0  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set positions/missing_rmt1f4ugl5435/deposits/d1  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set positions/pos_rmt1f4ugl5435/deposits/d1  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set positions/pos_rmt1f4ugl5435/withdrawals/w1  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set positions/pos_rmt1f4ugl5435/feeClaims/c0  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  get positions/pos_rmt1f4ugl5435/deposits/d1  - bounded data get --app-id c38bb651b8485632e69e743b --path positions/pos_rmt1f4ugl5435/deposits/d1 --json failed:
+{
+  "error": "bounded session: create session: wallet login is not enabled for app c38bb651b8485632e69e743b\nadd \"auth\": { \"wallets\": true } to that app's policy.json and redeploy.\nOn a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+
+=== marketplace-listings-orders-spend-cap ===
+  PASS  deploy  - 48533b0f9e5a322a13b89674
+  PASS  verify
+  FAIL  set sellers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/listings/l_rmt1f5ffi5645  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set sellers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/listings/l_rmt1f5ffi5645  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  get sellers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/listings/l_rmt1f5ffi5645  - bounded data get --app-id 48533b0f9e5a322a13b89674 --path sellers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/listings/l_rmt1f5ffi5645 --json failed:
+{
+  "error": "bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674\nadd \"auth\": { \"wallets\": true } to that app's policy.json and redeploy.\nOn a cloud app you can instead use your Bounded web login, whic
+  FAIL  set sellers/someone_else/listings/l2_rmt1f5ffi5645  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set sellers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/listings/l_rmt1f5ffi5645  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set buyers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/orders/o1_rmt1f5ffi5645  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set buyers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/orders/o2_rmt1f5ffi5645  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set buyers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/orders/o3_rmt1f5ffi5645  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set buyers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/orders/o1_rmt1f5ffi5645  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set sellers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/listings/big_rmt1f5ffi5645  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set buyers/3G8xxi4KVMB5aH115CJoLvZDjWR7LocD8PPVXhdnFM2Z/orders/o4_rmt1f5ffi5645  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 48533b0f9e5a322a13b89674
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+
+=== nft-collection ===
+  PASS  deploy  - 767c9e78978b523c67cc55fd
+  PASS  verify
+  FAIL  set collections/c_rmt1f641i8274  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 767c9e78978b523c67cc55fd
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set collections/cbad_rmt1f641i8274  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 767c9e78978b523c67cc55fd
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set collections/c_rmt1f641i8274  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 767c9e78978b523c67cc55fd
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set nfts/n_rmt1f641i8274  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 767c9e78978b523c67cc55fd
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set nfts/norphan_rmt1f641i8274  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 767c9e78978b523c67cc55fd
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set nfts/n_rmt1f641i8274  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 767c9e78978b523c67cc55fd
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  get collections/c_rmt1f641i8274  - bounded data get --app-id 767c9e78978b523c67cc55fd --path collections/c_rmt1f641i8274 --json failed:
+{
+  "error": "bounded session: create session: wallet login is not enabled for app 767c9e78978b523c67cc55fd\nadd \"auth\": { \"wallets\": true } to that app's policy.json and redeploy.\nOn a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login', then 'boun
+
+=== prediction-market-amm ===
+  PASS  deploy  - a04b575609a1d2e7b23d902d
+  PASS  verify
+  PASS  set pmMarkets/m_rmt1f6l7k2020  - creator omitted (hook stages @user.address); pot seeded 0.01 SOL at 1:1
+  PASS  set pmMarkets/low_rmt1f6l7k2020  - seed below MIN_SEED_LAMPORTS
+  PASS  set pmMarkets/forge_rmt1f6l7k2020  - hook-derived creator must be null at create
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1  - open position; owner staged by hook
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p2  - positions must start at zero balance
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1/buys/b1  - quote = floor(1000000*10000000/11000000) = 909090 YES
+  PASS  get pmMarkets/m_rmt1f6l7k2020  - staged reserve update landed
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1/buys/b0  - zero-collateral buy
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1/sells/s1  - oversell: position holds only 909090
+  PASS  set pmResolves/m_rmt1f6l7k2020  - creator resolves; hook stages winningSupply = 10000000 - 9090910 = 909090
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1/buys/b2  - trading closed once the resolution document exists
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1/redeems/claim  - YES redemption at 1 lamport per share; the id is pinned to the literal claim
+  PASS  get pmPositions/m_rmt1f6l7k2020/holders/p1  - position zeroed by redeem hook
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1/redeems/claim  - second redeem hits the same pinned path, becomes an update, denied by update:false
+  PASS  set pmPositions/m_rmt1f6l7k2020/holders/p1/redeems/other  - non-pinned redeem id is denied by the $claimId == claim rule
+  PASS  set pmWithdrawals/m_rmt1f6l7k2020  - winningSupply exhausted (0); creator sweeps exact remaining reserve 11000000 - 909090
+  PASS  get pmMarkets/m_rmt1f6l7k2020  - reserve zeroed after sweep
+
+=== randomness-coin-flip ===
+  PASS  deploy  - 338f7468ad843eb64c4028b9
+  PASS  verify
+  FAIL  set houseDeposits/dep_rmt1f7j7q6272  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 338f7468ad843eb64c4028b9
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set houseDeposits/dep2_rmt1f7j7q6272  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 338f7468ad843eb64c4028b9
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  get houseDeposits/dep_rmt1f7j7q6272  - bounded data get --app-id 338f7468ad843eb64c4028b9 --path houseDeposits/dep_rmt1f7j7q6272 --json failed:
+{
+  "error": "bounded session: create session: wallet login is not enabled for app 338f7468ad843eb64c4028b9\nadd \"auth\": { \"wallets\": true } to that app's policy.json and redeploy.\nOn a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login', then '
+  FAIL  set houseDeposits/depzero_rmt1f7j7q6272  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 338f7468ad843eb64c4028b9
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set flips/flip_owner_rmt1f7j7q6272  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 338f7468ad843eb64c4028b9
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set flips/flip_low_rmt1f7j7q6272  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 338f7468ad843eb64c4028b9
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  PASS  set flips/flip_missing_rmt1f7j7q6272  - settle-shaped write against a flip that was never created: evaluated as a create and rejected (required fields missing)
+
+=== staking-lock-vault ===
+  PASS  deploy  - 601657795ea00223ba4b938d
+  PASS  verify
+  PASS  set stakes/s_rmt1f81x99997_flex  - deposit with no lock (lockedUntil 0); hook idempotently creates the vault, moves 2000000 lamports in, and stamps owner
+  PASS  get stakes/s_rmt1f81x99997_flex  - stake recorded with its deposit amount
+  PASS  set stakes/s_rmt1f81x99997_locked  - deposit locked one hour from now (within MAX_LOCK_SECONDS)
+  PASS  set stakes/s_rmt1f81x99997_dust  - amount 0 is below MIN_STAKE_LAMPORTS
+  PASS  set stakes/s_rmt1f81x99997_past  - nonzero lockedUntil in the past fails the lockedUntil > @time.now bound
+  PASS  set stakes/s_rmt1f81x99997_forge  - owner must be absent at create; it is hook-stamped from @user.address
+  PASS  set stakes/s_rmt1f81x99997_locked  - unstake before lockedUntil is denied by the @time.now comparison
+  PASS  set stakes/s_rmt1f81x99997_flex  - unstake the unlocked stake; hook pays 2000000 lamports from the vault back to the stamped owner
+  PASS  get stakes/s_rmt1f81x99997_flex  - stake drained to a receipt
+  PASS  set stakes/s_rmt1f81x99997_flex  - double unstake denied: @data.amount > 0 no longer holds
+  PASS  query stakes/s_rmt1f81x99997_locked  - vault balance readable via the named query on the onchain path (authenticated caller)
+
+=== token-launch ===
+  PASS  deploy  - 6193ecfc93a54976f9cd6c55
+  PASS  verify
+  FAIL  set tokens/t_rmt1f8qnw1762  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 6193ecfc93a54976f9cd6c55
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set tokens/t_rmt1f8qnw1762  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 6193ecfc93a54976f9cd6c55
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set tokens/t_rmt1f8qnw1762/buys/b1_rmt1f8qnw1762  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 6193ecfc93a54976f9cd6c55
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set tokens/t_rmt1f8qnw1762/buys/b2_rmt1f8qnw1762  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 6193ecfc93a54976f9cd6c55
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set tokens/t_rmt1f8qnw1762/buys/b3_rmt1f8qnw1762  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 6193ecfc93a54976f9cd6c55
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  get tokens/t_rmt1f8qnw1762  - bounded data get --app-id 6193ecfc93a54976f9cd6c55 --path tokens/t_rmt1f8qnw1762 --json failed:
+{
+  "error": "bounded session: create session: wallet login is not enabled for app 6193ecfc93a54976f9cd6c55\nadd \"auth\": { \"wallets\": true } to that app's policy.json and redeploy.\nOn a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login', then 'bounded a
+  FAIL  query tokens/t_rmt1f8qnw1762  - {
+  "error": "bounded session: create session: wallet login is not enabled for app 6193ecfc93a54976f9cd6c55\nadd \"auth\": { \"wallets\": true } to that app's policy.json and redeploy.\nOn a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login', then 'bounded account use --web'"
+}
+
+
+
+=== token2022-extensions ===
+  PASS  deploy  - 7fb8f5ccc9ec5f1e2d54d8c8
+  PASS  verify
+  FAIL  set feeTokens/fee_rmt1f9a524401  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set feeTokens/fee2_rmt1f9a524401  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set feeTokens/fee3_rmt1f9a524401  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  get feeTokens/fee_rmt1f9a524401  - bounded data get --app-id 7fb8f5ccc9ec5f1e2d54d8c8 --path feeTokens/fee_rmt1f9a524401 --json failed:
+{
+  "error": "bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8\nadd \"auth\": { \"wallets\": true } to that app's policy.json and redeploy.\nOn a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login', then 'boun
+  FAIL  set badges/badge_rmt1f9a524401  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set badges/badge_rmt1f9a524401  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set savingsTokens/sav_rmt1f9a524401  - expected ok:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet key: 'bounded login'
+  FAIL  set savingsTokens/sav2_rmt1f9a524401  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+  FAIL  set feeWithdrawals/w_rmt1f9a524401  - failed without a policy denial:
+
+[local:bounded-local-full] instance cca65fa2-2c10-4c61-887a-b6ae79cbf981 (base staging; project state isolated)
+Error: bounded session: create session: wallet login is not enabled for app 7fb8f5ccc9ec5f1e2d54d8c8
+add "auth": { "wallets": true } to that app's policy.json and redeploy.
+On a cloud app you can instead use your Bounded web login, which needs no wallet k
+
+=== treasury ===
+  PASS  deploy  - e76a99c31a37eba583c3150f
+  PASS  verify
+  PASS  set treasuryDeposits/drmt1f9yo55869  - open deposit into the app_treasury PDA
+  PASS  set treasuryDeposits/dzrmt1f9yo55869  - zero deposit denied
+  PASS  set treasuryWithdrawals/wrmt1f9yo55869  - caller is not the TREASURER constant
+
+11 specs, 121 steps, 49 failures

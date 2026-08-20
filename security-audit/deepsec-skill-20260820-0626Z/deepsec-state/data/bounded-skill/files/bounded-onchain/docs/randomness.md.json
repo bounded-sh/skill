@@ -1,0 +1,74 @@
+{
+  "filePath": "bounded-onchain/docs/randomness.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.096Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "88baca2c99b5baf541a42d1e207333a632d3608fdf9179b31e091e5ae0c2d660",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "Roll materialization guidance is impossible with the documented request collection",
+      "description": "The request collection is created before randomness is requested, has `update: false`, and requests ORAO randomness only in its create hook. Later, the page recommends materializing the fulfilled roll into that request document using a create rule that calls `getRandomNumber`. Rules execute before hooks, so the randomness account cannot exist when that create rule is evaluated. If applied to the documented collection, the request is denied before its hook can request randomness; after fulfillment, `update: false` prevents storing the roll. The recommended flow therefore deadlocks or cannot materialize its result.",
+      "lineNumbers": [
+        24,
+        31,
+        34,
+        188,
+        194,
+        197
+      ],
+      "recommendation": "Materialize the roll in a separately authorized resolution receipt or a one-way update after the reveal exists. Preserve all immutable request fields, require the unresolved-to-resolved transition, pin the roll to `getRandomNumber`, and prohibit subsequent changes.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_8731caa2f54429e1"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:40:32.831Z",
+      "durationMs": 104627,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2c36-7a10-8496-61cd20fd334a",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40734.4,
+        "outputTokens": 3827,
+        "cacheReadInputTokens": 956467.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-11T11:38:53-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-27T20:15:58-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:40:32.837Z"
+  }
+}

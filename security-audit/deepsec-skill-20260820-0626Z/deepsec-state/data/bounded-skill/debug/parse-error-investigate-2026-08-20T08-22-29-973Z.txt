@@ -1,0 +1,13 @@
+# deepsec parse-failure debug dump
+# phase: investigate
+# agentType: codex
+# timestamp: 2026-08-20T08:22:29.973Z
+# error: Error: Agent produced output that wasn't a parseable JSON findings array: Unexpected token 'I', "I’m using "... is not valid JSON. Tolerant jsonrepair failed: Unexpected character "’" at position 1. First 400 chars: I’m using the `bounded` skill because this review covers Bounded deployment and account guidance. I’ll first load its routing instructions, then inspect every target file in full, trace the referenced deployment/account behavior, and compare any candidate issue against the known false-positive register. No target code or examples will be executed.
+# batch (5 files):
+  - bounded-deploy/docs/access-playbook.md
+  - bounded-deploy/docs/accounts.md
+  - bounded-deploy/docs/cli-reference.md
+  - bounded-deploy/docs/domains.md
+  - bounded-deploy/docs/environments.md
+# --- raw agent output begins on next line ---
+I’m using the `bounded` skill because this review covers Bounded deployment and account guidance. I’ll first load its routing instructions, then inspect every target file in full, trace the referenced deployment/account behavior, and compare any candidate issue against the known false-positive register. No target code or examples will be executed.

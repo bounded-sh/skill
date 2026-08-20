@@ -1,0 +1,132 @@
+{
+  "filePath": "bounded-onchain/docs/examples/token-launch.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.068Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "671cb700d63f6e5fac37a81f149d0151a140f5a4f0c2bfdd0ada0a5f1cfed8c3",
+  "findings": [
+    {
+      "findingId": "finding_d85c66d684bb089b",
+      "severity": "HIGH",
+      "vulnSlug": "other-slippage-bypass",
+      "title": "The buy's slippage parameter does not bind the signed price",
+      "description": "The policy passes only the SOL amount and slippage basis points to buyExactSolIn. In the owning onchain runtime, that function reads the bonding curve reserves during transaction execution, computes a fresh token quote from those already-moved reserves, and applies slippage to that fresh quote immediately before the CPI. There is no client-signed minimum token output or deadline. A validator or MEV trader can move the price before the victim's transaction; the transaction then recomputes a much lower quote and still succeeds. Capping slippageBps at 1000 therefore does not cap price movement since signing and does not provide the protection claimed by the page.",
+      "lineNumbers": [
+        58,
+        64,
+        68,
+        112
+      ],
+      "recommendation": "First extend the owning Pump.fun runtime API to accept and enforce a client-signed minTokensOut and deadline. Then record those values in the immutable buy intent, reject zero or stale bounds, and pass them unchanged to the Pump.fun instruction. Do not derive the user's minimum from execution-time reserves.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The buy receipt contains only `solLamports` and `slippageBps`, and the hook passes exactly those values to `buyExactSolIn`. In the current Rust interpreter, that function deserializes the bonding curve during transaction execution, calculates `tokens_out` from the then-current virtual reserves, and applies `slippageBps` to produce `min_tokens_out`. The resulting Pump.fun CPI contains a minimum token amount, but that minimum was created after execution began rather than being an amount the client reviewed and signed. The platform transaction builder resolves accounts but does not embed a client-provided quote, minimum output, or market deadline, and the public signature exposes no such arguments. A generic Solana blockhash expiry only limits transaction lifetime and does not constrain how far the curve may move before the transaction executes. A validator or MEV participant can order a price-moving buy ahead of the victim, let the victim recompute a much smaller quote from the changed reserves, and reverse afterward for sandwich profit. The 1000-bps cap only bounds deviation from that fresh execution-time quote, not movement since signing, so it does not provide the protection claimed by the example. Recent token documentation changes did not extend the runtime signature, and no known false-positive or attestation assumption neutralizes this direct instruction path.",
+        "revalidatedAt": "2026-08-20T10:12:12.663Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    },
+    {
+      "findingId": "finding_a410efdf44944ba0",
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-nonretryable-receipt",
+      "title": "A transient Poofnet launch failure permanently poisons the token ID",
+      "description": "The token row is create-only and immutable. On Poofnet, a failed simulated createToken hook still persists the primary row with an error receipt. The desired tokenId is then occupied even though no Pump.fun token was launched, and update/delete are both denied. Retrying with a different tokenId changes the id-only mint derivation, so this can permanently destroy a selected or vanity mint identity. The statement that a failed hook leaves no launch record is not true on the default Poofnet protocol.",
+      "lineNumbers": [
+        21,
+        22,
+        23,
+        27,
+        46,
+        97,
+        109
+      ],
+      "recommendation": "Add a failed-attempt retry path that preserves all immutable launch inputs, or separate the immutable launch intent from fresh attempt rows. Clients must wait for the matching Poofnet completion marker before presenting the token as launched.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The launch collection is create-only at `tokens/$tokenId`, with both update and delete unconditionally denied. On Poofnet, the realtime data plane deliberately commits the primary onchain-flagged document and its simulated transaction hash before executing the onchain hook. Current hook execution treats a thrown error or false result as non-fatal to that primary write, discards the staged simulated token state, and patches the surviving row with `_error_message` but no matching `_hook_completed`. A second write to the same path is classified as an update and is rejected before the create hook can run again, while deletion is also unavailable. Both the simulator and real onchain path derive an id-only mint seed from the app ID and token ID, so choosing another token ID necessarily selects another mint identity. Thus a transient storage, concurrency, authority, or simulator failure can leave no launched token while permanently occupying the desired semantic ID under this policy. The general onchain guide explicitly warns that this exact create-only shape can be poisoned and documents retryable-row or intent-plus-attempt patterns, but the target example implements neither and instead claims that failure leaves no launch record. The current Poofnet result-stamping source and its contract tests preserve this behavior, and recent changes only made simulated side effects atomic rather than rolling back the already committed primary row. The false-positive register's related CCA entry concerns a different policy that gained an explicit failed-receipt deletion path; that recovery does not exist here.",
+        "revalidatedAt": "2026-08-20T10:12:12.663Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:45:12.636Z",
+      "durationMs": 117932.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4f-622c-7cc1-b392-b739b44d802c",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 45149.8,
+        "outputTokens": 4572.6,
+        "cacheReadInputTokens": 668774.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:12:12.663Z",
+      "durationMs": 212408,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-1f75-72d2-9bc8-62285332ea40",
+      "findingCount": 2,
+      "numTurns": 0.25,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 107815.75,
+        "outputTokens": 6777,
+        "cacheReadInputTokens": 2353536,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T14:37:05-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T17:40:32+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:12:12.699Z"
+  },
+  "status": "analyzed"
+}

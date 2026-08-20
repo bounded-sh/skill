@@ -1,0 +1,60 @@
+{
+  "filePath": "bounded-frontend/docs/app-auth.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:20:23.894Z",
+  "lastScannedRunId": "20260820082023-e8473e6a97137ae7",
+  "fileHash": "a3b8d2fe26ec44ef5254dc18a583f71b145359cbb4e7b58c17be26dc75109329",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820082023-71b34e159c890b44",
+      "investigatedAt": "2026-08-20T08:27:31.019Z",
+      "durationMs": 83965.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e41-cf24-7a71-934a-e571aa42fc85",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40024.4,
+        "outputTokens": 3498.8,
+        "cacheReadInputTokens": 546918.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-18T01:37:34+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-16T13:24:56-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-05T01:14:05-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:27:31.065Z"
+  }
+}

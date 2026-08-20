@@ -1,0 +1,98 @@
+{
+  "filePath": "bounded-onchain/docs/plugins/_fragments/NFTPlugin.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.082Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "b835a7b82ce9877757de42d586d4e586e58628ebb89bf3166eaadec0d7b40be6",
+  "findings": [
+    {
+      "findingId": "finding_20aefcc965bde502",
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Standalone NFTs are payer-controlled despite being documented as program-managed",
+      "description": "Line 4 states that assets created through mintNFT use a program-signed update authority and ignore the supplied authority during royalty updates. The owning runtime's handle_create_nft implementation does not set update_authority or authority when minting without a collection. Metaplex Core therefore defaults the update authority to the transaction payer, as confirmed by its create_asset_with_different_payer contract test. The runtime also installs TransferDelegate and BurnDelegate plugins governed by UpdateAuthority. Consequently, any wallet permitted to trigger a standalone mint becomes its on-chain update authority even when the NFT is delivered to another user, the app escrow, or a named PDA. That wallet can bypass Bounded policy rules and directly update, transfer, or burn the asset through Metaplex. The royalty handler only derives a Bounded authority for collection-backed NFTs, so there is no compensating program-signing path for standalone assets.",
+      "lineNumbers": [
+        4
+      ],
+      "recommendation": "Fix the owning monorepo first by assigning standalone NFTs a dedicated app-scoped authority PDA and teaching all mutation handlers to derive and sign for it. Add tests proving that the payer cannot directly update, transfer, or burn an NFT delivered to another owner. Then update the manifest, catalog snapshot, fragment, and generated reference pages to accurately distinguish collection-backed, standalone, and externally managed assets.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The fragment and its generated NFTPlugin page categorically treat both createCollection and mintNFT outputs as program-signed Bounded-managed assets. In the owning runtime, handle_create_nft sets the invoking user as payer and the requested destination as owner, but the standalone branch supplies neither authority nor update_authority to Metaplex. The pinned mpl-core contract test confirms that omitting those fields makes the payer the update authority. The runtime also installs TransferDelegate and BurnDelegate plugins whose authority is PluginAuthority::UpdateAuthority. Collection-backed assets derive and sign with an app-scoped collection-authority PDA, while the standalone branch signs only with the asset PDA and the royalty mutation path falls back to a supplied authority rather than deriving a standalone Bounded authority. Consequently, a lower-trust wallet allowed to mint a standalone NFT to a victim, escrow, or named PDA becomes its update authority and can directly update, transfer, or burn it through Metaplex. Bounded policy checks cannot mediate those direct Solana instructions, and the catalog's unverified status only records missing retained live acceptance evidence rather than providing an authorization mitigation. The vulnerable source and documentation remain present at the current revisions, and the known-false-positive register contains no matching trust assumption or mitigation.",
+        "revalidatedAt": "2026-08-20T10:11:53.783Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:47:19.191Z",
+      "durationMs": 110081.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e51-edc9-7641-95ac-45b1ecef373b",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 51670.4,
+        "outputTokens": 3929,
+        "cacheReadInputTokens": 1650739.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:11:53.783Z",
+      "durationMs": 207618.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-1f7d-73e1-b8f8-0613646726b5",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 112193.25,
+        "outputTokens": 6897.25,
+        "cacheReadInputTokens": 2353600,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:11:53.801Z"
+  },
+  "status": "analyzed"
+}

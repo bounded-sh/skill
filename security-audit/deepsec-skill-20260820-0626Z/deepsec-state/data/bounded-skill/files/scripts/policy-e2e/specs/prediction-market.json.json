@@ -1,0 +1,85 @@
+{
+  "filePath": "scripts/policy-e2e/specs/prediction-market.json",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.405Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "db0f8985f24698fe6edbdcc1c81c4dc3e295bf0e6d15934030f2542668433372",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "other-double-spend",
+      "title": "Batched sells can redeem the same YES balance multiple times",
+      "description": "The spec only checks that one sell exceeding the 909090 balance is denied. The referenced policy permits distinct sell paths and evaluates every balance, reserve, and quote check with get(), which reads pre-transaction state. An attacker can submit two set-many entries with different order IDs, each selling the full 909090 balance. Both rules see the original balance and reserve, both hooks transfer roughly 1000000 lamports from the market pot, and both staged updates write the same final zero balance. The attacker therefore spends one logical YES balance twice and can repeat the pattern within transaction limits to drain collateral. The example page explicitly acknowledges that batched sells share pre-state, but AMM pricing does not prevent this double-spend.",
+      "lineNumbers": [
+        72,
+        77,
+        98,
+        104
+      ],
+      "recommendation": "Serialize sells with a per-position nonce or cursor. Require every sell ID to equal the stored next nonce and atomically advance it, so two sells from the same pre-state collide on one required ID. Alternatively model selling as a guarded update of the position itself. Extend the E2E runner with set-many support and add a regression test containing two individually valid sells for the same position.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_12239c0e73777050"
+    },
+    {
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Test approves market resolution outside the authorized time window",
+      "description": "The fixture creates a market expiring at Unix time 4102444800, then immediately expects its resolution to succeed. The referenced pmResolves create rule checks the creator and outcome but contains no lower or upper clock bound, despite the page claiming resolution is accepted only between expiry and expiry plus claimWindowSec. A creator can resolve NO immediately and sweep the entire reserve, including traders' collateral, because winningSupply becomes zero. The creator can also wait until after the claim window, resolve, and sweep while winners are already barred from redeeming. Trusting the creator as the outcome oracle does not authorize resolution outside the documented temporal boundary.",
+      "lineNumbers": [
+        13,
+        14,
+        107,
+        108,
+        112,
+        113
+      ],
+      "recommendation": "Require @time.now >= market.expiryTs and @time.now <= market.expiryTs + market.claimWindowSec in the resolution rule. Change this fixture to use a controllable relative expiry and add denied tests for both premature and late resolution.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_65594e17d2399258"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:56:29.391Z",
+      "durationMs": 96351.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-65a6-7980-885f-52b177b38d97",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 46908.8,
+        "outputTokens": 3730,
+        "cacheReadInputTokens": 550553.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:56:29.402Z"
+  }
+}

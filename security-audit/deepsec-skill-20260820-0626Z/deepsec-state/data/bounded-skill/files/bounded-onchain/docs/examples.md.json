@@ -1,0 +1,70 @@
+{
+  "filePath": "bounded-onchain/docs/examples.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.063Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "6575f8455afeb69881b53d2916d1c061445a35dde6900eff2344c12277cc0557",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Indexed prediction-market policy lets the creator resolve and drain before expiry",
+      "description": "The index presents its linked policies as complete, deployable examples and recommends the prediction-market policy. In bounded-onchain/docs/examples/prediction-market-amm.md, the pmResolves create rule checks creator identity and outcome but never requires @time.now >= expiryTs, despite the page claiming resolution is accepted only after expiry. The creator can open a far-future market, wait for a victim to buy YES, immediately resolve NO, which sets winningSupply to zero, and then satisfy the creator-withdrawal rule immediately to sweep the entire collateral reserve. The policy E2E specification reinforces the flaw by creating a market expiring in 2099 and expecting immediate resolution to succeed.",
+      "lineNumbers": [
+        3,
+        11
+      ],
+      "recommendation": "Add @time.now >= get(/pmMarkets/$marketId).expiryTs and an upper resolution deadline to the pmResolves create rule. Add an E2E denial test for pre-expiry resolution and retain a post-expiry success test before continuing to list the policy as deployable.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_363550fc109ba707"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:38:13.140Z",
+      "durationMs": 76702.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2b25-7b13-be94-73520bcdfc97",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42801,
+        "outputTokens": 2881.2,
+        "cacheReadInputTokens": 699750.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-11T19:26:45Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T17:40:32+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:38:13.151Z"
+  }
+}

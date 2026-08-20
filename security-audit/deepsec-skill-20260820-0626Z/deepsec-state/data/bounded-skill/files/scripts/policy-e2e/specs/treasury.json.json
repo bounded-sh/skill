@@ -1,0 +1,65 @@
+{
+  "filePath": "scripts/policy-e2e/specs/treasury.json",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.406Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "01ead644ffd4211dbce5960b58086aef626073437a2408f92534201e897a63ad",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-test-coverage-gap",
+      "title": "Treasury e2e never exercises the authorized money-out path",
+      "description": "The successful deposit on line 6 only checks that the document write returns success; it never observes the named PDA's balance, so the test would still pass if the funding hook were removed or became a no-op. The sole withdrawal case on line 8 uses the local CLI identity while the extracted policy retains its fixed TREASURER address. The runner substitutes USER_ADDRESS only in step paths and data, not in policy constants, so this case always stops at the treasurer comparison and never exercises the positive amount check, live getBalance guard, or program-signed transfer. Formal verify does not compensate because it proves declared rule properties, not the presence or correctness of plugin effects. Consequently this publication suite can remain green after removal or breakage of the balance guard, withdrawal hook, source/destination resolution, or deposit transfer in a public funds-moving example.",
+      "lineNumbers": [
+        6,
+        8
+      ],
+      "recommendation": "Add a test-only policy constant override that sets TREASURER to a controlled fixture wallet, fund the PDA, execute an authorized withdrawal, and assert the treasury and recipient balance deltas. Also test zero and over-balance withdrawals and retain an unauthorized case using a second identity. Extend the harness with query or RPC balance postconditions so a successful document write alone cannot count as evidence that funds moved correctly.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_43f62fc8a7f50459"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:53:08.842Z",
+      "durationMs": 281631,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-645f-7742-83c7-d127d0eb4bab",
+      "findingCount": 1,
+      "numTurns": 1,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 148648,
+        "outputTokens": 10544,
+        "cacheReadInputTokens": 1945856,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:53:08.857Z"
+  }
+}

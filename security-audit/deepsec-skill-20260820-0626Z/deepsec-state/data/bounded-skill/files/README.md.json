@@ -1,0 +1,65 @@
+{
+  "filePath": "README.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T07:26:07.865Z",
+  "lastScannedRunId": "20260820072607-00628138e8d2ad86",
+  "fileHash": "206fab548af410b84153a84d4220a8ef7870b3c31d66ecda86df75f64f7fe616",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820072607-57c5db42e0cdadf1",
+      "investigatedAt": "2026-08-20T07:30:02.344Z",
+      "durationMs": 57218.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e10-2bf0-7410-a776-cc3097b6af23",
+      "findingCount": 0,
+      "numTurns": 0.25,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 30522,
+        "outputTokens": 2302.5,
+        "cacheReadInputTokens": 409984,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-17T11:37:53Z"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-14T22:25:03-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-14T11:57:23+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-12T22:29:34-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T07:30:02.350Z"
+  }
+}

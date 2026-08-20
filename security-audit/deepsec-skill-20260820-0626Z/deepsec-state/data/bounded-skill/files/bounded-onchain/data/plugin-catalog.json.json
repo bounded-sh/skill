@@ -1,0 +1,110 @@
+{
+  "filePath": "bounded-onchain/data/plugin-catalog.json",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.059Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "5510416f22779af664a75ce8dfaff1f61071fc2ac1d817b83045f840f0b014e4",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-asset-lockout",
+      "title": "NFT ownership guidance confuses the program-ID sentinel with the escrow PDA",
+      "description": "The getOwner documentation says a Bounded-held NFT's raw escrow PDA can be represented by @contract.address. This is false: @contract.address evaluates to the Bounded program ID, while getOwner returns the Metaplex asset's actual owner public key. The owning runtime's escrow test explicitly confirms that getOwner(nft) == @contract.address never matches. An agent following this guidance can place an NFT in app escrow and gate its claim or transfer on that comparison, causing every claim to fail and stranding the asset until the policy is repaired or upgraded.",
+      "lineNumbers": [
+        4945
+      ],
+      "recommendation": "Correct the owning monorepo manifest to distinguish the program-ID sentinel from the concrete escrow PDA. Tell users to compare getOwner against the concrete, network-specific escrow address obtained through the documented AccountPlugin resolution flow. Add a contract test rejecting @contract.address as a raw getOwner comparison, then regenerate the catalog and generated plugin pages.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_54e5dd8d69680d4a"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-documentation-generation",
+      "title": "Built-in values are rendered as [object Object]",
+      "description": "Thirteen PriceFeedPlugin, Solana, and TokenPlugin built-ins have the literal description [object Object]. Their source manifest definitions are structured objects containing fields such as priceFeedId or address, but the extractor stringifies the entire object instead of preserving meaningful fields. Consequently, the generated public reference loses the values and meanings it claims to publish.",
+      "lineNumbers": [
+        6470,
+        6474,
+        6478,
+        6482,
+        7168,
+        7172,
+        7176,
+        7184,
+        7188,
+        7192,
+        7799,
+        7803,
+        7807
+      ],
+      "recommendation": "Update the extractor to handle structured variable definitions explicitly, preserving their description and relevant address, mint, or feed-ID fields. Regenerate the catalog and add a test that rejects [object Object] in snapshots and generated pages.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_eb3145b01474a726"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-incomplete-api-contract",
+      "title": "Four read-only functions omit their return types",
+      "description": "The catalog records null return types for getClaimableMeteoraPoolFees, getMeteoraVirtualPoolAddress, getRandomNumber, and getVRFAddress, so their generated pages omit the Returns contract despite the skill promising exact return types. The owning runtime returns an unsigned fee amount, a pool address, a bounded random integer, and a VRF address respectively. Agents relying on this reference can select an incompatible named-query return type or generate policies that fail validation or execution.",
+      "lineNumbers": [
+        3894,
+        4129,
+        5109,
+        5162
+      ],
+      "recommendation": "Add the verified return types to the owning monorepo manifests first, then re-extract and regenerate the catalog. Add a contract test requiring every readOnly function to declare a non-null returnType.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_4962c0ca25be3ce0"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:46:48.398Z",
+      "durationMs": 213589.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e53-554b-72e1-8382-ab813fa418d8",
+      "findingCount": 3,
+      "numTurns": 0.5,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 117050,
+        "outputTokens": 8612.5,
+        "cacheReadInputTokens": 2148224,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T23:32:17-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T17:40:32+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:46:48.405Z"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "filePath": "bounded-backend/docs/live-runtime.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.591Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "0a799167d29b124c4027090af3f9858caaddba8f789e3d5609c557d21238f8c6",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "rate-limit-bypass",
+      "title": "Separate rollingSum collection cannot rate-limit native live intents",
+      "description": "The page correctly states that session.intentRule does not create a durable record and that nothing automatically ties live.intent calls to a durable event. It later claims macro, turbo-fire, and write floods are prevented by pairing the room with a rollingSum-capped intent collection. These paths are independent: an attacker can call live.intent without creating the capped document. The owning runtime applies intentRule, app-wide usage limits, and queue bounds, but no per-principal rollingSum check. A copied application therefore does not enforce its advertised per-player rate cap, allowing input flooding or unfair gameplay until broader app limits are reached.",
+      "lineNumbers": [
+        250,
+        251,
+        272,
+        290,
+        291,
+        292
+      ],
+      "recommendation": "Do not claim that a separate collection gates native live.intent traffic. Add a runtime-enforced per-principal rate limit at live-intent admission, or provide an atomic primitive that records and checks each accepted intent against rollingSum. Until then, implement a server-side principal-keyed limiter in the authoritative runtime and describe the durable collection as audit-only.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_6b629890e3e85db2"
+    },
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-invalid-policy-example",
+      "title": "Validated native-live policy example is rejected by the policy validator",
+      "description": "The page labels the policy at lines 142-158 as a validated declaration, but places invariants at the policy root and expresses them as strings. In the owning validator, invariants are collection-local, the root key is not reserved, and the one-segment key is therefore rejected as an invalid collection path. Invariant entries must also be supported invariant objects, not free-form expressions. Users copying this central example cannot verify or deploy it.",
+      "lineNumbers": [
+        142,
+        157
+      ],
+      "recommendation": "Replace the root-level string array with supported collection-local invariant objects attached to the authoritative room collection, using declared scalar fields and supported types such as bound. Add a contract test that extracts and validates this exact example.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_8b8d475a6e182c85"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:13:33.437Z",
+      "durationMs": 105993,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-59b8-74c0-92e8-1ebfe465e04a",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48681.4,
+        "outputTokens": 4089.2,
+        "cacheReadInputTokens": 1086668.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-01T04:25:25+05:30"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-07-10T12:51:51-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:13:33.450Z"
+  }
+}

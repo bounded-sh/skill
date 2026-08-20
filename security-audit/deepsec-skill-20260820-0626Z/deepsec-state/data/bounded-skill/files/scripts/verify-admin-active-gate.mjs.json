@@ -1,0 +1,88 @@
+{
+  "filePath": "scripts/verify-admin-active-gate.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.412Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "6c6f915e51b9a1efe10d7558b5f23b3145d5af6af3ec72196c338153f65dc821",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-incomplete-policy-scan",
+      "title": "Active-admin scan misses snippets that reference a registry defined elsewhere",
+      "description": "The static check examines a policy block only when that same fenced block contains admins/$ and declares active. The later consistency check merely requires the file to contain the active-gate expression somewhere. This misses partial policy snippets that use an active registry established earlier in the page. The current maintainApp example in bounded-backend/docs/functions.md demonstrates the blind spot: its function block uses get(/admins/@user.id) != null and explicitly refers readers to the earlier active registry, but the block itself contains no admins collection and is skipped. The exact example's build submission is separately rejected because its profile exposes only scheduled-function while a user invocation is origin function, so this is classified as a validation bug rather than a currently exploitable build authorization bypass.",
+      "lineNumbers": [
+        111,
+        114,
+        127,
+        128,
+        131,
+        197,
+        216,
+        217
+      ],
+      "recommendation": "Track the registry model at page or named-example scope instead of requiring the collection and every consumer to share one JSON fence. At minimum, reject each bare-existence privileged example unless its local prose explicitly states that the referenced registry has no active field and revocation occurs by deletion.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_4866440909e2c9cb"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-proof-fail-open",
+      "title": "Negative proof control treats UNKNOWN as successful evidence",
+      "description": "The load-bearing negative control fails only when the existence gate is PROVED to imply active. Any other result, including UNKNOWN, ERROR-like statuses, or a missing proofStatus, is accepted and logged as confirmation that the gate does not enforce active. A verifier timeout or unsupported encoding can therefore let the regression harness pass without producing the counterexample it claims to require.",
+      "lineNumbers": [
+        359,
+        363,
+        381,
+        382,
+        385
+      ],
+      "recommendation": "Require the exact verifier status that represents a disproved implication, along with a valid counterexample where available. Treat UNKNOWN, errors, absent fields, and every unexpected status as a harness failure.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_e8574a2d6bba2f5c"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:56:19.840Z",
+      "durationMs": 94473.4,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-650f-75d1-ab8a-2fc0a54a8f19",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 37010.4,
+        "outputTokens": 3714.2,
+        "cacheReadInputTokens": 553420.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-04T13:42:30+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:56:19.849Z"
+  }
+}

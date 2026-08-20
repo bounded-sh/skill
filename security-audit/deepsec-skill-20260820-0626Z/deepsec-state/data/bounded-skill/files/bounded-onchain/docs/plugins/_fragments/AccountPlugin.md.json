@@ -1,0 +1,50 @@
+{
+  "filePath": "bounded-onchain/docs/plugins/_fragments/AccountPlugin.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.075Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "f0c1fb7137f4dbf0c5690b07e120474cdddae03fc85c5d460ded0c472941008e",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:47:19.151Z",
+      "durationMs": 110081.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e51-edc9-7641-95ac-45b1ecef373b",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 51670.4,
+        "outputTokens": 3929,
+        "cacheReadInputTokens": 1650739.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:47:19.165Z"
+  }
+}

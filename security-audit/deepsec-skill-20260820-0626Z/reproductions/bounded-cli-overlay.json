@@ -1,0 +1,5 @@
+{
+  "Replace": {
+    "/Users/athar/Desktop/workspace/poof-new/bounded-cli-audit.CyUPDL/internal/cli/audit_security_test.go": "/Users/athar/Desktop/workspace/poof-new/bounded-skill-deepsec.kf3zFH/security-audit/deepsec-skill-20260820-0626Z/reproductions/cli_security_regressions_test.go"
+  }
+}

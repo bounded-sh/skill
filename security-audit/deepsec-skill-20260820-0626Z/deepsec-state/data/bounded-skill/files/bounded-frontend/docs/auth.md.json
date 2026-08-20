@@ -1,0 +1,104 @@
+{
+  "filePath": "bounded-frontend/docs/auth.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:20:23.895Z",
+  "lastScannedRunId": "20260820082023-e8473e6a97137ae7",
+  "fileHash": "4a5a5d411ad71192090c4b01272c1444983898a382f9198b1e2a7da6908a5eab",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-api-contract-mismatch",
+      "title": "The universal user.id guarantee does not hold for direct guest and Privy returns",
+      "description": "The page states that user.id is always present on an authenticated user object. The owning SDK instead enriches only the object stored by setCurrentUser(). GuestAuthProvider and PrivyExpoProvider return raw objects containing address but no id, and their public sign-in wrappers return those raw objects. Therefore callers awaiting signInAnonymously() or loginWithPrivy() can receive an authenticated User whose id is undefined even though useAuth() or getCurrentUser() subsequently exposes an enriched object.",
+      "lineNumbers": [
+        552,
+        555,
+        583,
+        588,
+        596,
+        604
+      ],
+      "recommendation": "Normalize and return the same enriched User object from every public login method. Until then, document that callers must obtain the canonical object from getCurrentUser(), useAuth(), or onAuthStateChanged() after these methods complete.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_e41205acfec73bdd"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-configuration-mismatch",
+      "title": "Hosted-auth guidance incorrectly says localhost is always allowed",
+      "description": "The hosted-auth troubleshooting text says localhost is always allowed without registration. The owning human-auth OIDC gate permits tenant redirects only when their origin is mapped to that app or appears in that app's allowedOrigins. Its global localhost allowance applies to the separately gated platform client, not arbitrary tenant apps. The app-auth and React Native pages correctly require registration, so following this statement causes local hosted login to fail with the very origin error being discussed. The SIWS loopback behavior in known false-positive FP-013 is a separate wallet-auth trust model and does not mitigate tenant OIDC redirects.",
+      "lineNumbers": [
+        206,
+        211
+      ],
+      "recommendation": "State that tenant apps must register the exact http://localhost:<port> origin in their allowedOrigins. Reserve the always-allowed statement for the explicitly scoped platform-client behavior.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_3681f30a0d7c992e"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-identity-confusion",
+      "title": "Session-expiry example writes the nullable wallet address as ordinary ownership",
+      "description": "The page correctly establishes @user.id as the ordinary ownership identity and gives a create rule requiring @newData.owner == @user.id. Its session-expiry example then writes owner: me.address. For email/social accounts, the Turnkey wallet address differs from the account id, so the page's own rule rejects the write. For phone-only sessions or wallet-disabled apps, address is null. This makes the example fail independently of session expiry and encourages the wallet-versus-account identity confusion the surrounding guidance warns against.",
+      "lineNumbers": [
+        662,
+        676,
+        721,
+        725
+      ],
+      "recommendation": "Use owner: me.id for the offchain runs document. Use me.address only when the example is explicitly an onchain or wallet-semantic operation with a non-null address guard.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_2ab215398bfedd1c"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082023-71b34e159c890b44",
+      "investigatedAt": "2026-08-20T08:27:31.067Z",
+      "durationMs": 83965.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e41-cf24-7a71-934a-e571aa42fc85",
+      "findingCount": 3,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40024.4,
+        "outputTokens": 3498.8,
+        "cacheReadInputTokens": 546918.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T18:11:17-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-18T23:40:55-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:27:31.092Z"
+  }
+}

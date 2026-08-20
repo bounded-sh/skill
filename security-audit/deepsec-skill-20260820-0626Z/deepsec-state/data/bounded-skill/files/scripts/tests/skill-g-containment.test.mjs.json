@@ -1,0 +1,96 @@
+{
+  "filePath": "scripts/tests/skill-g-containment.test.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.408Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "2e48c3892527c18aa43e378fcb05c6ca87b06277d755a16456180e4f8398dbed",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-incomplete-path-containment-test",
+      "title": "Containment test omits symlink escapes",
+      "description": "Lines 27-30 test only ordinary lexical paths. The imported isWithinRoot helper uses path.resolve/path.relative and therefore accepts an in-root path that is a symbolic link to a file outside the project. validate.mjs subsequently follows such links through existsSync, statSync, and readFileSync when checking Markdown anchors. A link to an in-repository symlink can therefore cause filesystem access outside the root while this contract test passes. No tracked symlinks currently exercise the flaw, so this is a validation-gate bug rather than a present documentation exposure.",
+      "lineNumbers": [
+        27,
+        28,
+        29,
+        30
+      ],
+      "recommendation": "Add a temporary in-root symlink fixture targeting an external file and require validation to reject it before reading. Resolve existing targets with realpathSync and reapply containment to the physical path, or reject symbolic-link targets with lstatSync.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_653d8cebd1a79bf3"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-ineffective-security-regression-test",
+      "title": "Substring assertions can approve unsafe documentation",
+      "description": "The security publication gate checks textual presence and a few exact spellings rather than the effective examples. The frame-ancestors test permits additional unsafe origins because it only requires four expected strings, while embeddedBy and REPLACES may occur anywhere in the document. The React Native test treats any occurrence of 'encrypt' as success, including 'unencrypted' or a warning not to encrypt, and only rejects exact spellings such as getRandomBytes(32), toString(16), new MMKV(, and one specifically named async function. An unencrypted or non-working sample using equivalent syntax can therefore pass. The current referenced documents are safe, but the test does not enforce the security properties its name and failure messages claim.",
+      "lineNumbers": [
+        35,
+        38,
+        42,
+        47,
+        52,
+        59,
+        61,
+        68,
+        72,
+        76,
+        81,
+        87
+      ],
+      "recommendation": "Extract the relevant fenced blocks and validate their structure. Compare the complete normalized frame-ancestors token set, and parse or compile the React Native sample to require createMMKV with a keychain-derived encryptionKey of an accepted length and a synchronous initialization path. Add negative fixtures for equivalent unsafe syntax.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_be1af7686fa9e833"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:58:27.223Z",
+      "durationMs": 155833.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5f-ca27-7422-8510-390a9ca7494e",
+      "findingCount": 2,
+      "numTurns": 0.5,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 58003.5,
+        "outputTokens": 6089.5,
+        "cacheReadInputTokens": 666368,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:40:46Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T19:51:28+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:58:27.233Z"
+  }
+}

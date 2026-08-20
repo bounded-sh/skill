@@ -1,0 +1,73 @@
+{
+  "filePath": "bounded-backend/docs/examples/marketplace.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.587Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "b98a3edda27dff9e9120b6eb2d01c68f92e53d25faceeb1b345889be162920cb",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "rate-limit-bypass",
+      "title": "Zero-price listings permit unbounded durable order creation",
+      "description": "`UInt` permits zero, but the listing create and update rules impose no positive minimum on `priceUsd`. An authenticated attacker can create an active zero-price listing under their own seller ID, then repeatedly create fresh orders under their buyer ID with `amountUsd: 0`. Each order passes the listing-price comparison, while the `daily_spend_cap` rolling sum increases by zero and therefore never limits the number of orders. Because orders are durable and both update and delete are permanently denied, the attacker can accumulate rows until the application's storage or processing quota is exhausted, causing cost or availability impact. The owning monorepo identifies this same zero-amount append-only pattern as requiring a separate row-count cap.",
+      "lineNumbers": [
+        11,
+        16,
+        17,
+        32,
+        36,
+        37,
+        38,
+        48,
+        49,
+        50
+      ],
+      "recommendation": "Add a per-order `weight` field that the create rule requires to equal 1, and enforce a second `rollingSum` over that field with a reasonable per-buyer limit and, where appropriate, an unpartitioned global limit. If free listings are unsupported, also require `priceUsd >= 1` on listing creation and updates. Define bounded retention or archival for old immutable orders and add a policy test covering repeated zero-price orders.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_62067c2ae0691b16"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:19:33.476Z",
+      "durationMs": 117764.66666666667,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e3b-8bb5-7e43-9170-1b4f460f88c4",
+      "findingCount": 1,
+      "numTurns": 0.3333333333333333,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 75932.33333333333,
+        "outputTokens": 4622,
+        "cacheReadInputTokens": 979882.6666666666,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:19:33.491Z"
+  }
+}

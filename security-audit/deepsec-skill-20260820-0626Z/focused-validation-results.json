@@ -1,0 +1,91 @@
+{
+  "validatedAt": "2026-08-20T11:00:00Z",
+  "baseline": {
+    "skill": "54b05647169d6ed8b011db0c7a7cc9cc91cc0c53",
+    "monorepo": "8e7f1e25b53e8f0575ea0f2336640d68761d60a9",
+    "cli": "755dd6b1cdf2d810fd119c0d95616f1ff7871730"
+  },
+  "results": [
+    {
+      "id": "cli-ignore-negated-class",
+      "result": "PASS",
+      "evidence": "Git ignored local.prod under local.[!e]*, while collectSourceArtifactFiles included it."
+    },
+    {
+      "id": "cli-bare-environment",
+      "result": "PASS",
+      "appId": "b0c30767cb63cef7802e0e8a",
+      "stagingPrincipal": "BDXnnDpsuLmsscBeiuAK4JBQVScyGwp5dHSBJppPyA9J",
+      "evidence": "A bare deploy was accepted, stripped environments, and retained the staging principal in top-level constants. That unrelated principal then read victim-production-secret through the resulting read:* role on the production target app."
+    },
+    {
+      "id": "slug-migration-takeover",
+      "result": "PASS",
+      "victimApp": "27c5dbfc143dd7fb48486b4d",
+      "attackerApp": "03705639e362a9898f5bc405",
+      "slug": "audit-move-mt1eqgcw6237",
+      "evidence": "The unrelated attacker claimed the released label before the documented new-app claim."
+    },
+    {
+      "id": "stale-origin-after-reclaim",
+      "result": "PASS",
+      "evidence": "The pinned origin gate accepted reclaimed.bounded.page for victim-app after the host map identified attacker-app, because the victim allowlist remained stale."
+    },
+    {
+      "id": "analytics-scrubbing",
+      "result": "PASS",
+      "evidence": "The pinned sanitizer retained both /reset/Reset_A7b9 and Authorization: Bearer sk-audit-only-123456."
+    },
+    {
+      "id": "prediction-early-resolution",
+      "result": "PASS",
+      "appId": "6026dc048b8b32a0708f3c74",
+      "evidence": "After an unrelated victim added 10000000 units of collateral, a future-dated market accepted creator outcome NO and an immediate 20000000-unit sweep, leaving collateralReserve 0 before expiry."
+    },
+    {
+      "id": "prediction-distinct-path-batch-sell",
+      "result": "PASS",
+      "appId": "0c6f313db7f50c32514c1e79",
+      "evidence": "An unrelated attacker bought 5000000 YES, then two distinct sell paths in one accepted setMany each paid the 10000000-unit pre-state quote. The physical payout was 20000000, draining the creator's 10000000-unit seed, while the final recorded reserve was 10000000."
+    },
+    {
+      "id": "randomness-aggregate-liability",
+      "result": "PASS",
+      "appId": "c923901987e5a7c7ba419325",
+      "evidence": "After an unrelated victim's bet, the policy accepted two attacker bets. Three unsettled 100000000-unit bets against a 500000000-unit pot created 600000000 units of maximum payout liability and a 100000000-unit shortfall."
+    },
+    {
+      "id": "pump-execution-time-price-protection",
+      "result": "PASS",
+      "evidence": "The pinned implementation recomputes both quote and minimum from execution reserves. The code-level proof moved the quote from 90 with a signed-time minimum of 85 to an accepted execution quote of 23 with a recomputed minimum of 21."
+    },
+    {
+      "id": "documented-arithmetic-rewrite",
+      "result": "PASS_AS_CORRECTNESS_PROOF_ONLY",
+      "evidence": "The documented rewrite evaluated true where the intended inequality evaluated false for spent=1, scale=100, tokens=50, price=1. Severity and reproducible agent-causality gates remain separate."
+    },
+    {
+      "id": "whole-token-base-unit-guidance",
+      "result": "PASS_AS_CORRECTNESS_PROOF_ONLY",
+      "evidence": "Following the base-unit instruction with a six-decimal token magnified 1000000 caller units to 1000000000000 transferred base units. Reachability and attacker-control gates remain separate."
+    },
+    {
+      "id": "runtime-agent-missing-caller-authorization",
+      "result": "PASS",
+      "appId": "3811b24da4ec6b7556326d9b",
+      "evidence": "The pinned /agents/* admission path accepts any verified app JWT and forwards the verified identity without a role or action authorization decision. A distinct lower-privileged wallet invoked the deployed documented kind: agent handler on the local stack, mutated its app-scoped runtime store, and caused the handler to receive a declared audit-only app secret. The same user's direct policy write was denied, and a runtime ctx.bounded attempt was also denied by the downstream policy, confirming that policy rules remain a defense for that surface. The pinned Flue environment additionally exposes services, queues, schedules, and app-service data capabilities to the resulting tool loop; the complete public guidance provides no agent/onInvoke authorization gate and limits its warning to kind: backend fetch handlers."
+    },
+    {
+      "id": "standalone-nft-caller-update-authority",
+      "result": "PASS_CODE_PROOF",
+      "evidence": "The pinned NFT runtime sets the invoking wallet as payer, supplies a destination owner, and omits authority and update_authority in the standalone branch. Cargo.lock pins mpl-core 0.10.0, whose create contract test proves that an omitted standalone update authority defaults to the payer, contradicting the documented program-managed authority guarantee. A focused policy using the public mintNFT signature without a collection passed the pinned CLI's solana_devnet deploy-safety gate with zero schema or proof failures."
+    }
+  ],
+  "executionErrors": [
+    {
+      "operation": "Direct TypeScript execution for two source-level reproductions",
+      "error": "Node could not resolve source-style .js and extensionless TypeScript imports.",
+      "resolution": "Bundled the exact pinned sources and audit entrypoints with the monorepo's installed esbuild, then ran the resulting temporary ESM bundles successfully."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "filePath": "bounded-deploy/docs/access-playbook.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.883Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "099abb3033be7165dde9d6b7dc2c25dbe89ca165258982546e2531f4ab7ebd3e",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:30:51.712Z",
+      "durationMs": 90880.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-5f5a-7200-a2d4-7e9d651c16f5",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 53776.6,
+        "outputTokens": 2620.8,
+        "cacheReadInputTokens": 759296,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-17T13:36:40-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-06T23:51:32-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-07-27T18:14:07-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:30:51.743Z"
+  }
+}

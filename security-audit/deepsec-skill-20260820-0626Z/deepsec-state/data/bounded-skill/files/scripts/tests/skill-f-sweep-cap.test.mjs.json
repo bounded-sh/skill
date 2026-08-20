@@ -1,0 +1,71 @@
+{
+  "filePath": "scripts/tests/skill-f-sweep-cap.test.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:48:20.408Z",
+  "lastScannedRunId": "20260820084820-c383b4dd9ac5a756",
+  "fileHash": "f512140505dfc597349116dafd7d67f2dc43984baea7d5dfa609dd5cd73e9e05",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-ineffective-resource-bound",
+      "title": "Sweep-cap test accepts a helper whose limit can be overridden",
+      "description": "The test only requires limit: SWEEP_LIMIT to appear near the readPage declaration. The referenced helper currently constructs options as { limit: SWEEP_LIMIT, ...opts }, so a caller-provided limit, including undefined, overwrites the cap and can restore an unbounded collection read. The test therefore passes even though its assertion message claims every helper read is capped.",
+      "lineNumbers": [
+        41,
+        44,
+        45
+      ],
+      "recommendation": "Place the enforced limit after caller options, for example { ...opts, limit: SWEEP_LIMIT }, and strengthen the test to verify that the final effective limit cannot be overridden rather than checking textual proximity.",
+      "confidence": "high",
+      "producedByRunId": "20260820084820-0c41ac9093882232",
+      "findingId": "finding_b2cd298390da2f5f"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820084820-0c41ac9093882232",
+      "investigatedAt": "2026-08-20T08:58:08.581Z",
+      "durationMs": 115775.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e5b-6640-72d1-bfc3-4b50dad65ea8",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 39845,
+        "outputTokens": 4915.2,
+        "cacheReadInputTokens": 706304,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:39:01Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T19:48:24+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:58:08.590Z"
+  }
+}

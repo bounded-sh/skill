@@ -1,0 +1,88 @@
+{
+  "filePath": "bounded-backend/docs/service-keys.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.599Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "2ca5902425b8ebfab051da30aabf688e47d6b4a6c204b9feb5ea9e6367417c1b",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-untrusted-payout-intent",
+      "title": "Payout bot converts caller-controlled arguments into trusted payout records",
+      "description": "The page correctly warns that settlement values must be rederived from trusted provider state, but its payout bot does the opposite. An admin-gated function runs as the privileged payout-bot identity and writes args.to and args.amount directly into a protected payouts record under a caller-selected args.id. No trusted settlement record, provider response, immutable entitlement, balance constraint, amount cap, or idempotency condition binds those values. In an application copied from this example, a compromised or over-privileged admin could create fresh payout obligations for an attacker-selected recipient and arbitrary amount, which a downstream settlement worker could treat as authoritative.",
+      "lineNumbers": [
+        58,
+        59,
+        60,
+        204,
+        205,
+        208,
+        220,
+        228,
+        230,
+        232
+      ],
+      "recommendation": "Accept only a trusted operation identifier, then derive recipient and amount from immutable provider-verified or server-owned settlement state. Make the transition atomic and idempotent, validate identifier shape, and enforce conservation, balance, per-operation, and rolling payout limits with policy invariants.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_5028226dfb05426b"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:22:59.112Z",
+      "durationMs": 122536.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e3a-c0d3-7103-a840-687fe641859e",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 58086,
+        "outputTokens": 3166.4,
+        "cacheReadInputTokens": 1426636.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-10T11:28:18-04:00"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-04T13:42:30+05:30"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-27T19:31:33-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:22:59.120Z"
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "filePath": "bounded-onchain/docs/plugins/_fragments/TokenPlugin.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.090Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "9b9b5cfd8e36da613935c17289df2736464954401a106a1c8abbb3e8bad9dcd8",
+  "findings": [
+    {
+      "findingId": "finding_fd6160f17f3b296c",
+      "severity": "HIGH",
+      "vulnSlug": "other-amount-unit-confusion",
+      "title": "Universal base-unit guidance dangerously misdocuments transferWholeTokens",
+      "description": "The fragment states that amounts for every TokenPlugin call are integers in base units. This is false for transferWholeTokens: the generated catalog describes its amount as being without decimals, and the owning Rust and Poofnet implementations multiply the supplied value by 10^mintDecimals before transferring. An agent following this universal convention could pass a base-unit field into transferWholeTokens and enforce a cap in base units. For a 6-decimal token, a policy intended to permit at most 1 token might accept amount <= 1000000 and then transfer 1000000 whole tokens, or fail only when the source lacks that balance. An attacker controlling the amount on a program-signed escrow or named-PDA payout could therefore multiply the intended withdrawal by the mint's decimal factor and drain substantially more funds. The function's unverified capability status does not correct the contradictory contract and the same scaling is present in the published runtime source.",
+      "lineNumbers": [
+        4
+      ],
+      "recommendation": "Carve transferWholeTokens out of the base-unit convention explicitly. State that transfer and other raw-amount functions accept base units, while transferWholeTokens accepts whole-token units and multiplies by 10^decimals. Warn authors to express policy caps in the same unit as the selected function, and prefer TokenPlugin.transfer for financial rules denominated in base units.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The TokenPlugin fragment states without exception that every amount is expressed in base units, while the generated transferWholeTokens entry describes its amount as being without decimals. The owning Rust handler uses the use_whole_tokens branch to multiply SOL values by 10^9 and SPL values by 10^mintDecimals before transferring. The Poofnet bytecode implementation independently performs the same conversion from wholeAmount to base units. For a six-decimal mint, a policy author following the universal guidance could permit amount <= 1000000 as a one-token base-unit cap. If a funded program-signed escrow holds 100 tokens, an attacker can submit amount 100, which is far below that apparent cap but causes transferWholeTokens to move all 100 whole tokens rather than 100 base units. Bounded verification evaluates the documented input comparison and has no way to infer or constrain the later decimal multiplication. Insufficient source balance may stop an oversized request, but it does not protect a realistically funded escrow or named-PDA payout source. The contradictory guidance and scaling behavior are still present in the current documentation, catalog, and owning implementations, so HIGH severity is justified.",
+        "revalidatedAt": "2026-08-20T10:11:53.783Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:43:40.605Z",
+      "durationMs": 64262.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e52-1fa1-7e51-a2b7-9b26c0e6f2f5",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 36825.8,
+        "outputTokens": 2456.8,
+        "cacheReadInputTokens": 534681.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:11:53.783Z",
+      "durationMs": 207618.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-1f7d-73e1-b8f8-0613646726b5",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 112193.25,
+        "outputTokens": 6897.25,
+        "cacheReadInputTokens": 2353600,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-11T16:19:36+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:11:53.810Z"
+  },
+  "status": "analyzed"
+}

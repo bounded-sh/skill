@@ -1,0 +1,144 @@
+{
+  "batchIndex": 1,
+  "label": "initial",
+  "timestamp": "2026-08-20T10:12:12.663Z",
+  "files": [
+    "bounded-deploy/docs/domains.md",
+    "bounded-deploy/docs/environments.md",
+    "bounded-onchain/docs/examples/prediction-market-amm.md",
+    "bounded-onchain/docs/examples/token-launch.md"
+  ],
+  "requested": [
+    {
+      "findingId": "finding_c9d6b734fc80501d",
+      "filePath": "bounded-deploy/docs/domains.md",
+      "title": "Released slug can remain a trusted authentication origin after attacker reclamation",
+      "alias": "F1"
+    },
+    {
+      "findingId": "finding_0af67c5530ef54bc",
+      "filePath": "bounded-deploy/docs/domains.md",
+      "title": "Immediate slug reuse enables stale hostname and API endpoint takeover",
+      "alias": "F2"
+    },
+    {
+      "findingId": "finding_1e581f41b1bfe0cf",
+      "filePath": "bounded-deploy/docs/environments.md",
+      "title": "Example makes a staging principal the production fallback",
+      "alias": "F3"
+    },
+    {
+      "findingId": "finding_76269b0b72d8de3c",
+      "filePath": "bounded-onchain/docs/examples/prediction-market-amm.md",
+      "title": "Batched sells can spend one YES balance multiple times and drain the market",
+      "alias": "F4"
+    },
+    {
+      "findingId": "finding_5bed72968ee3f7ae",
+      "filePath": "bounded-onchain/docs/examples/prediction-market-amm.md",
+      "title": "Resolution lacks time bounds, enabling premature and post-deadline fund sweeps",
+      "alias": "F5"
+    },
+    {
+      "findingId": "finding_d85c66d684bb089b",
+      "filePath": "bounded-onchain/docs/examples/token-launch.md",
+      "title": "The buy's slippage parameter does not bind the signed price",
+      "alias": "F6"
+    },
+    {
+      "findingId": "finding_a410efdf44944ba0",
+      "filePath": "bounded-onchain/docs/examples/token-launch.md",
+      "title": "A transient Poofnet launch failure permanently poisons the token ID",
+      "alias": "F7"
+    }
+  ],
+  "rawResponses": [
+    {
+      "kind": "initial",
+      "rawText": "```json\n[\n  {\n    \"findingId\": \"F1\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The current domains page states that releasing a slug immediately frees it and that Bounded automatically maintains `allowedOrigins`. The owning release route first clears the database slug and deletes the `slug:<label>` host mapping, then attempts to persist the reduced origin list inside a caught, non-fatal `try` block. Consequently, the release returns success even when the victim app continues to store the old origin as allowed. Both authentication implementations cache registered origins for 30 seconds, while host-map reads may be edge-cached for 60 seconds. When the attacker claims the freed slug, the host map correctly returns the attacker's app, but the victim-app origin resolver treats that mismatch as a miss and falls through to the victim's stale allowlist instead of denying explicitly. The browser Origin, OIDC, signing-capability, SIWE, and SIWS gates all rely on these resolvers, so ordinary CSRF and origin protections do not help when the malicious page is itself considered a trusted victim-app origin. A concrete attacker can claim the old label, serve JavaScript there, initiate authentication for the known victim app ID, and receive victim-app credentials after a user follows an old link or bookmark. Launched oApps and route-managed build children cannot release their slugs, but ordinary applications remain exposed. Current source after the recent authentication hardening still contains the non-fatal revocation and fallback behavior, and the false-positive register contains no matching mitigation.\"\n  },\n  {\n    \"findingId\": \"F2\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The page explicitly documents that release frees a slug and instructs a move as two separate operations: release it from the old app, then claim it on the new app. `clearSlug` simply sets the owning database column to null, and the ordinary claim path has no tombstone, quarantine period, or same-account preference. The only temporary reservation is for an unsettled oApp launch, while launched oApps are separately prevented from releasing their names; neither mechanism protects ordinary applications. The router resolves both `<slug>.bounded.page` and `<slug>-api.bounded.page` from the same `slug:<slug>` mapping, with the `-api` form forwarded to the runtime using the newly mapped app ID. An attacker who wins the move interval or claims an abandoned label therefore controls the content shown by stale links and the backend reached by stale API URLs. App-scoped credentials may still be rejected by the attacker's runtime, but that does not prevent platform-domain phishing, unauthenticated endpoint substitution, or clients operating against the wrong application. The owning repository has an atomic internal slug move for the special launch workflow, which confirms that the public release-then-claim flow lacks equivalent protection. No recent change adds quarantine or atomic ordinary-app transfer, and this is distinct from F1 because perfect origin revocation would not stop stale hostname takeover.\"\n  },\n  {\n    \"findingId\": \"F3\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The primary example places the staging administrator and cap in the top-level `constants`, while the production overlay contains a different administrator and a cap of 5000. The same page states that top-level values are the default and, by convention, the production truth used by a bare deployment. In the current CLI, environment overlay resolution only runs when `--environment` is supplied. Its environment-blind refusal checks only functions that have their own explicit environment allowlists, so this policy, which has no such functions, is admitted. The CLI then removes the entire `environments` block and resolves the target app from the explicit flag or authoritative `bounded.json` project configuration. Compile-time `@const.ADMIN` expansion therefore installs the staging identity into the broad admin read role, and `@const.DAILY_CAP` becomes 50 rather than the production value of 5000. A developer or CI job issuing the documented bare command while configured for production would grant the lower-trust staging principal production-wide reads and replace the intended production cap. The current CLI history still contains this exact behavior after the environment-overlay changes, and the false-positive register identifies no external deployment guard that would prevent the scenario.\"\n  },\n  {\n    \"findingId\": \"F4\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"Every sell rule and hook derives its balance, reserve, supply, and quote from committed `get()` pre-state. The runtime rejects repeated writes to the same concrete submitted document path, but attacker-chosen distinct `$orderId` values produce distinct passthrough paths and avoid that check. In the onchain interpreter, the transaction snapshot is built once, while staged document changes are stored by path and field in hash maps whose later insertion overwrites the earlier value. Each accepted sell nevertheless executes its SOL transfer CPI, so the financial effects accumulate even though the shared reserve, supply, and position fields retain only one computed transition. With an even seed `S`, buying with `S` leaves reserve `2S`, pool supply `S/2`, and a user balance of `S/2`; two distinct sells of `S/2` each independently quote `S`. Both balance rules see the original position, and the physical pot check still passes for the second payout because exactly `S` remains after the first. The two CPIs drain all `2S`, while the final documents show the state of only one sell, including a recorded reserve of `S`. Batched redemptions by different holders have the same last-write-wins defect for the common reserve and winning-supply fields. The LIVE-PENDING status is an absence of retained live evidence, not a safety control, and current runtime source plus the false-positive register provide no aggregate conservation or serialization mitigation.\"\n  },\n  {\n    \"findingId\": \"F5\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The resolution create rule checks the caller, market existence, outcome, and null `winningSupply`, but contains no comparison with `expiryTs`, `claimWindowSec`, or `@time.now`. Its hook sets `winningSupply` to the outstanding YES supply for a YES outcome and directly to zero for NO. The withdrawal rule separately permits the creator to take the exact reserve whenever `winningSupply == 0` or the original expiry-plus-claim-window deadline has passed. A creator can therefore resolve NO before expiry and, in a following transaction, sweep the entire reserve through the zero-supply branch while trading was supposed to remain open. More decisively, even an otherwise truthful oracle can wait until after the claim deadline, resolve either outcome, and then sweep through the deadline branch. All holder redemptions are permanently denied at that point because their rule requires the current time to be at or before the same deadline. Calling the creator the outcome oracle does not mitigate this because the page expressly claims that policy constrains resolution timing, rather than trusting the creator for timely availability. No framework layer adds implicit temporal bounds to a policy expression, and the current file and history still lack the claimed lower and upper checks.\"\n  },\n  {\n    \"findingId\": \"F6\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The buy receipt contains only `solLamports` and `slippageBps`, and the hook passes exactly those values to `buyExactSolIn`. In the current Rust interpreter, that function deserializes the bonding curve during transaction execution, calculates `tokens_out` from the then-current virtual reserves, and applies `slippageBps` to produce `min_tokens_out`. The resulting Pump.fun CPI contains a minimum token amount, but that minimum was created after execution began rather than being an amount the client reviewed and signed. The platform transaction builder resolves accounts but does not embed a client-provided quote, minimum output, or market deadline, and the public signature exposes no such arguments. A generic Solana blockhash expiry only limits transaction lifetime and does not constrain how far the curve may move before the transaction executes. A validator or MEV participant can order a price-moving buy ahead of the victim, let the victim recompute a much smaller quote from the changed reserves, and reverse afterward for sandwich profit. The 1000-bps cap only bounds deviation from that fresh execution-time quote, not movement since signing, so it does not provide the protection claimed by the example. Recent token documentation changes did not extend the runtime signature, and no known false-positive or attestation assumption neutralizes this direct instruction path.\"\n  },\n  {\n    \"findingId\": \"F7\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The launch collection is create-only at `tokens/$tokenId`, with both update and delete unconditionally denied. On Poofnet, the realtime data plane deliberately commits the primary onchain-flagged document and its simulated transaction hash before executing the onchain hook. Current hook execution treats a thrown error or false result as non-fatal to that primary write, discards the staged simulated token state, and patches the surviving row with `_error_message` but no matching `_hook_completed`. A second write to the same path is classified as an update and is rejected before the create hook can run again, while deletion is also unavailable. Both the simulator and real onchain path derive an id-only mint seed from the app ID and token ID, so choosing another token ID necessarily selects another mint identity. Thus a transient storage, concurrency, authority, or simulator failure can leave no launched token while permanently occupying the desired semantic ID under this policy. The general onchain guide explicitly warns that this exact create-only shape can be poisoned and documents retryable-row or intent-plus-attempt patterns, but the target example implements neither and instead claims that failure leaves no launch record. The current Poofnet result-stamping source and its contract tests preserve this behavior, and recent changes only made simulated side effects atomic rather than rolling back the already committed primary row. The false-positive register's related CCA entry concerns a different policy that gained an explicit failed-receipt deletion path; that recovery does not exist here.\"\n  }\n]\n```",
+      "parsedCount": 7
+    }
+  ],
+  "repairAttempts": 0,
+  "parsedVerdicts": [
+    {
+      "findingId": "F1",
+      "verdict": "true-positive",
+      "reasoning": "The current domains page states that releasing a slug immediately frees it and that Bounded automatically maintains `allowedOrigins`. The owning release route first clears the database slug and deletes the `slug:<label>` host mapping, then attempts to persist the reduced origin list inside a caught, non-fatal `try` block. Consequently, the release returns success even when the victim app continues to store the old origin as allowed. Both authentication implementations cache registered origins for 30 seconds, while host-map reads may be edge-cached for 60 seconds. When the attacker claims the freed slug, the host map correctly returns the attacker's app, but the victim-app origin resolver treats that mismatch as a miss and falls through to the victim's stale allowlist instead of denying explicitly. The browser Origin, OIDC, signing-capability, SIWE, and SIWS gates all rely on these resolvers, so ordinary CSRF and origin protections do not help when the malicious page is itself considered a trusted victim-app origin. A concrete attacker can claim the old label, serve JavaScript there, initiate authentication for the known victim app ID, and receive victim-app credentials after a user follows an old link or bookmark. Launched oApps and route-managed build children cannot release their slugs, but ordinary applications remain exposed. Current source after the recent authentication hardening still contains the non-fatal revocation and fallback behavior, and the false-positive register contains no matching mitigation."
+    },
+    {
+      "findingId": "F2",
+      "verdict": "true-positive",
+      "reasoning": "The page explicitly documents that release frees a slug and instructs a move as two separate operations: release it from the old app, then claim it on the new app. `clearSlug` simply sets the owning database column to null, and the ordinary claim path has no tombstone, quarantine period, or same-account preference. The only temporary reservation is for an unsettled oApp launch, while launched oApps are separately prevented from releasing their names; neither mechanism protects ordinary applications. The router resolves both `<slug>.bounded.page` and `<slug>-api.bounded.page` from the same `slug:<slug>` mapping, with the `-api` form forwarded to the runtime using the newly mapped app ID. An attacker who wins the move interval or claims an abandoned label therefore controls the content shown by stale links and the backend reached by stale API URLs. App-scoped credentials may still be rejected by the attacker's runtime, but that does not prevent platform-domain phishing, unauthenticated endpoint substitution, or clients operating against the wrong application. The owning repository has an atomic internal slug move for the special launch workflow, which confirms that the public release-then-claim flow lacks equivalent protection. No recent change adds quarantine or atomic ordinary-app transfer, and this is distinct from F1 because perfect origin revocation would not stop stale hostname takeover."
+    },
+    {
+      "findingId": "F3",
+      "verdict": "true-positive",
+      "reasoning": "The primary example places the staging administrator and cap in the top-level `constants`, while the production overlay contains a different administrator and a cap of 5000. The same page states that top-level values are the default and, by convention, the production truth used by a bare deployment. In the current CLI, environment overlay resolution only runs when `--environment` is supplied. Its environment-blind refusal checks only functions that have their own explicit environment allowlists, so this policy, which has no such functions, is admitted. The CLI then removes the entire `environments` block and resolves the target app from the explicit flag or authoritative `bounded.json` project configuration. Compile-time `@const.ADMIN` expansion therefore installs the staging identity into the broad admin read role, and `@const.DAILY_CAP` becomes 50 rather than the production value of 5000. A developer or CI job issuing the documented bare command while configured for production would grant the lower-trust staging principal production-wide reads and replace the intended production cap. The current CLI history still contains this exact behavior after the environment-overlay changes, and the false-positive register identifies no external deployment guard that would prevent the scenario."
+    },
+    {
+      "findingId": "F4",
+      "verdict": "true-positive",
+      "reasoning": "Every sell rule and hook derives its balance, reserve, supply, and quote from committed `get()` pre-state. The runtime rejects repeated writes to the same concrete submitted document path, but attacker-chosen distinct `$orderId` values produce distinct passthrough paths and avoid that check. In the onchain interpreter, the transaction snapshot is built once, while staged document changes are stored by path and field in hash maps whose later insertion overwrites the earlier value. Each accepted sell nevertheless executes its SOL transfer CPI, so the financial effects accumulate even though the shared reserve, supply, and position fields retain only one computed transition. With an even seed `S`, buying with `S` leaves reserve `2S`, pool supply `S/2`, and a user balance of `S/2`; two distinct sells of `S/2` each independently quote `S`. Both balance rules see the original position, and the physical pot check still passes for the second payout because exactly `S` remains after the first. The two CPIs drain all `2S`, while the final documents show the state of only one sell, including a recorded reserve of `S`. Batched redemptions by different holders have the same last-write-wins defect for the common reserve and winning-supply fields. The LIVE-PENDING status is an absence of retained live evidence, not a safety control, and current runtime source plus the false-positive register provide no aggregate conservation or serialization mitigation."
+    },
+    {
+      "findingId": "F5",
+      "verdict": "true-positive",
+      "reasoning": "The resolution create rule checks the caller, market existence, outcome, and null `winningSupply`, but contains no comparison with `expiryTs`, `claimWindowSec`, or `@time.now`. Its hook sets `winningSupply` to the outstanding YES supply for a YES outcome and directly to zero for NO. The withdrawal rule separately permits the creator to take the exact reserve whenever `winningSupply == 0` or the original expiry-plus-claim-window deadline has passed. A creator can therefore resolve NO before expiry and, in a following transaction, sweep the entire reserve through the zero-supply branch while trading was supposed to remain open. More decisively, even an otherwise truthful oracle can wait until after the claim deadline, resolve either outcome, and then sweep through the deadline branch. All holder redemptions are permanently denied at that point because their rule requires the current time to be at or before the same deadline. Calling the creator the outcome oracle does not mitigate this because the page expressly claims that policy constrains resolution timing, rather than trusting the creator for timely availability. No framework layer adds implicit temporal bounds to a policy expression, and the current file and history still lack the claimed lower and upper checks."
+    },
+    {
+      "findingId": "F6",
+      "verdict": "true-positive",
+      "reasoning": "The buy receipt contains only `solLamports` and `slippageBps`, and the hook passes exactly those values to `buyExactSolIn`. In the current Rust interpreter, that function deserializes the bonding curve during transaction execution, calculates `tokens_out` from the then-current virtual reserves, and applies `slippageBps` to produce `min_tokens_out`. The resulting Pump.fun CPI contains a minimum token amount, but that minimum was created after execution began rather than being an amount the client reviewed and signed. The platform transaction builder resolves accounts but does not embed a client-provided quote, minimum output, or market deadline, and the public signature exposes no such arguments. A generic Solana blockhash expiry only limits transaction lifetime and does not constrain how far the curve may move before the transaction executes. A validator or MEV participant can order a price-moving buy ahead of the victim, let the victim recompute a much smaller quote from the changed reserves, and reverse afterward for sandwich profit. The 1000-bps cap only bounds deviation from that fresh execution-time quote, not movement since signing, so it does not provide the protection claimed by the example. Recent token documentation changes did not extend the runtime signature, and no known false-positive or attestation assumption neutralizes this direct instruction path."
+    },
+    {
+      "findingId": "F7",
+      "verdict": "true-positive",
+      "reasoning": "The launch collection is create-only at `tokens/$tokenId`, with both update and delete unconditionally denied. On Poofnet, the realtime data plane deliberately commits the primary onchain-flagged document and its simulated transaction hash before executing the onchain hook. Current hook execution treats a thrown error or false result as non-fatal to that primary write, discards the staged simulated token state, and patches the surviving row with `_error_message` but no matching `_hook_completed`. A second write to the same path is classified as an update and is rejected before the create hook can run again, while deletion is also unavailable. Both the simulator and real onchain path derive an id-only mint seed from the app ID and token ID, so choosing another token ID necessarily selects another mint identity. Thus a transient storage, concurrency, authority, or simulator failure can leave no launched token while permanently occupying the desired semantic ID under this policy. The general onchain guide explicitly warns that this exact create-only shape can be poisoned and documents retryable-row or intent-plus-attempt patterns, but the target example implements neither and instead claims that failure leaves no launch record. The current Poofnet result-stamping source and its contract tests preserve this behavior, and recent changes only made simulated side effects atomic rather than rolling back the already committed primary row. The false-positive register's related CCA entry concerns a different policy that gained an explicit failed-receipt deletion path; that recovery does not exist here."
+    }
+  ],
+  "reconciliation": {
+    "matches": [
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F1",
+        "resolvedFindingId": "finding_c9d6b734fc80501d"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F2",
+        "resolvedFindingId": "finding_0af67c5530ef54bc"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F3",
+        "resolvedFindingId": "finding_1e581f41b1bfe0cf"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F4",
+        "resolvedFindingId": "finding_76269b0b72d8de3c"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F5",
+        "resolvedFindingId": "finding_5bed72968ee3f7ae"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F6",
+        "resolvedFindingId": "finding_d85c66d684bb089b"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F7",
+        "resolvedFindingId": "finding_a410efdf44944ba0"
+      }
+    ],
+    "missingFindingIds": [],
+    "unknownVerdicts": [],
+    "ambiguousVerdicts": []
+  },
+  "persistedCount": 7,
+  "unresolvedFindingIds": []
+}

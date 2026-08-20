@@ -1,0 +1,116 @@
+{
+  "filePath": "bounded-backend/docs/backend-runtime.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.585Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "4a0fe2989479701a6ec3b655fd72bd02e71eca3cf5ca114c1954f3d66ccc0f63",
+  "findings": [
+    {
+      "findingId": "finding_cd64dd5b1dd92ac9",
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Agent onInvoke example performs privileged operations without authorization",
+      "description": "The onInvoke example reads an app secret, invokes paid AI and managed services, makes a secret-authenticated request, writes through the app's service identity, and schedules work before checking the caller. The owning runtime's /agents route only verifies an app-scoped JWT; it does not require the caller to be an owner or privileged member. Consequently, any ordinary signed-in app user can invoke copied code with attacker-controlled jobId and query values, trigger provider requests, consume resources, poison runtime state, and cause service-authorized writes. The page correctly explains this authorization boundary for kind: backend handlers at lines 127-145, but incorrectly limits the warning to that kind even though agent invocation has the same admission boundary.",
+      "lineNumbers": [
+        93,
+        96,
+        98,
+        103,
+        107,
+        111,
+        116,
+        127,
+        130
+      ],
+      "recommendation": "Require onInvoke handlers to fail closed on a missing acting user and then verify an owner, admin, or resource-specific role keyed by ctx.identity.user before reading secrets or performing any external, paid, scheduled, or service-identity operation. Add this warning and a secure authorization example directly to the Agent Entry section.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The `onInvoke` example performs storage writes, secret reads, paid AI and service calls, a secret-authenticated fetch, an app-identity data write, and scheduling before checking `ctx.identity.user` or any role. The same bounded-host `/agents/*` admission path used for this runtime verifies only that the JWT belongs to the app. The generated runtime wrapper calls `H.onInvoke(input, ctx)` directly and does not evaluate a function policy `auth` expression. The authorization warning later on the page is explicitly limited to the `kind: \"backend\"` fetch handler even though the agent entry has the same caller-admission boundary. An ordinary signed-in user can supply `jobId` and `query`, causing the example to make provider requests and write or schedule attacker-selected application state. The `ctx.bounded` operation runs through the app service identity, so downstream policy cannot reconstruct or authorize the original human caller. Caller billing and app-level spend caps limit some cost exposure, but they do not protect the secret-authenticated external call or privileged service-identity effects. The missing authorization gate therefore remains a high-impact exploitable flaw in the copied example.",
+        "revalidatedAt": "2026-08-20T10:09:37.879Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:13:41.171Z",
+      "durationMs": 107488.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-57cd-7150-a78d-c99ec1c5cbe2",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48972.2,
+        "outputTokens": 4088,
+        "cacheReadInputTokens": 864460.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:09:37.880Z",
+      "durationMs": 139220.4,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-2032-7a13-aa05-33cd6f24267f",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 71436.8,
+        "outputTokens": 4538.4,
+        "cacheReadInputTokens": 1184665.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-18T01:37:34+05:30"
+      },
+      {
+        "name": "devin-ai-integration[bot]",
+        "email": "devin-ai-integration[bot]@users.noreply.github.com",
+        "date": "2026-08-10T16:39:01Z"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-07-12T14:09:55-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:09:37.907Z"
+  },
+  "status": "analyzed"
+}

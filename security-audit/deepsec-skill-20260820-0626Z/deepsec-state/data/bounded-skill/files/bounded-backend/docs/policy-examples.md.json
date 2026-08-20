@@ -1,0 +1,76 @@
+{
+  "filePath": "bounded-backend/docs/policy-examples.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.592Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "75b0c68acf78c6210d0fbf6702f73269fc2a0f610ae3a7f992d321128c084b1d",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-broken-realtime-example",
+      "title": "Complete realtime example can neither advance its room nor settle results",
+      "description": "Example C claims that the tick advances server-authoritative state and that settleTo plus settleFrom writes a durable result. Its tick instead writes the hardcoded path rooms/system. The owning runtime confines a tick to the current room subtree, so a tick for rooms/r1 rejects that mutation as outside rooms/r1. updateField also sets the literal value 1 rather than incrementing a counter, and the hook never creates the score or view documents the example relies on. Separately, the session omits settleRule, while the runtime fails closed and returns 403 for settlement without an explicit settleRule. Consequently, this purported complete policy does not implement its core game or settlement behavior.",
+      "lineNumbers": [
+        198,
+        199,
+        203,
+        213,
+        215,
+        218,
+        219,
+        269
+      ],
+      "recommendation": "Replace the hardcoded mutation with a room-relative, scope-valid reducer that actually creates authoritative score and view state, or use session.live for a real game loop. Add an explicit least-privilege settleRule and document the authorized settlement trigger. Exercise ticking and settlement in a behavioral contract test rather than checking static validation alone.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_238e0f89a892ccda"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:13:33.459Z",
+      "durationMs": 105993,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-59b8-74c0-92e8-1ebfe465e04a",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48681.4,
+        "outputTokens": 4089.2,
+        "cacheReadInputTokens": 1086668.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-07-28T21:10:44+05:30"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-06T22:10:42-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:13:33.467Z"
+  }
+}

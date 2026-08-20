@@ -1,0 +1,81 @@
+{
+  "filePath": "bounded-backend/docs/constants-and-defs.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.586Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "213f1554e8bcbe99b28d509a66604df1687b59c14c20dfaaa9cd24185fadc259",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-principal-confusion",
+      "title": "Canonical live settlement pattern rejects every live invocation",
+      "description": "The claimed canonical pattern authorizes settleMatch with @user.id equal to the SETTLER constant and asserts that session.live.runAs lets the room invoke it. The documented runtime semantics in principals-and-origins.md establish that a live function's auth rule is evaluated first with @user set to the all-null system principal and @origin populated. runAs supplies the acting identity for the function body and its writes, not the pre-execution caller used by auth. Therefore @user.id == @const.SETTLER is false for every live call, so settlement never runs even though the subsequent collection write would accept the service identity. Applications copying this pattern can leave matches, payouts, or escrow settlement permanently stuck.",
+      "lineNumbers": [
+        149,
+        154,
+        155,
+        156,
+        159,
+        160,
+        161,
+        162
+      ],
+      "recommendation": "Authorize the function using its unforgeable origin, for example @origin.kind == 'live' && @origin.module == 'arena', and include settleMatch in the session.live.calls whitelist. Keep runAs set to SETTLER and keep the settlement collection's create rule bound to SETTLER, since that rule is evaluated for the acting service identity.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_40677c255c5cbc48"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:13:41.204Z",
+      "durationMs": 107488.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-57cd-7150-a78d-c99ec1c5cbe2",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 48972.2,
+        "outputTokens": 4088,
+        "cacheReadInputTokens": 864460.8,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-18T02:05:19-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-10T11:28:18-04:00"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:13:41.209Z"
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "filePath": "bounded-backend/docs/identity-and-logs.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.590Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "bab5859c3303205f8aef8a1f2a898a73a3af7778e1f89637d1091e4178ddeb09",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Payout example grants invocation to read-only and billing collaborators",
+      "description": "The document defines __managers__ as the owner plus every collaborator, while viewer is explicitly a read-only role and billing is separately scoped. Nevertheless, the money-moving runPayouts function authorizes all __managers__. A lower-privileged viewer or billing collaborator is still a collaborator and can therefore invoke payouts despite their narrower control role.",
+      "lineNumbers": [
+        11,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        21,
+        75,
+        82,
+        83,
+        84
+      ],
+      "recommendation": "Gate payout invocation on __owners__, a deliberately selected __admins__ role, or a dedicated custom payout role. Do not use the union-style __managers__ set for money movement.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_8f85629e928580cd"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-documentation-bug",
+      "title": "Denied read behavior is incorrectly documented as HTTP 403",
+      "description": "The page claims non-managers reading ops receive 403. Bounded intentionally hides denied reads as successful HTTP 200 responses with null or empty data; only denied writes and function invokes return 403. Code or tests copied from this statement will misclassify an access denial as a missing record or wait for an error that never occurs.",
+      "lineNumbers": [
+        56,
+        57
+      ],
+      "recommendation": "State that denied reads return HTTP 200 with empty data, while a denied create returns 403.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_9adfe919394bc72e"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:12:13.612Z",
+      "durationMs": 90152.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-591a-7b51-9f17-ec879089860a",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42457.2,
+        "outputTokens": 3148,
+        "cacheReadInputTokens": 669696,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-10T19:53:39+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-06T22:10:42-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:12:13.620Z"
+  }
+}

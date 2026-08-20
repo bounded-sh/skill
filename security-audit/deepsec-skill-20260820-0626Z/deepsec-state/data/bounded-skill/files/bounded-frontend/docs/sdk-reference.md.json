@@ -1,0 +1,91 @@
+{
+  "filePath": "bounded-frontend/docs/sdk-reference.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:20:23.898Z",
+  "lastScannedRunId": "20260820082023-e8473e6a97137ae7",
+  "fileHash": "f054cfe0ff1cb6d4ae61b3ece1864c6bd1c0d9249372f954dec7066a3ce82603",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-documentation-mismatch",
+      "title": "Documented authMode default contradicts the SDK implementation",
+      "description": "The reference says authMode defaults to \"bounded\", but the current SDK resolver returns \"bounded\" only when that value is explicitly supplied and otherwise defaults to \"turnkey\". Related authentication documentation also identifies Turnkey-native authentication as the default and bounded mode as legacy. An application that omits authMode based on this reference can unexpectedly receive the inline Turnkey email flow instead of hosted Better Auth/OIDC behavior. Login can fail when the Turnkey email OTP prerequisite is not configured, and callback, issuer-session, and logout behavior can differ from what the developer intended.",
+      "lineNumbers": [
+        101,
+        102,
+        103,
+        106
+      ],
+      "recommendation": "Change the documented default to \"turnkey\", identify \"bounded\" as the explicitly selected legacy mode, and align the surrounding examples and prerequisites. Add a documentation contract test against the SDK's auth-mode resolver so future default changes cannot silently drift.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_5db3cc22bf2b1e17"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-nonfunctional-sdk-method",
+      "title": "runExpression is documented as functional but silently returns null",
+      "description": "The reference presents runExpression as evaluating an expression with queryArgs staged into @newData and recommends runExpressionMany for batching. The current client sends expression-only query entries without a path or named query. The production query executor explicitly does not compile these string expressions at runtime; when the path is absent it treats the request as malformed and appends a null result instead of returning an error. Consequently, the documented example does not evaluate the predicate and can silently appear to produce a false or empty result, causing application logic built from this guidance to behave incorrectly.",
+      "lineNumbers": [
+        440,
+        444,
+        447,
+        448,
+        449,
+        467,
+        468
+      ],
+      "recommendation": "Either implement a dedicated, bounded expression-evaluation endpoint that stages queryArgs as documented, or remove and deprecate these methods from the public reference. Malformed expression requests should return an explicit error rather than null. Add an end-to-end contract test covering the documented example.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_4ab87ad0ab45d4ba"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082023-71b34e159c890b44",
+      "investigatedAt": "2026-08-20T08:31:16.915Z",
+      "durationMs": 323207.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e41-d0da-7ab3-8ff5-8cd7912aae5a",
+      "findingCount": 2,
+      "numTurns": 0.5,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 137337,
+        "outputTokens": 10457,
+        "cacheReadInputTokens": 3376000,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-19T14:37:05-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-17T20:38:39-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:31:16.934Z"
+  }
+}

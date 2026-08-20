@@ -1,0 +1,76 @@
+{
+  "filePath": "bounded-frontend/docs/frontend-hosting.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:20:23.897Z",
+  "lastScannedRunId": "20260820082023-e8473e6a97137ae7",
+  "fileHash": "291929eb1c70256b7337e333431b47daf3f0d3142089619fcde2f32347623504",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "secrets-exposure",
+      "title": "Open source history can expose deleted credentials from ordinary files",
+      "description": "The documentation states that completing Open publishes both the current source tree and its change history at a public app-id host. It also recommends source synchronization through sourcePush or --with-source. The implementation preserves reachable commits, exposes commit IDs through the unauthenticated history endpoint, and permits retrieval of files from a caller-selected reachable revision. Current upload and integrity checks examine secret-like filenames and limited private-key patterns, but they do not content-scan every blob in historical commits for general credentials. An app owner could therefore synchronize a live provider token in an ordinary file such as config.ts, delete it in a later commit, and then complete Open. An unauthenticated attacker could enumerate the public history and retrieve the old file by commit SHA. This matches the known false-positive register's explicit condition that the historical-content gap becomes a real issue when published source is readable beyond the app owner.",
+      "lineNumbers": [
+        103,
+        105,
+        106,
+        112,
+        155,
+        166,
+        167,
+        182
+      ],
+      "recommendation": "Before allowing Open, content-scan every blob reachable through the history that will become public, including files with ordinary names and common provider-token formats. Alternatively, publish a new scrubbed history rooted at the audited revision instead of exposing prior commits. Block publication when credentials are found, and document that deleting a secret from the latest revision is insufficient: affected history must be removed and the credential rotated.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_b7e987d66b9dc06b"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082023-71b34e159c890b44",
+      "investigatedAt": "2026-08-20T08:31:16.873Z",
+      "durationMs": 323207.5,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e41-d0da-7ab3-8ff5-8cd7912aae5a",
+      "findingCount": 1,
+      "numTurns": 0.5,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 137337,
+        "outputTokens": 10457,
+        "cacheReadInputTokens": 3376000,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-11T10:22:42-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-21T20:59:54-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:31:16.914Z"
+  }
+}

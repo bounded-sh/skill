@@ -1,0 +1,11 @@
+[
+  "bounded-deploy/SKILL.md",
+  "bounded-deploy/docs/access-playbook.md",
+  "bounded-deploy/docs/accounts.md",
+  "bounded-deploy/docs/cli-reference.md",
+  "bounded-deploy/docs/domains.md",
+  "bounded-deploy/docs/environments.md",
+  "bounded-deploy/docs/key-and-account-safety.md",
+  "bounded-deploy/docs/quickstart.md",
+  "bounded-deploy/docs/source-sync.md"
+]

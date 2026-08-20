@@ -1,0 +1,97 @@
+{
+  "filePath": "bounded-onchain/docs/oapps-tokenomics-fee-split.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.071Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "eb729ea3a1fc38cff4039eacff4052d68565f51ae5c4e909fc148a844e45ea31",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Linked launch policy lets any wallet invoke privileged token creation",
+      "description": "The page presents a verified reference policy and links readers to the complete deployable-shaped artifact, but the shown launch collection authorizes create with only @user.address != null before invoking createMeteoraConfig. The linked policy repeats this authorization for launch and pool creation, with the pool hook accepting caller-controlled tokenId, name, symbol, and URI. If the mechanics are copied into a deployed app as instructed, any authenticated wallet can front-run or spam app-authority launch operations and create arbitrary token pools in the app namespace. The historical and verify-only warnings prevent the checked-in artifact from deploying directly, but do not make the copied policy safe.",
+      "lineNumbers": [
+        42,
+        43,
+        84,
+        88,
+        91,
+        330,
+        331
+      ],
+      "recommendation": "Gate vault, config, and pool creation to a founder, launcher, admin, or dedicated service identity. Bind tokenId to the intended launch and validate or policy-pin all metadata and configuration inputs.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_f5b41cb314c93926"
+    },
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "acl-check",
+      "title": "Any authenticated user can exhaust the shared build allowance",
+      "description": "The builds collection models real fee-funded build spend, but its create rule is only @user.id != null and amount is entirely caller-controlled. Any authenticated user can append arbitrary spend records until the shared rollingSum reaches BUILD_ALLOWANCE. This blocks legitimate build or maintenance spending for the rest of the 24-hour window and corrupts the accounting that the page describes as a provable earned-fee budget. rollingSum constrains the total but does not authenticate the writer or establish that an amount corresponds to a real build.",
+      "lineNumbers": [
+        263,
+        266,
+        268,
+        280,
+        283
+      ],
+      "recommendation": "Allow only the trusted build-originating function or a dedicated service identity to create spend rows. Derive amount server-side and append it atomically with the governed build request; keep public build intents in a separate collection.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_2b3646584e0f3353"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:40:17.478Z",
+      "durationMs": 101166.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-29ff-7303-999a-f0a4eb07b3bb",
+      "findingCount": 2,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 55231.2,
+        "outputTokens": 3892.8,
+        "cacheReadInputTokens": 1065523.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-18T01:07:31-04:00"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-07-28T21:02:17+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:40:17.485Z"
+  }
+}

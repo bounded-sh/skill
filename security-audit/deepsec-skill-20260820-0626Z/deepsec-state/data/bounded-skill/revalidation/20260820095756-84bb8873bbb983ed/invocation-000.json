@@ -1,0 +1,161 @@
+{
+  "batchIndex": 0,
+  "label": "initial",
+  "timestamp": "2026-08-20T10:09:37.880Z",
+  "files": [
+    "bounded-backend/docs/agents-flue.md",
+    "bounded-backend/docs/backend-runtime.md",
+    "bounded-backend/docs/functions-graduation.md",
+    "bounded-backend/docs/functions.md",
+    "bounded-backend/docs/secrets.md"
+  ],
+  "requested": [
+    {
+      "findingId": "finding_c25682bb8a82d60e",
+      "filePath": "bounded-backend/docs/agents-flue.md",
+      "title": "Any app-authenticated user can drive privileged Flue capabilities",
+      "alias": "F1"
+    },
+    {
+      "findingId": "finding_cd64dd5b1dd92ac9",
+      "filePath": "bounded-backend/docs/backend-runtime.md",
+      "title": "Agent onInvoke example performs privileged operations without authorization",
+      "alias": "F2"
+    },
+    {
+      "findingId": "finding_0cbdec87fa68e83f",
+      "filePath": "bounded-backend/docs/functions-graduation.md",
+      "title": "Function-to-runtime migration silently loses caller-scoped authorization",
+      "alias": "F3"
+    },
+    {
+      "findingId": "finding_98c4b6dcadc05a6c",
+      "filePath": "bounded-backend/docs/functions.md",
+      "title": "Founder bootstrap authority remains permanently usable",
+      "alias": "F4"
+    },
+    {
+      "findingId": "finding_d4ffc3b8bddf3430",
+      "filePath": "bounded-backend/docs/functions.md",
+      "title": "Money-spending build function ignores admin revocation",
+      "alias": "F5"
+    },
+    {
+      "findingId": "finding_8bcf55902559fbca",
+      "filePath": "bounded-backend/docs/functions.md",
+      "title": "Chain-data examples omit required idempotency keys",
+      "alias": "F6"
+    },
+    {
+      "findingId": "finding_0e184d9e11f8b2dd",
+      "filePath": "bounded-backend/docs/functions.md",
+      "title": "dueRows function targets are documented as firing but remain inert",
+      "alias": "F7"
+    },
+    {
+      "findingId": "finding_63c65d3747a72ec6",
+      "filePath": "bounded-backend/docs/secrets.md",
+      "title": "Egress-bound secret guidance incorrectly promises prompt-injection-safe secrecy",
+      "alias": "F8"
+    }
+  ],
+  "rawResponses": [
+    {
+      "kind": "initial",
+      "rawText": "```json\n[\n  {\n    \"findingId\": \"F1\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The guide exposes Flue agents through an app-scoped authentication token and provides capabilities for secrets, managed services, queues, schedules, and app-identity data access without describing a separate authorization gate. The owning bounded-host `/agents/*` route validates the app JWT and resolves the caller identity, but it does not evaluate a per-agent role, ownership predicate, or function-style `auth` expression. The request is then forwarded to the tenant agent coordinator, which likewise performs no application authorization check before accepting the prompt. The sealed Flue environment includes the advertised capabilities, and its data gateway is constructed with `serviceIdentity: \\\"svc:\\\" + appId`, not the invoking user. Tool schemas constrain argument shapes but do not determine whether the caller is entitled to use the tool. In a public-signup app, an ordinary user can therefore invoke an agent and prompt it to exercise any privileged tools the developer exposed, including secret-authenticated provider calls and service-identity writes. Policy rules and invariants may reject some data changes, but they see the app service identity and cannot authorize the original caller or undo external side effects. Current billing code appears to charge AI and managed-service use to the verified caller account rather than unconditionally to the owner, which narrows the budget-theft claim but does not remove the privileged-effects vulnerability.\"\n  },\n  {\n    \"findingId\": \"F2\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The `onInvoke` example performs storage writes, secret reads, paid AI and service calls, a secret-authenticated fetch, an app-identity data write, and scheduling before checking `ctx.identity.user` or any role. The same bounded-host `/agents/*` admission path used for this runtime verifies only that the JWT belongs to the app. The generated runtime wrapper calls `H.onInvoke(input, ctx)` directly and does not evaluate a function policy `auth` expression. The authorization warning later on the page is explicitly limited to the `kind: \\\"backend\\\"` fetch handler even though the agent entry has the same caller-admission boundary. An ordinary signed-in user can supply `jobId` and `query`, causing the example to make provider requests and write or schedule attacker-selected application state. The `ctx.bounded` operation runs through the app service identity, so downstream policy cannot reconstruct or authorize the original human caller. Caller billing and app-level spend caps limit some cost exposure, but they do not protect the secret-authenticated external call or privileged service-identity effects. The missing authorization gate therefore remains a high-impact exploitable flaw in the copied example.\"\n  },\n  {\n    \"findingId\": \"F3\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The migration guide says Tier 2 keeps Bounded authorization identity, describes migration as largely mechanical, and later states that a Bounded function or runtime acts as the verified caller. The runtime does preserve the caller identity as information in `ctx.identity`, but its `/agents/*` route does not carry over or evaluate the source function's policy `auth` rule. The backend profile wrapper dispatches directly to `onInvoke` or `fetch`, leaving all resource and role authorization to tenant code. In addition, bounded-host constructs the runtime data gateway with the app-wide `svc:<appId>` identity, so `ctx.bounded` does not act as `ctx.identity.user`. A developer mechanically migrating an admin-only function can consequently expose its body to every authenticated app user while retaining secrets, provider calls, and service-authorized data access. Policy rules and invariants can constrain final data state but cannot authorize the initiating caller or reverse paid and external side effects. The guide's current wording therefore creates a concrete privilege-loss path and the high severity is justified.\"\n  },\n  {\n    \"findingId\": \"F4\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The admin create rule authorizes either an active admin or any caller whose identity equals `@const.FOUNDER`. Nothing in the expression checks that the admin set is empty, consults a one-shot marker, or disables the founder branch after the first row is created. Setting the founder's existing admin row to `active: false` only affects predicates that read that field and has no effect on the independent founder disjunct. This contradicts the prose describing the founder clause as dormant after genesis and the active flag as an immediate off-switch for every privileged path. A compromised or retired founder can create `admins/<attacker>` with `active: true`, because the target identifier and new active value are not otherwise confined. The attacker can then authenticate as that new identity and satisfy `syncStripe`'s active-admin rule, reaching the declared Stripe secret and service-identity subscription writes. Redeploying the policy to remove or replace the founder would stop the path, but the documented deactivation operation does not. The persistent privilege requires compromise of a specially designated bootstrap identity, so the reported medium severity is appropriate.\"\n  },\n  {\n    \"findingId\": \"F5\",\n    \"verdict\": \"false-positive\",\n    \"reasoning\": \"The bare `get(/admins/@user.id) != null` predicate does allow a deactivated admin row to pass the function's invocation rule. However, the exact copied build profile exposes `maintenance` only to the `scheduled-function` origin. A direct authenticated invocation is stamped by the dispatcher with the server-derived build origin `function`, and callers cannot override that provenance through function arguments or headers. The bounded-build control plane resolves the capability-named profile and rejects it with `capability_profile_origin` when that profile does not include the derived origin. This rejection occurs before a build run is created or owner and app funding is allocated. The example does not schedule `maintainApp`, and it does not opt the function into a queue path that could let the former admin manufacture trusted scheduled provenance. Thus a deactivated admin can enter the function body, but the described create, edit, and build-spend operations fail closed under the copied policy. The predicate should still be changed to the active check for consistency and future safety, but the claimed high-impact build exploit is not reachable in this example.\"\n  },\n  {\n    \"findingId\": \"F6\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The documented managed-service contract requires `ctx.services.invoke(tool, args, { idempotencyKey })`. Both the Helius and Alchemy snippets omit the third argument entirely. In bounded-host, the services gateway rejects a missing or oversized logical idempotency key with `services_idempotency_key_required` before invoking the managed provider. The Functions runtime bridge independently enforces the same required field after checking that the enclosing invocation has replay-safe provenance. Therefore, even under a correctly idempotent outer function invocation, either copied chain-data call fails admission rather than returning the advertised account or balance data. The read-only provider allowlists do not mitigate this interface error because execution never reaches them. This is a current, deterministic documentation bug with the reported BUG severity.\"\n  },\n  {\n    \"findingId\": \"F7\",\n    \"verdict\": \"fixed\",\n    \"reasoning\": \"The page still incorrectly says that a `dueRows.run` target naming a top-level function fires with limited arguments. The realtime implementation only collects due-row entries whose target resolves to `hooks.scheduled` bytecode and has no due-row function dispatch path. Earlier validation resolved function names without rejecting them, so the documented configuration could once deploy and remain inert. Monorepo commit `26dd66579` on 2026-07-14 added an explicit fail-closed check in `PolicyValidator.validateDueRows`. The current validator rejects a function target with an actionable message explaining that one-shot delivery requires row identity and atomic `onComplete`, and directs users to a scheduled hook or recurring `schedule`. Consequently, the claimed silently deployed one-shot job is no longer reachable. The public page remains stale and should be corrected because copied configuration now fails deployment, but the specific inert-deployment behavior described by the finding has been patched.\"\n  },\n  {\n    \"findingId\": \"F8\",\n    \"verdict\": \"true-positive\",\n    \"reasoning\": \"The documentation makes an absolute claim that an egress-bound secret cannot leak under prompt injection because its value never enters application code. The owning `OutboundGateway` source explicitly documents the residual case that a bound host can reflect an injected header or query credential in a readable response. Header-mode responses are returned unchanged, while query mode removes URL-bearing metadata but preserves the response body. A tool that returns provider response text to its agent can therefore call a reflecting endpoint on the configured host, receive the credential in the body, and expose it in the model response or a later tool action. Exact-host binding, forbidden-host checks, and refusal to forward the secret across redirects prevent direct cross-host forwarding but do not inspect or redact reflected response bodies. The scenario depends on a reflective, malicious, or compromised endpoint at the trusted bound provider, which limits prevalence but does not make the absolute prompt-injection claim correct. The finding is therefore real, with medium severity appropriate for its provider and application-shape prerequisites.\"\n  }\n]\n```",
+      "parsedCount": 8
+    }
+  ],
+  "repairAttempts": 0,
+  "parsedVerdicts": [
+    {
+      "findingId": "F1",
+      "verdict": "true-positive",
+      "reasoning": "The guide exposes Flue agents through an app-scoped authentication token and provides capabilities for secrets, managed services, queues, schedules, and app-identity data access without describing a separate authorization gate. The owning bounded-host `/agents/*` route validates the app JWT and resolves the caller identity, but it does not evaluate a per-agent role, ownership predicate, or function-style `auth` expression. The request is then forwarded to the tenant agent coordinator, which likewise performs no application authorization check before accepting the prompt. The sealed Flue environment includes the advertised capabilities, and its data gateway is constructed with `serviceIdentity: \"svc:\" + appId`, not the invoking user. Tool schemas constrain argument shapes but do not determine whether the caller is entitled to use the tool. In a public-signup app, an ordinary user can therefore invoke an agent and prompt it to exercise any privileged tools the developer exposed, including secret-authenticated provider calls and service-identity writes. Policy rules and invariants may reject some data changes, but they see the app service identity and cannot authorize the original caller or undo external side effects. Current billing code appears to charge AI and managed-service use to the verified caller account rather than unconditionally to the owner, which narrows the budget-theft claim but does not remove the privileged-effects vulnerability."
+    },
+    {
+      "findingId": "F2",
+      "verdict": "true-positive",
+      "reasoning": "The `onInvoke` example performs storage writes, secret reads, paid AI and service calls, a secret-authenticated fetch, an app-identity data write, and scheduling before checking `ctx.identity.user` or any role. The same bounded-host `/agents/*` admission path used for this runtime verifies only that the JWT belongs to the app. The generated runtime wrapper calls `H.onInvoke(input, ctx)` directly and does not evaluate a function policy `auth` expression. The authorization warning later on the page is explicitly limited to the `kind: \"backend\"` fetch handler even though the agent entry has the same caller-admission boundary. An ordinary signed-in user can supply `jobId` and `query`, causing the example to make provider requests and write or schedule attacker-selected application state. The `ctx.bounded` operation runs through the app service identity, so downstream policy cannot reconstruct or authorize the original human caller. Caller billing and app-level spend caps limit some cost exposure, but they do not protect the secret-authenticated external call or privileged service-identity effects. The missing authorization gate therefore remains a high-impact exploitable flaw in the copied example."
+    },
+    {
+      "findingId": "F3",
+      "verdict": "true-positive",
+      "reasoning": "The migration guide says Tier 2 keeps Bounded authorization identity, describes migration as largely mechanical, and later states that a Bounded function or runtime acts as the verified caller. The runtime does preserve the caller identity as information in `ctx.identity`, but its `/agents/*` route does not carry over or evaluate the source function's policy `auth` rule. The backend profile wrapper dispatches directly to `onInvoke` or `fetch`, leaving all resource and role authorization to tenant code. In addition, bounded-host constructs the runtime data gateway with the app-wide `svc:<appId>` identity, so `ctx.bounded` does not act as `ctx.identity.user`. A developer mechanically migrating an admin-only function can consequently expose its body to every authenticated app user while retaining secrets, provider calls, and service-authorized data access. Policy rules and invariants can constrain final data state but cannot authorize the initiating caller or reverse paid and external side effects. The guide's current wording therefore creates a concrete privilege-loss path and the high severity is justified."
+    },
+    {
+      "findingId": "F4",
+      "verdict": "true-positive",
+      "reasoning": "The admin create rule authorizes either an active admin or any caller whose identity equals `@const.FOUNDER`. Nothing in the expression checks that the admin set is empty, consults a one-shot marker, or disables the founder branch after the first row is created. Setting the founder's existing admin row to `active: false` only affects predicates that read that field and has no effect on the independent founder disjunct. This contradicts the prose describing the founder clause as dormant after genesis and the active flag as an immediate off-switch for every privileged path. A compromised or retired founder can create `admins/<attacker>` with `active: true`, because the target identifier and new active value are not otherwise confined. The attacker can then authenticate as that new identity and satisfy `syncStripe`'s active-admin rule, reaching the declared Stripe secret and service-identity subscription writes. Redeploying the policy to remove or replace the founder would stop the path, but the documented deactivation operation does not. The persistent privilege requires compromise of a specially designated bootstrap identity, so the reported medium severity is appropriate."
+    },
+    {
+      "findingId": "F5",
+      "verdict": "false-positive",
+      "reasoning": "The bare `get(/admins/@user.id) != null` predicate does allow a deactivated admin row to pass the function's invocation rule. However, the exact copied build profile exposes `maintenance` only to the `scheduled-function` origin. A direct authenticated invocation is stamped by the dispatcher with the server-derived build origin `function`, and callers cannot override that provenance through function arguments or headers. The bounded-build control plane resolves the capability-named profile and rejects it with `capability_profile_origin` when that profile does not include the derived origin. This rejection occurs before a build run is created or owner and app funding is allocated. The example does not schedule `maintainApp`, and it does not opt the function into a queue path that could let the former admin manufacture trusted scheduled provenance. Thus a deactivated admin can enter the function body, but the described create, edit, and build-spend operations fail closed under the copied policy. The predicate should still be changed to the active check for consistency and future safety, but the claimed high-impact build exploit is not reachable in this example."
+    },
+    {
+      "findingId": "F6",
+      "verdict": "true-positive",
+      "reasoning": "The documented managed-service contract requires `ctx.services.invoke(tool, args, { idempotencyKey })`. Both the Helius and Alchemy snippets omit the third argument entirely. In bounded-host, the services gateway rejects a missing or oversized logical idempotency key with `services_idempotency_key_required` before invoking the managed provider. The Functions runtime bridge independently enforces the same required field after checking that the enclosing invocation has replay-safe provenance. Therefore, even under a correctly idempotent outer function invocation, either copied chain-data call fails admission rather than returning the advertised account or balance data. The read-only provider allowlists do not mitigate this interface error because execution never reaches them. This is a current, deterministic documentation bug with the reported BUG severity."
+    },
+    {
+      "findingId": "F7",
+      "verdict": "fixed",
+      "reasoning": "The page still incorrectly says that a `dueRows.run` target naming a top-level function fires with limited arguments. The realtime implementation only collects due-row entries whose target resolves to `hooks.scheduled` bytecode and has no due-row function dispatch path. Earlier validation resolved function names without rejecting them, so the documented configuration could once deploy and remain inert. Monorepo commit `26dd66579` on 2026-07-14 added an explicit fail-closed check in `PolicyValidator.validateDueRows`. The current validator rejects a function target with an actionable message explaining that one-shot delivery requires row identity and atomic `onComplete`, and directs users to a scheduled hook or recurring `schedule`. Consequently, the claimed silently deployed one-shot job is no longer reachable. The public page remains stale and should be corrected because copied configuration now fails deployment, but the specific inert-deployment behavior described by the finding has been patched."
+    },
+    {
+      "findingId": "F8",
+      "verdict": "true-positive",
+      "reasoning": "The documentation makes an absolute claim that an egress-bound secret cannot leak under prompt injection because its value never enters application code. The owning `OutboundGateway` source explicitly documents the residual case that a bound host can reflect an injected header or query credential in a readable response. Header-mode responses are returned unchanged, while query mode removes URL-bearing metadata but preserves the response body. A tool that returns provider response text to its agent can therefore call a reflecting endpoint on the configured host, receive the credential in the body, and expose it in the model response or a later tool action. Exact-host binding, forbidden-host checks, and refusal to forward the secret across redirects prevent direct cross-host forwarding but do not inspect or redact reflected response bodies. The scenario depends on a reflective, malicious, or compromised endpoint at the trusted bound provider, which limits prevalence but does not make the absolute prompt-injection claim correct. The finding is therefore real, with medium severity appropriate for its provider and application-shape prerequisites."
+    }
+  ],
+  "reconciliation": {
+    "matches": [
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F1",
+        "resolvedFindingId": "finding_c25682bb8a82d60e"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F2",
+        "resolvedFindingId": "finding_cd64dd5b1dd92ac9"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F3",
+        "resolvedFindingId": "finding_0cbdec87fa68e83f"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F4",
+        "resolvedFindingId": "finding_98c4b6dcadc05a6c"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F5",
+        "resolvedFindingId": "finding_d4ffc3b8bddf3430"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F6",
+        "resolvedFindingId": "finding_8bcf55902559fbca"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F7",
+        "resolvedFindingId": "finding_0e184d9e11f8b2dd"
+      },
+      {
+        "matchedBy": "finding-id",
+        "returnedFindingId": "F8",
+        "resolvedFindingId": "finding_63c65d3747a72ec6"
+      }
+    ],
+    "missingFindingIds": [],
+    "unknownVerdicts": [],
+    "ambiguousVerdicts": []
+  },
+  "persistedCount": 8,
+  "unresolvedFindingIds": []
+}

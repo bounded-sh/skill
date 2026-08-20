@@ -1,0 +1,21 @@
+{
+  "filePath": "security-audit/deepsec-skill-20260820-0626Z/tools/build-inventory.mjs",
+  "projectId": "bounded-skill",
+  "candidates": [
+    {
+      "vulnSlug": "crypto-usage",
+      "lineNumbers": [
+        2,
+        14
+      ],
+      "snippet": "#!/usr/bin/env node\nimport { createHash } from \"node:crypto\";\nimport { execFileSync } from \"node:child_process\";\nimport { mkdirSync, readFileSync, writeFileSync } from \"node:fs\";",
+      "matchedPattern": "Node crypto import, Node crypto.create*"
+    }
+  ],
+  "lastScannedAt": "2026-08-20T07:25:57.702Z",
+  "lastScannedRunId": "20260820072557-0bfb703de0d97b84",
+  "fileHash": "a7605b1f83ecb2a44edb84dfee486f5f886cbad6a089f1e3dadcf702d2c9c323",
+  "findings": [],
+  "analysisHistory": [],
+  "status": "pending"
+}

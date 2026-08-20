@@ -1,0 +1,109 @@
+{
+  "filePath": "bounded-frontend/docs/anonymous-accounts.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:20:23.893Z",
+  "lastScannedRunId": "20260820082023-e8473e6a97137ae7",
+  "fileHash": "34fb7a4e6429dc49df0c81f8ed01416ec70f015f3456c830026df70b3a449a3f",
+  "findings": [
+    {
+      "severity": "HIGH_BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "Guest migration always rejects because the sign-in return lacks id",
+      "description": "The guide treats the object returned directly by signInAnonymously() as having an id and compares restoredGuest.id with the previously saved guest id. In the owning SDK, GuestAuthProvider returns only address, isAnonymous, and provider. setCurrentUser() creates a separate enriched object containing id, while signInAnonymously() returns the original unenriched object. Consequently restoredGuest.id is undefined and the check at line 228 always throws for a valid saved guestId, preventing the documented guest-to-real ownership migration. The earlier me.id example is broken for the same reason.",
+      "lineNumbers": [
+        62,
+        64,
+        227,
+        229
+      ],
+      "recommendation": "Fix the SDK so every GuestAuthProvider return includes id: key.address, or make signInAnonymously() return the enriched current-user object. Until that is published, await signInAnonymously() and then read and validate getCurrentUser() instead of inspecting the immediate return.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_d6d19bc1b380d77b"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-interrupted-migration",
+      "title": "Volatile handoff state can strand a partially migrated account set",
+      "description": "The migration stores its only recovery record in sessionStorage and transfers accounts through sequential set() calls. If the tab or browser closes after one or more rows transfer but before the loop and second hosted login finish, sessionStorage is discarded while ownership is split between the guest and real identities. On the next visit the callback sees no handoff record and returns normally, leaving no documented way to identify or resume the remaining rows. The claimed retry behavior covers reloads in the same tab, but not tab closure, browser termination, or session restoration in a new tab.",
+      "lineNumbers": [
+        160,
+        169,
+        184,
+        231,
+        240,
+        257
+      ],
+      "recommendation": "Persist a durable, validated migration journal until every row and the return-to-real phase complete, or perform the ownership changes atomically through setMany or a purpose-built Function when the batch size permits. Provide explicit recovery UI for an interrupted, partially transferred migration.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_1d7edf7ecb1a12af"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-race-condition",
+      "title": "Read-then-replace transfer can overwrite concurrent account updates",
+      "description": "For each account the guide performs get(), modifies a previously read object with a spread, and sends the entire document through set(). A concurrent update by the same guest between the get and set can therefore be replaced with the stale snapshot. Runtime mutation-conflict handling only protects changes during the individual set request; it does not compare the set against the earlier client-side get.",
+      "lineNumbers": [
+        232,
+        236
+      ],
+      "recommendation": "Perform the transfer in a Function that reads current state and updates ownership within one transaction, or add an explicit version field and require a compare-and-set style version transition. Avoid replacing the whole document from a stale client snapshot.",
+      "confidence": "high",
+      "producedByRunId": "20260820082023-71b34e159c890b44",
+      "findingId": "finding_de162f10712d90e3"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082023-71b34e159c890b44",
+      "investigatedAt": "2026-08-20T08:27:30.972Z",
+      "durationMs": 83965.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e41-cf24-7a71-934a-e571aa42fc85",
+      "findingCount": 3,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40024.4,
+        "outputTokens": 3498.8,
+        "cacheReadInputTokens": 546918.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-07-28T21:04:45+05:30"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:27:31.018Z"
+  }
+}

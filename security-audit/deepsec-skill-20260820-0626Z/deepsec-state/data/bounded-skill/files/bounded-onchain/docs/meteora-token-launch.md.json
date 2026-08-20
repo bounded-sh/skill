@@ -1,0 +1,55 @@
+{
+  "filePath": "bounded-onchain/docs/meteora-token-launch.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.070Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "625abaf25938f8c79f9e53a577c24d93e2d620c969c78f62336ce59962ab44b0",
+  "findings": [],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:40:17.464Z",
+      "durationMs": 101166.2,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-29ff-7303-999a-f0a4eb07b3bb",
+      "findingCount": 0,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 55231.2,
+        "outputTokens": 3892.8,
+        "cacheReadInputTokens": 1065523.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-17T15:21:23-04:00"
+      },
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T14:41:32-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:40:17.477Z"
+  }
+}

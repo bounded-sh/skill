@@ -1,0 +1,115 @@
+{
+  "filePath": "bounded-backend/docs/agents-flue.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.584Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "6936e81db51b86a50d0abe55e08758909f741f019f9a5094c10a8f8a7300df48",
+  "findings": [
+    {
+      "findingId": "finding_c25682bb8a82d60e",
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Any app-authenticated user can drive privileged Flue capabilities",
+      "description": "The guide exposes Flue through an app-scoped token but never explains that token verification is the only invoke gate. The owning runtime accepts any valid user token for the app and does not evaluate a per-agent policy auth rule. Consequently, every signed-in app user can start cost-bearing model loops and reach tools that close over app secrets, managed services, queues, schedules, and `env.bounded`, which writes as the app identity. Input schemas validate tool arguments but do not authorize the caller. In a public-signup app, a low-privileged user can consume the owner's provider budget or induce privileged application effects.",
+      "lineNumbers": [
+        7,
+        8,
+        9,
+        36,
+        43,
+        44,
+        45,
+        46,
+        50,
+        53,
+        80,
+        83,
+        111,
+        117,
+        125,
+        126,
+        130,
+        134
+      ],
+      "recommendation": "Add a platform-enforced per-agent authorization predicate comparable to function `auth`, evaluated before model execution. Until that exists, clearly state that every signed-in app user can invoke the agent, require fail-closed checks against `env.identity.user` for every privileged tool, avoid exposing secrets or app-identity writes to public agents, and apply caller-level invocation and spend limits.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The guide exposes Flue agents through an app-scoped authentication token and provides capabilities for secrets, managed services, queues, schedules, and app-identity data access without describing a separate authorization gate. The owning bounded-host `/agents/*` route validates the app JWT and resolves the caller identity, but it does not evaluate a per-agent role, ownership predicate, or function-style `auth` expression. The request is then forwarded to the tenant agent coordinator, which likewise performs no application authorization check before accepting the prompt. The sealed Flue environment includes the advertised capabilities, and its data gateway is constructed with `serviceIdentity: \"svc:\" + appId`, not the invoking user. Tool schemas constrain argument shapes but do not determine whether the caller is entitled to use the tool. In a public-signup app, an ordinary user can therefore invoke an agent and prompt it to exercise any privileged tools the developer exposed, including secret-authenticated provider calls and service-identity writes. Policy rules and invariants may reject some data changes, but they see the app service identity and cannot authorize the original caller or undo external side effects. Current billing code appears to charge AI and managed-service use to the verified caller account rather than unconditionally to the owner, which narrows the budget-theft claim but does not remove the privileged-effects vulnerability.",
+        "revalidatedAt": "2026-08-20T10:09:37.879Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:12:41.530Z",
+      "durationMs": 95816.6,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-578f-7780-9f0b-2380cda403e5",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40174.2,
+        "outputTokens": 3658.2,
+        "cacheReadInputTokens": 586342.4,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:09:37.880Z",
+      "durationMs": 139220.4,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-2032-7a13-aa05-33cd6f24267f",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 71436.8,
+        "outputTokens": 4538.4,
+        "cacheReadInputTokens": 1184665.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-07-07T06:57:20-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:09:37.898Z"
+  },
+  "status": "analyzed"
+}

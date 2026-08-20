@@ -1,0 +1,31 @@
+{
+  "runId": "20260820082023-71b34e159c890b44",
+  "projectId": "bounded-skill",
+  "rootPath": "/Users/athar/Desktop/workspace/poof-new/bounded-skill-deepsec.kf3zFH",
+  "createdAt": "2026-08-20T08:20:23.901Z",
+  "type": "process",
+  "phase": "done",
+  "pid": 64602,
+  "hostname": "athars-starlight.local",
+  "processorConfig": {
+    "agentType": "codex",
+    "model": "gpt-5.6-sol",
+    "modelConfig": {
+      "model": "gpt-5.6-sol",
+      "maxTurns": 40,
+      "thinkingLevel": "high",
+      "reasoningEffort": "high"
+    },
+    "invocationMode": "direct",
+    "source": "files-from:manifests/03-frontend.txt"
+  },
+  "stats": {
+    "filesProcessed": 8,
+    "findingsCount": 12,
+    "totalCostUsd": 0,
+    "totalInputTokens": 623109,
+    "totalOutputTokens": 47309,
+    "totalDurationMs": 1357889
+  },
+  "completedAt": "2026-08-20T08:31:16.936Z"
+}

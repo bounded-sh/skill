@@ -1,0 +1,195 @@
+{
+  "filePath": "bounded-backend/docs/functions.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.589Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "2d1f0fe4726961be2cc85f07ccb689eb0b2bb53f852a7b4c95174a5a2f0efef7",
+  "findings": [
+    {
+      "findingId": "finding_98c4b6dcadc05a6c",
+      "severity": "MEDIUM",
+      "vulnSlug": "acl-check",
+      "title": "Founder bootstrap authority remains permanently usable",
+      "description": "The admin create rule permanently allows @const.FOUNDER to create arbitrary admin rows. Although the prose says the founder is used once for seeding and claims that setting a compromised admin to active:false immediately blocks them, a compromised or supposedly retired founder can create an active row for another identity they control. That identity can then satisfy syncStripe's active-admin gate and invoke the actAs function with access to STRIPE_KEY and privileged subscription writes.",
+      "lineNumbers": [
+        95,
+        103,
+        113,
+        117,
+        119,
+        120
+      ],
+      "recommendation": "Remove the founder disjunct immediately after genesis in a second policy deployment, or use a one-shot genesis marker that prevents any later founder-created rows. Ensure every persistent privileged path depends on revocable current state.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The admin create rule authorizes either an active admin or any caller whose identity equals `@const.FOUNDER`. Nothing in the expression checks that the admin set is empty, consults a one-shot marker, or disables the founder branch after the first row is created. Setting the founder's existing admin row to `active: false` only affects predicates that read that field and has no effect on the independent founder disjunct. This contradicts the prose describing the founder clause as dormant after genesis and the active flag as an immediate off-switch for every privileged path. A compromised or retired founder can create `admins/<attacker>` with `active: true`, because the target identifier and new active value are not otherwise confined. The attacker can then authenticate as that new identity and satisfy `syncStripe`'s active-admin rule, reaching the declared Stripe secret and service-identity subscription writes. Redeploying the policy to remove or replace the founder would stop the path, but the documented deactivation operation does not. The persistent privilege requires compromise of a specially designated bootstrap identity, so the reported medium severity is appropriate.",
+        "revalidatedAt": "2026-08-20T10:09:37.879Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    },
+    {
+      "findingId": "finding_d4ffc3b8bddf3430",
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Money-spending build function ignores admin revocation",
+      "description": "maintainApp authorizes callers using bare admin-row existence even though the page's bootstrapped admin registry includes an active field and explicitly warns that existence does not provide revocation. A deactivated admin row remains present, so the former admin can continue invoking a function authorized to create apps, edit the current app, and spend owner or app build funds.",
+      "lineNumbers": [
+        122,
+        123,
+        124,
+        125,
+        126,
+        723,
+        725,
+        727,
+        728,
+        742,
+        743,
+        755,
+        760
+      ],
+      "recommendation": "Use @user.id != null && get(/admins/@user.id).active == true, or a suitable reserved owner/admin set, for maintainApp. Do not reuse an active-field registry through a bare existence predicate.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "revalidation": {
+        "verdict": "false-positive",
+        "reasoning": "The bare `get(/admins/@user.id) != null` predicate does allow a deactivated admin row to pass the function's invocation rule. However, the exact copied build profile exposes `maintenance` only to the `scheduled-function` origin. A direct authenticated invocation is stamped by the dispatcher with the server-derived build origin `function`, and callers cannot override that provenance through function arguments or headers. The bounded-build control plane resolves the capability-named profile and rejects it with `capability_profile_origin` when that profile does not include the derived origin. This rejection occurs before a build run is created or owner and app funding is allocated. The example does not schedule `maintainApp`, and it does not opt the function into a queue path that could let the former admin manufacture trusted scheduled provenance. Thus a deactivated admin can enter the function body, but the described create, edit, and build-spend operations fail closed under the copied policy. The predicate should still be changed to the active check for consistency and future safety, but the claimed high-impact build exploit is not reachable in this example.",
+        "revalidatedAt": "2026-08-20T10:09:37.879Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    },
+    {
+      "findingId": "finding_8bcf55902559fbca",
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "Chain-data examples omit required idempotency keys",
+      "description": "The documented ctx.services.invoke contract requires an options object containing idempotencyKey, but both the Helius and Alchemy examples call invoke with only the tool name and arguments. Copied code therefore fails admission instead of making the documented managed service call.",
+      "lineNumbers": [
+        425,
+        426,
+        472,
+        476
+      ],
+      "recommendation": "Pass a stable business-operation idempotency key as the third argument in both examples.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The documented managed-service contract requires `ctx.services.invoke(tool, args, { idempotencyKey })`. Both the Helius and Alchemy snippets omit the third argument entirely. In bounded-host, the services gateway rejects a missing or oversized logical idempotency key with `services_idempotency_key_required` before invoking the managed provider. The Functions runtime bridge independently enforces the same required field after checking that the enclosing invocation has replay-safe provenance. Therefore, even under a correctly idempotent outer function invocation, either copied chain-data call fails admission rather than returning the advertised account or balance data. The read-only provider allowlists do not mitigate this interface error because execution never reaches them. This is a current, deterministic documentation bug with the reported BUG severity.",
+        "revalidatedAt": "2026-08-20T10:09:37.879Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    },
+    {
+      "findingId": "finding_0e184d9e11f8b2dd",
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "dueRows function targets are documented as firing but remain inert",
+      "description": "The page says dueRows.run naming a function runs that function and later says it also fires with limited arguments. The owning realtime runtime only collects dueRows entries whose run name resolves to hooks.scheduled bytecode; function targets are not collected or dispatched. The validator can accept such a target, leaving a deployed one-shot job that silently never runs.",
+      "lineNumbers": [
+        1070,
+        1071,
+        1072,
+        1111,
+        1112,
+        1113,
+        1114,
+        1115
+      ],
+      "recommendation": "Document dueRows as hook-only until function dispatch is implemented, and preferably make validation reject inert function targets. Retain function guidance only for recurring schedule.run.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "revalidation": {
+        "verdict": "fixed",
+        "reasoning": "The page still incorrectly says that a `dueRows.run` target naming a top-level function fires with limited arguments. The realtime implementation only collects due-row entries whose target resolves to `hooks.scheduled` bytecode and has no due-row function dispatch path. Earlier validation resolved function names without rejecting them, so the documented configuration could once deploy and remain inert. Monorepo commit `26dd66579` on 2026-07-14 added an explicit fail-closed check in `PolicyValidator.validateDueRows`. The current validator rejects a function target with an actionable message explaining that one-shot delivery requires row identity and atomic `onComplete`, and directs users to a scheduled hook or recurring `schedule`. Consequently, the claimed silently deployed one-shot job is no longer reachable. The public page remains stale and should be corrected because copied configuration now fails deployment, but the specific inert-deployment behavior described by the finding has been patched.",
+        "revalidatedAt": "2026-08-20T10:09:37.879Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:12:13.580Z",
+      "durationMs": 90152.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-591a-7b51-9f17-ec879089860a",
+      "findingCount": 4,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42457.2,
+        "outputTokens": 3148,
+        "cacheReadInputTokens": 669696,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:09:37.880Z",
+      "durationMs": 139220.4,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-2032-7a13-aa05-33cd6f24267f",
+      "findingCount": 4,
+      "numTurns": 0.2,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 71436.8,
+        "outputTokens": 4538.4,
+        "cacheReadInputTokens": 1184665.6,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T17:23:24-04:00"
+      },
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-14T11:57:23+05:30"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-12T08:12:50Z"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:09:37.922Z"
+  },
+  "status": "analyzed"
+}

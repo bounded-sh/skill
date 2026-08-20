@@ -1,0 +1,118 @@
+{
+  "filePath": "bounded-deploy/docs/environments.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:23:11.885Z",
+  "lastScannedRunId": "20260820082311-5c9678832ca11675",
+  "fileHash": "59e6d0554d357c23adccdc968f4044ad0843c8e764efb7f225e791efa4c89906",
+  "findings": [
+    {
+      "findingId": "finding_1e581f41b1bfe0cf",
+      "severity": "HIGH",
+      "vulnSlug": "acl-check",
+      "title": "Example makes a staging principal the production fallback",
+      "description": "The primary example defines top-level ADMIN and DAILY_CAP values for staging while separately defining safer production values, even though the page says top-level values are conventionally the production truth used by a bare bounded deploy. The current CLI only rejects a bare deployment when a function has an explicit environment allowlist. For policies like this example, it strips the environments block, uses the top-level staging constants, and deploys to the app selected by project configuration. A later bare deployment targeting production would therefore grant the staging principal the production-wide read role and replace the production cap of 5000 with 50. A lower-trust staging identity could gain access to protected production data, while the cap change could also disrupt production behavior.",
+      "lineNumbers": [
+        15,
+        16,
+        18,
+        19,
+        41,
+        42,
+        43,
+        68,
+        69,
+        96,
+        100,
+        103,
+        217,
+        218,
+        229,
+        233
+      ],
+      "recommendation": "Make the top-level policy values the actual production defaults and place staging values only in the staging overlay. In the owning CLI, fail closed whenever a policy containing environments is deployed without an explicit environment, unless the user supplies a separate explicit option acknowledging deployment of the base policy.",
+      "confidence": "high",
+      "producedByRunId": "20260820082311-6067fdf13617c273",
+      "revalidation": {
+        "verdict": "true-positive",
+        "reasoning": "The primary example places the staging administrator and cap in the top-level `constants`, while the production overlay contains a different administrator and a cap of 5000. The same page states that top-level values are the default and, by convention, the production truth used by a bare deployment. In the current CLI, environment overlay resolution only runs when `--environment` is supplied. Its environment-blind refusal checks only functions that have their own explicit environment allowlists, so this policy, which has no such functions, is admitted. The CLI then removes the entire `environments` block and resolves the target app from the explicit flag or authoritative `bounded.json` project configuration. Compile-time `@const.ADMIN` expansion therefore installs the staging identity into the broad admin read role, and `@const.DAILY_CAP` becomes 50 rather than the production value of 5000. A developer or CI job issuing the documented bare command while configured for production would grant the lower-trust staging principal production-wide reads and replace the intended production cap. The current CLI history still contains this exact behavior after the environment-overlay changes, and the false-positive register identifies no external deployment guard that would prevent the scenario.",
+        "revalidatedAt": "2026-08-20T10:12:12.663Z",
+        "runId": "20260820095756-84bb8873bbb983ed",
+        "model": "gpt-5.6-sol"
+      }
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820082311-6067fdf13617c273",
+      "investigatedAt": "2026-08-20T08:30:51.812Z",
+      "durationMs": 90880.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e44-5f5a-7200-a2d4-7e9d651c16f5",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 53776.6,
+        "outputTokens": 2620.8,
+        "cacheReadInputTokens": 759296,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    },
+    {
+      "runId": "20260820095756-84bb8873bbb983ed",
+      "investigatedAt": "2026-08-20T10:12:12.663Z",
+      "durationMs": 212408,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "thinkingLevel": "xhigh",
+        "reasoningEffort": "xhigh"
+      },
+      "agentSessionId": "01a01e9b-1f75-72d2-9bc8-62285332ea40",
+      "findingCount": 1,
+      "numTurns": 0.25,
+      "phase": "revalidate",
+      "usage": {
+        "inputTokens": 107815.75,
+        "outputTokens": 6777,
+        "cacheReadInputTokens": 2353536,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-17T17:23:24-04:00"
+      },
+      {
+        "name": "Pratik Patel",
+        "email": "prpatel05@gmail.com",
+        "date": "2026-08-10T11:28:18-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T10:12:12.680Z"
+  },
+  "status": "analyzed"
+}

@@ -1,0 +1,161 @@
+{
+  "filePath": "bounded-backend/docs/invariants.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:04:35.590Z",
+  "lastScannedRunId": "20260820080435-db127ccde6d56c1e",
+  "fileHash": "689970021446915c92438123a1283ac309606400baaae07bdf187e063545cb1f",
+  "findings": [
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "rate-limit-bypass",
+      "title": "Separate event-log rate limit can be bypassed by omitting the event",
+      "description": "The message and rate-event collections have independent create rules. Although the client example sends both writes in setMany and the prose calls the construction airtight, atomicity does not require a hostile client to include every intended write. An attacker can create messages directly without writing users/$userId/posts/$postId, so rollingSum is never evaluated and the advertised 50-per-hour limit is bypassed.",
+      "lineNumbers": [
+        297,
+        303,
+        304,
+        309,
+        314,
+        318,
+        324,
+        328,
+        336,
+        345,
+        347,
+        348,
+        349
+      ],
+      "recommendation": "Enforce batch completeness in policy. Restructure the paths so the message create can use requiresInBatch for a deterministically matching event and bind its contents with getAfter, put the action itself in the capped collection, or deny direct writes and use a function that atomically emits both legs.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_3fc3500be1c5c6f2"
+    },
+    {
+      "severity": "MEDIUM",
+      "vulnSlug": "other-data-poisoning",
+      "title": "windowSum volume example allows arbitrary ranking inflation",
+      "description": "Any authenticated user may create trades under any attacker-selected marketId with any UInt size. windowSum faithfully adds that untrusted value to the runtime-owned vol10m field and the text recommends using it for sortable trending feeds and leaderboards. An attacker can submit a very large fake trade and force a chosen market to the top of the ranking without executing any real trade.",
+      "lineNumbers": [
+        380,
+        381,
+        383,
+        385,
+        387,
+        389,
+        390,
+        402,
+        413,
+        414,
+        436,
+        437,
+        438
+      ],
+      "recommendation": "Allow only a trusted settlement or exchange service identity to create trade events, and derive size from verified executed-trade state rather than a caller-provided value.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_cb58ce0019059d45"
+    },
+    {
+      "severity": "HIGH",
+      "vulnSlug": "other-untrusted-inflow",
+      "title": "flowBound escrow example lets users mint their own withdrawal capacity",
+      "description": "The canonical escrow policy authorizes each user to create arbitrary deposit records in their own partition and also create release records there. flowBound proves only that recorded releases do not exceed recorded deposits; it does not establish that a deposit represents paid or onchain funds. An attacker can first append a fabricated large deposit and then append an equally large release, satisfying every rule and the invariant while manufacturing escrow withdrawal capacity.",
+      "lineNumbers": [
+        450,
+        451,
+        456,
+        457,
+        461,
+        466,
+        471,
+        477,
+        481,
+        482,
+        503,
+        504,
+        505,
+        513,
+        514,
+        515,
+        516,
+        517
+      ],
+      "recommendation": "Make inflow creation service-only and derive deposits from verified payment, onchain settlement, or another immutable trusted source. Keep users limited to release requests, with actual payout additionally bound to the authenticated owner and trusted inflow state.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_8b413cf117718bb3"
+    },
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-invalid-policy-example",
+      "title": "publicReads example uses unsupported @doc variables",
+      "description": "The conditional read rule refers to @doc.visibility and @doc.owner. The policy runtime and compiler expose existing document fields through @data, not @doc; the owning public-read tests likewise use @data. Copying the example therefore produces an invalid or non-evaluating read rule rather than the documented public/private conditional access.",
+      "lineNumbers": [
+        768,
+        772,
+        779,
+        780,
+        781,
+        782,
+        788,
+        789
+      ],
+      "recommendation": "Replace @doc.visibility and @doc.owner with @data.visibility and @data.owner, retaining an explicit authenticated owner branch.",
+      "confidence": "high",
+      "producedByRunId": "20260820080435-39421ba804cea7fa",
+      "findingId": "finding_50e6833985d19319"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820080435-39421ba804cea7fa",
+      "investigatedAt": "2026-08-20T08:12:13.620Z",
+      "durationMs": 90152.8,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e33-591a-7b51-9f17-ec879089860a",
+      "findingCount": 4,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 42457.2,
+        "outputTokens": 3148,
+        "cacheReadInputTokens": 669696,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "atharmohammad",
+        "email": "mohd.rule123@gmail.com",
+        "date": "2026-08-19T19:48:01+05:30"
+      },
+      {
+        "name": "Bilal Shahid",
+        "email": "bshahid331@gmail.com",
+        "date": "2026-08-10T08:44:35-04:00"
+      },
+      {
+        "name": "athar",
+        "email": "athar@poof.new",
+        "date": "2026-08-04T19:14:52Z"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:12:13.627Z"
+  }
+}

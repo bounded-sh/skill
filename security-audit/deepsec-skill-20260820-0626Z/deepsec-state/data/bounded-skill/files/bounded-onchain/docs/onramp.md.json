@@ -1,0 +1,66 @@
+{
+  "filePath": "bounded-onchain/docs/onramp.md",
+  "projectId": "bounded-skill",
+  "candidates": [],
+  "lastScannedAt": "2026-08-20T08:31:42.074Z",
+  "lastScannedRunId": "20260820083142-460552726bee7963",
+  "fileHash": "39cf2da7710e9baf853078a4631223d5053241727ae4632e5ba2ffc9d9046ccd",
+  "findings": [
+    {
+      "severity": "BUG",
+      "vulnSlug": "other-logic-bug",
+      "title": "Documented alternate-destination onramp flows are disabled",
+      "description": "The page presents `address` as an effective destination option and tells bring-your-own-wallet and guest users to pass it explicitly. The current SDK deprecates and omits this option, while the server deliberately ignores caller-supplied addresses and requires the authenticated identity's embedded wallet. Consequently, a guest or BYO-wallet account without an embedded wallet receives `no_wallet`, while a wallet-backed user attempting another destination silently funds the embedded wallet instead. This is stale documentation following the DS2-0076 security fix.",
+      "lineNumbers": [
+        18,
+        41,
+        44
+      ],
+      "recommendation": "Remove the address option and BYO/guest claims. State that onramp only funds the authenticated embedded wallet and instruct wallet-less users to create or upgrade to one. Document alternate destinations only if a platform-confirmed ownership flow is implemented.",
+      "confidence": "high",
+      "producedByRunId": "20260820083142-fa479c063b4ee86b",
+      "findingId": "finding_be64c96126455b28"
+    }
+  ],
+  "analysisHistory": [
+    {
+      "runId": "20260820083142-fa479c063b4ee86b",
+      "investigatedAt": "2026-08-20T08:40:32.798Z",
+      "durationMs": 104627,
+      "agentType": "codex",
+      "model": "gpt-5.6-sol",
+      "modelConfig": {
+        "model": "gpt-5.6-sol",
+        "maxTurns": 40,
+        "thinkingLevel": "high",
+        "reasoningEffort": "high"
+      },
+      "agentSessionId": "01a01e4c-2c36-7a10-8496-61cd20fd334a",
+      "findingCount": 1,
+      "numTurns": 0.2,
+      "phase": "process",
+      "usage": {
+        "inputTokens": 40734.4,
+        "outputTokens": 3827,
+        "cacheReadInputTokens": 956467.2,
+        "cacheCreationInputTokens": 0
+      },
+      "refusal": {
+        "refused": false,
+        "skipped": [],
+        "raw": "{\"refused\":false,\"reason\":null,\"skipped\":[]}"
+      }
+    }
+  ],
+  "status": "analyzed",
+  "gitInfo": {
+    "recentCommitters": [
+      {
+        "name": "Amit Ishairzay",
+        "email": "amit.ishairzay@gmail.com",
+        "date": "2026-08-04T00:37:06-04:00"
+      }
+    ],
+    "enrichedAt": "2026-08-20T08:40:32.811Z"
+  }
+}
