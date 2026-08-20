@@ -145,6 +145,24 @@ Mints one token (`tokenId` is app-unique) against a `configId` and opens its vir
 pool. `uri` is the JSON-metadata URI. `initialSolBuyAmount?` (lamports) does an
 optional dev-buy right after creation.
 
+### Deriving the mint: always the 3-arg `getTokenMintAddress`
+
+`createMeteoraVirtualPool` always derives the pool's base mint with the **legacy token seed**
+(`appId + tokenId + name + symbol`); it accepts no seed-mode option.
+So every later reference to this mint - `swapInMeteoraVirtualPool`'s `poolTokenMint`,
+`getMeteoraVirtualPoolAddress`, `getDammV2PoolAddress`, a buy hook, a query - must derive it with
+the 3-arg form, using the exact `name` and `symbol` passed at creation:
+
+```
+@TokenPlugin.getTokenMintAddress($tokenId, "My App Token", "MYAPP")
+```
+
+The 1-arg `@TokenPlugin.getTokenMintAddress($tokenId)` uses the *id-only* seed, which pairs only
+with Pump.fun creates that passed `{seedMode: "idOnly"}`.
+Using it for a Meteora launch derives a different address that was never created on chain, and the
+swap later fails at account resolution with `onchain account not found`
+(see [onchain-troubleshooting.md](onchain-troubleshooting.md#missing-onchain-accounts-vs-platform-502s)).
+
 ### The `uri` must be a Metaplex metadata JSON, not an image
 
 Wallets, DEX frontends and Meteora itself resolve the token's display identity

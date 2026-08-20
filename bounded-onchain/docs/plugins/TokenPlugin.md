@@ -17,7 +17,11 @@ Argument descriptions and signer markers below are copied from the existing mono
 - **Amounts are integers in base units** (lamports for SOL, the mint's smallest unit for tokens). Use `@TokenPlugin.SOL` for native SOL; `@TokenPlugin.USDC` is mainnet-only.
 - A transfer to a recipient with no token account creates the recipient's ATA; the transaction payer funds that rent.
 - `getBalance` accepts the same three source forms, which makes it the natural rule guard for named-PDA pots: `@TokenPlugin.getBalance($marketId, @TokenPlugin.SOL) >= @newData.payout`.
-- Mint identity for `createToken`/`mint` is the app-scoped `tokenId`; `getTokenMintAddress(tokenId)` (or the legacy `(tokenId, name, symbol)` form) derives the mint address without a live read.
+- Mint identity for `createToken`/`mint` is the app-scoped `tokenId`; `getTokenMintAddress` derives the mint address without a live read.
+  **Its argument form MUST match the seed mode of the function that created the mint.**
+  The 1-arg `getTokenMintAddress(tokenId)` (id-only seed) pairs ONLY with Pump.fun creates that passed `{seedMode: "idOnly"}`.
+  Classic TokenPlugin creates (`createToken`/`createToken2022`) and `@DeFiPlugin.createMeteoraVirtualPool` always use the legacy seed, so they require the 3-arg `getTokenMintAddress(tokenId, name, symbol)`.
+  A mismatched form derives a different, nonexistent address, and the write later fails with `onchain account not found`.
 
 ## Transactional
 
@@ -199,7 +203,7 @@ Fields of `extensions`:
 ### `TokenPlugin.getTokenMintAddress`
 
 ```
-@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode
+@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode. The argument form MUST match the seed mode of the function that created the mint: the 1-arg form pairs ONLY with Pump.fun creates that passed {seedMode: "idOnly"}; classic TokenPlugin creates (createToken/createToken2022) and @DeFiPlugin.createMeteoraVirtualPool always use the legacy seed and require the 3-arg form. A mismatched form derives a different, nonexistent address and the write later fails with onchain account not found
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries

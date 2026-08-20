@@ -78,7 +78,7 @@ A provably fair double-or-nothing coin flip: the bet requests an ORAO roll, the 
       "create": "@OraclePlugin.getRandomNumber($flipId, 0, 1) == 0"
     },
     "operationDetails": {
-      "read": "Existence of /flipreveals/$flipId is the fulfillment signal; the value itself is read through the roll query on /flips.",
+      "read": "The reveal document is the settlement and audit record that follows fulfillment; the fulfillment signal itself is the roll query on /flips returning an in-range value (it reads ORAO's randomness account directly, with no indexing dependency).",
       "create": "Server-driven oracle write with no user context. Note the create rule is NOT \"false\": the mandated shape (onchain, empty fields, exactly this getRandomNumber rule, one path variable, no update/delete) is the only accepted form. Because there is no user and no transaction payer here, this path carries no hooks and could not call createAccount - the house PDA is created in the houseDeposits user write instead."
     }
   }
@@ -89,7 +89,7 @@ A provably fair double-or-nothing coin flip: the bet requests an ORAO roll, the 
 
 1. **Fund the house** (one or more times): `set('houseDeposits/<id>', { amount })`. The first deposit creates the `coinflip-house-v1` PDA idempotently and funds it in one atomic hook.
 2. **Bet**: `set('flips/<flipId>', { player: <your wallet>, choice: 0 | 1, stake, settled: false })`. Denied unless the house holds at least `2 * stake`. The hook transfers the stake and requests randomness together.
-3. **Wait for fulfillment**: confirm the request transaction, then poll `flipreveals/<flipId>` with bounded backoff until it exists, and read the value with `runQuery('flips/<flipId>', 'roll', {})`. Stop at an explicit deadline; an absent reveal is not success. `vrf` returns the on-chain VRF account for independent verification.
+3. **Wait for fulfillment**: confirm the request transaction, then poll `runQuery('flips/<flipId>', 'roll', {})` with bounded backoff until it returns an in-range value (0 or 1). That query reads ORAO's randomness account directly and involves no platform indexing, so an in-range roll IS fulfillment: enable the settle step on it. The `flipreveals/<flipId>` document is the settlement/audit record that normally lands shortly after - observe it, but never block the UI on it; a queryable roll with a long-absent reveal doc means a platform indexing delay, not an unfulfilled request. Stop at an explicit deadline; an absent result is not success. `vrf` returns the on-chain VRF account for independent verification.
 4. **Settle** (permissionless crank): patch `set('flips/<flipId>', { settled: true, roll: <observed roll>, payout: <stake*2 or 0> })`, omitting the readonly fields. A wrong `roll` or a `payout` inconsistent with it is denied; on a win the hook pays `2 * stake` from the house PDA to the recorded player.
 
 ## Why it holds

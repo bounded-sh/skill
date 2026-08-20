@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "dd5874c2b8f0a812f2e5e2cc57456667d264df8a",
+  "monorepoCommit": "6a5c0d106b4ce661bed13669bb53dd4c211eac65",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -3217,7 +3217,7 @@
      "callName": "@DeFiPlugin.createMeteoraVirtualPool",
      "category": "transactional",
      "signature": "createMeteoraVirtualPool(string, string, string, string, string, string?)",
-     "usage": "@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?)",
+     "usage": "@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?) - the pool base mint is ALWAYS derived with the LEGACY token seed (appId + tokenId + name + symbol); there is no seedMode option. Derive the mint elsewhere with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form (that derives a different, nonexistent address)",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3721,7 +3721,7 @@
      "callName": "@DeFiPlugin.swapInMeteoraVirtualPool",
      "category": "transactional",
      "signature": "swapInMeteoraVirtualPool(string, string, string, string, string?, number?)",
-     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?)",
+     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3742,7 +3742,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The mint address of the pool's base token (used to find the pool)",
+       "description": "The mint address of the pool's base token (used to find the pool). For a pool created by createMeteoraVirtualPool this is the LEGACY-seed mint: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form",
        "fields": null
       },
       {
@@ -4040,7 +4040,7 @@
      "callName": "@DeFiPlugin.getDammV2PoolAddress",
      "category": "readOnly",
      "signature": "getDammV2PoolAddress(string)",
-     "usage": "@DeFiPlugin.getDammV2PoolAddress(tokenMintAddress)",
+     "usage": "@DeFiPlugin.getDammV2PoolAddress(tokenMintAddress) - for Meteora-launched tokens the mint uses the LEGACY seed: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form",
      "returnType": "string",
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -4052,7 +4052,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The mint address of the token (same as used in createMeteoraVirtualPool)",
+       "description": "The mint address of the token (same as used in createMeteoraVirtualPool - the LEGACY-seed mint, derived with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol))",
        "fields": null
       }
      ],
@@ -4087,7 +4087,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The mint address of the pool's base token (used to find the pool)",
+       "description": "The mint address of the pool's base token (used to find the pool). For a pool created by createMeteoraVirtualPool this is the LEGACY-seed mint: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form",
        "fields": null
       },
       {
@@ -8409,7 +8409,7 @@
      "callName": "@TokenPlugin.getTokenMintAddress",
      "category": "readOnly",
      "signature": "getTokenMintAddress(string,string?,string?)",
-     "usage": "@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode",
+     "usage": "@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode. The argument form MUST match the seed mode of the function that created the mint: the 1-arg form pairs ONLY with Pump.fun creates that passed {seedMode: \"idOnly\"}; classic TokenPlugin creates (createToken/createToken2022) and @DeFiPlugin.createMeteoraVirtualPool always use the legacy seed and require the 3-arg form. A mismatched form derives a different, nonexistent address and the write later fails with onchain account not found",
      "returnType": "string",
      "isOnlyOffchain": false,
      "validArgCounts": [
