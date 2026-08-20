@@ -967,6 +967,27 @@ and 2 MB total; an oversize tree is refused locally with those same numbers.
 Older CLI versions upload only the entry and refuse a relative import at deploy
 time with `Relative import ... cannot be resolved`, so if you see that, update.
 
+**Never import a credential file into a function.** A bundle is a stored
+artifact, so importing a key file hardcodes a secret into it. The CLI refuses to
+package a file in the closure whose bytes look like credential material - a PEM
+private key, a GCP/Firebase `service_account` JSON, a Bounded credentials file,
+or a raw Solana keypair array - and redirects you to the supported path:
+
+```
+refusing to package infra/service-account.json (imported by function entry syncStripe.ts):
+it looks like a service-account key. A function must not bundle a credential file -
+store the value with `bounded secret put <NAME>` and read it from ctx.env at invoke time.
+```
+
+The supported path is [secrets](secrets.md): `bounded secret put NAME` stores the
+value per app, you declare `NAME` under `functions.<name>.secrets`, and the
+function reads it from `ctx.env.NAME` / `ctx.secrets.get("NAME")` - resolved at
+invoke time, never baked into the artifact. If a file genuinely is not a secret
+and trips the check (e.g. a 32/64-integer hash-vector fixture the function
+imports), clear it locally with `BOUNDED_PACKAGING_ALLOW=<relative/path>` - an
+environment override, deliberately not a committed file a repository contributor
+could edit in the same change that plants the key.
+
 Two deploy-ordering notes worth knowing:
 - **A policy deploy preserves deployed functions.** When your `policy.json` omits
   the `functions` block, the server carries the already-deployed functions (and

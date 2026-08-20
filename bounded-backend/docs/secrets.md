@@ -16,6 +16,13 @@ A secret has **two halves, kept apart on purpose**:
 
 Then your code reads it. That's it.
 
+**Never import a credential file into a function instead.** A key file bundled
+into a function is hardcoded into a stored artifact; the CLI refuses to package
+one (a PEM key, a `service_account` JSON, a Bounded credentials file, or a raw
+keypair array) and points you back here. Put the value with `bounded secret put`
+and read it from `ctx.env` - the value stays in the app secret store and is
+resolved at invoke time. See [functions.md](functions.md).
+
 ## Simplest form (do this unless you need more)
 
 `bounded.manifest`:
