@@ -19,6 +19,10 @@ Real-network failure lookup for `"onchain": true` collections: what broke, why, 
 | Deploy refuses a function with `NEEDS-RUNTIME-V4` | The function's runtime is newer than the deployed program's recorded runtime version. | Check [solana-capability-status.md](solana-capability-status.md); do not ship that path until the runtime is live. |
 | Write succeeds but the mirror shows nothing yet | Mirror ingestion is eventually consistent. | Poll the mirror for the exact expected postcondition; never treat an immediate read (or its absence) as proof. |
 | `validate pre-built transaction: SOLANA_DEVNET_RPC_URL is required for pre-built transaction network "solana_devnet"` | The CLI submits onchain writes itself and has no RPC endpoint configured. The platform built the transaction correctly; submission never started. | Set `SOLANA_DEVNET_RPC_URL` (or `SOLANA_MAINNET_RPC_URL`) in the shell running `bounded`. See [CLI submission needs an explicit RPC endpoint](#cli-submission-needs-an-explicit-rpc-endpoint). |
+| `Pre-built Solana transaction submission requires init({ rpcUrl }) for solana_devnet` in a web app | The browser twin of the CLI rule above: the SDK submits the pre-built transaction itself, and `init()` was called without a top-level `rpcUrl`. | Pass top-level `chain` + `rpcUrl` to `init()`; a nested `walletLogin.rpcUrl` is not a substitute. See [Browser/SDK submission needs an explicit RPC endpoint](#browsersdk-submission-needs-an-explicit-rpc-endpoint). |
+| `Transaction building failed: onchain account resolution failed (502): ...` on a write that is NOT a `403` | Bounded's platform-side account resolver could not resolve the accounts and plugin values the transaction needs (platform infrastructure or its RPC). The policy did not deny; the write was rejected fail-closed before anything signed or landed. | Do not rewrite a passing hook or change amounts/slippage. Confirm it is platform-side with a trivial named query, then retry and report. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
+| `onchain query failed (502)` on a named query (CLI shows `Error: 500 onchain query failed (502)`), even a plain `@TokenPlugin.getBalance` | Same platform-side failure surface for queries: Bounded's onchain query executor could not run the query simulation. | Same as the row above; it is not a bad query argument. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
+| Pump.fun launch dies inside `Create` with `Transfer: insufficient lamports` (`... 0, need 1461600` for the mint, or a shortfall under `IX: Create Metadata Accounts v3`) | The `createToken`/`createTokenV2` `creator` is ALSO the account Pump.fun's `Create` bills: mint rent (1,461,600 lamports), metadata rent (~5,616,720), then bonding-curve/ATA setup. With app custody (a named account id), that PDA pays, and the signing user's own wallet balance is irrelevant. | Fund the named creator account with the whole Create cost (~0.025 SOL) in the same hook, before `createToken`: `@AccountPlugin.createAccount(id) && @TokenPlugin.transfer(@user.address, id, @TokenPlugin.SOL, 25000000) && @PumpFunPlugin.createToken(..., id)`. See [token-launch example](examples/token-launch.md). |
 
 ## CLI submission needs an explicit RPC endpoint
 
@@ -37,6 +41,42 @@ The check runs before signing, so an unset variable fails the write with `valida
 Set it in whatever shell runs `bounded`; it applies per shell, so add it to your shell profile if you want it to persist.
 A public endpoint such as `https://api.devnet.solana.com` is enough to get a development write through, but it is rate-limited and is not a trusted source for the evidence described in [Confirmation behavior](#confirmation-behavior); use a dedicated provider endpoint for anything you intend to rely on.
 Never echo, log, commit, or retain a secret RPC URL.
+
+## Browser/SDK submission needs an explicit RPC endpoint
+
+The browser twin of the CLI rule above, with the exact error:
+
+```
+Pre-built Solana transaction submission requires init({ rpcUrl }) for solana_devnet
+```
+
+On an onchain write from a web app the platform builds the transaction, and the SDK signs it with the user's wallet and submits it to Solana itself.
+That submission endpoint comes only from `init()`, and it must be TOP-LEVEL:
+
+```ts
+await init({
+  appId: "<appId>",
+  chain: "solana_devnet",                        // the app's onchain network
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
+  walletLogin: true,                             // if the app offers wallet login
+});
+```
+
+A nested `walletLogin.rpcUrl` configures wallet login only and does not enable submission; `walletLogin: true` supplies no submit RPC either.
+The check runs before the wallet signs, so a misconfigured app fails the write without spending the user's signature.
+The trust rationale is the same as the CLI's: there is deliberately no bundled default endpoint, because confirmation and simulation results are only as trustworthy as the endpoint returning them.
+A public endpoint gets a development write through but is rate-limited; use a dedicated provider endpoint for anything you rely on, and keep secret RPC URLs out of logs and commits.
+
+## Platform resolver and onchain-query 502s
+
+`Transaction building failed: onchain account resolution failed (502): ...` (on a write) and `onchain query failed (502)` (on a named query; the CLI prints `Error: 500 onchain query failed (502)`) are PLATFORM-side failures, not policy verdicts and not problems with your hook.
+
+- A policy denial is a `403` and never carries the 502 text.
+  A 502 means Bounded's account resolver or onchain query executor could not complete the resolution or simulation; your rule may never have been evaluated at all.
+- Both surfaces share one platform resolver, so the cheap discriminator is a trivial named query that only reads a balance, for example `bounded data query --path <collection>/<id> --name <a plain @TokenPlugin.getBalance query>`.
+  If that also returns the 502, the platform (or its RPC) is the problem: do not modify the failing hook, its amounts, or its slippage, and do not switch DEXes.
+- The write was rejected fail-closed before signing: nothing landed, no fees were spent, and retrying after the platform recovers is safe.
+- If the 502 persists, report it to Bounded with the app id and timestamp; there is no app-policy workaround.
 
 ## Confirmation behavior
 

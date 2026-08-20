@@ -249,11 +249,42 @@ The browser origin matters too: SIWS binds to it, so a non-first-party host (a t
 { "auth": { "wallets": true } }
 ```
 
+**Wallet sessions survive reloads.** The SDK records which login method minted
+the active session (the `bounded_last_auth_method` localStorage marker), and
+`init()` restores through that same method, so a wallet session persists across
+refreshes exactly like an email session - including sessions the widget's
+wallet lane minted on apps that never passed `walletLogin` to `init()`.
+A restored session holds the user's address but no live wallet connection; the
+first signing call reconnects (that is `confirmWalletAction`'s `"connect"`).
+
+> Known defect in `@bounded-sh/client` **0.0.72 and earlier**: `init()` always
+> restored as email and then wiped the wallet session on every reload
+> (`getCurrentUser()` came back `null` after a refresh). On those versions,
+> read the marker yourself and pass the method into `init()` explicitly:
+>
+> ```ts
+> const stored = localStorage.getItem("bounded_last_auth_method");
+> const wallet = ["phantom", "wallet", "mobile-wallet-adapter"].includes(stored ?? "");
+> // Never hard-code authMethod: 'phantom' for every load - that wipes email sessions.
+> await init({ appId: "<appId>", walletLogin: true, ...(wallet ? { authMethod: "phantom" } : {}) });
+> ```
+
 ```ts
 import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
 
 // Add bring-your-own wallet login alongside the canonical email/social login.
-await init({ appId: "<appId>", authMethod: "phantom", walletLogin: true });
+// `chain` + a TOP-LEVEL `rpcUrl` are what let the signed transaction actually
+// be submitted below; a nested walletLogin.rpcUrl is not a substitute, and
+// without them signAndSubmitTransaction / an onchain set() throws
+// "Pre-built Solana transaction submission requires init({ rpcUrl })" AFTER
+// the user has signed.
+await init({
+  appId: "<appId>",
+  authMethod: "phantom",
+  walletLogin: true,
+  chain: "solana_devnet",
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
+});
 
 // Right next to the login call — connects the injected wallet, signs the SIWS
 // challenge, and mints the session. user.address === the user's real wallet.
@@ -349,6 +380,10 @@ await init({
   appId: "<appId>",
   authMethod: "phantom",
   chain: "solana_devnet",
+  // Required for the `set()` writes and signAndSubmitTransaction calls named
+  // above: the SDK submits the signed transaction itself. Top-level, never
+  // nested under walletLogin.
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,
   walletLogin: {
     // Only where the mobile wallet can be active; injected wallets sign
     // in-page and need no extra tap.
