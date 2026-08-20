@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "931c87f7f52a3ab6f49328c7ec9de5b76e3523ee",
+  "monorepoCommit": "dd5874c2b8f0a812f2e5e2cc57456667d264df8a",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
