@@ -1,10 +1,13 @@
 {
   "auditStartedAt": "2026-08-20T06:26:53Z",
   "auditDeadline": "2026-08-20T12:26:53Z",
-  "lastUpdatedAt": "2026-08-20T11:42:05Z",
-  "phase": "report-finalization",
+  "lastUpdatedAt": "2026-08-20T12:26:53Z",
+  "phase": "complete",
+  "auditFinishedAt": "2026-08-20T12:26:53Z",
   "discoveryStoppedAt": "2026-08-20T09:57:42Z",
   "validationStoppedAt": "2026-08-20T11:41:53Z",
+  "pendingLowSignalWork": 0,
+  "pushStatus": "pushed to origin/audit/deepsec-skill-20260820-0626Z",
   "baseline": {
     "repositoryPath": "/Users/athar/Desktop/workspace/poof-new/skill",
     "remoteUrl": "git@github.com:bounded-sh/skill.git",
