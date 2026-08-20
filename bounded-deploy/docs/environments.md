@@ -15,7 +15,7 @@ deploys a normal policy. Builds on
     "preview":    { "appId": "6a2e...pre", "constants": { "ADMIN": "PreAdminWallet", "DAILY_CAP": 50 }, "schedules": { "*": { "every": "15m" } } },
     "production": { "appId": "6a2e...prd", "constants": { "ADMIN": "PrdAdminWallet", "DAILY_CAP": 5000 } }
   },
-  "constants": { "ADMIN": "PreAdminWallet", "DAILY_CAP": 50 },
+  "constants": { "ADMIN": "LocalDevWallet", "DAILY_CAP": 50 },
   "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
   "spend/$id": {
     "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
@@ -38,9 +38,22 @@ A function can also scope *itself* to a set of environments from the other side,
 with its own `environments` allowlist — see
 [§ Environment-scoped functions](#environment-scoped-functions).
 
-The top-level `constants` block and the collections' own `schedule.every` values
-are the **default**, and by convention the production truth (handy for a bare
-`bounded deploy` with no `--environment`).
+The top-level `constants` block is the **local-dev default** - the values used
+when you deploy to an app that the `environments` block does not name. Do **not**
+fill it with a copy of any deployed environment's real identity constants
+(`ADMIN`, a fee wallet, a steward): if it holds staging's admin and you deploy to
+production, that staging wallet becomes the production admin. In the example
+above `ADMIN` is a throwaway `LocalDevWallet`, distinct from both preview and
+production, precisely so a bare deploy cannot silently ship one environment's
+identity to another.
+
+You do not have to rely on the base block for a named deploy: `bounded deploy`
+**derives the environment from the target app id** when you omit `--environment`.
+If `--app-id` (or the linked `bounded.json` app) matches exactly one
+environment's `appId`, the CLI resolves that environment's constants and prints
+which one it picked; only a target that matches no environment falls through to
+the base block. So the base block is for local/unnamed targets, never a stand-in
+for a production environment's identity.
 
 ## Usage
 
