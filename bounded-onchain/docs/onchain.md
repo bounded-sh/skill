@@ -57,9 +57,16 @@ This is the one thing to get right before creating a mainnet app, because it
 cannot be undone.
 
 A devnet app is owned on-chain by the Bounded platform admin, which is why the
-platform can sign its policy updates for you. A **mainnet** app is not: it is
-owned on-chain by the wallet that created it, that owner is written once and can
-never be reassigned, and only that wallet can authorize a policy update.
+platform can sign its policy updates for you. A **mainnet** app you create is
+not: it is owned on-chain by the wallet that created it, that owner is written
+once and can never be reassigned, and only that wallet can authorize a policy
+update.
+
+(One exception, and you never create these yourself: an **oApp** root and
+workload are also mainnet apps, but the platform mints them owned by a
+Bounded-custodied key so it can co-sign their policy updates without a person
+holding that key. See the **oapps-fun** skill. Everything below is about the
+mainnet apps *you* create.)
 
 What follows from that:
 

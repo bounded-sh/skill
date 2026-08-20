@@ -68,6 +68,34 @@ The direct workload app-id host remains public, and `/l/<rootAppId>` remains the
 Choose the requested slug before Commence because its pointer becomes governance-controlled once Commence completes.
 
 **One creator app launches exactly once.**
+
+## oApps are mainnet apps
+
+Open creates the root and the workload as Solana **mainnet** apps (`realtime_mainnet`), even when the
+policy has no onchain collections at all. You do not choose this and you do not pass `--protocol`:
+the platform sets it.
+
+- **On-chain owner is a Bounded-custodied key**, not your wallet and not the platform admin. That is
+  what lets the app outlive you: the platform can co-sign its policy updates without any person
+  holding the key that owns it. An ordinary `--create --protocol realtime_mainnet` app is different -
+  that one is owned by *your* wallet, immutably (see **bounded-onchain**).
+- **Your creator app does not change.** It stays whatever protocol it was created with (normally
+  `realtime_offchain`). Do NOT re-create it as `realtime_mainnet` to "become an oApp" - Open does the
+  mainnet part for you, and a mainnet creator app cannot be deleted or transferred.
+- **Do not `bounded deploy` at an opened root or workload.** They are platform-managed and
+  custody-owned; the CLI will refuse on an owner mismatch because your local wallet is not the owner.
+  Governed changes go through the oApp's own rails.
+- **Rehearsal/preview stays poofnet** (simulated money), by design.
+- Open can refuse with `mainnet_not_entitled`. That is checked against the oApp's own fuel account
+  (`oapp:<rootAppId>`), not your personal plan, so "upgrade my account to Pro" is not the fix.
+
+**`onchain: true` collections are not Openable yet.** An oApp's mainnet app would execute them
+against real mainnet rather than the simulator, but the Open rail does not yet register those
+collections on the app's program account - so Open refuses the policy outright with
+`oapp_opening_onchain_policy_unsupported` rather than publishing an app the chain cannot serve.
+Everything else onchain still works: embedded wallets, payments, DEX/token plugin calls, and reads.
+If you need onchain state collections in an oApp, say so plainly and stop, per "calling it out"
+below - do not work around it.
 Commence claims the slug on the creator app itself, and that name becomes the oApp's permanent public address, so the platform freezes it and keeps the app alive forever.
 Re-opening BEFORE Commence is fine and expected, but once any opening from this app has commenced, a further opening is refused at the door with `oapp_creator_already_launched` (409), naming the launch that already exists.
 To launch a second oApp, start from a different app.
@@ -192,6 +220,7 @@ What the ritual still refuses:
 | text-only tree (binaries cannot ride the source lane) | yes | `source_not_text` |
 | if the source `init()`s the Bounded client, the DEPLOYED site embeds that literal id | yes — rebuild + redeploy if stale | `clone_app_id_not_rewritten` |
 | a recorded site deployment must actually be found at Open | platform-checked | `clone_site_missing_expected` |
+| no `onchain: true` collection in the deployed policy | see "oApps are mainnet apps" below | `oapp_opening_onchain_policy_unsupported` |
 
 The refusal body carries the specific `rejections`, so read them rather than
 guessing.
@@ -272,9 +301,12 @@ skip to a workaround:
 1. **Native first.** Does the runtime provide it? `ctx.ai` (LLMs, images,
    video — no keys), `ctx.services` (Bounded-managed third-party APIs; list
    them with `bounded services`), direct crypto and provider payment rails,
-   onchain (Solana collections, embedded wallets, DEX/token plugins),
+   embedded wallets and DEX/token plugins,
    data/auth/realtime/files/functions. Route to **bounded-backend**,
    **bounded-frontend**, **bounded-onchain** for the mechanics.
+   One exception for oApps: an `onchain: true` COLLECTION is not Openable yet
+   (`oapp_opening_onchain_policy_unsupported`) — see "oApps are mainnet apps"
+   below. Embedded wallets, payments, and plugin calls are unaffected.
 2. **x402 relay second.** No native integration, but the counterparty prices
    itself with [x402](https://www.x402.org) (HTTP 402 payment-required,
    machine-to-machine)? Bounded can pay that API per-call **on the app's
