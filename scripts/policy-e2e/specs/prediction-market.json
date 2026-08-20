@@ -2,6 +2,7 @@
   "page": "bounded-onchain/docs/examples/prediction-market-amm.md",
   "name": "prediction-market-amm",
   "appName": "pm-amm",
+  "notes": "H004 gates resolution to [expiry, expiry+claimWindow]. The market here expires in 2100, so at a single point in time only the trading phase and the resolve-before-expiry refusal are reachable; the post-expiry resolve/redeem/sweep lifecycle needs time control this harness does not have (create refuses a past expiry, and there is no wait step). That lifecycle is proven deployable by the offline verifyForDeploy gate (`bounded verify` step below, approved) and pinned by the structural contract test scripts/tests/skill-new-prediction-market.test.mjs. H005 (two sells in one atomic setMany paying twice) is likewise not reproducible here: this runner submits each set separately, and separate submissions are already safe; the getAfter fix is exercised by the offline proof and the contract test.",
   "tests": [
     {
       "kind": "verify"
@@ -107,73 +108,10 @@
       "kind": "set",
       "path": "pmResolves/m_RUN_ID",
       "data": {
-        "outcome": "YES"
-      },
-      "expect": "ok",
-      "note": "creator resolves; hook stages winningSupply = 10000000 - 9090910 = 909090"
-    },
-    {
-      "kind": "set",
-      "path": "pmPositions/m_RUN_ID/holders/p1/buys/b2",
-      "data": {
-        "amountIn": 1000000
+        "outcome": "NO"
       },
       "expect": "denied",
-      "note": "trading closed once the resolution document exists"
-    },
-    {
-      "kind": "set",
-      "path": "pmPositions/m_RUN_ID/holders/p1/redeems/claim",
-      "data": {
-        "amount": 909090
-      },
-      "expect": "ok",
-      "note": "YES redemption at 1 lamport per share; the id is pinned to the literal claim"
-    },
-    {
-      "kind": "get",
-      "path": "pmPositions/m_RUN_ID/holders/p1",
-      "expectField": {
-        "field": "yesBalance",
-        "equals": 0
-      },
-      "note": "position zeroed by redeem hook"
-    },
-    {
-      "kind": "set",
-      "path": "pmPositions/m_RUN_ID/holders/p1/redeems/claim",
-      "data": {
-        "amount": 909090
-      },
-      "expect": "denied",
-      "note": "second redeem hits the same pinned path, becomes an update, denied by update:false"
-    },
-    {
-      "kind": "set",
-      "path": "pmPositions/m_RUN_ID/holders/p1/redeems/other",
-      "data": {
-        "amount": 0
-      },
-      "expect": "denied",
-      "note": "non-pinned redeem id is denied by the $claimId == claim rule"
-    },
-    {
-      "kind": "set",
-      "path": "pmWithdrawals/m_RUN_ID",
-      "data": {
-        "amount": 10090910
-      },
-      "expect": "ok",
-      "note": "winningSupply exhausted (0); creator sweeps exact remaining reserve 11000000 - 909090"
-    },
-    {
-      "kind": "get",
-      "path": "pmMarkets/m_RUN_ID",
-      "expectField": {
-        "field": "collateralReserve",
-        "equals": 0
-      },
-      "note": "reserve zeroed after sweep"
+      "note": "H004: the market expires in 2100, so resolution before expiry is refused (@time.now >= expiryTs). This is the attack - resolving NO against the only trader before the term ends, then sweeping the zero-winner branch - and it is now denied. The post-expiry resolve/redeem/sweep lifecycle is covered by the offline proof and the contract test (see notes)."
     }
   ]
 }
