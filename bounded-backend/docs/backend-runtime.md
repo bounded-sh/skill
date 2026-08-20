@@ -91,6 +91,24 @@ Provider keys belong in Bounded secrets, not frontend code.
 ```ts
 export default {
   async onInvoke(input, ctx) {
+    // Bounded verifies the caller's app token before onInvoke runs, but it does
+    // NOT evaluate a policy `auth` rule for an agent invocation: every signed-in
+    // user of the app reaches this handler. Authorization is YOURS - and this
+    // handler holds the app's secrets, services, queues and schedules, so
+    // "signed in" must not mean "may drive them". Fail closed on no user, then
+    // authorize WHO may run this agent (check ownership/role keyed on
+    // `ctx.identity.user`) before touching a secret or a tool. `ctx.identity` is
+    // ALWAYS a populated object, so a bare `!ctx.identity` check fails open - gate
+    // on `ctx.identity.user`, which Bounded sets from the verified token and a
+    // caller cannot supply.
+    if (!ctx.identity.user) {
+      return { ok: false, error: "unauthorized" };
+    }
+    // If this agent is DELIBERATELY public to any signed-in user (a chatbot, a
+    // support bot), say so explicitly here and skip the role check - but that is a
+    // decision you make, not a default you inherit.
+    // e.g. if (!(await isTeamMember(ctx, ctx.identity.user))) return { ok: false, error: "forbidden" };
+
     await ctx.store.put("last-input", JSON.stringify(input));
 
     const apiKey = await ctx.secrets.get("EXAMPLE_API_KEY");
