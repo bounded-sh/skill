@@ -561,7 +561,15 @@ etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,
 headless flows, `startTurnkeyEmailLogin(email)` returns
 `{ verify(code): Promise<User> }`; `signSolanaMessageViaTurnkey` and
 `getOrCreateTurnkeyWallet` (the Turnkey signer bridge) handle passkey
-(Face ID / Touch ID) signing and lazy wallet provisioning after login.
+(Face ID / Touch ID) signing and wallet provisioning after login.
+The default email login provisions the wallet eagerly at login (so
+`@user.address` exists immediately), and the FIRST signature then runs a
+one-time setup in the signer window: the user creates their passkey and
+confirms a code emailed to them, which attaches the passkey to their existing
+wallet (the address never changes). Every later signature is a passkey tap
+only. `openTurnkeyKeyExport()` opens the hosted private-key export page for the
+session's wallet and works for both login modes (it carries its own
+authorization, so it does not depend on an issuer cookie).
 
 **Track the user with `onAuthStateChanged`, not a one-time `getCurrentUser()`.**
 `getCurrentUser()` is a snapshot: it does not update when a session expires, so a
