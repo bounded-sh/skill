@@ -68,6 +68,9 @@ The direct workload app-id host remains public, and `/l/<rootAppId>` remains the
 Choose the requested slug before Commence because its pointer becomes governance-controlled once Commence completes.
 
 **One creator app launches exactly once.**
+Commence claims the slug on the creator app itself, and that name becomes the oApp's permanent public address, so the platform freezes it and keeps the app alive forever.
+Re-opening BEFORE Commence is fine and expected, but once any opening from this app has commenced, a further opening is refused at the door with `oapp_creator_already_launched` (409), naming the launch that already exists.
+To launch a second oApp, start from a different app.
 
 ## oApps are mainnet apps
 
@@ -96,9 +99,6 @@ collections on the app's program account - so Open refuses the policy outright w
 Everything else onchain still works: embedded wallets, payments, DEX/token plugin calls, and reads.
 If you need onchain state collections in an oApp, say so plainly and stop, per "calling it out"
 below - do not work around it.
-Commence claims the slug on the creator app itself, and that name becomes the oApp's permanent public address, so the platform freezes it and keeps the app alive forever.
-Re-opening BEFORE Commence is fine and expected, but once any opening from this app has commenced, a further opening is refused at the door with `oapp_creator_already_launched` (409), naming the launch that already exists.
-To launch a second oApp, start from a different app.
 
 ### Community code contributions while exact patches are closed
 
