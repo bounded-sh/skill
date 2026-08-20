@@ -51,21 +51,21 @@ Let any signed-in user launch a Pump.fun bonding-curve token, let any signed-in 
     "onchain": true,
     "fields": {
       "solLamports": "UInt!",
-      "slippageBps": "UInt!"
+      "minTokensOut": "UInt!"
     },
     "rules": {
       "read": "true",
-      "create": "@user.address != null && @newData.solLamports > 0 && @newData.slippageBps > 0 && @newData.slippageBps <= 1000",
+      "create": "@user.address != null && @newData.solLamports > 0 && @newData.minTokensOut > 0",
       "update": "false",
       "delete": "false"
     },
     "hooks": {
       "onchain": {
-        "create": "@PumpFunPlugin.buyExactSolIn(@user.address, @TokenPlugin.getTokenMintAddress($tokenId), @newData.solLamports, @newData.slippageBps)"
+        "create": "@PumpFunPlugin.buyExactSolIn(@user.address, @TokenPlugin.getTokenMintAddress($tokenId), @newData.solLamports, @newData.minTokensOut)"
       }
     },
     "operationDetails": {
-      "create": "solLamports is in lamports (1 SOL = 1000000000); slippageBps is basis points, capped at 1000 (10%). The buyer signs: the wallet in source position is @user.address, so self-custody. There is no sell primitive on the curve; selling waits for graduation to PumpSwap."
+      "create": "solLamports is in lamports (1 SOL = 1000000000). minTokensOut is an absolute minimum token amount (in the mint's smallest units): the buy reverts on chain if it would yield less, which is the buyer's slippage protection. The client computes it before writing by calling @PumpFunPlugin.getPumpBuyQuote(mint, solLamports) and subtracting its own tolerance, e.g. quote * 9500 // 10000 for 5%. The program never re-derives this floor, so a curve moved between quote and buy cannot shrink the fill below it. The buyer signs: the wallet in source position is @user.address, so self-custody. There is no sell primitive on the curve; selling waits for graduation to PumpSwap."
     }
   },
   "tokens/$tokenId/sweeps/$sweepId": {
@@ -95,7 +95,7 @@ Let any signed-in user launch a Pump.fun bonding-curve token, let any signed-in 
 ## Operations
 
 1. Launch: write `tokens/{tokenId}` with `name`, `symbol`, `uri`. The create hook launches the token with the caller's wallet as creator-fee recipient. All three fields are readonly-after-create and `update` is `"false"`, so the record is immutable - no patch payloads exist for this collection.
-2. Buy: write `tokens/{tokenId}/buys/{buyId}` with `solLamports` and `slippageBps`. The buyer's wallet signs and spends its own SOL; tokens land in the buyer's ATA.
+2. Buy: write `tokens/{tokenId}/buys/{buyId}` with `solLamports` and `minTokensOut`. The client sizes `minTokensOut` by quoting `@PumpFunPlugin.getPumpBuyQuote(mint, solLamports)` and slashing it by its slippage tolerance. The buyer's wallet signs and spends its own SOL; tokens land in the buyer's ATA.
 3. Sweep fees: write `tokens/{tokenId}/sweeps/{sweepId}` with the creator address. Permissionless crank; fees move from the Pump.fun vault to the creator wallet.
 
 Creator-fee custody options (pick one before launch - the `creator` argument of `createToken` is the only place the recipient is chosen):
@@ -109,7 +109,7 @@ Creator-fee custody options (pick one before launch - the `creator` argument of 
 - Rules stay pure boolean gates and all value movement lives in `hooks.onchain.create`, so `bounded verify` proves who can write, and a hook that fails reverts the whole write atomically - no launch record without a launched token.
 - The launch hook hardwires `@user.address` as creator: no field a caller could point at someone else's wallet, so fee-recipient spoofing is structurally impossible.
 - `update` and `delete` are `"false"` on every collection, so nobody can rewrite `uri` or `name` after launch to re-skin a token, and no `!`-field preservation clauses are needed.
-- Buys pass the buyer's own wallet as `source`, so the buyer signs and only the buyer's funds move; `solLamports > 0` and the 1000-bps slippage cap stop zero-value spam and unbounded slippage.
+- Buys pass the buyer's own wallet as `source`, so the buyer signs and only the buyer's funds move; `solLamports > 0` stops zero-value spam, and the required `minTokensOut > 0` guarantees every buy carries an honest, caller-priced floor the interpreter enforces verbatim rather than a floor it recomputes against a curve an attacker may have moved.
 - The sweep is safe to expose permissionlessly because Pump.fun validates the destination against the bonding curve on chain; a wrong `creator` fails instead of redirecting fees.
 - `curveProgress` and `creatorFee` are pure reads that return 0 when accounts are unavailable, so the page treats 0 as "nothing readable", never as proof of an empty vault.
 
