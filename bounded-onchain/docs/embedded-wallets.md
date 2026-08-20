@@ -27,7 +27,19 @@ Use the shared widget with no auth-mode override:
 ```ts
 import { init, openBoundedWidget } from "@bounded-sh/client";
 
-await init({ appId: "<APP_ID>" });
+await init({
+  appId: "<APP_ID>",
+  // An ONCHAIN app must also declare the network it writes on and the endpoint
+  // the SDK submits through: the platform builds the transaction, the user's
+  // wallet signs it, and the SDK broadcasts it from the browser. Without a
+  // TOP-LEVEL rpcUrl the first onchain set() fails AFTER the user has signed,
+  // with "Pre-built Solana transaction submission requires init({ rpcUrl })".
+  // A nested walletLogin.rpcUrl configures wallet login only - it is not a
+  // substitute. See onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint
+  chain: "solana_devnet",
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
+  walletLogin: true,                             // offering the wallet lane below
+});
 
 const user = await openBoundedWidget({
   methods: ["email", "google"],
@@ -45,6 +57,12 @@ wallet should be able to sign in with that wallet.
 **That button needs a policy opt-in of its own**: the issuer refuses to mint a
 session for an external wallet unless the app deployed `"auth": { "wallets": true }`.
 The client knob alone fails with "wallet login is not enabled for this app".
+When you offer the wallet lane, also pass `walletLogin: true` to `init()` so the
+app declares the lane it offers; `init()` then restores a wallet session across
+reloads through the recorded login method.
+On `@bounded-sh/client` 0.0.72 and earlier, wallet sessions were wiped on every
+reload regardless - see the workaround in
+[wallet login -> "Wallet sessions survive reloads"](../../bounded-frontend/docs/auth.md#solana-wallet-login-bring-your-own).
 
 No auth block is required in `policy.json` for the DEFAULT (Turnkey, embedded) path:
 

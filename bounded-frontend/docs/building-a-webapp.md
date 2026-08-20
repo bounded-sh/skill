@@ -42,6 +42,24 @@ await init({
 });
 ```
 
+**Onchain apps (`realtime_devnet` / `realtime_mainnet`) must also pass `chain`
+and a TOP-LEVEL `rpcUrl`** - the SDK submits pre-built onchain transactions
+itself, and without a submit endpoint the first onchain `set()` fails with
+`Pre-built Solana transaction submission requires init({ rpcUrl })`:
+
+```ts
+await init({
+  appId: "<appId>",
+  chain: "solana_devnet",                        // the app's onchain network
+  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
+  walletLogin: true,                             // if the app offers wallet login
+});
+```
+
+A nested `walletLogin.rpcUrl` configures wallet login only and does not enable
+submission. Full detail:
+[Browser/SDK submission needs an explicit RPC endpoint](../../bounded-onchain/docs/onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint).
+
 Mount your UI first and `init()` asynchronously — don't block first paint on it.
 
 ## Authenticate users
