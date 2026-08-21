@@ -390,24 +390,35 @@ admits only `live` and `governance`, so a retired oApp's page reads
 correctly says `RETIRED`. The record is fine. The cause the user is shown is false.
 Do not go looking for a data problem on a retired oApp because of this message.
 
-**3. The public opening read can time out at ~12 seconds, and it is CONCURRENCY, not a random failure rate.**
+**3. The public opening read can time out at ~12 seconds, and it has TWO contributors - one of which a lone caller can hit.**
 `/public/oapps/<rootAppId>/opening` can answer `503` at ~12.08 s - exactly the route's
 own read budget - while every success lands in under 2 s. Two public surfaces inherit
 it: the venue page `/l/<rootAppId>`, and the source viewer at
 `https://<workloadAppId>.bounded.page/__bounded/source`, which is the one source URL
 an oApp advertises. So a source link that 503s once and then works is this, not a
 broken publication.
-**This entry said "roughly one read in three or four" and that number is wrong as a
-description of what a single caller sees.** Measured both ways: 102 sequential reads
-of the same endpoints in the same hours refused ZERO times (p50 782-840 ms), and 12
-sequential reads at a 2 s gap answered `200` on 12 of 12. It reproduces immediately
-under concurrency instead: a 16-wide burst gave p50 2.61 s, p90 7.98 s and 1 of 32 at
-12,087 ms. The mechanism is that one public read serialises 8 to 14 subrequests
-through a single venue Durable Object, which is single-threaded, so latency is LINEAR
-in concurrent readers - about 18-20 ms of queue per reader (sequential p50 68-108 ms,
-8-wide 206-212 ms, 24-wide 413-428 ms, 48-wide 846-927 ms). The observed failure rate
-is therefore a property of how many readers are hitting the venue at that moment, not
-of the app.
+**This entry has now been corrected TWICE, and the honest state is that both
+contributors are real.** It first said "roughly one read in three or four", then said
+that number was wrong and blamed concurrency alone. Neither telling was complete.
+
+- **Concurrency is real.** 102 sequential reads of the same endpoints in the same
+  hours refused ZERO times (p50 782-840 ms), and 12 sequential reads at a 2 s gap
+  answered `200` on 12 of 12, while a 16-wide burst gave p50 2.61 s, p90 7.98 s and 1
+  of 32 at 12,087 ms. One public read serialises 8 to 14 subrequests through a single
+  venue Durable Object, which is single-threaded, so latency is LINEAR in concurrent
+  readers - about 18-20 ms of queue per reader (sequential p50 68-108 ms, 8-wide
+  206-212 ms, 24-wide 413-428 ms, 48-wide 846-927 ms).
+- **And a lone caller can still be refused, which is what the concurrency telling got
+  wrong.** A separate serial measurement, n=24 per condition, found 6 of 24 reads
+  taking 2.72-7.06 s against a 0.13-0.19 s baseline with no other load, and an earlier
+  serial pass recorded 7 of 24 refusing at ~12.08 s. Inside the read budget there is a
+  bounded-retry step on the platform's own authenticated hop whose backoff ladder could
+  exceed the budget it runs inside, so the refusal does not require anyone else to be
+  reading. Expect an occasional `503` even when you are the only caller.
+
+Both tellings agree on the practical point, which is why the advice below never
+changed. What changes is your expectation: do NOT conclude from one `503` that the
+venue is under load, and do not conclude from a quiet venue that you will not see one.
 **What to do:** retry ONCE, after a pause. If the same URL answers `200`, you have hit
 this and there is nothing to fix in the app.
 **Do not retry in a tight loop.** A no-gap loop across five different roots drew `429`
