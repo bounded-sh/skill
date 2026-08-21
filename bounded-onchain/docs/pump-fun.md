@@ -27,9 +27,10 @@ custody model that every call here inherits, read
   executed, never how much moved. Read balances or the mirror afterwards for
   amounts.
 - **Amounts are integers in base units.** SOL amounts are lamports; token amounts
-  are the mint's smallest units; slippage is basis points (`500` = 5%).
-- **Mutating calls require an authenticated caller.** The two read functions are
-  pure and do not.
+  are the mint's smallest units. The buy's `minTokensOut` is an absolute token
+  floor in those same units, not a basis-points slippage.
+- **Mutating calls require an authenticated caller.** The three read functions
+  (`getBondingCurveProgress`, `getCreatorFee`, `getPumpBuyQuote`) are pure and do not.
 
 ## Launching a token
 
@@ -72,7 +73,8 @@ Accounts v3` - both rows are in the
 ## Buying on the curve
 
 ```
-@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps) -> Bool
+@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, minTokensOut) -> Bool
+@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) -> Int            (read)
 ```
 
 | Arg | Type | Meaning |
@@ -80,10 +82,14 @@ Accounts v3` - both rows are in the
 | `source` | `Address` | Who spends the SOL and receives the tokens. |
 | `mint` | `Address` | The token mint. |
 | `solAmount` | `Int` | SOL to spend, **in lamports** (`1 SOL` = `1000000000`). |
-| `slippageBps` | `Int` | Slippage tolerance in **basis points**: `500` = 5%, `100` = 1%. |
+| `minTokensOut` | `Int` | Absolute minimum tokens the buy must yield, in the mint's smallest units. The buy reverts if it would return less. |
 
-`slippageBps` is required, not optional. There is no matching sell primitive and no
-"exact tokens out" variant.
+`minTokensOut` is required and must be positive.
+It is an absolute floor, not a basis-points slippage.
+Quote it first with `@PumpFunPlugin.getPumpBuyQuote(mint, solAmount)` - which returns the tokens the buy will ACTUALLY yield against the current curve, AFTER the pump fee (the real fill `buyExactSolIn` produces, not the raw pre-fee curve amount) - then subtract your own tolerance, e.g. `quote * 9500 // 10000` for 5%.
+That 5% only has to cover PRICE MOVEMENT between quoting and buying; the pump fee is already baked into the quote, so you do not add it on top.
+The program checks the floor you pass verbatim and never re-derives one, so a curve an attacker moved between quote and buy cannot shrink your fill below the amount you priced.
+There is no matching sell primitive and no "exact tokens out" variant.
 
 ## Creator fees
 

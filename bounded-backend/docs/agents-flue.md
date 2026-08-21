@@ -125,6 +125,29 @@ bounded runtime invoke myagent --app-id <id> --data '{"message":"ping"}'
 Invoking over raw HTTP requires an app-scoped auth token (the same identity
 `bounded data` uses); the CLI is the supported path for calling your own agent.
 
+### Authorize the caller — this is yours, not the runtime's
+
+The runtime verifies the caller's token is valid and belongs to your app before
+your agent runs. It does **not** decide WHO may invoke: an agent invocation runs
+no policy `auth` rule, so every signed-in user of the app reaches the same agent
+- and this agent holds the app's sealed `env.secrets`, `env.services`,
+`env.queue` and `env.schedule`. "Signed in" is not "allowed to drive them".
+
+Gate the caller inside your handler on `env.identity.user` (host-verified; a
+caller cannot supply it), fail closed on no user, then authorize the action by
+ownership or role before touching a secret or a tool:
+
+```ts
+if (!env.identity.user) throw new Error("unauthorized");
+// e.g. if (!(await isTeamMember(env, env.identity.user))) throw new Error("forbidden");
+```
+
+A public agent (a chatbot open to any signed-in user) is a deliberate choice you
+state, not a default you inherit. Note the split: policy-mediated `env.bounded`
+writes are still re-checked by your rules, but `env.secrets` / `env.services` /
+`env.queue` are **not** gated by policy - an unguarded agent lets any signed-in
+user reach every capability it declared.
+
 ## Model calls and the spend cap
 
 Model ids are `provider/model-id` (e.g. `anthropic/claude-haiku-4-5-20251001`,

@@ -66,7 +66,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@DeFiPlugin.lockCpAmmPosition` | `lockCpAmmPosition(string, string, string, number, string, string, number, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.removeCpAmmLiquidity` | `removeCpAmmLiquidity(string, string, string, string?, string?, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.swap` | `swap(string, string, string, string, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
-| `@DeFiPlugin.swapInMeteoraVirtualPool` | `swapInMeteoraVirtualPool(string, string, string, string, string?, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
+| `@DeFiPlugin.swapInMeteoraVirtualPool` | `swapInMeteoraVirtualPool(string, string, string, string, string)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.withdrawLeftover` | `withdrawLeftover(string)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.getClaimableCpAmmPositionFee` | `getClaimableCpAmmPositionFee(string, string, string, string?)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.getClaimableMeteoraPoolFees` | `getClaimableMeteoraPoolFees(string, string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
@@ -121,7 +121,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@PredictionMarketPlugin.getYesTokenOutAmm` | `getYesTokenOutAmm(amountIn, collateralReserve, yesSupply)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PredictionMarketPlugin.md) |
 | `@PredictionMarketPlugin.getYesTokensOutLsmr` | `getYesTokensOutLsmr(amountIn, yesSupply, noSupply, b)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PredictionMarketPlugin.md) |
 | `@PriceFeedPlugin.getPriceFeed` | `getPriceFeed(string, string?)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PriceFeedPlugin.md) |
-| `@PumpFunPlugin.buyExactSolIn` | `buyExactSolIn(source, mint, solAmount, slippageBps)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
+| `@PumpFunPlugin.buyExactSolIn` | `buyExactSolIn(source, mint, solAmount, minTokensOut)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.collectCreatorFee` | `collectCreatorFee(creator)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.createFeeSharingConfig` | `createFeeSharingConfig(source, mint)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.createToken` | `createToken(tokenId, name, symbol, uri, creator, config?)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
@@ -133,6 +133,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@PumpFunPlugin.updateShareholders` | `updateShareholders(source, mint, shareholders)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.getBondingCurveProgress` | `getBondingCurveProgress(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.getCreatorFee` | `getCreatorFee(mint)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PumpFunPlugin.md) |
+| `@PumpFunPlugin.getPumpBuyQuote` | `getPumpBuyQuote(string, number)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PumpFunPlugin.md) |
 | `@Solana.createAccount` | `createAccount(string, number, string)` | `hooks.onchain` | [reference](plugins/Solana.md) |
 | `@Solana.invoke` | `invoke(string, array, bytes)` | `hooks.onchain` | [reference](plugins/Solana.md) |
 | `@Solana.account` | `account(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |

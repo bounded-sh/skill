@@ -129,7 +129,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `DeFiPlugin.createMeteoraVirtualPool`
 
 ```
-@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?) - the pool base mint is ALWAYS derived with the LEGACY token seed (appId + tokenId + name + symbol); there is no seedMode option. Derive the mint elsewhere with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form (that derives a different, nonexistent address)
+@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?)
 ```
 
 - Callable from: `hooks.onchain`
@@ -244,7 +244,7 @@ Fields of `config`:
 ### `DeFiPlugin.swapInMeteoraVirtualPool`
 
 ```
-@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form. minimumAmountOut is a REQUIRED absolute floor (quote off @DeFiPlugin.getMeteoraSwapQuote and subtract your slippage); the program checks it verbatim, so there is no slippageBps and no derived-floor fallback.
 ```
 
 - Callable from: `hooks.onchain`
@@ -253,11 +253,10 @@ Fields of `config`:
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
 | `source` | string | yes | **yes** | The source account for the swap - can be @user.address, @contract.address for escrow, or a string ID for PDA |
-| `poolTokenMint` | string | yes | - | The mint address of the pool's base token (used to find the pool). For a pool created by createMeteoraVirtualPool this is the LEGACY-seed mint: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form |
+| `poolTokenMint` | string | yes | - | The mint address of the pool's base token (used to find the pool) |
 | `tokenMint` | string | yes | - | The mint address of the token to swap in (use @TokenPlugin.SOL for native SOL) |
 | `amount` | string | yes | - | The amount of token to swap in (in smallest units) |
-| `minimumAmountOut` | string | no | - | Optional explicit minimum output amount in smallest units. When omitted, the builder derives the floor from a fresh on-chain quote using slippageBps, which defaults to 500 (5%). |
-| `slippageBps` | number | no | - | Optional slippage tolerance in basis points (1 bps = 0.01%). Used when minimumAmountOut is omitted: the builder pulls a fresh on-chain quote and derives the protected minimum-output floor. Defaults to 500 (5%). |
+| `minimumAmountOut` | string | yes | - | Required absolute minimum output amount in smallest units, below which the swap reverts. Quote it with @DeFiPlugin.getMeteoraSwapQuote and subtract your own slippage. H006: this floor is taken by argument only - the program never derives one from a fresh on-chain quote (which a client could have moved between quote and swap), so it must be positive for any non-zero amount. |
 
 ### `DeFiPlugin.withdrawLeftover`
 
@@ -340,7 +339,7 @@ Fields of `config`:
 ### `DeFiPlugin.getDammV2PoolAddress`
 
 ```
-@DeFiPlugin.getDammV2PoolAddress(tokenMintAddress) - for Meteora-launched tokens the mint uses the LEGACY seed: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form
+@DeFiPlugin.getDammV2PoolAddress(tokenMintAddress)
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
@@ -349,7 +348,7 @@ Fields of `config`:
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `tokenMintAddress` | string | yes | - | The mint address of the token (same as used in createMeteoraVirtualPool - the LEGACY-seed mint, derived with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol)) |
+| `tokenMintAddress` | string | yes | - | The mint address of the token (same as used in createMeteoraVirtualPool) |
 
 ### `DeFiPlugin.getMeteoraSwapQuote`
 
@@ -363,7 +362,7 @@ Fields of `config`:
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `tokenMintAddress` | string | yes | - | The mint address of the pool's base token (used to find the pool). For a pool created by createMeteoraVirtualPool this is the LEGACY-seed mint: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form |
+| `tokenMintAddress` | string | yes | - | The mint address of the pool's base token (used to find the pool) |
 | `tokenToSwapInMintAddress` | string | yes | - | The mint address of the token to swap in (use 'solana' or @TokenPlugin.SOL for native SOL) |
 | `tokenAmount` | string | yes | - | The amount of token to swap in (in smallest units) |
 

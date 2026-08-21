@@ -22,7 +22,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `PumpFunPlugin.buyExactSolIn`
 
 ```
-@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps) - Buy tokens with exact SOL amount
+@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, minTokensOut) - Buy tokens with exact SOL amount, reverting unless at least minTokensOut tokens are received
 ```
 
 - Callable from: `hooks.onchain`
@@ -33,7 +33,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
 | `mint` | string | yes | - | Token mint address |
 | `solAmount` | string | yes | - | Amount of SOL to spend (in lamports) |
-| `slippageBps` | string | yes | - | Slippage tolerance in basis points (e.g., 500 = 5%) |
+| `minTokensOut` | string | yes | - | Absolute minimum tokens the buy must yield or it reverts. Quote it with @PumpFunPlugin.getPumpBuyQuote(mint, solAmount) and subtract your own slippage (e.g. quote * 9500 / 10000 for 5%). Must be positive; the program never re-derives this floor for you, so a stale or manipulated curve cannot shrink your fill below it. |
 
 ### `PumpFunPlugin.collectCreatorFee`
 
@@ -215,3 +215,18 @@ Fields of `config`:
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
 | `mint` | string | yes | - | Token mint address |
+
+### `PumpFunPlugin.getPumpBuyQuote`
+
+```
+@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns the tokens a solAmount (lamports) buy would ACTUALLY yield against the live bonding curve, AFTER the pump buy fee (so it matches what buyExactSolIn delivers, not the raw pre-fee curve amount). Derive minTokensOut as quote * (1 - slippageBps / 10000), where slippage only needs to cover PRICE MOVEMENT between quote and buy, not the fee.
+```
+
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
+- Returns: `number`
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mint` | string | yes | - | Token mint address |
+| `solAmount` | number | yes | - | SOL amount in lamports to quote a buy for |

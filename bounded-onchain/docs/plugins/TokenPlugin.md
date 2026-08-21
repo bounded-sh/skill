@@ -203,7 +203,7 @@ Fields of `extensions`:
 ### `TokenPlugin.getTokenMintAddress`
 
 ```
-@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode. The argument form MUST match the seed mode of the function that created the mint: the 1-arg form pairs ONLY with Pump.fun creates that passed {seedMode: "idOnly"}; classic TokenPlugin creates (createToken/createToken2022) and @DeFiPlugin.createMeteoraVirtualPool always use the legacy seed and require the 3-arg form. A mismatched form derives a different, nonexistent address and the write later fails with onchain account not found
+@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries

@@ -231,7 +231,7 @@ and the JSON is fetched by third parties forever after.
 
 | Function | Signature | Does |
 |---|---|---|
-| `swapInMeteoraVirtualPool` | `(source, poolTokenMint, tokenMint, amount, minimumAmountOut?) -> Bool` | Buy/sell against the virtual pool. The fifth argument is the slippage floor. |
+| `swapInMeteoraVirtualPool` | `(source, poolTokenMint, tokenMint, amount, minimumAmountOut) -> Bool` | Buy/sell against the virtual pool. The fifth argument is the required minimum-output floor. |
 | `getClaimableMeteoraPoolFees` | `(source, poolAddress) -> Int` (pure) | Creator-side claimable, as ONE number summing two mints - read the caveat below. |
 | `claimMeteoraPoolFees` | `(source, poolAddress) -> Bool` | Claim accrued bonding-curve fees to `source`. |
 
@@ -239,17 +239,17 @@ and the JSON is fetched by third parties forever after.
 sentinel resolved by this built-in plugin to the server-signed app escrow PDA for an app-operated launch, or a user wallet for
 self-custody. See [onchain-trading.md → `source`](onchain-trading.md).
 
-### Pass the swap's slippage floor
+### Pass the swap's required minimum-output floor
 
 ```
-@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) -> Bool
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut) -> Bool
 ```
 
-`minimumAmountOut` is the minimum output in the output token's smallest units, and the swap fails instead of filling below it.
-Omitting it does **not** leave the trade unprotected: the builder derives the floor from a fresh on-chain quote using `slippageBps`, which **defaults to 500 (5%)**.
-On a bonding curve, where the price moves with every fill, still pass an explicit floor whenever you can quote one.
+`minimumAmountOut` is the minimum output in the output token's smallest units, it is required, and the swap reverts instead of filling below it.
+There is no optional slippage argument and no derived-floor fallback: the program checks the floor you pass verbatim and never re-derives one from a fresh quote a manipulated pool could have moved between quote and swap, and it refuses a zero floor on a value-bearing swap.
+On a bonding curve, where the price moves with every fill, quote the floor with `@DeFiPlugin.getMeteoraSwapQuote` and subtract your own slippage before you pass it.
 There is no deadline parameter (the underlying DBC `swap2` has none), and the call returns `Bool`, not the amount received.
-Full guidance, including how to size the floor when the quote getter is offchain-only: [onchain-trading.md → the slippage floor](onchain-trading.md#swapinmeteoravirtualpool-takes-a-slippage-floor---use-it).
+Full guidance, including how to size the floor when the quote getter is offchain-only: [onchain-trading.md → the minimum-output floor](onchain-trading.md#swapinmeteoravirtualpool-takes-a-required-minimum-output-floor).
 
 ### What the fee surface cannot tell you yet (read before building fee accounting)
 

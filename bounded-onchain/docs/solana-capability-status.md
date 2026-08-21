@@ -179,6 +179,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@PumpFunPlugin.distributeCreatorFees` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.getBondingCurveProgress` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.getCreatorFee` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
+| `@PumpFunPlugin.getPumpBuyQuote` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.pumpswapDeposit` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.pumpswapWithdraw` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.transferCreatorFeesToPump` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |

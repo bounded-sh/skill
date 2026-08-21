@@ -52,15 +52,25 @@ registers the slug for the app atomically.
 ### Moving a slug to a different app
 
 Claiming a slug another app holds returns `409 slug_taken` with a suggested
-alternative — including when the holder is your own dead app. The suggestion is
+alternative - including when the holder is your own dead app. The suggestion is
 a nudge to pick a new name, not a statement that the original is unavailable to
-you. To keep a stable public URL across a rebuild, release it from the old app
-first, then claim it on the new one:
+you. To keep a stable public URL across a rebuild, MOVE the slug in one step with
+`--from` - do NOT release it and re-claim it:
 
 ```bash
-bounded domains slug --release --app-id <old-app-id>
-bounded domains slug myapp --app-id <new-app-id>
+bounded domains slug myapp --app-id <new-app-id> --from <old-app-id>
 ```
+
+Both apps must be yours (the move authorizes the source app as well as the
+destination). The name stays reserved for you throughout the move, so nobody can
+claim it in the gap, and the transfer moves `allowedOrigins` with it.
+
+Do NOT use release-then-claim for this. Releasing frees the name into a brief
+quarantine, but a slug's origin holds the live browser sessions of everyone who
+used it (they live in `localStorage`, keyed by origin), so handing it to another
+party hands over those sessions. `--release` is for genuinely giving a name up:
+the freed label is reserved against re-claim by anyone else for a while, and only
+the account that released it can take it straight back.
 
 Check who holds it with `bounded domains list --app-id <old-app-id>`; a slug is
 listed there as `vanity slug`, distinct from any custom domains beneath it.

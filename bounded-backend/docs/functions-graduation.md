@@ -46,6 +46,13 @@ You keep Bounded auth identity, the AI/external-services bucket, versioning, and
 ([billing.md](../../bounded/docs/billing.md)). Deploy with `bounded runtime deploy`. This is the normal upgrade
 from a Bounded function.
 
+> **"Keep auth identity" is not "auth is handled."** The runtime verifies the caller's
+> token and that it belongs to your app - but an agent/backend invocation runs no policy
+> `auth` rule, so authorizing WHO may invoke a secret-bearing handler is still yours. A
+> graduated agent that omits the check lets any signed-in user drive its secrets, services
+> and queues. Gate on `ctx.identity.user` / `env.identity.user` before touching them -
+> see [agents-flue.md](agents-flue.md) and [backend-runtime.md](backend-runtime.md).
+
 ### Tier 3 — eject to your own server (the final off-ramp; only if you must)
 Reach for this only when you want full control of hosting/billing or something
 the runtime does not expose. You **leave Bounded's managed runtime guarantees** for the
