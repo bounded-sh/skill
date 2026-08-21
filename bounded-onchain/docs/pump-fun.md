@@ -86,7 +86,8 @@ Accounts v3` - both rows are in the
 
 `minTokensOut` is required and must be positive.
 It is an absolute floor, not a basis-points slippage.
-Quote it first with `@PumpFunPlugin.getPumpBuyQuote(mint, solAmount)` - which returns the tokens a buy would yield against the current bonding curve, using the same math `buyExactSolIn` checks its floor against - then subtract your own tolerance, e.g. `quote * 9500 // 10000` for 5%.
+Quote it first with `@PumpFunPlugin.getPumpBuyQuote(mint, solAmount)` - which returns the tokens the buy will ACTUALLY yield against the current curve, AFTER the pump fee (the real fill `buyExactSolIn` produces, not the raw pre-fee curve amount) - then subtract your own tolerance, e.g. `quote * 9500 // 10000` for 5%.
+That 5% only has to cover PRICE MOVEMENT between quoting and buying; the pump fee is already baked into the quote, so you do not add it on top.
 The program checks the floor you pass verbatim and never re-derives one, so a curve an attacker moved between quote and buy cannot shrink your fill below the amount you priced.
 There is no matching sell primitive and no "exact tokens out" variant.
 

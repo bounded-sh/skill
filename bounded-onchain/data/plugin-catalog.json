@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "fce838421a07476c3372b4444b32bd96ae91ca58",
+  "monorepoCommit": "814e26f411a6e1337110b1d713f72ab96d3cda29",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -7151,7 +7151,7 @@
      "callName": "@PumpFunPlugin.getPumpBuyQuote",
      "category": "readOnly",
      "signature": "getPumpBuyQuote(string, number)",
-     "usage": "@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns tokens-out for solAmount (lamports) off the live bonding curve, using the same math buyExactSolIn checks its floor against. Derive the required minTokensOut as quote * (1 - slippageBps / 10000) before calling buyExactSolIn.",
+     "usage": "@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns the tokens a solAmount (lamports) buy would ACTUALLY yield against the live bonding curve, AFTER the pump buy fee (so it matches what buyExactSolIn delivers, not the raw pre-fee curve amount). Derive minTokensOut as quote * (1 - slippageBps / 10000), where slippage only needs to cover PRICE MOVEMENT between quote and buy, not the fee.",
      "returnType": "number",
      "isOnlyOffchain": false,
      "validArgCounts": null,

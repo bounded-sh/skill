@@ -219,7 +219,7 @@ Fields of `config`:
 ### `PumpFunPlugin.getPumpBuyQuote`
 
 ```
-@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns tokens-out for solAmount (lamports) off the live bonding curve, using the same math buyExactSolIn checks its floor against. Derive the required minTokensOut as quote * (1 - slippageBps / 10000) before calling buyExactSolIn.
+@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns the tokens a solAmount (lamports) buy would ACTUALLY yield against the live bonding curve, AFTER the pump buy fee (so it matches what buyExactSolIn delivers, not the raw pre-fee curve amount). Derive minTokensOut as quote * (1 - slippageBps / 10000), where slippage only needs to cover PRICE MOVEMENT between quote and buy, not the fee.
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries

@@ -65,7 +65,7 @@ Let any signed-in user launch a Pump.fun bonding-curve token, let any signed-in 
       }
     },
     "operationDetails": {
-      "create": "solLamports is in lamports (1 SOL = 1000000000). minTokensOut is an absolute minimum token amount (in the mint's smallest units): the buy reverts on chain if it would yield less, which is the buyer's slippage protection. The client computes it before writing by calling @PumpFunPlugin.getPumpBuyQuote(mint, solLamports) and subtracting its own tolerance, e.g. quote * 9500 // 10000 for 5%. The program never re-derives this floor, so a curve moved between quote and buy cannot shrink the fill below it. The buyer signs: the wallet in source position is @user.address, so self-custody. There is no sell primitive on the curve; selling waits for graduation to PumpSwap."
+      "create": "solLamports is in lamports (1 SOL = 1000000000). minTokensOut is an absolute minimum token amount (in the mint's smallest units): the buy reverts on chain if it would yield less, which is the buyer's slippage protection. The client computes it before writing by calling @PumpFunPlugin.getPumpBuyQuote(mint, solLamports) - which returns the ACTUAL post-fee fill, not the raw pre-fee curve amount - and subtracting its own tolerance, e.g. quote * 9500 // 10000 for 5%, where that 5% only covers price movement (the pump fee is already in the quote). The program never re-derives this floor, so a curve moved between quote and buy cannot shrink the fill below it. The buyer signs: the wallet in source position is @user.address, so self-custody. There is no sell primitive on the curve; selling waits for graduation to PumpSwap."
     }
   },
   "tokens/$tokenId/sweeps/$sweepId": {
