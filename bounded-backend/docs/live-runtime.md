@@ -213,6 +213,74 @@ provable). `checkpointed` = the authoritative state becomes provable on every
 checkpoint. The per-client `view/$userId` is **always ephemeral** because it is a
 projection — the source of truth is the room, not the view.
 
+## Keep room state small — it is reloaded whole, forever
+
+**Room state is what's needed to RESUME the simulation, not the game's record of what happened.**
+Each tick *replaces* the state; it is never a place to *append* history. The snapshot above
+persists your whole current state as **one stored value**, and it is reloaded **in full** on every
+eviction/reconstruction (which happen routinely — hibernation, redeploys, cold starts). So anything
+you leave in state is something the room reloads on every wake, for the life of the match. There is
+a **bounded per-room state budget**; a room that keeps growing its state eventually stops fitting.
+
+**The test — does it belong in state?** If a field **grows every tick and nothing ever removes
+entries**, it does **not** belong in room state. A chat log, a move list, an event trail, per-player
+history — these accumulate without bound. Write them to a **collection** instead, and keep room
+state to the bounded "resume the sim" set (`{ turn, board, players, phase }` — replaced each tick).
+
+**The misconception to kill: putting data in room state is NOT what makes it realtime.**
+**Subscriptions are.** A write to a collection is already pushed to every subscriber the instant it
+lands — so a chat kept in a `messages` collection is *equally* realtime, and also durable,
+queryable, paginated, and it survives the room ending. Room state buys you nothing here except a
+growing snapshot that you reload forever and that eventually breaks the room.
+
+**Chat, done right — a collection + a subscription, no room state:**
+
+```jsonc
+// policy.json — messages are their own collection, gated by a create rule.
+"rooms/$roomId/messages/$msgId": {
+  "tier": "durable",
+  "fields": { "from": "String", "text": "String", "at": "Number" },
+  "rules": { "read": "true", "create": "@user.id != null", "update": "false", "delete": "false" }
+}
+```
+
+```ts
+// client — post a message, and subscribe to the log. Both are realtime.
+// `myId` is your universal @user.id (the SDK session supplies it).
+await bounded.set(`rooms/${roomId}/messages/${crypto.randomUUID()}`, {
+  from: myId, text, at: Date.now(),
+});
+// Every collection is live: onData re-delivers the whole matching set on each
+// change. A live feed is event-ordered (no `sort` option), so order for display.
+const stop = await bounded.subscribe(`rooms/${roomId}/messages`, {
+  onData: (msgs) => render([...msgs].sort((a, b) => a.at - b.at)),
+  onError: (e) => console.error(e),
+});
+// (In React, `useQuery("rooms/" + roomId + "/messages")` is the same feed as a value.)
+```
+
+The live `tick` never sees the chat and room state never grows. (If the *game itself* must author a
+record server-side — an audit trail of scored moves, say — emit it from `tick` as a
+[`call`](#calling-out-from-a-tick-the-call-primitive) to a Function that writes the collection, the
+same effect → Function → collection path; still nothing accumulates in state.)
+
+**A well-shaped room:**
+
+```ts
+// STATE = resume-the-sim only. Bounded: every field is replaced each tick.
+init: () => ({ turn: 0, board: emptyBoard(), players: {}, phase: "lobby" }),
+tick: (state, intents) => applyMoves(state, intents),   // returns a NEW {turn, board, players, phase}
+// HISTORY = a collection: rooms/$roomId/messages/$id, rooms/$roomId/moves/$id, ...
+```
+
+**The failure mode — a silent one, so know where to look.** When state outgrows its budget the
+snapshot write fails, and the room **stops advancing and stops persisting** rather than surfacing a
+visible error to your game. **A live session that goes quiet with no error → check your state size
+first** (is a field growing every tick?). The tier ceilings you can discover with
+`bounded live limits`; the state budget follows the same per-plan shape, so the durable rule is the
+one above — keep state to the resume-the-sim set and everything that accumulates goes in a
+collection.
+
 ## Per-client view read-rules (structural fog-of-war)
 
 `rooms/$roomId/view/$userId` is `ephemeral` with read rule `$userId ==
