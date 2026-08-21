@@ -126,6 +126,39 @@ the platform sets it.
   so a retry there mints a NEW root instead of resuming. That flag is not set anywhere else, so an
   ordinary retry does resume.)
 
+**Three refusals on the oApp's PUBLIC page are permanent, and telling a user to retry them is wrong.**
+`/l/<rootAppId>` is the oApp's public root page and it reads
+`GET /public/oapps/<rootAppId>/opening`. Three of that route's refusals never clear on their own,
+so treat them as terminal and say so plainly rather than offering a retry:
+
+- **`oapp_fleet_launch_projection_mismatch` (409) means the published launch record no longer agrees
+  with the sealed opening, and it is NOT retryable.** Two causes are known and both are ordinary,
+  permitted creator or venue actions rather than misuse. **Amending the constitution can do it**: the
+  platform projects a fixed allowlist of constitution keys, an amended constitution can carry a key
+  the allowlist predates, and the whole launch bundle is then refused permanently. **Retiring the
+  oApp also does it**: a legitimately `retired` launch is not in the set of statuses the projection
+  admits, so a retired app is told its record "does not match its own opening" while its own status
+  rail correctly reads retired. If you meet this, do not tell the user to republish, re-amend or wait.
+  Report it as a platform projection refusal, name which of the two shapes the app is in, and stop.
+- **`oapp_opening_reconciliation_required` (503) is a pre-generation opening held for venue repair,
+  and nothing the user does moves it.** It applies to oApps opened before the platform sealed
+  openings the way it does now. The only exit is an authorized venue-side reconcile. A retry button
+  on this code is a lie; there is no visitor or creator action that reaches it.
+- **`oapp_public_manifest_root_state_refused` (429) is a spend cap on that oApp's own infra account**,
+  carried truthfully rather than laundered into a generic outage. It is about the oApp's fuel, not
+  about the reader and not about the platform being down.
+
+A useful discriminator before you diagnose any of these: a HEALTHY oApp answers `200` on the same
+route. If one root refuses and another answers `200` in the same minute, the refusal is about that
+root, not about the platform.
+
+**A creator can be told they already opened an app when they have not.** The creator-side
+"you have already opened this app N times" counter counts every opening ATTEMPT, including ones that
+never completed, and its "go to that room" link then lands on a page that answers `409
+oapp_opening_not_complete` or one of the codes above. If a user reports that shape, do not send them
+round the loop again and do not tell them to open it once more: an incomplete opening is not a room,
+and on mainnet a fresh attempt can cost real money.
+
 **`onchain: true` collections are not Openable yet.** An oApp's mainnet app would execute them
 against real mainnet rather than the simulator, but the Open rail does not yet register those
 collections on the app's program account - so Open refuses the policy outright with
