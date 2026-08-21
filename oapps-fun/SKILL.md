@@ -67,6 +67,13 @@ Commence does not create the app or make its source public because Open already 
 The direct workload app-id host remains public, and `/l/<rootAppId>` remains the canonical venue page before and after Commence.
 Choose the requested slug before Commence because its pointer becomes governance-controlled once Commence completes.
 
+**If the slug is already taken, Commence refuses and costs you nothing.**
+A slug that another launch already holds is refused with `oapp_commence_slug_conflict` (409).
+The refusal is clean: the opening is NOT consumed and no name is squatted, so its lifecycle
+(`mode`, `modeEpoch`, `transitionId`, `canCommence`) is unchanged and no terminal action is recorded.
+Pick a free slug and Commence again on the same opening.
+Do not re-Open to recover from it: re-Opening is unnecessary, and it burns an opening you still hold.
+
 **One creator app launches exactly once.**
 Commence claims the slug on the creator app itself, and that name becomes the oApp's permanent public address, so the platform freezes it and keeps the app alive forever.
 Re-opening BEFORE Commence is fine and expected, but once any opening from this app has commenced, a further opening is refused at the door with `oapp_creator_already_launched` (409), naming the launch that already exists.
