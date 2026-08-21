@@ -132,14 +132,19 @@ the platform sets it.
 so treat them as terminal and say so plainly rather than offering a retry:
 
 - **`oapp_fleet_launch_projection_mismatch` (409) means the published launch record no longer agrees
-  with the sealed opening, and it is NOT retryable.** Two causes are known and both are ordinary,
+  with the sealed opening, and it is NOT retryable.** THREE causes are known and all three are ordinary,
   permitted creator or venue actions rather than misuse. **Amending the constitution can do it**: the
   platform projects a fixed allowlist of constitution keys, an amended constitution can carry a key
   the allowlist predates, and the whole launch bundle is then refused permanently. **Retiring the
   oApp also does it**: a legitimately `retired` launch is not in the set of statuses the projection
   admits, so a retired app is told its record "does not match its own opening" while its own status
-  rail correctly reads retired. If you meet this, do not tell the user to republish, re-amend or wait.
-  Report it as a platform projection refusal, name which of the two shapes the app is in, and stop.
+  rail correctly reads retired. **And a shifted auction window does it**: the venue can move a launch's
+  CCA window through an admin-gated lever, while the sealed projection pinned the window's exact
+  INSTANTS rather than its duration, so a uniform shift reads as a mismatch. That third cause is not
+  creator-reachable - no user action produces it and no user action clears it - and it was measured on a
+  root whose window sat 85,778 s ahead of its digest-sealed projection. If you meet this code, do not
+  tell the user to republish, re-amend or wait. Report it as a platform projection refusal, name which of
+  the three shapes the app is in, and stop.
 - **`oapp_opening_reconciliation_required` (503) is a pre-generation opening held for venue repair,
   and nothing the user does moves it.** It applies to oApps opened before the platform sealed
   openings the way it does now. The only exit is an authorized venue-side reconcile. A retry button
@@ -385,18 +390,49 @@ admits only `live` and `governance`, so a retired oApp's page reads
 correctly says `RETIRED`. The record is fine. The cause the user is shown is false.
 Do not go looking for a data problem on a retired oApp because of this message.
 
-**3. The public opening read fails intermittently, at about 12 seconds.**
-`/public/oapps/<rootAppId>/opening` answers `503` on roughly one read in three or
-four, and every failure sits at ~12 s while every success lands in under 2 s. Two
-public surfaces inherit it: the venue page `/l/<rootAppId>`, and the source viewer
-at `https://<workloadAppId>.bounded.page/__bounded/source`, which is the one source
-URL an oApp advertises. So a source link that 503s once and then works is this, not
-a broken publication.
-**What to do:** retry once before reporting anything. If the same URL answers `200`
-on a retry, you have hit this and there is nothing to fix in the app. If it refuses
-repeatedly with the SAME code, that is a different condition and worth reporting.
-Never tell a user their source did not publish on the strength of one failed read;
-one sample is not a measurement.
+**3. The public opening read can time out at ~12 seconds, and it is CONCURRENCY, not a random failure rate.**
+`/public/oapps/<rootAppId>/opening` can answer `503` at ~12.08 s - exactly the route's
+own read budget - while every success lands in under 2 s. Two public surfaces inherit
+it: the venue page `/l/<rootAppId>`, and the source viewer at
+`https://<workloadAppId>.bounded.page/__bounded/source`, which is the one source URL
+an oApp advertises. So a source link that 503s once and then works is this, not a
+broken publication.
+**This entry said "roughly one read in three or four" and that number is wrong as a
+description of what a single caller sees.** Measured both ways: 102 sequential reads
+of the same endpoints in the same hours refused ZERO times (p50 782-840 ms), and 12
+sequential reads at a 2 s gap answered `200` on 12 of 12. It reproduces immediately
+under concurrency instead: a 16-wide burst gave p50 2.61 s, p90 7.98 s and 1 of 32 at
+12,087 ms. The mechanism is that one public read serialises 8 to 14 subrequests
+through a single venue Durable Object, which is single-threaded, so latency is LINEAR
+in concurrent readers - about 18-20 ms of queue per reader (sequential p50 68-108 ms,
+8-wide 206-212 ms, 24-wide 413-428 ms, 48-wide 846-927 ms). The observed failure rate
+is therefore a property of how many readers are hitting the venue at that moment, not
+of the app.
+**What to do:** retry ONCE, after a pause. If the same URL answers `200`, you have hit
+this and there is nothing to fix in the app.
+**Do not retry in a tight loop.** A no-gap loop across five different roots drew `429`
+on 4 of 5 - the endpoint is rate-limited as well - so hammering it both makes the
+queueing worse and hands you a second code that means something else entirely. A `429`
+here is not the 12 s budget and is not the oApp's fuel cap; it is your own request rate.
+If the URL refuses repeatedly with the SAME code at a sane interval, that is a
+different condition and worth reporting. Never tell a user their source did not publish
+on the strength of one failed read, and state your n when you report a rate: a rate
+measured alone and a rate measured during someone else's sweep are different quantities.
+
+**4. The advertised source viewer can say "awaiting Commence" on an oApp that HAS commenced.**
+The page at `https://<workloadAppId>.bounded.page/__bounded/source` renders files and
+change history correctly, but its lifecycle line can read *"This app and its source are
+public. It is awaiting Commence, so it does not have an oApps slug, token, or Gauntlet
+yet."* on oApps that already hold a slug. Measured deterministically on 3 of 3 advertised
+workload hosts whose roots carry real slugs. The cause is that the page derives that
+sentence from a launch pointer keyed on the HOST's app id, and the advertised host is the
+WORKLOAD app while only the ROOT carries the launch pointer - so the lookup is always
+absent there and the page always takes the pre-Commence copy.
+**What to do:** trust the slug, the venue page `/l/<rootAppId>` and the token, not this
+sentence. If a user verifying their published source after Open reports that their oApp
+"went back to awaiting Commence", it did not - this is page copy reading the wrong app id,
+and their files and history on the same page are correct. Do not re-run Commence on the
+strength of it.
 
 ## The capability ladder
 
