@@ -105,7 +105,18 @@ the platform sets it.
   and stop, per "calling it out" below. (Measured 2026-08-21 on staging: it refused every creator
   5/5 because the entitlement lookup presented one credential name while the route it called
   compared another. It was a platform bug for its entire existence and no creator action could
-  have cleared it.)
+  have cleared it. **That specific bug is fixed and the fix is deployed**, so if you meet this code
+  now it is a fresh platform fault, not the known one - report it rather than assuming it is the
+  same outage.)
+- **`oapp_custody_establishment_unavailable` (503) is also NOT about you, and it is retryable.** It
+  means the platform created your oApp's on-chain account and could not yet confirm it at the
+  chain's `finalized` commitment. The account is real and the fence stays installed, so the next
+  attempt resumes the same opening rather than duplicating it. Wait a few seconds and run Open
+  again. Do not change your policy, your plan, your fuel or your wallet in response to it: none of
+  them is the cause. If it repeats several times, report it as a platform outage and stop.
+  (Measured 2026-08-21 on staging. One caveat that applies to staging only: staging sets
+  `OAPP_OPENING_FRESH_IDENTITY_ON_POST`, so a retry there mints a NEW root instead of resuming.
+  That flag is not set anywhere else, so an ordinary retry does resume.)
 
 **`onchain: true` collections are not Openable yet.** An oApp's mainnet app would execute them
 against real mainnet rather than the simulator, but the Open rail does not yet register those
