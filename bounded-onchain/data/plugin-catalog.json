@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "814e26f411a6e1337110b1d713f72ab96d3cda29",
+  "monorepoCommit": "dcff416b5e29f0954ce72824377a5069e293291f",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -3721,7 +3721,7 @@
      "callName": "@DeFiPlugin.swapInMeteoraVirtualPool",
      "category": "transactional",
      "signature": "swapInMeteoraVirtualPool(string, string, string, string, string)",
-     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut)",
+     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form. minimumAmountOut is a REQUIRED absolute floor (quote off @DeFiPlugin.getMeteoraSwapQuote and subtract your slippage); the program checks it verbatim, so there is no slippageBps and no derived-floor fallback.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,

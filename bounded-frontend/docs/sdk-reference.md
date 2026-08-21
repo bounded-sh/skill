@@ -98,12 +98,13 @@ Text OTP (hosted: `provider: "text"` or `methods: ["text"]`) is off by default
 and works only when Bounded explicitly enables it for the app.
 Full flow in [auth.md](auth.md).
 
-`authMode?: 'bounded' | 'turnkey'` (default `'bounded'`) picks how human login
-runs. `'bounded'` is the normal Better Auth email/social/OIDC login - no extra
-setup. `'turnkey'` runs **Turnkey-native email OTP inline** in the unified
-widget (see `openBoundedWidget` below): no second Bounded OTP and no OIDC
-redirect for email, while the social and wallet lanes are unchanged. It
-requires the app's Turnkey organization to have email OTP configured
+`authMode?: 'bounded' | 'turnkey'` (default `'turnkey'`) picks how human login
+runs. `'turnkey'` - the default, used whenever you omit the option - runs
+**Turnkey-native email OTP inline** in the unified widget (see
+`openBoundedWidget` below): no second Bounded OTP and no OIDC redirect for
+email, while the social and wallet lanes are unchanged. Set `'bounded'`
+explicitly for the legacy Better Auth email/social/OIDC login. The default
+mode requires the app's Turnkey organization to have email OTP configured
 (application brand + email OTP enabled) - an issuer/platform-side prerequisite,
 not a client parameter. `walletLogin` (`true | false | { getProvider, network,
 rpcUrl, confirmWalletAction }`) turns on bring-your-own Solana wallet login (full detail:
@@ -561,7 +562,15 @@ etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,
 headless flows, `startTurnkeyEmailLogin(email)` returns
 `{ verify(code): Promise<User> }`; `signSolanaMessageViaTurnkey` and
 `getOrCreateTurnkeyWallet` (the Turnkey signer bridge) handle passkey
-(Face ID / Touch ID) signing and lazy wallet provisioning after login.
+(Face ID / Touch ID) signing and wallet provisioning after login.
+The default email login provisions the wallet eagerly at login (so
+`@user.address` exists immediately), and the FIRST signature then runs a
+one-time setup in the signer window: the user creates their passkey and
+confirms a code emailed to them, which attaches the passkey to their existing
+wallet (the address never changes). Every later signature is a passkey tap
+only. `openTurnkeyKeyExport()` opens the hosted private-key export page for the
+session's wallet and works for both login modes (it carries its own
+authorization, so it does not depend on an issuer cookie).
 
 **Track the user with `onAuthStateChanged`, not a one-time `getCurrentUser()`.**
 `getCurrentUser()` is a snapshot: it does not update when a session expires, so a

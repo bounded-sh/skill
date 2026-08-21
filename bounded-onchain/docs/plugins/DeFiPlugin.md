@@ -244,7 +244,7 @@ Fields of `config`:
 ### `DeFiPlugin.swapInMeteoraVirtualPool`
 
 ```
-@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut)
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form. minimumAmountOut is a REQUIRED absolute floor (quote off @DeFiPlugin.getMeteoraSwapQuote and subtract your slippage); the program checks it verbatim, so there is no slippageBps and no derived-floor fallback.
 ```
 
 - Callable from: `hooks.onchain`

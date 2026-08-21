@@ -91,8 +91,11 @@ The anonymous surface is the browser SDK - the CLI always needs a keypair sessio
 Fulfilment is asynchronous and an immediate read is not acceptance evidence.
 Give the attempt a unique run ID.
 Confirm the request transaction on devnet first.
-Then poll the reveal path with bounded backoff until it appears, and run the query until it returns the expected in-range value.
-Stop at an explicit deadline and record a sanitized timeout or error instead of treating an absent reveal as success.
+Then poll the request collection's `getRandomNumber`-backed query with bounded backoff until it returns the expected in-range value.
+That query reads ORAO's randomness account directly and involves no platform indexing, so an in-range result IS sufficient fulfillment evidence: proceed on it (enable the settle step, update the UI).
+The reveal document is the settlement and audit artifact that normally follows shortly after; observe it as a trailing record, never as the gate the UI blocks on.
+A queryable in-range roll whose reveal document stays absent for a long time indicates a platform indexing delay, not an unfulfilled request.
+Stop at an explicit deadline and record a sanitized timeout or error instead of treating an absent result as success.
 A toast, returned signature, simulation, or one stale mirror read is insufficient.
 
 ## 3. THE ROLL IS READABLE BEFORE IT IS USED
