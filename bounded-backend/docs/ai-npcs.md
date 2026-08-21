@@ -220,6 +220,11 @@ defense-in-depth.
   back as an `@effect` result `{ ok: false, error: "effect_budget_exhausted" }`
   instead of dispatching, so the same delay-tolerant loop should degrade
   gracefully (show "…thinking" / skip the turn) rather than assume every call ran.
+  A **transient** failure — the budget meter itself could not be reached — comes back
+  as `{ ok: false, error: "effect_meter_unavailable" }` instead: a distinct,
+  **retryable** signal (the budget was never consulted, so the call was not denied).
+  Treat `effect_budget_exhausted` as "stop for today" and `effect_meter_unavailable`
+  as "try again shortly"; both fail closed (the call did not run).
 - **Gate by `@origin`, keep `calls` tight.** The `@origin` `auth` rule is what
   stops a direct client call from reaching the NPC brain; the `session.live.calls`
   whitelist is what the tick may invoke. Whitelist only functions the game should

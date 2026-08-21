@@ -47,7 +47,7 @@ contract from the top of `pong.live.ts`:
 ```ts
 //   1. init(seed)               -> initial state           (optional)
 //   2. tick(state, intents, dt, ctx) -> next state         (required; server-authoritative)
-//      ctx = { presence: address[], tick } — who's connected (4th arg, optional to read)
+//      ctx = { presence: address[], tick, constants } — who's connected + policy constants (4th arg, optional)
 //   3. views(state)             -> { [address]: view }      (optional; per-client visibility)
 //
 // `intents` is the list of client inputs received since the last tick:
@@ -68,12 +68,23 @@ contract from the top of `pong.live.ts`:
   universal `@user.id` — present for every authenticated client, wallet or
   email/social login alike; the field is named `address` for legacy reasons, but
   its value is the `@user.id`, not a wallet address.) The optional **4th arg** `ctx
-  = { presence, tick }` gives the set of currently-connected `address`es — use
-  `ctx.presence` to evict
-  players who disconnected (see [Reconnection & presence](#reconnection--presence-drops-rejoins-leaves)).
-- `views(state): Record<address, View>` — **optional.** Maps each client's
-  universal `@user.id` to *what that client may see*. Bounded fans each entry out
-  to that user's view collection.
+  = { presence, tick, constants }` gives the set of currently-connected `address`es
+  (`ctx.presence` — use it to evict players who disconnected, see
+  [Reconnection & presence](#reconnection--presence-drops-rejoins-leaves)), the
+  current tick number (`ctx.tick`), and `ctx.constants` — the **read-only, frozen**
+  values of your policy's top-level `constants` block (scalars), so the reducer can
+  read a tuning constant without hardcoding it. `ctx.constants` refreshes on each
+  redeploy; the reducer must never mutate it.
+- `views(state): Record<address, View>` — **optional for a symmetric room, required
+  for confidentiality.** Maps each client's universal `@user.id` to *what that client
+  may see*. Bounded fans each entry out to that user's view collection. **If you OMIT
+  `views` entirely, the runtime defaults to broadcasting the ENTIRE authoritative state
+  under the wildcard `*` spectator key** — every client sees everything. That is correct
+  only for a symmetric / no-hidden-information room (Pong, a public dashboard). **Any
+  room with hidden state (fog-of-war, private hands, per-tenant rows) MUST define
+  `views` and MUST NOT emit `*`** — omitting `views` (or emitting `*`) publishes exactly
+  the state the per-client views exist to protect. See
+  [Per-client view read-rules](#per-client-view-read-rules-structural-fog-of-war).
 
 > **TypeScript is fine — types are stripped at upload.** `bounded live deploy`
 > transpiles the `.ts` source (strips annotations like `intents: any[]`, `x as Foo`,
@@ -125,8 +136,8 @@ intents (worked example at the end).
 | Field | Type / rule | Meaning |
 |---|---|---|
 | `module` | **Required.** Bare identifier `/^[a-zA-Z][a-zA-Z0-9_]*$/` | Name that resolves to the live module you uploaded. Not the source itself — the policy only declares the binding. |
-| `everyMs` | **Required.** Integer, `20`–`60000` | Native tick cadence (ms). ~33 ≈ 30Hz. |
-| `maxLifetimeSec` | **Required.** Integer, `1`–`86400` | Hard lifetime cap; the room is torn down at this age regardless of state. |
+| `everyMs` | **Required.** Integer, `20`–`60000` | Native tick cadence (ms). ~33 ≈ 30Hz. **Clamped UP to your plan's floor at runtime** (see the note below) — a below-floor value is not rejected at deploy, the room just ticks slower. |
+| `maxLifetimeSec` | **Required.** Integer, `1`–`86400` | Hard lifetime cap; the room is torn down at this age regardless of state. **Clamped DOWN to your plan's cap at runtime** — an above-cap value runs to the plan cap, not the declared value. |
 | `snapshotEveryTicks` | Optional. Integer, `1`–`600` | Snapshot room state every N ticks. Default: derived from the checkpoint cadence. |
 | `calls` | Optional. Function-name array. | Owner-declared whitelist of Functions that `tick` may request by returning `call` / `calls`. A name not in this list is rejected. |
 | `runAs` | Optional. Service wallet address. | Acting principal inherited by live-called Functions unless a Function has its own `actAs`. The target collection's rules must authorize this identity. |
@@ -138,6 +149,17 @@ intents (worked example at the end).
    loop. Declaring both is a validation error.
 2. **`session.live` is valid only on an `ephemeral` or `checkpointed` top-level
    template** — never `durable`, never onchain (same constraint as `session.tick`).
+
+> **Plan tiers clamp cadence + lifetime at RUNTIME — declared values in the `20`–`60000` /
+> `1`–`86400` policy range still deploy, but the room runs within your plan's ceilings.**
+> Free apps run at a **100 ms** tick floor (10 Hz) and a **1200 s** (20 min) room lifetime;
+> pro raises these to **20 ms** (50 Hz) and **8 h**. A declared `everyMs: 20` on a free app
+> ticks at 100 ms, and a `maxLifetimeSec: 86400` is torn down at 1200 s — silently, not as a
+> deploy error. **Check your resolved ceilings before you rely on a cadence:** run
+> `bounded live limits --app-id <id>` (or GET `/bounded/live/limits?appId=<id>`), and note
+> that `bounded live status` echoes the effective-vs-requested cadence + a `clamped` flag for
+> a running room. Concurrent live rooms per app (free 2 / pro 100) and players per room
+> (free 8 / pro 200) are capped the same way.
 
 The validated declaration (room + per-client view + invariants):
 
@@ -587,7 +609,7 @@ room:
 
 ```js
 //   tick(state, intents, dtMs, ctx)
-//   ctx = { presence: string[], tick: number }
+//   ctx = { presence: string[], tick: number, constants: Record<string, string|number|boolean> }
 //   ctx.presence = the @user.id (or wallet address) of every OPEN connection,
 //                  keyed identically to an intent's `address`.
 
@@ -608,10 +630,13 @@ them on the **next tick** (~instantly). The 4th arg is additive — existing 3-a
 reducers are unchanged.
 
 > **`ctx.presence` is "has an open socket," not "is actively playing."** For a clean
-> tab-close it's instant. A hard crash / network partition where no close frame is
-> sent clears within Bounded's connection keepalive window (seconds). If you want a
-> *tighter* idle/zombie timeout than that, layer your own `lastSeen` on top (stamp it
-> on each intent or a `ping`) — but you no longer need it just to handle disconnects.
+> tab-close it drops from `ctx.presence` on the next tick (~instant). But a hard crash /
+> network partition where **no close frame is sent** does NOT clear promptly: the socket
+> stays "connected" until the platform's own connection timeout reaps it, which can be
+> **minutes, not seconds** — the live runtime adds no application-level keepalive/ping of
+> its own. **So if your game needs prompt zombie eviction, you MUST layer your own
+> `lastSeen` heartbeat** (stamp it on each intent or a periodic `ping` and evict in `tick`
+> when it goes stale); do not rely on `ctx.presence` alone to time out a crashed client.
 
 ## Deploy + run lifecycle
 
