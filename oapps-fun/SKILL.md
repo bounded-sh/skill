@@ -109,14 +109,22 @@ the platform sets it.
   now it is a fresh platform fault, not the known one - report it rather than assuming it is the
   same outage.)
 - **`oapp_custody_establishment_unavailable` (503) is also NOT about you, and it is retryable.** It
-  means the platform created your oApp's on-chain account and could not yet confirm it at the
-  chain's `finalized` commitment. The account is real and the fence stays installed, so the next
-  attempt resumes the same opening rather than duplicating it. Wait a few seconds and run Open
-  again. Do not change your policy, your plan, your fuel or your wallet in response to it: none of
-  them is the cause. If it repeats several times, report it as a platform outage and stop.
-  (Measured 2026-08-21 on staging. One caveat that applies to staging only: staging sets
-  `OAPP_OPENING_FRESH_IDENTITY_ON_POST`, so a retry there mints a NEW root instead of resuming.
-  That flag is not set anywhere else, so an ordinary retry does resume.)
+  means the platform created your oApp's on-chain account and could not confirm it at the chain's
+  `finalized` commitment. The account is real and the fence stays installed, so the next attempt
+  resumes the same opening rather than duplicating it. Wait a few seconds and run Open again. Do
+  not change your policy, your plan, your fuel or your wallet in response to it: none of them is
+  the cause. If it repeats several times, report it as a platform outage and stop.
+  **What this code means changed on 2026-08-21, so an older note about it is wrong.** It used to
+  fire on an ordinary finality lag: the platform confirmed the account at `confirmed` and then
+  read it back at `finalized` immediately, with no wait, which on mainnet is seconds too early.
+  The platform now WAITS for finality on that readback (a bounded poll, tens of seconds), so a
+  plain lag no longer produces this code at all. Absence at `finalized` is the only state it waits
+  on - a finalized account with the WRONG owner is still refused on the first look, because
+  finality is irreversible and an owner mismatch is an integrity fault rather than a race. So if
+  you meet this code now, it is not the known lag; treat it as a fresh platform fault and report
+  it. (One caveat that applies to staging only: staging sets `OAPP_OPENING_FRESH_IDENTITY_ON_POST`,
+  so a retry there mints a NEW root instead of resuming. That flag is not set anywhere else, so an
+  ordinary retry does resume.)
 
 **`onchain: true` collections are not Openable yet.** An oApp's mainnet app would execute them
 against real mainnet rather than the simulator, but the Open rail does not yet register those
@@ -318,6 +326,44 @@ the project source tree to the app's cloud source repository and prints
 `source synced: <sha>`. One-off control: `--with-source` / `--no-source` on
 the deploy commands. An oApps-bound app must deploy with source ON, and the
 source that ships must be the tree that produced the deployed site.
+
+## Open platform defects on the public oApp surface (2026-08-21)
+
+These are live, measured, and NOT things you can fix from your app.
+They are here so you neither chase them nor promise around them.
+Each one names what a visitor actually sees, because a status code is not a symptom.
+
+**1. Amending a launched oApp's constitution can permanently break its public opening page.**
+The venue's own rule requires an amendment to carry `rootAppId`, and the platform's
+projection check does not yet accept that key, so the first amendment to a
+constitution makes `/public/oapps/<rootAppId>/opening` answer `409` for good. The
+visible damage is the canonical venue page `/l/<rootAppId>`, which degrades to an
+error panel: it still renders the status rail, the public brain head and the fuel
+state, but the app itself does not load. Measured on the one launched oApp that has
+an amended constitution, against five un-amended ones that are fine.
+**What to do:** do not amend a launched oApp's constitution while this is open, and
+if a user asks why their venue page broke right after an amendment, this is why - say
+so plainly rather than guessing at their policy. There is no app-side workaround.
+
+**2. A retired launch is told its records do not match.**
+Retiring a launch is a supported, shipped action, but the same projection check
+admits only `live` and `governance`, so a retired oApp's page reads
+"This app's launch record does not match its own opening" while its own status rail
+correctly says `RETIRED`. The record is fine. The cause the user is shown is false.
+Do not go looking for a data problem on a retired oApp because of this message.
+
+**3. The public opening read fails intermittently, at about 12 seconds.**
+`/public/oapps/<rootAppId>/opening` answers `503` on roughly one read in three or
+four, and every failure sits at ~12 s while every success lands in under 2 s. Two
+public surfaces inherit it: the venue page `/l/<rootAppId>`, and the source viewer
+at `https://<workloadAppId>.bounded.page/__bounded/source`, which is the one source
+URL an oApp advertises. So a source link that 503s once and then works is this, not
+a broken publication.
+**What to do:** retry once before reporting anything. If the same URL answers `200`
+on a retry, you have hit this and there is nothing to fix in the app. If it refuses
+repeatedly with the SAME code, that is a different condition and worth reporting.
+Never tell a user their source did not publish on the strength of one failed read;
+one sample is not a measurement.
 
 ## The capability ladder
 
