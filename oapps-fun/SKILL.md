@@ -98,6 +98,14 @@ the platform sets it.
 - **Rehearsal/preview stays poofnet** (simulated money), by design.
 - Open can refuse with `mainnet_not_entitled`. That is checked against the oApp's own fuel account
   (`oapp:<rootAppId>`), not your personal plan, so "upgrade my account to Pro" is not the fix.
+- **`oapp_opening_entitlement_unavailable` (503) is NOT about your entitlement.** It means the
+  platform could not read the entitlement at all, so nothing about your app, your plan or your fuel
+  account is the cause and changing them will not help. Do not treat it as `mainnet_not_entitled`
+  and do not tell the user to upgrade. Retry once; if it repeats, report it as a platform outage
+  and stop, per "calling it out" below. (Measured 2026-08-21 on staging: it refused every creator
+  5/5 because the entitlement lookup presented one credential name while the route it called
+  compared another. It was a platform bug for its entire existence and no creator action could
+  have cleared it.)
 
 **`onchain: true` collections are not Openable yet.** An oApp's mainnet app would execute them
 against real mainnet rather than the simulator, but the Open rail does not yet register those
