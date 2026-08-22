@@ -561,16 +561,22 @@ etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,
 `requireEmail: true` in the init config suppresses the wallet lane. For
 headless flows, `startTurnkeyEmailLogin(email)` returns
 `{ verify(code): Promise<User> }`; `signSolanaMessageViaTurnkey` and
-`getOrCreateTurnkeyWallet` (the Turnkey signer bridge) handle passkey
-(Face ID / Touch ID) signing and wallet provisioning after login.
+`getOrCreateTurnkeyWallet` (the Turnkey signer bridge) handle email-session
+signing and wallet provisioning after login.
 The default email login provisions the wallet eagerly at login (so
-`@user.address` exists immediately), and the FIRST signature then runs a
-one-time setup in the signer window: the user creates their passkey and
-confirms a code emailed to them, which attaches the passkey to their existing
-wallet (the address never changes). Every later signature is a passkey tap
-only. `openTurnkeyKeyExport()` opens the hosted private-key export page for the
-session's wallet and works for both login modes (it carries its own
-authorization, so it does not depend on an issuer cookie).
+`@user.address` exists immediately), and the login code itself also establishes
+a 24-hour SIGNING SESSION on the signer origin.
+Every signature shows an in-app approve card with the decoded transaction:
+within a live signing session it is one Approve click; when the session has
+expired (or the user is on a hosted/social login, a new device, or cleared
+storage), the card collects a fresh Turnkey-emailed one-time code inline, which
+establishes the session for the next 24 hours, and the same click completes the
+signature. There is no renewal - expiry always costs one code. Wallet creation
+and address reads never prompt. `openTurnkeyKeyExport()` opens the hosted
+private-key export page for the session's wallet and works for both login modes
+(it carries its own authorization, so it does not depend on an issuer cookie);
+export always requires its own fresh emailed code - a live signing session never
+satisfies it.
 
 **Track the user with `onAuthStateChanged`, not a one-time `getCurrentUser()`.**
 `getCurrentUser()` is a snapshot: it does not update when a session expires, so a
