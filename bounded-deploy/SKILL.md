@@ -76,11 +76,17 @@ account profile, or recovery of an existing key-owned app.
 ## Release rules
 
 - Read `bounded.json` first in an existing app.
+- If it declares `instances`, select one with `--instance` or
+  `defaultInstance`. The selected entry binds app ID, control plane, policy
+  target, and frontend build target as one tuple.
+- Ordinary policy, function, and site deployment does not sync source. Use
+  `sourcePush: true` or `--with-source` only when a source-backed workflow is
+  explicitly required.
 - Regenerate a generated `policy.json` before both verify and deploy.
 - `bounded verify` is the fast proof loop; `bounded deploy` still fails closed
   if the exact deployed policy does not pass its release gate.
 - After a release-critical deploy, use
-  `bounded apps inspect --app-id <id> --json` to confirm the active policy and
+  `bounded --instance <name> apps inspect --json` to confirm the active policy and
   runtime publication before measuring behavior.
 - Resolve the hosted URL from the exact site receipt or
   `bounded domains list --app-id <id> --env <environment> --json`. Do not invent

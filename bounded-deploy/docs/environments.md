@@ -1,5 +1,16 @@
 # Environments — one policy file, many deploys
 
+## Project instances and policy environments are different
+
+Use `bounded.json` `instances` to name app deployments.
+Each instance owns one `appId`, `controlPlane`, `policyTarget`, and `buildTarget` tuple.
+Use the policy's `environments` block for constant overlays, schedule cadence, and function inclusion.
+
+For example, two separate Poofnet apps can both use `controlPlane: "production"`, `policyTarget: "poofnet"`, and `buildTarget: "poofnet"` while retaining different app IDs.
+Select either with `bounded --instance <name> ...`.
+The CLI refuses a conflicting `--env` because it would split the selected tuple.
+It also refuses a conflicting `--environment` because policy deployment must use the instance's declared policy target.
+
 **What's in here:** the `environments` block — a **client-side** (CLI-only)
 construct that lets one `policy.json` drive several apps (preview, production, …),
 each with its own `appId`, its own constant values, its own schedule cadence, and
@@ -142,11 +153,9 @@ bounded functions deploy --all --policy ./policy.json --environment staging
 bounded functions deploy --all --policy ./policy.json --environment production
 ```
 
-`policy.json` `--environment` and `bounded.json` `environment` are different
-axes. `--environment staging` selects an entry from the policy and its app id.
-`bounded.json` `environment`, the global `--env` flag, and `BOUNDED_ENV` select
-the Bounded platform control plane. They do not select a staging or production
-entry from the policy.
+`policy.json` `--environment` and an instance's `controlPlane` are different axes.
+`--environment staging` selects an entry from the policy.
+The instance's `controlPlane`, or legacy `bounded.json` `environment`, selects the Bounded platform control plane.
 
 ## Per-environment schedule cadence
 

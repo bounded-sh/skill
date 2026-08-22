@@ -60,8 +60,8 @@ Load these only when the task calls for them:
 ## Core rules
 
 - Act for the user: build, verify, deploy, and test instead of only explaining.
-- Read `bounded.json` first in an existing project. It selects the app,
-  environment, policy, and account source.
+- Read `bounded.json` first in an existing project. It selects the named app
+  instance tuple, policy, and account source.
 - Use `@user.id` for ownership and membership. Use `@user.address` only for
   wallet/onchain semantics.
 - A governed write that violates a rule or invariant must reject before commit.

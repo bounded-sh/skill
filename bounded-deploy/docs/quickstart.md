@@ -57,9 +57,47 @@ bounded apps inspect --app-id <id> --json
 For release-critical work, confirm the active policy/runtime publication before
 testing. Test one intended user flow and one policy-denied boundary.
 
+## Add another app instance
+
+One repository can target several app IDs, including several app IDs that use the same production control plane and the same Poofnet policy/build targets.
+Add a named entry to `bounded.json` with an empty `appId`:
+
+```json
+{
+  "defaultInstance": "primary",
+  "instances": {
+    "primary": {
+      "appId": "<existing-app-id>",
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    },
+    "empty-poofnet": {
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    }
+  }
+}
+```
+
+Create, deploy, and inspect only that instance:
+
+```bash
+bounded --instance empty-poofnet deploy backend/policy.json --create --name my-empty-poofnet --environment poofnet
+bounded --instance empty-poofnet functions deploy --all --policy backend/policy.json --environment poofnet
+npm run build -- --mode poofnet
+bounded --instance empty-poofnet site deploy ./dist
+bounded --instance empty-poofnet apps inspect --json
+```
+
+The create command writes the new app ID only into `instances.empty-poofnet.appId`.
+It does not replace another instance or the legacy top-level app ID.
+None of these commands sync source unless `sourcePush: true` or `--with-source` is explicitly selected.
+
 ## Existing project
 
-Read `bounded.json` first. It identifies the environment, app, policy path, and
+Read `bounded.json` first. It identifies the instance tuple, app, policy path, and
 developer account source. Do not create a replacement app merely because the
 current account lacks access; use `bounded whoami`, `bounded access`, and the
 [access playbook](access-playbook.md).

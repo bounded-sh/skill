@@ -4,8 +4,9 @@
 by purpose. Every flag below exists in the CLI; `bounded <cmd> --help` prints the
 same with an Example block.
 
-**Global flags** (any command): `--json` (structured output for agents —
-errors are emitted as JSON too), `--quiet` (minimal output), `--env`
+**Global flags** (any command): `--json` (structured output for agents,
+errors are emitted as JSON too), `--quiet` (minimal output), `--instance`
+(select a named `bounded.json` instance), `--env`
 (`production`; also `BOUNDED_ENV`).
 
 ## Identity & teams
@@ -62,8 +63,8 @@ source remains an intentional wallet-mode selection.
 | `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
-| `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
-| `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
+| `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `runtimeTarget`, the compatibility alias `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
+| `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, runtime target, selected instance context, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
 | `apps delete` | Permanently delete an owned app: its data, realtime state, hosted site, addresses, functions, secrets, and schedules. Owner only (non-delegable; no collaborator role or grant can reach it) and NEVER one-shot: the command creates a short-lived delete request, opens a hosted confirmation page in the browser where the human types the app name, and polls until the deletion completes. There is no `--yes`. See the `apps delete` section below for the exact flow, refusal codes, and JSON mode. | `bounded apps delete --app-id <id>` |
 | `dashboard [page]` | Open the hosted dashboard. In a linked project it opens that app directly; optional pages include `data/<path>`, `policy/tests`, `boundaries/change`, and `activity/logs`. `--app-id` overrides the project, `--no-open` prints guidance without launching, and `--print` emits only the URL. Staging opens the staging dashboard. The app-ID handoff is replaced by the dashboard's readable app-name URL after load. | `bounded dashboard data/orders` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
@@ -193,31 +194,42 @@ An explicit public `message` field may supply human detail, but an absent messag
 
 `bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
 Agents should read this file first. It is safe to commit and contains no private
-key material. This example explicitly opts into cloud source sync:
+key material. A named instance binds every deployment target that must move
+together:
 
 ```json
 {
   "$schema": "https://bounded.sh/schemas/bounded.schema.json",
-  "appId": "6a37ecc89def2f10f13aa922",
   "name": "my-app",
-  "environment": "production",
+  "defaultInstance": "poofnet-primary",
+  "instances": {
+    "poofnet-primary": {
+      "appId": "6a37ecc89def2f10f13aa922",
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    },
+    "poofnet-empty": {
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    }
+  },
   "protocol": "realtime_offchain",
   "policy": "policy.json",
-  "liveEdit": {
-    "artifacts": true,
-    "sourceProvider": "auto",
-    "artifactPush": true,
-    "defaultEditMode": "canonical",
-    "frontendDir": "web",
-    "distDir": "web/dist",
-    "buildCommand": "npm run build"
-  },
   "account": {
     "keySource": "web",
     "loginHint": "you@example.com"
   }
 }
 ```
+
+Select an instance with the global `--instance <name>` flag, `BOUNDED_INSTANCE`, or `defaultInstance`, in that order.
+If exactly one instance exists, the CLI selects it automatically.
+If several exist with no selection, the CLI refuses and names the available instances.
+An explicit `--app-id` can still target an app directly, but `--env` cannot change the control plane of a selected instance.
+The selected instance's `policyTarget` selects the matching policy `environments` entry, while `buildTarget` selects the frontend build mode.
+Several instances may intentionally reuse those targets while keeping distinct app IDs.
 
 Resolution rules:
 
@@ -241,8 +253,7 @@ bounded account use --web       # use ~/.bounded/web-session.json
 bounded login --email you@example.com
 ```
 
-Explicit flags still win for app/environment routing: `--app-id` and `--env`
-override project defaults.
+Legacy single-app files with top-level `appId` and `environment` remain readable.
 For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` overrides `account.keySource:"global"`, `"project"`, and `"profile"`.
 Check `bounded whoami --json` before an identity-sensitive deploy instead of assuming the public project config selected the active key.
 An explicit project `account.keySource:"web"`, and projectless control-plane commands, use the web session.
@@ -268,7 +279,8 @@ Use `keySource` for release checks and `keyLocation` only as a human-readable di
 The human `bounded whoami` output continues to print the descriptive location.
 Identity-sensitive automation should also require the expected environment, `authSource`, public identity, and absence of an unexpected `connection` object.
 
-Cloud source sync is opt-in and rides the deploy: set `"sourcePush": true` in
+Cloud source sync is opt-in and separate from ordinary artifact deployment.
+Set `"sourcePush": true` in
 `bounded.json` (or pass `--with-source`) and every deploy also pushes the
 project source tree to the app's cloud source repository. See
 [source-sync.md](source-sync.md). A legacy `liveEdit` block in `bounded.json`
