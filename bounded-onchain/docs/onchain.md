@@ -80,7 +80,10 @@ What follows from that:
   email/social accounts, or the wallet you signed in with - and because that
   choice is permanent, the CLI states the exact address and asks you to confirm
   it (interactively, or with `--owner-wallet <address>` in scripts and JSON
-  mode). A web account with no wallet yet is refused before anything is created.
+  mode). The CLI resolves that address from your account (an email/social
+  account that has no embedded wallet yet gets one provisioned right here);
+  only an account that can never hold one - a login with no email identity -
+  is refused before anything is created.
 - **A mainnet app cannot be ownership-transferred or ejected.** The Bounded-side
   transfer would move the database record while the on-chain owner stayed put,
   leaving the recipient an app they could never deploy to. Both are refused.
