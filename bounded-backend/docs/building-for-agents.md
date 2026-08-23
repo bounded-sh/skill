@@ -147,6 +147,13 @@ During `bounded link --no-browser` the CLI prints a verification URL of the form
 fingerprint shown in the browser matches the one the CLI printed (anti-phishing
 check).
 
+The same relay applies to **mainnet policy deploys on a web login**. Those need the
+owner wallet's signature, which lives in the browser, so `bounded deploy` prints an
+approval URL plus a fingerprint and then waits (it fails cleanly if nobody approves).
+Relay both, same rule: approve only if the fingerprint on the page matches the one
+the CLI printed. Every deploy asks again - it is not a one-time setup - and devnet
+and offchain deploys never ask at all. See the **bounded-onchain** skill.
+
 ## Related
 
 - [../docs/policy-generation-guide.md](../docs/policy-generation-guide.md) — turning the task into a provable policy
