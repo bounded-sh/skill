@@ -142,10 +142,17 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
 ## Hand the login link to your user
 
 During `bounded link --no-browser` the CLI prints a verification URL of the form
-`https://bounded.sh/link?user_code=XXXX` **plus a device fingerprint**. Relay
+`https://dashboard.bounded.sh/link?user_code=XXXX` **plus a device fingerprint**. Relay
 **both** to your user and tell them to open the URL and approve only if the
 fingerprint shown in the browser matches the one the CLI printed (anti-phishing
 check).
+
+The same relay applies to **mainnet policy deploys on a web login**. Those need the
+owner wallet's signature, which lives in the browser, so `bounded deploy` prints an
+approval URL plus a fingerprint and then waits (it fails cleanly if nobody approves).
+Relay both, same rule: approve only if the fingerprint on the page matches the one
+the CLI printed. Every deploy asks again - it is not a one-time setup - and devnet
+and offchain deploys never ask at all. See the **bounded-onchain** skill.
 
 ## Related
 

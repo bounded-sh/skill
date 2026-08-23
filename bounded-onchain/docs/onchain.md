@@ -70,32 +70,53 @@ mainnet apps *you* create.)
 
 What follows from that:
 
-- **Create mainnet apps from the machine holding the key you want to own them.**
-  `bounded deploy --create --protocol realtime_mainnet` sends your local CLI
-  wallet as the intended owner and the server refuses any wallet you have not
-  proven you control. Creating an app for an address whose key lives elsewhere -
-  a browser wallet, a teammate's machine - produces an app that can never deploy
-  a policy again.
+- **The owner must be a wallet your identity can actually sign with.**
+  `bounded deploy --create --protocol realtime_mainnet` resolves the owner from
+  how you are signed in, and the server refuses any wallet you have not proven
+  you control.
+  On a CLI keypair, the owner is your local CLI wallet, exactly as before.
+  On a **web login** (`bounded login`; email, social, or wallet sign-in), the
+  owner is your Bounded account's own wallet - the embedded wallet for
+  email/social accounts, or the wallet you signed in with - and because that
+  choice is permanent, the CLI states the exact address and asks you to confirm
+  it (interactively, or with `--owner-wallet <address>` in scripts and JSON
+  mode). A web account with no wallet yet is refused before anything is created.
 - **A mainnet app cannot be ownership-transferred or ejected.** The Bounded-side
   transfer would move the database record while the on-chain owner stayed put,
   leaving the recipient an app they could never deploy to. Both are refused.
-- **`--starter-policy` is not available on mainnet.** Seeding a starter policy
-  would need the server to sign on your behalf, which it cannot do. Create the
-  app, then deploy your policy.
-- **Deploying is otherwise normal.** The CLI checks whether a permit is needed,
-  has the server mint one bound to the exact policy you are deploying, signs it
-  locally, and deploys - one command, no extra step. Your private key never
-  leaves your machine, and the permit cannot authorize a different policy than
-  the one it was issued for.
+- **`--starter-policy` is not available on mainnet.** A mainnet app's first
+  policy must be authorized by its owner like every later one. Create the app,
+  then deploy your policy.
+- **Deploying from a CLI keypair is one command.** The CLI checks whether a
+  permit is needed, has the server mint one bound to the exact policy you are
+  deploying, verifies it locally, signs it, and deploys - no extra step. Your
+  private key never leaves your machine, and the permit cannot authorize a
+  different policy than the one it was issued for.
+- **Deploying from a web login adds one browser approval per deploy.** Your
+  wallet lives in the browser, so the CLI prints an approval link plus a short
+  anti-phishing fingerprint and waits. On the dashboard approval page - signed
+  in as the SAME Bounded account - you compare the fingerprint with the one
+  your terminal printed, approve, and sign: with your embedded wallet's approve
+  card, or with a connected browser wallet holding the owner address. The page
+  independently verifies the transaction is exactly a policy-authority permit
+  for that app before any wallet sees it, and every signature covers exactly
+  one deploy - the next deploy asks again. Rejecting, closing the page, or
+  letting the request expire fails the deploy cleanly; re-run it to start over.
+  No private key ever reaches the CLI or the control plane.
 - **Mainnet creation needs a paid account.** Creating a mainnet app spends real
   rent on an account that is immutable once it exists, so it is granted by your
   account's plan (`pro`/`enterprise`). There is no API key or shared secret to
   obtain; if your plan does not include it you get a `mainnet_not_entitled`
-  refusal telling you to upgrade. Devnet needs no entitlement.
+  refusal telling you to upgrade. Devnet needs no entitlement, and devnet and
+  offchain deploys from a web login stay keyless and approval-free.
 
 ```bash
-# onchain on mainnet - owned by your local CLI wallet
+# onchain on mainnet - owned by your local CLI wallet (keypair lane)
 bounded deploy ./policy.json --create --name my-app --protocol realtime_mainnet
+
+# the same on a web login - confirm the permanent owner wallet explicitly
+bounded deploy ./policy.json --create --name my-app --protocol realtime_mainnet \
+  --owner-wallet <your-account-wallet>
 ```
 
 If you see `owner_not_established`, the app's on-chain account is not owned by a
