@@ -45,6 +45,9 @@ Build a static output directory, then publish it to the same app:
 bounded site deploy ./dist
 ```
 
+The CLI packages the directory as one deterministic gzip-tar artifact and uploads it directly or through resumable multipart transport when needed.
+It does not sync project source unless `sourcePush` or `--with-source` explicitly requests that separate workflow.
+
 Use the URL in the JSON receipt, or resolve the environment-qualified slug with
 `bounded domains list --app-id <id> --env <environment> --json`.
 
@@ -63,3 +66,39 @@ Read `bounded.json` first. It identifies the environment, app, policy path, and
 developer account source. Do not create a replacement app merely because the
 current account lacks access; use `bounded whoami`, `bounded access`, and the
 [access playbook](access-playbook.md).
+
+## Multiple app IDs from one project
+
+Use named instances when several app IDs intentionally share policy and frontend build targets:
+
+```json
+{
+  "$schema": "https://bounded.sh/schemas/bounded.schema.json",
+  "defaultInstance": "poofnet",
+  "instances": {
+    "poofnet": {
+      "appId": "existing-app-id",
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    },
+    "poofnet-empty": {
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    }
+  },
+  "policy": "policy.json"
+}
+```
+
+Create and deploy only the empty instance, then publish its frontend:
+
+```bash
+bounded deploy --create --name poofnet-empty --instance poofnet-empty
+bounded site deploy ./dist --instance poofnet-empty
+```
+
+The create command writes the new `appId` only into `instances.poofnet-empty`.
+Use `--instance <name>` or `BOUNDED_INSTANCE`; `defaultInstance` is used when neither is present.
+If several instances exist without a default or explicit selection, the CLI refuses instead of guessing.

@@ -34,7 +34,7 @@ Read only the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| First setup, normal verify/deploy, publish a site | [docs/quickstart.md](docs/quickstart.md) |
+| First setup, normal verify/deploy, publish a site, multiple app IDs from one project | [docs/quickstart.md](docs/quickstart.md) |
 | Normal web account login, session refresh, headless OTP, account switching | [docs/accounts.md](docs/accounts.md) |
 | Hosted web frontend, preview, private/public access | [frontend-hosting.md](../bounded-frontend/docs/frontend-hosting.md) |
 | Multi-environment policies: per-env app id, constants, schedule cadence, function scoping | [docs/environments.md](docs/environments.md) |
