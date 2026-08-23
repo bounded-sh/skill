@@ -3,6 +3,7 @@
 Bounded keeps an optional cloud copy of an app's source tree in the "Artifacts" repository.
 It powers `bounded clone` / `bounded pull` and the public source page of completed-Open oApps (`/__bounded/source`).
 There is no separate register/sync machinery: **a deploy either carries its source or it does not.**
+An ordinary `bounded site deploy ./dist` uploads only the built static artifact and does not sync source.
 
 ## Enable it
 

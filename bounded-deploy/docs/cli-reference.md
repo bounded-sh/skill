@@ -4,9 +4,10 @@
 by purpose. Every flag below exists in the CLI; `bounded <cmd> --help` prints the
 same with an Example block.
 
-**Global flags** (any command): `--json` (structured output for agents —
+**Global flags** (any command): `--json` (structured output for agents -
 errors are emitted as JSON too), `--quiet` (minimal output), `--env`
-(`production`; also `BOUNDED_ENV`).
+(`production`; also `BOUNDED_ENV`), and `--instance` (a named `bounded.json`
+deployment instance; also `BOUNDED_INSTANCE`).
 
 ## Identity & teams
 
@@ -274,6 +275,34 @@ project source tree to the app's cloud source repository. See
 [source-sync.md](source-sync.md). A legacy `liveEdit` block in `bounded.json`
 is ignored with a deprecation notice (`liveEdit.artifactPush: true` is honored
 as `sourcePush: true`).
+
+For several app IDs that share policy and frontend targets, declare named instances:
+
+```json
+{
+  "defaultInstance": "poofnet",
+  "instances": {
+    "poofnet": {
+      "appId": "existing-app-id",
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    },
+    "poofnet-empty": {
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    }
+  },
+  "policy": "policy.json"
+}
+```
+
+`--instance <name>` or `BOUNDED_INSTANCE` selects the complete tuple.
+Without either, the CLI uses `defaultInstance`, automatically selects the only declared instance, or refuses when several instances are ambiguous.
+Every instance must declare `controlPlane`, `policyTarget`, and `buildTarget`; `appId` may be absent only until `deploy --create` fills it for the selected instance.
+An explicit `--env` or policy `--environment` that conflicts with the selected tuple is refused.
+Legacy top-level `appId` and `environment` configuration remains supported when `instances` is absent.
 
 ### The per-app marker — `.bounded/app.json`
 
@@ -944,7 +973,7 @@ Full treatment: [environments.md](environments.md).
 | `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |
-| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to the app's mapped slug/custom host; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback. Canonical `--with-source` deploys also preflight and establish the exact hosted-widget editing base before reporting success. Add `--variant <var_id>` to upload a preview frontend branch without replacing that canonical site or editing base. | `bounded site deploy ./dist --with-source --app-id <id>` |
+| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to the app's mapped slug/custom host as one deterministic gzip-tar artifact. Small artifacts use one upload; larger artifacts use resumable multipart chunks of that archive, never per-file uploads. Project source is not synced unless `sourcePush` or `--with-source` explicitly requests it. If no app is linked, creates a private app unless `--public` is passed. Deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. | `bounded site deploy ./dist --app-id <id>` |
 | `site seed-build-base [dir]` | Prepare the current canonical CLI deployment for hosted-widget editing from the filtered local source and exact local frontend bytes (default `./dist`). `--deploy-id` pins the expected current deployment; any deployment, file-digest, or receipt mismatch exits nonzero. | `bounded site seed-build-base --app-id <id> --deploy-id <deploy-id> -- ./dist` |
 | `site variants` | List current frontend variants for owner/admin review: status, deploy id, preview/switch paths, and affected files. | `bounded site variants --app-id <id>` |
 | `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
