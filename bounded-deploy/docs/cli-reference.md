@@ -247,7 +247,8 @@ For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` overrides `accoun
 Check `bounded whoami --json` before an identity-sensitive deploy instead of assuming the public project config selected the active key.
 An explicit project `account.keySource:"web"`, and projectless control-plane commands, use the web session.
 App-bound data-plane operations (`data`, `subscribe`, `functions invoke`, `runtime invoke`) also run under the web session **on cloud apps**: the CLI exchanges the platform login for an app-pinned session server-side, so `@user.id` matches the same email's identity on the app's own site.
-A web session cannot SIGN, so writes to `onchain: true` collections that need a client-signed Solana transaction still require a local keypair (`bounded account use --global`, with `"auth": { "wallets": true }` deployed).
+A web session holds no local signing key, so writes to `onchain: true` collections that need a client-signed Solana transaction still require a local keypair (`bounded account use --global`, with `"auth": { "wallets": true }` deployed).
+The one signature a web session CAN produce is the mainnet policy-deploy authority permit: `bounded deploy` routes it through a per-deploy browser approval where the account's own wallet signs (see the **bounded-onchain** skill's mainnet section); devnet and offchain deploys stay keyless with no approval.
 On a **Bounded Local** connection the web lane is refused outright: the app lives only in your stack while web login is brokered by the shared staging issuer, so local data commands use the keypair lane.
 Older projects with only `.bounded/app.json` still work; the CLI falls back to that marker when `bounded.json` is absent.
 
@@ -326,7 +327,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation` |
+| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
 | `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
 | `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |

@@ -208,13 +208,17 @@ owns the app on-chain before accepting a new policy.
 
 - **The CLI handles it.** `bounded deploy` probes whether a permit is needed,
   reserves the deploy operation, has the server mint the permit transaction,
-  signs it locally with your CLI key, and submits it with the deploy. The
-  private key never leaves your machine, and no extra command is involved.
-- **It only works if the CLI holds the owner's key.** A mainnet app is owned
-  on-chain by the wallet that created it, and that owner is **immutable**. If the
-  app was created for a wallet this CLI cannot sign with, no policy can ever be
-  deployed to it. Create mainnet apps from the machine holding the key you intend
-  to own them.
+  verifies it, gets it signed, and submits it with the deploy. On a CLI keypair
+  the signature happens locally, with no extra step; on a **web login** the CLI
+  prints a dashboard approval link plus an anti-phishing fingerprint and waits
+  while you approve and sign in the browser with your account's wallet
+  (embedded or connected). Either way the private key never reaches the CLI or
+  the control plane, and each signature authorizes exactly one deploy.
+- **It only works with the owner's wallet.** A mainnet app is owned on-chain by
+  the wallet that created it, and that owner is **immutable**. If the app was
+  created for a wallet neither your CLI key nor your web account can sign with,
+  no policy can ever be deployed to it. The create flow only accepts an owner
+  the signed-in identity can prove it controls, for exactly this reason.
 - **The default path never hits any of this.** Realtime / offchain apps - the
   default protocol, and what nearly every app starts as - update their policy with
   no onchain signature at all. Devnet apps are admin-managed and need no permit
