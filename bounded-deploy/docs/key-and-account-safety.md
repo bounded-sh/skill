@@ -277,7 +277,7 @@ detachable signing credentials, and email is a verified contact/login method.
 `bounded login` is a plain web login and does **not** link any local key.
 `bounded link` explicitly attaches the active **local wallet key** to a **remote
 Bounded web account** via an OAuth-style **device flow** (device code +
-fingerprint approval at **bounded.sh/link** — agents should print that URL for
+fingerprint approval at the dashboard **/link** page (the CLI prints the exact URL) — agents should print that URL for
 their user). The current headless approval method is email OTP: run
 `bounded link --email you@example.com`; the CLI emails an OTP, reads the code
 from stdin, approves the same fingerprint-checked device flow, and records the

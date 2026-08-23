@@ -76,7 +76,7 @@ keys:
 - **`bounded link`** is wallet-only: it **explicitly attaches THIS device's
   local wallet key** to a **remote Bounded web account**; the current headless
   approval method is email OTP. It runs an OAuth-style **device flow**: the CLI
-  prints a device code, you approve the fingerprint at **bounded.sh/link** in a
+  prints a device code, you approve the fingerprint at the dashboard **/link** page (the CLI prints the exact URL for your environment) in a
   browser with the remote web account (agents should print that URL for their
   user), and the CLI records the linkage. For headless/agent workflows, use
   `bounded link --email you@example.com`: the CLI sends the OTP, reads the code
