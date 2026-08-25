@@ -298,9 +298,9 @@ await signTransaction(tx);                        // returns the signed tx
 await signAndSubmitTransaction(tx);               // wallet signs, SDK verifies + submits, returns the tx hash
 ```
 
-Both transaction calls verify, before handing the transaction back or putting it on the network, that the message is the one you passed and that **the account your session was authenticated with actually signed it**.
-That check exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
-When it fires, the error names what the wallet changed: `it replaced the blockhash` means the transaction's lifetime ran out before the user approved and the wallet swapped in a live one rather than signing a dead lifetime, which is a retry, not a bug in your write. See [onchain-troubleshooting.md](../../bounded-onchain/docs/onchain-troubleshooting.md#a-wallet-returned-a-different-transaction).
+Both transaction calls verify, before handing the transaction back or putting it on the network, that the transaction still MEANS what you passed and that **the account your session was authenticated with actually signed it**.
+The signer half exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
+The message half is deliberately not a byte comparison: a wallet may add its own guard instructions (Phantom injects Lighthouse on mainnet), renumber the account table, and retune the compute budget, and all of that is accepted. What it may not do is move the blockhash, change who must sign, alter any instruction you sent, or add another call to a program your transaction already uses. See [onchain-troubleshooting.md](../../bounded-onchain/docs/onchain-troubleshooting.md#a-wallet-returned-a-different-transaction) for the clause-by-clause meaning.
 One consequence: a wallet that can ONLY sign-and-send cannot be used through `signAndSubmitTransaction`, because it broadcasts before anything can be checked; it refuses and tells you so.
 If you want that wallet's own broadcast anyway, drive it yourself - outside the guarantee, knowingly.
 Doing that means doing by hand everything the SDK was doing for you, in this order; skip a step and it fails on a phone rather than on your desk:
