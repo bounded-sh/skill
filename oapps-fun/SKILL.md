@@ -84,7 +84,8 @@ the platform sets it.
   that one is owned by *your* wallet, immutably (see **bounded-onchain**).
 - **Your creator app does not change.** It stays whatever protocol it was created with (normally
   `realtime_offchain`). Do NOT re-create it as `realtime_mainnet` to "become an oApp" - Open does the
-  mainnet part for you, and a mainnet creator app cannot be deleted or transferred.
+  mainnet part for you, and a mainnet creator app cannot be transferred; deleting one permanently
+  orphans its onchain accounts (nothing offchain can close them).
 - **Do not `bounded deploy` at an opened root or workload.** They are platform-managed and
   custody-owned; the CLI will refuse on an owner mismatch because your local wallet is not the owner.
   Governed changes go through the oApp's own rails.
