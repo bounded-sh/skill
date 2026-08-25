@@ -161,7 +161,7 @@ There are **two issuers**: wallet/guest auth (Phantom / anonymous,
   must pass one (an https universal link). Works web and React Native (deep links).
 
 App-origin email/text OTP and guest-link helpers are retired and are not exported
-by `@bounded-sh/client@0.0.42`. A guest who signs in through hosted auth gets a
+by the published `@bounded-sh/client`. A guest who signs in through hosted auth gets a
 distinct real `@user.id`; transfer guest-owned data explicitly when needed.
 
 > Pick the methods (email / phone / social / wallet / guest) and hosted presentation

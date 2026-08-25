@@ -159,7 +159,7 @@ const publicText = textFiles
 
 const forbidden = [
   [/^\s*npx(?: --yes)? skills add bounded-sh\/skill\s+[^\n]*(?:--all|--skill\s+['"]?\*)/m, 'public install command must not use a wildcard or --all'],
-  [/@bounded-sh\/client@0\.0\.40\b/, 'stale client version 0.0.40'],
+  [/@bounded-sh\/client@\d+\.\d+\.\d+\b/, 'exact-version client pin in prose - say "the published client" or a floor like "0.0.72+"'],
   [/from\s+['"]bounded-sh(?:\/server)?['"]|or\s+['"]bounded-sh\/server['"]/, 'bare bounded-sh package import'],
   [/use\s+['"]none['"]\s+to disable auth|authMethod\s*:\s*['"]none['"][^\n]{0,80}(?:disable|public-read)/i, 'unsupported authMethod none'],
   [/forgetGuest\(\)\s+(?:wipes|deletes|clears)/i, 'unexported forgetGuest helper'],

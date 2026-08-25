@@ -89,9 +89,9 @@ the hosted flow `loginWithRedirect` / `loginWithPopup`; the credential is entere
 on `auth.bounded.sh`, never your origin. Pass `methods: ["email", "google"]` for
 a chooser, or `provider: "google"` to jump straight to one from your own button.
 App-origin OTP helpers are retired and are not exported by
-`@bounded-sh/client@0.0.42`.
+the published `@bounded-sh/client`.
 The wallet option is `'phantom'`, reserved for crypto/onchain apps that need a
-real Solana wallet. There is no `authMethod: 'none'` provider in 0.0.42; for a
+real Solana wallet. There is no `authMethod: 'none'` provider; for a
 public-read app, initialize normally and simply do not start a login flow.
 Browser anonymous accounts are via `signInAnonymously()` and coexist with
 Bounded Auth.
@@ -532,7 +532,7 @@ await signInAnonymously();
 ```
 
 > **Hosted credentials only.** Use `loginWithRedirect` or `loginWithPopup`, with
-> `completeLoginFromRedirect()` on web app load. The published 0.0.42 client no
+> `completeLoginFromRedirect()` on web app load. The published client no
 > longer exports app-origin email or text OTP helpers. See [auth.md](auth.md).
 
 ### The unified login widget - `openBoundedWidget`
