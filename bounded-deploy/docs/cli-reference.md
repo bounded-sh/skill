@@ -172,7 +172,7 @@ powers explicitly via policy rules ([admin-and-ownership.md](../../bounded-backe
 ### Machine-readable onboarding
 
 Onboarding commands in `--json` mode keep stdout to exactly one JSON document and keep stderr free of human progress text, including first-use key-creation guidance.
-The successful `bounded init --json` result has `action: "init"`, the written policy and project-config paths, the selected account source and environment, and `nextCommands`.
+The successful `bounded init --json` result has `action: "init"`, the written policy and project-config paths, `projectConfigWritten` (false when `bounded.json` was already configured and left unchanged), the selected account source and environment, and `nextCommands`.
 The successful `bounded account use ... --json` result has `action: "accountUse"`, the selected `keySource`, project context, and safe next commands.
 When a wallet source and a saved web session are separate, `bounded whoami --json` reports the condition in `warnings[]` with stable code `unlinked_web_account`, the public wallet address, the web email, and next commands instead of printing a warning beside the JSON.
 Running `bounded account transfer-to-web --json` without `--yes` returns an `action: "transferToWebPreview"` document with `requiresConfirmation: true` and replayable `confirmationArgs`; its `ok: true` means the preview completed, not that ownership moved.
@@ -193,6 +193,7 @@ An explicit public `message` field may supply human detail, but an absent messag
 ### Project config — `bounded.json`
 
 `bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
+Init refuses to run from inside another Bounded project's directory tree (upward discovery would anchor the scaffold at that ancestor); run it from the project root it names, or pass `--project-root .` to deliberately make the current directory its own project root.
 Agents should read this file first. It is safe to commit and contains no private
 key material. This example explicitly opts into cloud source sync:
 
@@ -371,7 +372,7 @@ bounded deploy                                          # redeploy using bounded
 ```
 
 `verify` and `deploy --create` reject an unknown `--protocol` locally before any network call and list the valid app protocols.
-When the verifier returns a valid result, `bounded verify --json` emits exactly one schema-version-2 document with `status`, `passed`, `safeToDeploy`, exact counts, structured proof details and counterexamples, the access report, and `capabilityReadiness`.
+When the verifier returns a valid result, `bounded verify --json` emits exactly one schema-version-3 document with `status`, `passed`, `safeToDeploy`, `policyPath` (the absolute path of the policy file the run actually proved) and `projectRoot` (the discovered `bounded.json` root, empty without one), exact counts, structured proof details and counterexamples, the access report, and `capabilityReadiness`.
 Local argument, file, JSON, environment, configuration, authentication, transport, and malformed-response failures that occur before a valid verifier result instead use the ordinary one-document root error shape and exit nonzero.
 `status` is one of `PROVEN`, `DISPROVED`, `INVALID`, or `UNPROVEN`.
 `safeToDeploy` describes the whole-policy schema and proof gate and can be true only for the default `verifyForDeploy` operation.
@@ -395,7 +396,7 @@ bounded plugins describe buyExactSolIn --json
 
 These commands need no account, project, or network.
 `list` reports each callable identifier, signature, return type, and network-scoped capability state; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
-The embedded plugin projection has its own catalog `schemaVersion`, which is separate from the verify report's schema version 2.
+The embedded plugin projection has its own catalog `schemaVersion`, which is separate from the verify report's own `schemaVersion`.
 Capability state describes onchain reachability for the catalog's named network, not a deploy verdict: `unverified` means no retained live proof exists, while `unsupported` also covers offchain-only functions and functions unavailable on that network.
 An unambiguous bare function name is accepted, but use the returned canonical identifier in policy source.
 Namespaced entries use `@Namespace.function`, while core entries such as `get` and `getAfter` remain bare.

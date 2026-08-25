@@ -67,8 +67,8 @@ me.id            // the guest's stable identity — use for ownership; durable a
 `signInAnonymously()` generates a non-extractable ed25519 key (an XSS can *sign* but
 never read it), runs nonce → sign → session. It's the wallet-signature path with a
 local key — durable across reloads. `logout()` ends the session but keeps the
-device key, so a later anonymous login returns to the same guest. The 0.0.42
-public package does not export a `forgetGuest()` helper; clearing the browser's
+device key, so a later anonymous login returns to the same guest. The published
+package does not export a `forgetGuest()` helper; clearing the browser's
 site data removes the IndexedDB key and creates a new guest on the next login.
 
 ## 2. Gate guests in policy with `@user.isAnonymous`

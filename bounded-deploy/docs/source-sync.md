@@ -73,6 +73,14 @@ race, redeploy those exact frontend files with `site deploy --with-source`
 instead of seeding an obsolete deployment. A retired target is terminal until
 it is restored, so the CLI does not print an unsafe retry for that case.
 
+A source-only change is not a conflict: re-running the deploy (or the seed)
+with byte-identical frontend bytes and changed project source refreshes the
+editing base to the new source snapshot for the same canonical deployment.
+The one base a CLI seed never replaces is one already carrying hosted-widget
+edits (promoted lineage) - the CLI reports that distinctly, and deploying
+changed frontend bytes as a new canonical deployment is what re-anchors
+editing to your files.
+
 Frontend variants are previews. `site deploy --variant ... --with-source` may
 sync source, but it does not replace or re-establish the canonical widget
 editing base.
