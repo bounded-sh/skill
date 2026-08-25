@@ -88,10 +88,14 @@ outlives its apps), the PEOPLE who signed in (their Bounded user account and
 wallet, which are theirs and span every app), and short-lived operational logs
 that expire on their own (function invocation logs age out within 30 days).
 
-If the app was deployed onchain (devnet), its **onchain accounts remain onchain**.
-Deletion removes everything Bounded runs and bills you for, but the deployed
-program has no instruction that closes an app account, so nothing offchain can
-retract it. Its rent stays where it is, and the address keeps resolving.
+If the app was deployed onchain (devnet or mainnet), its **onchain accounts
+remain onchain**. Deletion removes everything Bounded runs and bills you for,
+but the deployed program has no instruction that closes an app account, so
+nothing offchain can retract it. Its rent stays where it is, the address keeps
+resolving, and any funds it holds stay exactly where they are - with no
+Bounded backend left to interact with them. For a mainnet app, move funds out
+BEFORE deleting; the deleted app record was the only Bounded-side pointer to
+that onchain state.
 
 The flow is deliberately two-step so a single mistyped command can never
 delete an app:
@@ -117,10 +121,11 @@ Refusals worth recognizing (409 with a `code`):
 
 - `oapp_launched` - an open/launched oApp belongs to its venue and holders;
   it cannot be deleted.
-- `app_delete_blocked_mainnet` - apps deployed to Solana mainnet keep their
-  record (it is the only pointer to their on-chain state).
 - `app_delete_blocked_deploy_in_flight` - retry after the active policy
   deploy settles.
+- `app_delete_blocked_onchain_creation_pending` /
+  `app_delete_blocked_governance_mutation` - an onchain operation is still in
+  flight; retry once it settles.
 - `app_delete_in_progress` - a confirmed deletion is already executing.
 
 JSON mode never opens a browser. `bounded apps delete --json` creates the
