@@ -28,6 +28,13 @@ bounded verify
 bounded deploy --create --name my-app
 ```
 
+A healthy proof answers in a few seconds. If verify or deploy returns `503`
+`proof_substrate_unavailable` (`retryable: true`), the prover is warming up or
+busy — the policy is fine. Wait ~30s and rerun the same command, at most 3
+attempts; past that, report the proving service as degraded rather than
+retrying forever or changing the policy (full protocol: the incident router in
+this skill's SKILL.md).
+
 Fix every blocking verify result. The create deploy records the new `appId` in
 `bounded.json`. Later policy releases use:
 
