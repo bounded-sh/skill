@@ -60,6 +60,17 @@ account profile, or recovery of an existing key-owned app.
   target-mismatch and manual-intervention states. Re-running the recovery can
   never commit it; run a fresh `bounded deploy` (or escalate, when the message
   says operator review). Never invent a recovery command for these.
+- `onchain_creation_pending`, `onchain_creation_unreadable`, or
+  `onchain_creation_superseded` (all `409`): the app's mainnet creation never
+  finished - its on-chain owner is not proven at finalized yet, so nothing can
+  be deployed to it and nothing has been signed or spent.
+  Re-run the SAME `bounded deploy` for that app id: the platform resumes the
+  original creation and lifts the fence as soon as the account is finalized.
+  Never re-run `--create`, and never create a replacement app - the first app's
+  on-chain account is already paid for and a second one strands that rent.
+- `onchain_creation_owner_conflict` (`409`): the app's on-chain account is
+  finalized under a wallet the creation did not intend. That is an integrity
+  fault, not a state to retry; escalate for operator review.
 - Unsure which applies, or unsure whether a fresh deploy is safe: run the
   read-only `bounded deploy status --json` first. It reports what holds the
   deploy slot and a `freshDeploySafe` verdict, and it never mutates anything.

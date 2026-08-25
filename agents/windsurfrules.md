@@ -50,6 +50,10 @@ Flow:
   the proof gate and fails closed on any regression.
   If it returns `deploy_in_progress` with an `operationId`, the verified app
   owner runs the exact emitted `recoveryCommand` with unchanged policy inputs.
+  A `409` naming `onchain_creation_pending` (or `onchain_creation_unreadable`
+  or `onchain_creation_superseded`) instead means the app's mainnet creation
+  never finished; nothing was signed or spent. Re-run the SAME deploy for that
+  app id - never `--create`, and never a replacement app.
   The CLI does not submit another policy mutation and lets `202` with
   `state: "processing"` poll the same operation while the server re-runs the
   proof, compiler, and exact-state reconciliation.

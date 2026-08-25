@@ -604,6 +604,21 @@ resumable - `recoveryCommand`:
   manual-intervention outcomes): NO `recoveryCommand` is emitted, because
   re-running the operation can never commit. The message says whether to run a
   fresh `bounded deploy` or to escalate for operator review.
+- **Mainnet creation fence** (`409` with `onchain_creation_pending`,
+  `onchain_creation_unreadable`, `onchain_creation_superseded`, or
+  `onchain_creation_owner_conflict`): classified definitive, so no
+  `recoveryCommand` is emitted - but the remedy is different from the outcomes
+  above. These refusals mean the app's mainnet creation never finished: its
+  on-chain owner is not proven at finalized yet. They are raised BEFORE any
+  permit is minted or signed, so nothing was spent and no signature was burned.
+  Re-run the same `bounded deploy` against the same app id; the platform makes
+  one finalized read, resumes the original creation from the app's own journaled
+  operation, and lifts the fence when the account is there. Do not re-run
+  `--create` and do not create a replacement app - the original app's on-chain
+  account is already rent-paid, and a second app strands it.
+  `onchain_creation_owner_conflict` is the one exception: the account is
+  finalized under a wallet the creation did not intend, which is an integrity
+  fault to escalate rather than retry.
 
 The operation id the CLI minted stays authoritative: a response carrying a
 different id is refused rather than followed, so a recovery can never be bound to
