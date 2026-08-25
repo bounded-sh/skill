@@ -43,8 +43,9 @@ await init({
 ```
 
 **Onchain apps (`realtime_devnet` / `realtime_mainnet`) must also pass `chain`
-and a TOP-LEVEL `rpcUrl`** - the SDK submits pre-built onchain transactions
-itself, and without a submit endpoint the first onchain `set()` fails with
+and a TOP-LEVEL `rpcUrl`** - the SDK refreshes the transaction's blockhash from
+that endpoint just before the wallet approves and then submits the pre-built
+onchain transaction itself, and without it the first onchain `set()` fails with
 `Pre-built Solana transaction submission requires init({ rpcUrl })`:
 
 ```ts

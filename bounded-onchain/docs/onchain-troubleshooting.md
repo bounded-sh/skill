@@ -20,6 +20,7 @@ Real-network failure lookup for `"onchain": true` collections: what broke, why, 
 | Write succeeds but the mirror shows nothing yet | Mirror ingestion is eventually consistent. | Poll the mirror for the exact expected postcondition; never treat an immediate read (or its absence) as proof. |
 | `validate pre-built transaction: SOLANA_DEVNET_RPC_URL is required for pre-built transaction network "solana_devnet"` | The CLI submits onchain writes itself and has no RPC endpoint configured. The platform built the transaction correctly; submission never started. | Set `SOLANA_DEVNET_RPC_URL` (or `SOLANA_MAINNET_RPC_URL`) in the shell running `bounded`. See [CLI submission needs an explicit RPC endpoint](#cli-submission-needs-an-explicit-rpc-endpoint). |
 | `Pre-built Solana transaction submission requires init({ rpcUrl }) for solana_devnet` in a web app | The browser twin of the CLI rule above: the SDK submits the pre-built transaction itself, and `init()` was called without a top-level `rpcUrl`. | Pass top-level `chain` + `rpcUrl` to `init()`; a nested `walletLogin.rpcUrl` is not a substitute. See [Browser/SDK submission needs an explicit RPC endpoint](#browsersdk-submission-needs-an-explicit-rpc-endpoint). |
+| `The Solana wallet returned a different transaction than the one it was asked to sign` | The wallet did not sign the bytes it was handed. When the message names the blockhash as what moved, the transaction's lifetime had run out before the user approved. | Retry the write; the SDK refreshes the blockhash immediately before each approval. If it recurs, see [A wallet returned a different transaction](#a-wallet-returned-a-different-transaction). |
 | `Transaction building failed: onchain account resolution failed (422): onchain account not found: <pubkey> (<role>)` | An account the write references does not exist on chain (a wrong mint derivation, a pool that was never created, an absent bonding curve, an unlisted NFT). This is YOUR data, not the platform: retrying can never help. | Fix the referenced account. The commonest cause is a mint-seed mismatch: Meteora pool mints use the legacy seed, so derive them with the 3-arg `@TokenPlugin.getTokenMintAddress(tokenId, name, symbol)`, never the 1-arg id-only form. See [Missing onchain accounts vs platform 502s](#missing-onchain-accounts-vs-platform-502s). |
 | `Transaction building failed: onchain account resolution failed (502): ...` on a write that is neither a `403` nor a `422` | Bounded's platform-side account resolver could not resolve the accounts and plugin values the transaction needs (platform infrastructure or its RPC). The policy did not deny; the write was rejected fail-closed before anything signed or landed. | Do not rewrite a passing hook or change amounts/slippage. Confirm it is platform-side with a trivial named query, then retry and report. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
 | `onchain query failed (502)` on a named query (CLI shows `Error: 500 onchain query failed (502)`), even a plain `@TokenPlugin.getBalance` | Same platform-side failure surface for queries: Bounded's onchain query executor could not run the query simulation. | Same as the row above; it is not a bad query argument. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
@@ -65,8 +66,32 @@ await init({
 
 A nested `walletLogin.rpcUrl` configures wallet login only and does not enable submission; `walletLogin: true` supplies no submit RPC either.
 The check runs before the wallet signs, so a misconfigured app fails the write without spending the user's signature.
+That endpoint is also what keeps the transaction alive: the SDK reads a current blockhash from it and writes that onto the transaction immediately before the wallet is asked to approve, so the whole ~60-second blockhash lifetime belongs to your user rather than to the build that produced the transaction.
+A pre-built transaction the platform already co-signed (a gas-sponsored write, or any plugin write that carries an attestation signature) is left exactly as it arrived, because that signature covers the blockhash too.
 The trust rationale is the same as the CLI's: there is deliberately no bundled default endpoint, because confirmation and simulation results are only as trustworthy as the endpoint returning them.
 A public endpoint gets a development write through but is rate-limited; use a dedicated provider endpoint for anything you rely on, and keep secret RPC URLs out of logs and commits.
+
+## A wallet returned a different transaction
+
+```
+The Solana wallet returned a different transaction than the one it was asked to sign, so nothing was
+returned: it replaced the blockhash (asked to sign against <A>, signed against <B>), which is what a
+wallet does when the transaction expired before it was approved
+```
+
+This is the SDK refusing, not the platform and not your app.
+Before a wallet is opened, the SDK validates that the platform's transaction encodes exactly the write you requested; that validation covers the bytes it sent and nothing else, so a wallet that hands back a different message has produced a signature over something nobody checked.
+It is refused whatever the wallet's motive, and the clause after the colon says which part moved.
+
+`it replaced the blockhash` is the common one and it is a timing problem.
+A Solana blockhash is only good for about 150 blocks, roughly a minute, and a wallet will not put its name to a lifetime it can see has run out, so it swaps in a live one and signs that instead.
+The SDK now writes a current blockhash onto the transaction immediately before each approval, so the full window belongs to the person clicking Approve.
+Retry the click.
+If it still recurs, the endpoint in `init({ rpcUrl })` is lagging the cluster, or the write is a gas-sponsored or plugin write whose blockhash the platform's own signature pins and the SDK therefore cannot refresh; there the fix is to shorten the gap between the write and the approval, not to retry harder.
+
+`its instructions or accounts differ` and `the transaction it signed has a different shape entirely` are not timing.
+The wallet rewrote the transaction body.
+Do not work around this: capture the wallet's build and report it.
 
 ## Missing onchain accounts vs platform 502s
 

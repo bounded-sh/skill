@@ -273,11 +273,12 @@ first signing call reconnects (that is `confirmWalletAction`'s `"connect"`).
 import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
 
 // Add bring-your-own wallet login alongside the canonical email/social login.
-// `chain` + a TOP-LEVEL `rpcUrl` are what let the signed transaction actually
-// be submitted below; a nested walletLogin.rpcUrl is not a substitute, and
-// without them signAndSubmitTransaction / an onchain set() throws
-// "Pre-built Solana transaction submission requires init({ rpcUrl })" AFTER
-// the user has signed.
+// `chain` + a TOP-LEVEL `rpcUrl` are what keep the transaction's blockhash alive
+// up to the moment of approval and let the signed transaction actually be
+// submitted below; a nested walletLogin.rpcUrl is not a substitute, and without
+// them signAndSubmitTransaction / an onchain set() throws
+// "Pre-built Solana transaction submission requires init({ rpcUrl })" BEFORE
+// the user is asked to sign.
 await init({
   appId: "<appId>",
   authMethod: "phantom",
@@ -299,6 +300,7 @@ await signAndSubmitTransaction(tx);               // wallet signs, SDK verifies 
 
 Both transaction calls verify, before handing the transaction back or putting it on the network, that the message is the one you passed and that **the account your session was authenticated with actually signed it**.
 That check exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
+When it fires, the error names what the wallet changed: `it replaced the blockhash` means the transaction's lifetime ran out before the user approved and the wallet swapped in a live one rather than signing a dead lifetime, which is a retry, not a bug in your write. See [onchain-troubleshooting.md](../../bounded-onchain/docs/onchain-troubleshooting.md#a-wallet-returned-a-different-transaction).
 One consequence: a wallet that can ONLY sign-and-send cannot be used through `signAndSubmitTransaction`, because it broadcasts before anything can be checked; it refuses and tells you so.
 If you want that wallet's own broadcast anyway, drive it yourself - outside the guarantee, knowingly.
 Doing that means doing by hand everything the SDK was doing for you, in this order; skip a step and it fails on a phone rather than on your desk:

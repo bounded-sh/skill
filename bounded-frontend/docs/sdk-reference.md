@@ -79,8 +79,9 @@ can be dropped.
 production by default** - `init({ appId })` just works, no endpoints to set (the
 network is `'bounded-production'`).
 **Onchain apps need two more keys**: `chain` (the app's Solana network, e.g.
-`'solana_devnet'`) and a TOP-LEVEL `rpcUrl` (the endpoint the SDK submits
-pre-built onchain transactions through). Without them the first onchain `set()`
+`'solana_devnet'`) and a TOP-LEVEL `rpcUrl` (the endpoint the SDK reads a current
+blockhash from just before the wallet approves, and submits the pre-built onchain
+transaction through). Without them the first onchain `set()`
 fails with `Pre-built Solana transaction submission requires init({ rpcUrl })`;
 a nested `walletLogin.rpcUrl` configures wallet login only and is not a
 substitute. See [Browser/SDK submission needs an explicit RPC endpoint](../../bounded-onchain/docs/onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint). **Email + OAuth/social + text** work through
