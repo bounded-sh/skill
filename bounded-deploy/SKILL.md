@@ -52,6 +52,16 @@ account profile, or recovery of an existing key-owned app.
 
 ## Incident router
 
+- `503` + `proof_substrate_unavailable` (`retryable: true`) from `bounded verify`: the prover lane is warming up or busy.
+  This is NOT a policy error and NOT permanent.
+  The policy is fine, so retry it UNCHANGED.
+  Wait 30 seconds, then rerun the same `bounded verify`; make at most 3 attempts total, meaning the initial attempt plus 2 retries.
+  If the third attempt still returns this error, stop and tell the user the proving service is degraded.
+  Include the `correlationId` when present.
+  Do not edit the policy, switch accounts, or create a new app.
+  This retry protocol applies only to `bounded verify`.
+  Never use it to retry `bounded deploy`.
+  In particular, never retry `bounded deploy --create` because it can create another app.
 - `deploy_in_progress`, `operationId`, or `recoveryCommand`: use only the exact
   owner-visible recovery command with unchanged inputs, then let the CLI poll.
   See [deploy recovery](docs/cli-reference.md#recover-an-in-progress-policy-deploy).
