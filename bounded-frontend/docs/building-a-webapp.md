@@ -86,6 +86,11 @@ Whatever the method, an authenticated `user` is `{ id, address, email }`:
 
 Full auth model: [../docs/auth.md](../docs/auth.md).
 
+Testing login from a local dev server (`npm run dev`)? Hosted login only opens
+for registered origins, so register your localhost origin once first — see
+[Develop on localhost](#develop-on-localhost). Data reads/writes need no
+registration; only login checks the origin.
+
 ```tsx
 import { useAuth, loginWithRedirect, loginWithPopup, completeLoginFromRedirect } from "@bounded-sh/client";
 import { useEffect } from "react";
@@ -164,6 +169,41 @@ function Notes() {
 
 A subscription only ever delivers documents the user is allowed to read — the
 read rule is enforced per delivered row, so live UIs can't leak.
+
+## Develop on localhost
+
+Run your dev server as usual (`npm run dev` — Vite, Next, anything) against the
+deployed backend. The data plane needs **no origin setup** from
+`http://localhost`: reads, writes, subscriptions, and file uploads are governed
+by policy, not by where the page is served.
+
+**Hosted login is the one thing that checks your origin.** The issuer only
+opens the login flow for origins the app's owner registered, so the first
+`loginWithPopup` / `loginWithRedirect` from an unregistered dev server fails —
+the popup shows an error like:
+
+```json
+{ "error": "invalid_request",
+  "error_description": "redirect_uri origin is not a registered origin for this app" }
+```
+
+Fix it once per app + port (run as the app owner):
+
+```bash
+bounded domains origins add http://localhost:5173 --app-id <id>
+```
+
+- `http://` is accepted **only** for `localhost` / `127.0.0.1` / `[::1]`; every
+  other origin must be `https`.
+- Matching is port-exact: `:5173` and `:3000` are different origins — register
+  each dev port you actually use.
+- Takes effect within ~30 seconds (server-side config caches).
+- The registration is permanent, like a localhost redirect URI in Google or
+  GitHub OAuth. This is safe: only the owner can add origins, and plaintext
+  `http` never authorizes a non-loopback host. Remove one any time with
+  `bounded domains origins remove <origin> --app-id <id>`.
+- If the app has been **launched as an oApp**, its origin list is frozen
+  (`409 oapp_launched`) — register dev origins before launching.
 
 ## Shipping to mobile
 
