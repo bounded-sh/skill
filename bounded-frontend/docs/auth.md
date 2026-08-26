@@ -207,8 +207,10 @@ but not the credential form.
 `redirect_uri origin is not a registered origin for this app`. Fix it by registering
 the app's web origin — claim a vanity slug (`bounded domains slug <name> --app-id <id>`
 → `<slug>.bounded.page`) or add a custom domain (`bounded domains add <host> --app-id
-<id>`); both wire `allowedOrigins` automatically. `localhost` (for dev) and Bounded's own
-first-party `*.bounded.sh` origins are always allowed without registration.
+<id>`); both wire `allowedOrigins` automatically. `localhost` is **not** allowed
+automatically — a local dev server's origin must be registered too, port-exact:
+`bounded domains origins add http://localhost:5173 --app-id <id>`. See
+[develop on localhost](building-a-webapp.md#develop-on-localhost).
 
 ### Login-method matrix — the whole menu
 

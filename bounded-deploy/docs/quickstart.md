@@ -59,6 +59,19 @@ It does not sync project source unless `sourcePush` or `--with-source` explicitl
 Use the URL in the JSON receipt, or resolve the environment-qualified slug with
 `bounded domains list --app-id <id> --env <environment> --json`.
 
+## Develop locally
+
+You do not need to publish to iterate. Run the frontend on a local dev server
+against the deployed backend — data calls work from `http://localhost`
+immediately. Only hosted login checks origins; register your dev origin once
+(owner-run, port-exact, ~30s to take effect):
+
+```bash
+bounded domains origins add http://localhost:5173 --app-id <id>
+```
+
+Details: [develop on localhost](../../bounded-frontend/docs/building-a-webapp.md#develop-on-localhost).
+
 ## Confirm the release
 
 ```bash
