@@ -342,8 +342,10 @@ folder maps to:
   source does this app use?"
 - `sitePrivate` — true when the hosted static site was created behind the
   private site gate. Older/public apps may omit it.
-- `linkedAccount` — the linked or logged-in web account hint when known, blank if
-  none.
+- `linkedAccount` — the linked or logged-in account hint when known, blank if
+  none. An email for an email-approved link or web login; the approving
+  **wallet address** for a wallet-approved link, which records no email. Do not
+  assume this field is an email address.
 
 `deploy --create` also maintains a managed `.gitignore` block that ignores every
 secret-bearing path (`.bounded/credentials`, `*.key`, `*.keypair.json`, `.env`,

@@ -238,7 +238,7 @@ Web-account projects record only a public login hint:
 |---|---|
 | `owner` | the public owner identity recorded at create time: a wallet address in wallet/keypair mode, or a Bounded Auth user id in web mode |
 | `ownerKeySource` | the account source — `global (~/.bounded/credentials)`, `project (.bounded/credentials)`, `profile "<name>" (~/.bounded/accounts/<name>/credentials)`, `env (BOUNDED_PRIVATE_KEY)`, or `web (Bounded Auth)`. Never a key or token. |
-| `linkedAccount` | the linked or logged-in web account hint when known, blank if none |
+| `linkedAccount` | the linked or logged-in account hint when known, blank if none: an email for an email-approved link or web login, the approving **wallet address** for a wallet-approved link |
 
 `account.keySource` / `ownerKeySource` answer "which account source does this app
 use?" without ever embedding a secret. If it says `global`, the key is in
