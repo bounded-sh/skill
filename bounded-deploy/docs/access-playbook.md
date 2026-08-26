@@ -82,16 +82,18 @@ carried by a login to the linked email. So:
 
 ```bash
 bounded access --app-id <id> --json      # shows the owner identity (often a wallet)
-bounded whoami                            # who you are now; account info shows linked identities
-cat ~/.bounded/account.json               # which email the owner wallet is linked to
+bounded whoami --json                     # who you are now; `linkedAccount` names the linked account
+cat ~/.bounded/account.json               # what the owner wallet is linked to
 bounded login --email <that-email>        # an OTP login to the LINKED email carries owner rights
 bounded share <email> --role viewer --app-id <id>
 ```
 
 If the owner is a wallet linked to `person@example.com`, logging in as that
 email IS acting as the owner — you do not need the wallet's keypair on disk.
-Only a wallet linked to no email requires the actual keypair
-(`bounded account use --global` / the profile holding it).
+A link approved with a **wallet** instead of an email has no email to log in as:
+`linkedAccount` is that wallet, and acting as the owner means holding either
+that wallet or the linked keypair. A wallet linked to nothing requires the
+actual keypair (`bounded account use --global` / the profile holding it).
 
 Also: if `bounded share` returns a **5xx**, the grant may still have landed
 (some failures happen after the roster write — a retry then says "Address is
