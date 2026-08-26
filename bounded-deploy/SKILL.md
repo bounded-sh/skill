@@ -74,6 +74,13 @@ account profile, or recovery of an existing key-owned app.
 - Unsure which applies, or unsure whether a fresh deploy is safe: run the
   read-only `bounded deploy status --json` first. It reports what holds the
   deploy slot and a `freshDeploySafe` verdict, and it never mutates anything.
+- Before a deploy, to know whether it will LAND (not just whether the slot is
+  free): run the read-only `bounded deploy preflight --json`. Deploys are metered
+  against the app's credit balance - each leg charges its actual Cloudflare infra
+  cost (sub-cent; no per-tier deploy cap, no minimum), so an out-of-credit app is
+  refused. Preflight reports the credit balance + a `would_likely_admit/refuse/
+  unknown` verdict so you can tell the user "this will land" or "top up first"
+  before spending time on the deploy. It never mutates anything.
 - `site_control_denied`, wrong owner, or unexpected `401`/`403`: run
   `bounded whoami` and `bounded access --app-id <id>` before changing identity.
   See [access playbook](docs/access-playbook.md).

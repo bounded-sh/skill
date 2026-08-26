@@ -364,6 +364,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
 | `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
 | `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
+| `deploy preflight` | Read-only: whether a deploy will land - your credit balance (deploys are metered against credits, no per-tier cap), the deploy rate-limit, and the structural size caps. Advice, never a promise; never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
 | `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |
 
@@ -557,6 +558,34 @@ For a Solana Devnet policy recovery, the server reads the finalized onchain poli
   Keep using the exact recovery command after a polling timeout.
 - If finalized state is partial or contradictory, the operation remains locked for manual intervention.
   Do not run a normal deploy or attempt a guessed repair.
+
+### Will this deploy land? (`bounded deploy preflight`)
+
+`bounded deploy preflight --json` is the read-only answer to "will a deploy succeed right now".
+Deploys are **metered against your credit balance** - each deploy leg charges its actual Cloudflare
+infra cost (sub-cent; there is **no per-tier deploy cap and no minimum charge**), so the real gate is
+whether you have credits. Run it before a deploy so an agent can tell the user exactly what will
+happen ("you have N credits, this will land" / "0 credits - top up or upgrade first").
+
+```json
+{
+  "appId": "<id>",
+  "plan": "free",
+  "verdict": "would_likely_admit",
+  "metering": { "basis": "infra_usage_cost", "minimumMicroUsd": 0 },
+  "legs": {
+    "credits": { "verdict": "would_likely_admit", "availableCredits": 5 },
+    "ownerRateLimit": { "verdict": "would_likely_admit" },
+    "site": { "verdict": "would_likely_admit", "maxFiles": 5000 }
+  }
+}
+```
+
+Each verdict is **advice, never a promise** (`would_likely_admit` / `would_likely_refuse` /
+`unknown`): a parallel deploy can move the balance between the preflight and the deploy, and the
+deploy-time charge stays authoritative. `unknown` means a backing store could not be read - treat it
+as "cannot confirm", never as "safe". The `site`/`backendSource` caps are structural size limits that
+apply to every tier.
 
 ### Is a fresh deploy safe? (`bounded deploy status`)
 
