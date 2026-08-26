@@ -38,7 +38,8 @@ A function can also scope *itself* to a set of environments from the other side,
 with its own `environments` allowlist — see
 [§ Environment-scoped functions](#environment-scoped-functions).
 
-The top-level `constants` block is the **local-dev default** - the values used
+The top-level `constants` block, and the collections' own `schedule.every`
+values, are the **local-dev default** - the values used
 when you deploy to an app that the `environments` block does not name. Do **not**
 fill it with a copy of any deployed environment's real identity constants
 (`ADMIN`, a fee wallet, a steward): if it holds staging's admin and you deploy to
@@ -184,7 +185,7 @@ Keys are collection keys, or the literal `"*"`:
   repoints one.
 
 The base policy's own `schedule.every` values stay untouched and remain what a
-bare deploy (and, by convention, production) ships.
+deploy to an app the `environments` block does not name ships.
 
 This is fail-closed on every axis, because a silently-ignored override would
 leave the base cadence running in an environment the author believed they had
