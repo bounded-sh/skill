@@ -77,10 +77,10 @@ keys:
   local wallet key** to a **remote Bounded account**; the current headless
   approval method is email OTP. It runs an OAuth-style **device flow**: the CLI
   prints a device code, you approve the fingerprint at the dashboard **/link** page (the CLI prints the exact URL for your environment) in a
-  browser signed in as the remote account — with email/social **or a Solana
+  browser signed in as the remote account, with email/social **or a Solana
   wallet** (a wallet approval keys the linked account by that wallet address; no
-  email is on file until you later sign in with email once) — (agents should
-  print that URL for their user), and the CLI records the linkage. For
+  email is on file until you later sign in with email once) - agents should
+  print that URL for their user - and the CLI records the linkage. For
   headless/agent workflows, use
   `bounded link --email you@example.com`: the CLI sends the OTP, reads the code
   from stdin, approves the same fingerprint-checked device flow, and records the
