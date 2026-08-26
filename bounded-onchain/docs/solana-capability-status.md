@@ -18,8 +18,9 @@ The catalog contains 157 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The current Bounded Solana program is recorded as **runtime v4**, live on both devnet and mainnet-beta since 2026-08-05, which is the version this snapshot classifies against.
-Runtime v4 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
+The current Bounded Solana program is recorded as **runtime v5**, live on both devnet and mainnet-beta since 2026-08-26.
+The rows below were classified against the runtime-v4 minimum and have not been reclassified, which is safe because v5 is a superset: nothing in this catalog is gated above v4, so no row's support state changed.
+Runtime v5 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
 The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`.
@@ -45,7 +46,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
 | `CPAMM-SCENARIO` | A devnet acceptance run of this function is straightforward to construct, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
-| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4. Runtime v4 is live on both devnet and mainnet-beta as of 2026-08-05, so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
+| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4 as a minimum. Both devnet and mainnet-beta have met it since 2026-08-05 and now run v5 (2026-08-26), so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-RAYDIUM-PROOF` | Raydium CPMM is deployed on devnet (at a different address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-DLMM-PROOF` | Meteora DLMM is deployed on devnet at the same address as mainnet and stays unverified until retained live proof exists. |
