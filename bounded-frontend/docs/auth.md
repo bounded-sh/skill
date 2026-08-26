@@ -74,11 +74,14 @@ keys:
   bounded.sh). No key is involved, and a `bounded login` web session does
   **not** link any local key. Headless agents can use `--email` for terminal OTP.
 - **`bounded link`** is wallet-only: it **explicitly attaches THIS device's
-  local wallet key** to a **remote Bounded web account**; the current headless
+  local wallet key** to a **remote Bounded account**; the current headless
   approval method is email OTP. It runs an OAuth-style **device flow**: the CLI
   prints a device code, you approve the fingerprint at the dashboard **/link** page (the CLI prints the exact URL for your environment) in a
-  browser with the remote web account (agents should print that URL for their
-  user), and the CLI records the linkage. For headless/agent workflows, use
+  browser signed in as the remote account — with email/social **or a Solana
+  wallet** (a wallet approval keys the linked account by that wallet address; no
+  email is on file until you later sign in with email once) — (agents should
+  print that URL for their user), and the CLI records the linkage. For
+  headless/agent workflows, use
   `bounded link --email you@example.com`: the CLI sends the OTP, reads the code
   from stdin, approves the same fingerprint-checked device flow, and records the
   linkage without opening a browser. After linking, your keypair address and the
@@ -86,10 +89,10 @@ keys:
   keeps signing for everything** — linking adds an account association, it never
   replaces or rolls your key. In web account mode, use `bounded login`; there is
   no local key to link.
-  The link is one explicit wallet-key <-> web-account pair. One local key can be
-  linked to one remote account, and that email/wallet combo is the durable
-  association. Linking is **refused** if it would merge two unlinked accounts
-  that both already own projects. When the current web login method is email,
+  The link is one explicit wallet-key <-> account pair. One local key can be
+  linked to one remote account, and that account (email or wallet) is the
+  durable association. Linking is **refused** if it would merge two unlinked
+  accounts that both already own projects. When the current web login method is email,
   that email is also the owner notification surface for plan/usage alerts. You can
   run **`bounded account transfer-to-web`** (after `bounded login`; no link
   required, `--app <appId>` for a subset) to make the web account the

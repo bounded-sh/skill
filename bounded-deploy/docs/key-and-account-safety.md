@@ -276,9 +276,13 @@ The canonical identity is your **web account's user id** — wallet keys are
 detachable signing credentials, and email is a verified contact/login method.
 `bounded login` is a plain web login and does **not** link any local key.
 `bounded link` explicitly attaches the active **local wallet key** to a **remote
-Bounded web account** via an OAuth-style **device flow** (device code +
+Bounded account** via an OAuth-style **device flow** (device code +
 fingerprint approval at the dashboard **/link** page (the CLI prints the exact URL) — agents should print that URL for
-their user). The current headless approval method is email OTP: run
+their user).
+On the approval page the human signs in with email/social **or a Solana wallet**;
+a wallet approval keys the linked account by that wallet address (no email on
+file until they later sign in with email once).
+The current headless approval method is email OTP: run
 `bounded link --email you@example.com`; the CLI emails an OTP, reads the code
 from stdin, approves the same fingerprint-checked device flow, and records the
 linkage locally. Linking is **refused** if it would merge two unlinked accounts
