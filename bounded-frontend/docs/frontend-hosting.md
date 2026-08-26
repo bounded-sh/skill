@@ -54,8 +54,10 @@ bounded site deploy ./dist --app-id <id>
   gate is deliberately simple and **web-login only**: a public app is reachable
   by anyone; a private app is reachable only after signing in with a Bounded
   web account that is the owner, a collaborator, or invited (identities linked
-  to that account — e.g. a linked CLI key's apps — resolve server-side). There
-  is no local-key/daemon auto-pass through the gate. Use `--public` during app
+  to that account — e.g. a linked CLI key's apps — resolve server-side), plus
+  Bounded platform staff, who can open any private site read-only for support
+  and never gain owner or collaborator powers on it. There is no
+  local-key/daemon auto-pass through the gate. Use `--public` during app
   creation when the site should be public from the start. Existing apps stay as
   they were. After creation, flip or inspect the gate with
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it
