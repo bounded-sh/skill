@@ -238,7 +238,7 @@ Web-account projects record only a public login hint:
 |---|---|
 | `owner` | the public owner identity recorded at create time: a wallet address in wallet/keypair mode, or a Bounded Auth user id in web mode |
 | `ownerKeySource` | the account source — `global (~/.bounded/credentials)`, `project (.bounded/credentials)`, `profile "<name>" (~/.bounded/accounts/<name>/credentials)`, `env (BOUNDED_PRIVATE_KEY)`, or `web (Bounded Auth)`. Never a key or token. |
-| `linkedAccount` | the linked or logged-in web account hint when known, blank if none |
+| `linkedAccount` | the linked or logged-in account hint when known, blank if none: an email for an email-approved link or web login, the approving **wallet address** for a wallet-approved link |
 
 `account.keySource` / `ownerKeySource` answer "which account source does this app
 use?" without ever embedding a secret. If it says `global`, the key is in
@@ -276,9 +276,13 @@ The canonical identity is your **web account's user id** — wallet keys are
 detachable signing credentials, and email is a verified contact/login method.
 `bounded login` is a plain web login and does **not** link any local key.
 `bounded link` explicitly attaches the active **local wallet key** to a **remote
-Bounded web account** via an OAuth-style **device flow** (device code +
+Bounded account** via an OAuth-style **device flow** (device code +
 fingerprint approval at the dashboard **/link** page (the CLI prints the exact URL) — agents should print that URL for
-their user). The current headless approval method is email OTP: run
+their user).
+On the approval page the human signs in with email/social **or a Solana wallet**;
+a wallet approval keys the linked account by that wallet address (no email on
+file until they later sign in with email once).
+The current headless approval method is email OTP: run
 `bounded link --email you@example.com`; the CLI emails an OTP, reads the code
 from stdin, approves the same fingerprint-checked device flow, and records the
 linkage locally. Linking is **refused** if it would merge two unlinked accounts
