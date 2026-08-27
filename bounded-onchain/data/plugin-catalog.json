@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "b3107f655548f206f2346cd484c74eb5c175186e",
+  "monorepoCommit": "354824149052abd895fd3635cfd9cc4d95ff5352",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -6488,7 +6488,7 @@
      "callName": "@PriceFeedPlugin.getPriceFeed",
      "category": "readOnly",
      "signature": "getPriceFeed(string, string?)",
-     "usage": "@PriceFeedPlugin.getPriceFeed(baseFeedId, quoteFeedId?) - pass a @PriceFeedPlugin.<SYMBOL> variable or a 64-character Pyth feed id, e.g., getPriceFeed(@PriceFeedPlugin.SOL) or getPriceFeed(@PriceFeedPlugin.SOL, @PriceFeedPlugin.BTC). A plain symbol string like 'SOL' is not a feed id and is rejected.",
+     "usage": "@PriceFeedPlugin.getPriceFeed(baseFeedId, quoteFeedId?) - pass a @PriceFeedPlugin.<SYMBOL> variable or a 64-character Pyth feed id, e.g., getPriceFeed(@PriceFeedPlugin.SOL) or getPriceFeed(@PriceFeedPlugin.SOL, @PriceFeedPlugin.BTC). A plain symbol string like 'SOL' is not a feed id and is rejected. Both onchain and offchain evaluation read the feed's sponsored Pyth push-oracle account on the app's cluster, so the feed id must have a sponsored account there (all @PriceFeedPlugin.<SYMBOL> feeds do); a feed without one fails closed.",
      "returnType": "string",
      "isOnlyOffchain": false,
      "validArgCounts": null,
