@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "dcff416b5e29f0954ce72824377a5069e293291f",
+  "monorepoCommit": "b3107f655548f206f2346cd484c74eb5c175186e",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -3217,7 +3217,7 @@
      "callName": "@DeFiPlugin.createMeteoraVirtualPool",
      "category": "transactional",
      "signature": "createMeteoraVirtualPool(string, string, string, string, string, string?)",
-     "usage": "@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?)",
+     "usage": "@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?) - the pool base mint is ALWAYS derived with the LEGACY token seed (appId + tokenId + name + symbol); there is no seedMode option. Derive the mint elsewhere with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form (that derives a different, nonexistent address)",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3720,8 +3720,8 @@
      "name": "swapInMeteoraVirtualPool",
      "callName": "@DeFiPlugin.swapInMeteoraVirtualPool",
      "category": "transactional",
-     "signature": "swapInMeteoraVirtualPool(string, string, string, string, string)",
-     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form. minimumAmountOut is a REQUIRED absolute floor (quote off @DeFiPlugin.getMeteoraSwapQuote and subtract your slippage); the program checks it verbatim, so there is no slippageBps and no derived-floor fallback.",
+     "signature": "swapInMeteoraVirtualPool(string, string, string, string, string?, number?)",
+     "usage": "@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form. Pass an absolute minimumAmountOut when available. If omitted, the builder derives and binds a floor from a fresh quote using slippageBps, which defaults to 500 (5%).",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3742,7 +3742,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The mint address of the pool's base token (used to find the pool)",
+       "description": "The mint address of the pool's base token (used to find the pool). For a pool created by createMeteoraVirtualPool this is the LEGACY-seed mint: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form",
        "fields": null
       },
       {
@@ -3767,9 +3767,18 @@
        "index": 4,
        "name": "minimumAmountOut",
        "type": "string",
-       "optional": false,
+       "optional": true,
        "signer": null,
-       "description": "Required absolute minimum output amount in smallest units, below which the swap reverts. Quote it with @DeFiPlugin.getMeteoraSwapQuote and subtract your own slippage. H006: this floor is taken by argument only - the program never derives one from a fresh on-chain quote (which a client could have moved between quote and swap), so it must be positive for any non-zero amount.",
+       "description": "Optional absolute minimum output in smallest units. When omitted, the builder binds a floor derived from a fresh quote and slippageBps.",
+       "fields": null
+      },
+      {
+       "index": 5,
+       "name": "slippageBps",
+       "type": "number",
+       "optional": true,
+       "signer": null,
+       "description": "Optional slippage tolerance used only when minimumAmountOut is omitted. Defaults to 500 (5%).",
        "fields": null
       }
      ],
@@ -4031,7 +4040,7 @@
      "callName": "@DeFiPlugin.getDammV2PoolAddress",
      "category": "readOnly",
      "signature": "getDammV2PoolAddress(string)",
-     "usage": "@DeFiPlugin.getDammV2PoolAddress(tokenMintAddress)",
+     "usage": "@DeFiPlugin.getDammV2PoolAddress(tokenMintAddress) - for Meteora-launched tokens the mint uses the LEGACY seed: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form",
      "returnType": "string",
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -4043,7 +4052,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The mint address of the token (same as used in createMeteoraVirtualPool)",
+       "description": "The mint address of the token (same as used in createMeteoraVirtualPool - the LEGACY-seed mint, derived with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol))",
        "fields": null
       }
      ],
@@ -4078,7 +4087,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The mint address of the pool's base token (used to find the pool)",
+       "description": "The mint address of the pool's base token (used to find the pool). For a pool created by createMeteoraVirtualPool this is the LEGACY-seed mint: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form",
        "fields": null
       },
       {
@@ -4822,7 +4831,7 @@
      "callName": "@NFTPlugin.updateRoyalties",
      "category": "transactional",
      "signature": "updateRoyalties(string, string?, string, number, array?)",
-     "usage": "@NFTPlugin.updateRoyalties(nftAddress, collectionAddress, updateAuthority, basisPoints, creators?) - Update the royalties plugin on an NFT. If creators is omitted or null, existing on-chain creators are preserved and only basisPoints changes. SECURITY: When updateAuthority is a Bounded-signed PDA (@contract.address, an @AccountPlugin account, or the collection's Bounded PDA), Bounded signs via invoke_signed - you MUST gate the policy path with `rules` (e.g. rules.create: '@user.address == <admin>') to prevent unauthorized callers. Wallet authorities are natively enforced by Metaplex Core.",
+     "usage": "@NFTPlugin.updateRoyalties(nftAddress, collectionAddress, updateAuthority, basisPoints, creators?) - Update the royalties plugin on an NFT. If creators is omitted or null, existing on-chain creators are preserved and only basisPoints changes. SECURITY: For a Bounded-managed NFT, the app-scoped collection or standalone-NFT authority PDA signs via invoke_signed, so you MUST gate the policy path with `rules` (e.g. rules.create: '@user.address == <admin>') to prevent unauthorized callers. For an externally managed NFT, pass the real wallet/account authority; Metaplex Core enforces its signature.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -5012,7 +5021,7 @@
      "callName": "@NFTPlugin.getUpdateAuthority",
      "category": "readOnly",
      "signature": "getUpdateAuthority(string)",
-     "usage": "@NFTPlugin.getUpdateAuthority(nftOrCollectionAddress) - Returns the actual on-chain update authority of an NFT or collection. For NFTs that inherit from their collection (UpdateAuthority::Collection), recursively resolves to the collection's on-chain authority. For Bounded-managed assets, returns the Bounded collection-authority PDA. For externally-managed assets, returns the wallet or account that owns the authority.",
+     "usage": "@NFTPlugin.getUpdateAuthority(nftOrCollectionAddress) - Returns the actual on-chain update authority of an NFT or collection. For NFTs that inherit from their collection (UpdateAuthority::Collection), recursively resolves to the collection's app-scoped authority PDA. For standalone Bounded-managed NFTs, returns the app-scoped per-NFT authority PDA. For externally managed assets, returns the wallet or account that owns the authority.",
      "returnType": "string",
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -6531,8 +6540,66 @@
      "name": "buyExactSolIn",
      "callName": "@PumpFunPlugin.buyExactSolIn",
      "category": "transactional",
-     "signature": "buyExactSolIn(source, mint, solAmount, minTokensOut)",
-     "usage": "@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, minTokensOut) - Buy tokens with exact SOL amount, reverting unless at least minTokensOut tokens are received",
+     "signature": "buyExactSolIn(source, mint, solAmount, slippageBps)",
+     "usage": "@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps) - Legacy exact-SOL buy. Kept for deployed-policy compatibility; use buyExactSolInWithMinimumOutput for a caller-committed price floor.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "Source address (wallet, @contract.address for escrow, or account ID) - provides SOL",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "Token mint address",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "solAmount",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "Amount of SOL to spend (in lamports)",
+       "fields": null
+      },
+      {
+       "index": 3,
+       "name": "slippageBps",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "Legacy slippage tolerance in basis points. New policies should use buyExactSolInWithMinimumOutput so the accepted price is committed before execution.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ],
+     "status": {
+      "lane": "legacy runtime",
+      "support": "unverified",
+      "verification": "source parity only",
+      "markers": "LIVE-PUMP-PROOF"
+     }
+    },
+    {
+     "name": "buyExactSolInWithMinimumOutput",
+     "callName": "@PumpFunPlugin.buyExactSolInWithMinimumOutput",
+     "category": "transactional",
+     "signature": "buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut)",
+     "usage": "@PumpFunPlugin.buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut) - Buy with exact SOL, reverting unless at least minTokensOut tokens are received",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -6571,7 +6638,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "Absolute minimum tokens the buy must yield or it reverts. Quote it with @PumpFunPlugin.getPumpBuyQuote(mint, solAmount) and subtract your own slippage (e.g. quote * 9500 / 10000 for 5%). Must be positive; the program never re-derives this floor for you, so a stale or manipulated curve cannot shrink your fill below it.",
+       "description": "Required absolute minimum output in smallest units. Derive it from getPumpBuyQuote and the user's slippage tolerance.",
        "fields": null
       }
      ],
@@ -7151,7 +7218,7 @@
      "callName": "@PumpFunPlugin.getPumpBuyQuote",
      "category": "readOnly",
      "signature": "getPumpBuyQuote(string, number)",
-     "usage": "@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns the tokens a solAmount (lamports) buy would ACTUALLY yield against the live bonding curve, AFTER the pump buy fee (so it matches what buyExactSolIn delivers, not the raw pre-fee curve amount). Derive minTokensOut as quote * (1 - slippageBps / 10000), where slippage only needs to cover PRICE MOVEMENT between quote and buy, not the fee.",
+     "usage": "@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns a conservative tokens-out quote against the live bonding curve. Derive minTokensOut as quote * (10000 - slippageBps) / 10000 and pass it to buyExactSolInWithMinimumOutput.",
      "returnType": "number",
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -7233,7 +7300,7 @@
      "callName": "@Solana.createAccount",
      "category": "transactional",
      "signature": "createAccount(string, number, string)",
-     "usage": "@Solana.createAccount(name, space, ownerProgramId) - Creates the app-scoped named PDA (Bounded_pda(appId, name)) as a fresh account with `space` bytes owned by ownerProgramId; rent-exempt minimum is funded by the app escrow.",
+     "usage": "@Solana.createAccount(name, space, ownerProgramId) - Creates the app-scoped named PDA (bounded_pda(appId, name)) as a fresh account with `space` bytes owned by ownerProgramId; rent-exempt minimum is funded by the app escrow.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -7245,7 +7312,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The app-scoped account name; the created account is Bounded_pda(appId, name), also addressable via @Solana.signerAccount(name).",
+       "description": "The app-scoped account name; the created account is bounded_pda(appId, name), also addressable via @Solana.signerAccount(name).",
        "fields": null
       },
       {
@@ -7621,7 +7688,7 @@
      "callName": "@Solana.signerAccount",
      "category": "readOnly",
      "signature": "signerAccount(string)",
-     "usage": "@Solana.signerAccount(name) - Returns the app-scoped named PDA (Bounded_pda(appId, name)); usable as a signerName-elevated meta in @Solana.invoke and as the account created by @Solana.createAccount.",
+     "usage": "@Solana.signerAccount(name) - Returns the app-scoped named PDA (bounded_pda(appId, name)); usable as a signerName-elevated meta in @Solana.invoke and as the account created by @Solana.createAccount.",
      "returnType": "string",
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -8444,7 +8511,7 @@
      "callName": "@TokenPlugin.getTokenMintAddress",
      "category": "readOnly",
      "signature": "getTokenMintAddress(string,string?,string?)",
-     "usage": "@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode",
+     "usage": "@TokenPlugin.getTokenMintAddress(tokenId) for id-only mode, or @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) for legacy mode. The argument form MUST match the seed mode of the function that created the mint: the 1-arg form pairs ONLY with Pump.fun creates that passed {seedMode: \"idOnly\"}; classic TokenPlugin creates (createToken/createToken2022) and @DeFiPlugin.createMeteoraVirtualPool always use the legacy seed and require the 3-arg form. A mismatched form derives a different, nonexistent address and the write later fails with onchain account not found",
      "returnType": "string",
      "isOnlyOffchain": false,
      "validArgCounts": [

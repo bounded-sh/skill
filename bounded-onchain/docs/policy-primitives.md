@@ -496,7 +496,7 @@ Before enabling a new primitive or runtime version:
   Fetch `getTransaction` at finalized commitment, require `meta.err` and slot to match the status evidence, and require the exact authoritative Anchor error name plus the expected runtime program's matching failure marker.
   Retain only public `meta.err` and the minimum sanitized log markers needed to identify that error.
   Derive the denied document PDA from the runtime program, app ID, and absolute document path.
-  The document seed is `sha256(utf8("tarobase_document" + appId + absolutePath))`, passed as the sole seed to `findProgramAddressSync`.
+  The document seed is `sha256(utf8("bounded_document" + appId + absolutePath))`, passed as the sole seed to `findProgramAddressSync`.
   Starting only after denial finalization, sample both the Bounded mirror and `getAccountInfo` at least four times across a measured monotonic observation window.
   Every mirror sample must show the exact pre-denial collection unchanged and the forbidden path absent.
   Every account sample must use finalized commitment, set `minContextSlot` to at least the denial slot, and return `null` for the denied document PDA.

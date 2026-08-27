@@ -22,7 +22,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `Solana.createAccount`
 
 ```
-@Solana.createAccount(name, space, ownerProgramId) - Creates the app-scoped named PDA (Bounded_pda(appId, name)) as a fresh account with `space` bytes owned by ownerProgramId; rent-exempt minimum is funded by the app escrow.
+@Solana.createAccount(name, space, ownerProgramId) - Creates the app-scoped named PDA (bounded_pda(appId, name)) as a fresh account with `space` bytes owned by ownerProgramId; rent-exempt minimum is funded by the app escrow.
 ```
 
 - Callable from: `hooks.onchain`
@@ -30,7 +30,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `name` | string | yes | - | The app-scoped account name; the created account is Bounded_pda(appId, name), also addressable via @Solana.signerAccount(name). |
+| `name` | string | yes | - | The app-scoped account name; the created account is bounded_pda(appId, name), also addressable via @Solana.signerAccount(name). |
 | `space` | number | yes | - | The account data size in bytes (rent-exempt minimum computed on-chain via the Rent sysvar; see @Solana.rentExemption for budgeting). |
 | `ownerProgramId` | string | yes | - | The executable program that will own the account. Must be a literal or @Solana well-known program constant. |
 
@@ -157,7 +157,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `Solana.signerAccount`
 
 ```
-@Solana.signerAccount(name) - Returns the app-scoped named PDA (Bounded_pda(appId, name)); usable as a signerName-elevated meta in @Solana.invoke and as the account created by @Solana.createAccount.
+@Solana.signerAccount(name) - Returns the app-scoped named PDA (bounded_pda(appId, name)); usable as a signerName-elevated meta in @Solana.invoke and as the account created by @Solana.createAccount.
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries

@@ -22,7 +22,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `PumpFunPlugin.buyExactSolIn`
 
 ```
-@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, minTokensOut) - Buy tokens with exact SOL amount, reverting unless at least minTokensOut tokens are received
+@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps) - Legacy exact-SOL buy. Kept for deployed-policy compatibility; use buyExactSolInWithMinimumOutput for a caller-committed price floor.
 ```
 
 - Callable from: `hooks.onchain`
@@ -33,7 +33,23 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
 | `mint` | string | yes | - | Token mint address |
 | `solAmount` | string | yes | - | Amount of SOL to spend (in lamports) |
-| `minTokensOut` | string | yes | - | Absolute minimum tokens the buy must yield or it reverts. Quote it with @PumpFunPlugin.getPumpBuyQuote(mint, solAmount) and subtract your own slippage (e.g. quote * 9500 / 10000 for 5%). Must be positive; the program never re-derives this floor for you, so a stale or manipulated curve cannot shrink your fill below it. |
+| `slippageBps` | string | yes | - | Legacy slippage tolerance in basis points. New policies should use buyExactSolInWithMinimumOutput so the accepted price is committed before execution. |
+
+### `PumpFunPlugin.buyExactSolInWithMinimumOutput`
+
+```
+@PumpFunPlugin.buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut) - Buy with exact SOL, reverting unless at least minTokensOut tokens are received
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (source parity only); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
+| `mint` | string | yes | - | Token mint address |
+| `solAmount` | string | yes | - | Amount of SOL to spend (in lamports) |
+| `minTokensOut` | string | yes | - | Required absolute minimum output in smallest units. Derive it from getPumpBuyQuote and the user's slippage tolerance. |
 
 ### `PumpFunPlugin.collectCreatorFee`
 
@@ -219,7 +235,7 @@ Fields of `config`:
 ### `PumpFunPlugin.getPumpBuyQuote`
 
 ```
-@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns the tokens a solAmount (lamports) buy would ACTUALLY yield against the live bonding curve, AFTER the pump buy fee (so it matches what buyExactSolIn delivers, not the raw pre-fee curve amount). Derive minTokensOut as quote * (1 - slippageBps / 10000), where slippage only needs to cover PRICE MOVEMENT between quote and buy, not the fee.
+@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns a conservative tokens-out quote against the live bonding curve. Derive minTokensOut as quote * (10000 - slippageBps) / 10000 and pass it to buyExactSolInWithMinimumOutput.
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries

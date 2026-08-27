@@ -66,7 +66,7 @@ program's own source resolver:
 1. the value parses as a pubkey **and equals the program ID** -> the app escrow PDA, program-signed;
 2. the value parses as a pubkey -> that wallet, no program signing (the user signs);
 3. **the value does not parse as a pubkey -> it is an account id**, resolved to
-   `hash("tarobase_pda" + appId + accountId)`, and the program signs for it with those seeds.
+   `hash("bounded_pda" + appId + accountId)`, and the program signs for it with those seeds.
 
 Branch 3 is the one people miss, because most examples only ever show branch 1.
 It applies only when that function's existing manifest description lists wallet,
