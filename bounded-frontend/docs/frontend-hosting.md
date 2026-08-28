@@ -207,10 +207,11 @@ data rules, or invariants.
 
 ## Version history and retention
 
-Every successful canonical `site deploy` is versioned and restorable - but
-history is BOUNDED: the newest 10 deployments are kept automatically, and
-everything older ages out on later deploys. Pins are ADDITIONAL to the newest
-10: pin any version you may want to roll back to later, BEFORE it ages out.
+Every successful canonical frontend version is restorable, whether it came
+from `site deploy` or a prompt build/edit promotion - but history is BOUNDED:
+the newest 10 versions are kept automatically, and everything older ages out
+on later deploys or promotions. Pins are ADDITIONAL to the newest 10: pin any
+version you may want to roll back to later, BEFORE it ages out.
 
 ```bash
 bounded site versions --app-id <id>          # what is restorable, what is live, what is pinned
@@ -224,6 +225,9 @@ Rules of thumb:
   rollback makes an old version live again.
 - Versions referenced by platform evidence (governed releases, active variant
   bases) are system-pinned automatically and never age out.
+- When an old prompt-built version ages out, Bounded keeps only a compact
+  internal completion receipt so a delayed promotion retry cannot reapply it;
+  that receipt is not a restorable frontend version.
 - User pins are bounded by a per-app cap; system pins never count against it.
 - Rolling back to a version that aged out answers `410 site_deploy_expired`:
   run `bounded site versions` and pick a retained version instead. A `404`
