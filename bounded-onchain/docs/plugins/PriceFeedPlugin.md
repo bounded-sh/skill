@@ -16,7 +16,7 @@ Argument descriptions and signer markers below are copied from the existing mono
 ### `PriceFeedPlugin.getPriceFeed`
 
 ```
-@PriceFeedPlugin.getPriceFeed(baseFeedId, quoteFeedId?) - pass a @PriceFeedPlugin.<SYMBOL> variable or a 64-character Pyth feed id, e.g., getPriceFeed(@PriceFeedPlugin.SOL) or getPriceFeed(@PriceFeedPlugin.SOL, @PriceFeedPlugin.BTC). A plain symbol string like 'SOL' is not a feed id and is rejected.
+@PriceFeedPlugin.getPriceFeed(baseFeedId, quoteFeedId?) - pass a @PriceFeedPlugin.<SYMBOL> variable or a 64-character Pyth feed id, e.g., getPriceFeed(@PriceFeedPlugin.SOL) or getPriceFeed(@PriceFeedPlugin.SOL, @PriceFeedPlugin.BTC). A plain symbol string like 'SOL' is not a feed id and is rejected. Both onchain and offchain evaluation read the feed's sponsored Pyth push-oracle account on the app's cluster, so the feed id must have a sponsored account there (all @PriceFeedPlugin.<SYMBOL> feeds do); a feed without one fails closed.
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
