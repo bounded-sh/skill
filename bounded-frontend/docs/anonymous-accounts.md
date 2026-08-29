@@ -96,17 +96,20 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 > proves someone is authenticated; `@user.isAnonymous` only narrows *which kind*
 > of authenticated user it is.
 
-## 2b. Guests are offchain-only on mainnet - and warn your users
+## 2b. Guests are offchain-only in the browser - and warn your users
 
 Treat a guest as a **temporary, try-the-app identity**. Two things the platform does, and one
 thing you must do:
 
-- **The platform blocks guests from writing to MAINNET onchain**, fail-closed - a guest write to
-  a `realtime_mainnet`/`solana_mainnet` (or `*_mainnet_preview`) collection returns
-  **403 `anonymous_onchain_blocked`** before any transaction is built. Devnet/testnet, poofnet
-  simulation, offchain writes, and onchain reads are all still allowed, so a guest can fully
-  explore your app. (See
-  [onchain.md](../../bounded-onchain/docs/onchain.md#guests-cannot-write-to-mainnet-onchain-platform-invariant).)
+- **A guest cannot complete an onchain write on any real network.** On mainnet the platform
+  refuses it fail-closed: a guest write to a `realtime_mainnet`/`solana_mainnet` (or
+  `*_mainnet_preview`) collection returns **403 `anonymous_onchain_blocked`** before any
+  transaction is built. On devnet the platform *permits* the write and returns a built
+  transaction, and then the browser SDK will not sign it - a guest session's `signTransaction`
+  throws `Guest (anonymous) auth is offchain-only`, and the guest device key (a non-extractable
+  WebCrypto Ed25519 key) has no transaction-byte signing path. Onchain reads, offchain writes,
+  and poofnet simulation are all still allowed, so a guest can still explore your app. (See
+  [onchain.md](../../bounded-onchain/docs/onchain.md#guests-cannot-complete-an-onchain-write).)
 - **A guest is dropped on upgrade.** Signing in with email or a wallet creates a **new** real
   account - the guest's keypair, its data, and any funds sitting in the guest device wallet do
   **not** carry over (see §3/§4 for the deliberate patterns to migrate data before upgrading).

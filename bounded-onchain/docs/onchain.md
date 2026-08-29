@@ -223,33 +223,44 @@ This is the opposite of the off-chain default: off-chain, prefer the universal
 `@user.id`; onchain, you have nothing but `@user.address`. See
 [policy-reference.md](../../bounded-backend/docs/policy-reference.md) for the full identity triad.
 
-## Guests cannot write to MAINNET onchain (platform invariant)
+## Guests cannot complete an onchain write
 
-A **guest (anonymous) session is blocked from every mainnet onchain write**, at the
-platform level, fail-closed - you do not (and cannot reliably) enforce this in your own
-policy, because onchain rules can't even reference `@user.isAnonymous` (above). A blocked
-write returns **HTTP 403 with `code: "anonymous_onchain_blocked"`** *before* any transaction
-is built.
+A guest (anonymous) session cannot land an onchain write on any real network, for two
+independent reasons - and only one of them is the platform's.
 
-**Why.** A guest is an ephemeral device-keypair identity that is **dropped when the user
+**Mainnet: the platform refuses it.** A **guest session is blocked from every mainnet onchain
+write**, at the platform level, fail-closed - you do not (and cannot reliably) enforce this in
+your own policy, because onchain rules can't even reference `@user.isAnonymous` (above). A
+blocked write returns **HTTP 403 with `code: "anonymous_onchain_blocked"`** *before* any
+transaction is built.
+
+**Devnet: the browser SDK will not sign it.** That gate is deliberately mainnet-only, so the
+platform accepts a guest's devnet onchain write and hands back the built transaction - and then
+the client refuses to sign.
+A guest session's `signTransaction` throws `Guest (anonymous) auth is offchain-only`, and the
+guest device key (a non-extractable WebCrypto Ed25519 key) has no transaction-byte signing path.
+So a browser guest is offchain-only in practice on every network: it can read onchain data and
+write offchain collections, and its onchain writes do not complete.
+
+**Why the mainnet gate exists.** A guest is an ephemeral device-keypair identity that is **dropped when the user
 upgrades to email or a real wallet** - its data and its keypair do not carry over. Letting a
 guest move or accumulate real value it would then lose is a footgun, so the platform simply
 forbids it. This mirrors the platform's "fail-closed on money-out" posture.
 
 **Exactly what is and isn't blocked:**
 
-| A guest can... | Blocked? |
+| A guest can... | Result |
 |---|---|
 | Read onchain data (any network) | ✓ allowed |
 | Write **offchain** collections (even in a mainnet app) | ✓ allowed |
-| Write onchain on **`realtime_devnet` / `solana_devnet`** (valueless testnet) | ✓ allowed |
 | Write onchain-flagged paths on **poofnet** (`realtime_offchain`, simulated) | ✓ allowed |
+| Write onchain on **`realtime_devnet` / `solana_devnet`** (valueless testnet) | platform accepts it; ✗ **the browser SDK will not sign the returned transaction** |
 | Write onchain on **`realtime_mainnet` / `solana_mainnet` (+ `*_mainnet_preview`)** | ✗ **403 `anonymous_onchain_blocked`** |
 
-So a guest can fully try your app and develop against devnet/poofnet; only **real mainnet
-value movement** requires a real login. This also covers writes a guest triggers **through a
-function** (`ctx.bounded`) - the anonymity signal is carried end to end, so there is no
-"launder it through a function" bypass.
+So a guest can fully try the offchain and poofnet-simulated surface of your app; a real onchain
+write needs a real login. The platform's `403` also covers mainnet writes a guest triggers
+**through a function** (`ctx.bounded`) - the anonymity signal is carried end to end, so there is
+no "launder it through a function" bypass.
 
 > **Value coming IN is your job to warn about.** The platform blocks value *out* (mainnet
 > writes) but cannot stop someone *depositing* funds into a guest's device wallet from
