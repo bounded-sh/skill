@@ -311,12 +311,12 @@ dedicated append-only log** in the *same* `setMany` as the real write, and put t
     "tier": "durable",
     "rules": {
       "read": "@user.address != null",
-      "create": "@user.address != null && @newData.author == @user.address",
+      "create": "@user.address != null && @newData.author == @user.address && get(/users/@user.address/posts/$messageId) == null && getAfter(/users/@user.address/posts/$messageId).weight == 1",
       "update": "false", "delete": "false"
     }
   },
   "users/$userId/posts/$postId": {
-    "description": "Append-only per-author rate-limit log. Every message appends one weight=1 event here in the SAME atomic setMany.",
+    "description": "Append-only per-author rate-limit log. Every message appends one weight=1 event here, under the SAME document id, in the SAME atomic setMany.",
     "fields": { "author": "Address!", "weight": "UInt!" },
     "tier": "durable",
     "rules": {
@@ -333,20 +333,39 @@ dedicated append-only log** in the *same* `setMany` as the real write, and put t
 ```
 
 ```ts
-// Client writes BOTH legs in one atomic setMany — the message and its cap event
-// commit together or not at all. The 51st post in an hour fails the whole batch
-// (409), so the message is never written either.
+// Client writes BOTH legs in one atomic setMany, under the SAME id - the message
+// and its cap event commit together or not at all. The 51st post in an hour fails
+// the whole batch (409), so the message is never written either.
 await setMany([
-  { path: `messages/${id}`,            document: { author: user.address, body, createdAt } },
-  { path: `users/${user.address}/posts/${postId}`, document: { author: user.address, weight: 1 } },
+  { path: `messages/${id}`,                    document: { author: user.address, body, createdAt } },
+  { path: `users/${user.address}/posts/${id}`, document: { author: user.address, weight: 1 } },
 ]);
 ```
 
 Three things make this airtight, and each is a common omission:
 
-1. **Atomic pairing.** Write the action and the cap event in **one `setMany`**.
-   Because `setMany` is all-or-nothing, you can't do the action without recording
-   the event, and a rejected cap event (over the limit) rolls back the action too.
+1. **Atomic pairing, required by the action's own rule.** Write the action and the
+   cap event in **one `setMany`**, so a rejected cap event (over the limit) rolls
+   back the action too. Atomicity alone is not the enforcement: nothing stops a
+   client from submitting the message leg *by itself*, and `requiresInBatch` cannot
+   close it here, because its companion paths may only use path variables the
+   declaring collection binds and this log is keyed by the caller's identity
+   ([data-plane.md](data-plane.md#require-companion-writes-with-requiresinbatch)).
+   So the message's own `create` rule demands the event, keyed by the caller and
+   sharing the message's id:
+
+   ```json
+   "create": "@user.address != null && @newData.author == @user.address && get(/users/@user.address/posts/$messageId) == null && getAfter(/users/@user.address/posts/$messageId).weight == 1"
+   ```
+
+   `getAfter()` reads the staged post-batch state, so it sees the companion row
+   exactly when the caller included it - drop that leg and the message is denied.
+   **Keep the `get(...) == null` in front of it.** A row that already existed
+   satisfies `getAfter` just as well, so without the absence check a caller can
+   append cheap event rows in one window, let them age out of it, and then spend
+   them on messages in a later window whose cap is never charged. Requiring the row
+   to be absent before the batch forces every message to append a fresh event that
+   counts now. (Offchain, `@user.id` keys this exactly as well as `@user.address`.)
 2. **Pin the weight in the create rule** (`@newData.weight == 1`). Without this a
    client can append `weight: 0` (or omit it) and **the cap never increments** —
    the limit is silently bypassed. The rule, not the client, fixes the per-event
