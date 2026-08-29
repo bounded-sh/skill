@@ -5,6 +5,11 @@ reduces to one shape: **rank items by a frequently-updated, time-windowed aggreg
 read the top-N cheaply and freshly.** Bounded makes each piece declarative; you never hand-roll a
 cron sweep, a dirty-set, or a materialized score pipeline.
 
+> **This pattern is offchain.** `windowSum` is **offchain-only in v1** - declaring it on an
+> `onchain: true` collection is structurally rejected at deploy, and there is no onchain analog
+> ([invariants.md](invariants.md#onchain--coverage-claims-are-verified-not-trusted)). An onchain
+> app ranks a different way: see [Ranking an onchain feed](#ranking-an-onchain-feed).
+
 ## The three pieces
 
 ### 1. Count the activity at event time (a reactive hook, or `windowSum`)
@@ -50,7 +55,7 @@ falsify the sum).
 
 windowSum constraints (validated at deploy): the event `field` is `UInt` and the `targetField`
 is declared numeric (`UInt?`/`Int?`) on a target template whose path variables all come from the
-event path; both collections are `durable` tier, non-session, offchain. Events maintain the
+event path; both collections are `durable` tier, non-session, and **offchain**. Events maintain the
 aggregate on EVERY write path — client SDK / HTTP, room-native WebSocket writes, and events
 created by policy HOOKS. The hook path is how you compose normalization with windowing: when the
 raw event needs a per-branch transform first (e.g. buys in lamports vs sells in raw tokens), have
@@ -102,10 +107,34 @@ Feeds usually rank by a blend (votes + comments + volume + freshness). Two good 
 Bound every activity term (cap + saturating curve, e.g. `min(48, 6*log2(1+vol/1000))`) so spam
 can't dominate organic signals.
 
+## Ranking an onchain feed
+
+`windowSum` is offchain-only, so an onchain collection cannot carry a runtime-maintained window
+score - the deploy rejects the invariant rather than degrading it. Rank from the vote documents
+themselves instead:
+
+- **One vote per voter is the path.** Key each vote by the caller
+  (`items/$itemId/votes/@user.address`) in an `onchain: true` subcollection, so a second vote is
+  the same document rather than a new one and the rules decide whether it may change.
+- **Count through the mirror.** Reads, lists, `subscribe`, and `aggregate` work on onchain
+  collections
+  ([onchain.md](../../bounded-onchain/docs/onchain.md#what-changes-when-a-collection-is-onchain)),
+  so `count('items/<id>/votes')` is the tally - subject to the mirror's eventual consistency, so
+  poll or subscribe rather than reading straight after a write.
+- **Rank client-side** over the candidate set you already read, and keep the blend there. The
+  cap + saturating curve above still applies; spam control is your rules, not an invariant.
+
+If the ranking must be authoritative and server-maintained, keep the ranked collection and its
+aggregate **offchain** and put only the value-bearing writes onchain - the two coexist in one app,
+but never in one batch
+([onchain.md](../../bounded-onchain/docs/onchain.md#onchain-and-offchain-collections-coexist-and-the-0xbc4-gotcha)).
+
 ## Correctness checklist
 
 - Runtime-owned fields (`vol`, `vol10m`) pinned null in user-writable create/update rule branches.
 - Event collection append-only when a `windowSum` is declared (enforced).
-- Both collections `durable` tier, not session-scoped.
+- Both collections `durable` tier, not session-scoped, and **offchain** - a `windowSum` on an
+  `onchain: true` collection is rejected at deploy; rank an onchain feed the other way instead
+  ([above](#ranking-an-onchain-feed)).
 - Counting attempts vs fills: a create-hook fires whether or not a downstream (e.g. onchain sim)
   action succeeded — cap the term if that distinction matters, or count from an executed-only sweep.
