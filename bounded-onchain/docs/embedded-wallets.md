@@ -258,7 +258,7 @@ change.
 ## Checklist
 
 - Keep default Turnkey auth for most apps.
-- Omit redundant `authMode: 'turnkey'` configuration, and `auth.wallets: true` UNLESS the app offers bring-your-own wallet login - that path requires it.
+- Omit redundant `authMode: 'turnkey'` configuration, and `auth.wallets: true` UNLESS an EXTERNAL-keypair session signs in - bring-your-own wallet login, a server-SDK keypair client, or the CLI keypair data lane; each of those requires it.
 - Expect an address after supported email/social login completes.
 - Use `@user.id` for identity and `@user.address` for wallet semantics.
 - Add `walletLogin` only when users should connect an existing wallet - and
