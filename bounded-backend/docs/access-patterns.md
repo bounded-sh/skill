@@ -86,7 +86,7 @@ Path nesting binds `$teamId` for every rule on the template, so a write to team 
 "create": "@newData.price >= 1 && @newData.price <= 1000000 && @StringUtils.length(@newData.title) <= 80"
 ```
 
-Read-only plugin calls are legal in rules; `@StringUtils.length` is offchain-only. Amount fields that invariants protect should be `UInt` so negatives are unrepresentable.
+Read-only plugin calls are legal in rules, on onchain collections too - `@StringUtils.length` compiles to onchain bytecode and the deployed program enforces it. Amount fields that invariants protect should be `UInt` so negatives are unrepresentable.
 
 ## Immutable fields
 
