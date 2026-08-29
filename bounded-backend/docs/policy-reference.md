@@ -242,9 +242,13 @@ For the current Devnet program, bind `openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6
 - Arithmetic: `+` `-` `*` `//` (integer division) `**`. **Plain `/` is reserved
   for paths — using it for division is a validation error.**
 - Literals: numbers (decimals only on offchain collections), quoted strings
-  (`"..."` or `'...'`, the empty string included), `true`, `false`, `null`.
-  Backticks are not a string form: the runtime grammar cannot parse one, so a
-  backtick literal is rejected at verify.
+  (`"..."` or `'...'`), `true`, `false`, `null`.
+  Backticks are not a string form - the runtime grammar cannot parse one, so a
+  backtick literal never deploys, whatever `verify` says about it.
+  The empty string (`''` / `""`) is a legal literal that older validators reject;
+  to require a non-empty `String` on any platform version, use bare truthiness
+  (`@newData.body`) or `@StringUtils.length(@newData.body) > 0`, both of which
+  work offchain and onchain.
 - **No ternary, no switch, no string concatenation.** Branch with
   `(cond && A) || (!cond && B)` chained. Build paths by embedding variables
   directly: `get(/teams/@newData.teamId/members/@user.address)`.
