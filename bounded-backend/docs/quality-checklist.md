@@ -97,6 +97,12 @@ the eval rubrics that grade generated policies; it catches the difference betwee
   `Float`, no offchain `get()`).
 - [ ] **No `onchainSupported` overclaim.** Only direct `conserve`, `tenantTag`, and
   `rollingSum` are enforced onchain; the verifier rejects claims beyond that.
+- [ ] **No silent underclaim either.** An invariant on an `onchain: true`
+  collection with `onchain` OMITTED is enforced offchain only - onchain program
+  writes are not checked against it, and nothing fails. Declare
+  `"onchainSupported"` where supported, or `"offchainOnly"` to record the
+  offchain-only choice as deliberate; `bounded verify` surfaces the omission as
+  an advisory.
 
 ### Extras are warranted
 
