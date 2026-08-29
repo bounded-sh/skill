@@ -113,9 +113,12 @@ can't dominate organic signals.
 score - the deploy rejects the invariant rather than degrading it. Rank from the vote documents
 themselves instead:
 
-- **One vote per voter is the path.** Key each vote by the caller
-  (`items/$itemId/votes/@user.address`) in an `onchain: true` subcollection, so a second vote is
-  the same document rather than a new one and the rules decide whether it may change.
+- **One vote per voter is the path.** Key each vote by the caller in an `onchain: true`
+  subcollection - `items/$itemId/votes/$voter`, with `$voter == @user.address` in the create and
+  update rules - so a second vote is the same document rather than a new one and the rules decide
+  whether it may change. Every id segment of a collection template must be a `$variable`;
+  `@user.address` is legal inside a `get()` / `getAfter()` path but not as a collection key, and a
+  template that spells it there is rejected at verify.
 - **Count through the mirror.** Reads, lists, `subscribe`, and `aggregate` work on onchain
   collections
   ([onchain.md](../../bounded-onchain/docs/onchain.md#what-changes-when-a-collection-is-onchain)),
