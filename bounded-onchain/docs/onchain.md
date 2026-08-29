@@ -226,7 +226,8 @@ This is the opposite of the off-chain default: off-chain, prefer the universal
 ## Guests cannot write to an onchain collection
 
 A guest (anonymous) session is **blocked from writing to any collection marked `onchain: true`**, at the platform level, fail-closed.
-A blocked write returns **HTTP 403 with `code: "anonymous_onchain_blocked"`** *before* any transaction is built, so there is no chain side effect.
+"Writing" means every mutation: `set`, an update, and `delete` alike, whether it arrives as a batch write or as a direct delete of one document.
+A blocked mutation returns **HTTP 403 with `code: "anonymous_onchain_blocked"`** *before* any transaction is built, so there is no chain side effect.
 
 **The refusal is keyed on the collection, not on the network.**
 Poofnet (`realtime_offchain`, simulated), devnet, and mainnet all refuse the same write in the same way.
