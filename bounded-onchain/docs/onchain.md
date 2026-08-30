@@ -175,7 +175,9 @@ write it from a trusted server function instead of the client.
   the user's key. The document is a program account/PDA; the write returns its
   transaction signature. This is the crypto-native path: the user authorizes
   every mutation on-chain, themselves. (A delete is the same tx with a `null`
-  body.)
+  body. It **closes the document's account** and refunds its rent to whoever
+  funded it, and the offchain mirror row disappears once the close is confirmed -
+  not when you call `set(path, null)`.)
 - **Field types map to on-chain types** - `UInt`→u64, `Int`→i64, `String`,
   `Bool`, `Address`→a 32-byte pubkey.
 - **Reads, lists, `subscribe`, and `aggregate` work identically.** Bounded
@@ -344,6 +346,11 @@ A policy that verifies on Poofnet still needs every called function checked agai
 - **Onchain-parity result fields.** Every write to an `onchain: true` path is
   stamped at commit with `_transaction_hash` (signature-shaped) and
   `_block_number` (sim slot).
+  A **delete** is a simulated transaction too, but the row it removes cannot
+  carry those fields, so its signature surfaces only on the batch receipt
+  (`SetResult.transactionId`) and in `getTransactionHistory` - never on the
+  returned document, which is the pre-delete value and still carries the
+  *earlier* write's `_transaction_hash`.
   A **failed** onchain hook still **persists the doc** and stamps `_error_message`
   with the failure reason - read it back or subscribe to surface trade errors in UI.
   **A record existing is NOT proof the onchain action succeeded.**
