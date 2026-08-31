@@ -61,8 +61,8 @@ against real mainnet rather than the simulator, but the Open rail does not yet r
 collections on the app's program account - so Open refuses the policy outright with
 `oapp_opening_onchain_policy_unsupported` rather than publishing an app the chain cannot serve.
 Everything else onchain still works: embedded wallets, payments, DEX/token plugin calls, and reads.
-If you need onchain state collections in an oApp, say so plainly and stop, per "calling it out"
-below - do not work around it.
+If you need onchain state collections in an oApp, say so plainly and stop, per
+"calling it out" in [capability-ladder.md](capability-ladder.md#what-calling-it-out-looks-like) - do not work around it.
 
 
 ## What Open publishes (read before you let go)

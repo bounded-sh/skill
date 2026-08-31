@@ -14,8 +14,8 @@ skip to a workaround:
    data/auth/realtime/files/functions. Route to **bounded-backend**,
    **bounded-frontend**, **bounded-onchain** for the mechanics.
    One exception for oApps: an `onchain: true` COLLECTION is not Openable yet
-   (`oapp_opening_onchain_policy_unsupported`) — see "oApps are mainnet apps"
-   below. Embedded wallets, payments, and plugin calls are unaffected.
+   (`oapp_opening_onchain_policy_unsupported`) — see "oApps are mainnet apps" in
+   [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps). Embedded wallets, payments, and plugin calls are unaffected.
 2. **x402 relay second.** No native integration, but the counterparty prices
    itself with [x402](https://www.x402.org) (HTTP 402 payment-required,
    machine-to-machine)? Bounded can pay that API per-call **on the app's

@@ -109,7 +109,7 @@ What the ritual still refuses:
 | text-only tree (binaries cannot ride the source lane) | yes | `source_not_text` |
 | if the source `init()`s the Bounded client, the DEPLOYED site embeds that literal id | yes — rebuild + redeploy if stale | `clone_app_id_not_rewritten` |
 | a recorded site deployment must actually be found at Open | platform-checked | `clone_site_missing_expected` |
-| no `onchain: true` collection in the deployed policy | see "oApps are mainnet apps" below | `oapp_opening_onchain_policy_unsupported` |
+| no `onchain: true` collection in the deployed policy | see "oApps are mainnet apps" in [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps) | `oapp_opening_onchain_policy_unsupported` |
 
 The refusal body carries the specific `rejections`, so read them rather than
 guessing.
