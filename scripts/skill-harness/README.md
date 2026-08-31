@@ -38,7 +38,15 @@ node scripts/skill-harness/usage.mjs $SKILL_HARNESS_OUT/baseline   # which pages
 
 Runs are resumable: an existing `run.json` is skipped, so raising `--n` only
 adds runs, and a rate-limit stop (`--stop-at-utilization`) resumes with the same
-command.
+command. Every run is stamped with the skill-family content hash, task hash,
+model, CLI version, and budget; a stored run whose stamp does not match the
+current invocation is an error (`--allow-stale` overrides), so pointing a label
+at a different tree can never silently return old results. `bounded verify`
+verdicts are cached per policy content in the run dir and transient prover-busy
+responses are retried, so a recheck cannot flip a verdict through prover noise.
+The two conditions run behind a hard barrier: every `without` run completes
+before the first `with` fixture exists on disk. `node selftest.mjs` pins the
+shim gate, escape detector, canary, and checker counterexamples.
 
 ## Isolation (Tier A, process-level)
 
@@ -55,11 +63,14 @@ this repo, its tests, or the conversation that designed the task. Each run:
   run's skill copy, so a no-skill subject that walks up the directory tree finds
   no installed skill anywhere on disk (observed: a subject did exactly that and
   found a sibling run's copy before this rule existed);
-- puts a read-only `bounded` shim first on PATH (`lib/shim.mjs`): `verify`,
-  `plugins`, `whoami`, `version`, `tests run` pass through to the real CLI;
-  `init`, `deploy`, `share`, `site`, `secret`, `apps`, and everything else is
-  refused with a neutral error and logged. The shim can fault the first N
-  `verify` calls with the documented retryable prover-busy error.
+- puts a read-only `bounded` shim first on PATH (`lib/shim.mjs`): args[0] must
+  literally be `verify`, `plugins`, `whoami`, `version`, or `tests run`; no flag
+  may precede the subcommand (a value-taking global flag like `--instance`
+  consumes the next token, so a filter-based classifier reads one subcommand
+  while the real CLI resolves another - an external review demonstrated exactly
+  that bypass, and `selftest.mjs` now pins it). Everything else is refused with
+  a neutral error and logged. The shim can fault the first N `verify` calls with
+  the documented retryable prover-busy error.
 
 Known limits of Tier A, on purpose so nobody over-trusts a number:
 
@@ -74,9 +85,14 @@ Known limits of Tier A, on purpose so nobody over-trusts a number:
   report "Not logged in". HOME stays real.
 
 - HOME and the filesystem are the maintainer's. A subject that wanders into
-  the checkout, reads the shim, or leaves its fixture through the shell is
-  caught by `lib/canary.mjs` + the escape detector in `lib/metrics.mjs`; such a
-  run is reported DIRTY and must be treated as void, not as a data point.
+  the checkout, a user-level skill install (which may be a DIFFERENT revision),
+  reads the shim, or leaves its fixture through the shell is caught by
+  `lib/canary.mjs` + the escape detector in `lib/metrics.mjs`; such a run is
+  void: counted, never scored. The isolation probe task sets `allowEscapes`
+  because looking around is its job; its output is read by a human, not scored.
+- Results default OUTSIDE the repo (os tmpdir): a fixture under the repo tree
+  would let the subject inherit the maintainer CLAUDE.md through directory
+  ancestry. Set `SKILL_HARNESS_OUT` explicitly for durable result sets.
 - Outbound network from Bash is open, so the public GitHub repo (which holds
   the contract tests) is reachable. The canary covers the strings a subject
   would bring back. A container with egress limited to `api.anthropic.com`

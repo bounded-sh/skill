@@ -11,14 +11,14 @@ export const CANARY_PATTERNS = [
   /\/poof-new\/skill/, /\/Desktop\/workspace\//,
 ]
 
-export function scanCanary(events, metrics, { condition } = {}) {
+export function scanCanary(events, metrics, { condition, allowEscapes } = {}) {
   const blob = JSON.stringify(events)
   const hits = []
-  // A `with` subject reading the same family from the user-level install is
-  // reading content it already has; not a contamination of its condition.
-  const escapes = condition === 'with'
-    ? metrics.escapes.filter((e) => !/\.claude\/skills\/(bounded|oapps-fun)/.test(e.path) && !/\.claude\/skills\/(bounded|oapps-fun)/.test(e.command || ''))
-    : metrics.escapes
+  // No waiver for reading a user-level skill install: it can be a DIFFERENT
+  // revision of the family than the one under test. allowEscapes is for the
+  // isolation probe, whose whole job is to look around; its findings are read
+  // by a human, never scored.
+  const escapes = allowEscapes ? [] : metrics.escapes
   for (const re of CANARY_PATTERNS) {
     const m = blob.match(re)
     if (m) hits.push({ pattern: re.source, sample: blob.slice(Math.max(0, m.index - 60), m.index + 80) })

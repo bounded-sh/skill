@@ -39,6 +39,11 @@
       "id": "seeding-not-bare-owner",
       "kind": "policy-expr",
       "expr": "!cols.some(([k,v]) => (v.invariants||[]).some(i=>i.type==='conserve') && /^\\s*@user\\.id != null && \\$\\w+ == @user\\.id\\s*$/.test(String((v.rules||{}).create||'')))"
+    },
+    {
+      "id": "supply-is-1000000",
+      "kind": "policy-expr",
+      "expr": "Object.values(p.constants||{}).map(String).includes('1000000') || cols.some(([k,v])=>(v.invariants||[]).some(i=>i.type==='conserve') && /1000000/.test(JSON.stringify(v))) || /1000000/.test(JSON.stringify(Object.values(p.functions||{})))"
     }
   ]
 }

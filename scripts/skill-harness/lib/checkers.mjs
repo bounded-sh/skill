@@ -2,7 +2,8 @@
 // (files, policy shape, verify result, CLI calls, final answer), never about
 // whether it paraphrased a doc sentence. Each returns { id, pass, detail }.
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { resolveRealBounded } from './shim.mjs'
 
@@ -46,15 +47,37 @@ function loadPolicy(work, spec) {
   try { return { policy: JSON.parse(readFileSync(p, 'utf8')), file: p } } catch (e) { return { error: `invalid JSON: ${e.message.slice(0, 80)}` } }
 }
 
-export function runVerify(file) {
-  const r = spawnSync(resolveRealBounded(), ['verify', file, '--json'], { encoding: 'utf8', timeout: 180000 })
-  const out = (r.stdout || '') + ''
-  try {
-    const j = JSON.parse(out.slice(out.indexOf('{')))
-    return { ok: true, status: j.status, passed: Boolean(j.passed), counts: j.counts || {}, failures: (j.details || []).filter((d) => !d.passed).map((d) => `${d.check}: ${d.message}`.slice(0, 220)) }
-  } catch {
-    return { ok: false, status: 'NONJSON', passed: false, counts: {}, failures: [((r.stderr || '') + out).slice(0, 300)] }
+// One verdict per policy CONTENT: cached in the run dir so a recheck never
+// re-rolls the prover. Transient responses (the documented prover-busy 503 and
+// the dev-api "429: Too many formal verification requests ... 20 per minute per
+// IP") are retried with backoff and never cached; a verdict is cached only when
+// it carries a real status string. Every uncached prover call is followed by a
+// 4s pause to stay under the 20/min limit even across a long recheck.
+export function runVerify(file, runDir) {
+  const bytes = readFileSync(file)
+  const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 16)
+  const cachePath = runDir ? path.join(runDir, 'verify-cache.json') : null
+  if (cachePath && existsSync(cachePath)) {
+    try { const c = JSON.parse(readFileSync(cachePath, 'utf8')); if (c.hash === hash && c.result && typeof c.result.status === 'string' && !['NONJSON', 'PROVER_BUSY'].includes(c.result.status)) return c.result } catch {}
   }
+  let last = { ok: false, status: 'PROVER_BUSY', passed: false, counts: {}, failures: ['no attempt succeeded'] }
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const r = spawnSync(resolveRealBounded(), ['verify', file, '--json'], { encoding: 'utf8', timeout: 180000 })
+    const raw = (r.stdout || '') + (r.stderr || '')
+    spawnSync('sleep', ['4']) // pacing: stay under 20 prover calls per minute
+    const transient = /proof_substrate_unavailable|Too many formal verification|\b429\b|"retryable"\s*:\s*true/.test(raw)
+    if (transient) { last = { ok: false, status: 'PROVER_BUSY', passed: false, counts: {}, failures: [raw.slice(0, 200)] }; spawnSync('sleep', [String(10 * attempt)]); continue }
+    try {
+      const j = JSON.parse((r.stdout || '').slice((r.stdout || '').indexOf('{')))
+      if (typeof j.status !== 'string') { last = { ok: false, status: 'NONJSON', passed: false, counts: {}, failures: [raw.slice(0, 300)] }; continue }
+      const result = { ok: true, status: j.status, passed: Boolean(j.passed), counts: j.counts || {}, failures: (j.details || []).filter((d) => !d.passed).map((d) => `${d.check}: ${d.message}`.slice(0, 220)) }
+      if (cachePath) writeFileSync(cachePath, JSON.stringify({ hash, result }))
+      return result
+    } catch (e) {
+      last = { ok: false, status: 'NONJSON', passed: false, counts: {}, failures: ['EXC: ' + e.message, raw.slice(0, 300)] }
+    }
+  }
+  return last
 }
 
 export async function runChecks(task, ctx) {
@@ -83,7 +106,7 @@ async function one(c, ctx) {
     case 'verify': {
       const p = path.join(work, c.path || 'policy.json')
       if (!existsSync(p)) return { pass: false, detail: 'policy missing' }
-      const v = runVerify(p)
+      const v = runVerify(p, ctx.runDir)
       const pass = c.expect === 'no-proof-failures' ? v.ok && (v.counts.proofFailures || 0) === 0 && (v.counts.schemaFailures || 0) === 0 : v.passed
       return { pass, detail: `${v.status} ${JSON.stringify(v.counts)}${v.failures.length ? ' ' + v.failures.slice(0, 3).join(' | ') : ''}`, verify: v }
     }
@@ -115,8 +138,8 @@ async function one(c, ctx) {
         if (colRe && !colRe.test(k)) continue
         for (const inv of v.invariants || []) invs.push({ col: k, inv })
       }
-      const where = c.where ? new Function('inv', 'col', 'return (' + c.where + ')') : null
-      const ok = invs.filter(({ inv, col }) => (!c.type || inv.type === c.type) && (!where || where(inv, col)))
+      const where = c.where ? new Function('inv', 'col', 'p', 'return (' + c.where + ')') : null
+      const ok = invs.filter(({ inv, col }) => (!c.type || inv.type === c.type) && (!where || where(inv, col, l.policy)))
       return { pass: ok.length > 0, detail: ok.length ? ok.map((o) => `${o.col}:${JSON.stringify(o.inv).slice(0, 120)}`).join(' || ') : `invariants seen: ${invs.map((o) => o.inv.type).join(',') || 'none'}` }
     }
     case 'regex': {

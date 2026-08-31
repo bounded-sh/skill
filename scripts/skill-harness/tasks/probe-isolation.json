@@ -16,5 +16,6 @@
       "regex": "bounded-skill|Never use the em dash|validate\\.mjs",
       "expect": "absent"
     }
-  ]
+  ],
+  "allowEscapes": true
 }

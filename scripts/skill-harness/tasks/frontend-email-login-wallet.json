@@ -21,7 +21,7 @@
       "id": "no-auth-mode",
       "kind": "regex",
       "glob": "\\.(json|tsx|jsx|ts|js)$",
-      "regex": "authMode",
+      "regex": "authMode['\"]?\\s*[:=]",
       "expect": "absent"
     },
     {

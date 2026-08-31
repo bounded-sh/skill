@@ -1,6 +1,6 @@
 # 2026-08-31 baseline (main) vs cand1 (this branch), with skill
 
-Same tasks, same checkers, same model. cand1 = commits on branch skill-harness: owner-only + escrow fixes, secrets.md surface note, functions.md split, oapps-fun split, auth-default dedupe. Baseline runs used a frozen copy of main. n per task in the table.
+Same tasks, same checkers, same model. cand1 = the branch content; baseline runs used a frozen copy of main. Regenerated after the external review under the hardened checkers (see the baseline report header); every number below is from the re-scored stored runs with verify verdicts cached and retried.
 
 
 | task | base all-pass | cand all-pass | base checks | cand checks | delta checks | base skill bytes | cand skill bytes | base $ | cand $ | base turns | cand turns |
@@ -12,7 +12,7 @@ Same tasks, same checkers, same model. cand1 = commits on branch skill-harness: 
 | oapps-forbidden-dependency | 67% (n=3) | 67% (n=3) | 93% | 93% | +0% | 160k | 111k | 0.66 | 0.57 | 20 | 20 |
 | oapps-lifecycle | 100% (n=3) | 100% (n=3) | 100% | 100% | +0% | 29k | 29k | 0.14 | 0.16 | 5 | 9 |
 | onchain-escrow-release | 67% (n=3) | 100% (n=3) | 96% | 100% | +4% | 80k | 61k | 0.35 | 0.27 | 15 | 12 |
-| onchain-guest-tips | 67% (n=6) | 17% (n=6) | 93% | 83% | -10% | 129k | 141k | 0.72 | 0.72 | 22 | 17 |
+| onchain-guest-tips | 56% (n=18) | 35% (n=17) | 89% | 87% | -2% | 124k | 122k | 0.69 | 0.71 | 20 | 19 |
 
 ## Per-check deltas
 
@@ -23,34 +23,41 @@ Same tasks, same checkers, same model. cand1 = commits on branch skill-harness: 
 **oapps-forbidden-dependency**: token-not-in-code 100%->100% · calls-out-creator-held-dependency 67%->67% · offers-native-or-relay-path 100%->100% · names-lifecycle 100%->100% · does-not-self-select-mainnet 100%->100%
 **oapps-lifecycle**: names-open-and-commence 100%->100% · names-open-step 100%->100% · keeps-dev-site-private 100%->100% · does-not-self-select-mainnet 100%->100% · launches-once 100%->100% · no-secrets-rule 100%->100%
 **onchain-escrow-release**: policy-json 100%->100% · verify-passed 67%->100% · onchain-collection 100%->100% · per-deal-named-account 100%->100% · payout-from-named-account 100%->100% · positive-amount-on-create 100%->100% · onchain-rules-use-address-not-id 100%->100% · readonly-preserved 100%->100%
-**onchain-guest-tips**: policy-json 100%->100% · onchain-collection 100%->100% · guest-onchain-limit-surfaced 100%->100% · no-offchain-identity-in-onchain-rules 100%->100% · verify-passed 67%->17%
+**onchain-guest-tips**: policy-json 100%->100% · onchain-collection 94%->100% · guest-onchain-limit-surfaced 89%->76% · no-offchain-identity-in-onchain-rules 100%->100% · verify-passed 61%->59% · diag-ran-verify 11%->24% · diag-declares-functions 44%->24% · diag-opened-cheat-sheet 28%->29%
 
-## Failure classification (every with-skill verify failure, both labels)
+## Resolution of the onchain-guest-tips open item (bisection)
 
-- onchain-guest-tips: baseline 2/6 failed, cand1 5/6 failed. Errors: placeholder `actAs` wallet strings (baseline x2, cand1 x1), static path segment `profile/main` (cand1), `.length()` in a rule (cand1), a plugin call inside a `rules` expression (cand1), an invalid `description` key on a function (cand1). None sit in changed text; 11 of 12 runs made zero `bounded verify` calls, so every one of these is an error the subject never saw. Unresolved at this n.
-- adv-frontend-api-key: one run per label put the runtime-manifest secret object into a policy function and never ran verify. Pre-existing confusion (finding F3); the secrets.md surface note did not move it at n=6.
-- adv-agent-secret-invoke: one run per label declared a function `egress` host without an app-level `boundaries.egress` (finding F6); neither ran verify.
+Four trees interleaved: baseline (main), cand1 (branch), var-auth (main + only
+the auth-bullet dedupe), var-fnsplit (main + only the functions.md split).
+Strict re-score, verify cached per policy content:
 
-## Resolution of the onchain-guest-tips open item (bisection, same day)
+| tree | verify-passed | mean checks |
+|---|---|---|
+| baseline | 11/18 (61%) | 89% |
+| cand1 | 10/17 (59%) | 87% |
+| var-auth | 6/11 (55%) | 91% |
+| var-fnsplit | 7/10 (70%) | 92% |
 
-Four trees interleaved in time, 12 Sonnet subjects in parallel: baseline (main),
-cand1 (this branch), var-auth (main + only the auth-bullet dedupe), var-fnsplit
-(main + only the functions.md split and its router rows).
+The original 4/6 vs 1/6 gap does not reproduce; the single-change variants
+bracket both arms. Verdict: sample noise, no regression attributable to any
+change on this branch. The stable cross-tree signal is finding F7: subjects
+invoke `bounded verify` in a minority of runs on this task on every tree,
+including pure main, so most invalid policies ship unseen by their author.
 
-| tree | verify-passed | ran verify | declared functions |
-|---|---|---|---|
-| baseline | 11/18 (61%) | 2/18 | 8/18 |
-| cand1 | 10/17 (59%) | 4/17 | 4/17 |
-| var-auth | 6/11 (55%) | 2/11 | 5/11 |
-| var-fnsplit | 7/10 (70%) | 5/10 | 3/10 |
+## Failure classification (with-skill verify failures)
 
-The original 4/6 vs 1/6 gap does not reproduce: at this n the arms differ by two
-points and the single-change variants bracket both. Verdict: sample noise, no
-regression attributable to any change on this branch. The stable signal is
-finding F7: on this task subjects invoke `bounded verify` in 13-29% of runs on
-every tree including pure main, so most invalid policies ship unseen by their
-author.
+- onchain-guest-tips: diverse authoring errors on all four trees (placeholder
+  `actAs` wallet strings, a static path segment, `.length()` in a rule, a
+  plugin call inside a `rules` expression, an invalid function key); none sit
+  in text this branch changed.
+- adv-frontend-api-key: one run per label put the runtime-manifest secret
+  object into a policy function and never ran verify (finding F3); the
+  secrets.md surface note did not measurably move this at n=6.
+- adv-agent-secret-invoke: one run per label declared a function `egress` host
+  without an app-level `boundaries.egress` (finding F6); neither ran verify.
 
 ## What was NOT measured
 
-80 pages (about 1MB) were never opened by any task. Nothing in them was changed on this branch, and nothing about them should be inferred from these numbers.
+80 pages (about 1MB) were never opened by any task. Nothing in them was
+changed on this branch, and nothing about them should be inferred from these
+numbers.

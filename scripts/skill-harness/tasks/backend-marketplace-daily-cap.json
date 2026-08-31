@@ -18,7 +18,7 @@
       "id": "rolling-cap-24h-1000",
       "kind": "policy-invariant",
       "type": "rollingSum",
-      "where": "String(inv.windowSeconds) === '86400' && (String(inv.limit) === '1000' || String(inv.limit) === '100000' || String(inv.limit).startsWith('@const'))"
+      "where": "String(inv.windowSeconds) === '86400' && (['1000','100000'].includes(String(inv.limit)) || (String(inv.limit).startsWith('@const.') && ['1000','100000'].includes(String(((p||{}).constants||{})[String(inv.limit).slice(7)]))))"
     },
     {
       "id": "cap-collection-durable",

@@ -15,6 +15,9 @@
 //        --void-dirty (delete runs whose canary is not clean so a resume re-runs those slots; no subject runs)
 import { mkdirSync, readFileSync, readdirSync, writeFileSync, existsSync, rmSync } from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
+import { createHash } from 'node:crypto'
+import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { buildFixture, runSubject, readShimLog } from './lib/sandbox.mjs'
 import { extractMetrics, assistantText, toolUses } from './lib/metrics.mjs'
@@ -34,7 +37,9 @@ const conditions = flag('conditions', 'with,without').split(',').filter(Boolean)
 const skillDir = path.resolve(flag('skill-dir', repoRoot))
 const model = flag('model', 'sonnet')
 const concurrency = Number(flag('concurrency', 3))
-const outRoot = path.resolve(flag('out', path.join(process.env.SKILL_HARNESS_OUT || path.join(repoRoot, 'scripts', 'skill-harness', 'results'))))
+// Default OUTSIDE the repo: a fixture under the repo tree would let the subject
+// inherit the maintainer CLAUDE.md as project instructions via directory ancestry.
+const outRoot = path.resolve(flag('out', process.env.SKILL_HARNESS_OUT || path.join(os.tmpdir(), 'skill-harness-results')))
 const maxTurns = Number(flag('max-turns', 60))
 const maxBudget = Number(flag('max-budget', 2.5))
 const timeoutMs = Number(flag('timeout-min', 20)) * 60000
@@ -43,6 +48,36 @@ const onlyTasks = flag('tasks') ? new Set(flag('tasks').split(',')) : null
 const onlyPhase = flag('phase')
 const RECHECK = has('recheck')
 const VOID_DIRTY = has('void-dirty')
+
+// Every run is bound to the exact inputs that produced it. A stored run whose
+// stamp differs from the current invocation is an error, never silently reused:
+// pointing a label at a different skill tree must not return old results.
+function familyHash(dir) {
+  const h = createHash('sha256')
+  const stack = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'oapps-fun'].map((s) => path.join(dir, s))
+  const files = []
+  while (stack.length) {
+    const d = stack.pop()
+    if (!existsSync(d)) continue
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name)
+      if (e.isDirectory()) { if (e.name !== '.git') stack.push(p) } else files.push(p)
+    }
+  }
+  for (const f of files.sort()) { h.update(path.relative(dir, f)); h.update(readFileSync(f)) }
+  return h.digest('hex').slice(0, 16)
+}
+let cliVersion = 'unknown'
+try { cliVersion = execSync('bounded version', { encoding: 'utf8' }).split('\n')[0].trim() } catch {}
+const skillHash = familyHash(skillDir)
+const taskHash = (t) => createHash('sha256').update(JSON.stringify(t)).digest('hex').slice(0, 12)
+const stampOf = (t) => ({ skillHash, taskHash: taskHash(t), model, cliVersion, maxTurns: t.maxTurns || maxTurns, maxBudget: t.maxBudgetUsd || maxBudget })
+const ALLOW_STALE = has('allow-stale')
+function stampMismatch(prev, cur) {
+  if (!prev) return 'run has no stamp (older harness revision)'
+  for (const k of ['skillHash', 'model', 'cliVersion', 'maxTurns', 'maxBudget']) if (String(prev[k]) !== String(cur[k])) return k + ': ' + prev[k] + ' != ' + cur[k]
+  return null
+}
 
 const tasksDir = path.join(here, 'tasks')
 const tasks = readdirSync(tasksDir).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(readFileSync(path.join(tasksDir, f), 'utf8')))
@@ -88,7 +123,12 @@ let lastUtil = null
 async function runOne({ t, cond, i }) {
   const runDir = path.join(labelDir, 'runs', t.id, cond, String(i))
   const done = path.join(runDir, 'run.json')
-  if (existsSync(done) && !RECHECK) { return JSON.parse(readFileSync(done, 'utf8')) }
+  if (existsSync(done) && !RECHECK) {
+    const prev = JSON.parse(readFileSync(done, 'utf8'))
+    const bad = stampMismatch(prev.stamp, stampOf(t))
+    if (bad && !ALLOW_STALE) throw new Error(`${t.id}/${cond}/${i}: stored run does not match this invocation (${bad}); delete it or pass --allow-stale`)
+    return prev
+  }
   if (RECHECK) {
     const evPath = path.join(runDir, 'events.jsonl')
     if (!existsSync(evPath)) return null
@@ -99,9 +139,9 @@ async function runOne({ t, cond, i }) {
     if (!metrics.skillBytesRead && prev.metrics && prev.metrics.skillBytesRead) metrics.skillBytesRead = prev.metrics.skillBytesRead
     const shimLog = readShimLog(runDir)
     const transcriptText = assistantText(events) + '\n' + JSON.stringify(toolUses(events).map((u) => u.input))
-    const checks = await runChecks(t, { work, finalText: metrics.finalText, transcriptText, shimLog })
-    const canary = scanCanary(events, metrics, { condition: cond })
-    const record = { ...prev, task: t.id, phase: t.phase, condition: cond, index: i, label, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary, rechecked: new Date().toISOString() }
+    const checks = await runChecks(t, { work, runDir, finalText: metrics.finalText, transcriptText, shimLog })
+    const canary = scanCanary(events, metrics, { condition: cond, allowEscapes: t.allowEscapes })
+    const record = { ...prev, task: t.id, phase: t.phase, condition: cond, index: i, label, stamp: prev.stamp ? { ...prev.stamp, scoredWithTaskHash: taskHash(t) } : undefined, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary, rechecked: new Date().toISOString() }
     writeFileSync(done, JSON.stringify(record, null, 2))
     console.log(`[${t.id}/${cond}/${i}] recheck ${record.score.passed}/${record.score.total}${canary.clean ? '' : ' CANARY!'}`)
     return record
@@ -115,9 +155,9 @@ async function runOne({ t, cond, i }) {
   const metrics = extractMetrics(r.events, work)
   const shimLog = readShimLog(runDir)
   const transcriptText = assistantText(r.events) + '\n' + JSON.stringify(toolUses(r.events).map((u) => u.input))
-  const checks = await runChecks(t, { work, finalText: metrics.finalText, transcriptText, shimLog })
-  const canary = scanCanary(r.events, metrics, { condition: cond })
-  const record = { task: t.id, phase: t.phase, condition: cond, index: i, label, model, started, wallMs: r.wallMs, exitCode: r.code, timedOut: r.timedOut, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary }
+  const checks = await runChecks(t, { work, runDir, finalText: metrics.finalText, transcriptText, shimLog })
+  const canary = scanCanary(r.events, metrics, { condition: cond, allowEscapes: t.allowEscapes })
+  const record = { task: t.id, phase: t.phase, condition: cond, index: i, label, model, stamp: stampOf(t), started, wallMs: r.wallMs, exitCode: r.code, timedOut: r.timedOut, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary }
   writeFileSync(path.join(runDir, 'final.md'), metrics.finalText || '')
   writeFileSync(done, JSON.stringify(record, null, 2))
   rmSync(path.join(work, '.claude', 'skills'), { recursive: true, force: true })
@@ -129,14 +169,21 @@ async function runOne({ t, cond, i }) {
 }
 
 const records = []
-let cursor = 0
-async function worker() {
-  while (cursor < jobs.length && !stopped) {
-    const job = jobs[cursor++]
-    try { const rec = await runOne(job); if (rec) records.push(rec) } catch (e) { console.error(`[${job.t.id}/${job.cond}/${job.i}] ERROR ${e.message}`) }
+// Hard barrier: every job of one condition completes before the next condition
+// starts, so a no-skill subject can never find a with-run's installed skill on
+// disk, not even at the queue boundary.
+for (const condGroup of ['without', 'with']) {
+  const group = jobs.filter((j) => j.cond === condGroup)
+  if (!group.length) continue
+  let cursor = 0
+  const worker = async () => {
+    while (cursor < group.length && !stopped) {
+      const job = group[cursor++]
+      try { const rec = await runOne(job); if (rec) records.push(rec) } catch (e) { console.error(`[${job.t.id}/${job.cond}/${job.i}] ERROR ${e.message}`) }
+    }
   }
+  await Promise.all(Array.from({ length: Math.min(concurrency, group.length) }, worker))
 }
-await Promise.all(Array.from({ length: Math.min(concurrency, jobs.length) }, worker))
 
 // Summarize everything present under this label (including runs from earlier invocations).
 const all = []

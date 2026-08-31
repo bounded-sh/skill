@@ -36,8 +36,13 @@ const REAL = ${JSON.stringify(real)}
 const LOG = ${JSON.stringify(logPath)} // invocation journal
 const WARMUP_RESPONSES = ${Number(faults)}
 const args = process.argv.slice(2)
+// args[0] must literally be an allowed subcommand: no flags before it. A global
+// flag that takes a value (--instance, --env, --project-root) consumes the next
+// token, so a filter-based classifier reads one subcommand while the real CLI
+// resolves another (verified bypass: "--instance verify deploy").
 const positional = args.filter((a) => !a.startsWith('-'))
-const sub = positional[0] || ''
+const bareHelp = args.length <= 1 && (args.length === 0 || args[0] === '--help' || args[0] === '-h')
+const sub = bareHelp ? '' : args[0]
 const ALLOW = new Set(['verify', 'plugins', 'whoami', 'version', 'help', ''])
 function priorVerifies() {
   if (!existsSync(LOG)) return 0
@@ -50,7 +55,7 @@ if (sub === 'verify') {
   if (existsSync(abs)) policyHash = createHash('sha256').update(readFileSync(abs)).digest('hex').slice(0, 16)
 }
 const entry = { ts: new Date().toISOString(), cwd: process.cwd(), args, sub, policyHash, faulted: false, blocked: false }
-const allowed = ALLOW.has(sub) || (sub === 'tests' && positional[1] === 'run') || args.includes('--help')
+const allowed = (ALLOW.has(sub) || (sub === 'tests' && args[1] === 'run')) && !args.slice(1).some((a) => a === '--instance' || a === '--project-root')
 if (!allowed) {
   entry.blocked = true
   appendFileSync(LOG, JSON.stringify(entry) + '\\n')
