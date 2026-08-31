@@ -84,7 +84,8 @@ bounded init
    Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
 
 Rejections at runtime are fail-closed: HTTP 409 for a violated invariant, 403 for
-a denied write or invoke rule.
+a denied write or invoke rule, and 500 `rule_evaluation_failed` when the rule
+could not be evaluated at all (no verdict; not retryable).
 
 ### SDKs (scope `@bounded-sh`)
 

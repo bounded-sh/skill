@@ -67,7 +67,9 @@ Load these only when the task calls for them:
 - A governed write that violates a rule or invariant must reject before commit.
   Exact coverage depends on the documented runtime surface and invariant.
 - Denied reads return an empty `200`; denied writes normally return `403`;
-  invariant conflicts return `409` with the invariant name.
+  invariant conflicts return `409` with the invariant name. A rule that could
+  not be EVALUATED is none of those - it returns `500 rule_evaluation_failed`
+  on every surface, means no rule decided, and is not retryable.
 - `bounded verify` is the proof loop. Fix every blocking result before deploy.
 - Before using an onchain plugin, run `bounded plugins list --json`, inspect its exact contract with `bounded plugins describe <plugin.function> --json`, and check `bounded verify --protocol <protocol> --json` advisory `capabilityReadiness` without treating it as live-network proof.
 - Give a collaborator access with `bounded share`; do not add application

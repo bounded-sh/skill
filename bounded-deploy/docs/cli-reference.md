@@ -1237,7 +1237,7 @@ so failing txs still land on-chain. No effect on the realtime data plane.
 ## Debugging denied writes — `bounded decisions`
 
 When a write returns `403`, `bounded decisions` shows the realtime backend's
-recent **WRITE policy decisions** for the app (most-recent-first) so you can see
+recent **policy outcomes** for the app (most-recent-first) so you can see
 *why* — each deny carries the failing rule/clause reason.
 
 ```sh
@@ -1254,11 +1254,17 @@ bounded decisions --app-id <id> --json           # one JSON object per line (age
 | `--limit N` | Max rows, most-recent-first (0 = server default) |
 | `--json` | Emit one compact JSON object per decision line |
 
-Each entry: `ts`, `collection`, `path`, `action` (create/update/delete),
-`actor` (wallet address or `(anon)`), `decision` (allow/deny), `reason`, and
-`roomId` (for session/partition writes). Owner/collaborator gated (same auth as
-`bounded share`/collaborators). The buffer is **in-memory and bounded** (~200
+Each entry: `ts`, `collection`, `path`, `action` (create/update/delete/read),
+`actor` (wallet address or `(anon)`), `decision` (allow/deny/error), `reason`,
+and `roomId` (for session/partition writes). Owner/collaborator gated (same auth
+as `bounded share`/collaborators). The buffer is **in-memory and bounded** (~200
 entries per app, denies retained over allows) — make a write, then re-run.
+
+`decision: "error"` is not a verdict: the rule was reached and could not be
+EVALUATED, so nothing decided and nothing was read or written. The caller saw
+`500 rule_evaluation_failed` (never a `403`, and never a retryable `409`). This
+is the only place such a rule is visible, and the only reason `read` appears as
+an action — a served or denied read is not recorded.
 
 Typical loop: a `data set` returns `403 Policy failed: ...` → run
 `bounded decisions --app-id <id> --denied-only` → read the failing-rule reason →

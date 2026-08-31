@@ -80,6 +80,7 @@ term.
 | Error/status | Meaning |
 |---|---|
 | `403` | A write or function invoke failed a rule. Check auth, ownership, roles, or function `auth`. Denied reads are hidden as `200` with empty data, not `403`. |
+| `500 rule_evaluation_failed` | The rule was reached and could NOT be evaluated - no rule denied you, and nothing was read or written. Not a denial, not a retryable conflict. Read `bounded decisions` for the cause; the row is recorded with `decision: error`. |
 | `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
 | `403 incomplete_batch` | A collection's `requiresInBatch` declaration names companion paths missing from the atomic batch. Submit the complete `setMany`. |
 | `DISPROVED` + counterexample | The proof found a breaking assignment. Fix every blocking result and verify again; only non-blocking advisories are reviewable. |
