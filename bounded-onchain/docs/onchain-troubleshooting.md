@@ -130,7 +130,9 @@ If the account does not exist, you are in the missing-account class regardless o
 
 A rule has three possible outcomes, not two: it allows, it denies, or it could not be evaluated at all.
 
-The third is reported as HTTP `500` with `"code": "rule_evaluation_failed"`, and it means exactly what it says - the rule was reached, something it needed could not be resolved, and no verdict exists. Nothing was read and nothing was written.
+The third is reported as HTTP `500` with `"code": "rule_evaluation_failed"`, and it means specifically that a READ THE RULE NEEDED could not be made - a plugin's chain query, an RPC read, a price observation. The rule was reached, no verdict exists, and nothing was read or written.
+
+A rule that throws on a particular document's own data is NOT this. `@data.n + 1 > 0` where that document's `n` is a string fails for that document and no other, every time, so it stays an ordinary fail-closed denial for that row and the rest of the collection reads normally. The distinction is deliberate: if one badly typed document made a rule "un-evaluable", anyone who could write that document could break every read of its collection.
 
 Do not read it as either of the other two:
 
