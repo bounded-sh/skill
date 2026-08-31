@@ -1,0 +1,41 @@
+{
+  "id": "backend-marketplace-daily-cap",
+  "phase": "backend",
+  "prompt": "Bounded app: a marketplace where sellers post listings and buyers place orders. I need a hard guarantee that a single buyer can't order more than 1000 USD in total within any 24 hour window, no matter how many separate orders they place. Write the policy.json here.",
+  "checks": [
+    {
+      "id": "policy-json",
+      "kind": "json-valid",
+      "path": "policy.json"
+    },
+    {
+      "id": "verify-passed",
+      "kind": "verify",
+      "path": "policy.json",
+      "expect": "passed"
+    },
+    {
+      "id": "rolling-cap-24h-1000",
+      "kind": "policy-invariant",
+      "type": "rollingSum",
+      "where": "String(inv.windowSeconds) === '86400' && (String(inv.limit) === '1000' || String(inv.limit) === '100000' || String(inv.limit).startsWith('@const'))"
+    },
+    {
+      "id": "cap-collection-durable",
+      "kind": "policy-expr",
+      "expr": "cols.some(([k,v]) => (v.invariants||[]).some(i=>i.type==='rollingSum') && v.tier === 'durable')"
+    },
+    {
+      "id": "cap-partitioned-per-buyer",
+      "kind": "policy-expr",
+      "expr": "cols.some(([k,v]) => (v.invariants||[]).some(i=>i.type===\"rollingSum\" && (/buyer|user/i.test(String(i.scopeVariable||\"\")) || /buyer|user/i.test(k))))"
+    },
+    {
+      "id": "no-foreign-types",
+      "kind": "regex",
+      "path": "policy.json",
+      "regex": "\"(Boolean|Timestamp|Number|Date)\"",
+      "expect": "absent"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "onchain-escrow-release",
+  "phase": "onchain",
+  "prompt": "Bounded app on Solana: a simple escrow. A buyer deposits SOL for a specific deal, and later the same buyer releases it to the seller. Money from different deals must never be mixed together. Write the policy.json here.",
+  "checks": [
+    { "id": "policy-json", "kind": "json-valid", "path": "policy.json" },
+    { "id": "verify-passed", "kind": "verify", "path": "policy.json", "expect": "passed" },
+    { "id": "onchain-collection", "kind": "policy-expr", "expr": "cols.some(([k,v])=>v.onchain===true)" },
+    { "id": "per-deal-named-account", "kind": "policy-expr", "expr": "cols.some(([k,v])=>v.onchain===true && /createAccount\\(\\s*\\$\\w+/.test(JSON.stringify((v.hooks||{}).onchain||{})))" },
+    { "id": "payout-from-named-account", "kind": "policy-expr", "expr": "cols.some(([k,v])=>v.onchain===true && /transfer\\(\\s*\\$\\w+\\s*,/.test(JSON.stringify((v.hooks||{}).onchain||{})))" },
+    { "id": "positive-amount-on-create", "kind": "policy-rule", "collection": ".", "rule": "create", "regex": "amount\\s*>\\s*0" },
+    { "id": "onchain-rules-use-address-not-id", "kind": "policy-expr", "expr": "cols.filter(([k,v])=>v.onchain===true).every(([k,v])=>!/@user\\.id/.test(JSON.stringify(v.rules||{})))" },
+    { "id": "readonly-preserved", "kind": "policy-expr", "expr": "cols.every(([k,v]) => Object.entries(v.fields||{}).filter(([f,t])=>String(t).includes('!')).every(([f]) => /^\\s*false\\s*$/.test(String((v.rules||{}).update)) || String((v.rules||{}).update||'').includes('@newData.'+f+' == @data.'+f) || String((v.rules||{}).update||'').includes('@data.'+f+' == @newData.'+f)))" }
+  ]
+}

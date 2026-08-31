@@ -1,0 +1,44 @@
+{
+  "id": "backend-fixed-supply-points",
+  "phase": "backend",
+  "prompt": "Bounded app: a loyalty points system. There is a fixed total supply of 1000000 points. The app admin (user id adm_7Qk2Vx9mP4tL) seeds the initial balances once, then users can transfer points to each other. The total number of points in the system must never change. Write the policy.json here.",
+  "checks": [
+    {
+      "id": "policy-json",
+      "kind": "json-valid",
+      "path": "policy.json"
+    },
+    {
+      "id": "verify-passed",
+      "kind": "verify",
+      "path": "policy.json",
+      "expect": "passed"
+    },
+    {
+      "id": "conserve-present",
+      "kind": "policy-invariant",
+      "type": "conserve"
+    },
+    {
+      "id": "seeding-gated-on-authority",
+      "kind": "any-of",
+      "of": [
+        {
+          "id": "create-gated-on-authority",
+          "kind": "policy-expr",
+          "expr": "cols.filter(([k,v])=>(v.invariants||[]).some(i=>i.type==='conserve')).some(([k,v]) => /@const\\.|get\\(|__admins__|__owners__|role|adm_7Qk2Vx9mP4tL/i.test(String((v.rules||{}).create||'')))"
+        },
+        {
+          "id": "create-mints-nothing",
+          "kind": "policy-expr",
+          "expr": "cols.filter(([k,v])=>(v.invariants||[]).some(i=>i.type==='conserve')).some(([k,v]) => /==\\s*0\\b/.test(String((v.rules||{}).create||'')))"
+        }
+      ]
+    },
+    {
+      "id": "seeding-not-bare-owner",
+      "kind": "policy-expr",
+      "expr": "!cols.some(([k,v]) => (v.invariants||[]).some(i=>i.type==='conserve') && /^\\s*@user\\.id != null && \\$\\w+ == @user\\.id\\s*$/.test(String((v.rules||{}).create||'')))"
+    }
+  ]
+}

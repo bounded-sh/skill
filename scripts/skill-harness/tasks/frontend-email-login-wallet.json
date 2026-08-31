@@ -1,0 +1,39 @@
+{
+  "id": "frontend-email-login-wallet",
+  "phase": "frontend",
+  "fixture": {
+    "policy.json": "@fixtures/notes-policy.json",
+    "package.json": "@fixtures/notes-app-package.json"
+  },
+  "prompt": "Add sign-in to my Bounded notes app (policy.json is in this directory) using email, and I want every signed-in user to also have a Solana wallet address available so I can show it on their profile. Update the policy if needed and write the login code.",
+  "checks": [
+    {
+      "id": "policy-json",
+      "kind": "json-valid",
+      "path": "policy.json"
+    },
+    {
+      "id": "no-redundant-auth-wallets",
+      "kind": "policy-expr",
+      "expr": "!(p.auth && p.auth.wallets === true)"
+    },
+    {
+      "id": "no-auth-mode",
+      "kind": "regex",
+      "glob": "\\.(json|tsx|jsx|ts|js)$",
+      "regex": "authMode",
+      "expect": "absent"
+    },
+    {
+      "id": "documented-login-entry",
+      "kind": "regex",
+      "glob": "\\.(tsx|jsx|ts|js)$",
+      "regex": "openBoundedWidget\\(|loginWithRedirect\\(|loginWithPopup\\(|[Oo][Tt][Pp]"
+    },
+    {
+      "id": "wallet-from-default-login",
+      "kind": "transcript",
+      "regex": "@user\\.address|user\\.address|\\.address\\b"
+    }
+  ]
+}
