@@ -24,7 +24,7 @@ Real-network failure lookup for `"onchain": true` collections: what broke, why, 
 | `Transaction building failed: onchain account resolution failed (422): onchain account not found: <pubkey> (<role>)` | An account the write references does not exist on chain (a wrong mint derivation, a pool that was never created, an absent bonding curve, an unlisted NFT). This is YOUR data, not the platform: retrying can never help. | Fix the referenced account. The commonest cause is a mint-seed mismatch: Meteora pool mints use the legacy seed, so derive them with the 3-arg `@TokenPlugin.getTokenMintAddress(tokenId, name, symbol)`, never the 1-arg id-only form. See [Missing onchain accounts vs platform 502s](#missing-onchain-accounts-vs-platform-502s). |
 | `Transaction building failed: onchain account resolution failed (502): ...` on a write that is neither a `403` nor a `422` | Bounded's platform-side account resolver could not resolve the accounts and plugin values the transaction needs (platform infrastructure or its RPC). The policy did not deny; the write was rejected fail-closed before anything signed or landed. | Do not rewrite a passing hook or change amounts/slippage. Confirm it is platform-side with a trivial named query, then retry and report. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
 | `onchain query failed (502)` on a named query (CLI shows `Error: 500 onchain query failed (502)`), even a plain `@TokenPlugin.getBalance` | Same platform-side failure surface for queries: Bounded's onchain query executor could not run the query simulation. | Same as the row above; it is not a bad query argument. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
-| `500` with `"code": "rule_evaluation_failed"` on a write, a read, or a subscription | The rule was REACHED and could not be EVALUATED - so no rule denied you and nothing was read or written. Usually a plugin call in the rule that the platform could not resolve. | This is not a denial and not a conflict: retrying will not clear it. Read `bounded decisions --app-id <id>` - the row is recorded with `decision: error` and the cause. See [A rule that could not be evaluated](#a-rule-that-could-not-be-evaluated). |
+| `500` with `"code": "rule_evaluation_failed"` on a write, a read, or a subscription | The rule was REACHED and could not be EVALUATED - so no rule denied you and nothing was read or written. Usually a plugin call in the rule that the platform could not resolve. | Not a denial and not a retryable conflict. The cause is never in the response; read `bounded decisions --app-id <id>`, where the row is recorded with `decision: error` and the cause. See [A rule that could not be evaluated](#a-rule-that-could-not-be-evaluated). |
 | Pump.fun launch dies inside `Create` with `Transfer: insufficient lamports` (`... 0, need 1461600` for the mint, or a shortfall under `IX: Create Metadata Accounts v3`) | The `createToken`/`createTokenV2` `creator` is ALSO the account Pump.fun's `Create` bills: mint rent (1,461,600 lamports), metadata rent (~5,616,720), then bonding-curve/ATA setup. With app custody (a named account id), that PDA pays, and the signing user's own wallet balance is irrelevant. | Fund the named creator account with the whole Create cost (~0.025 SOL) in the same hook, before `createToken`: `@AccountPlugin.createAccount(id) && @TokenPlugin.transfer(@user.address, id, @TokenPlugin.SOL, 25000000) && @PumpFunPlugin.createToken(..., id)`. See [token-launch example](examples/token-launch.md). |
 
 ## CLI submission needs an explicit RPC endpoint
@@ -135,17 +135,17 @@ The third is reported as HTTP `500` with `"code": "rule_evaluation_failed"`, and
 Do not read it as either of the other two:
 
 - It is NOT a denial. A denial is a `403` with `"code": "policy_denied"`. Looking for the rule that said no is wasted time; none did.
-- It is NOT a conflict. A conflict is a `409` `mutation_conflict` with `"retryable": true`, raised when a write must be re-attempted against fresher state. `rule_evaluation_failed` carries no `retryable` flag, and retrying it changes nothing.
+- It is NOT a conflict. A conflict is a `409` `mutation_conflict` with `"retryable": true`, raised when a write must be re-attempted against fresher state. `rule_evaluation_failed` carries no `retryable` flag: the platform is not claiming a retry will help, and not claiming it will not. A stubbed plugin call never clears; a provider having a bad minute does. Look at the cause before retrying in a loop.
 
 The same outcome reaches every surface. A read answers the `500` rather than an empty `200` (which would be indistinguishable from the document not existing); a subscription receives an `error` frame on that subscription rather than a `data` frame reporting a removal that never happened.
 
-Every occurrence is recorded in the decision log with `decision: "error"` and the cause, including on reads:
+The response names the operation and the path and NOTHING else - not at any disclosure level. The cause is whatever the evaluation threw, and a plugin's provider can throw a message carrying a credentialed endpoint or token, so it goes to the decision log instead, which is owner/collaborator-gated:
 
 ```sh
 bounded decisions --app-id <appId>
 ```
 
-In production the client-facing message is minimized like any other policy failure; the full reason is always in the decision log, which is owner/collaborator-gated.
+Every occurrence is recorded there with `decision: "error"`, including on reads, and the cause is on the row's indented detail line.
 
 ## Confirmation behavior
 
