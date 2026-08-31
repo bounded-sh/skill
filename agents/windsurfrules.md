@@ -80,7 +80,8 @@ Flow:
 
 Runtime rejections are fail-closed: 409 for a violated invariant, 403 for a denied
 write or invoke rule, and 500 `rule_evaluation_failed` when the rule could not be
-evaluated at all (no verdict; not retryable).
+evaluated at all (no verdict; not a denial and not a retryable `409`). Read
+`bounded decisions` for the cause; do not assume a retry will fail.
 
 `bounded create "<prompt>"` hands the whole app to Bounded's build agent and
 `bounded edit "<prompt>"` iterates on it; `bounded builds list|watch|cancel|gate`

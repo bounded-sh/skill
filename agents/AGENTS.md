@@ -85,7 +85,8 @@ bounded init
 
 Rejections at runtime are fail-closed: HTTP 409 for a violated invariant, 403 for
 a denied write or invoke rule, and 500 `rule_evaluation_failed` when the rule
-could not be evaluated at all (no verdict; not retryable).
+could not be evaluated at all (no verdict; not a denial and not a retryable
+`409`). Read `bounded decisions` for the cause; do not assume a retry will fail.
 
 ### SDKs (scope `@bounded-sh`)
 
