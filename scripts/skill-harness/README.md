@@ -103,4 +103,5 @@ Known limits of Tier A, on purpose so nobody over-trusts a number:
   `lib/checkers.mjs` outcome checks, `lib/metrics.mjs` tokens/docs/turns,
   `lib/canary.mjs` contamination scan
 - `tasks/*.json` frozen prompts and checks; `fixtures/` starting files
+- `reports/` committed evidence: one file per baseline and per comparison
 - `results/` is gitignored; publish summaries, not transcripts
