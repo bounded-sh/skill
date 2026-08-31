@@ -142,7 +142,7 @@ the user actually wanted is hollow. Before you call it done:
   real analysis, real results) — unless the user explicitly asked for a mock.
 - [ ] **AI / LLM features call `ctx.ai.run`** — real inference, no API key needed —
   not templated strings pretending to reason. See
-  [functions.md](functions.md#ctxai--real-ai-no-api-keys).
+  [functions.md](functions-ctx-ai.md).
 - [ ] **External integrations are wired** (broker, payments, data feed, third-party
   API) via a function `fetch` — or explicitly deferred *with the user told plainly*
   which parts are stubbed and why.

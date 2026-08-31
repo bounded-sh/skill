@@ -319,7 +319,7 @@ Policies name it `@const.AGENT` by convention. **Grant it the least it needs, an
 on a live app that usually means READ** - the grant is the whole blast radius,
 because logging a browser in puts the token in your app's own `localStorage`
 where your page can read it. See
-[functions.md](functions.md#driving-your-app-signed-in--the-agent-identity) for
+[functions-ctx-browser.md](functions-ctx-browser.md#driving-your-app-signed-in--the-agent-identity) for
 driving a signed-in page with `ctx.browser`.
 
 ## Security properties
