@@ -31,6 +31,26 @@ Same tasks, same checkers, same model. cand1 = commits on branch skill-harness: 
 - adv-frontend-api-key: one run per label put the runtime-manifest secret object into a policy function and never ran verify. Pre-existing confusion (finding F3); the secrets.md surface note did not move it at n=6.
 - adv-agent-secret-invoke: one run per label declared a function `egress` host without an app-level `boundaries.egress` (finding F6); neither ran verify.
 
+## Resolution of the onchain-guest-tips open item (bisection, same day)
+
+Four trees interleaved in time, 12 Sonnet subjects in parallel: baseline (main),
+cand1 (this branch), var-auth (main + only the auth-bullet dedupe), var-fnsplit
+(main + only the functions.md split and its router rows).
+
+| tree | verify-passed | ran verify | declared functions |
+|---|---|---|---|
+| baseline | 11/18 (61%) | 2/18 | 8/18 |
+| cand1 | 10/17 (59%) | 4/17 | 4/17 |
+| var-auth | 6/11 (55%) | 2/11 | 5/11 |
+| var-fnsplit | 7/10 (70%) | 5/10 | 3/10 |
+
+The original 4/6 vs 1/6 gap does not reproduce: at this n the arms differ by two
+points and the single-change variants bracket both. Verdict: sample noise, no
+regression attributable to any change on this branch. The stable signal is
+finding F7: on this task subjects invoke `bounded verify` in 13-29% of runs on
+every tree including pure main, so most invalid policies ship unseen by their
+author.
+
 ## What was NOT measured
 
 80 pages (about 1MB) were never opened by any task. Nothing in them was changed on this branch, and nothing about them should be inferred from these numbers.

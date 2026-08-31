@@ -175,5 +175,6 @@ async function one(c, ctx) {
 export function score(results) {
   const total = results.reduce((a, r) => a + r.weight, 0)
   const got = results.filter((r) => r.pass).reduce((a, r) => a + r.weight, 0)
-  return { fraction: total ? got / total : 0, allPass: results.every((r) => r.pass), passed: results.filter((r) => r.pass).length, total: results.length }
+  const scored = results.filter((r) => r.weight > 0)
+  return { fraction: total ? got / total : 0, allPass: scored.every((r) => r.pass), passed: results.filter((r) => r.pass).length, total: results.length }
 }
