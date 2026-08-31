@@ -86,7 +86,8 @@ No auth block is required in `policy.json` for the DEFAULT (Turnkey, embedded) p
 This omission is intentional for a normal app: the platform fills in the
 Turnkey, eager-wallet defaults, so do not generate a redundant block.
 The one exception is any EXTERNAL-keypair session - the issuer gates every one
-of them on a deployed `"auth": { "wallets": true }`.
+of them on a deployed `"auth": { "wallets": true }`, because it refuses to mint a
+session for a key it did not provision.
 That covers more than the browser button: bring-your-own wallet login
 (`wallet: true` / `walletLogin`), a server SDK authenticating with a keypair,
 and the CLI's keypair lane (`bounded data` / `functions invoke` under

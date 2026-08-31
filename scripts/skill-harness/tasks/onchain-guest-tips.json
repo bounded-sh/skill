@@ -3,10 +3,49 @@
   "phase": "onchain",
   "prompt": "Bounded app on Solana devnet: a tip jar page where visitors can tip a creator in SOL immediately as guests, without creating an account or connecting a wallet first (I want zero friction), and every tip is recorded onchain. Write the policy.json here and explain how the client flow works.",
   "checks": [
-    { "id": "policy-json", "kind": "json-valid", "path": "policy.json" },
-    { "id": "onchain-collection", "kind": "policy-expr", "expr": "cols.some(([k,v])=>v.onchain===true)" },
-    { "id": "guest-onchain-limit-surfaced", "kind": "response", "regex": "anonymous_onchain_blocked|guest[^.]{0,140}(cannot|can't|can not|blocked|not (be )?able|never|forbid)[^.]{0,100}(onchain|on-chain|chain|write|tip|sign)|(upgrade|sign in|email|wallet)[^.]{0,100}before[^.]{0,80}(onchain|on-chain|tip|first)" },
-    { "id": "no-offchain-identity-in-onchain-rules", "kind": "policy-expr", "expr": "cols.filter(([k,v])=>v.onchain===true).every(([k,v])=>!/@user\\.id|@user\\.isAnonymous|@origin|@user\\.email/.test(JSON.stringify(v.rules||{})))" },
-    { "id": "verify-passed", "kind": "verify", "path": "policy.json", "expect": "passed" }
+    {
+      "id": "policy-json",
+      "kind": "json-valid",
+      "path": "policy.json"
+    },
+    {
+      "id": "onchain-collection",
+      "kind": "policy-expr",
+      "expr": "cols.some(([k,v])=>v.onchain===true)"
+    },
+    {
+      "id": "guest-onchain-limit-surfaced",
+      "kind": "response",
+      "regex": "anonymous_onchain_blocked|guest[^.]{0,140}(cannot|can't|can not|blocked|not (be )?able|never|forbid)[^.]{0,100}(onchain|on-chain|chain|write|tip|sign)|(upgrade|sign in|email|wallet)[^.]{0,100}before[^.]{0,80}(onchain|on-chain|tip|first)"
+    },
+    {
+      "id": "no-offchain-identity-in-onchain-rules",
+      "kind": "policy-expr",
+      "expr": "cols.filter(([k,v])=>v.onchain===true).every(([k,v])=>!/@user\\.id|@user\\.isAnonymous|@origin|@user\\.email/.test(JSON.stringify(v.rules||{})))"
+    },
+    {
+      "id": "verify-passed",
+      "kind": "verify",
+      "path": "policy.json",
+      "expect": "passed"
+    },
+    {
+      "id": "diag-ran-verify",
+      "kind": "shim",
+      "expr": "log.some(e=>e.sub==='verify')",
+      "weight": 0
+    },
+    {
+      "id": "diag-declares-functions",
+      "kind": "policy-expr",
+      "expr": "Object.keys(p.functions||{}).length>0",
+      "weight": 0
+    },
+    {
+      "id": "diag-opened-cheat-sheet",
+      "kind": "transcript",
+      "regex": "policy-cheat-sheet\\.md",
+      "weight": 0
+    }
   ]
 }
