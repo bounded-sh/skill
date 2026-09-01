@@ -357,7 +357,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | Command | Does | Key flags |
 |---|---|---|
 | `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
-| `verify [policy.json]` | Run the proof engine, print the report + counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--json` |
+| `verify [policy.json]` | Run the proof engine, print exact counts plus blocking failures and counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--verbose` (every obligation), `--json` |
 | `plugins list` | List the callable plugin projection offline | `--family`, `--grep`, `--json`, `--quiet` |
 | `plugins describe <plugin.function>` | Print one plugin function's exact argument, return, auth, support, and verification contract offline | `--json`, `--quiet` |
 | `tests run [dir\|file]` | Run policy test files against a sandboxed app, print per-file PASS/FAIL | `--app-id`, `--deployed-policy`, `--file` (repeatable), `--json` |
@@ -380,6 +380,9 @@ bounded deploy                                          # redeploy using bounded
 ```
 
 `verify` and `deploy --create` reject an unknown `--protocol` locally before any network call and list the valid app protocols.
+Normal human output reports exact total, proven, unproven-advisory, and failed counts.
+A failed run also prints every blocking failure and counterexample, while passing and non-blocking advisory details stay summarized.
+Add `--verbose` to print every proof obligation and explanation.
 When the verifier returns a valid result, `bounded verify --json` emits exactly one schema-version-3 document with `status`, `passed`, `safeToDeploy`, `policyPath` (the absolute path of the policy file the run actually proved) and `projectRoot` (the discovered `bounded.json` root, empty without one), exact counts, structured proof details and counterexamples, the access report, and `capabilityReadiness`.
 Local argument, file, JSON, environment, configuration, authentication, transport, and malformed-response failures that occur before a valid verifier result instead use the ordinary one-document root error shape and exit nonzero.
 `status` is one of `PROVEN`, `DISPROVED`, `INVALID`, or `UNPROVEN`.
