@@ -49,16 +49,15 @@ A clean run:
 ```
 $ bounded verify
 
-policy.json — 1 collection, 1 invariant
+Proofs: 4 total - 4 proven, 0 unproven advisories, 0 failed.
 
-  create rule is satisfiable                                PROVED   (38ms)
-  create requires authentication                            PROVED   (41ms)
-  read requires authentication                              PROVED   (40ms)
-  transaction postcondition spend_cap
-    append-only rolling limit algebra                       PROVED  (106ms)
-
-4 obligations · 0 failed · every guarantee holds for all inputs — safe to deploy
+✓ Proven - safe to deploy.
+  Add --verbose to print every obligation and explanation.
 ```
+
+The default stays proportional to the verdict rather than the policy size.
+Run `bounded verify --verbose` when you need the complete `[PASS]`, `[UNPROVEN]`, and explanation list.
+A failed default run still prints every blocking `[FAIL]` item and its counterexample, so `--verbose` is never required to fix a rejection.
 
 ## Reading counterexamples
 
