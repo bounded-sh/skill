@@ -93,10 +93,11 @@ Known limits of Tier A, on purpose so nobody over-trusts a number:
 - Results default OUTSIDE the repo (os tmpdir): a fixture under the repo tree
   would let the subject inherit the maintainer CLAUDE.md through directory
   ancestry. Set `SKILL_HARNESS_OUT` explicitly for durable result sets.
-- Outbound network from Bash is open, so the public GitHub repo (which holds
-  the contract tests) is reachable. The canary covers the strings a subject
-  would bring back. A container with egress limited to `api.anthropic.com`
-  closes this (Tier B, not implemented here).
+- Outbound network is not blocked, only detected: a shell network client
+  (curl/wget/git clone/...) aimed anywhere but the loopback voids the run, and
+  the canary covers strings a quieter path would bring back. A container with
+  egress limited to `api.anthropic.com` closes this for real (Tier B, not
+  implemented here).
 - The fixture path contains the scratch root name.
 
 ## Reading the numbers

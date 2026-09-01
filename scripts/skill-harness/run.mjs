@@ -23,6 +23,7 @@ import { buildFixture, runSubject, readShimLog } from './lib/sandbox.mjs'
 import { extractMetrics, assistantText, toolUses } from './lib/metrics.mjs'
 import { scanCanary } from './lib/canary.mjs'
 import { runChecks, score } from './lib/checkers.mjs'
+import { familyHash, subjectHash, stampMismatch } from './lib/stamp.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(here, '..', '..')
@@ -49,35 +50,11 @@ const onlyPhase = flag('phase')
 const RECHECK = has('recheck')
 const VOID_DIRTY = has('void-dirty')
 
-// Every run is bound to the exact inputs that produced it. A stored run whose
-// stamp differs from the current invocation is an error, never silently reused:
-// pointing a label at a different skill tree must not return old results.
-function familyHash(dir) {
-  const h = createHash('sha256')
-  const stack = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'oapps-fun'].map((s) => path.join(dir, s))
-  const files = []
-  while (stack.length) {
-    const d = stack.pop()
-    if (!existsSync(d)) continue
-    for (const e of readdirSync(d, { withFileTypes: true })) {
-      const p = path.join(d, e.name)
-      if (e.isDirectory()) { if (e.name !== '.git') stack.push(p) } else files.push(p)
-    }
-  }
-  for (const f of files.sort()) { h.update(path.relative(dir, f)); h.update(readFileSync(f)) }
-  return h.digest('hex').slice(0, 16)
-}
 let cliVersion = 'unknown'
 try { cliVersion = execSync('bounded version', { encoding: 'utf8' }).split('\n')[0].trim() } catch {}
 const skillHash = familyHash(skillDir)
-const taskHash = (t) => createHash('sha256').update(JSON.stringify(t)).digest('hex').slice(0, 12)
-const stampOf = (t) => ({ skillHash, taskHash: taskHash(t), model, cliVersion, maxTurns: t.maxTurns || maxTurns, maxBudget: t.maxBudgetUsd || maxBudget })
+const stampOf = (t) => ({ skillHash, subjectHash: subjectHash(t, { maxTurns, maxBudget }), model, cliVersion, maxTurns: t.maxTurns || maxTurns, maxBudget: t.maxBudgetUsd || maxBudget })
 const ALLOW_STALE = has('allow-stale')
-function stampMismatch(prev, cur) {
-  if (!prev) return 'run has no stamp (older harness revision)'
-  for (const k of ['skillHash', 'model', 'cliVersion', 'maxTurns', 'maxBudget']) if (String(prev[k]) !== String(cur[k])) return k + ': ' + prev[k] + ' != ' + cur[k]
-  return null
-}
 
 const tasksDir = path.join(here, 'tasks')
 const tasks = readdirSync(tasksDir).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(readFileSync(path.join(tasksDir, f), 'utf8')))
@@ -141,7 +118,7 @@ async function runOne({ t, cond, i }) {
     const transcriptText = assistantText(events) + '\n' + JSON.stringify(toolUses(events).map((u) => u.input))
     const checks = await runChecks(t, { work, runDir, finalText: metrics.finalText, transcriptText, shimLog })
     const canary = scanCanary(events, metrics, { condition: cond, allowEscapes: t.allowEscapes })
-    const record = { ...prev, task: t.id, phase: t.phase, condition: cond, index: i, label, stamp: prev.stamp ? { ...prev.stamp, scoredWithTaskHash: taskHash(t) } : undefined, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary, rechecked: new Date().toISOString() }
+    const record = { ...prev, task: t.id, phase: t.phase, condition: cond, index: i, label, stamp: prev.stamp ? prev.stamp : { ...stampOf(t), backfilled: true }, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary, rechecked: new Date().toISOString() }
     writeFileSync(done, JSON.stringify(record, null, 2))
     console.log(`[${t.id}/${cond}/${i}] recheck ${record.score.passed}/${record.score.total}${canary.clean ? '' : ' CANARY!'}`)
     return record
@@ -185,13 +162,25 @@ for (const condGroup of ['without', 'with']) {
   await Promise.all(Array.from({ length: Math.min(concurrency, group.length) }, worker))
 }
 
-// Summarize everything present under this label (including runs from earlier invocations).
+// Summarize everything present under this label, refusing stale records: a stored
+// run whose stamp does not match this invocation's skill tree / subject shape /
+// model / CLI is excluded and reported, never averaged in.
+const allDefs = {}
+for (const f of readdirSync(tasksDir).filter((f) => f.endsWith('.json'))) { const d = JSON.parse(readFileSync(path.join(tasksDir, f), 'utf8')); allDefs[d.id] = d }
 const all = []
+let staleExcluded = 0
 const runsRoot = path.join(labelDir, 'runs')
 if (existsSync(runsRoot)) for (const tid of readdirSync(runsRoot)) for (const cond of readdirSync(path.join(runsRoot, tid))) for (const i of readdirSync(path.join(runsRoot, tid, cond))) {
-  const p = path.join(runsRoot, tid, cond, i, 'run.json'); if (existsSync(p)) all.push(JSON.parse(readFileSync(p, 'utf8')))
+  const p = path.join(runsRoot, tid, cond, i, 'run.json'); if (!existsSync(p)) continue
+  const rec = JSON.parse(readFileSync(p, 'utf8'))
+  const def = allDefs[rec.task]
+  const bad = !def ? 'unknown task id' : stampMismatch(rec.stamp, stampOf(def))
+  if (bad) { staleExcluded++; console.error(`stale (excluded from summary) ${rec.task}/${cond}/${i}: ${bad}`); continue }
+  all.push(rec)
 }
-writeFileSync(path.join(labelDir, 'summary.json'), JSON.stringify(summarize(all), null, 2))
+const summaryDoc = summarize(all)
+summaryDoc.staleExcluded = staleExcluded
+writeFileSync(path.join(labelDir, 'summary.json'), JSON.stringify(summaryDoc, null, 2))
 console.log(`summary: ${path.join(labelDir, 'summary.json')}${stopped ? ' (stopped early on rate limit; rerun the same command to resume)' : ''}`)
 
 export function summarize(records) {

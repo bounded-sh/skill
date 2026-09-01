@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url'
 import { writeShim } from './lib/shim.mjs'
 import { extractMetrics } from './lib/metrics.mjs'
 import { scanCanary } from './lib/canary.mjs'
+import { subjectHash, stampMismatch } from './lib/stamp.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const tmp = mkdtempSync(path.join(os.tmpdir(), 'harness-selftest-'))
@@ -53,6 +54,31 @@ test('escape: any .claude/skills flagged', () => assert.ok(esc('ls /Users/someon
 test('escape: traversal flagged', () => assert.ok(esc('cd ../.. && find . -iname "*bounded*"') > 0))
 test('escape: /tmp scratch not flagged', () => assert.equal(esc('npm run dev > /tmp/dev.log 2>&1'), 0))
 test('escape: own work dir not flagged', () => assert.equal(esc('ls ' + work + '/src'), 0))
+
+// --- outbound network (external review: a curl of the public repo was invisible)
+test('network: curl of the public repo flagged', () => assert.ok(esc('curl -sL https://raw.githubusercontent.com/bounded-sh/skill/main/bounded-backend/SKILL.md') > 0))
+test('network: git clone flagged', () => assert.ok(esc('git clone https://github.com/bounded-sh/skill /tmp/x') > 0))
+test('network: wget with bare host flagged', () => assert.ok(esc('wget example.com/a.tar.gz') > 0))
+test('network: curl to localhost dev server not flagged', () => assert.equal(esc('curl -s http://localhost:5183/health'), 0))
+test('network: npm install not flagged', () => assert.equal(esc('npm install react'), 0))
+
+// --- stamps (external review: taskHash was recorded but never compared)
+test('stamp: prompt edit is a mismatch', () => {
+  const t1 = { id: 'x', prompt: 'a', maxTurns: 60 }
+  const t2 = { id: 'x', prompt: 'b', maxTurns: 60 }
+  const cur = { skillHash: 'k', subjectHash: subjectHash(t2, {}), model: 'sonnet', cliVersion: 'v' }
+  const prev = { skillHash: 'k', subjectHash: subjectHash(t1, {}), model: 'sonnet', cliVersion: 'v' }
+  assert.match(String(stampMismatch(prev, cur)), /subjectHash/)
+})
+test('stamp: checker-only edit is NOT a mismatch', () => {
+  const t1 = { id: 'x', prompt: 'a', checks: [{ kind: 'regex', regex: 'p' }] }
+  const t2 = { id: 'x', prompt: 'a', checks: [{ kind: 'regex', regex: 'q' }] }
+  assert.equal(subjectHash(t1, {}), subjectHash(t2, {}))
+})
+test('stamp: different skill tree is a mismatch', () => {
+  assert.match(String(stampMismatch({ skillHash: 'a', subjectHash: 's', model: 'm', cliVersion: 'v' }, { skillHash: 'b', subjectHash: 's', model: 'm', cliVersion: 'v' })), /skillHash/)
+})
+test('stamp: missing stamp is refused, not accepted', () => assert.ok(stampMismatch(undefined, { skillHash: 'a' })))
 
 // --- canary: no waiver for user-level skill reads; allowEscapes only zeroes escapes
 test('canary: with-condition user-skill read is dirty', () => {
