@@ -567,7 +567,8 @@ signing and wallet provisioning after login.
 The default email login provisions the wallet eagerly at login (so
 `@user.address` exists immediately), and the login code itself also establishes
 a 24-hour SIGNING SESSION on the signer origin.
-Every signature shows an in-app approve card with the decoded transaction:
+Every signature shows an in-app approve card (wallet address, requesting
+origin, Approve/Cancel):
 within a live signing session it is one Approve click; when the session has
 expired (or the user is on a hosted/social login, a new device, or cleared
 storage), the card collects a fresh Turnkey-emailed one-time code inline, which

@@ -203,8 +203,8 @@ const user = await attempt.verify(code);
 Turnkey provisioning and signing helpers include `getOrCreateTurnkeyWallet`,
 `signSolanaMessageViaTurnkey`, and the normal auth-provider methods
 `signMessage`, `signTransaction`, and `signAndSubmitTransaction`. Signing
-requires user approval on an in-app approve card that shows the decoded
-transaction: within a live 24-hour signing session (established by the login
+requires user approval on an in-app approve card (wallet address, requesting
+origin, Approve/Cancel): within a live 24-hour signing session (established by the login
 code itself on the default email lane) approval is one click; otherwise the
 card collects a fresh Turnkey-emailed one-time code inline first, which
 establishes the session for the next 24 hours. Sessions are per device, never
