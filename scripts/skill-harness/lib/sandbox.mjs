@@ -25,7 +25,7 @@ export function scrubEnv(env) {
   return out
 }
 
-export function buildFixture({ runDir, skillDir, withSkill, files = {}, shim = {} }) {
+export function buildFixture({ runDir, skillDir, withSkill, files = {}, shim = {}, opts = {} }) {
   const work = path.join(runDir, 'work')
   mkdirSync(work, { recursive: true })
   if (withSkill) {

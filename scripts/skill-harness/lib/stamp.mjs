@@ -36,7 +36,9 @@ export function subjectHash(task, defaults = {}) {
 
 export function stampMismatch(prev, cur) {
   if (!prev) return 'run has no stamp (older harness revision); recheck to backfill, or delete it'
-  for (const k of ['skillHash', 'subjectHash', 'model', 'cliVersion']) {
+  // stamps minted before the local-stack mode existed were all hosted
+  if (prev.boundedTarget === undefined) prev = { ...prev, boundedTarget: 'hosted' }
+  for (const k of ['skillHash', 'subjectHash', 'model', 'cliVersion', 'boundedTarget']) {
     if (prev[k] !== undefined && cur[k] !== undefined && String(prev[k]) !== String(cur[k])) return `${k}: ${prev[k]} != ${cur[k]}`
   }
   return null

@@ -47,14 +47,30 @@ const timeoutMs = Number(flag('timeout-min', 20)) * 60000
 const stopAt = Number(flag('stop-at-utilization', 0.92))
 const onlyTasks = flag('tasks') ? new Set(flag('tasks').split(',')) : null
 const onlyPhase = flag('phase')
+// --bounded local routes every bounded invocation (the subject's shim AND the
+// verify checker) through `<monorepo>/dev exec -- bounded`, i.e. the local
+// stack the maintainer booted with ./dev. Hosted (default) uses the installed
+// CLI against the hosted platform. The target is stamped into every run, so
+// local and hosted results can never be silently mixed.
+const boundedTarget = flag('bounded', 'hosted')
+if (!['hosted', 'local'].includes(boundedTarget)) { console.error("--bounded must be 'hosted' or 'local'"); process.exit(2) }
+let boundedExec = null
+if (boundedTarget === 'local') {
+  const monorepo = process.env.BOUNDED_MONOREPO || path.resolve(repoRoot, '..', 'bounded-monorepo')
+  const dev = path.join(monorepo, 'dev')
+  if (!existsSync(dev)) { console.error(`--bounded local: ${dev} not found (set BOUNDED_MONOREPO)`); process.exit(2) }
+  try { execSync(`${JSON.stringify(dev)} status`, { encoding: 'utf8', timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] }) }
+  catch (e) { console.error(`--bounded local: local stack not healthy:\n${(e.stdout || '') + (e.stderr || '')}`.trim()); process.exit(2) }
+  boundedExec = [dev, 'exec', '--', 'bounded']
+}
 const RECHECK = has('recheck')
 const VOID_DIRTY = has('void-dirty')
 
 let cliVersion = 'unknown'
-try { cliVersion = execSync('bounded version', { encoding: 'utf8' }).split('\n')[0].trim() } catch {}
+try { cliVersion = boundedExec ? execSync(boundedExec.map((a) => JSON.stringify(a)).join(' ') + ' version', { encoding: 'utf8' }).split('\n')[0].trim() : execSync('bounded version', { encoding: 'utf8' }).split('\n')[0].trim() } catch {}
 const skillHash = familyHash(skillDir)
 const repoPatterns = checkoutPatterns(repoRoot, skillDir !== repoRoot ? skillDir : null)
-const stampOf = (t) => ({ skillHash, subjectHash: subjectHash(t, { maxTurns, maxBudget }), model, cliVersion, maxTurns: t.maxTurns || maxTurns, maxBudget: t.maxBudgetUsd || maxBudget })
+const stampOf = (t) => ({ skillHash, subjectHash: subjectHash(t, { maxTurns, maxBudget }), model, cliVersion, boundedTarget, maxTurns: t.maxTurns || maxTurns, maxBudget: t.maxBudgetUsd || maxBudget })
 const ALLOW_STALE = has('allow-stale')
 
 const tasksDir = path.join(here, 'tasks')
@@ -117,7 +133,7 @@ async function runOne({ t, cond, i }) {
     if (!metrics.skillBytesRead && prev.metrics && prev.metrics.skillBytesRead) metrics.skillBytesRead = prev.metrics.skillBytesRead
     const shimLog = readShimLog(runDir)
     const transcriptText = assistantText(events) + '\n' + JSON.stringify(toolUses(events).map((u) => u.input))
-    const checks = await runChecks(t, { work, runDir, finalText: metrics.finalText, transcriptText, shimLog })
+    const checks = await runChecks(t, { work, runDir, boundedExec, finalText: metrics.finalText, transcriptText, shimLog })
     const canary = scanCanary(events, metrics, { condition: cond, allowEscapes: t.allowEscapes, extraPatterns: repoPatterns })
     const record = { ...prev, task: t.id, phase: t.phase, condition: cond, index: i, label, stamp: prev.stamp ? prev.stamp : { ...stampOf(t), backfilled: true }, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary, rechecked: new Date().toISOString() }
     writeFileSync(done, JSON.stringify(record, null, 2))
@@ -125,7 +141,7 @@ async function runOne({ t, cond, i }) {
     return record
   }
   mkdirSync(runDir, { recursive: true })
-  const { work, bin } = buildFixture({ runDir, skillDir, withSkill: cond === 'with', files: loadFixture(t), shim: t.shim || {} })
+  const { work, bin } = buildFixture({ runDir, skillDir, withSkill: cond === 'with', files: loadFixture(t), shim: t.shim || {}, opts: { execVia: boundedExec } })
   const started = new Date().toISOString()
   const r = await runSubject({ work, bin, prompt: t.prompt, model, maxTurns: t.maxTurns || maxTurns, maxBudgetUsd: t.maxBudgetUsd || maxBudget, timeoutMs })
   writeFileSync(path.join(runDir, 'events.jsonl'), r.events.map((e) => JSON.stringify(e)).join('\n') + '\n')
@@ -133,7 +149,7 @@ async function runOne({ t, cond, i }) {
   const metrics = extractMetrics(r.events, work)
   const shimLog = readShimLog(runDir)
   const transcriptText = assistantText(r.events) + '\n' + JSON.stringify(toolUses(r.events).map((u) => u.input))
-  const checks = await runChecks(t, { work, runDir, finalText: metrics.finalText, transcriptText, shimLog })
+  const checks = await runChecks(t, { work, runDir, boundedExec, finalText: metrics.finalText, transcriptText, shimLog })
   const canary = scanCanary(r.events, metrics, { condition: cond, allowEscapes: t.allowEscapes, extraPatterns: repoPatterns })
   const record = { task: t.id, phase: t.phase, condition: cond, index: i, label, model, stamp: stampOf(t), started, wallMs: r.wallMs, exitCode: r.code, timedOut: r.timedOut, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary }
   writeFileSync(path.join(runDir, 'final.md'), metrics.finalText || '')

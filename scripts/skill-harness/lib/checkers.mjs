@@ -53,7 +53,8 @@ function loadPolicy(work, spec) {
 // IP") are retried with backoff and never cached; a verdict is cached only when
 // it carries a real status string. Every uncached prover call is followed by a
 // 4s pause to stay under the 20/min limit even across a long recheck.
-export function runVerify(file, runDir) {
+export function runVerify(file, runDir, execVia) {
+  const argvPrefix = execVia && execVia.length ? execVia : [resolveRealBounded()]
   const bytes = readFileSync(file)
   const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 16)
   const cachePath = runDir ? path.join(runDir, 'verify-cache.json') : null
@@ -62,9 +63,9 @@ export function runVerify(file, runDir) {
   }
   let last = { ok: false, status: 'PROVER_BUSY', passed: false, counts: {}, failures: ['no attempt succeeded'] }
   for (let attempt = 1; attempt <= 5; attempt++) {
-    const r = spawnSync(resolveRealBounded(), ['verify', file, '--json'], { encoding: 'utf8', timeout: 180000 })
+    const r = spawnSync(argvPrefix[0], [...argvPrefix.slice(1), 'verify', file, '--json'], { encoding: 'utf8', timeout: 240000 })
     const raw = (r.stdout || '') + (r.stderr || '')
-    spawnSync('sleep', ['4']) // pacing: stay under 20 prover calls per minute
+    if (!execVia) spawnSync('sleep', ['4']) // hosted dev-api pacing (20/min/IP); the local stack needs none
     const transient = /proof_substrate_unavailable|Too many formal verification|\b429\b|"retryable"\s*:\s*true/.test(raw)
     if (transient) { last = { ok: false, status: 'PROVER_BUSY', passed: false, counts: {}, failures: [raw.slice(0, 200)] }; spawnSync('sleep', [String(10 * attempt)]); continue }
     try {
@@ -106,7 +107,7 @@ async function one(c, ctx) {
     case 'verify': {
       const p = path.join(work, c.path || 'policy.json')
       if (!existsSync(p)) return { pass: false, detail: 'policy missing' }
-      const v = runVerify(p, ctx.runDir)
+      const v = runVerify(p, ctx.runDir, ctx.boundedExec)
       const pass = c.expect === 'no-proof-failures' ? v.ok && (v.counts.proofFailures || 0) === 0 && (v.counts.schemaFailures || 0) === 0 : v.passed
       return { pass, detail: `${v.status} ${JSON.stringify(v.counts)}${v.failures.length ? ' ' + v.failures.slice(0, 3).join(' | ') : ''}`, verify: v }
     }

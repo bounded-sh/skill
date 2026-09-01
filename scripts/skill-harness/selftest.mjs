@@ -45,6 +45,15 @@ test('shim allows read-only verify and logs it', () => {
   assert.equal(last.sub, 'verify'); assert.equal(last.blocked, false); assert.ok(last.policyHash, 'policy hash recorded')
 })
 
+// --- shim local mode: same gate, exec prefix honoured
+const bin2 = path.join(tmp, 'bin2'); mkdirSync(bin2)
+const rec = path.join(tmp, 'rec.sh')
+writeFileSync(rec, '#!/bin/sh\necho "VIA $@"\n'); execFileSync('chmod', ['+x', rec])
+writeShim({ binDir: bin2, runDir: tmp, faults: 0, execVia: [rec, 'exec', '--', 'bounded'] })
+const shim2 = (args) => { try { return { out: execFileSync(path.join(bin2, 'bounded'), args, { encoding: 'utf8', cwd: tmp }), code: 0 } } catch (e) { return { out: String(e.stdout || '') + String(e.stderr || ''), code: e.status ?? 1 } } }
+test('local-mode shim still blocks deploy', () => { const r = shim2(['deploy', '--create']); assert.equal(r.code, 1); assert.match(r.out, /command_unavailable/) })
+test('local-mode shim routes verify through the exec prefix', () => { const r = shim2(['verify', './x.json']); assert.match(r.out, /^VIA exec -- bounded verify \.\/x\.json/m) })
+
 // --- escape detector
 const work = '/private/tmp/c/hx/base/runs/t/without/0/work'
 const ev = (cmd) => [{ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: cmd } }] } }]

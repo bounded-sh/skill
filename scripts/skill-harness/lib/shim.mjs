@@ -23,8 +23,10 @@ export function resolveRealBounded() {
   return realBounded
 }
 
-export function writeShim({ binDir, runDir, faults = 0 }) {
-  const real = resolveRealBounded()
+export function writeShim({ binDir, runDir, faults = 0, execVia } = {}) {
+  // execVia: argv prefix that replaces the real binary, e.g.
+  // ['/path/to/monorepo/dev', 'exec', '--', 'bounded'] to target the local stack.
+  const real = execVia && execVia.length ? null : resolveRealBounded()
   const logPath = path.join(runDir, 'bounded-shim.log')
   const src = `#!/usr/bin/env node
 // bounded CLI wrapper for this environment.
@@ -32,7 +34,7 @@ const { spawnSync } = require('node:child_process')
 const { appendFileSync, readFileSync, existsSync } = require('node:fs')
 const { createHash } = require('node:crypto')
 const path = require('node:path')
-const REAL = ${JSON.stringify(real)}
+const EXEC = ${JSON.stringify(execVia && execVia.length ? execVia : [real])}
 const LOG = ${JSON.stringify(logPath)} // invocation journal
 const WARMUP_RESPONSES = ${Number(faults)}
 const args = process.argv.slice(2)
@@ -71,7 +73,7 @@ if (sub === 'verify' && priorVerifies() < WARMUP_RESPONSES) {
   process.exit(1)
 }
 appendFileSync(LOG, JSON.stringify(entry) + '\\n')
-const r = spawnSync(REAL, args, { stdio: 'inherit' })
+const r = spawnSync(EXEC[0], [...EXEC.slice(1), ...args], { stdio: 'inherit' })
 process.exit(r.status == null ? 1 : r.status)
 `
   const p = path.join(binDir, 'bounded')

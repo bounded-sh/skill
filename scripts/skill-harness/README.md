@@ -62,6 +62,26 @@ The two conditions run behind a hard barrier: every `without` run completes
 before the first `with` fixture exists on disk. `node selftest.mjs` pins the
 shim gate, escape detector, canary, and checker counterexamples.
 
+## Bounded target: hosted (default) or your local stack
+
+Claude subjects always run against Anthropic's API. The BOUNDED side has two
+targets:
+
+- **hosted** (default): the installed `bounded` CLI against the hosted
+  platform. Needs a logged-in CLI; the verify checker paces itself under the
+  hosted prover's 20/min/IP limit.
+- **local**: `--bounded local` routes every bounded invocation - the
+  subject's shim AND the verify checker - through
+  `<monorepo>/dev exec -- bounded`, the same lane the policy-e2e suite uses,
+  against the stack you booted with `./dev fresh smoke --yes --profile full
+  --detach` (set `BOUNDED_MONOREPO` if the checkout is not the sibling
+  directory). No hosted-prover rate limit, no network dependency for verify,
+  and the runner preflights `./dev status` and refuses an unhealthy stack.
+
+The target is part of every run's stamp: local and hosted results can never be
+silently mixed in a resume or a summary (stamps minted before this mode existed
+count as hosted).
+
 ## Isolation (Tier A, process-level)
 
 The subject must behave like a real user's agent, not like one that has read
