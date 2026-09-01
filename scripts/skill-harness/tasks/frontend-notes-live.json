@@ -1,0 +1,13 @@
+{
+  "id": "frontend-notes-live",
+  "phase": "frontend",
+  "fixture": { "policy.json": "@fixtures/notes-policy.json", "package.json": "@fixtures/notes-app-package.json" },
+  "prompt": "Write the React code for my Bounded notes app (policy.json is in this directory; the app id is nte4Kz8pQ2mW7vR1 and the policy is already deployed). Show the signed-in user's notes, updating live when they change, plus an input to add a new note.",
+  "checks": [
+    { "id": "imports-client-sdk", "kind": "regex", "glob": "\\.(tsx|jsx|ts|js)$", "regex": "@bounded-sh/client" },
+    { "id": "inits-app", "kind": "regex", "glob": "\\.(tsx|jsx|ts|js)$", "regex": "init\\(" },
+    { "id": "live-subscription", "kind": "regex", "glob": "\\.(tsx|jsx|ts|js)$", "regex": "subscribe\\(" },
+    { "id": "governed-write", "kind": "regex", "glob": "\\.(tsx|jsx|ts|js)$", "regex": "\\.set\\(|setMany\\(" },
+    { "id": "no-query-per-item", "kind": "regex", "glob": "\\.(tsx|jsx|ts|js)$", "regex": "\\.map\\([^)]*runQuery\\(", "expect": "absent" }
+  ]
+}

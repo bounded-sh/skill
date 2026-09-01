@@ -229,7 +229,9 @@ for (const expected of [
   if (!dataPlaneGuide.includes(expected)) fail(`data-plane guide: missing storage/conflict boundary ${expected}`)
 }
 
-const paidOperationsGuide = readFileSync(path.join(root, 'bounded-backend/docs/functions.md'), 'utf8')
+// The functions guide is a family: functions.md plus one page per large `ctx` capability.
+const paidOperationsGuide = ['functions.md', 'functions-ctx-ai.md', 'functions-ctx-services.md', 'functions-ctx-browser.md', 'functions-ctx-enqueue.md', 'functions-ctx-build.md']
+  .map((f) => readFileSync(path.join(root, 'bounded-backend/docs', f), 'utf8')).join('\n')
 for (const expected of [
   'idempotencyKey: string',
   '1–256-byte UTF-8 string',

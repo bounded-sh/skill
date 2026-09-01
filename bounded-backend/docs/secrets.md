@@ -50,7 +50,17 @@ export default {
 A bare name = **in-process**: your code can read the value. This is the default and is all most
 apps need.
 
-## Stronger form: egress-bound (the value never enters your code)
+## Which surface accepts which form
+
+The forms below (egress-bound objects, `uses`) belong to the runtime lane's
+`bounded.manifest` (`bounded runtime deploy`). A policy `functions.<name>.secrets`
+entry is different: it accepts bare `UPPER_SNAKE_CASE` names ONLY, and the function
+reads each one with `ctx.secrets.get("NAME")`. Putting an object there fails deploy
+with `secret "[object Object]" must be an UPPER_SNAKE_CASE name (e.g. "STRIPE_KEY")`;
+scope that function's outbound reach with its own `egress` key instead (see
+[functions.md](functions.md#declare-a-function-policy)).
+
+## Stronger form: egress-bound, runtime manifest only (the value never enters your code)
 
 For an HTTP API key, bind the secret to the host it's for. The runtime attaches it as a header
 on your outbound request — **your code never sees the value**, so it can't leak it (even if the
@@ -113,12 +123,13 @@ Here `GH_TOKEN` is injected on calls to api.github.com **and** readable via `ctx
 
 | You need… | Declare | Read in code? |
 |---|---|---|
+| A secret in a policy `functions.<name>` entry (`bounded functions deploy`) | `"NAME"` bare, names only; objects are refused | Yes, `ctx.secrets.get("NAME")`; scope reach with the function's `egress` key |
 | An API key for an HTTP service (Stripe, OpenAI over HTTP, GitHub) | `{ name, egress: "<host>" }` | No — Bounded injects it on matching outbound requests (safest) |
 | To use the value yourself (sign a JWT, a non-HTTP SDK, custom logic) | `"NAME"` (bare) or `{ name, in: true }` | Yes — `ctx.secrets.get("NAME")` |
 | Both | `{ name, uses: [ {egress:"<host>"}, "in" ] }` | Yes, and injected on egress |
 
-Default to **egress-bound** for HTTP keys; use **in-process** only when your code truly needs the
-raw value.
+In a runtime manifest, default to **egress-bound** for HTTP keys and use **in-process** only when
+your code truly needs the raw value. In a policy function there is only the bare-name form.
 
 ## CLI
 

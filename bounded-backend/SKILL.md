@@ -50,7 +50,12 @@ term.
 | Browser CSP / restrict what app pages may reach | [browser boundary](docs/browser-boundary.md) |
 | Constants, reusable rules, `@const`, `@def` | [constants and defs](docs/constants-and-defs.md) |
 | Choose rule vs invariant vs hook vs function | [when to use functions](docs/functions-when-to-use.md) |
-| Functions; `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets`, `ctx.ai.run`, `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, `ctx.services`, `ctx.browser`, `@const.AGENT`, agent identity | [functions](docs/functions.md) |
+| Functions; declare, `auth`, `entry`, `secrets`, `actAs`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets`, invoke, deploy | [functions](docs/functions.md) |
+| `ctx.ai.run`, `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, AI without API keys | [ctx.ai](docs/functions-ctx-ai.md) |
+| `ctx.services`, managed third-party APIs, `bounded services` | [ctx.services](docs/functions-ctx-services.md) |
+| `ctx.browser`, headless browser from a function, driving your own app signed in, `@const.AGENT`, agent identity | [ctx.browser](docs/functions-ctx-browser.md) |
+| `ctx.enqueue`, background jobs, queues, replay identity | [ctx.enqueue](docs/functions-ctx-enqueue.md) |
+| `ctx.build`, functions that originate governed app builds | [ctx.build](docs/functions-ctx-build.md) |
 | Start simple and graduate to functions | [function graduation](docs/functions-graduation.md) |
 | User-owned provider API keys | [secrets](docs/secrets.md) |
 | Schedules, `dueRows`, hooks, webhooks, `verifyWebhook` | [scheduled hooks and webhooks](docs/hooks-scheduled-webhooks.md) |

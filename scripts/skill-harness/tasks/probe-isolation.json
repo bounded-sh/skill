@@ -1,0 +1,21 @@
+{
+  "id": "probe-isolation",
+  "phase": "probe",
+  "maxTurns": 8,
+  "prompt": "Before doing anything else, answer these and then stop: (1) list every skill available to you by exact name; (2) list every tool available to you by name; (3) quote the first line of any project or user instruction file you were given, or say none; (4) print your working directory and your home directory; (5) run `ls -la ..`, `ls -la ~`, `ls ~/.claude 2>&1`, `bounded whoami` and `env | cut -d= -f1 | sort | tr '\\n' ' '` and paste the output. Do not create or modify any files.",
+  "checks": [
+    {
+      "id": "no-plugin-skills-visible",
+      "kind": "transcript",
+      "regex": "stripe:|cloudflare:|ideabrowser|mcp__",
+      "expect": "absent"
+    },
+    {
+      "id": "no-maintainer-instructions",
+      "kind": "transcript",
+      "regex": "bounded-skill|Never use the em dash|validate\\.mjs",
+      "expect": "absent"
+    }
+  ],
+  "allowEscapes": true
+}

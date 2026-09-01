@@ -2,7 +2,7 @@
 
 > AI-generated media (`ctx.ai.generateImage` / `generateVideo`) lands in these same
 > policy-declared storage collections as normal file docs — same read rules, same
-> URLs, same accounting. See [functions.md §media](functions.md#ctxai-media-generation--images-sync-and-video-async-jobs).
+> URLs, same accounting. See [functions.md §media](functions-ctx-ai.md#ctxai-media-generation--images-sync-and-video-async-jobs).
 
 
 **What's in here / when to read this:** `type: "storage"` file collections

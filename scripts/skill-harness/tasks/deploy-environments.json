@@ -1,0 +1,15 @@
+{
+  "id": "deploy-environments",
+  "phase": "deploy",
+  "fixture": { "policy.json": "@fixtures/spend-staging-policy.json" },
+  "prompt": "This is the policy.json for my Bounded app. So far I've only deployed it to my staging app (app id: stg7Kp2mQ9vX4nR8). Now I have a production app too (app id: prd3Hw6tL1bY5cZ2). The staging admin wallet is StgAdm7Gq4wNx2rVfK8pLm3Hs9TzYbC5dJ6eRuWq (already in the file) and the production admin wallet is PrdAdm4Vx9tK2mQ7nB3wLc8sHj5yFg6dRe1pZaUo. Production daily cap should be 5000, staging stays 50. Set the policy up so this one file can deploy to both apps with the right admin and cap for each, and tell me the exact commands to deploy each one.",
+  "checks": [
+    { "id": "policy-json", "kind": "json-valid", "path": "policy.json" },
+    { "id": "verify-passed", "kind": "verify", "path": "policy.json", "expect": "passed" },
+    { "id": "both-envs-declared", "kind": "policy-expr", "expr": "!!p.environments && Object.values(p.environments).some(e=>e && e.appId==='stg7Kp2mQ9vX4nR8') && Object.values(p.environments).some(e=>e && e.appId==='prd3Hw6tL1bY5cZ2')" },
+    { "id": "prod-env-values", "kind": "policy-expr", "expr": "Object.values(p.environments||{}).some(e=>e && e.appId==='prd3Hw6tL1bY5cZ2' && e.constants && e.constants.ADMIN==='PrdAdm4Vx9tK2mQ7nB3wLc8sHj5yFg6dRe1pZaUo' && String(e.constants.DAILY_CAP)==='5000')" },
+    { "id": "staging-env-values", "kind": "policy-expr", "expr": "Object.values(p.environments||{}).some(e=>e && e.appId==='stg7Kp2mQ9vX4nR8' && e.constants && e.constants.ADMIN==='StgAdm7Gq4wNx2rVfK8pLm3Hs9TzYbC5dJ6eRuWq')" },
+    { "id": "base-not-a-deployed-identity", "kind": "policy-expr", "expr": "!!p.constants && p.constants.ADMIN !== 'StgAdm7Gq4wNx2rVfK8pLm3Hs9TzYbC5dJ6eRuWq' && p.constants.ADMIN !== 'PrdAdm4Vx9tK2mQ7nB3wLc8sHj5yFg6dRe1pZaUo'" },
+    { "id": "deploy-commands-per-env", "kind": "response", "regex": "--environment\\s+(staging|production)|--app-id\\s+(stg7Kp2mQ9vX4nR8|prd3Hw6tL1bY5cZ2)" }
+  ]
+}
