@@ -38,10 +38,13 @@ node scripts/skill-harness/usage.mjs $SKILL_HARNESS_OUT/baseline   # which pages
 
 Runs are resumable: an existing `run.json` is skipped, so raising `--n` only
 adds runs, and a rate-limit stop (`--stop-at-utilization`) resumes with the same
-command. Every run is stamped with the skill-family content hash, task hash,
-model, CLI version, and budget; a stored run whose stamp does not match the
-current invocation is an error (`--allow-stale` overrides), so pointing a label
-at a different tree can never silently return old results. `bounded verify`
+command. Every run is stamped with the skill-family content hash, a subject
+hash (prompt, fixture, shim, budgets - what shapes the SUBJECT; checker edits
+are deliberately excluded so a recheck can re-score old runs), model, and CLI
+version. Both resume and the summary refuse a mismatched or unstamped record
+(`--allow-stale` overrides resume only; summaries always exclude and count
+stale records), so pointing a label at a different tree, or editing a prompt,
+can never silently reuse old results. `bounded verify`
 verdicts are cached per policy content in the run dir and transient prover-busy
 responses are retried, so a recheck cannot flip a verdict through prover noise.
 The two conditions run behind a hard barrier: every `without` run completes
