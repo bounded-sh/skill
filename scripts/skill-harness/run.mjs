@@ -21,7 +21,7 @@ import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { buildFixture, runSubject, readShimLog } from './lib/sandbox.mjs'
 import { extractMetrics, assistantText, toolUses } from './lib/metrics.mjs'
-import { scanCanary } from './lib/canary.mjs'
+import { scanCanary, checkoutPatterns } from './lib/canary.mjs'
 import { runChecks, score } from './lib/checkers.mjs'
 import { familyHash, subjectHash, stampMismatch } from './lib/stamp.mjs'
 
@@ -53,6 +53,7 @@ const VOID_DIRTY = has('void-dirty')
 let cliVersion = 'unknown'
 try { cliVersion = execSync('bounded version', { encoding: 'utf8' }).split('\n')[0].trim() } catch {}
 const skillHash = familyHash(skillDir)
+const repoPatterns = checkoutPatterns(repoRoot, skillDir !== repoRoot ? skillDir : null)
 const stampOf = (t) => ({ skillHash, subjectHash: subjectHash(t, { maxTurns, maxBudget }), model, cliVersion, maxTurns: t.maxTurns || maxTurns, maxBudget: t.maxBudgetUsd || maxBudget })
 const ALLOW_STALE = has('allow-stale')
 
@@ -117,7 +118,7 @@ async function runOne({ t, cond, i }) {
     const shimLog = readShimLog(runDir)
     const transcriptText = assistantText(events) + '\n' + JSON.stringify(toolUses(events).map((u) => u.input))
     const checks = await runChecks(t, { work, runDir, finalText: metrics.finalText, transcriptText, shimLog })
-    const canary = scanCanary(events, metrics, { condition: cond, allowEscapes: t.allowEscapes })
+    const canary = scanCanary(events, metrics, { condition: cond, allowEscapes: t.allowEscapes, extraPatterns: repoPatterns })
     const record = { ...prev, task: t.id, phase: t.phase, condition: cond, index: i, label, stamp: prev.stamp ? prev.stamp : { ...stampOf(t), backfilled: true }, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary, rechecked: new Date().toISOString() }
     writeFileSync(done, JSON.stringify(record, null, 2))
     console.log(`[${t.id}/${cond}/${i}] recheck ${record.score.passed}/${record.score.total}${canary.clean ? '' : ' CANARY!'}`)
@@ -133,7 +134,7 @@ async function runOne({ t, cond, i }) {
   const shimLog = readShimLog(runDir)
   const transcriptText = assistantText(r.events) + '\n' + JSON.stringify(toolUses(r.events).map((u) => u.input))
   const checks = await runChecks(t, { work, runDir, finalText: metrics.finalText, transcriptText, shimLog })
-  const canary = scanCanary(r.events, metrics, { condition: cond, allowEscapes: t.allowEscapes })
+  const canary = scanCanary(r.events, metrics, { condition: cond, allowEscapes: t.allowEscapes, extraPatterns: repoPatterns })
   const record = { task: t.id, phase: t.phase, condition: cond, index: i, label, model, stamp: stampOf(t), started, wallMs: r.wallMs, exitCode: r.code, timedOut: r.timedOut, metrics: { ...metrics, finalText: undefined }, shimLog, checks, score: score(checks), canary }
   writeFileSync(path.join(runDir, 'final.md'), metrics.finalText || '')
   writeFileSync(done, JSON.stringify(record, null, 2))

@@ -27,7 +27,7 @@ export function isForeign(p, work) {
   const outRoot = path.resolve(work, '..', '..', '..', '..', '..', '..')
   if (p.startsWith(outRoot + path.sep)) return true
   if (/\.claude\/skills/.test(p)) return true
-  if (/^\/Users\/[^/]+\//.test(p) && !/node_modules|\/\.npm\/|\/\.nvm\/|\/\.local\/bin\/bounded$|\/\.cache\//.test(p)) return true
+  if (/^\/(Users|home)\/[^/]+\//.test(p) && !/node_modules|\/\.npm\/|\/\.nvm\/|\/\.local\/bin\/bounded$|\/\.cache\//.test(p)) return true
   return false
 }
 

@@ -7,11 +7,15 @@ export const CANARY_PATTERNS = [
   // public plugin pages, examples.md and plugin-catalog.json contain them.)
   /\bH00[0-9]\b/, /\bcp9311\b/i, /\bDS2-0\d{3}\b/, /scripts\/tests/,
   /skill-harness/, /validate\.mjs/, /em dash/i, /router-baseline/,
-  // the maintainer checkout itself: a subject that reads or lists it did not learn from the installed skill
-  /\/poof-new\/skill/, /\/Desktop\/workspace\//,
+  // (the maintainer checkout's own path is added at runtime via extraPatterns,
+  // so the canary works on any machine, not just the one this was written on)
 ]
 
-export function scanCanary(events, metrics, { condition, allowEscapes } = {}) {
+export function checkoutPatterns(...dirs) {
+  return dirs.filter(Boolean).map((d) => new RegExp(d.replace(/[.*+?^${}()|[\]\\]/g, (ch) => '\\' + ch)))
+}
+
+export function scanCanary(events, metrics, { condition, allowEscapes, extraPatterns = [] } = {}) {
   const blob = JSON.stringify(events)
   const hits = []
   // No waiver for reading a user-level skill install: it can be a DIFFERENT
@@ -19,7 +23,7 @@ export function scanCanary(events, metrics, { condition, allowEscapes } = {}) {
   // isolation probe, whose whole job is to look around; its findings are read
   // by a human, never scored.
   const escapes = allowEscapes ? [] : metrics.escapes
-  for (const re of CANARY_PATTERNS) {
+  for (const re of [...CANARY_PATTERNS, ...extraPatterns]) {
     const m = blob.match(re)
     if (m) hits.push({ pattern: re.source, sample: blob.slice(Math.max(0, m.index - 60), m.index + 80) })
   }

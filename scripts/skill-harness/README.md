@@ -22,12 +22,23 @@ without the skill cannot show that a cut degraded anything.
 Two labels compared by `report.mjs` give the ablation verdict: a cut ships when
 the candidate holds or raises the pass rate and lowers skill bytes read.
 
+## Prerequisites
+
+- `claude` CLI logged in, with access to the subject model (default `sonnet`)
+- `bounded` CLI on PATH and logged in (the verify checker calls the real prover;
+  its dev API allows ~20 calls/min/IP - the checker paces and caches for you)
+- Node 20+; macOS or Linux
+- Budget: roughly $0.10-1.30 per subject run at Sonnet prices; a 14-task
+  baseline at n=3 in both conditions is on the order of $30
+
 ```sh
 export SKILL_HARNESS_OUT=/some/scratch/dir           # results are large; keep them out of the repo
 node scripts/skill-harness/run.mjs --label baseline --n 3
 node scripts/skill-harness/report.mjs $SKILL_HARNESS_OUT/baseline
 
-git worktree add /tmp/skill-main main                # a candidate is any checkout of the family
+git worktree add /tmp/skill-main main                # a frozen baseline tree
+rm -rf /tmp/skill-main/.git /tmp/skill-main/scripts  # strip what a subject must never find
+                                                     # (the contract tests spell out every incident)
 node scripts/skill-harness/run.mjs --label cut-1 --skill-dir /path/to/candidate --conditions with --n 3
 node scripts/skill-harness/report.mjs $SKILL_HARNESS_OUT/baseline $SKILL_HARNESS_OUT/cut-1
 
@@ -102,6 +113,25 @@ Known limits of Tier A, on purpose so nobody over-trusts a number:
   egress limited to `api.anthropic.com` closes this for real (Tier B, not
   implemented here).
 - The fixture path contains the scratch root name.
+
+## Using it as a regression check on a skill change
+
+The honest contract: this is a measurement instrument a human reads, not a
+green/red gate.
+
+1. Build (or reuse) a baseline label against a frozen copy of main, n>=3 per
+   task. Stamps guarantee a stale baseline cannot be silently reused.
+2. Run your change as a second label, `--conditions with`, same n, on the
+   tasks that route to the pages you touched (`usage.mjs` shows which).
+3. Read `report.mjs baseline candidate`. Compare per-check rates, not
+   all-pass. A drop at n=3 is a reason to raise n on that task, not yet a
+   conclusion; the guest-tips case in `reports/` shows a 4/6-vs-1/6 "regression"
+   that dissolved at n=18.
+4. A verdict only covers pages the tasks reach. `usage.mjs` lists what no task
+   opens (~80 pages today): a change there gets NO signal until someone writes
+   a task for it. "Harness is green" must never be said about unmeasured pages.
+5. `selftest.mjs` must pass before you trust a run; `validate.mjs` and the
+   contract tests remain the repo's own required gate.
 
 ## Reading the numbers
 

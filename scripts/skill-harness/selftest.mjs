@@ -13,6 +13,7 @@ import { writeShim } from './lib/shim.mjs'
 import { extractMetrics } from './lib/metrics.mjs'
 import { scanCanary } from './lib/canary.mjs'
 import { subjectHash, stampMismatch } from './lib/stamp.mjs'
+import { checkoutPatterns } from './lib/canary.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const tmp = mkdtempSync(path.join(os.tmpdir(), 'harness-selftest-'))
@@ -55,12 +56,20 @@ test('escape: traversal flagged', () => assert.ok(esc('cd ../.. && find . -iname
 test('escape: /tmp scratch not flagged', () => assert.equal(esc('npm run dev > /tmp/dev.log 2>&1'), 0))
 test('escape: own work dir not flagged', () => assert.equal(esc('ls ' + work + '/src'), 0))
 
+test('escape: linux home tree flagged', () => assert.ok(esc('cat /home/dev/project/CLAUDE.md') > 0))
+
+
 // --- outbound network (external review: a curl of the public repo was invisible)
 test('network: curl of the public repo flagged', () => assert.ok(esc('curl -sL https://raw.githubusercontent.com/bounded-sh/skill/main/bounded-backend/SKILL.md') > 0))
 test('network: git clone flagged', () => assert.ok(esc('git clone https://github.com/bounded-sh/skill /tmp/x') > 0))
 test('network: wget with bare host flagged', () => assert.ok(esc('wget example.com/a.tar.gz') > 0))
 test('network: curl to localhost dev server not flagged', () => assert.equal(esc('curl -s http://localhost:5183/health'), 0))
 test('network: npm install not flagged', () => assert.equal(esc('npm install react'), 0))
+
+test('canary: derived checkout pattern matches its path and escapes regex chars', () => {
+  const [re] = checkoutPatterns('/tmp/my repo (1)/skill')
+  assert.ok(re.test('ls /tmp/my repo (1)/skill/scripts'))
+})
 
 // --- stamps (external review: taskHash was recorded but never compared)
 test('stamp: prompt edit is a mismatch', () => {
