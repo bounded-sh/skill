@@ -113,7 +113,7 @@ The oApp publication gate applies before any source is returned.
 A creator development app gets `404` on every public source route before Open completes.
 Completed Open publishes the governed workload site and source together at `https://<workloadAppId>.bounded.page`, even though the app has no oApps slug, listing, token, or running Gauntlet yet.
 Commence later adds those surfaces without changing the direct workload host's public source visibility.
-The stable venue page is `/l/<rootAppId>` before and after Commence.
+The venue page is `/a/<rootAppId>` before and after Commence (older `/l/` links redirect).
 
 On a launched oApp the in-app widget also switches to a dedicated launched
 face: a public trust rundown (rules, source link, constitution, security,

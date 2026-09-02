@@ -10,6 +10,13 @@
 - Boundaries were written early and cover the app's money and state rules as
   proven invariants, not ad-hoc checks. They are the trust artifact buyers
   read alongside your source.
+- `bounded oapp preflight` is READY on the deployed app; every blocking finding
+  it names is fixed at the source, not worked around.
+- The creator policy's `boundaries.egress` allow list carries `service:cap` and
+  `service:x402`; Open refuses without both (`oapp_opening_capability_grants_missing`).
+- Every capability the app needs is native, a live catalog action, or callable
+  through x402; anything else was filed with `bounded services request` and the
+  app was built without it.
 - `policy.json` contains **no** rule, function, or egress that depends on a
   user-held credential; `bounded verify` passes.
 - Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only — no fetches to

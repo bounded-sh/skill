@@ -19,6 +19,7 @@ following, so these are requirements and not advice.
 | `boundaries.posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
 | `boundaries.binding` | `"all"` - applies to everyone including you | `binding_not_all` |
 | `boundaries.egress` | declared (an empty `allow` IS a declaration) | `egress_missing` |
+| capability grants | `service:cap` and `service:x402` in an egress `allow` list, so the opened workload can call live catalog actions and pay x402-priced APIs through the relay; `bounded oapp preflight` names them when missing | `oapp_opening_capability_grants_missing` |
 | `boundaries.policy` | a `"mode": "locked"` freeze covering `openApps` (NOT over `boundaries` - see below) | `policy_freeze_missing_openapps` |
 | `openApps.activity` | `"public"` - every prompt and change on the record | `activity_not_public` |
 | a deployed policy | the app must have one to launch | `no_deployed_policy` |

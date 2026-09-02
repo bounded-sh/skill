@@ -1,6 +1,32 @@
-# Rehearse before you open
+# Preflight and rehearse before you open
 
-**What's in here:** `bounded oapp rehearse`: an ephemeral, budget-sealed copy that starts from zero data, and the idempotent bootstrap it runs. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** `bounded oapp preflight` (the Open gate as a dry run, with the capability ladder for every dependency), and `bounded oapp rehearse`: an ephemeral, budget-sealed copy that starts from zero data, and the idempotent bootstrap it runs. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+
+## Preflight: what Open would refuse (`bounded oapp preflight`)
+
+Open runs one safety pass first, and refuses on anything it finds. The same
+pass is available as a dry run, on the DEPLOYED app, mutating nothing:
+
+```
+bounded oapp preflight            # READY, or every finding Open would refuse on
+bounded oapp preflight --json     # the report as one document (exit 1 when refused)
+```
+
+The report covers the synced source and its head revision, whether the dist is
+reproducible (`static` / `built`), the two grants Open requires in the creator
+policy's `boundaries.egress` allow list (`service:cap`, `service:x402`), and
+every finding: a declared secret, a credential-shaped string, a closed-creator
+boundary, an unsafe egress host. For each dependency a finding names, it
+answers the ladder:
+
+- `native` - the runtime already provides it (`ctx.ai`, `ctx.email`, files, auth, ...)
+- `live` - a catalog action: `ctx.services.invoke("<slug>", args, { idempotencyKey })`
+- `callable` - an x402-priced API, callable now through `X402_FETCH`
+- `request` - not on Bounded yet: `bounded services request "<what you need>"`
+
+Blocking findings fail the command; advisory ones only name a better route.
+Fix, redeploy with source, run it again, then open. `bounded oapp rehearse`
+runs the same preflight before it seals a rehearsal, and never blocks on it.
 
 ## Rehearse before you open (`bounded oapp rehearse`)
 

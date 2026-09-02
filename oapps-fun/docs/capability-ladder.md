@@ -5,23 +5,43 @@
 ## The capability ladder
 
 For EVERY capability the user asks for, resolve it in this order and never
-skip to a workaround:
+skip to a workaround. The catalog tells you which rung you are on: every
+`bounded services search` item carries a readiness of `live`, `callable`, or
+`requestable`.
 
-1. **Native first.** Does the runtime provide it? `ctx.ai` (LLMs, images,
-   video — no keys), `ctx.services` (Bounded-managed third-party APIs; list
-   them with `bounded services`), direct crypto and provider payment rails,
-   embedded wallets and DEX/token plugins,
-   data/auth/realtime/files/functions. Route to **bounded-backend**,
-   **bounded-frontend**, **bounded-onchain** for the mechanics.
-   One exception for oApps: an `onchain: true` COLLECTION is not Openable yet
-   (`oapp_opening_onchain_policy_unsupported`) — see "oApps are mainnet apps" in
-   [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps). Embedded wallets, payments, and plugin calls are unaffected.
-2. **x402 relay second.** No native integration, but the counterparty prices
-   itself with [x402](https://www.x402.org) (HTTP 402 payment-required,
-   machine-to-machine)? Bounded can pay that API per-call **on the app's
-   behalf** — see the next section.
-3. **Call it out.** Neither exists? Say so, plainly, BEFORE building around
-   it. Do not quietly wire a dependency that a person controls.
+1. **Native or live first.** Does the runtime provide it? `ctx.ai` (LLMs,
+   images, video — no keys), `ctx.email`, files, auth, collections, direct
+   crypto and provider payment rails, embedded wallets and DEX/token plugins,
+   data/auth/realtime/files/functions. Or is it a **live** catalog action?
+   `bounded services search "<need>"`, then `bounded services describe <slug>`,
+   then author the code that calls `ctx.services.invoke("<slug>", args,
+   { idempotencyKey })` under the app's `service:cap` grant. Route to
+   **bounded-backend**, **bounded-frontend**, **bounded-onchain** for the
+   mechanics. One exception for oApps: an `onchain: true` COLLECTION is not
+   Openable yet (`oapp_opening_onchain_policy_unsupported`) — see "oApps are
+   mainnet apps" in [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps).
+   Embedded wallets, payments, and plugin calls are unaffected.
+2. **Callable through x402 second.** No native integration, but the
+   counterparty prices itself with [x402](https://www.x402.org) (HTTP 402
+   payment-required, machine-to-machine)? The catalog marks it `callable`, and
+   Bounded pays that API per call **on the app's behalf** with no approval
+   step, through `ctx.services.invoke("X402_FETCH", ...)` under the app's
+   `service:x402` grant — see the next section.
+3. **Request it, then call it out.** Neither exists? File it once,
+   platform-wide: `bounded services request "<what you need>"`. A steward
+   reviews it, and the Hub emails you when it is live; follow it with
+   `bounded services status`. Then say so, plainly, BEFORE building around
+   it, and build the compliant version without it. Do not quietly wire a
+   dependency that a person controls. A brain running an opened app climbs
+   the same ladder on its own (`search_capabilities`, `describe_capability`,
+   `request_capability`, `capability_request_status`), and a request that
+   later goes live reaches its next run through the observation lane.
+
+Two grants make the ladder real for an opened app, and Open requires both in
+the creator policy's `boundaries.egress` allow list: `service:cap` (live
+catalog actions) and `service:x402` (the relay). `bounded oapp preflight`
+reports them as missing before Open refuses on them; the constitution's tools
+section says the same thing in prose.
 
 ### What "calling it out" looks like
 
@@ -107,9 +127,13 @@ signed blockhash is invalid on both recovery RPCs.
 Provider receipts and transaction hints are accelerators only, never settlement
 truth. Retry or reconcile the same operation after an ambiguous response; do
 not create a replacement call or payment.
-Discovery: `ctx.services.search("x402")` / `describe("X402_FETCH")`. The tool
-is environment-gated. When disabled, treat the feature as ladder-step-3 and flag it as
-"unblocks when the x402 relay is enabled".
+Discovery: `ctx.services.search("x402")` / `describe("X402_FETCH")`. The relay
+is enabled on staging and production; it is environment-gated only in the
+sense that a local stack without the relay describes the tool as disabled.
+When `describe` reports it disabled where you run, treat the feature as
+ladder-step-3 and flag it as "unblocks when the x402 relay is enabled".
+`X402_FETCH` is not oApp-only: any app whose egress carries `service:x402`
+may use it.
 
 When designing: if a needed service advertises x402 support, note it as
 "relay-eligible" in your plan and budget its per-call price + surcharge into
