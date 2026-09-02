@@ -107,8 +107,9 @@ and never re-runs the provider: a lost poll re-reads the same job.
   Give each logical operation its own key - `weather:${args.id}:now:v1`, not
   `weather` - so one unit of work is one charge.
 - **A funding refusal is RETRYABLE with the same key.** A refusal that moved no
-  money (`services_credit_exhausted`, `free_services_exhausted`,
-  `subscription_inactive`, `billing_attention_required`) is not stored as the
+  money (`services_credit_exhausted`, `managed_app_credit_exhausted`,
+  `free_services_exhausted`, `subscription_inactive`,
+  `billing_attention_required`) is not stored as the
   answer for that key: once the payer is funded, the same operation charges for
   real. Every other terminal answer still replays. A replayed one says
   `replayed: true`, and the error carries `detail` - the ledger's own refusal
