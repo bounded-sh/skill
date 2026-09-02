@@ -32,9 +32,11 @@ per account.
   $20/month AI/external-services credit, and $100/month Bounded infra credit.
   Team accounts can run up to five Builds concurrently and can top up.
 
-The public checkout flow starts only monthly Pro or Team subscriptions
-(`kind: "pro" | "team"`).
-Annual and bucket-specific top-up products are not sold.
+The public checkout flow sells the four subscription kinds
+(`kind: "pro" | "pro_annual" | "team" | "team_annual"`) and one fungible credit
+top-up (`kind: "credits_topup"`, bought in credits at $0.05 each).
+The per-bucket top-ups are retired and are not sold: a credits purchase is
+spendable on anything metered - managed services, AI, and infrastructure.
 
 Custom domains are also a Pro feature. Creating a custom domain link is blocked
 unless the app owner has Pro-or-better billing, and existing custom domain links
@@ -75,10 +77,13 @@ Use the public surfaces:
 
 ```bash
 bounded billing status
-bounded billing checkout --plan pro
-bounded billing checkout --plan team
+bounded billing checkout --plan pro          # also pro_annual, team, team_annual
+bounded billing topup --credits 100          # $5 of fungible Bounded credits
 bounded billing portal
 ```
+
+Checkout and top-up wait for the payment to be APPLIED and say whether it
+landed; a completed Stripe checkout is not yet an applied plan.
 
 `bounded billing status` reports the account's effective project cap.
 In JSON, read `.limits.maxProjects`; `-1` means unlimited.

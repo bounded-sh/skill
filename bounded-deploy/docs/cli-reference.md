@@ -945,18 +945,26 @@ It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `
 
 ## Billing
 
-`bounded billing ...` manages the caller's own Bounded account: monthly Pro or
-Team subscription and Stripe Customer Portal.
+`bounded billing ...` manages the caller's own Bounded account: a Pro or Team
+subscription, Bounded credits, and the Stripe Customer Portal.
 
 | Command | Does | Example |
 |---|---|---|
 | `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
-| `billing checkout` | Start monthly Bounded Pro or Team | `bounded billing checkout --plan pro` |
+| `billing checkout` | Start Bounded Pro or Team, monthly or annual. `--plan pro\|pro_annual\|team\|team_annual`, `--print`, `--no-open`, `--no-wait` | `bounded billing checkout --plan pro` |
+| `billing topup` | Buy Bounded credits. `--credits` (20-10,000; $0.05 each), `--print`, `--no-open`, `--no-wait` | `bounded billing topup --credits 100` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |
 | `upgrade` | Alias for `billing checkout --plan pro` | `bounded upgrade` |
 
-`billing checkout --plan pro|team` creates Bounded's own monthly subscription.
-It does not create subscriptions for an app's end users.
+`billing checkout` creates Bounded's own subscription. It does not create
+subscriptions for an app's end users.
+
+Checkout and top-up open Stripe, then WAIT for the payment to be applied and say
+whether it landed - a completed Stripe checkout is not yet an applied plan.
+`--no-wait` skips the wait; check with `bounded billing status` instead.
+
+Credits are one fungible pool spendable on anything metered: managed services,
+AI, and infrastructure. The old per-bucket top-ups are retired.
 
 ## Capabilities - `services`
 
@@ -966,7 +974,7 @@ Reads never bill; `invoke` from a function does (see the bounded-backend
 
 | Command | Does | Example |
 |---|---|---|
-| `services search <query>` | Search the catalog. Each item carries a readiness: `live` (call it now with `ctx.services.invoke(slug)`), `callable` (an x402-priced API; call it now through `ctx.services.invoke("X402_FETCH", { url })`), or `requestable` (not on Bounded yet). `--limit` | `bounded services search "current weather" --json` |
+| `services search <query>` | Search the catalog. Each item carries a readiness: `live` (call it now with `ctx.services.invoke(slug)`), `callable` (an x402-priced API; call it now through `ctx.services.invoke("X402_FETCH", { url })`), `requestable` (not on Bounded yet), or `disabled` (Bounded has it but it is switched off here; `unavailableReason` says why - do not file a request for it). `--limit` | `bounded services search "current weather" --json` |
 | `services describe <slug>` | One toolkit or tool with its input schema and readiness. An unknown target answers `capability_not_supported` with the Hub link and exits nonzero. `--limit` | `bounded services describe CAP_WEATHER_NOW --json` |
 | `services request "<what you need>"` | File a capability request with the Capability Hub under your account, once, platform-wide. `--title`, `--desired-action`, `--approach`, `--provider`, `--transport`, `--idempotency-key` (replays file nothing new) | `bounded services request "current weather for a lat/lng pair"` |
 | `services status [requestId]` | Every request filed under this account, or one, with its status and the slug once live | `bounded services status` |

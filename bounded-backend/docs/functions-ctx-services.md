@@ -30,7 +30,7 @@ Slugs are what `bounded services search --json` returns; the ones above are
 illustrative. Never invent a slug: search first, then describe the exact slug
 you will call.
 
-### Readiness: live, callable, requestable
+### Readiness: live, callable, requestable, disabled
 
 Every catalog item carries a `readiness`, and it decides what you can do today:
 
@@ -39,6 +39,11 @@ Every catalog item carries a `readiness`, and it decides what you can do today:
 | `live` | A managed action on Bounded. | `ctx.services.invoke("<slug>", args, { idempotencyKey })` |
 | `callable` | An API that prices itself with x402 on Solana. Bounded pays it per call from the platform relay wallet; no approval, no key. | `ctx.services.invoke("X402_FETCH", { url, method, body, maxUsd }, { idempotencyKey })` using the item's `invocation.endpointUrl` |
 | `requestable` | Known to the catalog but not on Bounded yet. | File it once: `bounded services request "<what you need>"`, then build without it |
+| `disabled` | Bounded RUNS it, but it is switched off here: a steward turned the action off, or the platform holds no credential for the provider. `unavailableReason` says which. | Do not design around it and do not file a request - it already exists. Tell the operator what `unavailableReason` names, and build the path that does not need it |
+
+A `disabled` item is deliberately still LISTED. An unconfigured provider used to
+advertise itself as `live` and then answer `provider_key_not_configured` at
+invoke; now the catalog says so up front.
 
 `describe` of an unknown target answers `capability_not_supported` with a Hub
 link. That is a real answer, not an outage: request it, do not fake it with a
@@ -89,7 +94,9 @@ and never re-runs the provider: a lost poll re-reads the same job.
   plain finite JSON object when provided (the whole argument may be omitted): no
   `undefined` inside it, non-finite numbers, `BigInt`, sparse
   arrays, accessors, cycles, class instances, `Date`, `Map`, or `Set`.
-- **Replay/conflict:** service operation keys are app-global. The same key,
+- **Replay/conflict:** service operation keys are app-global AND PERMANENT. The
+  operation id is derived from the app id and your `idempotencyKey` alone, so a
+  hard-coded key names ONE charge for the life of the app. The same key,
   normalized tool, effective entity, account, and exact snapshotted args replay
   one stored response. Changed tool/args/entity returns `409
   service_invoke_operation_conflict`; an in-flight duplicate returns retryable
@@ -97,6 +104,17 @@ and never re-runs the provider: a lost poll re-reads the same job.
   becomes permanent `503 service_invoke_outcome_unknown` and never calls the
   provider again. `entityId` defaults to the account id, is part of the
   fingerprint, and is also the provider billing entity.
+  Give each logical operation its own key - `weather:${args.id}:now:v1`, not
+  `weather` - so one unit of work is one charge.
+- **A funding refusal is RETRYABLE with the same key.** A refusal that moved no
+  money (`services_credit_exhausted`, `free_services_exhausted`,
+  `subscription_inactive`, `billing_attention_required`) is not stored as the
+  answer for that key: once the payer is funded, the same operation charges for
+  real. Every other terminal answer still replays. A replayed one says
+  `replayed: true`, and the error carries `detail` - the ledger's own refusal
+  code behind the folded `services_credit_exhausted`, which is how you tell "no
+  credit" from "no allocation" - plus `remainingMicroUsd` and
+  `attemptedMicroUsd`.
 - **CLI discovery:** during build, agents can run
   `bounded services search "<query>" --json` and
   `bounded services describe <toolkit-or-tool-slug> --json` to inspect the same
