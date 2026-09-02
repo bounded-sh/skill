@@ -72,7 +72,27 @@ A private app may keep a provider key in `ctx.secrets` as a stopgap; an app
 headed to openapps.xyz may not, and `bounded oapp preflight` will refuse on it.
 Never put a key in frontend code or a repo.
 
-## Recipes
+## Recipes by dependency
+
+| The old app had | On Bounded it becomes | Read |
+|---|---|---|
+| A container or long-running service (a worker loop, a poller, a bot process) | Functions for the work, schedules for the cadence; nothing runs between invocations. A whole-backend runtime (`bounded runtime deploy`) exists for code that cannot be split, but it is **not oApp-eligible**: an app headed to openapps.xyz keeps to policy, functions, and schedules | [functions](../../bounded-backend/docs/functions.md), [backend runtime](../../bounded-backend/docs/backend-runtime.md) |
+| Redis (counters, rate limits, leaderboards, caches, queues) | Collections with rules; `rollingSum` and `windowSum` invariants for counters, rate limits, and ranked reads; `ctx.enqueue` from a function for the queue | [invariants](../../bounded-backend/docs/invariants.md), [trending feeds](../../bounded-backend/docs/trending-feeds.md) |
+| Websockets, pub/sub, presence | Subscriptions on collections; nothing to run | [realtime](../../bounded-backend/docs/realtime-and-games.md) |
+| SQL tables, Firestore, Supabase (rows, RLS, security rules) | Collections and rules; a row-level policy becomes the collection's `rules`, provable here | [policy reference](../../bounded-backend/docs/policy-reference.md), [access patterns](../../bounded-backend/docs/access-patterns.md) |
+| Auth vendors (Auth0, Clerk, Firebase Auth, Supabase Auth) | Bounded auth through the SDK; ownership re-keyed on `@user.id` | [auth](../../bounded-frontend/docs/auth.md) |
+| Email vendors (SendGrid, Postmark, Resend) | `ctx.email` from a function; no vendor key | [functions](../../bounded-backend/docs/functions.md) |
+| Vendor AI keys (OpenAI, Anthropic, Replicate) | `ctx.ai`; no key, billed to the app's bucket | [ctx.ai](../../bounded-backend/docs/functions-ctx-ai.md) |
+| Object storage (S3, GCS, Cloudinary) | Files, governed by the same rules | [functions](../../bounded-backend/docs/functions.md) |
+| Stripe and card processing | Crypto acceptance and Bounded's provider payment rails; for an oApp a card processor billed to a person is a call-out, not a key | [accept crypto](../../bounded-onchain/docs/accept-crypto.md), [capability ladder](../../oapps-fun/docs/capability-ladder.md) |
+| Any other third-party API | The capability ladder: `live`, `callable` through `X402_FETCH`, or `bounded services request` | [ctx.services](../../bounded-backend/docs/functions-ctx-services.md) |
+
+Data migrations are out of scope for this guide: Bounded moves the app's
+shape and rules, not its history. Export the old data and load what the new
+rules admit with `bounded data set-many` or a one-time function; what the
+rules refuse was never admissible under the new policy.
+
+## Recipes by source stack
 
 ### Supabase or Firebase
 
