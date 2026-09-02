@@ -47,9 +47,10 @@ personal key.
 `X402_FETCH` is not oApp-only. Any app whose function egress carries the
 `service:x402` grant may call an x402-priced API through it; the relay wallet
 pays, the app's AI/external-services bucket is debited (price, a 5% markup,
-and the flat transaction-fee surcharge), and the app itself holds no key. It
-is environment-gated: `ctx.services.describe("X402_FETCH")` tells you whether
-the relay is enabled where you run.
+and the flat transaction-fee surcharge), and the app itself holds no key. The
+relay is live on staging and production; only a local stack ships with it off
+(fail-closed), and `ctx.services.describe("X402_FETCH")` tells you which you
+are on.
 
 ### Requesting a capability Bounded does not have
 
