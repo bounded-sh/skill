@@ -54,7 +54,7 @@ honest one for an app that talks to nothing.
 oApps are framework-independent: Open does not require Vite, React, a `package.json`, or any particular layout.
 What it requires is honesty between three artifacts: the synced source, the deployed frontend (if any), and the policy.
 There are two shapes, and both are first-class openings.
-They differ in what a visitor sees first at `https://<workloadAppId>.bounded.page` and, after Commence, at `<slug>.oapps.fun`:
+They differ in what a visitor sees first at `https://<workloadAppId>.bounded.page` and, after Commence, at `<slug>.openapps.xyz` (the creator's `<slug>.bounded.page` redirects there):
 
 **An app with a web frontend.** Deploy the exact static files users should see with `bounded site deploy dist --with-source`.
 The platform serves those bytes as-is forever, and governed edits keep the human source and the deployed `dist/` in sync.

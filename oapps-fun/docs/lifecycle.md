@@ -12,8 +12,8 @@ Nothing is deployed or public.
 
 **2. Bounded (development).** Promote the creator app with `bounded init`, `bounded verify`, `bounded deploy`, and `bounded site deploy dist`.
 At creation the app claims a slug derived from its name plus a random suffix, such as `myapp-x7k2.bounded.page`.
-That is a development address, not an oapps.fun address.
-There is no oapps.fun URL until Commence.
+That is a development address, not an openapps.xyz address.
+There is no openapps.xyz URL until Commence.
 
 While building, keep the creator site **private** (`sitePrivate`, set through the dashboard or API).
 The platform serves a sign-in gate to everyone else, and `bounded site preview` mints short-lived view links when you need to show someone.
@@ -25,9 +25,10 @@ It also publishes the stable venue page at `/l/<rootAppId>`.
 The app is real and usable, but it has no oApps slug, venue listing, token, or running Gauntlet yet.
 The creator app remains a disconnected development sandbox.
 
-**4. Commenced.** An explicit Commence action claims `<slug>.oapps.fun`, writes the venue listing, creates the token sale, and starts the Gauntlet.
+**4. Commenced.** An explicit Commence action claims `<slug>.openapps.xyz`, writes the venue listing, creates the token sale, and starts the Gauntlet.
 Commence does not create the app or make its source public because Open already did both.
 The direct workload app-id host remains public, and `/l/<rootAppId>` remains the canonical venue page before and after Commence.
+The creator app's `<slug>.bounded.page` address never serves the oApp: once the slug is opened it answers a permanent redirect to `<slug>.openapps.xyz`, so share the openapps.xyz address.
 Choose the requested slug before Commence because its pointer becomes governance-controlled once Commence completes.
 
 **One creator app launches exactly once.**

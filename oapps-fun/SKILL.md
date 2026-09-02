@@ -67,11 +67,13 @@ Mechanics (policy, functions, wallets, payments) live in **bounded-backend**,
    site and source at `https://<workloadAppId>.bounded.page`, and the stable
    venue page at `/l/<rootAppId>`. Your creator app stays a disconnected
    sandbox; never `bounded deploy` at the opened root or workload.
-4. **Commence.** An explicit action that claims `<slug>.oapps.fun`, writes the
+4. **Commence.** An explicit action that claims `<slug>.openapps.xyz`, writes the
    listing, creates the token sale, and starts the Gauntlet. **One creator app
    launches exactly once**: after Commence the slug is permanent and frozen, and
    a further opening is refused with `oapp_creator_already_launched` (409). Pick
-   the slug before Commence; start a different app for a second oApp.
+   the slug before Commence; start a different app for a second oApp. The
+   creator's `<slug>.bounded.page` never serves the oApp: after Commence it
+   answers a permanent redirect to `<slug>.openapps.xyz`.
 
 `onchain: true` collections are not Openable yet
 (`oapp_opening_onchain_policy_unsupported`); embedded wallets, payments, and
