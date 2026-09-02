@@ -9,23 +9,78 @@ can proxy for the app. This is the managed path for "find the right API, inspect
 its schema, then call it" without putting provider credentials in app code.
 
 ```ts
-export default async function sports(args, ctx) {
-  const catalog = await ctx.services.search("sports odds", { limit: 5 });
-  const docs = await ctx.services.describe("the_odds_api");
+export default async function weather(args, ctx) {
+  const catalog = await ctx.services.search("current weather", { limit: 5 });
+  const docs = await ctx.services.describe("CAP_WEATHER_NOW");
 
-  const games = await ctx.services.invoke("THE_ODDS_API_GET_ODDS", {
-    sport: args.sport ?? "basketball_nba",
-    regions: "us",
-    markets: "h2h"
-  }, { idempotencyKey: `sports:${args.id}:odds:v1` });
+  const now = await ctx.services.invoke("CAP_WEATHER_NOW", {
+    lat: args.lat,
+    lng: args.lng
+  }, { idempotencyKey: `weather:${args.id}:now:v1` });
 
-  await ctx.bounded.set(`sportsSnapshots/${args.id}`, {
+  await ctx.bounded.set(`weatherSnapshots/${args.id}`, {
     at: Date.now(),
-    games: games.result
+    conditions: now.result
   });
   return { ok: true, catalog, docs };
 }
 ```
+
+Slugs are what `bounded services search --json` returns; the ones above are
+illustrative. Never invent a slug: search first, then describe the exact slug
+you will call.
+
+### Readiness: live, callable, requestable
+
+Every catalog item carries a `readiness`, and it decides what you can do today:
+
+| readiness | Meaning | What to write |
+|---|---|---|
+| `live` | A managed action on Bounded. | `ctx.services.invoke("<slug>", args, { idempotencyKey })` |
+| `callable` | An API that prices itself with x402 on Solana. Bounded pays it per call from the platform relay wallet; no approval, no key. | `ctx.services.invoke("X402_FETCH", { url, method, body, maxUsd }, { idempotencyKey })` using the item's `invocation.endpointUrl` |
+| `requestable` | Known to the catalog but not on Bounded yet. | File it once: `bounded services request "<what you need>"`, then build without it |
+
+`describe` of an unknown target answers `capability_not_supported` with a Hub
+link. That is a real answer, not an outage: request it, do not fake it with a
+personal key.
+
+`X402_FETCH` is not oApp-only. Any app whose function egress carries the
+`service:x402` grant may call an x402-priced API through it; the relay wallet
+pays, the app's AI/external-services bucket is debited (price, a 5% markup,
+and the flat transaction-fee surcharge), and the app itself holds no key. The
+relay is live on staging and production; only a local stack ships with it off
+(fail-closed), and `ctx.services.describe("X402_FETCH")` tells you which you
+are on.
+
+### Requesting a capability Bounded does not have
+
+```sh
+bounded services request "current weather for a lat/lng pair, refreshed hourly" \
+  --title "Current weather by coordinates" --desired-action "Read current weather"
+bounded services status                 # every request filed under this account
+bounded services status cap_<id>        # one request
+```
+
+A request is filed under the signed-in account with the Capability Hub; a
+steward reviews it, the platform activates it, and the Hub emails the
+requester when it is live. Then the app uses it the only way anything gets
+used: by code that calls the new slug. Requests replay on
+`--idempotency-key`, scoped to your account, so a retried script files
+nothing new.
+
+### Async actions: `ctx.services.getJob`
+
+Some actions are asynchronous (a video generation, a long report). `invoke`
+returns a job instead of a result; poll it:
+
+```ts
+const started = await ctx.services.invoke("CAP_VIDEO_GENERATE", { prompt }, { idempotencyKey: `video:${args.id}` });
+const job = await ctx.services.getJob(started.jobId);
+// job.status: "pending" | "succeeded" | "failed"; job.result on success
+```
+
+`getJob` is a read on the app's own job, billed as the action's contract says,
+and never re-runs the provider: a lost poll re-reads the same job.
 
 - **Contract:** `ctx.services.search(query, { limit? })`,
   `ctx.services.describe(toolkitOrToolSlug, { limit? })`, and
@@ -45,15 +100,15 @@ export default async function sports(args, ctx) {
 - **CLI discovery:** during build, agents can run
   `bounded services search "<query>" --json` and
   `bounded services describe <toolkit-or-tool-slug> --json` to inspect the same
-  managed catalog before writing function or agent code.
+  managed catalog before writing function or agent code; both print each
+  item's readiness, and `bounded services request` files what is missing.
 - **Two use cases:** search/describe are for build-time and agent planning;
   invoke is the runtime tool call. A Flue agent can expose a small wrapper around
   `ctx.services.invoke` as one of its tools.
 - **Billing:** search/describe are catalog reads. Invoke is cost-bearing and
   bills the app owner's AI/external-services bucket at the underlying service
-  call cost plus 5%. Composio standard and pro-tool calls are itemized
-  separately; the 5% Bounded markup is applied to whichever tier the tool uses.
-  The same fail-closed bucket/cap rules as `ctx.ai` apply.
+  call cost plus 5%; for an oApp workload the payer is the app's own project
+  bucket. The same fail-closed bucket/cap rules as `ctx.ai` apply.
 - **Refunds:** tool/auth/admission failures happen before charge. After charge,
   confirmed non-OK transport/provider failures refund through their own
   idempotent operation. A lost refund confirmation is queued for retry and the

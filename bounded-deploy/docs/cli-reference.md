@@ -958,6 +958,26 @@ Team subscription and Stripe Customer Portal.
 `billing checkout --plan pro|team` creates Bounded's own monthly subscription.
 It does not create subscriptions for an app's end users.
 
+## Capabilities - `services`
+
+The managed capability catalog, and the request lane for what is not on it.
+Reads never bill; `invoke` from a function does (see the bounded-backend
+`ctx.services` page).
+
+| Command | Does | Example |
+|---|---|---|
+| `services search <query>` | Search the catalog. Each item carries a readiness: `live` (call it now with `ctx.services.invoke(slug)`), `callable` (an x402-priced API; call it now through `ctx.services.invoke("X402_FETCH", { url })`), or `requestable` (not on Bounded yet). `--limit` | `bounded services search "current weather" --json` |
+| `services describe <slug>` | One toolkit or tool with its input schema and readiness. An unknown target answers `capability_not_supported` with the Hub link and exits nonzero. `--limit` | `bounded services describe CAP_WEATHER_NOW --json` |
+| `services request "<what you need>"` | File a capability request with the Capability Hub under your account, once, platform-wide. `--title`, `--desired-action`, `--approach`, `--provider`, `--transport`, `--idempotency-key` (replays file nothing new) | `bounded services request "current weather for a lat/lng pair"` |
+| `services status [requestId]` | Every request filed under this account, or one, with its status and the slug once live | `bounded services status` |
+
+## Open Apps - `oapp`
+
+| Command | Does | Example |
+|---|---|---|
+| `oapp preflight` | Dry-run the openapps.xyz Open gate on the deployed app: source, dist, the `service:cap` / `service:x402` grants, and every finding Open would refuse on with its capability-ladder verdict (`native`, `live`, `callable`, `request`). Exits nonzero when Open would refuse. `--app-id` | `bounded oapp preflight --json` |
+| `oapp rehearse` | An ephemeral, budget-sealed rehearsal of the app from zero data; runs the preflight first and never blocks on it. `--status`, `--fresh`, `--down`, `--budget-credits`, `--ttl-hours`, `--skip-deploy`, `--skip-bootstrap`; `--json` is one document (`rehearsal` + `preflight`) | `bounded oapp rehearse` |
+
 ### `verify --operation`
 
 Default is `verifyForDeploy` (prove the whole policy). The others probe one

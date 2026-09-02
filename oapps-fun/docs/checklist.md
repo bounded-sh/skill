@@ -10,6 +10,13 @@
 - Boundaries were written early and cover the app's money and state rules as
   proven invariants, not ad-hoc checks. They are the trust artifact buyers
   read alongside your source.
+- `bounded oapp preflight` is READY on the deployed app; every blocking finding
+  it names is fixed at the source, not worked around.
+- The creator policy's `boundaries.egress` allow list carries `service:cap` and
+  `service:x402`; Open refuses without both (`oapp_opening_capability_grants_missing`).
+- Every capability the app needs is native, a live catalog action, or callable
+  through x402; anything else was filed with `bounded services request` and the
+  app was built without it.
 - `policy.json` contains **no** rule, function, or egress that depends on a
   user-held credential; `bounded verify` passes.
 - Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only — no fetches to
@@ -21,11 +28,11 @@
   Completed Open publishes the separate governed workload at the exact workload app-id host.
 - Make source ride the deploy with `sourcePush: true` in `bounded.json` or `--with-source` on the last deploy.
   After Open, verify the synchronized tree at `https://<workloadAppId>.bounded.page/__bounded/source`.
-- The slug is the name the token should live at (`<slug>.oapps.fun`), so rename it before Commence if it is wrong.
+- The slug is the name the app lives at on the venue (`openapps.xyz/a/<slug>`), so rename it before Commence if it is wrong.
   Open already created the venue-owned root and workload; Commence claims the requested slug for that opening.
 - This app has NOT already commenced an oApp.
   A creator app launches exactly once, so a second Open is refused with `oapp_creator_already_launched`; start a different app instead.
-- Save `/l/<rootAppId>` as the canonical venue page.
+- Save `/a/<rootAppId>` as the venue page (older `/l/` links redirect there).
   Do not replace it with a slug-derived venue route after Commence.
 - The synced tree is the real, complete project and every `init({ appId })`
   literal names this app (see "What shape the app can take").

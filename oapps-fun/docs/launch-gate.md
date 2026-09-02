@@ -19,6 +19,7 @@ following, so these are requirements and not advice.
 | `boundaries.posture` | `"closed"` - nothing changes except what you open | `posture_not_closed` |
 | `boundaries.binding` | `"all"` - applies to everyone including you | `binding_not_all` |
 | `boundaries.egress` | declared (an empty `allow` IS a declaration) | `egress_missing` |
+| capability grants | `service:cap` and `service:x402` in an egress `allow` list, so the opened workload can call live catalog actions and pay x402-priced APIs through the relay; `bounded oapp preflight` names them when missing | `oapp_opening_capability_grants_missing` |
 | `boundaries.policy` | a `"mode": "locked"` freeze covering `openApps` (NOT over `boundaries` - see below) | `policy_freeze_missing_openapps` |
 | `openApps.activity` | `"public"` - every prompt and change on the record | `activity_not_public` |
 | a deployed policy | the app must have one to launch | `no_deployed_policy` |
@@ -54,7 +55,7 @@ honest one for an app that talks to nothing.
 oApps are framework-independent: Open does not require Vite, React, a `package.json`, or any particular layout.
 What it requires is honesty between three artifacts: the synced source, the deployed frontend (if any), and the policy.
 There are two shapes, and both are first-class openings.
-They differ in what a visitor sees first at `https://<workloadAppId>.bounded.page` and, after Commence, at `<slug>.oapps.fun`:
+They differ in what a visitor sees first at `https://<workloadAppId>.bounded.page` and, after Commence, at `openapps.xyz/a/<slug>`:
 
 **An app with a web frontend.** Deploy the exact static files users should see with `bounded site deploy dist --with-source`.
 The platform serves those bytes as-is forever, and governed edits keep the human source and the deployed `dist/` in sync.
@@ -65,7 +66,7 @@ Plain static HTML with no JavaScript is equally valid: what you deploy is what v
 **An app with no web frontend** can be a CLI, an agent, or a pure backend.
 It is still a real oApp: the backend runs and the boundaries hold.
 Its home page becomes the public repo view.
-Visitors landing on the direct workload app-id host, or the oApps slug after Commence, see the app's source browser with files, history, `Download .zip`, and `bounded clone`, plus a link to the stable `/l/<rootAppId>` venue page for history, reports, and governance.
+Visitors landing on the direct workload app-id host, or the oApps slug after Commence, see the app's source browser with files, history, `Download .zip`, and `bounded clone`, plus a link to the `/a/<rootAppId>` venue page for history, reports, and governance.
 They read and take the project rather than using it in the browser.
 Say this plainly before Open so nobody expects a web app to appear.
 
