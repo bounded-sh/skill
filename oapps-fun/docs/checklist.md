@@ -28,11 +28,11 @@
   Completed Open publishes the separate governed workload at the exact workload app-id host.
 - Make source ride the deploy with `sourcePush: true` in `bounded.json` or `--with-source` on the last deploy.
   After Open, verify the synchronized tree at `https://<workloadAppId>.bounded.page/__bounded/source`.
-- The slug is the name the token should live at (`<slug>.oapps.fun`), so rename it before Commence if it is wrong.
+- The slug is the name the app lives at on the venue (`openapps.xyz/a/<slug>`), so rename it before Commence if it is wrong.
   Open already created the venue-owned root and workload; Commence claims the requested slug for that opening.
 - This app has NOT already commenced an oApp.
   A creator app launches exactly once, so a second Open is refused with `oapp_creator_already_launched`; start a different app instead.
-- Save `/l/<rootAppId>` as the canonical venue page.
+- Save `/a/<rootAppId>` as the venue page (older `/l/` links redirect there).
   Do not replace it with a slug-derived venue route after Commence.
 - The synced tree is the real, complete project and every `init({ appId })`
   literal names this app (see "What shape the app can take").

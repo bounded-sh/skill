@@ -129,7 +129,7 @@ override them.
 X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
 Permissions-Policy: browsing-topics=()
-Content-Security-Policy: frame-ancestors 'self' https://oapps.fun https://*.oapps.fun
+Content-Security-Policy: frame-ancestors 'self' https://openapps.xyz https://*.openapps.xyz
                                           https://bounded.page https://*.bounded.page
 ```
 
@@ -147,7 +147,7 @@ wildcard added, because the venue front door frames its own apps.
 If that is too wide for your app, narrow it yourself: declare
 `boundaries.browser` with an `embeddedBy` list.
 The declared list REPLACES this allow-list rather than adding to it, so name the
-venue hosts you actually want (`oapps.fun`, `*.oapps.fun`) and leave the rest out.
+venue hosts you actually want (`openapps.xyz`, `*.openapps.xyz`) and leave the rest out.
 Declaring `boundaries.browser` while omitting `embeddedBy` is the strictest
 setting: `frame-ancestors 'none'` plus `X-Frame-Options: DENY`, which means no
 venue can embed you either.

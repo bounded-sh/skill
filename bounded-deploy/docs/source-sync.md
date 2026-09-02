@@ -98,7 +98,7 @@ editing base.
 
 - **oApp Open.** Open reads the synced source and publishes that exact tree at `https://<workloadAppId>.bounded.page/__bounded/source` when the opening completes.
   No synced source means Open cannot complete.
-  Commence later adds the oApps slug, listing, token, and Gauntlet without changing that source publication or the stable `/l/<rootAppId>` venue page.
+  Commence later adds the oApps slug, listing, token, and Gauntlet without changing that source publication or the `/a/<rootAppId>` venue page.
 - **`bounded clone` / `bounded pull`** - read the same repo (read-only
   tokens, `code:read` authority). Browser login is the default identity, and a
   cloned checkout keeps `account.keySource: web`; `--link` exists only for an
