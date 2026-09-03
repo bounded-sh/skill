@@ -115,7 +115,16 @@ So one handler can serve your signed-in web app and your headless SDKs, but
 both paths, so policy rules like `@user.id != null` pass for the public
 principal - write rules against real identities (`get(/admins/@user.id) != null`,
 an owner field) where it matters. Rules and invariants still run on every
-`ctx.bounded` write; the public principal cannot spend `ctx.ai` or `ctx.build`.
+`ctx.bounded` write.
+
+**Owner-funded calls are reachable from an anonymous caller.** `ctx.ai` and
+`ctx.services` work exactly as they do on `/invoke` and are billed to you, and
+the per-user AI spend cap keys on `ctx.user.id` - which is the SAME public
+principal for every anonymous caller, so they share one cap rather than getting
+one each. Gate them behind your own check (an API key, a signed nonce, a
+per-caller quota you keep in `ctx.bounded`) before you call them. `ctx.build`,
+`ctx.apps` and email authority are withheld from a public run outright, and the
+declaration cannot ask for them.
 
 ## Limits and fences
 
