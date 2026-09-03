@@ -294,6 +294,12 @@ it epoch-bucketed (conservatively — it can over-enforce near the boundary, nev
 under-enforce). Onchain capped collections remain fully no-delete; expired-delete
 retention is offchain-only. See [proof-coverage.md](proof-coverage.md).
 
+Declaring the claim is what turns onchain enforcement ON: a `rollingSum` on an
+onchain collection **without** `onchain: "onchainSupported"` still verifies,
+deploys, and is enforced by the offchain runtime, but onchain program writes are
+not checked against it. See the omitted-default warning under
+[`onchain` — coverage claims](#onchain--coverage-claims-are-verified-not-trusted).
+
 ### Recipe — rate-limit an action with a separate event log
 
 The examples above cap a field that *is* the value being limited (a spend log
@@ -781,6 +787,21 @@ corresponding implementation and the collection is declared `"onchain": true`.
 For `flowBound`, structural rejection is the current fail-closed boundary; there
 is no onchain implementation. See [proof-coverage.md](proof-coverage.md) for the
 coverage matrix.
+
+**Omitting `onchain` is not neutral on an onchain collection.** The omitted
+default is offchain-only enforcement: the invariant still verifies, deploys, and
+is enforced by the offchain runtime, but onchain program writes are NOT checked
+against it. In the proof summary this shows up only as the word "offchain"
+inside a green PASS line, which is easy to read past (a devnet probe shipped
+exactly this mistake); `bounded verify` also surfaces the omission as an
+"Invariant enforcement plane" advisory in the capability-readiness section. On
+an `onchain: true` collection, declare the claim explicitly every time:
+`"onchainSupported"` only when the invariant is scoped to that same collection
+and the runtime supports the form (`conserve` in all three materializations,
+`tenantTag`, full-path `tenantEdge` without `targetPathVariable`, or `rollingSum`
+within the window cap and without `resetAtMs`), or
+`"offchainOnly"` to record offchain-only enforcement as a deliberate choice -
+the explicit spelling is also what silences the advisory.
 
 <a id="publicreads-exact-conditional-public-read-posture"></a>
 
