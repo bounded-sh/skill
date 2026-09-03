@@ -299,6 +299,12 @@ function PrivyBridge() {
               method: "signAndSendTransaction",
               params: { transaction, connection },
             }),
+          // Optional. Declare Solana transaction v1 (SIMD-0385) support only if the
+          // wallet can sign the 0x81 message-first wire; the SDK then sends
+          // clientTransactionVersions: ["legacy", 0, 1] and the worker may build v1.
+          // Omit both and every write stays v0.
+          // supportedTransactionVersions: () => ["legacy", 0, 1],
+          // signTransactionV1: async ({ messageBytes, signatures }) => ({ messageBytes, signatures: { ...signatures, [address]: sig } }),
         };
       },
     });
