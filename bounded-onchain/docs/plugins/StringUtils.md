@@ -13,6 +13,22 @@ Argument descriptions and signer markers below are copied from the existing mono
 
 ## Read-only
 
+### `StringUtils.concat`
+
+```
+@StringUtils.concat(a, b, ...) - Concatenates string values (variadic); builds an account-id string like rootAppId + ":cca" (the + operator is arithmetic-only).
+```
+
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries, `hooks.offchain`
+- Returns: `string`
+- Status: **unsupported** (source parity only); markers: NEEDS-RUNTIME-V6.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `a` | string | yes | - | First string value |
+| `b` | string | no | - | Second string value (optional; variadic) |
+| `c` | string | no | - | Additional string value (optional; variadic) |
+
 ### `StringUtils.length`
 
 ```

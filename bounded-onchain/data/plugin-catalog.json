@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "354824149052abd895fd3635cfd9cc4d95ff5352",
+  "monorepoCommit": "cd3458d41fbf504dcefc79887e81104696477d0f",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -7727,6 +7727,60 @@
    ],
    "variables": [],
    "functions": [
+    {
+     "name": "concat",
+     "callName": "@StringUtils.concat",
+     "category": "readOnly",
+     "signature": "concat(string, string?, ...)",
+     "usage": "@StringUtils.concat(a, b, ...) - Concatenates string values (variadic); builds an account-id string like rootAppId + \":cca\" (the + operator is arithmetic-only).",
+     "returnType": "string",
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "a",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "First string value",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "b",
+       "type": "string",
+       "optional": true,
+       "signer": null,
+       "description": "Second string value (optional; variadic)",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "c",
+       "type": "string",
+       "optional": true,
+       "signer": null,
+       "description": "Additional string value (optional; variadic)",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries",
+      "offchain.hooks"
+     ],
+     "status": {
+      "lane": "extended runtime",
+      "support": "unsupported",
+      "verification": "source parity only",
+      "markers": "NEEDS-RUNTIME-V6"
+     }
+    },
     {
      "name": "length",
      "callName": "@StringUtils.length",
