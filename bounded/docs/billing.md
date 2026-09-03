@@ -32,9 +32,12 @@ per account.
   $20/month AI/external-services credit, and $100/month Bounded infra credit.
   Team accounts can run up to five Builds concurrently and can top up.
 
-The public checkout flow sells the four subscription kinds
-(`kind: "pro" | "pro_annual" | "team" | "team_annual"`) and one fungible credit
-top-up (`kind: "credits_topup"`, bought in credits at $0.05 each).
+The public checkout flow sells the two monthly subscription kinds
+(`kind: "pro" | "team"`) and one fungible credit top-up
+(`kind: "credits_topup"`, bought in credits at $0.05 each).
+`pro_annual` and `team_annual` are settlement vocabulary, not products: the host
+reads them so that subscriptions issued before annual checkout was retired keep
+renewing, and answers `400 invalid_billing_kind` to any attempt to start one.
 The per-bucket top-ups are retired and are not sold: a credits purchase is
 spendable on anything metered - managed services, AI, and infrastructure.
 
@@ -77,7 +80,7 @@ Use the public surfaces:
 
 ```bash
 bounded billing status
-bounded billing checkout --plan pro          # also pro_annual, team, team_annual
+bounded billing checkout --plan pro          # or --plan team
 bounded billing topup --credits 100          # $5 of fungible Bounded credits
 bounded billing portal
 ```

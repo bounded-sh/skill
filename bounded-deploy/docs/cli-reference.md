@@ -951,7 +951,7 @@ subscription, Bounded credits, and the Stripe Customer Portal.
 | Command | Does | Example |
 |---|---|---|
 | `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
-| `billing checkout` | Start Bounded Pro or Team, monthly or annual. `--plan pro\|pro_annual\|team\|team_annual`, `--print`, `--no-open`, `--no-wait` | `bounded billing checkout --plan pro` |
+| `billing checkout` | Start Bounded Pro or Team. `--plan pro\|team`, `--print`, `--no-open`, `--no-wait` | `bounded billing checkout --plan pro` |
 | `billing topup` | Buy Bounded credits. `--credits` (20-10,000; $0.05 each), `--print`, `--no-open`, `--no-wait` | `bounded billing topup --credits 100` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |
 | `upgrade` | Alias for `billing checkout --plan pro` | `bounded upgrade` |
