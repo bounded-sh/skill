@@ -777,9 +777,10 @@ inside a green PASS line, which is easy to read past (a devnet probe shipped
 exactly this mistake); `bounded verify` also surfaces the omission as an
 "Invariant enforcement plane" advisory in the capability-readiness section. On
 an `onchain: true` collection, declare the claim explicitly every time:
-`"onchainSupported"` where the runtime supports the form (`conserve` in all
-three materializations, `tenantTag`, `tenantEdge` without `targetPathVariable`,
-`rollingSum` within the window cap and without `resetAtMs`), or
+`"onchainSupported"` only when the invariant is scoped to that same collection
+and the runtime supports the form (`conserve` in all three materializations,
+`tenantTag`, full-path `tenantEdge` without `targetPathVariable`, or `rollingSum`
+within the window cap and without `resetAtMs`), or
 `"offchainOnly"` to record offchain-only enforcement as a deliberate choice -
 the explicit spelling is also what silences the advisory.
 

@@ -95,8 +95,11 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Default offchain.** Mark `"onchain": true` only when the description needs
   a blockchain guarantee. Onchain adds cost and constraints (`read: "true"`, no
   `Float`, no offchain `get()`).
-- [ ] **No `onchainSupported` overclaim.** Only direct `conserve`, `tenantTag`, and
-  `rollingSum` are enforced onchain; the verifier rejects claims beyond that.
+- [ ] **No `onchainSupported` overclaim.** Claim it only for an invariant scoped
+  to its own `onchain: true` collection: `conserve` (direct, materialized, or
+  sharded), `tenantTag`, full-path `tenantEdge` without `targetPathVariable`, or
+  `rollingSum` within the onchain window cap and without `resetAtMs`.
+  The verifier rejects every unsupported form.
 - [ ] **No silent underclaim either.** An invariant on an `onchain: true`
   collection with `onchain` OMITTED is enforced offchain only - onchain program
   writes are not checked against it, and nothing fails. Declare
