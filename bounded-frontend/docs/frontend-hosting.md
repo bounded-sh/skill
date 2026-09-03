@@ -7,7 +7,7 @@ subdomains on the same SSL:
 - **`<slug>.bounded.page`** — your static site (SPA fallback;
   content-hashed assets cached immutably, HTML + un-fingerprinted assets always
   revalidated so a redeploy goes live instantly without a hard-refresh).
-- **`<slug>-api.bounded.page`** — your app's API host: public functions at
+- **`<slug>-api.bounded.page`** - your app's API host: public functions at
   `/<functionName>/...` (see [public-functions.md](../../bounded-backend/docs/public-functions.md))
   and the backend runtime at `/agents/<name>/<session>` (see
   [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)), so the
