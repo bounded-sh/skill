@@ -347,7 +347,8 @@ A policy that verifies on Poofnet still needs every called function checked agai
   simulated SOL, USDC, or any mint to any wallet inside that app's Poofnet
   ledger with `bounded wallet fund <wallet> --app-id <appId> --mint <SOL|USDC|mint> --amount <amount>`.
   The command works only for `realtime_offchain` and never creates real onchain assets.
-  Custom mints use their simulated token metadata decimals, or 6 decimals when the mint has not been created in simulated state yet.
+  Custom mints use their simulated token metadata decimals.
+  If the mint has not been created in simulated state yet, pass its real precision with `--decimals <0-18>`.
 - **Onchain-parity result fields.** Every write to an `onchain: true` path is
   stamped at commit with `_transaction_hash` (signature-shaped) and
   `_block_number` (sim slot).
