@@ -1103,7 +1103,8 @@ key alone as proof that every requested file landed.
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md). Frontend hosting: [frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).
-`<slug>-api.bounded.page` routes to your backend; `<slug>.bounded.page` serves the site.
+`<slug>-api.bounded.page/agents/<name>/<session>` invokes the runtime; `<slug>.bounded.page` serves the site.
+Arbitrary HTTP paths on the API host belong to [public functions](../../bounded-backend/docs/public-functions.md), not the runtime.
 
 ## Domains
 
@@ -1306,7 +1307,8 @@ fix the policy or the calling identity.
 ```sh
 bounded functions deploy <name> --entry <file> --app-id <id> \
   --auth '<rule>' [--timeout <sec>] [--secret NAME] \
-  [--act-as <address>] [--logs-auth '<rule>'] [--sandbox]
+  [--act-as <address>] [--logs-auth '<rule>'] [--sandbox] \
+  [--public [--method <VERB>]... [--cors app|passthrough]]
 bounded functions deploy --all --policy policy.json --environment <env>
 printf '%s' "$VALUE" | bounded secret put NAME --value-stdin --app-id <id>
 bounded functions list   --app-id <id>
@@ -1316,7 +1318,8 @@ bounded functions logs   [name] --app-id <id> [--since 2h] [--limit N] [--errors
 
 `deploy` uploads the function's code and updates its policy entry for a caller with `functions:deploy`.
 `--auth` is required.
-Explicit optional metadata overrides the existing entry, while omitted optional metadata such as timeout, secrets, runtime, sandbox, webhook, egress, browser origins, `actAs`, `logsAuth`, and build capability is preserved by the deploy service.
+Explicit optional metadata overrides the existing entry, while omitted optional metadata such as timeout, secrets, runtime, sandbox, webhook, egress, browser origins, `public`/`methods`/`cors`, `actAs`, `logsAuth`, and build capability is preserved by the deploy service.
+`--public` (requires `--auth true`) serves the function at `https://<slug>-api.bounded.page/<name>/...` with no Bounded session required; `--method` (repeatable) picks the verbs, `--cors app|passthrough` the CORS mode, and the success output prints the public URL. See [public functions](../../bounded-backend/docs/public-functions.md).
 A bare `--secret NAME` declares a name without exposing its value in argv.
 `deploy --all` (CLI 0.0.88+) is the batch form and the right default after a
 policy deploy: it reads every function from the policy file (metadata included,

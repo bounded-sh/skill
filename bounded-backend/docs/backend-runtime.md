@@ -43,7 +43,11 @@ my-agent/
 ```
 
 - `kind`: `"agent"` for `onInvoke`/`onSchedule`, or `"backend"` for a `fetch`
-  handler served at the app's backend URL.
+  handler. Both are invoked the same way: `POST /agents/<name>/<session>` on
+  the app's API host (or `bounded runtime invoke`) with a Bounded app token.
+  The runtime does **not** serve arbitrary HTTP paths; for a REST route, a public
+  JWKS, or any endpoint machines call without a session, declare a
+  [public function](public-functions.md) instead.
 - `dependencies`: npm packages bundled for the backend runtime.
 - `allowedHosts`: the outbound `ctx.fetch` allowlist. Egress is deny-by-default,
   so a host you do not list is refused (`egress_denied`) - declare every host the
@@ -143,9 +147,12 @@ export default {
 ```
 
 For `kind: "backend"`, export a `fetch` handler.
-Bounded verifies the caller's app token before your handler runs, but it does
-**not** evaluate a policy `auth` rule for a backend route, so authorization is
-yours: every signed-in user of the app reaches the same handler.
+It is reached only through `POST /agents/<name>/<session>` with a Bounded app
+token, and it receives a synthesized `POST` whose JSON body is the invoke input -
+not the caller's original method or path - so route on the body, not on
+`req.url`. Bounded verifies the caller's app token before your handler runs, but
+it does **not** evaluate a policy `auth` rule for a backend route, so
+authorization is yours: every signed-in user of the app reaches the same handler.
 Gate on the acting user and fail closed:
 
 ```ts
