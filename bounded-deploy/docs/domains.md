@@ -35,7 +35,10 @@ bounded domains slug --release --app-id <id> # free it
 - Reserved labels (`www`, `api`, `auth`, `admin`, …) and raw-appId-shaped names are rejected.
 - The slug is added to your app's `allowedOrigins` automatically, so auth + CORS work on the
   vanity domain with no extra setup.
-- The API also serves at `<slug>-api.bounded.page`.
+- The app's API host is `<slug>-api.bounded.page`: public functions answer at
+  `<slug>-api.bounded.page/<functionName>/...` and the backend runtime at
+  `<slug>-api.bounded.page/agents/<name>/<session>` (see
+  [public functions](../../bounded-backend/docs/public-functions.md)).
   This is a production example, not a source for staging site provenance.
 
 Requires the `app:settings` control-plane capability (owner or admin by default);

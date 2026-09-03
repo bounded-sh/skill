@@ -7,8 +7,12 @@ subdomains on the same SSL:
 - **`<slug>.bounded.page`** — your static site (SPA fallback;
   content-hashed assets cached immutably, HTML + un-fingerprinted assets always
   revalidated so a redeploy goes live instantly without a hard-refresh).
-- **`<slug>-api.bounded.page`** — your backend runtime (see [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)),
-  so the frontend can call its own agent/backend at a sibling URL with no CORS dance.
+- **`<slug>-api.bounded.page`** — your app's API host: public functions at
+  `/<functionName>/...` (see [public-functions.md](../../bounded-backend/docs/public-functions.md))
+  and the backend runtime at `/agents/<name>/<session>` (see
+  [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)), so the
+  frontend calls its own backend at a sibling URL; a public function declared with
+  `cors: "app"` accepts the slug origin with no CORS setup.
 
 ## What it CAN and CANNOT host
 
@@ -237,7 +241,8 @@ Rules of thumb:
 ```bash
 npm run build                              # produces ./dist
 bounded site deploy ./dist --app-id <id>   # → https://<slug>.bounded.page after you claim a slug
-# frontend calls its backend at https://<slug>-api.bounded.page/agents/<name>/<session>
+# frontend calls a public function at https://<slug>-api.bounded.page/<functionName>/...
+# or the backend runtime at https://<slug>-api.bounded.page/agents/<name>/<session>
 ```
 
 For deployed private-site testing, expect normal Bounded login rather than

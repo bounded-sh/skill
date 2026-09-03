@@ -144,7 +144,10 @@ need a private key; cryptographic/onchain signing does.
 | `timeout` | Optional. Per-invocation wall-clock seconds, `1`–`300` (default `30`). |
 | `secrets` | Optional. UPPER_SNAKE_CASE names exposed to the function as `ctx.env.*`. Only declared names are surfaced. Rejected under top-level `oapp: true`; an oApp function must omit this key. `actAs` is not a secret and remains allowed. |
 | `sandbox` | Optional. `true` or `{ "enabled": true }` opts this function into app-scoped `ctx.sandbox` container operations. Omitted/`false` keeps `ctx.sandbox` unavailable. Use only for trusted backend jobs that need isolated command/file execution. **Concurrency-bounded:** a sandbox container is a real shared resource, so an app (and an account, across its apps) may only hold a limited number of live containers at once - each distinct `scope` you pass is a distinct container that counts toward the limit, and a container stays counted for a short idle window after your call returns (it is kept warm, not destroyed). Exceeding the limit is a fail-closed `429` `sandbox_concurrency_limit` (with `retryAfterMs`); reuse the **same** `scope` for sequential steps that share a workspace so they share one container instead of each consuming a slot. Sandbox is a paid capability - a plan (or account) with no sandbox allowance is refused with `403` `sandbox_capability_plan_gated`. |
-| `build` | Optional. Grants app-build origination via `ctx.build` (the unified Build system — successor to `ctx.oapps`). `{ profile, create?, edit?, fork?, view?, cancel? }` — the capability *is* the authority (invariant 4). **Cannot** be combined with `webhook` or `browser`: a build capability on an unauthenticated Internet surface would let anonymous callers spend the owner's build funds, so the validator rejects both combinations. Promotion and gate-decision authority are never grantable. See [§ctx.build](functions-ctx-build.md). |
+| `build` | Optional. Grants app-build origination via `ctx.build` (the unified Build system — successor to `ctx.oapps`). `{ profile, create?, edit?, fork?, view?, cancel? }` — the capability *is* the authority (invariant 4). **Cannot** be combined with `webhook`, `browser`, or `public`: a build capability on an unauthenticated Internet surface would let anonymous callers spend the owner's build funds, so the validator rejects both combinations. Promotion and gate-decision authority are never grantable. See [§ctx.build](functions-ctx-build.md). |
+| `public` | Optional. `true` serves the function on the app's public HTTP surface (`https://<slug>-api.bounded.page/<name>/...` and `https://functions.bounded.sh/apps/<appId>/<name>/...`) with **no Bounded session required**: the function receives a standard `Request` and may return a `Response`. Requires the literal `auth: "true"` - which on its own never makes a function public - and cannot be combined with `actAs`, `build`, `apps`, `email`, `queueCallable`, `webhook`, or `browser`. A valid Bounded bearer runs it as that user; every other caller runs it as the function-scoped public principal, so it must authorize its own actions. See [public functions](public-functions.md). |
+| `methods` | Optional, `public` only. The verbs the route answers, from `GET`, `POST`, `PUT`, `PATCH`, `DELETE`. Omitted means `POST`; `HEAD` follows `GET`; `OPTIONS` follows `cors`. |
+| `cors` | Optional, `public` only. `"app"`: the platform answers preflight and reflects only the app's configured origins (slug host, custom domains, added extras). `"passthrough"`: `OPTIONS` and your own `Access-Control-*` headers reach the caller. Omitted: no CORS. |
 | `environments` | Optional, **CLI-only**. A non-empty array of names from the policy's top-level `environments` block: this function deploys to those environments and to no others, and the key is stripped before the policy is sent. Every other environment drops the function entirely, so a test-venue function cannot reach a real app — and once any function carries this key, `deploy`/`verify`/`functions deploy --all` refuse to run without `--environment`. See [environments.md](../../bounded-deploy/docs/environments.md#environment-scoped-functions). |
 
 **Auth-by-policy is the point.** Because the invocation rule is evaluated by the
@@ -234,7 +237,7 @@ See [functions-ctx-enqueue.md](functions-ctx-enqueue.md).
 
 ## Invoke a function
 
-The supported invoke path today is the **CLI**, which attaches your session
+A function declared `public: true` is not invoked this way at all: it answers plain HTTP at the app's API host with no session, see [public functions](public-functions.md). For every other function, the supported invoke path today is the **CLI**, which attaches your session
 token automatically — the **same token** `bounded data` uses — so Bounded
 verifies your identity and evaluates the function's `auth` rule before running it:
 
@@ -627,6 +630,7 @@ obligation as proved.
 - [ai-npcs.md](ai-npcs.md) — a live tick `call`s a function = an NPC; the `actAs`-funded LLM pattern
 - [agents-flue.md](agents-flue.md) — a **multi-step agent** (tool-use loop) when one `ctx.ai.run` isn't enough
 - [backend-runtime.md](backend-runtime.md) — long-running / batch work
+- [public-functions.md](public-functions.md) — HTTP routes without a Bounded session: `public`, `methods`, `cors`, public JWKS, machine callers
 - [live-runtime.md](live-runtime.md) — the deterministic tick and the `call` primitive that reaches functions
 - [../guides/capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — where functions fit (now supported)
 - [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) — in-boundary hooks vs notify-out webhooks
