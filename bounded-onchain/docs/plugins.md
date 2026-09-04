@@ -27,7 +27,7 @@ Argument descriptions and signer markers come directly from existing monorepo ma
 | `@PriceFeedPlugin` | Pyth price reads by 64-hex feed id. | `getPriceFeed` | [reference](plugins/PriceFeedPlugin.md) |
 | `@PumpFunPlugin` | Pump.fun token launches, buys, creator fees, and PumpSwap liquidity. | `buyExactSolIn`, `buyExactSolInWithMinimumOutput`, `collectCreatorFee`, `createFeeSharingConfig`, `createToken`, `createTokenV2`, `distributeCreatorFees`, `pumpswapDeposit`, `pumpswapWithdraw`, `transferCreatorFeesToPump`, `updateShareholders`, `getBondingCurveProgress`, `getCreatorFee`, `getPumpBuyQuote` | [reference](plugins/PumpFunPlugin.md) |
 | `@Solana` | Extended Solana primitives: account reads, PDAs/ATAs, named signers, raw invoke. | `createAccount`, `invoke`, `account`, `ata`, `data`, `lamports`, `pda`, `pdaBump`, `rentExemption`, `signerAccount` | [reference](plugins/Solana.md) |
-| `@StringUtils` | String helpers usable in rules. | `length` | [reference](plugins/StringUtils.md) |
+| `@StringUtils` | String helpers usable in rules. | `concat`, `length` | [reference](plugins/StringUtils.md) |
 | `@TensorPlugin` | Tensor NFT marketplace buys and listings. | `buyNft`, `listNft` | [reference](plugins/TensorPlugin.md) |
 | `@TokenPlugin` | SPL and Token-2022 tokens: transfers, mints, burns, balances, supply. | `burn`, `createToken`, `createToken2022`, `mint`, `transfer`, `transferWholeTokens`, `withdrawWithheldTokens`, `getBalance`, `getDecimals`, `getSupply`, `getTokenMintAddress`, `getWithdrawWithheldAuthority` | [reference](plugins/TokenPlugin.md) |
 

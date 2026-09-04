@@ -145,6 +145,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@Solana.pdaBump` | `pdaBump(array, string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |
 | `@Solana.rentExemption` | `rentExemption(number)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |
 | `@Solana.signerAccount` | `signerAccount(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |
+| `@StringUtils.concat` | `concat(string, string?, ...)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries, `hooks.offchain` | [reference](plugins/StringUtils.md) |
 | `@StringUtils.length` | `length(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries, `hooks.offchain` | [reference](plugins/StringUtils.md) |
 | `@TensorPlugin.buyNft` | `buyNft(string, number)` | `hooks.onchain` | [reference](plugins/TensorPlugin.md) |
 | `@TensorPlugin.listNft` | `listNft(string, number?, number?, string?, string?, string?)` | `hooks.onchain` | [reference](plugins/TensorPlugin.md) |

@@ -18,9 +18,9 @@ The catalog contains 157 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The current Bounded Solana program is recorded as **runtime v5**, live on both devnet and mainnet-beta since 2026-08-26.
-The rows below were classified against the runtime-v4 minimum and have not been reclassified, which is safe because v5 is a superset: nothing in this catalog is gated above v4, so no row's support state changed.
-Runtime v5 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
+The current Bounded Solana program is recorded as **runtime v6**, live on both devnet and mainnet-beta since 2026-09-04.
+The rows below were classified against the runtime-v4 minimum and have not been reclassified, which is safe because v6 is a superset: nothing in this catalog is gated above v4, so no row's support state changed.
+Runtime v6 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
 The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`.
@@ -46,7 +46,8 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
 | `CPAMM-SCENARIO` | A devnet acceptance run of this function is straightforward to construct, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
-| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4 as a minimum. Both devnet and mainnet-beta have met it since 2026-08-05 and now run v5 (2026-08-26), so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
+| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4 as a minimum. Both devnet and mainnet-beta have met it since 2026-08-05 and now run v6 (2026-09-04), so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
+| `NEEDS-RUNTIME-V6` | The function needs Bounded Solana runtime v6 as a minimum, because it is new on-chain interpreter code rather than a call into an external program. Both devnet (slot 492776210) and mainnet-beta (slot 444129016) have met it since 2026-09-04, so the runtime-version deploy-time refusal no longer applies. A cluster still on v5 refuses a policy using it at deploy time. |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-RAYDIUM-PROOF` | Raydium CPMM is deployed on devnet (at a different address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-DLMM-PROOF` | Meteora DLMM is deployed on devnet at the same address as mainnet and stays unverified until retained live proof exists. |
@@ -198,6 +199,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@Solana.rentExemption` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@Solana.signerAccount` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@Solana.slot` | extended runtime | unverified | source parity only | LIVE-PENDING |
+| `@StringUtils.concat` | extended runtime | unverified | source parity only | NEEDS-RUNTIME-V6 |
 | `@StringUtils.length` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@TensorPlugin.buyNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |
 | `@TensorPlugin.listNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |
