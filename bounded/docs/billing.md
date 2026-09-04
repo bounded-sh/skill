@@ -88,6 +88,14 @@ bounded billing portal
 Checkout and top-up wait for the payment to be APPLIED and say whether it
 landed; a completed Stripe checkout is not yet an applied plan.
 
+`bounded billing status` shows the authoritative account credit pool when available.
+In JSON, use `.credits.pool.available` for account credit.
+A healthy new account can have zero credits even before a ledger row exists.
+“Billing temporarily unavailable.” means the balance could not be read; it does not mean zero credit or that the user is signed out.
+Retry the status read later, and do not initiate another payment to recover one that has already been paid.
+Checkout refuses a known ledger outage, but a failure after the payment page opens can still delay settlement.
+Use the original checkout's settlement check and wait for applied credit before retrying paid work.
+
 `bounded billing status` reports the account's effective project cap.
 In JSON, read `.limits.maxProjects`; `-1` means unlimited.
 A platform-issued project-cap grant is reflected in that effective value, but

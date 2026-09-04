@@ -9,6 +9,11 @@ errors are emitted as JSON too), `--quiet` (minimal output), `--env`
 (`production`; also `BOUNDED_ENV`), and `--instance` (a named `bounded.json`
 deployment instance; also `BOUNDED_INSTANCE`).
 
+Billing status distinguishes zero credit from “Billing temporarily unavailable.”
+For account credit, read `.credits.pool.available` from a successful `bounded billing status --json` response.
+A billing error is not a zero balance; retry the read and avoid paying again for an already-paid checkout.
+See [billing.md](../../bounded/docs/billing.md#checking-status) for settlement guidance.
+
 ## Identity & teams
 
 The normal CLI identity is your **web account's user id**. `bounded init` reuses
