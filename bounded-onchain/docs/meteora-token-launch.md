@@ -126,6 +126,9 @@ hook, keep string args (ids, URIs) short, and omit optional args you don't need 
 each one is bytes you don't have. If `bounded verify` rejects your variant for
 transaction size, read the fix ladder in
 [onchain.md → Transaction-size limit](onchain.md#transaction-size-limit-one-hook--one-solana-transaction).
+On a cluster where transaction v1 is active the runtime sends this hook as a 4096-byte-cap v1
+transaction with no lookup table at all; the size guidance above is what keeps it deployable
+to mainnet until its gate flips.
 
 - `preMigratedFeeAmountBps = 300` (3%) is the settled bonding-curve fee and the decay
   target when `decayEndingFeeBps` is left at its default.

@@ -452,6 +452,12 @@ accounts** (fresh mints, ATAs, per-doc PDAs, user wallets) and **instruction
 data** (your argument bytes). If a hook is too big because of those, only
 restructuring fixes it.
 
+**Transaction v1 (SIMD-0385).**
+On a cluster where Solana's transaction v1 feature is active (devnet since epoch 1140; mainnet once Anza activates it there), the runtime builds writes as v1 transactions for any SDK or CLI that can sign them.
+A v1 transaction carries its compute, heap, loaded-data and priority-fee budget in the message header instead of ComputeBudget instructions, has no lookup tables, and is capped at **4096 bytes** and **64 unique accounts**, so the byte limit above stops being the binding constraint there and the ~1182-byte compression dance is not needed.
+The deploy-time gate below still applies the v0 packet limit on every protocol on purpose: a policy proven on poofnet must stay deployable on mainnet, and mainnet still executes v0 until its gate flips.
+Older SDKs and CLIs that do not declare v1 keep receiving v0 transactions, so nothing breaks when the worker ships.
+
 Bounded surfaces the limit at two points so you don't discover it when a user's
 write fails on-chain:
 
