@@ -21,6 +21,8 @@ import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { buildFixture, runSubject, readShimLog } from './lib/sandbox.mjs'
 import { extractMetrics, assistantText, toolUses } from './lib/metrics.mjs'
+import { summarize } from './lib/summary.mjs'
+export { summarize } from './lib/summary.mjs'
 import { scanCanary, checkoutPatterns } from './lib/canary.mjs'
 import { runChecks, score } from './lib/checkers.mjs'
 import { familyHash, subjectHash, stampMismatch } from './lib/stamp.mjs'
@@ -129,8 +131,7 @@ async function runOne({ t, cond, i }) {
     const prev = existsSync(done) ? JSON.parse(readFileSync(done, 'utf8')) : {}
     const events = readFileSync(evPath, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l))
     const work = path.join(runDir, 'work')
-    const metrics = extractMetrics(events, work)
-    if (!metrics.skillBytesRead && prev.metrics && prev.metrics.skillBytesRead) metrics.skillBytesRead = prev.metrics.skillBytesRead
+    const metrics = extractMetrics(events, work, { previousMetrics: prev.metrics })
     const shimLog = readShimLog(runDir)
     const transcriptText = assistantText(events) + '\n' + JSON.stringify(toolUses(events).map((u) => u.input))
     const checks = await runChecks(t, { work, runDir, boundedExec, finalText: metrics.finalText, transcriptText, shimLog })
@@ -157,7 +158,7 @@ async function runOne({ t, cond, i }) {
   rmSync(path.join(work, '.claude', 'skills'), { recursive: true, force: true })
   if (metrics.rateLimitUtilization && metrics.rateLimitUtilization.five_hour) lastUtil = metrics.rateLimitUtilization.five_hour.utilization
   const s = record.score
-  console.log(`[${t.id}/${cond}/${i}] ${s.passed}/${s.total} checks${s.allPass ? ' ALL' : ''}  $${(metrics.costUsd || 0).toFixed(2)} ${metrics.turns}t ${Math.round(r.wallMs / 1000)}s skillKB=${Math.round(metrics.skillBytesRead / 1024)} ${canary.clean ? '' : 'CANARY!'}${lastUtil != null ? ` util=${lastUtil.toFixed(2)}` : ''}${r.timedOut ? ' TIMEOUT' : ''}`)
+  console.log(`[${t.id}/${cond}/${i}] ${s.passed}/${s.total} checks${s.allPass ? ' ALL' : ''}  $${(metrics.costUsd || 0).toFixed(2)} ${metrics.turns}t ${Math.round(r.wallMs / 1000)}s fileFootprintKiB=${metrics.skillFileFootprintBytes == null ? '?' : (metrics.skillFileFootprintBytes / 1024).toFixed(1)} toolTextKiB=${metrics.observedToolResultTextBytes == null ? '?' : (metrics.observedToolResultTextBytes / 1024).toFixed(1)}(${metrics.toolResultCoverage}) ${canary.clean ? '' : 'CANARY!'}${lastUtil != null ? ` util=${lastUtil.toFixed(2)}` : ''}${r.timedOut ? ' TIMEOUT' : ''}`)
   if (lastUtil != null && lastUtil >= stopAt) { stopped = true; console.error(`rate-limit utilization ${lastUtil} >= ${stopAt}; stopping after in-flight runs`) }
   return record
 }
@@ -199,24 +200,3 @@ const summaryDoc = summarize(all)
 summaryDoc.staleExcluded = staleExcluded
 writeFileSync(path.join(labelDir, 'summary.json'), JSON.stringify(summaryDoc, null, 2))
 console.log(`summary: ${path.join(labelDir, 'summary.json')}${stopped ? ' (stopped early on rate limit; rerun the same command to resume)' : ''}`)
-
-export function summarize(records) {
-  const byTask = {}
-  for (const r of records) {
-    const t = (byTask[r.task] ||= { task: r.task, phase: r.phase, conditions: {} })
-    const c = (t.conditions[r.condition] ||= { n: 0, allPass: 0, fraction: 0, cost: 0, turns: 0, inputTokens: 0, skillBytes: 0, checks: {}, docs: {}, skills: {}, canaryDirty: 0, timeouts: 0 })
-    // Dirty runs (canary hit or escape) are void: counted, never scored.
-    if (!r.canary.clean) { c.canaryDirty++; continue }
-    c.n++; c.allPass += r.score.allPass ? 1 : 0; c.fraction += r.score.fraction; c.cost += r.metrics.costUsd || 0; c.turns += r.metrics.turns || 0
-    c.inputTokens += r.metrics.inputTokens || 0; c.skillBytes += r.metrics.skillBytesRead || 0; c.timeouts += r.timedOut ? 1 : 0
-    for (const ch of r.checks) { const k = (c.checks[ch.id] ||= { pass: 0, n: 0 }); k.n++; k.pass += ch.pass ? 1 : 0 }
-    for (const d of new Set(r.metrics.docsOpened)) c.docs[d] = (c.docs[d] || 0) + 1
-    for (const s of new Set(r.metrics.skillsLoaded)) c.skills[s] = (c.skills[s] || 0) + 1
-  }
-  for (const t of Object.values(byTask)) for (const c of Object.values(t.conditions)) {
-    if (!c.n) { c.allPassRate = null; c.meanFraction = null; c.meanCost = null; c.meanTurns = null; c.meanInputTokens = null; c.meanSkillBytes = null; continue }
-    c.allPassRate = c.allPass / c.n; c.meanFraction = c.fraction / c.n; c.meanCost = c.cost / c.n; c.meanTurns = c.turns / c.n; c.meanInputTokens = c.inputTokens / c.n; c.meanSkillBytes = c.skillBytes / c.n
-    for (const k of Object.values(c.checks)) k.rate = k.pass / k.n
-  }
-  return { generatedAt: new Date().toISOString(), runs: records.length, tasks: byTask }
-}

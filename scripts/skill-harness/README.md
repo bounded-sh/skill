@@ -19,8 +19,37 @@ Two conditions per task give the **skill lift**: `pass(with) - pass(without)`.
 Only tasks with real lift are informative for ablation; a task the model passes
 without the skill cannot show that a cut degraded anything.
 
-Two labels compared by `report.mjs` give the ablation verdict: a cut ships when
-the candidate holds or raises the pass rate and lowers skill bytes read.
+Two labels compared by `report.mjs` compare baseline and candidate behavior.
+A candidate must preserve correctness before considering changes in returned tool text, model-token usage or cost.
+Compare equivalent tasks and trace coverage; a smaller file footprint alone is not evidence of reduced context consumption.
+
+## Context measurements
+
+New records use `contextMetricsVersion: 2` and separate three different quantities:
+
+- `skillFileFootprintBytes` is the distinct full size of skill files referenced by `Read` or `Skill` requests.
+  It ignores offsets, limits and repeated reads, includes attempted reads, and cannot attribute shell commands to files.
+  `docsOpened` retains the historical field name for these `Read` requests; it is not proof that every requested byte reached the model.
+  This footprint helps locate relevant pages, but is not a context counter.
+- `observedToolResultTextBytes` sums UTF-8 text in the trace's actual `tool_result` messages, including line-number prefixes, error text, repeated reads and `Bash` output.
+  It is broken down by tool in `toolResultTextBytesByTool`; repeated delivery of the same result for the same tool-use id is deduplicated.
+  All tools count, not only reads attributed to a skill; shell output is measured without guessing what a shell command reads.
+  This excludes non-text blocks, separately injected skill instructions, prompts and other messages, so it is not a complete prompt-size or token measure.
+- `inputTokens` sums the model-reported uncached, cache-read and cache-creation input usage; those components and `outputTokens` are also retained separately.
+  These totals span model calls and include repeatedly supplied context; different cache categories have different prices.
+  Missing usage components remain `null`, including the combined input total when it cannot be established.
+
+`toolResultCoverage` is `complete`, `partial` or `unavailable` for tool-result text in the stored trace.
+Unmatched calls/results, unparsed events and non-text blocks prevent a complete text measurement.
+The raw observed partial count remains in the run record, with the coverage details.
+Reports average tool text only across complete traces and show the sample count; partial or missing telemetry never becomes a zero-cost run.
+Model-token means also use only available samples.
+
+Completed fixtures remove their copied skill files.
+Rechecking still measures returned text from `events.jsonl`; if the files are missing, it may preserve a recorded file footprint with `skillFileFootprintSource: "recorded"` or `"legacy-recorded"`.
+Legacy `skillBytesRead` and summary `meanSkillBytes` values are displayed only as file footprints, never promoted to measured tool text.
+Historical report snapshots keep their original captions; interpret those old byte columns as file footprints.
+Use `--recheck` to refresh old records from stored traces; absent trace data stays unavailable.
 
 ## Prerequisites
 
