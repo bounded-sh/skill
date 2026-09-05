@@ -29,7 +29,8 @@ bounded deploy --create --name my-app
 ```
 
 A healthy proof answers in a few seconds.
-If `bounded verify` returns `503` `proof_substrate_unavailable` (`retryable: true`), the prover is warming up or busy and the policy is fine.
+If `bounded verify` returns `503` `proof_substrate_unavailable` (`retryable: true`), the proving service is temporarily unavailable.
+This response does not establish policy correctness.
 Wait 30 seconds and rerun the same `bounded verify`.
 Make at most 3 attempts total, meaning the initial attempt plus 2 retries.
 If the third attempt still fails this way, stop and report the proving service as degraded, including the `correlationId` when present.
@@ -56,8 +57,15 @@ bounded site deploy ./dist
 The CLI packages the directory as one deterministic gzip-tar artifact and uploads it directly or through resumable multipart transport when needed.
 It does not sync project source unless `sourcePush` or `--with-source` explicitly requests that separate workflow.
 
-Use the URL in the JSON receipt, or resolve the environment-qualified slug with
-`bounded domains list --app-id <id> --env <environment> --json`.
+If the upload receipt reports `liveUrlStatus: "not_mapped"` and the app has no mapped slug or active custom domain, claim a unique slug or follow the [custom-domain guide](domains.md).
+Keep an existing mapping unchanged.
+
+```bash
+bounded domains slug <unique-slug> --app-id <id>
+```
+
+Use the nonempty URL in the JSON receipt, or resolve the environment-qualified slug with `bounded domains list --app-id <id> --env <environment> --json`.
+Keep the returned hostname exactly; do not invent an app-id URL or change site privacy to obtain one.
 
 ## Develop locally
 

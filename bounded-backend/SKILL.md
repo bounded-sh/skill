@@ -8,8 +8,7 @@ description: >-
   rooms, and the proof loop (bounded verify, counterexamples, proof coverage). Use
   when writing or changing server-side Bounded logic, policies, or the rules that
   govern who can do what. Part of the Bounded skill family; see the bounded skill
-  to route across frontend, deploy, onchain, teams, and cross-cutting Action
-  Boundaries guidance.
+  to route across frontend, deploy, onchain, and teams.
 ---
 
 # Bounded backend

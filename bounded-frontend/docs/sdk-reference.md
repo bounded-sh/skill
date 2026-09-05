@@ -44,19 +44,14 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 
 ### `npm audit` reports a moderate `uuid` advisory - here is the fix
 
-Installing `@bounded-sh/client` pulls a **moderate** advisory that is not yours and
-has no upstream fix:
+Some `@bounded-sh/client` dependency trees report this **moderate** advisory through `jayson`:
 
 ```
 GHSA-w5hq-g745-h8pq  (uuid < 11.1.1)
 @solana/web3.js@1.98.x -> jayson -> uuid@8.3.2
 ```
 
-`npm audit` reports `fixAvailable: false` accurately: web3.js 1.98.4 is the latest
-1.x, no jayson release ships a fixed `uuid`, and `@coral-xyz/anchor` pins the whole
-ecosystem to the web3.js 1.x line, so no dependency bump anywhere clears it.
-
-**The verified app-level fix** is to force the transitive version yourself:
+If the installed lockfile has this chain, apply the scoped transitive override rather than assuming an unrelated SDK upgrade resolves it:
 
 ```jsonc
 // package.json (npm / pnpm)
@@ -66,14 +61,10 @@ ecosystem to the web3.js 1.x line, so no dependency bump anywhere clears it.
 "resolutions": { "jayson/uuid": "^11.1.1" }
 ```
 
-With that in place `npm audit --omit=dev` exits `0`.
-
-**The vulnerable code path was never reachable anyway.** The advisory concerns
-`uuid`'s v3/v5/v6 buffer-writing path; jayson only ever calls `uuid.v4()` with no
-buffer argument, so nothing in the SDK's dependency graph can reach it. The
-override is for a clean audit report, not for a live exposure. When jayson
-eventually ships a fixed `uuid`, fresh installs clear on their own and the override
-can be dropped.
+This override addresses the named `uuid` advisory; it does not guarantee a clean production audit.
+Run `npm audit --omit=dev` on the installed lockfile and investigate remaining findings independently.
+In this dependency path, jayson uses `uuid.v4()` without a buffer argument, rather than the advisory's v3/v5/v6 buffer-writing path; that observation does not establish the safety of other dependency paths.
+Remove the override only after verifying that the installed dependency chain resolves the advisory without it.
 
 `init(config)` takes `{ appId, authMethod?, network?, authMode?, chain?, rpcUrl?, walletLogin?, requireEmail?, loginWidget? }`. **It points at Bounded
 production by default** - `init({ appId })` just works, no endpoints to set (the
@@ -683,7 +674,7 @@ browser auth. Each client has its own session - no global state.
 > Use a keypair dedicated to the server. A key that has signed in to the app
 > from a browser wallet can no longer open a server-side session, and
 > `createWalletClient` then fails with `relying party not allowed for app`.
-> Server-only keys need no extra credential or configuration.
+> Server-only keys need no extra credential, but the app must explicitly enable keypair login with `auth.wallets: true`; see [app-user auth](auth.md).
 
 There are two server setup shapes; both work:
 
@@ -716,14 +707,10 @@ const { init, createWalletClient } = await import("@bounded-sh/server");
 The wallet client (`vault` above) exposes `get`, `getMany`, `set`, `setMany`, `setFile`,
 `getFiles`, `search`, `count`, `aggregate`, `queryAggregate`, `runQuery`,
 `runQueryMany`, `runExpression`, `runExpressionMany`, `subscribe`, and `invoke`.
-Prefer these client methods over the top-level `get` /
-`subscribe` exports when you hold a `createWalletClient` instance: the top-level
-ones use the ambient `BOUNDED_PRIVATE_KEY` session and throw `No server keypair`
-if it isn't set, whereas the client methods authenticate as the client's own
-keypair. `keypair` is a base58 string or JSON array secret key - the **base58**
-form is the same value the CLI stores as the `privateKey` field in
-`~/.bounded/credentials` (and accepts via `BOUNDED_PRIVATE_KEY`), so a server can
-sign as the CLI identity by reading that key. Server tasks:
+Use these client methods: top-level server auth operations such as `get`, `set`, `subscribe`, and `functions.invoke` are unavailable, even when `BOUNDED_PRIVATE_KEY` is set.
+The client methods authenticate as the client's own keypair.
+`keypair` is a base58 string or JSON array secret key; the CLI accepts the same formats via `BOUNDED_PRIVATE_KEY`, but the server SDK requires the value passed explicitly to `createWalletClient`.
+Server tasks:
 [../guides/building-a-backend.md](../../bounded-backend/docs/building-a-backend.md).
 
 ### Verifying webhooks - `verifyWebhook`
@@ -769,13 +756,12 @@ in-memory replay protection is suitable only for a single process. Declaring web
 
 ### Invoking a function - `functions.invoke`
 
-Use the first-class `functions.invoke(name, args)` helper - exported from both
-`@bounded-sh/client` and `@bounded-sh/server`. It attaches the caller's session token
-automatically (the same token the data plane sends), so Bounded verifies your
-identity and evaluates the function's `auth` policy rule before it runs:
+In browser/React Native code, use `functions.invoke(name, args)` from `@bounded-sh/client`.
+It attaches the caller's session token automatically, so Bounded verifies the identity and evaluates the function's `auth` rule before it runs.
+On a server, use `vault.invoke(name, args)` on an explicit `createWalletClient` instead.
 
 ```ts
-import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
+import { functions } from "@bounded-sh/client";
 
 // Invoke carries only the ACTION intent, never the caller's identity. Bounded
 // attaches the session token, so the function already knows who called from
@@ -783,9 +769,8 @@ import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 const res = await functions.invoke("syncStripe", {});
 // → the function's JSON return value.
 // Optional 3rd arg: { timeoutMs, headers }. Throws FunctionInvokeError on
-// 401/403/404/503 (see .statusCode). Top-level uses the ambient session
-// (BOUNDED_PRIVATE_KEY on server); `await vault.invoke("syncStripe", {})` invokes
-// as a specific keypair with no env var, on a createWalletClient.
+// 401/403/404/503 (see .statusCode). The browser helper uses its current session.
+// On the server, `await vault.invoke("syncStripe", {})` uses the wallet client.
 ```
 
 > **Arguments are untrusted; resolve the customer server-side.** A caller can pass

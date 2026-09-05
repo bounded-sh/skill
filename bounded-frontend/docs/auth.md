@@ -126,12 +126,10 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });  //
 vault.address;   // the signer this app acts as
 ```
 
-`init()` on the server takes only `{ appId, network }` — it does **not** require
-a keypair. Each `createWalletClient({ keypair })` carries its own signer, so one
-process can act as many keypairs. If instead you want a single process-wide
-signer for the global `set`/`get` helpers (no explicit client), set
-**`BOUNDED_PRIVATE_KEY`** (same env var the CLI uses; a base58 secret or JSON
-array). The keypair is read lazily — only the first signed write needs it.
+`init()` on the server selects the app and network; it does not require a keypair.
+Each `createWalletClient({ keypair })` carries its own signer, so one process can act as many keypairs.
+Use that client's `get`, `set`, `subscribe`, and `invoke` methods; top-level server auth operations are unavailable even when `BOUNDED_PRIVATE_KEY` is set.
+The CLI still accepts that environment variable for its own keypair authentication.
 
 ## End-user auth — the `user` object
 
@@ -582,7 +580,7 @@ out of a rule (Supabase parity).
 > Native does not provide IndexedDB, and configuring the RN session adapter does
 > not add it, so guest auth fails closed there. Use hosted RN login or the explicit
 > Privy Expo bridge. For Node/server code use **`@bounded-sh/server`** with a
-> keypair (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
+> keypair passed explicitly to `createWalletClient({ keypair })`.
 
 `authMethod` selects the **identity system**, not a login UI. The supported
 documented choices are:

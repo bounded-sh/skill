@@ -77,10 +77,10 @@ bounded site deploy ./dist --app-id <id>
   one-click link — `https://<host>/__bounded/gate/land?token=…` — that sets the
   gate cookie and lands on the REAL site, then expires (default 60 min, `--ttl
   <minutes>`, max 1440) back to the normal sign-in page. Host auto-resolves from
-  the app's mapped slug/custom domain, or pass `--host <host>`. This needs the
-  **owning wallet** identity (the app-scoped SIWS token); a plain web-login
-  session is platform-scoped and can't preview, and the command says so. Treat
-  the link as a bearer secret until it expires — anyone who opens it gets in.
+  the app's mapped slug/custom domain, or pass `--host <host>`.
+  Authorized web accounts and wallet accounts are both supported: the CLI obtains the app-bound identity token needed by the gate.
+  Keep the current authorized account; no wallet switch is required for web login.
+  Treat the link as a bearer secret until it expires - anyone who opens it gets in.
 
 ## Public proof page (opt-in)
 

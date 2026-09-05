@@ -237,9 +237,9 @@ See [functions-ctx-enqueue.md](functions-ctx-enqueue.md).
 
 ## Invoke a function
 
-A function declared `public: true` is not invoked this way at all: it answers plain HTTP at the app's API host with no session, see [public functions](public-functions.md). For every other function, the supported invoke path today is the **CLI**, which attaches your session
-token automatically — the **same token** `bounded data` uses — so Bounded
-verifies your identity and evaluates the function's `auth` rule before running it:
+A function declared `public: true` answers plain HTTP at the app's API host with no session; see [public functions](public-functions.md).
+For authenticated functions, use the CLI or the appropriate SDK client below.
+The CLI attaches the same session token as `bounded data`, so Bounded verifies your identity and evaluates the function's `auth` rule before running it:
 
 ```sh
 bounded functions invoke syncStripe --app-id <id> --data '{"customerId":"cus_123"}'
@@ -251,29 +251,30 @@ or the error the function threw.
 
 ### From TypeScript
 
-Use the first-class `functions.invoke(name, args)` helper (exported from both
-`@bounded-sh/client` and `@bounded-sh/server`). It attaches the caller's session token
-automatically — the **same** token the data plane sends — so you never hand-roll
-auth headers:
+In browser/React Native code, use `functions.invoke(name, args)` from `@bounded-sh/client`.
+It attaches the current user's session token automatically, just like the data plane:
 
 ```ts
-import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
+import { functions } from "@bounded-sh/client";
 
 const res = await functions.invoke("syncStripe", { customerId });
 // → the function's JSON return value.
 ```
 
-`invokeFunction(name, args)` is the same call as a plain function if you prefer.
-Both accept an optional 3rd arg `{ timeoutMs, headers }`. The top-level helper uses
-the ambient session — `BOUNDED_PRIVATE_KEY` on the server (set it, or log in on the
-browser). To invoke **as a specific keypair** with no env var, use the wallet
-client's own method, which authenticates as that wallet (the function's `auth`
-rule + `ctx.user` then reflect it):
+The browser client also exports `invokeFunction(name, args)` as the same call.
+Both accept an optional third argument `{ timeoutMs, headers }`.
+On a server, initialize `@bounded-sh/server` and use the wallet client's own method; the function's `auth` rule and `ctx.user` see that wallet.
+Top-level server auth operations are unavailable, even with `BOUNDED_PRIVATE_KEY` set:
 
 ```ts
+import { init, createWalletClient } from "@bounded-sh/server";
+
+await init({ appId: "<appId>" });
 const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 const res = await vault.invoke("syncStripe", { customerId });
 ```
+
+Direct invocations that perform cost-bearing `ctx.ai` or `ctx.services` work also require a stable `Idempotency-Key` in `headers`; see [managed-service replay](functions-ctx-services.md#direct-invocations).
 
 The platform gates the call on the function's `auth` rule using the verified
 caller, so the identity the function sees is exactly the one your data rules

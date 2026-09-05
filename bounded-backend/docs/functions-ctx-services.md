@@ -73,6 +73,24 @@ used: by code that calls the new slug. Requests replay on
 `--idempotency-key`, scoped to your account, so a retried script files
 nothing new.
 
+### Direct invocations
+
+A direct browser/server invocation that calls `ctx.services.invoke` must supply an outer HTTP `Idempotency-Key`; without it, the runtime refuses the managed call before billing or provider contact.
+Create the request id once per logical action and retain it, the arguments, and the header across retries; create a new id for a fresh read or other new action.
+
+```ts
+import { functions } from "@bounded-sh/client";
+
+// Browser caller; use vault.invoke(...) on a server wallet client.
+const requestId = crypto.randomUUID(); // retain for retries of this action
+await functions.invoke("chainSnapshot", { requestId, address, wallet }, {
+  headers: { "Idempotency-Key": requestId }
+});
+```
+
+This outer key does not replace each service call's required `idempotencyKey` below.
+Scheduled/system invocations already carry stable outer provenance.
+
 ### Async actions: `ctx.services.getJob`
 
 Some actions are asynchronous (a video generation, a long report). `invoke`
@@ -89,7 +107,7 @@ and never re-runs the provider: a lost poll re-reads the same job.
 
 - **Contract:** `ctx.services.search(query, { limit? })`,
   `ctx.services.describe(toolkitOrToolSlug, { limit? })`, and
-  `ctx.services.invoke(toolSlug, args, { idempotencyKey: string; entityId? })`.
+  `ctx.services.invoke(toolSlug, args, { idempotencyKey: string; billingSlug?: string })`.
   The required key is a 1–256-byte UTF-8 string. `args` must be an immutable
   plain finite JSON object when provided (the whole argument may be omitted): no
   `undefined` inside it, non-finite numbers, `BigInt`, sparse
@@ -102,8 +120,10 @@ and never re-runs the provider: a lost poll re-reads the same job.
   service_invoke_operation_conflict`; an in-flight duplicate returns retryable
   `503 service_invoke_in_flight`. Provider/charge/result-persistence ambiguity
   becomes permanent `503 service_invoke_outcome_unknown` and never calls the
-  provider again. `entityId` defaults to the account id, is part of the
-  fingerprint, and is also the provider billing entity.
+  provider again.
+  The provider billing entity is resolved server-side from the paying account and cannot be selected through an `entityId` option.
+  Optional `billingSlug` asserts a per-call payer backed by the app's `billingConsents/<slug>` record; the runtime validates consent and refuses an unsupported assertion.
+  Omit it for normal app-owner billing.
   Give each logical operation its own key - `weather:${args.id}:now:v1`, not
   `weather` - so one unit of work is one charge.
 - **A funding refusal is RETRYABLE with the same key.** A refusal that moved no
@@ -149,15 +169,18 @@ Onchain data lives in the same catalog. Two Bounded-local toolkits — `helius`
 history) and `alchemy` (EVM: JSON-RPC reads, token balances/metadata, transfer
 history) — resolve through the same `search`/`describe`/`invoke` calls:
 
+For these caller-scoped examples, `args.requestId` is the stable logical read id from the caller; use a new id for a fresh snapshot and retain it on retries.
+
 ```ts
+const operationKey = `chain:${ctx.user.id}:${args.requestId}`;
 const acct = await ctx.services.invoke("HELIUS_RPC_CALL", {
   method: "getAccountInfo",       // read-only allowlist — writes are rejected
   params: [address, { encoding: "base64" }]
-});
+}, { idempotencyKey: `${operationKey}:account:v1` });
 const bal = await ctx.services.invoke("ALCHEMY_TOKEN_BALANCES", {
   network: "base-mainnet",        // validated against Bounded's EVM network registry
   address: wallet
-});
+}, { idempotencyKey: `${operationKey}:balances:v1` });
 ```
 
 - **Read-only, enforced:** the RPC passthrough tools accept only an explicit

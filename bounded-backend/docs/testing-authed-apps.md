@@ -113,10 +113,8 @@ identity. Keep the stored auth fields together so silent refresh works for long 
   client does not export app-origin OTP helpers. An agent cannot read the OTP
   email or drive the hosted page headlessly. Give the app a wallet/guest auth
   method for test builds — that's the recommended path.
-- Agents running **in Node** (not a browser) don't need any of this — use
-  `@bounded-sh/server`'s `createWalletClient({ keypair })` (or `BOUNDED_PRIVATE_KEY`)
-  and call the SDK directly. This page is specifically for driving a **browser**
-  as a signed-in user.
+- Agents running **in Node** use `@bounded-sh/server`'s explicit `createWalletClient({ keypair })` and call that client's methods.
+  This page is specifically for driving a **browser** as a signed-in user.
 
 See also: [auth.md](../../bounded-frontend/docs/auth.md) (end-user auth + the `@user` object),
 [building-for-agents.md](building-for-agents.md),

@@ -5,15 +5,19 @@ surface: `ctx.services` in functions, `bounded services search|describe` in the
 CLI. No provider keys in app code, every call metered and observed, and the
 whole surface is read-only by construction.
 
+For caller-scoped reads, `args.requestId` identifies the logical snapshot: retain it across retries and use a new id for fresh data.
+Direct invocations also need an outer HTTP `Idempotency-Key`; see [managed-service replay](../../bounded-backend/docs/functions-ctx-services.md#direct-invocations).
+
 ```ts
+const operationKey = `chain:${ctx.user.id}:${args.requestId}`;
 // Solana: parsed activity for a wallet
 const txs = await ctx.services.invoke("HELIUS_ENHANCED_TRANSACTIONS", {
   address: wallet, limit: 25
-});
+}, { idempotencyKey: `${operationKey}:transactions:v1` });
 // EVM: ERC-20 holdings on Base
 const bal = await ctx.services.invoke("ALCHEMY_TOKEN_BALANCES", {
   network: "base-mainnet", address: evmWallet
-});
+}, { idempotencyKey: `${operationKey}:balances:v1` });
 ```
 
 ## What's available

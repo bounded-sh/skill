@@ -56,8 +56,8 @@ account profile, or recovery of an existing key-owned app.
 ## Incident router
 
 - `503` + `proof_substrate_unavailable` (`retryable: true`) from `bounded verify`: the prover lane is warming up or busy.
-  This is NOT a policy error and NOT permanent.
-  The policy is fine, so retry it UNCHANGED.
+  This response does not establish policy correctness.
+  Retry the same policy UNCHANGED using the bounded protocol below.
   Wait 30 seconds, then rerun the same `bounded verify`; make at most 3 attempts total, meaning the initial attempt plus 2 retries.
   If the third attempt still returns this error, stop and tell the user the proving service is degraded.
   Include the `correlationId` when present.
