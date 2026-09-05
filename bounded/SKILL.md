@@ -20,11 +20,25 @@ and cannot host that server elsewhere.
 ## Start
 
 ```bash
-curl -fsSL https://get.bounded.sh/install.sh | sh
-bounded init
+npm install -D @bounded-sh/cli
+npx bounded init
 ```
 
-`bounded init` opens Bounded's hosted browser login when needed, then creates
+The CLI ships on npm as a project dev dependency, so the same two commands work
+on macOS, Linux, and Windows with no shell involved (Node 20 or later). Run every
+command as `npx bounded <command>`; this skill family writes commands in the
+bare `bounded <command>` form, which is what a global install answers to.
+Without Node, the shell installer
+`curl -fsSL https://get.bounded.sh/install.sh | sh` installs a global `bounded`
+on macOS and Linux.
+
+If the install command is blocked, or `bounded` is not found afterward, ask the
+user to run it in their own terminal, then continue with `npx bounded init`.
+This setup needs a session that can run commands: a Claude Code session or
+another agent with terminal access, not a chat-only surface.
+
+`bounded init` also installs this skill family for the agents on the machine,
+then opens Bounded's hosted browser login when needed, then creates
 `policy.json` and public project config. It reuses a valid saved web session.
 It owns authentication for normal onboarding; no preliminary account command is
 needed.

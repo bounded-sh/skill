@@ -126,7 +126,9 @@ Fix outdated management-command behavior in this order:
 ```bash
 bounded version                                          # confirm what build you're on
 bounded update                                           # update to the current CLI
-# If this old build has no `update` command, run the installer once:
+# Installed from npm? update the dev dependency instead:
+npm install -D @bounded-sh/cli@latest
+# If this old shell-installed build has no `update` command, run the installer once:
 curl -fsSL https://get.bounded.sh/install.sh | sh
 # (developing the CLI locally? rebuild the bundle, then `bounded version` to confirm)
 ```

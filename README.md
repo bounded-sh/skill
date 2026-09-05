@@ -44,7 +44,17 @@ policy surface.
 
 ## Install
 
-Bounded CLI plus the public skill family:
+Bounded CLI as a project dev dependency (macOS, Linux, and Windows; Node 20 or
+later). `bounded init` installs the public skill family for the agents on the
+machine:
+
+```bash
+npm install -D @bounded-sh/cli
+npx bounded init
+```
+
+Run every command as `npx bounded <command>`. Without Node, the shell installer
+installs a global `bounded` plus the skill family on macOS and Linux:
 
 ```bash
 curl -fsSL https://get.bounded.sh/install.sh | sh

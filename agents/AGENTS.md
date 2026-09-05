@@ -35,9 +35,15 @@ declared policy surface as proved.
 ### Install
 
 ```bash
-curl -fsSL https://get.bounded.sh/install.sh | sh
-bounded init
+npm install -D @bounded-sh/cli
+npx bounded init
 ```
+
+The CLI is a project dev dependency (macOS, Linux, Windows; Node 20 or later):
+run every command as `npx bounded <command>`. Without Node, the shell installer
+`curl -fsSL https://get.bounded.sh/install.sh | sh` installs a global `bounded`
+on macOS and Linux. If the install is blocked or `bounded` is not found
+afterward, ask the user to run it in their own terminal, then continue.
 
 ### Flow
 
