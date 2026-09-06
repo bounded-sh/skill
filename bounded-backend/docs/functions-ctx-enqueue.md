@@ -55,7 +55,7 @@ that has not opted in has its queued replay dropped (fail-closed):
 - **Contract:** `ctx.enqueue(functionName: string, payload?: unknown, opts?: { delaySeconds?: number }): Promise<{ jobId }>`.
 - **What it runs:** `functionName` must be a **deployed function in this app** (a
   function may enqueue another function or itself; validated at enqueue time).
-- **How it runs:** a queued replay is **never deputized as the enqueuer** — it runs as the **null system principal** (`ctx.user` is `{ id: null, address: null, email: null, system: true }`, `ctx.auth.system == true`, and every `@user.*` resolves to null), regardless of who enqueued it.
+- **How it runs:** a queued replay is **never deputized as the enqueuer**. From a trusted enqueuer it runs as the **null system principal** (`ctx.user` is `{ id: null, address: null, email: null, system: true }`, `ctx.auth.system == true`, and every `@user.*` resolves to null), whoever enqueued it. (A job that descends from a public route is the one exception to the null principal, not to the no-deputizing rule: it replays as that ROUTE's principal, never as the caller who hit the route — see [§ Public-origin jobs](#public-origin-jobs).)
   Because the human `auth` rule is written against a real caller, it cannot authorize a null-user run, so the queued lane instead requires the **target** to opt in with `queueCallable: true` in its policy `functions` entry.
   A target that has not opted in is **rejected fail-closed**: the queued message is dropped (a `function_failed` analytics event is emitted for operators) and the human `auth` rule is never evaluated under a null user.
   Pass any caller identity or context the job needs through the `payload` (it arrives as `args`); do **not** expect the enqueuer in `ctx.user`.
