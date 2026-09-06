@@ -45,9 +45,12 @@ The two look identical but are NOT the same — mind the underscores:
   pattern.
 
 They only meet at the optional **bridge**: a rule *may* read `get(/__admins__/@user.id)` if
-you want your operators to also have data powers. Otherwise the two never touch. **A B2C app
-with end-user roles (moderators, etc.) uses an `admins`/`roles` collection and may need no
-`access` block at all.**
+you want your operators to also have data powers. The deploy gate for `actAs` service-identity
+functions accepts that bridge as admin evidence (`get(/__admins__/@user.id) != null` or
+`get(/__owners__/@user.id) != null`, keyed by `@user.id`), so an app whose privileged functions
+are run by its own team needs no `admins` collection at all. Otherwise the two never touch.
+**A B2C app with end-user roles (moderators, etc.) uses an `admins`/`roles` collection and may
+need no `access` block at all.**
 
 ## Control roles (preset bundles of capabilities)
 
