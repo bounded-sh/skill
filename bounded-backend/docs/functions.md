@@ -237,10 +237,13 @@ function that does not use it never loads it.
 | `ctx.enqueue`, background jobs, queues, `queueCallable`, `publicQueueCallable`, replay identity | [functions-ctx-enqueue.md](functions-ctx-enqueue.md) |
 | `ctx.build`, functions that originate app builds, promotion profiles | [functions-ctx-build.md](functions-ctx-build.md) |
 
-A queued or scheduled run executes as the null system principal: `ctx.user` is
-`{ id: null, address: null, email: null, system: true }`, so gate on
-`ctx.user.id == null`, never on `ctx.user` itself (which is always an object).
-See [functions-ctx-enqueue.md](functions-ctx-enqueue.md).
+A scheduled run, and a queued run from a trusted enqueuer, executes as the null
+system principal: `ctx.user` is `{ id: null, address: null, email: null, system: true }`,
+so gate on `ctx.user.id == null`, never on `ctx.user` itself (which is always an
+object). The one exception is a queued job that descends from a public route: it
+replays as **that route's reserved principal**, so `ctx.user.id` is non-null there
+and the target opts in with `publicQueueCallable` instead. See
+[functions-ctx-enqueue.md](functions-ctx-enqueue.md).
 
 ## Invoke a function
 
