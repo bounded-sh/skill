@@ -37,11 +37,17 @@ and does not prove the function body."
 caller, so `auth: "true"` means any logged-in caller may invoke it and
 `ctx.bounded` still cannot exceed that caller's data-plane authority. A function
 that declares `actAs` writes as a backend/service identity and is therefore
-privileged: deploy requires its `auth` rule to imply the app's admin predicate
-using a runtime-valid expression such as `get(/admins/@user.id).active == true`
-(`.active == true` implies the row exists, so it satisfies the deploy gate while
-giving you a real off-switch - see [admin-and-ownership.md](admin-and-ownership.md)).
-Declare and bootstrap that `admins/$userId` scope before deploying an `actAs` function.
+privileged: deploy requires its `auth` rule to imply the app's admin predicate.
+Two runtime-valid gates satisfy it. The control-plane roster - the app owner and
+every `bounded share --role admin` collaborator, which the runtime exposes as the
+reserved `__owners__`/`__admins__` sets - needs no collection at all:
+`@user.id != null && (get(/__owners__/@user.id) != null || get(/__admins__/@user.id) != null)`.
+An app-data `admins/$userId` collection works too, gated as
+`get(/admins/@user.id).active == true` (`.active == true` implies the row exists,
+so it satisfies the deploy gate while giving you a real off-switch - see
+[admin-and-ownership.md](admin-and-ownership.md)); declare and bootstrap that
+scope before deploying the function. Reach for the collection only when the
+people who may run the service identity are end-users rather than your team.
 
 ## When to reach for a function — read this first
 
