@@ -1348,7 +1348,7 @@ bounded functions logs   [name] --app-id <id> [--since 2h] [--limit N] [--errors
 `deploy` uploads the function's code and updates its policy entry for a caller with `functions:deploy`.
 `--auth` is required.
 Explicit optional metadata overrides the existing entry, while omitted optional metadata such as timeout, secrets, runtime, sandbox, webhook, egress, browser origins, `public`/`methods`/`cors`, `actAs`, `logsAuth`, and build capability is preserved by the deploy service.
-`--public` (requires `--auth true`) serves the function at `https://<slug>-api.bounded.page/<name>/...` with no Bounded session required; `--method` (repeatable) picks the verbs, `--cors app|passthrough` the CORS mode, and the success output prints the public URL. See [public functions](../../bounded-backend/docs/public-functions.md).
+`--public` (requires `--auth true`) serves the function at `https://<slug>-api.bounded.page/<name>/...` with no Bounded session required; `--method` (repeatable) picks the verbs, `--cors app|passthrough` the CORS mode, and the success output prints the public URL and the public principal (the `__bounded_public_v1__:` identity anonymous callers run it as, injected into the policy as `@const.BOUNDED_PUBLIC_PRINCIPAL_<NAME>`; `functions list` prints it as `runs as:` under each public function, and `--json` carries `publicPrincipal` / `publicPrincipals`). See [public functions](../../bounded-backend/docs/public-functions.md).
 A bare `--secret NAME` declares a name without exposing its value in argv.
 `deploy --all` (CLI 0.0.88+) is the batch form and the right default after a
 policy deploy: it reads every function from the policy file (metadata included,

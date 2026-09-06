@@ -60,12 +60,44 @@ that has not opted in has its queued replay dropped (fail-closed):
   A target that has not opted in is **rejected fail-closed**: the queued message is dropped (a `function_failed` analytics event is emitted for operators) and the human `auth` rule is never evaluated under a null user.
   Pass any caller identity or context the job needs through the `payload` (it arrives as `args`); do **not** expect the enqueuer in `ctx.user`.
   `ctx.bounded` writes from the queued run still pass your `rules` + invariants as the system principal.
-- **Public-origin restriction:** `queueCallable` authorizes **trusted** callers (a cron/heartbeat schedule, an internal run, or a user-authenticated function) to drive a system-principal background run - it does **not** authorize the anonymous internet.
-  A queued job that **descends from public ingress** (it was enqueued by a `browser`- or `webhook`-public function, or by any descendant of one) is **refused fail-closed** at replay even when the target declares `queueCallable: true`: the message is dropped and a `function_failed` analytics event is emitted, mirroring the build ban on public-origin runs.
-  This prevents an anonymous caller from laundering public ingress into a full system-principal run through your enqueue code.
-  If a public-facing function needs to trigger background work, do that work inline in the function (still under its own `auth` rule), not by enqueuing a system-principal job.
+- **Public-origin jobs:** `queueCallable` authorizes **trusted** callers (a cron/heartbeat schedule, an internal run, or a user-authenticated function) to drive a system-principal background run - it does **not** authorize the anonymous internet.
+  A job that **descends from public ingress** (enqueued by a `public`, `browser`, or `webhook` function, or by any queued descendant of one) never runs as system. See [§ Public-origin jobs](#public-origin-jobs) below.
 - **Delivery:** at-least-once, with Cloudflare-managed retries and a dead-letter
   queue. **Make enqueued functions idempotent** so a retry is safe.
+
+## Public-origin jobs
+
+A run that started on an anonymous surface - a `public: true` route, a
+`browser`-public function, or a `webhook` receiver - and every queued job it
+spawns, at any depth, is **publicly originated**. Such a job may only target a
+function that declares `publicQueueCallable: true`, and it replays **as the
+originating surface's reserved principal**: the same `ctx.user.id` the public
+route ran as (named in policy as `@const.BOUNDED_PUBLIC_PRINCIPAL_<FN>`, or the
+`BROWSER`/`WEBHOOK` variant), with `claims.public`/`browser`/`webhook` set and no
+`actAs`, build, apps, or email authority. Because that identity is non-null, the
+target's own `auth` rule **is** evaluated for the replay, exactly as if the
+principal had called it directly - so a literal `auth: "false"` cannot be combined
+with `publicQueueCallable`, and the natural gate is the constant:
+
+```jsonc
+{
+  "functions": {
+    "intake":  { "auth": "true", "entry": "functions/intake.ts", "public": true, "methods": ["POST"] },
+    "deliver": {
+      "auth": "@user.id == @const.BOUNDED_PUBLIC_PRINCIPAL_INTAKE",   // only jobs from the intake route
+      "entry": "functions/deliver.ts",
+      "publicQueueCallable": true                                     // ...may replay here, as that principal
+    }
+  }
+}
+```
+
+- `publicQueueCallable` may sit beside `queueCallable` (a target can accept both lanes; a trusted enqueuer's job still replays as system) and never beside `actAs`, `build`, `apps`, `email`, `public`, `browser`, `webhook`, a promotion authorizer, or a controller-trigger receiver.
+- **Fail-loud admission:** a publicly originated run that enqueues a target without the opt-in gets a throw inside `ctx.enqueue` (`enqueue_public_origin_not_allowed`), and the dispatcher refuses the whole outbox with the same code if an isolate somehow slips one past it. Nothing is accepted and dropped at replay any more.
+- **Smaller budgets:** a public root gets a fan-out breadth budget of 100 (chains stay free) and at most **10** intents per invocation (`enqueue_public_intent_cap_exceeded`).
+- A public HTTP call that carried a valid Bounded bearer still enqueues as the **route**, never as that user: a queued replay is never deputized. Pass what the job needs in the payload.
+- The replay's `ctx.bounded` writes pass rules and invariants as the public principal, so a collection that should accept only those jobs can say `"create": "@user.id == @const.BOUNDED_PUBLIC_PRINCIPAL_INTAKE"`.
+- Operators see these runs as `run_type: queued_public` in the backend-execution analytics; a refused replay emits `function_failed` under the same run type.
 - **Limits:** `payload` must be JSON-serializable and ≤ 96,000 UTF-8 bytes;
   `delaySeconds`
   is 0..86400 (24h). One invocation may emit at most 50 enqueue intents.
