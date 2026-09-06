@@ -64,6 +64,9 @@ me.isAnonymous   // true
 me.id            // the guest's stable identity — use for ownership; durable across reloads
 ```
 
+The successful return value includes the same normalized identity fields as `getCurrentUser()`, including `id`, `address`, `email`, and `isAnonymous`.
+This also applies when reusing or restoring a guest session.
+
 `signInAnonymously()` generates a non-extractable ed25519 key (an XSS can *sign* but
 never read it), runs nonce → sign → session. It's the wallet-signature path with a
 local key — durable across reloads. `logout()` ends the session but keeps the
