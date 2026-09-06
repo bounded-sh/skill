@@ -1,65 +1,43 @@
 # Billing & Usage
 
-What's in here: public plan/bucket behavior, usage warnings, upgrade
-guidance, project-limit recovery, and transparent pass-through fee language.
+Public plan limits, shared account credits, usage warnings, and payment recovery.
 
 ## Public Model
 
-Bounded uses hard, fail-closed limits so an app cannot silently turn into an
-unbounded bill. Cost-bearing work must fit both:
+Bounded uses one shared credit balance for each payer.
+Ordinary apps billed to an account share that account's credits for AI builds, runtime AI, infrastructure, and managed services.
+An independently funded project uses its own payer balance.
+Plan limits and optional app spending caps are separate restrictions; buying credits does not raise them.
 
-- the user's plan limits, and
-- the relevant account bucket or app-level spend cap.
+| Plan | Included account credits | Simultaneous builds |
+|---|---|---|
+| Free | Up to 5 courtesy credits per calendar month, subject to availability | 1 |
+| Pro ($25/month) | 500 credits per monthly billing period | 2 |
+| Team ($99/month) | 1,980 credits per monthly billing period | 5 |
 
-There are two user-visible buckets:
+Free courtesy credits cover infrastructure and managed services, excluding AI, and expire at calendar month-end.
+They depend on a shared monthly promotional budget; a refused courtesy grant does not remove purchased credits.
+All plans, including Free, can purchase account credits; purchased credits can fund AI on Free.
+Subscription credits expire at the end of the paid billing period and cannot be transferred.
+Purchased credits do not expire; card processing fees reduce the amount added.
+There is no daily AI Build entitlement.
+Enterprise and comped credit arrangements must be checked in the account's actual billing view.
 
-| Bucket | Covers |
-|---|---|
-| AI/external-services | `ctx.ai` and Bounded-managed third-party service proxies |
-| Bounded infra | metered Bounded platform usage at public Bounded rates |
+The public checkout flow sells the two monthly subscriptions (`kind: "pro" | "team"`) and account credit purchases (`kind: "credits_topup"`).
+`pro_annual` and `team_annual` remain settlement vocabulary for subscriptions sold before annual acquisition retired.
+Legacy annual invoices grant the paid year's credit amount once, expiring at that annual period's end.
+The old AI/services and infrastructure top-up products are retired.
 
-Plans: Free, Pro ($25/month), Team ($99/month). Enterprise terms are negotiated
-per account.
+Custom domains are also a paid feature.
+Creating a custom domain link requires the app owner's effective paid entitlement; existing links may be removed or disabled after a downgrade.
 
-- Free includes **up to $3 of metered AI/external-services usage per rolling 30
-  days**, shared by AI Build, `ctx.ai`, and `ctx.services`. It allows one Build
-  at a time and has no daily Build entitlement;
-  when the allowance is exhausted, upgrade.
-- Pro includes $5/month for the AI/external-services bucket and $30/month for
-  the Bounded infra bucket. AI Build and runtime calls consume the same metered
-  AI/external-services credit. Pro accounts can run up to two Builds concurrently.
-- Team includes everything in Pro plus roles (builders, reviewers, admins),
-  $20/month AI/external-services credit, and $100/month Bounded infra credit.
-  Team accounts can run up to five Builds concurrently and can top up.
+Billing snapshots report money and plan limits separately.
+Do not interpret an included-credit policy as an available balance or a promise that an unpaid invoice has granted credit.
+A positive balance does not override a quantity, concurrency, or spending limit.
+Usage collection and enforcement differ by capability; do not promise that every credit debit is synchronous or that every runtime operation immediately stops when a balance is exhausted.
 
-The public checkout flow sells the two monthly subscription kinds
-(`kind: "pro" | "team"`) and one fungible credit top-up
-(`kind: "credits_topup"`, bought in credits at $0.05 each).
-`pro_annual` and `team_annual` are settlement vocabulary, not products: the host
-reads them so that subscriptions issued before annual checkout was retired keep
-renewing, and answers `400 invalid_billing_kind` to any attempt to start one.
-The per-bucket top-ups are retired and are not sold: a credits purchase is
-spendable on anything metered - managed services, AI, and infrastructure.
-
-Custom domains are also a Pro feature. Creating a custom domain link is blocked
-unless the app owner has Pro-or-better billing, and existing custom domain links
-may be removed or disabled if that account loses Pro.
-
-Free AI/external-services usage also has a platform-wide rolling abuse cap. If
-that global free pool is paused or exhausted, free accounts see a clear
-"free usage paused" / "upgrade to Pro" error. Paid accounts continue through the
-normal bucket ledger.
-
-Paid included credit is granted once per UTC calendar month while the purchased
-monthly term remains paid through. Build reserves only a bounded AI
-amount before starting, settles the measured AI cost, and releases the unused
-reservation. Confirmed platform failures release the full reservation.
-Infrastructure is not charged as an estimate when no authoritative cost receipt
-exists.
-
-Do not explain pricing with unpublished provider costs, margin targets, private
-payment details, or non-public service details. Use the public plan, usage
-snapshot and checkout flow.
+Do not explain pricing with unpublished provider costs, margin targets, private payment details, or non-public service details.
+Use the public plan, usage snapshot, and checkout flow.
 
 ## Transparent Fees
 
@@ -81,7 +59,7 @@ Use the public surfaces:
 ```bash
 bounded billing status
 bounded billing checkout --plan pro          # or --plan team
-bounded billing topup --credits 100          # $5 of fungible Bounded credits
+bounded billing topup --credits 100          # buy account credits; review checkout terms
 bounded billing portal
 ```
 
@@ -89,7 +67,9 @@ Checkout and top-up wait for the payment to be APPLIED and say whether it
 landed; a completed Stripe checkout is not yet an applied plan.
 
 `bounded billing status` shows the authoritative account credit pool when available.
-In JSON, use `.credits.pool.available` for account credit.
+In JSON, use `.credits.pool.available` for available account credits and `.credits.pool.reserved` for held credits.
+`billingModel: "pool"` responses omit the retired split-bucket fields.
+`creditPolicy.grant` describes the included offer and its restrictions, not additional available funds.
 A healthy new account can have zero credits even before a ledger row exists.
 “Billing temporarily unavailable.” means the balance could not be read; it does not mean zero credit or that the user is signed out.
 Retry the status read later, and do not initiate another payment to recover one that has already been paid.
@@ -108,8 +88,9 @@ When usage data is available, explain it in user terms:
 - file reads/writes,
 - storage,
 - resident compute,
-- AI/external-services bucket,
-- Bounded infra bucket,
+- AI and managed-service usage,
+- infrastructure usage,
+- shared account credits,
 - app-level spend cap.
 
 ## Usage Alerts
@@ -138,7 +119,7 @@ Do not invent thresholds. Use the values returned in the usage snapshot.
 
 ## Project Creation Limits
 
-Project creation is account-scoped. Free accounts can create 3 projects; Pro,
+Project creation is account-scoped. Free accounts can create 10 projects; Pro,
 Team, and Enterprise accounts can create unlimited projects.
 
 When project creation returns `project_limit_exceeded` or a usage error with
@@ -187,9 +168,9 @@ Common axes:
 | file writes/reads | reduce file traffic, delete/export old data, or upgrade |
 | storage | delete/export data or upgrade; reads may still work while new writes are blocked |
 | resident compute | reduce live/runtime duration or upgrade |
-| AI/external-services bucket | reduce calls, lower app caps, or upgrade if the current plan is Free |
-| free AI/external-services pool | free trial usage is paused or exhausted; upgrade to Pro to continue |
-| Bounded infra bucket | reduce usage or adjust allowed caps |
+| account credits | add credits on any plan, upgrade for subscription credits, or reduce usage |
+| AI-eligible credits | Free courtesy credits exclude AI; purchased or paid subscription credits can fund it |
+| app spending cap | reduce usage or adjust the app cap; purchasing credits alone does not raise it |
 
 A `429` is separate from funded usage. It can mean either a short operational
 burst/shared-capacity guard or an app-authored daily, monthly, or participant
