@@ -136,6 +136,12 @@ URL, so you never copy a hash:
 
 See [constants](constants-and-defs.md#platform-injected-constants-constbounded_).
 
+> **Naming it needs an app id.** Like every `BOUNDED_*` constant, the principal is computed from the app id,
+> so it does not exist before the app does: `bounded deploy --create` verifies the policy first and refuses a
+> rule that references one with `@const.BOUNDED_PUBLIC_PRINCIPAL_<FN> is not defined in the constants block`.
+> Create the app first (or deploy the constant-free policy with `--create`), then deploy the policy that
+> names the principal.
+
 ## Background work from a public route
 
 A public function may call `ctx.enqueue`, but only for a target that opted into
