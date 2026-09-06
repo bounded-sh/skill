@@ -120,18 +120,25 @@ Commence later adds those surfaces without changing the direct workload host's p
 The venue page is `/a/<rootAppId>` before and after Commence (older `/l/` links redirect).
 
 On a launched oApp the in-app widget also switches to a dedicated launched
-face: a public trust rundown (rules, source link, constitution, security,
-fuel state, version history, the app's venue room link) instead of the owner
-console.
-The rundown states only what the published data supports.
-A security row reads `audited clean` only when the audit ran against the
-revision deployed right now; a mismatch, a missing revision, or an unreadable
-head reads `stale`, and an app with no completed audit reads `never audited`.
-A paused app says `out of fuel` only when its published gauge is actually
-empty - otherwise it says the engine is paused without naming a cause.
-An announced build shows its veto countdown, and where circulating supply is
-not yet counted it says the threshold is pending rather than naming a number
-the engine cannot enforce.
+face: a public trust rundown (rules, source link, constitution, the Gauntlet,
+fuel state, the venue's own surfaces) instead of the owner console.
+The rundown states only what the venue's published sources support, in the
+venue's own words.
+A Gauntlet row reads `12 of 15 passed` from the per-check outcomes, `no
+gauntlet attempt yet` where no attempt exists, and `checks not readable` where
+the projection cannot be read; it is never derived from an aggregate bit.
+Fuel uses the venue's five labels (running, low, conserving, asleep, waking)
+with one label per reading, the cause carried in the headline rather than the
+label, and dollars rather than raw credits.
+Where a veto window is open the widget links to the venue's brain-veto surface
+instead of rendering a countdown of its own.
+Venue rows (overview, discussion, constitution, treasury, versions, and the
+rest) are composed server-side from the launch record's venue, never guessed
+from the serving hostname, and a surface the venue does not publish gets no
+row.
+Writes are widget-initiated and venue-completed: an action row opens the
+venue's own page as a top-level document, and the widget never performs a
+venue write from the app's origin.
 Owner-console actions are refused on launched apps with `launched_locked` /
 `oapp_launched` errors - changes ship only through the app's governed build
 lane on its venue.

@@ -1348,7 +1348,7 @@ bounded functions logs   [name] --app-id <id> [--since 2h] [--limit N] [--errors
 `deploy` uploads the function's code and updates its policy entry for a caller with `functions:deploy`.
 `--auth` is required.
 Explicit optional metadata overrides the existing entry, while omitted optional metadata such as timeout, secrets, runtime, sandbox, webhook, egress, browser origins, `public`/`methods`/`cors`, `actAs`, `logsAuth`, and build capability is preserved by the deploy service.
-`--public` (requires `--auth true`) serves the function at `https://<slug>-api.bounded.page/<name>/...` with no Bounded session required; `--method` (repeatable) picks the verbs, `--cors app|passthrough` the CORS mode, and the success output prints the public URL. See [public functions](../../bounded-backend/docs/public-functions.md).
+`--public` (requires `--auth true`) serves the function at `https://<slug>-api.bounded.page/<name>/...` with no Bounded session required; `--method` (repeatable) picks the verbs, `--cors app|passthrough` the CORS mode, and the success output prints the public URL and the public principal (the `__bounded_public_v1__:` identity anonymous callers run it as, injected into the policy as `@const.BOUNDED_PUBLIC_PRINCIPAL_<NAME>`; `functions list` prints it as `runs as:` under each public function, and `--json` carries `publicPrincipal` / `publicPrincipals`). See [public functions](../../bounded-backend/docs/public-functions.md).
 A bare `--secret NAME` declares a name without exposing its value in argv.
 `deploy --all` (CLI 0.0.88+) is the batch form and the right default after a
 policy deploy: it reads every function from the policy file (metadata included,
@@ -1365,7 +1365,9 @@ Bounded gates the call on the `auth` rule, then prints the function's JSON (or
 the platform error — `403` if the rule denies you). Caller-scoped functions may
 be invoked by any caller their `auth` rule admits; functions that declare
 `actAs` in policy are service-identity functions and must be admin-gated at
-verify/deploy. `logs` (CLI 0.0.89+) reads the durable per-invocation log store:
+verify/deploy: the `auth` rule must imply the control-plane roster
+(`get(/__admins__/@user.id) != null`, the owner plus `--role admin`
+collaborators) or an app-data `admins/$userId` membership. `logs` (CLI 0.0.89+) reads the durable per-invocation log store:
 every invoke — end-user and scheduled runs included — is persisted with status,
 latency, error, and console output for 30 days, and the readable window/entry
 count is plan-tiered (free reads the recent days; Pro the full history). Name a

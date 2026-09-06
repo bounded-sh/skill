@@ -117,6 +117,54 @@ principal - write rules against real identities (`get(/admins/@user.id) != null`
 an owner field) where it matters. Rules and invariants still run on every
 `ctx.bounded` write.
 
+The principal has a name in policy. The platform injects
+`@const.BOUNDED_PUBLIC_PRINCIPAL_<FN>` for every `public: true` function (the
+function name uppercased, so `broker` gives `BOUNDED_PUBLIC_PRINCIPAL_BROKER`),
+and a public deploy and `bounded functions list` print the same value beside the
+URL, so you never copy a hash:
+
+```jsonc
+"tokens/$id": {
+  "rules": {
+    // only the broker route may mint; a signed-in human may not
+    "create": "@user.id == @const.BOUNDED_PUBLIC_PRINCIPAL_BROKER",
+    // any signed-in identity EXCEPT the anonymous route
+    "read": "@user.id != null && @user.id != @const.BOUNDED_PUBLIC_PRINCIPAL_BROKER"
+  }
+}
+```
+
+See [constants](constants-and-defs.md#platform-injected-constants-constbounded_).
+
+> **Naming it needs an app id.** Like every `BOUNDED_*` constant, the principal is computed from the app id,
+> so it does not exist before the app does: `bounded deploy --create` verifies the policy first and refuses a
+> rule that references one with `@const.BOUNDED_PUBLIC_PRINCIPAL_<FN> is not defined in the constants block`.
+> Create the app first (or deploy the constant-free policy with `--create`), then deploy the policy that
+> names the principal.
+
+## Background work from a public route
+
+A public function may call `ctx.enqueue`, but only for a target that opted into
+**public-origin** replay with `publicQueueCallable: true`. The queued run then
+replays **as this route's public principal** (the same `ctx.user.id`, `claims.public`,
+no `actAs`/build/apps/email authority), never as the system principal, and the
+target's own `auth` rule is evaluated for it exactly as for a direct call by that
+identity - so gate the target on the constant:
+
+```jsonc
+"functions": {
+  "broker":  { "auth": "true", "entry": "functions/broker.ts", "public": true, "methods": ["POST"] },
+  "deliver": { "auth": "@user.id == @const.BOUNDED_PUBLIC_PRINCIPAL_BROKER", "entry": "functions/deliver.ts", "publicQueueCallable": true }
+}
+```
+
+Enqueuing any other target throws inside `ctx.enqueue` with
+`enqueue_public_origin_not_allowed` - nothing is accepted and dropped later. A
+call that carried a valid Bounded bearer still enqueues as the **route**, not as
+that user (a queued replay is never deputized; pass what the job needs in the
+payload). Public runs also get a smaller fan-out budget and at most 10 enqueue
+intents per invocation. Details: [ctx.enqueue](functions-ctx-enqueue.md#public-origin-jobs).
+
 **Owner-funded calls are reachable from an anonymous caller.** `ctx.ai` and
 `ctx.services` work exactly as they do on `/invoke` and are billed to you, and
 the per-user AI spend cap keys on `ctx.user.id` - which is the SAME public
@@ -130,7 +178,7 @@ declaration cannot ask for them.
 
 - 120 requests per minute per app+function per Cloudflare location, before any config or body read; exhausted returns `429` with `Retry-After: 60`.
 - 128 KiB body, UTF-8 only, no `Content-Encoding`. Function timeout as declared (`timeout`, default 30s).
-- Single-surface: a public function is invisible to `/invoke` (`404`), cannot be a schedule, `dueRows`, live-call, queue, or Open Apps target, and the validator refuses those references.
+- Single-surface: a public function is invisible to `/invoke` (`404`), cannot be a schedule, `dueRows`, live-call, queue, or Open Apps target (neither `queueCallable` nor `publicQueueCallable`), and the validator refuses those references.
 - Removing `public: true` closes the route on the next request. Deploying `public: true` on a function whose code predates this contract answers `503 public_function_runtime_stale` until you redeploy it.
 
 ## The two narrower public modes

@@ -99,8 +99,11 @@ The proof boundary is precise - don't overclaim it:
 - A function's *logic* is not proven. Its writes go through enforced rules and
   proved invariants, and its invocation is gated by the `auth` rule. Normal
   functions write as the verified caller; `actAs`
-  service-identity functions are privileged and must be admin-gated. They are
-  *un-proven logic, contained by enforced rules and proved invariant walls.*
+  service-identity functions are privileged and must be admin-gated: on the
+  control-plane roster (`get(/__admins__/@user.id) != null`, the owner plus
+  `bounded share --role admin` collaborators) or on an app-data `admins`
+  collection. They are *un-proven logic, contained by enforced rules and proved
+  invariant walls.*
 
 ## Function proof boundary
 
