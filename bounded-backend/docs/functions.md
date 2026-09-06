@@ -154,6 +154,7 @@ need a private key; cryptographic/onchain signing does.
 | `public` | Optional. `true` serves the function on the app's public HTTP surface (`https://<slug>-api.bounded.page/<name>/...` and `https://functions.bounded.sh/apps/<appId>/<name>/...`) with **no Bounded session required**: the function receives a standard `Request` and may return a `Response`. Requires the literal `auth: "true"` - which on its own never makes a function public - and cannot be combined with `actAs`, `build`, `apps`, `email`, `queueCallable`, `webhook`, or `browser`. A valid Bounded bearer runs it as that user; every other caller runs it as the function-scoped public principal, so it must authorize its own actions. See [public functions](public-functions.md). |
 | `methods` | Optional, `public` only. The verbs the route answers, from `GET`, `POST`, `PUT`, `PATCH`, `DELETE`. Omitted means `POST`; `HEAD` follows `GET`; `OPTIONS` follows `cors`. |
 | `cors` | Optional, `public` only. `"app"`: the platform answers preflight and reflects only the app's configured origins (slug host, custom domains, added extras). `"passthrough"`: `OPTIONS` and your own `Access-Control-*` headers reach the caller. Omitted: no CORS. |
+| `publicQueueCallable` | Optional. `true` lets a background job that descends from a public route (`public`, `browser`, or `webhook`) replay here **as that route's reserved principal** (never as system); this function's `auth` rule is then evaluated for that identity, so gate it on `@const.BOUNDED_PUBLIC_PRINCIPAL_<FN>`. May sit beside `queueCallable`; never with `actAs`, `build`, `apps`, `email`, or a public surface. See [ctx.enqueue](functions-ctx-enqueue.md#public-origin-jobs). |
 | `environments` | Optional, **CLI-only**. A non-empty array of names from the policy's top-level `environments` block: this function deploys to those environments and to no others, and the key is stripped before the policy is sent. Every other environment drops the function entirely, so a test-venue function cannot reach a real app — and once any function carries this key, `deploy`/`verify`/`functions deploy --all` refuse to run without `--environment`. See [environments.md](../../bounded-deploy/docs/environments.md#environment-scoped-functions). |
 
 **Auth-by-policy is the point.** Because the invocation rule is evaluated by the
@@ -188,7 +189,7 @@ export default async function (args, ctx) {
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's AI/external-services bucket, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](functions-ctx-ai.md) and [§media](functions-ctx-ai.md#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
 | `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's AI/external-services bucket at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](functions-ctx-services.md). |
-| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run executes as the **null system principal** (`ctx.user.id == null`, `ctx.user.system == true`), never as the enqueuer, so the target must opt in with `queueCallable: true` in policy; it receives `payload` as its `args` and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](functions-ctx-enqueue.md). |
+| `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run is never deputized as the enqueuer: a job from a trusted caller executes as the **null system principal** (`ctx.user.id == null`, `ctx.user.system == true`) and the target must opt in with `queueCallable: true`, while a job that descends from a public route replays as **that route's reserved principal** and the target must opt in with `publicQueueCallable: true` instead. Either way it receives `payload` as its `args` and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](functions-ctx-enqueue.md). |
 | `ctx.build` | **Governed app builds — `create` / `edit` / `fork` / `get` / `cancel`.** Present only when the function's policy declares a `build` capability; otherwise every method returns `{ ok: false, reason: "build_capability_missing" }` with no network call. Originates AI app builds through the unified Build control plane, funded and governed by the named build profile. See [§ctx.build](functions-ctx-build.md). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
 | `ctx.appId` | The app this function belongs to. |
@@ -233,13 +234,16 @@ function that does not use it never loads it.
 | `ctx.ai.run`, `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, AI budgets | [functions-ctx-ai.md](functions-ctx-ai.md) |
 | `ctx.services`, managed third-party APIs, `bounded services` | [functions-ctx-services.md](functions-ctx-services.md) |
 | `ctx.browser`, headless browser, smoke tests, egress-fenced browsing | [functions-ctx-browser.md](functions-ctx-browser.md) |
-| `ctx.enqueue`, background jobs, queues, `queueCallable`, replay identity | [functions-ctx-enqueue.md](functions-ctx-enqueue.md) |
+| `ctx.enqueue`, background jobs, queues, `queueCallable`, `publicQueueCallable`, replay identity | [functions-ctx-enqueue.md](functions-ctx-enqueue.md) |
 | `ctx.build`, functions that originate app builds, promotion profiles | [functions-ctx-build.md](functions-ctx-build.md) |
 
-A queued or scheduled run executes as the null system principal: `ctx.user` is
-`{ id: null, address: null, email: null, system: true }`, so gate on
-`ctx.user.id == null`, never on `ctx.user` itself (which is always an object).
-See [functions-ctx-enqueue.md](functions-ctx-enqueue.md).
+A scheduled run, and a queued run from a trusted enqueuer, executes as the null
+system principal: `ctx.user` is `{ id: null, address: null, email: null, system: true }`,
+so gate on `ctx.user.id == null`, never on `ctx.user` itself (which is always an
+object). The one exception is a queued job that descends from a public route: it
+replays as **that route's reserved principal**, so `ctx.user.id` is non-null there
+and the target opts in with `publicQueueCallable` instead. See
+[functions-ctx-enqueue.md](functions-ctx-enqueue.md).
 
 ## Invoke a function
 
