@@ -1077,6 +1077,25 @@ Full treatment: [environments.md](environments.md).
 | `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. The router currently requires an exact app-bound wallet token for preview minting; the platform-scoped browser session is not accepted. The link is a bearer secret until it expires - don't post it publicly. | `bounded site preview --app-id <id> --open` |
 | `site proof [status\|on\|off]` | Opt-in public proof surface: the /__bounded/boundaries page (proof stamp, plain-English invariants, decline count) + the site's Boundaries corner badge. OFF by default | `bounded site proof on --app-id <id>` |
 
+### Publication history and concurrent deployments
+
+On servers supporting publication receipts, `bounded site versions --app-id <id>` includes server-recorded publication history as well as restorable asset versions.
+Use `--json` for the full receipt, `--limit 20` to select a page size, and `--cursor <historyCursor>` to read the next page.
+Each new receipt identifies the operation, authenticated actor, server time, previous and resulting deployment, artifact digest, and outcome.
+A `prepared` receipt is not a confirmed publication.
+Older deployments have unknown actors; history cannot reconstruct identities that were never recorded.
+Compact history survives asset pruning, so a receipt does not imply its old files are still restorable.
+
+The CLI reports its version and, when available, the local Git commit and dirty state separately as `clientProvenance`.
+Those fields are client assertions, not server-verified source provenance or proof that uploaded bytes were built from that commit.
+Authenticated actor identity comes from the server, never those client fields.
+
+Deploy, promotion, and rollback carry the exact canonical deployment the CLI observed before publication.
+If another publication wins first, `site_deployment_changed` refuses the stale request; inspect `site versions` before deciding what to publish next.
+The CLI never refreshes the expected parent and silently retries an overwrite.
+After an app enables this protection with a guarded publication, clients that omit the expected parent receive `site_parent_precondition_required` and must update.
+Use an explicit `site rollback <deployId>` to restore an older retained deployment.
+
 For release-critical public sites, retain the exact successful `site deploy
 --json` receipt and independently verify every uploaded byte through the
 canonical public host.
