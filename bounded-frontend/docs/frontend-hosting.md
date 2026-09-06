@@ -132,10 +132,12 @@ with one label per reading, the cause carried in the headline rather than the
 label, and dollars rather than raw credits.
 Where a veto window is open the widget links to the venue's brain-veto surface
 instead of rendering a countdown of its own.
-Venue rows (overview, discussion, constitution, treasury, versions, and the
-rest) are composed server-side from the launch record's venue, never guessed
-from the serving hostname, and a surface the venue does not publish gets no
-row.
+Venue rows (overview, analytics, constitution, versions, and the rest) are
+composed server-side from the launch record's venue, never guessed from the
+serving hostname, and a surface the venue does not publish gets no row.
+Each destination appears once: the surfaces a visitor acts on (Discussion, the
+treasury, a live sale, the token, an open veto window) are offered as action
+rows and are not repeated in the venue-row list.
 Writes are widget-initiated and venue-completed: an action row opens the
 venue's own page as a top-level document, and the widget never performs a
 venue write from the app's origin.
