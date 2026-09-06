@@ -1090,11 +1090,13 @@ The CLI reports its version and, when available, the local Git commit and dirty 
 Those fields are client assertions, not server-verified source provenance or proof that uploaded bytes were built from that commit.
 Authenticated actor identity comes from the server, never those client fields.
 
-Deploy, promotion, and rollback carry the exact canonical deployment the CLI observed before publication.
+Deploy, promotion, and rollback carry the canonical deployment and publication identity the CLI observed before publication.
+The publication identity distinguishes restoring an old version from that version’s original publication, so a rollback cannot make a stale request current again.
 If another publication wins first, `site_deployment_changed` refuses the stale request; inspect `site versions` before deciding what to publish next.
 The CLI never refreshes the expected parent and silently retries an overwrite.
 After an app enables this protection with a guarded publication, clients that omit the expected parent receive `site_parent_precondition_required` and must update.
 Use an explicit `site rollback <deployId>` to restore an older retained deployment.
+The CLI negotiates these fields from the server’s versions response; older servers retain their legacy request format and do not gain the new protection until upgraded.
 
 For release-critical public sites, retain the exact successful `site deploy
 --json` receipt and independently verify every uploaded byte through the
