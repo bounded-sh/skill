@@ -38,6 +38,10 @@
   literal names this app (see "What shape the app can take").
   If the app has a frontend, the deployed site was built from THIS tree.
   A stale dist that no longer embeds the app id refuses at Open (`clone_app_id_not_rewritten`).
+- Every script the page runs ships inside the tree: dependencies come from npm and
+  the build bundles them.
+  A `<script src="https://…">` or a URL import refuses at Open (`remote_script_forbidden`),
+  and the launched host's `script-src 'self'` floor would refuse to load it anyway.
 - If the app has NO web frontend, the user knows its home page will be the
   public repo view at the direct workload host, not a web app.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
