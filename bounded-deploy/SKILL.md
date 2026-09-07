@@ -84,6 +84,8 @@ account profile, or recovery of an existing key-owned app.
 - `onchain_creation_owner_conflict` (`409`): the app's on-chain account is
   finalized under a wallet the creation did not intend. That is an integrity
   fault, not a state to retry; escalate for operator review.
+- A site upload reports `canonical_apply_pending`, `canonical_apply_in_progress`, or a generic `external_apply_unavailable`: use the [interrupted site deployment guide](docs/cli-reference.md#interrupted-site-deployments).
+  Inspect `bounded site versions --app-id <id> --json`; the policy deployment status command does not diagnose a site publication reservation.
 - Unsure which applies, or unsure whether a fresh deploy is safe: run the
   read-only `bounded deploy status --json` first. It reports what holds the
   deploy slot and a `freshDeploySafe` verdict, and it never mutates anything.

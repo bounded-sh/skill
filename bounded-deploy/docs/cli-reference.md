@@ -1398,6 +1398,7 @@ read the invocation's error and console lines. Full guide:
 Attempts are recorded before a canonical upload claims its publication reservation, with the authenticated account, client-reported source commit and agent label, phase observations, and a terminal result when observed.
 A worker interruption can leave the last observed phase unfinished; that does not prove a process is still running.
 Older deployments may have no attempt attribution.
+Attempt history retains the newest 1,000 attempts plus the last recorded claimant, so repeated refused uploads cannot exhaust the deployment coordinator.
 Use `--attempts-cursor <attemptsCursor>` to retrieve older attempts independently of publication receipt pagination.
 
 A `canonical_apply_pending` or `canonical_apply_in_progress` error identifies the blocking operation and its reservation expiry when available.
