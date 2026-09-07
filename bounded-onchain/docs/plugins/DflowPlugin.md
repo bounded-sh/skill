@@ -26,7 +26,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `source` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `source` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `inputMint` | string | yes | - | The mint address of the input token |
 | `outputMint` | string | yes | - | The mint address of the output token |
 | `amount` | number | yes | - | The amount of input tokens to escrow |

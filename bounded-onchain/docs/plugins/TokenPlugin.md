@@ -38,7 +38,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `mintAddress` | string | yes | - | The mint address of the token to burn |
 | `amount` | number | yes | - | The amount of tokens to burn with decimals |
 
@@ -62,7 +62,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `TokenPlugin.createToken2022`
 
 ```
-@TokenPlugin.createToken2022(tokenId, name, symbol, uri, decimals, extensions?) - Creates a Token2022 token with optional extensions object. Extension fields: nonTransferable (true|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). All address fields support: wallet addresses, @contract.address for escrow, or account IDs.
+@TokenPlugin.createToken2022(tokenId, name, symbol, uri, decimals, extensions?) - Creates a Token2022 token with optional extensions object. Extension fields: nonTransferable (true|false), feeBasisPoints (integer 0-10000), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED whenever feeBasisPoints is provided, including zero), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). All address fields support: wallet addresses, @contract.address for escrow, or account IDs.
 ```
 
 - Callable from: `hooks.onchain`
@@ -75,7 +75,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `symbol` | string | yes | - | The symbol of the token |
 | `uri` | string | yes | - | The URI of the token metadata |
 | `decimals` | number | yes | - | The number of decimals for the token |
-| `extensions` | object | no | - | Optional extensions object. Fields: nonTransferable (true\|false), feeBasisPoints (0-65535), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED if feeBasisPoints > 0), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID. |
+| `extensions` | object | no | - | Optional extensions object. Fields: nonTransferable (true\|false), feeBasisPoints (integer 0-10000), maxFee (required if feeBasisPoints > 0), transferFeeAuthority (REQUIRED whenever feeBasisPoints is provided, including zero), withdrawWithheldAuthority (optional, defaults to transferFeeAuthority), interestRate (i16), interestRateAuthority (REQUIRED if interestRate is set), permanentDelegate (address). Address fields can be wallet, @contract.address (escrow), or account ID. |
 
 Fields of `extensions`:
 
@@ -104,8 +104,23 @@ Fields of `extensions`:
 | `tokenId` | string | yes | - | Unique identifier for the token within the app |
 | `name` | string | yes | - | The name of the token |
 | `symbol` | string | yes | - | The symbol of the token |
-| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `amount` | number | yes | - | The amount of tokens to mint with decimals |
+
+### `TokenPlugin.revokeMintAuthority`
+
+```
+@TokenPlugin.revokeMintAuthority(tokenId, name, symbol) - permanently removes the mint authority of a Bounded-created SPL or Token-2022 token. Pass the same tokenId, name and symbol used at creation, after minting the intended supply. Further minting (even zero) and repeated revocation fail. Preserves metadata, transfer-fee and withdrawal authorities; transfer and burn remain possible. Requires runtime v7 and a canonical 24-hex platform app id; not an external-mint authority setter.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unsupported** (not run); markers: NEEDS-RUNTIME-V7.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `tokenId` | string | yes | - | Token id used by TokenPlugin.createToken or createToken2022. |
+| `name` | string | yes | - | Exact name used at creation, part of the existing mint seed. |
+| `symbol` | string | yes | - | Exact symbol used at creation, part of the existing mint seed. |
 
 ### `TokenPlugin.transfer`
 
@@ -118,8 +133,8 @@ Fields of `extensions`:
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `mintAddress` | string | yes | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
 | `amount` | number | yes | - | The amount of tokens to transfer with decimals |
 
@@ -134,8 +149,8 @@ Fields of `extensions`:
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `mintAddress` | string | yes | - | The mint address of the token to transfer or 'So11111111111111111111111111111111111111112' or @TokenPlugin.SOL for SOL. Can also use @TokenPlugin.USDC for USDC |
 | `amount` | number | yes | - | The amount of tokens to transfer without decimals |
 
@@ -169,7 +184,7 @@ Fields of `extensions`:
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `walletAddress` | string | yes | - | The address of the wallet, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) to get the balance of |
+| `walletAddress` | string | yes | - | The address of the wallet, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) to get the balance of |
 | `mintAddress` | string | yes | - | The mint address of the token to get the balance of |
 
 ### `TokenPlugin.getDecimals`

@@ -49,7 +49,9 @@ Read only the row matching the current task or term.
 | Escrow custody, `source` argument, per-entity funds, named PDA accounts, `@AccountPlugin.createAccount` | [named escrow accounts](docs/onchain-trading.md#named-escrow-accounts---the-third-custody-model-read-this-before-pooling-funds) |
 | Rule arithmetic overflow, int64, division-first pins, large-magnitude comparisons | [rule arithmetic](docs/policy-primitives.md#rule-arithmetic-is-bounded-on-chain---write-pins-division-first) |
 | Randomness, VRF, raffle/gacha/shuffle, `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [randomness](docs/randomness.md) |
-| Meteora token launch, DBC, anti-snipe fee decay, DAMM v2, `createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover` | [Meteora launch](docs/meteora-token-launch.md) |
+| Token-2022 transfer tax, immutable fee rate, mint-level fee collection, consumer holder rewards | [token fee rewards](docs/token-fee-rewards.md) |
+| Raydium CLMM, Burn & Earn, LaunchLab and CPMM policy authoring | [Raydium policy recipes](docs/raydium-policy-recipes.md) |
+| Governed fee ownership, per-mint claim receipts, quote assets, CP-AMM vs DBC, Meteora token launch, anti-snipe fee decay, DAMM v2, `createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover` | [Meteora launch](docs/meteora-token-launch.md) |
 | Pump.fun, PumpSwap, `@PumpFunPlugin`, `createToken`/`createTokenV2`, `buyExactSolIn`, creator fees, fee sharing, `updateShareholders`, `distributeCreatorFees`, `pumpswapDeposit`/`pumpswapWithdraw`, argument names/units | [Pump.fun reference](docs/pump-fun.md) |
 | Multi-party fee split, `feepool`, `mulDivFloor`, keeper/scheduled onchain writes, `actAs`, `rollingSum` fee-funded build allowance | [oApps tokenomics](docs/oapps-tokenomics-fee-split.md) |
 | Embedded wallet for email/social users, `@user.address`, Turnkey, `auth.wallets` | [embedded wallets](docs/embedded-wallets.md) |
@@ -58,6 +60,8 @@ Read only the row matching the current task or term.
 | Accept crypto/USDC, `payments.acceptCrypto`, seller settlement, direct-transfer rail | [accept crypto](docs/accept-crypto.md) |
 
 ## Rules Of Thumb
+
+- Assess capability through this skill, its focused references, and CLI plugin discovery before declaring a platform gap. Distinguish a convenience plugin restriction from a composition of existing policy primitives; separately verify deployment and target-network execution. App builders should not need platform source access to discover these distinctions.
 
 - **Default onchain login = default Turnkey email/social auth + optional wallet login, side by side.** Do not add `authMode` or `auth.wallets` for the normal path. Turnkey is the sole embedded-wallet implementation, and Turnkey-native auth with eager provisioning is already the default. Supported email/social users have `@user.address` when login completes. Add bring-your-own **wallet login** (`walletLogin`) only for users who already hold a Solana wallet - and when you do, deploy `"auth": { "wallets": true }` with it, since the issuer refuses an external-wallet session otherwise. Use explicit auth policy only for that, to opt out, or to retain the legacy hosted login mode. See [docs/embedded-wallets.md -> recommended login](docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app).
 - Use `@user.address` only for wallet/onchain semantics; use `@user.id` for normal ownership. See the bounded-backend skill.

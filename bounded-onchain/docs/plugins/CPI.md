@@ -311,6 +311,34 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `poolTokens` | u64 | yes | - | Pool tokens to burn. |
 | `minimumLamportsOut` | u64 | yes | - | Minimum lamports to accept; the transaction fails below this. |
 
+### `CPI.token2022RevokeFeeAuthority`
+
+```
+@CPI.token2022RevokeFeeAuthority(source, mint) - permanently revokes the Token-2022 transfer-fee configuration authority. The current and scheduled rates remain; this does not revoke minting or the separate fee-withdrawal authority. Source must be the current fee-config authority (wallet, @contract.address, or named account). Irreversible; repeating it fails.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (source parity only); markers: LIVE-SAFE-CPI-PROOF.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Current transfer-fee configuration authority: wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint carrying TransferFeeConfig. |
+
+### `CPI.token2022WithdrawMintFees`
+
+```
+@CPI.token2022WithdrawMintFees(source, mint) - withdraws all fees already harvested into the Token-2022 mint to the source authority's ATA, creating it if needed. Source must be the mint's withdraw-withheld authority (wallet, @contract.address, or named account). Does not collect fees still held on individual token accounts; consumers can permissionlessly harvest those with the SPL SDK. A zero balance succeeds without a payout. Returns Bool; read actual balance deltas for accounting.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (source parity only); markers: LIVE-SAFE-CPI-PROOF.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Withdraw-withheld authority and fee recipient: wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint with harvested withheld fees. |
+
 ### `CPI.transferLamports`
 
 ```

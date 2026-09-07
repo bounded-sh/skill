@@ -22,7 +22,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `PumpFunPlugin.buyExactSolIn`
 
 ```
-@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps) - Buy tokens with exact SOL amount
+@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps) - Legacy exact-SOL buy. Kept for deployed-policy compatibility; use buyExactSolInWithMinimumOutput for a caller-committed price floor.
 ```
 
 - Callable from: `hooks.onchain`
@@ -33,7 +33,23 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
 | `mint` | string | yes | - | Token mint address |
 | `solAmount` | string | yes | - | Amount of SOL to spend (in lamports) |
-| `slippageBps` | string | yes | - | Slippage tolerance in basis points (e.g., 500 = 5%) |
+| `slippageBps` | string | yes | - | Legacy slippage tolerance in basis points. New policies should use buyExactSolInWithMinimumOutput so the accepted price is committed before execution. |
+
+### `PumpFunPlugin.buyExactSolInWithMinimumOutput`
+
+```
+@PumpFunPlugin.buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut) - Buy with exact SOL, reverting unless at least minTokensOut tokens are received
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (manifest present; target-network evidence not checked); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | string | yes | - | Source address (wallet, @contract.address for escrow, or account ID) - provides SOL |
+| `mint` | string | yes | - | Token mint address |
+| `solAmount` | string | yes | - | Amount of SOL to spend (in lamports) |
+| `minTokensOut` | string | yes | - | Required absolute minimum output in smallest units. Derive it from getPumpBuyQuote and the user's slippage tolerance. |
 
 ### `PumpFunPlugin.collectCreatorFee`
 
@@ -215,3 +231,18 @@ Fields of `config`:
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
 | `mint` | string | yes | - | Token mint address |
+
+### `PumpFunPlugin.getPumpBuyQuote`
+
+```
+@PumpFunPlugin.getPumpBuyQuote(mint, solAmount) - returns a conservative tokens-out quote against the live bonding curve. Derive minTokensOut as quote * (10000 - slippageBps) / 10000 and pass it to buyExactSolInWithMinimumOutput.
+```
+
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
+- Returns: `number`
+- Status: **unverified** (manifest present; target-network evidence not checked); markers: LIVE-PUMP-PROOF.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `mint` | string | yes | - | Token mint address |
+| `solAmount` | number | yes | - | SOL amount in lamports to quote a buy for |

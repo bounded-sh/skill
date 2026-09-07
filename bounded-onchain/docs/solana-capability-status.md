@@ -8,7 +8,7 @@ versa. Do not read a devnet row as a mainnet guarantee.
 
 This is the canonical public classification of Bounded Solana functions for devnet.
 It is a source-derived snapshot, not a claim that every discovered function works on a live cluster.
-The catalog contains 157 individually classified functions.
+The catalog contains 163 individually classified functions.
 
 ## Read the three states independently
 
@@ -18,17 +18,19 @@ The catalog contains 157 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The current Bounded Solana program is recorded as **runtime v4**, live on both devnet and mainnet-beta since 2026-08-05, which is the version this snapshot classifies against.
-Runtime v4 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
+The platform deployment registry records **runtime v6** on devnet and mainnet-beta, with the upgrades recorded on 2026-09-04.
+Runtime v7 exists in source for mint-authority sealing but has not been deployed.
+A runtime version establishes the bytecode and invariant/governance grammar level, but does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`.
+The current totals are 130 `unverified`, 33 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
 
 | Code | Meaning |
 |---|---|
+| `NEEDS-RUNTIME-V7` | Source implements the function, but devnet and mainnet remain on runtime v6; policy deployment must refuse it until a guarded v7 upgrade is verified. |
 | `LIVE-PENDING` | Source is present, but a retained devnet acceptance run is still required. |
 | `LIVE-ORAO-PROOF` | ORAO request, fulfillment, reveal, and query still require retained live proof. |
 | `LIVE-PYTH-PROOF` | The Pyth read still requires retained live proof with freshness enforcement. |
@@ -95,6 +97,8 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
 | `@CPI.memoNote` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.transferLamports` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
+| `@CPI.token2022RevokeFeeAuthority` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
+| `@CPI.token2022WithdrawMintFees` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.stakePoolDepositSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
 | `@CPI.stakePoolWithdrawSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
 | `@CPI.raydiumSwapBaseInput` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
@@ -172,6 +176,8 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@PredictionMarketPlugin.getYesTokensOutLsmr` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@PriceFeedPlugin.getPriceFeed` | legacy runtime | unverified | source parity only | LIVE-PYTH-PROOF |
 | `@PumpFunPlugin.buyExactSolIn` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
+| `@PumpFunPlugin.buyExactSolInWithMinimumOutput` | runtime requirement to verify | unverified | manifest present; target-network evidence not checked | LIVE-PUMP-PROOF |
+| `@PumpFunPlugin.getPumpBuyQuote` | runtime requirement to verify | unverified | manifest present; target-network evidence not checked | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.collectCreatorFee` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.createFeeSharingConfig` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
@@ -196,11 +202,13 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@Solana.signerAccount` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@Solana.slot` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@StringUtils.length` | legacy runtime | unverified | source parity only | LIVE-PENDING |
+| `@StringUtils.concat` | runtime requirement to verify | unverified | manifest present; target-network evidence not checked | LIVE-PENDING |
 | `@TensorPlugin.buyNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |
 | `@TensorPlugin.listNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |
 | `@TokenPlugin.burn` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@TokenPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@TokenPlugin.createToken2022` | legacy runtime | unverified | source parity only | LIVE-PENDING |
+| `@TokenPlugin.revokeMintAuthority` | ext primitive | unsupported | not run | NEEDS-RUNTIME-V7 |
 | `@TokenPlugin.getBalance` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@TokenPlugin.getDecimals` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@TokenPlugin.getSupply` | legacy runtime | unverified | source parity only | LIVE-PENDING |
