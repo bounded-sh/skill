@@ -6,8 +6,8 @@ Declaring, writing, invoking and deploying a function are in [functions.md](func
 
 **If your app needs an LLM, you do not need an OpenAI/Anthropic key or endpoint.**
 Bounded is your AI router. Call `ctx.ai.run(model, input)` inside any function: it
-routes through the Bounded AI Gateway, billed to the **app owner's**
-AI/external-services bucket, and
+routes through the Bounded AI Gateway, billed to the **app owner's** credit
+pool, and
 **capped fail-closed** (over budget → the call is denied, never a surprise bill).
 This is the difference between an app that *actually reasons* and one that fakes it
 with templated strings — reach for `ctx.ai`, not `Math.random()`.
@@ -78,7 +78,7 @@ export default async function (args, ctx) {
   this gateway"*, that deployment's provider allowlist is off — fall back to an
   `@cf/*` model and report it. Avoid dated `@cf` model ids from memory; Workers
   AI deprecates them (a 5028 "deprecated" error means pick a current one).
-- **Cap it provably.** The per-account AI/external-services bucket is the platform ceiling. For a
+- **Cap it provably.** The account's credit pool is the platform ceiling. For a
   *per-user* / *per-app* AI budget you can prove, write an append-only spend event
   under a `rollingSum` in the same flow (the
   [spend-cap recipe](invariants.md#rollingsum--caps-over-time-windows)) — so "this

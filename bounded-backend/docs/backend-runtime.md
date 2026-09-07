@@ -71,7 +71,7 @@ Use `bounded runtime init` to scaffold the current manifest format.
 | `ctx.bounded` | read/write the app's Bounded data under policy checks |
 | `ctx.store.get/put` | store small app-scoped runtime state |
 | `ctx.ai.run` | call AI models against the app/account spend controls |
-| `ctx.services.search/describe/invoke` | discover and call Bounded-managed third-party APIs through the AI/external-services bucket |
+| `ctx.services.search/describe/invoke` | discover and call Bounded-managed third-party APIs, billed to the credit pool |
 | `ctx.secrets.get` | read declared app secrets |
 | `ctx.fetch` | call allowed outbound hosts |
 | `ctx.schedule` | schedule follow-up work |
@@ -84,7 +84,7 @@ the right managed API/tool shape. Runtime code can also use
 `ctx.services.search` and `ctx.services.describe` for agent planning. Use
 `ctx.services.invoke` at runtime when Bounded manages that provider. Invoke is
 cost-bearing, billed at the applicable upstream service cost plus 5%, and fails
-closed when the app owner's AI/external-services bucket is exhausted. If a
+closed when the app owner's credit pool is exhausted. If a
 provider is not enabled in the managed proxy, integrate it directly with
 `ctx.fetch` and store the provider key in Bounded secrets.
 
@@ -198,9 +198,9 @@ Use it for "who is calling this backend route", and let policy rules on
   Loopback, private, link-local, `*.internal`/`*.local`, IP-literal, and
   cloud-metadata targets are refused whether you declared them or a redirect
   tried to reach them.
-- `ctx.ai` spends against the AI/external-services bucket and app-level caps.
-  When a cap or bucket is exhausted, calls fail closed.
-- `ctx.services.invoke` spends against the same AI/external-services bucket and
+- `ctx.ai` spends against the credit pool and app-level caps. When a cap or
+  the pool is exhausted, calls fail closed.
+- `ctx.services.invoke` spends against the same credit pool and
   uses the applicable upstream service cost plus 5%. Search/describe are catalog
   reads.
 - Both cost-bearing surfaces require a 1–256-byte app-global idempotency key.
@@ -222,7 +222,7 @@ Recommended pattern:
 1. Store job state in a Bounded collection or `ctx.store`.
 2. Process a bounded amount of work per step.
 3. Write progress before scheduling the next step.
-4. Stop when complete or when the user's cap/bucket is exhausted.
+4. Stop when complete or when the user's cap or credit pool is exhausted.
 
 ## Deploy
 

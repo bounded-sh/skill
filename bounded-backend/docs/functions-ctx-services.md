@@ -51,7 +51,7 @@ personal key.
 
 `X402_FETCH` is not oApp-only. Any app whose function egress carries the
 `service:x402` grant may call an x402-priced API through it; the relay wallet
-pays, the app's AI/external-services bucket is debited (price, a 5% markup,
+pays, the app's credit pool is debited (price, a 5% markup,
 and the flat transaction-fee surcharge), and the app itself holds no key. The
 relay is live on staging and production; only a local stack ships with it off
 (fail-closed), and `ctx.services.describe("X402_FETCH")` tells you which you
@@ -145,9 +145,9 @@ and never re-runs the provider: a lost poll re-reads the same job.
   invoke is the runtime tool call. A Flue agent can expose a small wrapper around
   `ctx.services.invoke` as one of its tools.
 - **Billing:** search/describe are catalog reads. Invoke is cost-bearing and
-  bills the app owner's AI/external-services bucket at the underlying service
-  call cost plus 5%; for an oApp workload the payer is the app's own project
-  bucket. The same fail-closed bucket/cap rules as `ctx.ai` apply.
+  bills the app owner's credit pool at the underlying service call cost plus
+  5%; for an oApp workload the payer is the app's own project pool. The same
+  fail-closed pool/cap rules as `ctx.ai` apply.
 - **Refunds:** tool/auth/admission failures happen before charge. After charge,
   confirmed non-OK transport/provider failures refund through their own
   idempotent operation. A lost refund confirmation is queued for retry and the
@@ -191,7 +191,7 @@ const bal = await ctx.services.invoke("ALCHEMY_TOKEN_BALANCES", {
   transactions is a different plane (onchain collections), never this proxy.
 - **Metered like every managed service:** each tool has a published provider
   cost (Helius credits / Alchemy compute units) billed to the app owner's
-  AI/external-services bucket at cost + 5%, charged before the call and
+  credit pool at cost + 5%, charged before the call and
   refunded if the provider errors. Same fail-closed 402
   (`services_credit_exhausted`) as the rest of `ctx.services`.
 - **Rate-isolated per app:** bursty apps get a 429 `chain_data_rate_limited`

@@ -44,7 +44,7 @@ a sealed, metered, spend-capped `ctx`:
 - You want a **multi-step agentic loop** (LLM drives tool calls toward a goal) → the **Flue agent runtime** (`bounded-flue@2026.07`), [agents-flue.md](agents-flue.md).
 - You need **long-running / batch / background** work — use resumable scheduled steps instead of one long function call.
 
-You keep Bounded auth identity, the AI/external-services bucket, versioning, and billing
+You keep Bounded auth identity, the credit pool, versioning, and billing
 ([billing.md](../../bounded/docs/billing.md)). Deploy with `bounded runtime deploy`. This is the normal upgrade
 from a Bounded function.
 

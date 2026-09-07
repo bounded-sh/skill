@@ -84,11 +84,11 @@ reintroducing personal keys:
 - Bounded operates **one admin-funded relay wallet on Solana** (primary rail).
   When a third-party API supports x402, the steward pays it per-call from that
   wallet on the app's behalf. The app itself still holds nothing.
-- **Metering:** each relayed call debits the app's **service bucket** exactly
+- **Metering:** each relayed call debits the app's **credit pool** exactly
   like measured AI spend, **plus a small surcharge that covers the payment
   transaction fee** (the send-tx costs real lamports; the app's budget carries
   it, not the platform). Price relayed features accordingly.
-- **Fail-closed:** app bucket empty → that app's relay calls stop. Relay
+- **Fail-closed:** app pool empty → that app's relay calls stop. Relay
   wallet empty → all relay calls stop until admins top up (balance alerts +
   an admin-console panel watch it). Nothing overdrafts; apps freeze, they
   don't die.
