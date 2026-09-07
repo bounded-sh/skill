@@ -50,7 +50,7 @@ actor, declare `runAs` (session-wide) or `actAs` (per-function).
 
 Declare a service identity **once** on the session's `live` block and **every**
 live call from this game runs as it. This is the simple, mature way to fund AI
-NPCs: the owner funds that service account's AI/external-services credit, and `ctx.ai` Just Works
+NPCs: the owner funds that service account's credit pool, and `ctx.ai` Just Works
 (capped at the app account).
 
 ```json

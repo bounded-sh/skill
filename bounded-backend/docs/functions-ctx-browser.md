@@ -39,7 +39,7 @@ blocked. An app that declares no egress at all is unfenced, exactly like raw
 `fetch`.
 
 **Billing.** Browser time bills per SECOND of open session against the app
-owner's prepaid services credit, fail-closed, and settles to actual elapsed
+owner's prepaid credits (the payer pool), fail-closed, and settles to actual elapsed
 seconds (`result.billedSeconds`, `result.costMicroUsd`, plus the uniform
 `result.meter` capability-spend fact). `maxSeconds` (default 60, ceiling 300) is
 your own spend fence — the reservation is taken up front and released on settle.

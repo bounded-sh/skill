@@ -86,17 +86,17 @@ export default async function (args, ctx) {
 
 ### How your user pays for it — route through Bounded, don't hand-roll
 
-AI/external-services credit is **per-account** (the app owner). Two things to wire and to tell the user:
+Credits are **per-account** (the app owner's payer pool). Two things to wire and to tell the user:
 
 1. **Use the owner's Bounded account.** Wallet/keypair owners should run
    `bounded link` to attach the owner key to a web account (also the day-one
    key-safety step). Web-account owners should run `bounded account use --web`
-   and `bounded login --email ...`. Billing and buckets live on that account.
+   and `bounded login --email ...`. Billing and credits live on that account.
 2. **Top up through Bounded** — never a custom checkout:
    - Stripe: `POST /billing/checkout { kind: "credits_topup", amountUsdCents, idempotencyKey }` -> redirect the user to the returned `url`. Or `bounded billing topup --credits <n>`. The old per-bucket `services_topup` is retired and answers `410 bucket_topup_retired`.
    - Crypto (USDC on Solana): `POST /billing/x402/intent` -> pay -> `POST /billing/x402/settle`.
-   - Free includes up to $3 of metered AI/external-services usage per rolling 30 days, shared by Build, `ctx.ai`, and `ctx.services`; it allows one Build at a time and cannot top up.
-   - Pro ($25/mo) gifts $5/month of AI/external-services credit and $30/month of Bounded infra credit; Team ($99/mo) gifts $20/$100. AI Build consumes the same measured bucket. Top-ups require Pro-or-better.
+   - Free includes up to 5 courtesy credits per calendar month (infrastructure and managed services, not AI, subject to the shared promotional budget), allows one Build at a time, and can still purchase credits, which do fund AI.
+   - Pro ($25/mo) includes 500 credits per monthly billing period; Team ($99/mo) includes 1,980. AI Build, `ctx.ai`, `ctx.services`, and infra usage all draw from that one pool; purchased credits top it up on any plan.
 
    Full rails, amounts, and webhooks: [billing.md](../../bounded/docs/billing.md). **If your app
    charges *its own* users for anything, route that through Bounded billing too** —

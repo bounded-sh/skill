@@ -20,12 +20,12 @@ runs as and *where* the call came from (`@origin`).
 A live tick has **no human** behind it. By default a call runs as the anonymous
 **system principal** (`@user.*` all null) — which can't bill AI. To fund an NPC,
 declare **`session.live.runAs`** once on the room's `live` block, pointing at a
-**service wallet the owner funds with AI/external-services credit**. Every live call from that game
+**service wallet the owner funds with credits**. Every live call from that game
 then acts as that wallet, and `ctx.ai` **Just Works** (capped at the app
 account). That's the whole story:
 
 1. **Fund it:** set `session.live.runAs: "<serviceAddress>"`; fund that account
-   with AI/external-services credit.
+   with credits.
 2. **Gate it:** give the NPC function
    `auth: "@origin.kind == 'live' && @origin.module == '<yourGame>'"` so **only
    your game's tick** can reach it (`@origin` is platform-set and unforgeable).
@@ -209,7 +209,7 @@ defense-in-depth.
   prompt revision (as the example does); the same logical turn then replays one
   terminal AI result across runtime retries. Do **not** use an in-memory `Set` or
   assume exactly-once.
-- **Cap NPC spend / rate.** `ctx.ai` is capped per the app account's AI/external-services credit (a
+- **Cap NPC spend / rate.** `ctx.ai` is capped by the app account's credit pool (a
   depleted account fails closed — no runaway bill), but also bound the *rate*:
   gate `npcShouldSpeak` (e.g. once every N ticks, or only on a player action) and
   keep `pendingRef` so at most one call is in flight. For a hard ceiling, fund the
@@ -270,4 +270,4 @@ human's key (see [key-and-account-safety.md](../../bounded-deploy/docs/key-and-a
 - [backend-runtime.md](backend-runtime.md) — a long-running external agent through Bounded
 - [agents-flue.md](agents-flue.md) — the Flue agent framework: a multi-step tool-use loop (vs an in-game NPC tick)
 - [guides/building-for-agents.md](building-for-agents.md) — a `@bounded-sh/server` keypair agent, per-agent key isolation
-- [billing.md](../../bounded/docs/billing.md) — AI/external-services credit + per-account caps
+- [billing.md](../../bounded/docs/billing.md) — account credits + per-account caps

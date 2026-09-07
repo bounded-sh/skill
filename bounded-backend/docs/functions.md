@@ -576,7 +576,7 @@ generated obligations that reference the gate; that does not make every auth
 expression a blanket proof of product intent.
 
 To ship a **funded** AI NPC, set `session.live.runAs` to a service wallet the owner
-funds with AI/external-services credit — then `ctx.ai` in the called function Just Works (capped at
+funds with credits — then `ctx.ai` in the called function Just Works (capped at
 the app account). Per-function `actAs` is the per-call override and wins for that
 one function. The anonymous system principal still **cannot** bill AI (`ctx.ai.run`
 → `402`, no account). Precedence: function `actAs` > session `runAs` > anonymous

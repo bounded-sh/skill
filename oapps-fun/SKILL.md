@@ -30,7 +30,7 @@ So for oApps:
 
 - **Everything must be Bounded-owned.** Hosting, data, auth, payments,
   wallets, onchain access, AI: all provided by the runtime, billed to the
-  app's own buckets, governed by its proven policy.
+  app's own credit pool, governed by its proven policy.
 - **Zero secrets.** No API keys, no vendor accounts, no credentials in
   anyone's drawer. A key in the creator's name is exactly the lever the rule
   removes, so `secrets` is refused on an oApp function.
