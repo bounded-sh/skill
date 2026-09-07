@@ -1391,3 +1391,16 @@ read the invocation's error and console lines. Full guide:
 - [access-control.md](../../bounded-backend/docs/access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
 - [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md) — reading `verify` output
 - [policy-tests.md](../../bounded-backend/docs/policy-tests.md) — `bounded tests` file format and semantics
+
+### Interrupted site deployments
+
+`bounded site versions --app-id <id> --json` includes deployment `attempts` alongside publication `receipts`.
+Attempts are recorded before a canonical upload claims its publication reservation, with the authenticated account, client-reported source commit and agent label, phase observations, and a terminal result when observed.
+A worker interruption can leave the last observed phase unfinished; that does not prove a process is still running.
+Older deployments may have no attempt attribution.
+Use `--attempts-cursor <attemptsCursor>` to retrieve older attempts independently of publication receipt pagination.
+
+A `canonical_apply_pending` or `canonical_apply_in_progress` error identifies the blocking operation and its reservation expiry when available.
+The reservation can remain after the writer fails, so a failed attempt is not proof the reservation has already been released.
+Inspect the operation in deployment history, resume the exact original built artifact, or wait for the reservation to expire normally.
+Do not rebuild repeatedly or manually clear deployment authority to get around the conflict.
