@@ -548,7 +548,9 @@ before enabling it and supplying `walletLogin.confirmWalletAction` - see
 
 Options: `methods` (default `["email", "google"]`), `wallet` (enable the native
 Solana wallet lane - Wallet Standard enumeration: Phantom, Solflare, Backpack,
-etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,
+etc., detected at runtime, names not hardcoded; login requires the wallet's
+`solana:signIn` feature, and a wallet without it is refused with a clear
+message - see [auth.md](auth.md#solana-wallet-login-bring-your-own)), `redirectUri`, `title`,
 `subtitle`, and a per-call `authMode` override (falls back to the init config).
 `requireEmail: true` in the init config suppresses the wallet lane. For
 headless flows, `startTurnkeyEmailLogin(email)` returns

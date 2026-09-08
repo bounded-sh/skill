@@ -47,7 +47,10 @@ you should not have to enumerate every host to ship. For an oApp it is wrong,
 because the entire promise is that the app can only do what it publicly declared,
 and an undeclared egress surface is the one hole through which a governed build
 could later reach anywhere. An empty `allow` array is a real declaration and the
-honest one for an app that talks to nothing.
+honest one for an app that talks to nothing. So is an allow list that carries only
+the two capability grants, `service:cap` and `service:x402` (the starter shape):
+grants are not hosts, and on an oApp the runtime fences raw `fetch` and `ctx.browser`
+to no outside destination for that list, exactly what the constitution publishes.
 
 
 ## What shape the app can take, and what visitors get

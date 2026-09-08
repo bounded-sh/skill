@@ -400,6 +400,8 @@ External egress is fully closed when every declared entry has an empty `allow` a
 
 Each egress entry accepts `id`, optional `title` and `description`, an `allow` array, and literal `"mode": "locked"`.
 Nonempty `allow` values are exact hostnames, `*.suffix` wildcards, or `service:<name>` integration ids.
+A `service:<name>` id is a capability grant, not a host: it enables `ctx.services` and never widens raw `fetch` or `ctx.browser`.
+On an oApp, an allow list that carries only `service:` grants (the starter shape: `service:cap` and `service:x402`) is therefore closed for hosts exactly like an empty allow list, and the runtime refuses every outside destination; on a regular app a service-only list leaves raw `fetch` unrestricted, as before.
 
 #### Per-function egress
 

@@ -127,11 +127,21 @@ automatically — a local dev server's origin must be registered too, port-exact
 > overwrites it.
 
 When enabled, wallet login lets a user **connect their own Solana browser wallet**
-(Phantom, or any Wallet-Standard `window.solana`) and sign in with it. Their **real
-wallet address becomes `@user.address`** (and `@user.id`) everywhere — SIWS: the SDK
-fetches a nonce, the wallet signs the canonical challenge locally, and the session is
+and sign in with it. Their **real wallet address becomes `@user.address`** (and
+`@user.id`) everywhere — Sign In With Solana: the SDK fetches a nonce, the wallet
+renders the standard sign-in text for the page that asked (it fills the domain from
+the requesting origin and refuses a mismatch), signs it locally, and the session is
 minted by `wallet-auth.bounded.sh`. It rides the injected wallet provider — **no heavy
 wallet SDK, no React dependency, no popup**.
+
+**The wallet must implement the Wallet Standard `solana:signIn` feature.** That is
+what binds the signature to the page, so a phishing page cannot obtain a login
+signature for another site. Phantom, Solflare, Backpack, and the Solana Mobile
+wallet (Mobile Wallet Adapter 2.0 and later) do; a wallet that offers only plain
+message signing is refused with the message "This wallet cannot sign in to Bounded
+apps" instead of being downgraded. Browser guest accounts sign the same text with
+their device key; the CLI, the server SDK, and React Native keep the legacy challenge
+because they send no browser Origin.
 
 **Two knobs, not one.** `walletLogin` is the CLIENT opt-in; the issuer additionally refuses to mint an external-wallet session unless the app's policy allows it, so a deployed `"auth": { "wallets": true }` is a prerequisite (without it login fails with "wallet login is not enabled for this app").
 The browser origin matters too: SIWS binds to it, so a non-first-party host (a tunnel, a preview domain) must be registered with `bounded domains origins add https://<host> --app-id <id> --env <env>`.
