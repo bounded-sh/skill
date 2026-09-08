@@ -109,11 +109,33 @@ What the ritual still refuses:
 | every app-id literal names THIS app | yes (repeats of your own id are fine) | `app_id_literal_foreign` |
 | text-only tree (binaries cannot ride the source lane) | yes | `source_not_text` |
 | if the source `init()`s the Bounded client, the DEPLOYED site embeds that literal id | yes — rebuild + redeploy if stale | `clone_app_id_not_rewritten` |
+| every script the page runs ships inside the release: no `<script src="https://…">`, no `import("https://…")`, SRI or not | yes — install it as a dependency and let the build bundle it | `remote_script_forbidden` (preview) / `oapp_opening_remote_script_forbidden` (Open) |
+| every worker is a file in the release: no `?worker&inline`, no `new Worker(URL.createObjectURL(…))`, no `blob:`/`data:` worker | yes — `new Worker(new URL("./worker.ts", import.meta.url))`, Vite's default | `inline_worker_forbidden` (preview) / `oapp_opening_inline_worker_forbidden` (Open) |
 | a recorded site deployment must actually be found at Open | platform-checked | `clone_site_missing_expected` |
 | no `onchain: true` collection in the deployed policy | see "oApps are mainnet apps" in [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps) | `oapp_opening_onchain_policy_unsupported` |
 
 The refusal body carries the specific `rejections`, so read them rather than
 guessing.
+
+Two things hold after Commence whatever the source declared, because the
+frozen release is only as frozen as the bytes it contains:
+
+- **The launched host serves under a script floor.** Every launched page gets
+  `script-src 'self'`, `object-src 'none'`, `base-uri 'none'`, and
+  `worker-src 'self'` in its Content-Security-Policy, even if
+  `boundaries.browser.script` names a CDN. A script hosted outside the
+  release could be swapped after governance removed the creator, so the
+  browser refuses it on every load; a worker built from a Blob or a `data:`
+  URL would run bytes fetched at runtime, so workers must be files too. Bundle
+  scripts, and ship workers as files.
+- **The launched origin is pinned to its own backend.** A request from the
+  launched origin (`https://<slug>.openapps.xyz`, the workload's own
+  `https://<workloadAppId>.bounded.page` host, a venue apex host, or the local
+  `openapps.localhost` zone) may only name the app the router serves there.
+  Realtime, its WebSocket handshake, and function invokes answer `403` with
+  `origin_app_mismatch` when the page names any other app id, however that id
+  was produced. The creator's own hosts are not launched hosts and are not
+  pinned.
 
 ## The `gov-frozen` freeze covers `openApps` only - never `boundaries`
 

@@ -13,6 +13,9 @@ Declare it and the platform compiles a Content-Security-Policy header and serves
 
 A host your functions call server-side has no business in the browser list, and a CDN your page loads fonts from has no business in the egress list.
 
+One exception to "the header is compiled from the declaration": on a **launched oApp host** (after Commence) the `script` list is not honored.
+Every launched page serves under `script-src 'self'; object-src 'none'; base-uri 'none'; worker-src 'self'` whatever the app declared, so scripts and workers must ship as files inside the frozen release; the other lists (`connect`, `img`, `font`, `style`, `embeddedBy`) compile exactly as declared.
+
 ## Shape
 
 ```json
