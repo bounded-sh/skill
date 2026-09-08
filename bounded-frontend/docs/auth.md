@@ -129,8 +129,9 @@ automatically — a local dev server's origin must be registered too, port-exact
 When enabled, wallet login lets a user **connect their own Solana browser wallet**
 and sign in with it. Their **real wallet address becomes `@user.address`** (and
 `@user.id`) everywhere — Sign In With Solana: the SDK fetches a nonce, the wallet
-renders the standard sign-in text for the page that asked (it fills the domain from
-the requesting origin and refuses a mismatch), signs it locally, and the session is
+renders the standard sign-in text for the page that asked (the SDK leaves the domain
+unset, so the wallet stamps the requesting origin's host, and the issuer refuses any
+other domain for that origin), signs it locally, and the session is
 minted by `wallet-auth.bounded.sh`. It rides the injected wallet provider — **no heavy
 wallet SDK, no React dependency, no popup**.
 
