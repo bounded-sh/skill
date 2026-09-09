@@ -9,6 +9,13 @@ token**. This is the diagnostic playbook that runs the real checks instead of
 surrendering. For the roles/capabilities model behind it, see
 [access-control.md](../../bounded-backend/docs/access-control.md).
 
+Two refusals are **never** identity problems, so nothing below applies to them: a
+`boundary_violation` (an app boundary that refuses every author; see the
+boundary-lock section) and a **`402 deploy_credit_insufficient`** (billing: the
+deploying account has no spendable credit for the deploy; run
+`bounded billing status`, add credit with `bounded billing topup --credits <n>`,
+retry under the same identity).
+
 > **The incident this doc exists to prevent.** A user was an **admin**
 > (`ui:deploy` = ✓) on an app and could deploy the whole time. Their CLI was
 > signed in as a **web-login** account, so `bounded site deploy` errored
