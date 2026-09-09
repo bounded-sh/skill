@@ -311,6 +311,49 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `poolTokens` | u64 | yes | - | Pool tokens to burn. |
 | `minimumLamportsOut` | u64 | yes | - | Minimum lamports to accept; the transaction fails below this. |
 
+### `CPI.token2022HarvestFees`
+
+```
+@CPI.token2022HarvestFees(source, mint, accounts) - permissionlessly harvests withheld Token-2022 fees from pipe-separated token account addresses into the mint. Includes non-ATA pool vaults. Empty, closed, already harvested, or wrong-mint sources are skipped by SPL Token-2022. This does not pay anyone; compose with token2022WithdrawMintFees to collect directly into the authority's treasury. Transaction construction must fit all accounts, bytes and compute limits.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (local policy verified; live not run); markers: LIVE-PENDING, NEEDS-RUNTIME-V4.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Acting wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint carrying TransferFeeConfig. |
+| `accounts` | string | yes | - | Pipe-separated token account addresses, not wallet owners; empty string is a no-op harvest. |
+
+### `CPI.token2022RevokeFeeAuthority`
+
+```
+@CPI.token2022RevokeFeeAuthority(source, mint) - permanently revokes the Token-2022 transfer-fee configuration authority. The current and scheduled rates remain; this does not revoke minting or the separate fee-withdrawal authority. Source must be the current fee-config authority (wallet, @contract.address, or named account). Irreversible; repeating it fails.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (local policy verified; live not run); markers: LIVE-PENDING.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Current transfer-fee configuration authority: wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint carrying TransferFeeConfig. |
+
+### `CPI.token2022WithdrawMintFees`
+
+```
+@CPI.token2022WithdrawMintFees(source, mint) - withdraws all fees already harvested into the Token-2022 mint to the source authority's ATA, creating it if needed. Source must be the mint's withdraw-withheld authority (wallet, @contract.address, or named account). Does not collect fees still held on individual token accounts; consumers can permissionlessly harvest those with the SPL SDK. A zero balance succeeds without a payout. Returns Bool; read actual balance deltas for accounting.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (local policy verified; live not run); markers: LIVE-PENDING.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Withdraw-withheld authority and fee recipient: wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint with harvested withheld fees. |
+
 ### `CPI.transferLamports`
 
 ```

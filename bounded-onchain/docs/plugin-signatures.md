@@ -54,6 +54,9 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@CPI.raydiumWithdraw` | `raydiumWithdraw(source, poolState, token0Vault, token1Vault, vault0Mint, vault1Mint, lpMint, lpTokenAmount, minimumToken0Amount, minimumToken1Amount)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.stakePoolDepositSol` | `stakePoolDepositSol(source, stakePool, reserveStake, poolMint, managerFeeAccount, referralFeeAccount, lamports, minimumPoolTokensOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.stakePoolWithdrawSol` | `stakePoolWithdrawSol(source, stakePool, reserveStake, poolMint, managerFeeAccount, poolTokens, minimumLamportsOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022HarvestFees` | `token2022HarvestFees(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022RevokeFeeAuthority` | `token2022RevokeFeeAuthority(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022WithdrawMintFees` | `token2022WithdrawMintFees(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.transferLamports` | `transferLamports(string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@DeFiPlugin.addCpAmmLiquidity` | `addCpAmmLiquidity(string, string, string, string, string, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.claimDammV2PoolFees` | `claimDammV2PoolFees(string, string, string?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
@@ -122,6 +125,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@PredictionMarketPlugin.getYesTokensOutLsmr` | `getYesTokensOutLsmr(amountIn, yesSupply, noSupply, b)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PredictionMarketPlugin.md) |
 | `@PriceFeedPlugin.getPriceFeed` | `getPriceFeed(string, string?)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PriceFeedPlugin.md) |
 | `@PumpFunPlugin.buyExactSolIn` | `buyExactSolIn(source, mint, solAmount, slippageBps)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
+| `@PumpFunPlugin.buyExactSolInWithMinimumOutput` | `buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.collectCreatorFee` | `collectCreatorFee(creator)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.createFeeSharingConfig` | `createFeeSharingConfig(source, mint)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.createToken` | `createToken(tokenId, name, symbol, uri, creator, config?)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
@@ -133,6 +137,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@PumpFunPlugin.updateShareholders` | `updateShareholders(source, mint, shareholders)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.getBondingCurveProgress` | `getBondingCurveProgress(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.getCreatorFee` | `getCreatorFee(mint)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PumpFunPlugin.md) |
+| `@PumpFunPlugin.getPumpBuyQuote` | `getPumpBuyQuote(string, number)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PumpFunPlugin.md) |
 | `@Solana.createAccount` | `createAccount(string, number, string)` | `hooks.onchain` | [reference](plugins/Solana.md) |
 | `@Solana.invoke` | `invoke(string, array, bytes)` | `hooks.onchain` | [reference](plugins/Solana.md) |
 | `@Solana.account` | `account(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |
@@ -143,6 +148,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@Solana.pdaBump` | `pdaBump(array, string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |
 | `@Solana.rentExemption` | `rentExemption(number)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |
 | `@Solana.signerAccount` | `signerAccount(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Solana.md) |
+| `@StringUtils.concat` | `concat(string, string?, ...)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries, `hooks.offchain` | [reference](plugins/StringUtils.md) |
 | `@StringUtils.length` | `length(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries, `hooks.offchain` | [reference](plugins/StringUtils.md) |
 | `@TensorPlugin.buyNft` | `buyNft(string, number)` | `hooks.onchain` | [reference](plugins/TensorPlugin.md) |
 | `@TensorPlugin.listNft` | `listNft(string, number?, number?, string?, string?, string?)` | `hooks.onchain` | [reference](plugins/TensorPlugin.md) |

@@ -155,7 +155,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `tokenMintAAddress` | string | yes | - | The mint address of the token A |
 | `tokenMintBAddress` | string | yes | - | The mint address of the token B |
 | `tokenAAmount` | string | yes | - | The amount of token A to deposit |
@@ -235,7 +235,7 @@ Fields of `config`:
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `tokenMintAAddress` | string | yes | - | The mint address of the token A |
 | `tokenMintBAddress` | string | yes | - | The mint address of the token B |
 | `tokenAAmount` | string | yes | - | The amount of token A to swap |
@@ -244,7 +244,7 @@ Fields of `config`:
 ### `DeFiPlugin.swapInMeteoraVirtualPool`
 
 ```
-@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form
+@DeFiPlugin.swapInMeteoraVirtualPool(source, poolTokenMint, tokenMint, amount, minimumAmountOut?, slippageBps?) - Meteora pool mints use the LEGACY token seed, so derive poolTokenMint/tokenMint with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form. Pass an absolute minimumAmountOut when available. If omitted, the builder derives and binds a floor from a fresh quote using slippageBps, which defaults to 500 (5%).
 ```
 
 - Callable from: `hooks.onchain`
@@ -256,8 +256,8 @@ Fields of `config`:
 | `poolTokenMint` | string | yes | - | The mint address of the pool's base token (used to find the pool). For a pool created by createMeteoraVirtualPool this is the LEGACY-seed mint: derive it with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg form |
 | `tokenMint` | string | yes | - | The mint address of the token to swap in (use @TokenPlugin.SOL for native SOL) |
 | `amount` | string | yes | - | The amount of token to swap in (in smallest units) |
-| `minimumAmountOut` | string | no | - | Optional explicit minimum output amount in smallest units. When omitted, the builder derives the floor from a fresh on-chain quote using slippageBps, which defaults to 500 (5%). |
-| `slippageBps` | number | no | - | Optional slippage tolerance in basis points (1 bps = 0.01%). Used when minimumAmountOut is omitted: the builder pulls a fresh on-chain quote and derives the protected minimum-output floor. Defaults to 500 (5%). |
+| `minimumAmountOut` | string | no | - | Optional absolute minimum output in smallest units. When omitted, the builder binds a floor derived from a fresh quote and slippageBps. |
+| `slippageBps` | number | no | - | Optional slippage tolerance used only when minimumAmountOut is omitted. Defaults to 500 (5%). |
 
 ### `DeFiPlugin.withdrawLeftover`
 

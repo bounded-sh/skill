@@ -32,7 +32,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `mintAddress` | string | yes | - | The mint address of the NFT to burn |
 | `collectionAddress` | string | no | - | Optional: The address of the collection to burn the NFT from. It is required if the NFT belongs to a collection. |
 
@@ -65,7 +65,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `nftId` | string | yes | - | Unique identifier for the NFT within the app |
 | `name` | string | yes | - | The name of the NFT |
 | `metadataUri` | string | yes | - | The URI of the NFT metadata |
-| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `collectionAddress` | string | no | - | Optional: The address of the collection to create the NFT in. It is required if the NFT belongs to a collection. |
 
 ### `NFTPlugin.transfer`
@@ -79,8 +79,8 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
-| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
 | `mintAddress` | string | yes | - | The mint address of the NFT to transfer |
 | `collectionAddress` | string | no | - | Optional: The address of the collection to transfer the NFT to. It is required if the NFT belongs to a collection. |
 
@@ -103,7 +103,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `NFTPlugin.updateRoyalties`
 
 ```
-@NFTPlugin.updateRoyalties(nftAddress, collectionAddress, updateAuthority, basisPoints, creators?) - Update the royalties plugin on an NFT. If creators is omitted or null, existing on-chain creators are preserved and only basisPoints changes. SECURITY: When updateAuthority is a Bounded-signed PDA (@contract.address, an @AccountPlugin account, or the collection's Bounded PDA), Bounded signs via invoke_signed - you MUST gate the policy path with `rules` (e.g. rules.create: '@user.address == <admin>') to prevent unauthorized callers. Wallet authorities are natively enforced by Metaplex Core.
+@NFTPlugin.updateRoyalties(nftAddress, collectionAddress, updateAuthority, basisPoints, creators?) - Update the royalties plugin on an NFT. If creators is omitted or null, existing on-chain creators are preserved and only basisPoints changes. SECURITY: For a Bounded-managed NFT, the app-scoped collection or standalone-NFT authority PDA signs via invoke_signed, so you MUST gate the policy path with `rules` (e.g. rules.create: '@user.address == <admin>') to prevent unauthorized callers. For an externally managed NFT, pass the real wallet/account authority; Metaplex Core enforces its signature.
 ```
 
 - Callable from: `hooks.onchain`
@@ -166,7 +166,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `NFTPlugin.getUpdateAuthority`
 
 ```
-@NFTPlugin.getUpdateAuthority(nftOrCollectionAddress) - Returns the actual on-chain update authority of an NFT or collection. For NFTs that inherit from their collection (UpdateAuthority::Collection), recursively resolves to the collection's on-chain authority. For Bounded-managed assets, returns the Bounded collection-authority PDA. For externally-managed assets, returns the wallet or account that owns the authority.
+@NFTPlugin.getUpdateAuthority(nftOrCollectionAddress) - Returns the actual on-chain update authority of an NFT or collection. For NFTs that inherit from their collection (UpdateAuthority::Collection), recursively resolves to the collection's app-scoped authority PDA. For standalone Bounded-managed NFTs, returns the app-scoped per-NFT authority PDA. For externally managed assets, returns the wallet or account that owns the authority.
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
