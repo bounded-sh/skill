@@ -144,6 +144,13 @@ switching identities can never help. Do **not** cycle credentials against it - s
 and follow the boundary-lock playbook
 ([access-playbook.md §5](access-playbook.md)) to inspect and amend the boundary.
 
+A **402 `deploy_credit_insufficient`** is neither. It is a billing verdict on an
+identity the platform has *already accepted*: the deploying account's payer ledger
+could not cover the deploy's infra cost. The CLI prints the credits the deploy
+needs against what the account holds. Run `bounded billing status`, add credit with
+`bounded billing topup --credits <n>`, and retry under the **same** identity.
+Cycling accounts cannot mint credit, so never read a 402 as an identity signal.
+
 This is the trap: you can be logged in to two accounts at once — a wallet key at
 `~/.bounded/credentials` **and** a web login at `~/.bounded/web-session.json` — and
 still get a hard 403, because the deploy only tried the one the config selected.
@@ -181,7 +188,8 @@ session is expired, `bounded login --email you@example.com` first.
 machine.** Wallet-owns-it and web-owns-it are both common; the CLI picks one, so the
 fix is usually just switching sources. (This does **not** apply to a
 `boundary_violation`: a boundary lock refuses every identity, so cycling accounts is
-pointless - amend the boundary via the access playbook instead.)
+pointless - amend the boundary via the access playbook instead. Nor to a
+`402 deploy_credit_insufficient`, which is billing: add credit, then retry.)
 
 ## 4. Public project markers — `bounded.json` and `.bounded/app.json`
 
