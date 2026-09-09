@@ -81,6 +81,22 @@ Mechanics (policy, functions, wallets, payments) live in **bounded-backend**,
 (`oapp_opening_onchain_policy_unsupported`); embedded wallets, payments, and
 plugin calls are fine. Say so plainly and stop rather than work around it.
 
+## Launch economics
+
+Openings whose sealed head selects `transfer-fee-v1` use a CCA with 65% Treasury / 30% initial liquidity / 2.5% creator / 2.5% OpenApps allocations in USDC.
+The minimum is $5,000 plus the requirement to retain six months of baseline operating costs after setup costs, assuming no future trading revenue.
+The app token's fixed 1% transfer fee belongs entirely to Treasury in app tokens.
+The canonical DAMM v2 pool has a separate fixed 0.5% USDC fee with OnlyB and dynamic fees disabled.
+After Meteora's 20% protocol share, actual net receipts of the designated launch position split 50% creator / 50% OpenApps.
+Additional app positions earn for the app, and product revenue belongs entirely to the app.
+Existing launches retain their sealed model.
+Accrued transfer fees appear as pending token claims; they are not spendable USDC or prepaid Bounded credits.
+The managed brain can request fee collection with a credit ceiling without a holder proposal.
+The treasury policy fixes the withdrawal authority and destination; Bounded supplies collection infrastructure, transaction signing and credit billing.
+Holder-governed reserve conversions target six months of baseline USDC expenses and start below three months by default.
+
+See [token transfer fees](../bounded-onchain/docs/token-transfer-fees.md) for collection and pending balances.
+
 ## The capability ladder
 
 For EVERY capability the user asks for, resolve in this order and never skip to

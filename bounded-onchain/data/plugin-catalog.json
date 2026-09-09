@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "621db2de936e21f15eebdb240db8c8b0ce5c672d",
+  "monorepoCommit": "71dcfd36c4f65c0cb5c58849a08db465d1bef84d",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -2723,6 +2723,135 @@
       "support": "unverified",
       "verification": "not run",
       "markers": "LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4"
+     }
+    },
+    {
+     "name": "token2022HarvestFees",
+     "callName": "@CPI.token2022HarvestFees",
+     "category": "transactional",
+     "signature": "token2022HarvestFees(string, string, string)",
+     "usage": "@CPI.token2022HarvestFees(source, mint, accounts) - permissionlessly harvests withheld Token-2022 fees from pipe-separated token account addresses into the mint. Includes non-ATA pool vaults. Empty, closed, already harvested, or wrong-mint sources are skipped by SPL Token-2022. This does not pay anyone; compose with token2022WithdrawMintFees to collect directly into the authority's treasury. Transaction construction must fit all accounts, bytes and compute limits.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Acting wallet, app escrow, or named account.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "Token-2022 mint carrying TransferFeeConfig.",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "accounts",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "Pipe-separated token account addresses, not wallet owners; empty string is a no-op harvest.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ],
+     "status": {
+      "lane": "descriptor CPI",
+      "support": "unverified",
+      "verification": "local policy verified; live not run",
+      "markers": "LIVE-PENDING, NEEDS-RUNTIME-V4"
+     }
+    },
+    {
+     "name": "token2022RevokeFeeAuthority",
+     "callName": "@CPI.token2022RevokeFeeAuthority",
+     "category": "transactional",
+     "signature": "token2022RevokeFeeAuthority(string, string)",
+     "usage": "@CPI.token2022RevokeFeeAuthority(source, mint) - permanently revokes the Token-2022 transfer-fee configuration authority. The current and scheduled rates remain; this does not revoke minting or the separate fee-withdrawal authority. Source must be the current fee-config authority (wallet, @contract.address, or named account). Irreversible; repeating it fails.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Current transfer-fee configuration authority: wallet, app escrow, or named account.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "Token-2022 mint carrying TransferFeeConfig.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ],
+     "status": {
+      "lane": "descriptor CPI",
+      "support": "unverified",
+      "verification": "local policy verified; live not run",
+      "markers": "LIVE-PENDING"
+     }
+    },
+    {
+     "name": "token2022WithdrawMintFees",
+     "callName": "@CPI.token2022WithdrawMintFees",
+     "category": "transactional",
+     "signature": "token2022WithdrawMintFees(string, string)",
+     "usage": "@CPI.token2022WithdrawMintFees(source, mint) - withdraws all fees already harvested into the Token-2022 mint to the source authority's ATA, creating it if needed. Source must be the mint's withdraw-withheld authority (wallet, @contract.address, or named account). Does not collect fees still held on individual token accounts; consumers can permissionlessly harvest those with the SPL SDK. A zero balance succeeds without a payout. Returns Bool; read actual balance deltas for accounting.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Withdraw-withheld authority and fee recipient: wallet, app escrow, or named account.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "Token-2022 mint with harvested withheld fees.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ],
+     "status": {
+      "lane": "descriptor CPI",
+      "support": "unverified",
+      "verification": "local policy verified; live not run",
+      "markers": "LIVE-PENDING"
      }
     },
     {

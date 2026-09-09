@@ -3,8 +3,8 @@
 **What's in here / when to read this:** you want an app to *launch a token* on
 Meteora - stand up a Dynamic Bonding Curve (DBC) that trades on a bonding curve,
 then **graduates** (migrates) to a DAMM v2 pool once it hits a market cap - and
-collect the trading fees on both sides. This is the launchpad primitive behind
-oApps / pump-style launches. For plain spot swaps against an existing pool, and the
+collect the trading fees on both sides. This is a DBC launch pattern.
+Current OpenApps CCA launches create DAMM v2 liquidity directly after auction settlement. For plain spot swaps against an existing pool, and the
 `source`/custody model, read [onchain-trading.md](onchain-trading.md) first - this
 builds on the same server-signed `hooks.onchain` mechanism.
 
@@ -14,6 +14,17 @@ builds on the same server-signed `hooks.onchain` mechanism.
 > Registered proof contracts and matching manifests establish source shape only, and neither they nor a local shard run is live devnet evidence.
 > If a live write fails today it typically fails on PLATFORM configuration - the environment's devnet signing/RPC secrets (errors naming `ATTESTATION_KEYPAIR` / `SOLANA_DEVNET_RPC_URL`) - not on anything Meteora-specific; that failure class is a platform provisioning gap, and `bounded plugins describe` remains the compile-time source of truth.
 > See [solana-capability-status.md](solana-capability-status.md).
+
+## Direct DAMM v2 and transfer-fee tokens
+
+For an existing Token-2022 mint, `createPool` can create DAMM v2 liquidity directly.
+This is a separate path from the DBC lifecycle below.
+Token-2022 transfer fees are additional to pool swap fees, and the deposited gross amount may differ from the spendable vault amount.
+The current direct pool path moves tokens from source to a configuration PDA and then into the pool vault, so both transfer-fee legs must be included in funding and pricing calculations.
+`claimDammV2PoolFees(source, pool, positionMint?)` and `getClaimableCpAmmPositionFee(owner, pool, token, positionMint?)` accept an optional position mint.
+Pin that mint when one LP position has special fee rights; omitting it aggregates the owner's positions and can accidentally include later liquidity purchases.
+Keep the proceeds split in policy and verify actual net token receipts before transferring the recipients' shares.
+See [Token-2022 fee collection](token-transfer-fees.md) for the separate mint-wide transfer-tax inventory and collection flow.
 
 ## The two phases
 

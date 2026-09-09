@@ -1,32 +1,23 @@
 # HISTORICAL worked example: the oApps 55/25/20 fee split
 
-> **CURRENT MODEL - OpenApps fee model v2 (2026-08-17).** The OpenApps venue
-> (openapps.xyz) launches each token through a 24h continuous clearing auction
-> (CCA) of 65% of supply. Every bid pays 3% admission plus a 0.9% gauntlet fee,
-> win or lose; the other 99.1% is escrowed and unspent escrow refunds at
-> settlement. A launch MAY instead run operator-funded: the venue steward can
-> waive the gauntlet fee once, only before any demand lands (the head's
-> `gauntletFeeBps` goes from absent to `0`), after which bids escrow 100%, a
-> failed sale refunds 100%, and the graduation gauntlet draw is zero - the
-> gauntlet then runs on fuel top-ups only. The raise R is then paid out of escrow by a fixed waterfall at
-> activation: 2% creator, 1% OpenApps, a tiered gauntlet draw (1% of R capped at
-> the Mega tier cap, $30k at launch pinning), a fuel tank (10% of R capped at
-> $30k), locked liquidity (30% of R with a $10k floor, LP locked), and the app
-> reserve takes the remainder. Pool fees are 1% flat on volume, claimed split
-> **50% app reserve / 20% creator / 20% app fuel / 10% OpenApps** - reserve and
-> fuel stay in the app root escrow, and only the 10% OpenApps leg is paid out
-> (to `FEE_WALLET`). The fuel leg was previously labeled "steward" and paid to
-> the venue wallet; the intermediate shipped model (10% platform / 20% creator /
-> 20% steward / 50% app reserve, reserve-first 50/20/20/10) is superseded by
-> this same change.
+> **New openings: transfer-fee model v1.**
+> The CCA allocates net USDC proceeds 65% to Treasury, 30% to initial liquidity, 2.5% to creator proceeds and 2.5% to OpenApps.
+> A launch needs at least $5,000 and six months of its baseline operating costs after setup costs, without relying on future trading income.
+> The app token has a fixed 1% transfer fee, entirely for Treasury in app tokens.
+> The canonical Meteora DAMM v2 pool uses a separate fixed 0.5% fee in USDC with OnlyB and dynamic fees disabled.
+> Meteora's protocol share is 20%; the designated launch position's actual net LP receipts split equally between creator and OpenApps.
+> Additional app-owned LP positions earn entirely for the app; principal remains subject to treasury policy.
+> Product revenue belongs entirely to the app.
+> Treasury shows accrued token fees separately as pending to claim, with an estimated USD value when priced.
+> Tokens become spendable only after collection and require conversion before they can fund USDC expenses.
+> Reserve conversions follow holder-governed limits, with a six-month target and three-month trigger by default.
+> Existing launches keep their sealed economics.
 >
-> **HISTORICAL WORKED EXAMPLE below.** The rest of this document preserves the
-> retired Meteora DBC reference policy (55% treasury / 25% creator / 20% Poof).
-> Port the mechanics below, not its recipients or percentages.
->
-> **Current devnet status: unverified, not blocked.**
-> The earlier retired-authority blocker was cleared on 2026-07-29: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` is deployed on devnet and the deployed runtime targets it.
-> This document and its example remain verify-only source references until live acceptance evidence exists, but nothing external blocks producing that evidence.
+> **Historical example below.**
+> The DBC policy below retains its retired 55% Treasury / 25% creator / 20% platform split.
+> Reuse its composition patterns only; its rates and DBC lifecycle are not the new CCA model.
+> See [Token-2022 fee collection](token-transfer-fees.md) for collection authority and accounting.
+> Source registration and local verification do not establish availability on a deployed network; check the target environment's plugin capabilities before submitting a policy.
 
 **What's in here / when to read this:** you launched a token on Meteora (see
 [meteora-token-launch.md](meteora-token-launch.md)) and now you need to *route the

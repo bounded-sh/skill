@@ -29,6 +29,7 @@ Read only the row matching the current task or term.
 | Find a plugin namespace or function quickly | [plugin catalog](docs/plugins.md) - compact namespace/function router |
 | Scan every bare signature and callable context | [complete signatures index](docs/plugin-signatures.md) |
 | One plugin function's exact signature, manifest argument descriptions and signer markers, return type, and callable context | [plugin catalog](docs/plugins.md), then its per-namespace page under `docs/plugins/` |
+| Token-2022 transfer tax, withheld wallet/vault fees, mint harvesting, treasury withdrawal authority, pending claims | [transfer-fee collection](docs/token-transfer-fees.md) |
 | Who holds funds, who signs, escrow vs named PDA vs user wallet, `@AccountPlugin.createAccount`, account-id hygiene, create-fund-use idiom | [custody and PDAs](docs/custody-and-pdas.md) |
 | A complete policy for an escrow, vault, treasury, staking, market, launch, NFT, Token-2022, randomness, or liquidity app | [examples index](docs/examples.md) |
 | A failing onchain write: error lookup, rent, ATA payer, transaction limits, confirmation, environment differences | [onchain troubleshooting](docs/onchain-troubleshooting.md) |

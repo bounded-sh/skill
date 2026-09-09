@@ -95,6 +95,9 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@CPI.kaminoRefreshReserve` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
 | `@CPI.kaminoRepay` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
 | `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
+| `@CPI.token2022RevokeFeeAuthority` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
+| `@CPI.token2022HarvestFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING, NEEDS-RUNTIME-V4 |
+| `@CPI.token2022WithdrawMintFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
 | `@CPI.memoNote` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.transferLamports` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.stakePoolDepositSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
@@ -173,8 +176,9 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@PredictionMarketPlugin.getYesTokenOutAmm` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@PredictionMarketPlugin.getYesTokensOutLsmr` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@PriceFeedPlugin.getPriceFeed` | legacy runtime | unverified | source parity only | LIVE-PYTH-PROOF |
-| `@PumpFunPlugin.buyExactSolIn` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.buyExactSolInWithMinimumOutput` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
+| `@PumpFunPlugin.getPumpBuyQuote` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
+| `@PumpFunPlugin.buyExactSolIn` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.collectCreatorFee` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.createFeeSharingConfig` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
@@ -182,7 +186,6 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@PumpFunPlugin.distributeCreatorFees` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.getBondingCurveProgress` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.getCreatorFee` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
-| `@PumpFunPlugin.getPumpBuyQuote` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.pumpswapDeposit` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.pumpswapWithdraw` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.transferCreatorFeesToPump` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |

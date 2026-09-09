@@ -54,6 +54,9 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@CPI.raydiumWithdraw` | `raydiumWithdraw(source, poolState, token0Vault, token1Vault, vault0Mint, vault1Mint, lpMint, lpTokenAmount, minimumToken0Amount, minimumToken1Amount)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.stakePoolDepositSol` | `stakePoolDepositSol(source, stakePool, reserveStake, poolMint, managerFeeAccount, referralFeeAccount, lamports, minimumPoolTokensOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.stakePoolWithdrawSol` | `stakePoolWithdrawSol(source, stakePool, reserveStake, poolMint, managerFeeAccount, poolTokens, minimumLamportsOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022HarvestFees` | `token2022HarvestFees(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022RevokeFeeAuthority` | `token2022RevokeFeeAuthority(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022WithdrawMintFees` | `token2022WithdrawMintFees(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.transferLamports` | `transferLamports(string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@DeFiPlugin.addCpAmmLiquidity` | `addCpAmmLiquidity(string, string, string, string, string, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.claimDammV2PoolFees` | `claimDammV2PoolFees(string, string, string?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
