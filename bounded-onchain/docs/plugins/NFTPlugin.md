@@ -14,7 +14,8 @@ Argument descriptions and signer markers below are copied from the existing mono
 ## Conventions for every call
 
 - **Custody:** `sourceAddress`/`destinationAddress` follow the uniform rule - wallet, `@contract.address` escrow, or account id (named app PDA). An escrowed NFT sale holds the asset in a named PDA exactly like an escrowed token balance. See [custody and PDAs](../custody-and-pdas.md).
-- Bounded-managed assets (created through `createCollection`/`mintNFT`) are update-authority-signed by the program; for those, royalty updates ignore the passed authority argument. Externally created assets need the real authority wallet to sign.
+- **Update authority governs transfer/burn/royalty** for a Bounded-managed asset - the program grants the Transfer and Burn delegates to whoever holds it at mint. A **collection** asset inherits its collection's program-derived authority PDA; a **standalone** `mintNFT` (null `collectionAddress`) gets its own per-NFT program authority PDA, so your policy - not whoever paid for the mint - governs it. Royalty updates ignore the passed authority argument for these; externally created assets need the real authority wallet to sign.
+- **Standalone update authority is not retroactive.** Standalone NFTs minted before the per-NFT-authority fix carry the *payer* as update authority (mpl-core's default when none is set), which let the payer transfer or burn an asset another wallet owns. A policy that assumes the program holds the authority is true only for newly minted standalone assets - do not mint a standalone NFT for a third-party owner on a runtime older than that fix.
 - `assetId`/`collectionId` are app-scoped id strings (mint derivation inputs), not addresses; read the derived addresses with `getTokenMintAddress`/`getCollectionMintAddress`.
 
 ## Transactional
@@ -32,7 +33,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
 | `mintAddress` | string | yes | - | The mint address of the NFT to burn |
 | `collectionAddress` | string | no | - | Optional: The address of the collection to burn the NFT from. It is required if the NFT belongs to a collection. |
 
@@ -65,7 +66,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `nftId` | string | yes | - | Unique identifier for the NFT within the app |
 | `name` | string | yes | - | The name of the NFT |
 | `metadataUri` | string | yes | - | The URI of the NFT metadata |
-| `destinationAddress` | string | yes | - | The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
 | `collectionAddress` | string | no | - | Optional: The address of the collection to create the NFT in. It is required if the NFT belongs to a collection. |
 
 ### `NFTPlugin.transfer`
@@ -79,8 +80,8 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
-| `destinationAddress` | string | yes | - | The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
+| `destinationAddress` | string | yes | - | The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
 | `mintAddress` | string | yes | - | The mint address of the NFT to transfer |
 | `collectionAddress` | string | no | - | Optional: The address of the collection to transfer the NFT to. It is required if the NFT belongs to a collection. |
 

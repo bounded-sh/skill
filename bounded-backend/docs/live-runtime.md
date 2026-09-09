@@ -422,7 +422,7 @@ client cannot inject a fake result or impersonate the effect channel.
   per-function `actAs`) to give the call a funded identity. See
   [principals-and-origins.md](principals-and-origins.md).
 - **To fund an AI NPC, declare `session.live.runAs`.** Point it at a service wallet the
-  owner funds with AI/external-services credit, then `ctx.ai` in any whitelisted live-call function Just
+  owner funds with credits, then `ctx.ai` in any whitelisted live-call function Just
   Works (capped at the app account). Gate that function with
   `auth: "@origin.kind == 'live' && @origin.module == '<yourGame>'"` so only your game's
   tick can call it. (A per-function `actAs` still works for a one-off and wins over

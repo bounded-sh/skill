@@ -70,18 +70,42 @@ One file per logical concern, `policy-tests/*.json`:
 
 - **`actors`** — string sets both `@user.id` and `@user.address` to that value
   (matches wallet login). Object form `{id?, address?, email?}` splits
-  identity for email/onchain scenarios. Steps before any `as` run
+  identity for email/onchain scenarios; an object giving only `address` gets
+  the same value as its `id`. Steps before any `as` run
   **unauthenticated** (`@user.id == null`) — use that to assert anonymous
   denial.
 - **`constants`** — merged over the policy's own `constants` block before
   compile. Shrink a cap here to make a limit testable without 21 real writes.
 - **`$Actor` substitution** is recursive over string values of the parsed JSON and is applied before execution.
+  **`$Name` always interpolates that actor's `id`**, never its `address`.
+  For a string actor the two are the same value, so the choice is invisible; for an object actor whose `id` and `address` differ, `$Name` yields the `id` while the caller `as` switched to still reports the other value as `@user.address` - so an onchain-style expectation such as `$author == @user.address` fails on a mismatch you did not write.
   A write-step `path` is a JSON string, but a `get(/...)` or `getAfter(/...)` path inside `expr` is parsed as an unquoted expression path.
   Literal segments in those expression paths accept only ASCII letters, digits, and `_`.
   A hyphen is not a path-segment character, so an expression such as `get(/runs/run-001)` is invalid even though `"path": "runs/run-001"` is a valid write path.
   If one fixture ID must appear in both a write path and an expectation path, use a grammar-safe value such as `run_001`, not a UUID or run ID containing `-`.
   There is no documented quoted-segment escape for a `get()` expression path.
   When substitution is used as a scalar value in an expression, quote it as a string literal: `"get(/x).owner == '$Alice'"`.
+
+**Testing an onchain collection.** Onchain rules key on `@user.address`, so declare those actors
+as plain strings (or as an object with only `address`, which copies it into `id`). Then `$Name`
+and `@user.address` are the same value and the rule under test sees what you wrote:
+
+```json
+{
+  "version": "1",
+  "name": "an author can only post as themselves",
+  "actors": { "Ana": "4k5g..." },
+  "steps": [
+    { "op": "as", "who": "Ana" },
+    { "op": "set", "path": "posts/p_001", "data": { "author": "$Ana" } },
+    { "op": "expect", "expr": "get(/posts/p_001).author == '$Ana'" }
+  ]
+}
+```
+
+With an onchain `create` rule of `@newData.author == @user.address`, that write is admitted. Give
+`Ana` an object form with a distinct `id` and the same write is denied, because `$Ana` carried the
+`id` into `author` while the rule compared it against the address.
 
 ### Ops
 

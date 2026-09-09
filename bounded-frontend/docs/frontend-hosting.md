@@ -7,8 +7,12 @@ subdomains on the same SSL:
 - **`<slug>.bounded.page`** — your static site (SPA fallback;
   content-hashed assets cached immutably, HTML + un-fingerprinted assets always
   revalidated so a redeploy goes live instantly without a hard-refresh).
-- **`<slug>-api.bounded.page`** — your backend runtime (see [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)),
-  so the frontend can call its own agent/backend at a sibling URL with no CORS dance.
+- **`<slug>-api.bounded.page`** - your app's API host: public functions at
+  `/<functionName>/...` (see [public-functions.md](../../bounded-backend/docs/public-functions.md))
+  and the backend runtime at `/agents/<name>/<session>` (see
+  [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)), so the
+  frontend calls its own backend at a sibling URL; a public function declared with
+  `cors: "app"` accepts the slug origin with no CORS setup.
 
 ## What it CAN and CANNOT host
 
@@ -54,8 +58,10 @@ bounded site deploy ./dist --app-id <id>
   gate is deliberately simple and **web-login only**: a public app is reachable
   by anyone; a private app is reachable only after signing in with a Bounded
   web account that is the owner, a collaborator, or invited (identities linked
-  to that account — e.g. a linked CLI key's apps — resolve server-side). There
-  is no local-key/daemon auto-pass through the gate. Use `--public` during app
+  to that account — e.g. a linked CLI key's apps — resolve server-side), plus
+  Bounded platform staff, who can open any private site read-only for support
+  and never gain owner or collaborator powers on it. There is no
+  local-key/daemon auto-pass through the gate. Use `--public` during app
   creation when the site should be public from the start. Existing apps stay as
   they were. After creation, flip or inspect the gate with
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it
@@ -71,10 +77,10 @@ bounded site deploy ./dist --app-id <id>
   one-click link — `https://<host>/__bounded/gate/land?token=…` — that sets the
   gate cookie and lands on the REAL site, then expires (default 60 min, `--ttl
   <minutes>`, max 1440) back to the normal sign-in page. Host auto-resolves from
-  the app's mapped slug/custom domain, or pass `--host <host>`. This needs the
-  **owning wallet** identity (the app-scoped SIWS token); a plain web-login
-  session is platform-scoped and can't preview, and the command says so. Treat
-  the link as a bearer secret until it expires — anyone who opens it gets in.
+  the app's mapped slug/custom domain, or pass `--host <host>`.
+  Authorized web accounts and wallet accounts are both supported: the CLI obtains the app-bound identity token needed by the gate.
+  Keep the current authorized account; no wallet switch is required for web login.
+  Treat the link as a bearer secret until it expires - anyone who opens it gets in.
 
 ## Public proof page (opt-in)
 
@@ -111,21 +117,30 @@ The oApp publication gate applies before any source is returned.
 A creator development app gets `404` on every public source route before Open completes.
 Completed Open publishes the governed workload site and source together at `https://<workloadAppId>.bounded.page`, even though the app has no oApps slug, listing, token, or running Gauntlet yet.
 Commence later adds those surfaces without changing the direct workload host's public source visibility.
-The stable venue page is `/l/<rootAppId>` before and after Commence.
+The venue page is `/a/<rootAppId>` before and after Commence (older `/l/` links redirect).
 
 On a launched oApp the in-app widget also switches to a dedicated launched
-face: a public trust rundown (rules, source link, constitution, security,
-fuel state, version history, the app's venue room link) instead of the owner
-console.
-The rundown states only what the published data supports.
-A security row reads `audited clean` only when the audit ran against the
-revision deployed right now; a mismatch, a missing revision, or an unreadable
-head reads `stale`, and an app with no completed audit reads `never audited`.
-A paused app says `out of fuel` only when its published gauge is actually
-empty - otherwise it says the engine is paused without naming a cause.
-An announced build shows its veto countdown, and where circulating supply is
-not yet counted it says the threshold is pending rather than naming a number
-the engine cannot enforce.
+face: a public trust rundown (rules, source link, constitution, the Gauntlet,
+fuel state, the venue's own surfaces) instead of the owner console.
+The rundown states only what the venue's published sources support, in the
+venue's own words.
+A Gauntlet row reads `12 of 15 passed` from the per-check outcomes, `no
+gauntlet attempt yet` where no attempt exists, and `checks not readable` where
+the projection cannot be read; it is never derived from an aggregate bit.
+Fuel uses the venue's five labels (running, low, conserving, asleep, waking)
+with one label per reading, the cause carried in the headline rather than the
+label, and dollars rather than raw credits.
+Where a veto window is open the widget links to the venue's brain-veto surface
+instead of rendering a countdown of its own.
+Venue rows (overview, analytics, constitution, versions, and the rest) are
+composed server-side from the launch record's venue, never guessed from the
+serving hostname, and a surface the venue does not publish gets no row.
+Each destination appears once: the surfaces a visitor acts on (Discussion, the
+treasury, a live sale, the token, an open veto window) are offered as action
+rows and are not repeated in the venue-row list.
+Writes are widget-initiated and venue-completed: an action row opens the
+venue's own page as a top-level document, and the widget never performs a
+venue write from the app's origin.
 Owner-console actions are refused on launched apps with `launched_locked` /
 `oapp_launched` errors - changes ship only through the app's governed build
 lane on its venue.
@@ -203,11 +218,40 @@ bounded site promote var_alice_dashboard --app-id <id>
 Variants are frontend-only. They cannot bypass backend permissions, functions,
 data rules, or invariants.
 
+## Version history and retention
+
+Every successful canonical frontend version is restorable, whether it came
+from `site deploy` or a prompt build/edit promotion - but history is BOUNDED:
+the newest 10 versions are kept automatically, and everything older ages out
+on later deploys or promotions. Pins are ADDITIONAL to the newest 10: pin any
+version you may want to roll back to later, BEFORE it ages out.
+
+```bash
+bounded site versions --app-id <id>          # what is restorable, what is live, what is pinned
+bounded site pin <deployId> --app-id <id>    # keep this version beyond the newest 10 (owner/admin)
+bounded site unpin <deployId> --app-id <id>  # let it age out again
+bounded site rollback <deployId> --app-id <id>
+```
+
+Rules of thumb:
+- The LIVE version and the rollback target are always retained, even after a
+  rollback makes an old version live again.
+- Versions referenced by platform evidence (governed releases, active variant
+  bases) are system-pinned automatically and never age out.
+- When an old prompt-built version ages out, Bounded keeps only a compact
+  internal completion receipt so a delayed promotion retry cannot reapply it;
+  that receipt is not a restorable frontend version.
+- User pins are bounded by a per-app cap; system pins never count against it.
+- Rolling back to a version that aged out answers `410 site_deploy_expired`:
+  run `bounded site versions` and pick a retained version instead. A `404`
+  means the id never existed for this app.
+
 ## Typical flow
 ```bash
 npm run build                              # produces ./dist
 bounded site deploy ./dist --app-id <id>   # → https://<slug>.bounded.page after you claim a slug
-# frontend calls its backend at https://<slug>-api.bounded.page/agents/<name>/<session>
+# frontend calls a public function at https://<slug>-api.bounded.page/<functionName>/...
+# or the backend runtime at https://<slug>-api.bounded.page/agents/<name>/<session>
 ```
 
 For deployed private-site testing, expect normal Bounded login rather than

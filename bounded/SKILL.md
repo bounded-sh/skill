@@ -20,11 +20,25 @@ and cannot host that server elsewhere.
 ## Start
 
 ```bash
-curl -fsSL https://get.bounded.sh/install.sh | sh
-bounded init
+npm install -D @bounded-sh/cli
+npx bounded init
 ```
 
-`bounded init` opens Bounded's hosted browser login when needed, then creates
+The CLI ships on npm as a project dev dependency, so the same two commands work
+on macOS, Linux, and Windows with no shell involved (Node 20 or later). Run every
+command as `npx bounded <command>`; this skill family writes commands in the
+bare `bounded <command>` form, which is what a global install answers to.
+Without Node, the shell installer
+`curl -fsSL https://get.bounded.sh/install.sh | sh` installs a global `bounded`
+on macOS and Linux.
+
+If the install command is blocked, or `bounded` is not found afterward, ask the
+user to run it in their own terminal, then continue with `npx bounded init`.
+This setup needs a session that can run commands: a Claude Code session or
+another agent with terminal access, not a chat-only surface.
+
+`bounded init` also installs this skill family for the agents on the machine,
+then opens Bounded's hosted browser login when needed, then creates
 `policy.json` and public project config. It reuses a valid saved web session.
 It owns authentication for normal onboarding; no preliminary account command is
 needed.
@@ -39,8 +53,10 @@ family.
 | Policy, rules, invariants, functions, data, realtime, actor model, proofs, policy tests | **bounded-backend** |
 | Client SDK, web/mobile UI, subscriptions, hosted frontend, app-user authentication | **bounded-frontend** |
 | CLI, verify/deploy, environments, source sync, domains, project config, collaborators, prompt-driven builds | **bounded-deploy** |
+| "Move my existing app to Bounded", "bring this repo", porting a Supabase/Firebase/Express/Next app, replacing a key-holding backend | **bounded-deploy** ([porting guide](../bounded-deploy/docs/porting-an-existing-app.md)) |
+| A third-party API the app needs: is it on Bounded, callable through x402, or requestable | **bounded-backend** ([ctx.services](../bounded-backend/docs/functions-ctx-services.md)) |
 | Embedded wallets, Solana, tokens, onchain transactions, onramp | **bounded-onchain** |
-| An app specifically destined for oapps.fun | **oapps-fun** |
+| An app destined for openapps.xyz, "make it an oApp", "go open", "outlive its creator" | **oapps-fun** |
 
 For a complete app, work through backend, frontend, then deploy. Add onchain
 only when requested.
@@ -67,7 +83,10 @@ Load these only when the task calls for them:
 - A governed write that violates a rule or invariant must reject before commit.
   Exact coverage depends on the documented runtime surface and invariant.
 - Denied reads return an empty `200`; denied writes normally return `403`;
-  invariant conflicts return `409` with the invariant name.
+  invariant conflicts return `409` with the invariant name. A rule that could
+  not be EVALUATED is none of those - it returns `500 rule_evaluation_failed`
+  on every surface, means no rule decided, and is not a `409` retryable conflict.
+  Read `bounded decisions` for the cause; do not assume a retry will fail.
 - `bounded verify` is the proof loop. Fix every blocking result before deploy.
 - Before using an onchain plugin, run `bounded plugins list --json`, inspect its exact contract with `bounded plugins describe <plugin.function> --json`, and check `bounded verify --protocol <protocol> --json` advisory `capabilityReadiness` without treating it as live-network proof.
 - Give a collaborator access with `bounded share`; do not add application

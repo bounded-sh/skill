@@ -5,15 +5,19 @@ surface: `ctx.services` in functions, `bounded services search|describe` in the
 CLI. No provider keys in app code, every call metered and observed, and the
 whole surface is read-only by construction.
 
+For caller-scoped reads, `args.requestId` identifies the logical snapshot: retain it across retries and use a new id for fresh data.
+Direct invocations also need an outer HTTP `Idempotency-Key`; see [managed-service replay](../../bounded-backend/docs/functions-ctx-services.md#direct-invocations).
+
 ```ts
+const operationKey = `chain:${ctx.user.id}:${args.requestId}`;
 // Solana: parsed activity for a wallet
 const txs = await ctx.services.invoke("HELIUS_ENHANCED_TRANSACTIONS", {
   address: wallet, limit: 25
-});
+}, { idempotencyKey: `${operationKey}:transactions:v1` });
 // EVM: ERC-20 holdings on Base
 const bal = await ctx.services.invoke("ALCHEMY_TOKEN_BALANCES", {
   network: "base-mainnet", address: evmWallet
-});
+}, { idempotencyKey: `${operationKey}:balances:v1` });
 ```
 
 ## What's available
@@ -55,11 +59,11 @@ move funds or mutate chain state.
 Standard managed-services metering: each tool has a published provider cost
 (Helius credits, billed at their $5/M overage rate; Alchemy compute units at
 the ~$0.45/M CU on-demand rate) and Bounded charges the app owner's
-AI/external-services bucket at cost + 5% — charged before the provider call,
+credit pool at cost + 5% — charged before the provider call,
 refunded automatically if the provider errors. Cheap reads are fractions of a
 cent (a Solana RPC read is ~6 µUSD); the expensive ones are asset search and
 parsed history (~525 µUSD). Fail-closed 402 `services_credit_exhausted` when
-the bucket is empty; free-plan apps draw from the free services allowance.
+the pool is empty; free-plan apps draw from their monthly courtesy credits.
 Calls are also rate-isolated per app (429 `chain_data_rate_limited` on bursts).
 
 ## Views vs proxy — which one do I want?

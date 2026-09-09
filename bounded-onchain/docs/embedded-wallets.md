@@ -30,10 +30,12 @@ import { init, openBoundedWidget } from "@bounded-sh/client";
 await init({
   appId: "<APP_ID>",
   // An ONCHAIN app must also declare the network it writes on and the endpoint
-  // the SDK submits through: the platform builds the transaction, the user's
-  // wallet signs it, and the SDK broadcasts it from the browser. Without a
-  // TOP-LEVEL rpcUrl the first onchain set() fails AFTER the user has signed,
-  // with "Pre-built Solana transaction submission requires init({ rpcUrl })".
+  // the SDK uses: the platform builds the transaction, the SDK refreshes its
+  // blockhash from that endpoint so the user gets the full ~60s to approve, the
+  // wallet signs, and the SDK broadcasts it from the browser. Without a
+  // TOP-LEVEL rpcUrl the first onchain set() fails BEFORE the user is asked to
+  // sign, with "Pre-built Solana transaction submission requires init({ rpcUrl })",
+  // so a misconfigured app never spends a signature.
   // A nested walletLogin.rpcUrl configures wallet login only - it is not a
   // substitute. See onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint
   chain: "solana_devnet",
@@ -84,7 +86,8 @@ No auth block is required in `policy.json` for the DEFAULT (Turnkey, embedded) p
 This omission is intentional for a normal app: the platform fills in the
 Turnkey, eager-wallet defaults, so do not generate a redundant block.
 The one exception is any EXTERNAL-keypair session - the issuer gates every one
-of them on a deployed `"auth": { "wallets": true }`.
+of them on a deployed `"auth": { "wallets": true }`, because it refuses to mint a
+session for a key it did not provision.
 That covers more than the browser button: bring-your-own wallet login
 (`wallet: true` / `walletLogin`), a server SDK authenticating with a keypair,
 and the CLI's keypair lane (`bounded data` / `functions invoke` under
@@ -201,8 +204,13 @@ const user = await attempt.verify(code);
 Turnkey provisioning and signing helpers include `getOrCreateTurnkeyWallet`,
 `signSolanaMessageViaTurnkey`, and the normal auth-provider methods
 `signMessage`, `signTransaction`, and `signAndSubmitTransaction`. Signing
-requires user approval. Never place a server-side credential or signer secret
-in frontend code.
+requires user approval on an in-app approve card (wallet address, requesting
+origin, Approve/Cancel): within a live 24-hour signing session (established by the login
+code itself on the default email lane) approval is one click; otherwise the
+card collects a fresh Turnkey-emailed one-time code inline first, which
+establishes the session for the next 24 hours. Sessions are per device, never
+renew silently, and end on logout; wallet creation and address reads never
+prompt. Never place a server-side credential or signer secret in frontend code.
 
 ## Bring-your-own wallet is a companion path
 
@@ -251,7 +259,7 @@ change.
 ## Checklist
 
 - Keep default Turnkey auth for most apps.
-- Omit redundant `authMode: 'turnkey'` configuration, and `auth.wallets: true` UNLESS the app offers bring-your-own wallet login - that path requires it.
+- Omit redundant `authMode: 'turnkey'` configuration, and `auth.wallets: true` UNLESS an EXTERNAL-keypair session signs in - bring-your-own wallet login, a server-SDK keypair client, or the CLI keypair data lane; each of those requires it.
 - Expect an address after supported email/social login completes.
 - Use `@user.id` for identity and `@user.address` for wallet semantics.
 - Add `walletLogin` only when users should connect an existing wallet - and

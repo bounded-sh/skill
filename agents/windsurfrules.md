@@ -32,9 +32,15 @@ declared policy surface as proved.
 Install:
 
 ```bash
-curl -fsSL https://get.bounded.sh/install.sh | sh
-bounded init
+npm install -D @bounded-sh/cli
+npx bounded init
 ```
+
+The CLI is a project dev dependency (macOS, Linux, Windows; Node 20 or later):
+run every command as `npx bounded <command>`. Without Node, the shell installer
+`curl -fsSL https://get.bounded.sh/install.sh | sh` installs a global `bounded`
+on macOS and Linux. If the install is blocked or `bounded` is not found
+afterward, ask the user to run it in their own terminal, then continue.
 
 Flow:
 
@@ -50,6 +56,13 @@ Flow:
   the proof gate and fails closed on any regression.
   If it returns `deploy_in_progress` with an `operationId`, the verified app
   owner runs the exact emitted `recoveryCommand` with unchanged policy inputs.
+  A `409` naming `onchain_creation_pending` (or `onchain_creation_unreadable`
+  or `onchain_creation_superseded`) instead means the app's mainnet creation
+  never finished; nothing was signed or spent. Re-run the SAME deploy for that
+  app id - never `--create`, and never a replacement app.
+  `onchain_creation_owner_conflict` is the exception: the on-chain account is
+  finalized under a wallet the creation did not intend. Retrying can never fix
+  that - escalate for operator review.
   The CLI does not submit another policy mutation and lets `202` with
   `state: "processing"` poll the same operation while the server re-runs the
   proof, compiler, and exact-state reconciliation.
@@ -72,7 +85,9 @@ Flow:
   Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
 
 Runtime rejections are fail-closed: 409 for a violated invariant, 403 for a denied
-write or invoke rule.
+write or invoke rule, and 500 `rule_evaluation_failed` when the rule could not be
+evaluated at all (no verdict; not a denial and not a retryable `409`). Read
+`bounded decisions` for the cause; do not assume a retry will fail.
 
 `bounded create "<prompt>"` hands the whole app to Bounded's build agent and
 `bounded edit "<prompt>"` iterates on it; `bounded builds list|watch|cancel|gate`

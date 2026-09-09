@@ -1,0 +1,15 @@
+{
+  "id": "backend-notes-owner",
+  "phase": "backend",
+  "prompt": "I'm building a notes app on Bounded (bounded.sh). Users sign in with email, create notes, and each user can only see and edit their own notes. Write the policy.json for it in this directory.",
+  "checks": [
+    { "id": "policy-exists", "kind": "file-exists", "path": "policy.json" },
+    { "id": "policy-json", "kind": "json-valid", "path": "policy.json" },
+    { "id": "verify-passed", "kind": "verify", "path": "policy.json", "expect": "passed" },
+    { "id": "read-by-user-id", "kind": "policy-rule", "collection": "notes", "rule": "read", "regex": "@user\\.id" },
+    { "id": "create-by-user-id", "kind": "policy-rule", "collection": "notes", "rule": "create", "regex": "@user\\.id" },
+    { "id": "update-by-user-id", "kind": "policy-rule", "collection": "notes", "rule": "update", "regex": "@user\\.id" },
+    { "id": "no-foreign-types", "kind": "regex", "path": "policy.json", "regex": "\"(Boolean|Timestamp|Number|Date)\"", "expect": "absent" },
+    { "id": "readonly-preserved", "kind": "policy-expr", "expr": "cols.every(([k,v]) => Object.entries(v.fields||{}).filter(([f,t])=>String(t).includes('!')).every(([f]) => /^\\s*false\\s*$/.test(String((v.rules||{}).update)) || String((v.rules||{}).update||'').includes('@newData.'+f+' == @data.'+f) || String((v.rules||{}).update||'').includes('@data.'+f+' == @newData.'+f)))" }
+  ]
+}

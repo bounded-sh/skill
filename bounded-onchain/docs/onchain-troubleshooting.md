@@ -15,14 +15,16 @@ Real-network failure lookup for `"onchain": true` collections: what broke, why, 
 | Account creation fails on rent | `@AccountPlugin.createAccount` / `@Solana.createAccount` needs rent-exempt lamports from the payer. | Query `@Solana.rentExemption(space)` live and fund the exact amount; never reuse an old estimate. |
 | Transaction too large / too many accounts | The builder fails before signing above 1,232 serialized bytes or 64 account locks; compute is simulated with a 20% margin up to 1.4M CU. | Split the batch; account-heavy hooks may need the platform lookup table ([onchain.md](onchain.md)). |
 | Build-time refusal naming a character in a string argument | Plugin string arguments cannot contain `,` `{` `}` `[` `]` - the rendered call line would be re-parsed wrong. | Sanitize or encode the value (`@Bytes.utf8`), or store free text offchain. |
-| Plugin call rejected at compile for the onchain target | Offchain-only construct (`@user.id`, `@origin.*`, `@StringUtils` in an onchain rule), an address atom where a string account id is required, or an unsupported composition such as `getAccountAddress(@contract.address)`. | Use `@user.address`; pass string account ids; resolve the escrow with the program-ID string literal ([policy-primitives.md](policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address)). |
+| Plugin call rejected at compile for the onchain target | An offchain-only construct (`@user.id`, `@origin.*`) in an onchain rule, an address atom where a string account id is required, or an unsupported composition such as `getAccountAddress(@contract.address)`. `@StringUtils.length` is not one of these - it compiles onchain and the program enforces it. | Use `@user.address`; pass string account ids; resolve the escrow with the program-ID string literal ([policy-primitives.md](policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address)). |
 | Deploy refuses a function with `NEEDS-RUNTIME-V4` | The function's runtime is newer than the deployed program's recorded runtime version. | Check [solana-capability-status.md](solana-capability-status.md); do not ship that path until the runtime is live. |
 | Write succeeds but the mirror shows nothing yet | Mirror ingestion is eventually consistent. | Poll the mirror for the exact expected postcondition; never treat an immediate read (or its absence) as proof. |
 | `validate pre-built transaction: SOLANA_DEVNET_RPC_URL is required for pre-built transaction network "solana_devnet"` | The CLI submits onchain writes itself and has no RPC endpoint configured. The platform built the transaction correctly; submission never started. | Set `SOLANA_DEVNET_RPC_URL` (or `SOLANA_MAINNET_RPC_URL`) in the shell running `bounded`. See [CLI submission needs an explicit RPC endpoint](#cli-submission-needs-an-explicit-rpc-endpoint). |
 | `Pre-built Solana transaction submission requires init({ rpcUrl }) for solana_devnet` in a web app | The browser twin of the CLI rule above: the SDK submits the pre-built transaction itself, and `init()` was called without a top-level `rpcUrl`. | Pass top-level `chain` + `rpcUrl` to `init()`; a nested `walletLogin.rpcUrl` is not a substitute. See [Browser/SDK submission needs an explicit RPC endpoint](#browsersdk-submission-needs-an-explicit-rpc-endpoint). |
+| `The Solana wallet returned a different transaction than the one it was asked to sign` | The wallet changed what your write MEANS, not merely its bytes - guard instructions and index renumbering are accepted. The clause after the colon names what moved. | Only `it replaced the blockhash` is a retry. Everything else means the wallet rewrote the substance of the write: capture its build and report it. See [A wallet returned a different transaction](#a-wallet-returned-a-different-transaction). |
 | `Transaction building failed: onchain account resolution failed (422): onchain account not found: <pubkey> (<role>)` | An account the write references does not exist on chain (a wrong mint derivation, a pool that was never created, an absent bonding curve, an unlisted NFT). This is YOUR data, not the platform: retrying can never help. | Fix the referenced account. The commonest cause is a mint-seed mismatch: Meteora pool mints use the legacy seed, so derive them with the 3-arg `@TokenPlugin.getTokenMintAddress(tokenId, name, symbol)`, never the 1-arg id-only form. See [Missing onchain accounts vs platform 502s](#missing-onchain-accounts-vs-platform-502s). |
 | `Transaction building failed: onchain account resolution failed (502): ...` on a write that is neither a `403` nor a `422` | Bounded's platform-side account resolver could not resolve the accounts and plugin values the transaction needs (platform infrastructure or its RPC). The policy did not deny; the write was rejected fail-closed before anything signed or landed. | Do not rewrite a passing hook or change amounts/slippage. Confirm it is platform-side with a trivial named query, then retry and report. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
 | `onchain query failed (502)` on a named query (CLI shows `Error: 500 onchain query failed (502)`), even a plain `@TokenPlugin.getBalance` | Same platform-side failure surface for queries: Bounded's onchain query executor could not run the query simulation. | Same as the row above; it is not a bad query argument. See [Platform resolver and onchain-query 502s](#platform-resolver-and-onchain-query-502s). |
+| `500` with `"code": "rule_evaluation_failed"` on a write, a read, or a subscription | The rule was REACHED and could not be EVALUATED - so no rule denied you and nothing was read or written. Usually a plugin call in the rule that the platform could not resolve. | Not a denial and not a retryable conflict. The cause is never in the response; read `bounded decisions --app-id <id>`, where the row is recorded with `decision: error` and the cause. See [A rule that could not be evaluated](#a-rule-that-could-not-be-evaluated). |
 | Pump.fun launch dies inside `Create` with `Transfer: insufficient lamports` (`... 0, need 1461600` for the mint, or a shortfall under `IX: Create Metadata Accounts v3`) | The `createToken`/`createTokenV2` `creator` is ALSO the account Pump.fun's `Create` bills: mint rent (1,461,600 lamports), metadata rent (~5,616,720), then bonding-curve/ATA setup. With app custody (a named account id), that PDA pays, and the signing user's own wallet balance is irrelevant. | Fund the named creator account with the whole Create cost (~0.025 SOL) in the same hook, before `createToken`: `@AccountPlugin.createAccount(id) && @TokenPlugin.transfer(@user.address, id, @TokenPlugin.SOL, 25000000) && @PumpFunPlugin.createToken(..., id)`. See [token-launch example](examples/token-launch.md). |
 
 ## CLI submission needs an explicit RPC endpoint
@@ -65,8 +67,38 @@ await init({
 
 A nested `walletLogin.rpcUrl` configures wallet login only and does not enable submission; `walletLogin: true` supplies no submit RPC either.
 The check runs before the wallet signs, so a misconfigured app fails the write without spending the user's signature.
+That endpoint is also what keeps the transaction alive: the SDK reads a current blockhash from it and writes that onto the transaction immediately before the wallet is asked to approve, so the whole ~60-second blockhash lifetime belongs to your user rather than to the build that produced the transaction.
+A pre-built transaction the platform already co-signed (a gas-sponsored write, or any plugin write that carries an attestation signature) is left exactly as it arrived, because that signature covers the blockhash too.
 The trust rationale is the same as the CLI's: there is deliberately no bundled default endpoint, because confirmation and simulation results are only as trustworthy as the endpoint returning them.
 A public endpoint gets a development write through but is rate-limited; use a dedicated provider endpoint for anything you rely on, and keep secret RPC URLs out of logs and commits.
+
+## A wallet returned a different transaction
+
+```
+The Solana wallet returned a different transaction than the one it was asked to sign, so nothing was
+returned: <what moved>. Try again.
+```
+
+This is the SDK refusing, not the platform and not your app.
+
+A wallet is ALLOWED to change the transaction it signs, and good ones do.
+Phantom injects Lighthouse guard instructions on mainnet so the transaction aborts if balances move in ways its simulation did not predict, and it raises the compute-unit limit to pay for them.
+Adding instructions makes the transaction recompile, which renumbers every account index in it.
+None of that changes what your write does, so the SDK accepts all of it.
+
+What the SDK checks instead is that your write still MEANS the same thing: the blockhash, the set of accounts that must sign, and every instruction it sent - same program, same data, same accounts in the same roles, same order.
+The clause after the colon names what broke that.
+
+| Clause | What happened | What to do |
+|---|---|---|
+| `it replaced the blockhash` | The transaction's lifetime ran out before approval and the wallet swapped in a live one. | Retry the click. The SDK refreshes the blockhash immediately before each approval, so this should be rare; if it recurs, the endpoint in `init({ rpcUrl })` is lagging, or it is a gas-sponsored or plugin write whose blockhash the platform's own signature pins and the SDK cannot refresh. |
+| `it added another call to a program this transaction already uses` | The wallet appended a second call to a program your write invokes. A second `set_documents` would apply your write twice, and increment operations are not idempotent. | Do not work around this. Capture the wallet's build and report it. |
+| `one of the instructions it was asked to sign is missing or altered` | An instruction was dropped, reordered, repointed at another account, had its data changed, or had an account's role changed. | Same: capture and report. |
+| `it changed which accounts must sign the transaction` / `it changed how many signatures the transaction requires` | The wallet altered who is on the hook for the transaction. | Same: capture and report. |
+| `could not be read` / `could not be read back` | The message could not be parsed on one side, so nothing can be shown to have survived. It fails closed. | Same: capture and report. |
+
+Only the first row is a retry.
+Everything else means the wallet rewrote the substance of your write, and no amount of retrying will fix it.
 
 ## Missing onchain accounts vs platform 502s
 
@@ -87,11 +119,35 @@ If the account does not exist, you are in the missing-account class regardless o
 `Transaction building failed: onchain account resolution failed (502): ...` (on a write) and `onchain query failed (502)` (on a named query; the CLI prints `Error: 500 onchain query failed (502)`) are PLATFORM-side failures, not policy verdicts and not problems with your hook.
 
 - A policy denial is a `403` and never carries the 502 text.
-  A 502 means Bounded's account resolver or onchain query executor could not complete the resolution or simulation; your rule may never have been evaluated at all.
+  A 502 means Bounded's account resolver or onchain query executor could not complete the resolution or simulation.
+  When the failure happened while EVALUATING a rule (a plugin call the rule makes), you get the `500 rule_evaluation_failed` above instead, which says so directly - see [A rule that could not be evaluated](#a-rule-that-could-not-be-evaluated).
 - Both surfaces share one platform resolver, so the cheap discriminator is a trivial named query that only reads a balance, for example `bounded data query --path <collection>/<id> --name <a plain @TokenPlugin.getBalance query>`.
   If that also returns the 502, the platform (or its RPC) is the problem: do not modify the failing hook, its amounts, or its slippage, and do not switch DEXes.
 - The write was rejected fail-closed before signing: nothing landed, no fees were spent, and retrying after the platform recovers is safe.
 - If the 502 persists, report it to Bounded with the app id and timestamp; there is no app-policy workaround.
+
+## A rule that could not be evaluated
+
+A rule has three possible outcomes, not two: it allows, it denies, or it could not be evaluated at all.
+
+The third is reported as HTTP `500` with `"code": "rule_evaluation_failed"`, and it means specifically that a READ THE RULE NEEDED could not be made - a plugin's chain query, an RPC read, a price observation. The rule was reached, no verdict exists, and nothing was read or written.
+
+A rule that throws on a particular document's own data is NOT this. `@data.n + 1 > 0` where that document's `n` is a string fails for that document and no other, every time, so it stays an ordinary fail-closed denial for that row and the rest of the collection reads normally. The distinction is deliberate: if one badly typed document made a rule "un-evaluable", anyone who could write that document could break every read of its collection.
+
+Do not read it as either of the other two:
+
+- It is NOT a denial. A denial is a `403` with `"code": "policy_denied"`. Looking for the rule that said no is wasted time; none did.
+- It is NOT a conflict. A conflict is a `409` `mutation_conflict` with `"retryable": true`, raised when a write must be re-attempted against fresher state. `rule_evaluation_failed` carries no `retryable` flag: the platform is not claiming a retry will help, and not claiming it will not. A stubbed plugin call never clears; a provider having a bad minute does. Look at the cause before retrying in a loop.
+
+The same outcome reaches every surface. A read answers the `500` rather than an empty `200` (which would be indistinguishable from the document not existing); a subscription receives an `error` frame on that subscription rather than a `data` frame reporting a removal that never happened.
+
+The response names the operation and the path and NOTHING else - not at any disclosure level. The cause is whatever the evaluation threw, and a plugin's provider can throw a message carrying a credentialed endpoint or token, so it goes to the decision log instead, which is owner/collaborator-gated:
+
+```sh
+bounded decisions --app-id <appId>
+```
+
+Every occurrence is recorded there with `decision: "error"`, including on reads, and the cause is on the row's indented detail line.
 
 ## Confirmation behavior
 

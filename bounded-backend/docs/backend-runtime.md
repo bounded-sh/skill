@@ -43,7 +43,11 @@ my-agent/
 ```
 
 - `kind`: `"agent"` for `onInvoke`/`onSchedule`, or `"backend"` for a `fetch`
-  handler served at the app's backend URL.
+  handler. Both are invoked the same way: `POST /agents/<name>/<session>` on
+  the app's API host (or `bounded runtime invoke`) with a Bounded app token.
+  The runtime does **not** serve arbitrary HTTP paths; for a REST route, a public
+  JWKS, or any endpoint machines call without a session, declare a
+  [public function](public-functions.md) instead.
 - `dependencies`: npm packages bundled for the backend runtime.
 - `allowedHosts`: the outbound `ctx.fetch` allowlist. Egress is deny-by-default,
   so a host you do not list is refused (`egress_denied`) - declare every host the
@@ -67,7 +71,7 @@ Use `bounded runtime init` to scaffold the current manifest format.
 | `ctx.bounded` | read/write the app's Bounded data under policy checks |
 | `ctx.store.get/put` | store small app-scoped runtime state |
 | `ctx.ai.run` | call AI models against the app/account spend controls |
-| `ctx.services.search/describe/invoke` | discover and call Bounded-managed third-party APIs through the AI/external-services bucket |
+| `ctx.services.search/describe/invoke` | discover and call Bounded-managed third-party APIs, billed to the credit pool |
 | `ctx.secrets.get` | read declared app secrets |
 | `ctx.fetch` | call allowed outbound hosts |
 | `ctx.schedule` | schedule follow-up work |
@@ -80,7 +84,7 @@ the right managed API/tool shape. Runtime code can also use
 `ctx.services.search` and `ctx.services.describe` for agent planning. Use
 `ctx.services.invoke` at runtime when Bounded manages that provider. Invoke is
 cost-bearing, billed at the applicable upstream service cost plus 5%, and fails
-closed when the app owner's AI/external-services bucket is exhausted. If a
+closed when the app owner's credit pool is exhausted. If a
 provider is not enabled in the managed proxy, integrate it directly with
 `ctx.fetch` and store the provider key in Bounded secrets.
 
@@ -91,6 +95,24 @@ Provider keys belong in Bounded secrets, not frontend code.
 ```ts
 export default {
   async onInvoke(input, ctx) {
+    // Bounded verifies the caller's app token before onInvoke runs, but it does
+    // NOT evaluate a policy `auth` rule for an agent invocation: every signed-in
+    // user of the app reaches this handler. Authorization is YOURS - and this
+    // handler holds the app's secrets, services, queues and schedules, so
+    // "signed in" must not mean "may drive them". Fail closed on no user, then
+    // authorize WHO may run this agent (check ownership/role keyed on
+    // `ctx.identity.user`) before touching a secret or a tool. `ctx.identity` is
+    // ALWAYS a populated object, so a bare `!ctx.identity` check fails open - gate
+    // on `ctx.identity.user`, which Bounded sets from the verified token and a
+    // caller cannot supply.
+    if (!ctx.identity.user) {
+      return { ok: false, error: "unauthorized" };
+    }
+    // If this agent is DELIBERATELY public to any signed-in user (a chatbot, a
+    // support bot), say so explicitly here and skip the role check - but that is a
+    // decision you make, not a default you inherit.
+    // e.g. if (!(await isTeamMember(ctx, ctx.identity.user))) return { ok: false, error: "forbidden" };
+
     await ctx.store.put("last-input", JSON.stringify(input));
 
     const apiKey = await ctx.secrets.get("EXAMPLE_API_KEY");
@@ -125,9 +147,12 @@ export default {
 ```
 
 For `kind: "backend"`, export a `fetch` handler.
-Bounded verifies the caller's app token before your handler runs, but it does
-**not** evaluate a policy `auth` rule for a backend route, so authorization is
-yours: every signed-in user of the app reaches the same handler.
+It is reached only through `POST /agents/<name>/<session>` with a Bounded app
+token, and it receives a synthesized `POST` whose JSON body is the invoke input -
+not the caller's original method or path - so route on the body, not on
+`req.url`. Bounded verifies the caller's app token before your handler runs, but
+it does **not** evaluate a policy `auth` rule for a backend route, so
+authorization is yours: every signed-in user of the app reaches the same handler.
 Gate on the acting user and fail closed:
 
 ```ts
@@ -173,9 +198,9 @@ Use it for "who is calling this backend route", and let policy rules on
   Loopback, private, link-local, `*.internal`/`*.local`, IP-literal, and
   cloud-metadata targets are refused whether you declared them or a redirect
   tried to reach them.
-- `ctx.ai` spends against the AI/external-services bucket and app-level caps.
-  When a cap or bucket is exhausted, calls fail closed.
-- `ctx.services.invoke` spends against the same AI/external-services bucket and
+- `ctx.ai` spends against the credit pool and app-level caps. When a cap or
+  the pool is exhausted, calls fail closed.
+- `ctx.services.invoke` spends against the same credit pool and
   uses the applicable upstream service cost plus 5%. Search/describe are catalog
   reads.
 - Both cost-bearing surfaces require a 1–256-byte app-global idempotency key.
@@ -197,7 +222,7 @@ Recommended pattern:
 1. Store job state in a Bounded collection or `ctx.store`.
 2. Process a bounded amount of work per step.
 3. Write progress before scheduling the next step.
-4. Stop when complete or when the user's cap/bucket is exhausted.
+4. Stop when complete or when the user's cap or credit pool is exhausted.
 
 ## Deploy
 

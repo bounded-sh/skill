@@ -60,12 +60,15 @@ enforcement. The trade-offs:
 If a single logical entity must sustain very high write throughput against one
 invariant, that is the case to design around (shard the tenant, split the room).
 
-## Onchain policy updates need a signer (deferred)
+## Mainnet policy updates need the owner's signature
 
-For onchain apps, updating the deployed policy requires a signer step that is not
-yet wired in the CLI flow. Offchain (realtime) apps deploy policy updates with
-`bounded deploy` directly. Plan onchain policy changes as a human-signed step
-until this lands.
+Offchain (realtime) and **devnet** apps deploy policy updates with `bounded deploy` directly.
+A devnet app is owned on-chain by the Bounded platform admin, so the platform signs its policy updates for you - a keyless web-login deploy needs no permit and no local key.
+
+A **mainnet** app is owned on-chain by the wallet that created it, so every policy update carries an owner-signed authority permit.
+That signature is wired, not deferred: from a CLI keypair it happens inside the one `bounded deploy` command (the CLI has the server mint a permit bound to that exact policy, verifies it locally, and signs it), and from a web-login account it is one browser approval per deploy.
+Budget the owner's signature for mainnet policy changes; nothing else about the flow is manual.
+Full mechanics: [onchain.md](../../bounded-onchain/docs/onchain.md#mainnet-apps-are-owned-by-your-wallet-immutably).
 
 ## SDK status: beta
 
@@ -96,8 +99,11 @@ The proof boundary is precise - don't overclaim it:
 - A function's *logic* is not proven. Its writes go through enforced rules and
   proved invariants, and its invocation is gated by the `auth` rule. Normal
   functions write as the verified caller; `actAs`
-  service-identity functions are privileged and must be admin-gated. They are
-  *un-proven logic, contained by enforced rules and proved invariant walls.*
+  service-identity functions are privileged and must be admin-gated: on the
+  control-plane roster (`get(/__admins__/@user.id) != null`, the owner plus
+  `bounded share --role admin` collaborators) or on an app-data `admins`
+  collection. They are *un-proven logic, contained by enforced rules and proved
+  invariant walls.*
 
 ## Function proof boundary
 

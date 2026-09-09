@@ -8,15 +8,15 @@ Copy-adjust recipes for `rules`. Expression semantics: [policy reference](policy
 "docs/$docId": {
   "fields": { "ownerId": "String!", "body": "String" },
   "rules": {
-    "read":   "@data.ownerId == @user.id",
+    "read":   "@user.id != null && @data.ownerId == @user.id",
     "create": "@user.id != null && @newData.ownerId == @user.id",
-    "update": "@data.ownerId == @user.id && @newData.ownerId == @data.ownerId",
-    "delete": "@data.ownerId == @user.id"
+    "update": "@user.id != null && @data.ownerId == @user.id && @newData.ownerId == @data.ownerId",
+    "delete": "@user.id != null && @data.ownerId == @user.id"
   }
 }
 ```
 
-Denied reads surface as empty results, not `403`. The `!` on `ownerId` needs exactly that preservation clause in `update`.
+Denied reads surface as empty results, not `403`. The `!` on `ownerId` needs exactly that preservation clause in `update`. Keep the `@user.id != null` guard: a bare `@data.ownerId == @user.id` is DISPROVED by `bounded verify` (`read requires authentication`) because both sides are null for a signed-out caller reading a row with no owner.
 
 ## Public read, authenticated write
 
@@ -86,7 +86,7 @@ Path nesting binds `$teamId` for every rule on the template, so a write to team 
 "create": "@newData.price >= 1 && @newData.price <= 1000000 && @StringUtils.length(@newData.title) <= 80"
 ```
 
-Read-only plugin calls are legal in rules; `@StringUtils.length` is offchain-only. Amount fields that invariants protect should be `UInt` so negatives are unrepresentable.
+Read-only plugin calls are legal in rules, on onchain collections too - `@StringUtils.length` compiles to onchain bytecode and the deployed program enforces it. Amount fields that invariants protect should be `UInt` so negatives are unrepresentable.
 
 ## Immutable fields
 

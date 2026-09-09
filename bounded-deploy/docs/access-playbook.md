@@ -9,6 +9,13 @@ token**. This is the diagnostic playbook that runs the real checks instead of
 surrendering. For the roles/capabilities model behind it, see
 [access-control.md](../../bounded-backend/docs/access-control.md).
 
+Two refusals are **never** identity problems, so nothing below applies to them: a
+`boundary_violation` (an app boundary that refuses every author; see the
+boundary-lock section) and a **`402 deploy_credit_insufficient`** (billing: the
+deploying account has no spendable credit for the deploy; run
+`bounded billing status`, add credit with `bounded billing topup --credits <n>`,
+retry under the same identity).
+
 > **The incident this doc exists to prevent.** A user was an **admin**
 > (`ui:deploy` = ✓) on an app and could deploy the whole time. Their CLI was
 > signed in as a **web-login** account, so `bounded site deploy` errored
@@ -82,16 +89,18 @@ carried by a login to the linked email. So:
 
 ```bash
 bounded access --app-id <id> --json      # shows the owner identity (often a wallet)
-bounded whoami                            # who you are now; account info shows linked identities
-cat ~/.bounded/account.json               # which email the owner wallet is linked to
+bounded whoami --json                     # who you are now; `linkedAccount` names the linked account
+cat ~/.bounded/account.json               # what the owner wallet is linked to
 bounded login --email <that-email>        # an OTP login to the LINKED email carries owner rights
 bounded share <email> --role viewer --app-id <id>
 ```
 
 If the owner is a wallet linked to `person@example.com`, logging in as that
 email IS acting as the owner — you do not need the wallet's keypair on disk.
-Only a wallet linked to no email requires the actual keypair
-(`bounded account use --global` / the profile holding it).
+A link approved with a **wallet** instead of an email has no email to log in as:
+`linkedAccount` is that wallet, and acting as the owner means holding either
+that wallet or the linked keypair. A wallet linked to nothing requires the
+actual keypair (`bounded account use --global` / the profile holding it).
 
 Also: if `bounded share` returns a **5xx**, the grant may still have landed
 (some failures happen after the roster write — a retry then says "Address is
@@ -124,7 +133,9 @@ Fix outdated management-command behavior in this order:
 ```bash
 bounded version                                          # confirm what build you're on
 bounded update                                           # update to the current CLI
-# If this old build has no `update` command, run the installer once:
+# Installed from npm? update the dev dependency instead:
+npm install -D @bounded-sh/cli@latest
+# If this old shell-installed build has no `update` command, run the installer once:
 curl -fsSL https://get.bounded.sh/install.sh | sh
 # (developing the CLI locally? rebuild the bundle, then `bounded version` to confirm)
 ```

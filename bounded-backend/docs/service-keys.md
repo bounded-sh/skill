@@ -15,8 +15,12 @@ own backend actor — Bounded never custodies *user* funds.**
 
 Because `actAs` changes who `ctx.bounded` writes as, it is the privileged
 Functions mode. Deploy requires every `actAs` function's `auth` rule to imply
-the app's admin predicate through a runtime-valid gate such as
-`get(/admins/@user.id) != null`. Declare a bootstrap-safe `admins/$userId`
+the app's admin predicate through a runtime-valid gate. When the people who may
+run it are your own team, gate on the control-plane roster and declare nothing:
+`@user.id != null && (get(/__owners__/@user.id) != null || get(/__admins__/@user.id) != null)`
+admits the owner and every `bounded share --role admin` collaborator. When they
+are end-users of the app, gate on an app-data registry such as
+`get(/admins/@user.id) != null` and declare a bootstrap-safe `admins/$userId`
 collection with a founder genesis clause before deploying the Function; see
 [admin-and-ownership.md](admin-and-ownership.md#bootstrapping-the-first-admin--the-genesis-flow).
 Public user-invoked functions should usually omit `actAs` and write as the caller.
@@ -319,7 +323,7 @@ Policies name it `@const.AGENT` by convention. **Grant it the least it needs, an
 on a live app that usually means READ** - the grant is the whole blast radius,
 because logging a browser in puts the token in your app's own `localStorage`
 where your page can read it. See
-[functions.md](functions.md#driving-your-app-signed-in--the-agent-identity) for
+[functions-ctx-browser.md](functions-ctx-browser.md#driving-your-app-signed-in--the-agent-identity) for
 driving a signed-in page with `ctx.browser`.
 
 ## Security properties

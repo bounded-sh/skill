@@ -159,7 +159,7 @@ const publicText = textFiles
 
 const forbidden = [
   [/^\s*npx(?: --yes)? skills add bounded-sh\/skill\s+[^\n]*(?:--all|--skill\s+['"]?\*)/m, 'public install command must not use a wildcard or --all'],
-  [/@bounded-sh\/client@0\.0\.40\b/, 'stale client version 0.0.40'],
+  [/@bounded-sh\/client@\d+\.\d+\.\d+\b/, 'exact-version client pin in prose - say "the published client" or a floor like "0.0.72+"'],
   [/from\s+['"]bounded-sh(?:\/server)?['"]|or\s+['"]bounded-sh\/server['"]/, 'bare bounded-sh package import'],
   [/use\s+['"]none['"]\s+to disable auth|authMethod\s*:\s*['"]none['"][^\n]{0,80}(?:disable|public-read)/i, 'unsupported authMethod none'],
   [/forgetGuest\(\)\s+(?:wipes|deletes|clears)/i, 'unexported forgetGuest helper'],
@@ -229,7 +229,9 @@ for (const expected of [
   if (!dataPlaneGuide.includes(expected)) fail(`data-plane guide: missing storage/conflict boundary ${expected}`)
 }
 
-const paidOperationsGuide = readFileSync(path.join(root, 'bounded-backend/docs/functions.md'), 'utf8')
+// The functions guide is a family: functions.md plus one page per large `ctx` capability.
+const paidOperationsGuide = ['functions.md', 'functions-ctx-ai.md', 'functions-ctx-services.md', 'functions-ctx-browser.md', 'functions-ctx-enqueue.md', 'functions-ctx-build.md']
+  .map((f) => readFileSync(path.join(root, 'bounded-backend/docs', f), 'utf8')).join('\n')
 for (const expected of [
   'idempotencyKey: string',
   '1–256-byte UTF-8 string',

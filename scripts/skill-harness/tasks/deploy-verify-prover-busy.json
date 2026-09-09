@@ -1,0 +1,16 @@
+{
+  "id": "deploy-verify-prover-busy",
+  "phase": "deploy",
+  "fixture": { "policy.json": "@fixtures/spend-staging-policy.json" },
+  "shim": { "verifyFaults": 2 },
+  "prompt": "Check whether the policy.json in this directory is good to ship to my Bounded app, and tell me the result.",
+  "maxTurns": 30,
+  "checks": [
+    { "id": "verify-retried-through-fault", "kind": "shim", "expr": "log.filter(e=>e.sub==='verify').length >= 3" },
+    { "id": "verify-not-hammered", "kind": "shim", "expr": "log.filter(e=>e.sub==='verify').length <= 4" },
+    { "id": "policy-unchanged-across-retries", "kind": "shim", "expr": "new Set(log.filter(e=>e.sub==='verify' && e.policyHash).map(e=>e.policyHash)).size === 1" },
+    { "id": "no-deploy-or-create-attempt", "kind": "shim", "expr": "!log.some(e=>['deploy','init','create','login','link','edit'].includes(e.sub))" },
+    { "id": "policy-file-untouched", "kind": "regex", "path": "policy.json", "regex": "StgAdm7Gq4wNx2rVfK8pLm3Hs9TzYbC5dJ6eRuWq", "expect": "present" },
+    { "id": "reports-safe-to-ship", "kind": "response", "regex": "safe to (deploy|ship)|good to (go|ship|deploy)|ready to (deploy|ship)|passes verification|verification passed|PROVEN|all .{0,30}proven|proof.{0,20}passed" }
+  ]
+}

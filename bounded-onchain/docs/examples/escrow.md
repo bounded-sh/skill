@@ -33,7 +33,7 @@ Devnet status: `@AccountPlugin.createAccount`, `@AccountPlugin.getAccountAddress
     "queries": {
       "getEscrowAddress": {
         "description": "Resolved base58 address of this escrow's named PDA. For display, rules comparisons, and destination arguments - never valid in a signer position.",
-        "returnType": "String",
+        "returnType": "Address",
         "query": "@AccountPlugin.getAccountAddress($escrowId)"
       }
     },

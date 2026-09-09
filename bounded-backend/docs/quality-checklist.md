@@ -95,8 +95,17 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Default offchain.** Mark `"onchain": true` only when the description needs
   a blockchain guarantee. Onchain adds cost and constraints (`read: "true"`, no
   `Float`, no offchain `get()`).
-- [ ] **No `onchainSupported` overclaim.** Only direct `conserve`, `tenantTag`, and
-  `rollingSum` are enforced onchain; the verifier rejects claims beyond that.
+- [ ] **No `onchainSupported` overclaim.** Claim it only for an invariant scoped
+  to its own `onchain: true` collection: `conserve` (direct, materialized, or
+  sharded), `tenantTag`, full-path `tenantEdge` without `targetPathVariable`, or
+  `rollingSum` within the onchain window cap and without `resetAtMs`.
+  The verifier rejects every unsupported form.
+- [ ] **No silent underclaim either.** An invariant on an `onchain: true`
+  collection with `onchain` OMITTED is enforced offchain only - onchain program
+  writes are not checked against it, and nothing fails. Declare
+  `"onchainSupported"` where supported, or `"offchainOnly"` to record the
+  offchain-only choice as deliberate; `bounded verify` surfaces the omission as
+  an advisory.
 
 ### Extras are warranted
 
@@ -142,7 +151,7 @@ the user actually wanted is hollow. Before you call it done:
   real analysis, real results) — unless the user explicitly asked for a mock.
 - [ ] **AI / LLM features call `ctx.ai.run`** — real inference, no API key needed —
   not templated strings pretending to reason. See
-  [functions.md](functions.md#ctxai--real-ai-no-api-keys).
+  [functions.md](functions-ctx-ai.md).
 - [ ] **External integrations are wired** (broker, payments, data feed, third-party
   API) via a function `fetch` — or explicitly deferred *with the user told plainly*
   which parts are stubbed and why.

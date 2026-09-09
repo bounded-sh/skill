@@ -3,6 +3,7 @@
 Bounded keeps an optional cloud copy of an app's source tree in the "Artifacts" repository.
 It powers `bounded clone` / `bounded pull` and the public source page of completed-Open oApps (`/__bounded/source`).
 There is no separate register/sync machinery: **a deploy either carries its source or it does not.**
+An ordinary `bounded site deploy ./dist` uploads only the built static artifact and does not sync source.
 
 ## Enable it
 
@@ -72,6 +73,14 @@ race, redeploy those exact frontend files with `site deploy --with-source`
 instead of seeding an obsolete deployment. A retired target is terminal until
 it is restored, so the CLI does not print an unsafe retry for that case.
 
+A source-only change is not a conflict: re-running the deploy (or the seed)
+with byte-identical frontend bytes and changed project source refreshes the
+editing base to the new source snapshot for the same canonical deployment.
+The one base a CLI seed never replaces is one already carrying hosted-widget
+edits (promoted lineage) - the CLI reports that distinctly, and deploying
+changed frontend bytes as a new canonical deployment is what re-anchors
+editing to your files.
+
 Frontend variants are previews. `site deploy --variant ... --with-source` may
 sync source, but it does not replace or re-establish the canonical widget
 editing base.
@@ -89,7 +98,7 @@ editing base.
 
 - **oApp Open.** Open reads the synced source and publishes that exact tree at `https://<workloadAppId>.bounded.page/__bounded/source` when the opening completes.
   No synced source means Open cannot complete.
-  Commence later adds the oApps slug, listing, token, and Gauntlet without changing that source publication or the stable `/l/<rootAppId>` venue page.
+  Commence later adds the oApps slug, listing, token, and Gauntlet without changing that source publication or the `/a/<rootAppId>` venue page.
 - **`bounded clone` / `bounded pull`** - read the same repo (read-only
   tokens, `code:read` authority). Browser login is the default identity, and a
   cloned checkout keeps `account.keySource: web`; `--link` exists only for an

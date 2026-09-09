@@ -70,32 +70,56 @@ mainnet apps *you* create.)
 
 What follows from that:
 
-- **Create mainnet apps from the machine holding the key you want to own them.**
-  `bounded deploy --create --protocol realtime_mainnet` sends your local CLI
-  wallet as the intended owner and the server refuses any wallet you have not
-  proven you control. Creating an app for an address whose key lives elsewhere -
-  a browser wallet, a teammate's machine - produces an app that can never deploy
-  a policy again.
+- **The owner must be a wallet your identity can actually sign with.**
+  `bounded deploy --create --protocol realtime_mainnet` resolves the owner from
+  how you are signed in, and the server refuses any wallet you have not proven
+  you control.
+  On a CLI keypair, the owner is your local CLI wallet, exactly as before.
+  On a **web login** (`bounded login`; email, social, or wallet sign-in), the
+  owner is your Bounded account's own wallet - the embedded wallet for
+  email/social accounts, or the wallet you signed in with - and because that
+  choice is permanent, the CLI states the exact address and asks you to confirm
+  it (interactively, or with `--owner-wallet <address>` in scripts and JSON
+  mode). The CLI resolves that address from your account (an email/social
+  account that has no embedded wallet yet gets one provisioned right here);
+  only an account that can never hold one - a login with no email identity -
+  is refused before anything is created.
 - **A mainnet app cannot be ownership-transferred or ejected.** The Bounded-side
   transfer would move the database record while the on-chain owner stayed put,
   leaving the recipient an app they could never deploy to. Both are refused.
-- **`--starter-policy` is not available on mainnet.** Seeding a starter policy
-  would need the server to sign on your behalf, which it cannot do. Create the
-  app, then deploy your policy.
-- **Deploying is otherwise normal.** The CLI checks whether a permit is needed,
-  has the server mint one bound to the exact policy you are deploying, signs it
-  locally, and deploys - one command, no extra step. Your private key never
-  leaves your machine, and the permit cannot authorize a different policy than
-  the one it was issued for.
+- **`--starter-policy` is not available on mainnet.** A mainnet app's first
+  policy must be authorized by its owner like every later one. Create the app,
+  then deploy your policy.
+- **Deploying from a CLI keypair is one command.** The CLI checks whether a
+  permit is needed, has the server mint one bound to the exact policy you are
+  deploying, verifies it locally, signs it, and deploys - no extra step. Your
+  private key never leaves your machine, and the permit cannot authorize a
+  different policy than the one it was issued for.
+- **Deploying from a web login adds one browser approval per deploy.** Your
+  wallet lives in the browser, so the CLI prints an approval link plus a short
+  anti-phishing fingerprint and waits. On the dashboard approval page - signed
+  in as the SAME Bounded account - you compare the fingerprint with the one
+  your terminal printed, approve, and sign: with your embedded wallet's approve
+  card, or with a connected browser wallet holding the owner address. The page
+  independently verifies the transaction is exactly a policy-authority permit
+  for that app before any wallet sees it, and every signature covers exactly
+  one deploy - the next deploy asks again. Rejecting, closing the page, or
+  letting the request expire fails the deploy cleanly; re-run it to start over.
+  No private key ever reaches the CLI or the control plane.
 - **Mainnet creation needs a paid account.** Creating a mainnet app spends real
   rent on an account that is immutable once it exists, so it is granted by your
   account's plan (`pro`/`enterprise`). There is no API key or shared secret to
   obtain; if your plan does not include it you get a `mainnet_not_entitled`
-  refusal telling you to upgrade. Devnet needs no entitlement.
+  refusal telling you to upgrade. Devnet needs no entitlement, and devnet and
+  offchain deploys from a web login stay keyless and approval-free.
 
 ```bash
-# onchain on mainnet - owned by your local CLI wallet
+# onchain on mainnet - owned by your local CLI wallet (keypair lane)
 bounded deploy ./policy.json --create --name my-app --protocol realtime_mainnet
+
+# the same on a web login - confirm the permanent owner wallet explicitly
+bounded deploy ./policy.json --create --name my-app --protocol realtime_mainnet \
+  --owner-wallet <your-account-wallet>
 ```
 
 If you see `owner_not_established`, the app's on-chain account is not owned by a
@@ -111,11 +135,11 @@ Run `bounded plugins list --json` for the CLI's offline callable projection, the
 These commands need no account or network connection and their capability state is advisory, not a deploy verdict.
 Run `bounded verify --protocol <protocol> --json` against the actual policy and inspect `capabilityReadiness`; it reports applicable plugin and return-type advisories but never proves live-network execution.
 An invalid `--protocol` is rejected locally before any network request.
-The deployed program is recorded as runtime v4 on both devnet and mainnet-beta (2026-08-05), but the runtime version does not prove that an external protocol is deployed or configured.
+The deployed program is recorded as runtime v6 on both devnet and mainnet-beta (2026-09-04), but the runtime version does not prove that an external protocol is deployed or configured.
 Consult the [157-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
 Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
-SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4; that runtime is now live on both clusters, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
+SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4 as a minimum; both clusters now run v6, which includes it, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
 Meteora is **not** blocked.
 The replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so nothing about the Meteora flows is externally blocked; they stay unverified until retained live proof exists, like the rest.
 Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.
@@ -151,7 +175,9 @@ write it from a trusted server function instead of the client.
   the user's key. The document is a program account/PDA; the write returns its
   transaction signature. This is the crypto-native path: the user authorizes
   every mutation on-chain, themselves. (A delete is the same tx with a `null`
-  body.)
+  body. It **closes the document's account** and refunds its rent to whoever
+  funded it, and the offchain mirror row disappears once the close is confirmed -
+  not when you call `set(path, null)`.)
 - **Field types map to on-chain types** - `UInt`→u64, `Int`→i64, `String`,
   `Bool`, `Address`→a 32-byte pubkey.
 - **Reads, lists, `subscribe`, and `aggregate` work identically.** Bounded
@@ -199,35 +225,46 @@ This is the opposite of the off-chain default: off-chain, prefer the universal
 `@user.id`; onchain, you have nothing but `@user.address`. See
 [policy-reference.md](../../bounded-backend/docs/policy-reference.md) for the full identity triad.
 
-## Guests cannot write to MAINNET onchain (platform invariant)
+## Guests cannot write to an onchain collection
 
-A **guest (anonymous) session is blocked from every mainnet onchain write**, at the
-platform level, fail-closed - you do not (and cannot reliably) enforce this in your own
-policy, because onchain rules can't even reference `@user.isAnonymous` (above). A blocked
-write returns **HTTP 403 with `code: "anonymous_onchain_blocked"`** *before* any transaction
-is built.
+A guest (anonymous) session is **blocked from writing to any collection marked `onchain: true`**, at the platform level, fail-closed.
+"Writing" means every mutation: `set`, an update, and `delete` alike, whether it arrives as a batch write or as a direct delete of one document.
+A blocked mutation returns **HTTP 403 with `code: "anonymous_onchain_blocked"`** *before* any transaction is built, so there is no chain side effect.
 
-**Why.** A guest is an ephemeral device-keypair identity that is **dropped when the user
-upgrades to email or a real wallet** - its data and its keypair do not carry over. Letting a
-guest move or accumulate real value it would then lose is a footgun, so the platform simply
-forbids it. This mirrors the platform's "fail-closed on money-out" posture.
+**The refusal is keyed on the collection, not on the network.**
+Poofnet (`realtime_offchain`, simulated), devnet, and mainnet all refuse the same write in the same way.
+That is deliberate: what a guest can do in your app must not change when you promote it from poofnet to devnet to mainnet.
+A guest write you watch succeed against a test network would otherwise become a 403 on the day real value is at stake, which is the worst possible moment to discover it.
+
+You do not (and cannot reliably) enforce this in your own policy, because onchain rules can't even reference `@user.isAnonymous` (above).
+
+**Why the gate exists.**
+A guest is an ephemeral device-keypair identity that is **dropped when the user upgrades to email or a real wallet**, and its data and its keypair do not carry over.
+Letting a guest move or accumulate value it would then lose is a footgun, so the platform simply forbids it.
+This mirrors the platform's "fail-closed on money-out" posture.
+
+**The browser SDK refuses too, independently.**
+A guest session's `signTransaction` throws `Guest (anonymous) auth is offchain-only`, and the guest device key (a non-extractable WebCrypto Ed25519 key) has no transaction-byte signing path.
+So even if a write reached the signing step, a browser guest could not complete it.
 
 **Exactly what is and isn't blocked:**
 
-| A guest can... | Blocked? |
+| A guest can... | Result |
 |---|---|
 | Read onchain data (any network) | ✓ allowed |
-| Write **offchain** collections (even in a mainnet app) | ✓ allowed |
-| Write onchain on **`realtime_devnet` / `solana_devnet`** (valueless testnet) | ✓ allowed |
-| Write onchain-flagged paths on **poofnet** (`realtime_offchain`, simulated) | ✓ allowed |
-| Write onchain on **`realtime_mainnet` / `solana_mainnet` (+ `*_mainnet_preview`)** | ✗ **403 `anonymous_onchain_blocked`** |
+| Write **offchain** collections (in any app, on any network) | ✓ allowed |
+| Write an **`onchain: true`** collection on **poofnet** (`realtime_offchain`, simulated) | ✗ **403 `anonymous_onchain_blocked`** |
+| Write an **`onchain: true`** collection on **`realtime_devnet` / `solana_devnet`** | ✗ **403 `anonymous_onchain_blocked`** |
+| Write an **`onchain: true`** collection on **`realtime_mainnet` / `solana_mainnet` (+ `*_mainnet_preview`)** | ✗ **403 `anonymous_onchain_blocked`** |
 
-So a guest can fully try your app and develop against devnet/poofnet; only **real mainnet
-value movement** requires a real login. This also covers writes a guest triggers **through a
-function** (`ctx.bounded`) - the anonymity signal is carried end to end, so there is no
-"launder it through a function" bypass.
+So a guest can fully try the offchain surface of your app; every onchain write needs a real login.
+The `403` also covers onchain writes a guest triggers **through a function** (`ctx.bounded`), because the anonymity signal is carried end to end, so there is no "launder it through a function" bypass.
 
-> **Value coming IN is your job to warn about.** The platform blocks value *out* (mainnet
+**What to build instead.**
+Model the guest-reachable part of your app as offchain collections, and prompt the upgrade (`loginWithRedirect`, or a wallet connect) at the exact point the user first needs to touch an onchain collection.
+Gate that UI on `user.isAnonymous` so the prompt appears before the write, not as a 403 after it.
+
+> **Value coming IN is your job to warn about.** The platform blocks value *out* (onchain
 > writes) but cannot stop someone *depositing* funds into a guest's device wallet from
 > off-platform. Tell guests not to fund the guest wallet - see the guest-mode warning in
 > [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md).
@@ -306,9 +343,20 @@ A policy that verifies on Poofnet still needs every called function checked agai
   **10 SOL + 1,000 USDC** (simulated). No funding step; the USDC is the on-ramp
   into perps collateral (`emberDeposit`) and stable-quoted pools.
   This simulated Poofnet balance does not make the mainnet-only `@TokenPlugin.USDC` constant usable on devnet.
+- **Explicit developer funding.** An app owner, admin, or developer can add
+  simulated SOL, USDC, or any mint to any wallet inside that app's Poofnet
+  ledger with `bounded wallet fund <wallet> --app-id <appId> --mint <SOL|USDC|mint> --amount <amount>`.
+  The command works only for `realtime_offchain` and never creates real onchain assets.
+  Custom mints use their simulated token metadata decimals.
+  If the mint has not been created in simulated state yet, pass its real precision with `--decimals <0-18>`.
 - **Onchain-parity result fields.** Every write to an `onchain: true` path is
   stamped at commit with `_transaction_hash` (signature-shaped) and
   `_block_number` (sim slot).
+  A **delete** is a simulated transaction too, but the row it removes cannot
+  carry those fields, so its signature surfaces only on the batch receipt
+  (`SetResult.transactionId`) and in `getTransactionHistory` - never on the
+  returned document, which is the pre-delete value and still carries the
+  *earlier* write's `_transaction_hash`.
   A **failed** onchain hook still **persists the doc** and stamps `_error_message`
   with the failure reason - read it back or subscribe to surface trade errors in UI.
   **A record existing is NOT proof the onchain action succeeded.**

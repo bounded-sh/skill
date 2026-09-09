@@ -21,7 +21,7 @@ Argument descriptions and signer markers below are copied from the existing mono
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries, `hooks.offchain`
 - Returns: `string`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
+- Status: **unverified** (source parity only); markers: NEEDS-RUNTIME-V6.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

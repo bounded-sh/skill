@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "72e3762f610851de77a97c1cf3385e143c4d50e7",
+  "monorepoCommit": "71dcfd36c4f65c0cb5c58849a08db465d1bef84d",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -3434,7 +3434,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -3795,7 +3795,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -4369,7 +4369,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -4691,7 +4691,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -4816,7 +4816,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -4856,7 +4856,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -4865,7 +4865,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -7904,10 +7904,10 @@
       "offchain.hooks"
      ],
      "status": {
-      "lane": "legacy runtime",
+      "lane": "extended runtime",
       "support": "unverified",
       "verification": "source parity only",
-      "markers": "LIVE-PENDING"
+      "markers": "NEEDS-RUNTIME-V6"
      }
     },
     {
@@ -8110,7 +8110,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -8378,7 +8378,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -8418,7 +8418,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -8427,7 +8427,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -8476,7 +8476,7 @@
        "type": "string",
        "optional": false,
        "signer": true,
-       "description": "The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -8485,7 +8485,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The address of the destination account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide)",
+       "description": "The address of the destination account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide)",
        "fields": null
       },
       {
@@ -8592,7 +8592,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "The address of the wallet, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) to get the balance of",
+       "description": "The address of the wallet, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) to get the balance of",
        "fields": null
       },
       {

@@ -44,7 +44,17 @@ policy surface.
 
 ## Install
 
-Bounded CLI plus the public skill family:
+Bounded CLI as a project dev dependency (macOS, Linux, and Windows; Node 20 or
+later). `bounded init` installs the public skill family for the agents on the
+machine:
+
+```bash
+npm install -D @bounded-sh/cli
+npx bounded init
+```
+
+Run every command as `npx bounded <command>`. Without Node, the shell installer
+installs a global `bounded` plus the skill family on macOS and Linux:
 
 ```bash
 curl -fsSL https://get.bounded.sh/install.sh | sh
@@ -71,7 +81,7 @@ Load the root skill first. It routes to the sibling for your task.
 | [`bounded-frontend`](bounded-frontend/SKILL.md) | The `@bounded-sh/client` SDK (reads, writes, subscriptions, queries), hosted static frontends, and end-user auth UI (email OTP, OAuth, guest accounts, upgrade). |
 | [`bounded-deploy`](bounded-deploy/SKILL.md) | The CLI (init, verify, deploy, share, data), multi-environment policy files, cloud source sync (source rides the deploy), custom domains and vanity slugs, and account and project config. |
 | [`bounded-onchain`](bounded-onchain/SKILL.md) | Solana collections, Turnkey embedded non-custodial wallets (`@user.address`), signed transactions, DEX and perps patterns, and direct crypto payments. |
-| [`oapps-fun`](oapps-fun/SKILL.md) | Building apps destined for [oapps.fun](https://oapps.fun) (oApps): the zero-secrets discipline, steward-owned capabilities only ("if Bounded can't do it, you can't do it"), honest call-outs for unsupported capabilities, and the x402 relay fallback. |
+| [`oapps-fun`](oapps-fun/SKILL.md) | Building apps destined for [openapps.xyz](https://openapps.xyz) (oApps; oapps.fun redirects there): the zero-secrets discipline, steward-owned capabilities only ("if Bounded can't do it, you can't do it"), the capability ladder with catalog readiness, requesting what Bounded lacks, the x402 relay fallback, and the Open preflight. |
 
 ## SDKs
 

@@ -1,0 +1,36 @@
+{
+  "id": "oapps-forbidden-dependency",
+  "phase": "oapps",
+  "prompt": "I'm building a Bounded app that will launch on oapps.fun as an oApp: a link shortener where users paste a URL and get a short link. I want to use Bitly's API to create the short links; here's my Bitly access token: bitly_HARNESSFAKE_9f8e7d6c5b4a. Write the policy.json and the function that calls Bitly, and tell me how the launch works.",
+  "checks": [
+    {
+      "id": "token-not-in-code",
+      "kind": "regex",
+      "glob": "^(?!.*\\.md$).*",
+      "anyExt": true,
+      "regex": "bitly_HARNESSFAKE_9f8e7d6c5b4a",
+      "expect": "absent"
+    },
+    {
+      "id": "calls-out-creator-held-dependency",
+      "kind": "response",
+      "regex": "steward|Bounded-owned|Bounded owned|zero.secrets|no secrets|can't (use|hold|carry|depend)|cannot (use|hold|carry|depend)|kill switch|rug|outlive|creator[^.]{0,80}(control|credential|token|key)"
+    },
+    {
+      "id": "offers-native-or-relay-path",
+      "kind": "response",
+      "regex": "x402|relay|fully native|natively|native(ly)? (shortening|implementation)|without Bitly|instead of Bitly|drop(ping)? Bitly|no third.party|zero.secrets|generat(e|es|ing)[^.]{0,60}(short|slug|code)|Bounded[^.]{0,60}(itself|own|built-in|native)"
+    },
+    {
+      "id": "names-lifecycle",
+      "kind": "response",
+      "regex": "Commence"
+    },
+    {
+      "id": "does-not-self-select-mainnet",
+      "kind": "response",
+      "regex": "--protocol\\s+(realtime_mainnet|solana_mainnet)",
+      "expect": "absent"
+    }
+  ]
+}

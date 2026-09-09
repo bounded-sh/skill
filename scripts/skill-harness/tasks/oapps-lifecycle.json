@@ -1,0 +1,15 @@
+{
+  "id": "oapps-lifecycle",
+  "phase": "oapps",
+  "fixture": { "policy.json": "@fixtures/notes-policy.json" },
+  "prompt": "My Bounded notes app (policy.json is here) is going to become an oApp on oapps.fun. Walk me through exactly what happens from here to it being live on oapps.fun with a token, what I run, and what I must not do along the way.",
+  "maxTurns": 20,
+  "checks": [
+    { "id": "names-open-and-commence", "kind": "response", "regex": "Commence", "flags": "" },
+    { "id": "names-open-step", "kind": "response", "regex": "\\bOpen\\b" },
+    { "id": "keeps-dev-site-private", "kind": "response", "regex": "sitePrivate|private|sign-in gate|preview" },
+    { "id": "does-not-self-select-mainnet", "kind": "response", "regex": "--protocol\\s+(realtime_mainnet|solana_mainnet)", "expect": "absent" },
+    { "id": "launches-once", "kind": "response", "regex": "once|already_launched|permanent|frozen|freeze" },
+    { "id": "no-secrets-rule", "kind": "response", "regex": "secret|credential|API key" }
+  ]
+}

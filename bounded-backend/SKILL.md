@@ -8,8 +8,7 @@ description: >-
   rooms, and the proof loop (bounded verify, counterexamples, proof coverage). Use
   when writing or changing server-side Bounded logic, policies, or the rules that
   govern who can do what. Part of the Bounded skill family; see the bounded skill
-  to route across frontend, deploy, onchain, teams, and cross-cutting Action
-  Boundaries guidance.
+  to route across frontend, deploy, onchain, and teams.
 ---
 
 # Bounded backend
@@ -50,7 +49,13 @@ term.
 | Browser CSP / restrict what app pages may reach | [browser boundary](docs/browser-boundary.md) |
 | Constants, reusable rules, `@const`, `@def` | [constants and defs](docs/constants-and-defs.md) |
 | Choose rule vs invariant vs hook vs function | [when to use functions](docs/functions-when-to-use.md) |
-| Functions; `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets`, `ctx.ai.run`, `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, `ctx.services`, `ctx.browser`, `@const.AGENT`, agent identity | [functions](docs/functions.md) |
+| Functions; declare, `auth`, `entry`, `secrets`, `actAs`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets`, invoke, deploy | [functions](docs/functions.md) |
+| Public functions: HTTP routes without a Bounded session at `<slug>-api.bounded.page`, `public`, `methods`, `cors`, public JWKS, machine callers, webhook and browser-public modes | [public functions](docs/public-functions.md) |
+| `ctx.ai.run`, `ctx.ai.generateImage`, `ctx.ai.generateVideo`, `getJob`, AI without API keys | [ctx.ai](docs/functions-ctx-ai.md) |
+| `ctx.services`, managed third-party APIs, `bounded services` | [ctx.services](docs/functions-ctx-services.md) |
+| `ctx.browser`, headless browser from a function, driving your own app signed in, `@const.AGENT`, agent identity | [ctx.browser](docs/functions-ctx-browser.md) |
+| `ctx.enqueue`, background jobs, queues, replay identity | [ctx.enqueue](docs/functions-ctx-enqueue.md) |
+| `ctx.build`, functions that originate governed app builds | [ctx.build](docs/functions-ctx-build.md) |
 | Start simple and graduate to functions | [function graduation](docs/functions-graduation.md) |
 | User-owned provider API keys | [secrets](docs/secrets.md) |
 | Schedules, `dueRows`, hooks, webhooks, `verifyWebhook` | [scheduled hooks and webhooks](docs/hooks-scheduled-webhooks.md) |
@@ -80,6 +85,7 @@ term.
 | Error/status | Meaning |
 |---|---|
 | `403` | A write or function invoke failed a rule. Check auth, ownership, roles, or function `auth`. Denied reads are hidden as `200` with empty data, not `403`. |
+| `500 rule_evaluation_failed` | The rule was reached and could NOT be evaluated - no rule denied you, and nothing was read or written. Not a denial, not a retryable conflict. Read `bounded decisions` for the cause; the row is recorded with `decision: error`. |
 | `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
 | `403 incomplete_batch` | A collection's `requiresInBatch` declaration names companion paths missing from the atomic batch. Submit the complete `setMany`. |
 | `DISPROVED` + counterexample | The proof found a breaking assignment. Fix every blocking result and verify again; only non-blocking advisories are reviewable. |

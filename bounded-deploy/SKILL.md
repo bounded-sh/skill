@@ -34,12 +34,15 @@ Read only the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| First setup, normal verify/deploy, publish a site | [docs/quickstart.md](docs/quickstart.md) |
+| First setup, normal verify/deploy, publish a site, multiple app IDs from one project | [docs/quickstart.md](docs/quickstart.md) |
 | Normal web account login, session refresh, headless OTP, account switching | [docs/accounts.md](docs/accounts.md) |
 | Hosted web frontend, preview, private/public access | [frontend-hosting.md](../bounded-frontend/docs/frontend-hosting.md) |
 | Multi-environment policies: per-env app id, constants, schedule cadence, function scoping | [docs/environments.md](docs/environments.md) |
 | Build an app from a prompt, iterate with `edit`, watch/cancel/gate a run | [docs/cli-reference.md](docs/cli-reference.md) (Prompt-driven builds) |
 | Source sync, `--with-source`, clone, pull | [docs/source-sync.md](docs/source-sync.md) |
+| Port an existing app (Supabase, Firebase, Express, Next, a key-holding backend) onto Bounded; decide what becomes rules, functions, schedules, or a capability | [docs/porting-an-existing-app.md](docs/porting-an-existing-app.md) |
+| Third-party API discovery, readiness, and requests: `bounded services search/describe/request/status` | [docs/cli-reference.md](docs/cli-reference.md) (Capabilities) |
+| Open dry run and rehearsal for an oApp: `bounded oapp preflight`, `bounded oapp rehearse` | [docs/cli-reference.md](docs/cli-reference.md) (Open Apps) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
 | Share, access, owner mismatch, `401`/`403` | [docs/access-playbook.md](docs/access-playbook.md) |
 | Delete an app permanently (browser-confirmed, owner only) | [docs/cli-reference.md](docs/cli-reference.md) (`apps delete`) |
@@ -52,6 +55,16 @@ account profile, or recovery of an existing key-owned app.
 
 ## Incident router
 
+- `503` + `proof_substrate_unavailable` (`retryable: true`) from `bounded verify`: the prover lane is warming up or busy.
+  This response does not establish policy correctness.
+  Retry the same policy UNCHANGED using the bounded protocol below.
+  Wait 30 seconds, then rerun the same `bounded verify`; make at most 3 attempts total, meaning the initial attempt plus 2 retries.
+  If the third attempt still returns this error, stop and tell the user the proving service is degraded.
+  Include the `correlationId` when present.
+  Do not edit the policy, switch accounts, or create a new app.
+  This retry protocol applies only to `bounded verify`.
+  Never use it to retry `bounded deploy`.
+  In particular, never retry `bounded deploy --create` because it can create another app.
 - `deploy_in_progress`, `operationId`, or `recoveryCommand`: use only the exact
   owner-visible recovery command with unchanged inputs, then let the CLI poll.
   See [deploy recovery](docs/cli-reference.md#recover-an-in-progress-policy-deploy).
@@ -60,10 +73,32 @@ account profile, or recovery of an existing key-owned app.
   target-mismatch and manual-intervention states. Re-running the recovery can
   never commit it; run a fresh `bounded deploy` (or escalate, when the message
   says operator review). Never invent a recovery command for these.
+- `onchain_creation_pending`, `onchain_creation_unreadable`, or
+  `onchain_creation_superseded` (all `409`): the app's mainnet creation never
+  finished - its on-chain owner is not proven at finalized yet, so nothing can
+  be deployed to it and nothing has been signed or spent.
+  Re-run the SAME `bounded deploy` for that app id: the platform resumes the
+  original creation and lifts the fence as soon as the account is finalized.
+  Never re-run `--create`, and never create a replacement app - the first app's
+  on-chain account is already paid for and a second one strands that rent.
+- `onchain_creation_owner_conflict` (`409`): the app's on-chain account is
+  finalized under a wallet the creation did not intend. That is an integrity
+  fault, not a state to retry; escalate for operator review.
 - Unsure which applies, or unsure whether a fresh deploy is safe: run the
   read-only `bounded deploy status --json` first. It reports what holds the
   deploy slot and a `freshDeploySafe` verdict, and it never mutates anything.
-- `site_control_denied`, wrong owner, or unexpected `401`/`403`: run
+- Before a deploy, to know whether it will LAND (not just whether the slot is
+  free): run the read-only `bounded deploy preflight --json`. Deploys are metered
+  against the app's credit balance - each leg charges its actual Cloudflare infra
+  cost (sub-cent; no per-tier deploy cap, no minimum), so an out-of-credit app is
+  refused. Preflight reports the credit balance + a `would_likely_admit/refuse/
+  unknown` verdict so you can tell the user "this will land" or "top up first"
+  before spending time on the deploy. It never mutates anything.
+- `402 deploy_credit_insufficient` on `site deploy`: billing, not identity. The
+  deploying account has no spendable credit for the deploy's infra cost. Run
+  `bounded billing status`, add credit with `bounded billing topup --credits <n>`,
+  then retry under the same identity. Switching accounts never helps here.
+- `site_control_denied` (a `403`), wrong owner, or unexpected `401`/`403`: run
   `bounded whoami` and `bounded access --app-id <id>` before changing identity.
   See [access playbook](docs/access-playbook.md).
 - `project_limit_exceeded`: inventory apps; never delete or repurpose one

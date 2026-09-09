@@ -294,6 +294,12 @@ it epoch-bucketed (conservatively — it can over-enforce near the boundary, nev
 under-enforce). Onchain capped collections remain fully no-delete; expired-delete
 retention is offchain-only. See [proof-coverage.md](proof-coverage.md).
 
+Declaring the claim is what turns onchain enforcement ON: a `rollingSum` on an
+onchain collection **without** `onchain: "onchainSupported"` still verifies,
+deploys, and is enforced by the offchain runtime, but onchain program writes are
+not checked against it. See the omitted-default warning under
+[`onchain` — coverage claims](#onchain--coverage-claims-are-verified-not-trusted).
+
 ### Recipe — rate-limit an action with a separate event log
 
 The examples above cap a field that *is* the value being limited (a spend log
@@ -311,12 +317,12 @@ dedicated append-only log** in the *same* `setMany` as the real write, and put t
     "tier": "durable",
     "rules": {
       "read": "@user.address != null",
-      "create": "@user.address != null && @newData.author == @user.address",
+      "create": "@user.address != null && @newData.author == @user.address && get(/users/@user.address/posts/$messageId) == null && getAfter(/users/@user.address/posts/$messageId).weight == 1",
       "update": "false", "delete": "false"
     }
   },
   "users/$userId/posts/$postId": {
-    "description": "Append-only per-author rate-limit log. Every message appends one weight=1 event here in the SAME atomic setMany.",
+    "description": "Append-only per-author rate-limit log. Every message appends one weight=1 event here, under the SAME document id, in the SAME atomic setMany.",
     "fields": { "author": "Address!", "weight": "UInt!" },
     "tier": "durable",
     "rules": {
@@ -333,20 +339,39 @@ dedicated append-only log** in the *same* `setMany` as the real write, and put t
 ```
 
 ```ts
-// Client writes BOTH legs in one atomic setMany — the message and its cap event
-// commit together or not at all. The 51st post in an hour fails the whole batch
-// (409), so the message is never written either.
+// Client writes BOTH legs in one atomic setMany, under the SAME id - the message
+// and its cap event commit together or not at all. The 51st post in an hour fails
+// the whole batch (409), so the message is never written either.
 await setMany([
-  { path: `messages/${id}`,            document: { author: user.address, body, createdAt } },
-  { path: `users/${user.address}/posts/${postId}`, document: { author: user.address, weight: 1 } },
+  { path: `messages/${id}`,                    document: { author: user.address, body, createdAt } },
+  { path: `users/${user.address}/posts/${id}`, document: { author: user.address, weight: 1 } },
 ]);
 ```
 
 Three things make this airtight, and each is a common omission:
 
-1. **Atomic pairing.** Write the action and the cap event in **one `setMany`**.
-   Because `setMany` is all-or-nothing, you can't do the action without recording
-   the event, and a rejected cap event (over the limit) rolls back the action too.
+1. **Atomic pairing, required by the action's own rule.** Write the action and the
+   cap event in **one `setMany`**, so a rejected cap event (over the limit) rolls
+   back the action too. Atomicity alone is not the enforcement: nothing stops a
+   client from submitting the message leg *by itself*, and `requiresInBatch` cannot
+   close it here, because its companion paths may only use path variables the
+   declaring collection binds and this log is keyed by the caller's identity
+   ([data-plane.md](data-plane.md#require-companion-writes-with-requiresinbatch)).
+   So the message's own `create` rule demands the event, keyed by the caller and
+   sharing the message's id:
+
+   ```json
+   "create": "@user.address != null && @newData.author == @user.address && get(/users/@user.address/posts/$messageId) == null && getAfter(/users/@user.address/posts/$messageId).weight == 1"
+   ```
+
+   `getAfter()` reads the staged post-batch state, so it sees the companion row
+   exactly when the caller included it - drop that leg and the message is denied.
+   **Keep the `get(...) == null` in front of it.** A row that already existed
+   satisfies `getAfter` just as well, so without the absence check a caller can
+   append cheap event rows in one window, let them age out of it, and then spend
+   them on messages in a later window whose cap is never charged. Requiring the row
+   to be absent before the batch forces every message to append a fresh event that
+   counts now. (Offchain, `@user.id` keys this exactly as well as `@user.address`.)
 2. **Pin the weight in the create rule** (`@newData.weight == 1`). Without this a
    client can append `weight: 0` (or omit it) and **the cap never increments** —
    the limit is silently bypassed. The rule, not the client, fixes the per-event
@@ -762,6 +787,21 @@ corresponding implementation and the collection is declared `"onchain": true`.
 For `flowBound`, structural rejection is the current fail-closed boundary; there
 is no onchain implementation. See [proof-coverage.md](proof-coverage.md) for the
 coverage matrix.
+
+**Omitting `onchain` is not neutral on an onchain collection.** The omitted
+default is offchain-only enforcement: the invariant still verifies, deploys, and
+is enforced by the offchain runtime, but onchain program writes are NOT checked
+against it. In the proof summary this shows up only as the word "offchain"
+inside a green PASS line, which is easy to read past (a devnet probe shipped
+exactly this mistake); `bounded verify` also surfaces the omission as an
+"Invariant enforcement plane" advisory in the capability-readiness section. On
+an `onchain: true` collection, declare the claim explicitly every time:
+`"onchainSupported"` only when the invariant is scoped to that same collection
+and the runtime supports the form (`conserve` in all three materializations,
+`tenantTag`, full-path `tenantEdge` without `targetPathVariable`, or `rollingSum`
+within the window cap and without `resetAtMs`), or
+`"offchainOnly"` to record offchain-only enforcement as a deliberate choice -
+the explicit spelling is also what silences the advisory.
 
 <a id="publicreads-exact-conditional-public-read-posture"></a>
 

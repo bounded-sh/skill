@@ -28,6 +28,15 @@ bounded verify
 bounded deploy --create --name my-app
 ```
 
+A healthy proof answers in a few seconds.
+If `bounded verify` returns `503` `proof_substrate_unavailable` (`retryable: true`), the proving service is temporarily unavailable.
+This response does not establish policy correctness.
+Wait 30 seconds and rerun the same `bounded verify`.
+Make at most 3 attempts total, meaning the initial attempt plus 2 retries.
+If the third attempt still fails this way, stop and report the proving service as degraded, including the `correlationId` when present.
+This retry protocol never applies to `bounded deploy`; in particular, never retry `bounded deploy --create` because it can create another app.
+See the incident router in this skill's SKILL.md for the full protocol.
+
 Fix every blocking verify result. The create deploy records the new `appId` in
 `bounded.json`. Later policy releases use:
 
@@ -45,8 +54,31 @@ Build a static output directory, then publish it to the same app:
 bounded site deploy ./dist
 ```
 
-Use the URL in the JSON receipt, or resolve the environment-qualified slug with
-`bounded domains list --app-id <id> --env <environment> --json`.
+The CLI packages the directory as one deterministic gzip-tar artifact and uploads it directly or through resumable multipart transport when needed.
+It does not sync project source unless `sourcePush` or `--with-source` explicitly requests that separate workflow.
+
+If the upload receipt reports `liveUrlStatus: "not_mapped"` and the app has no mapped slug or active custom domain, claim a unique slug or follow the [custom-domain guide](domains.md).
+Keep an existing mapping unchanged.
+
+```bash
+bounded domains slug <unique-slug> --app-id <id>
+```
+
+Use the nonempty URL in the JSON receipt, or resolve the environment-qualified slug with `bounded domains list --app-id <id> --env <environment> --json`.
+Keep the returned hostname exactly; do not invent an app-id URL or change site privacy to obtain one.
+
+## Develop locally
+
+You do not need to publish to iterate. Run the frontend on a local dev server
+against the deployed backend — data calls work from `http://localhost`
+immediately. Only hosted login checks origins; register your dev origin once
+(owner-run, port-exact, ~30s to take effect):
+
+```bash
+bounded domains origins add http://localhost:5173 --app-id <id>
+```
+
+Details: [develop on localhost](../../bounded-frontend/docs/building-a-webapp.md#develop-on-localhost).
 
 ## Confirm the release
 
@@ -63,3 +95,39 @@ Read `bounded.json` first. It identifies the environment, app, policy path, and
 developer account source. Do not create a replacement app merely because the
 current account lacks access; use `bounded whoami`, `bounded access`, and the
 [access playbook](access-playbook.md).
+
+## Multiple app IDs from one project
+
+Use named instances when several app IDs intentionally share policy and frontend build targets:
+
+```json
+{
+  "$schema": "https://bounded.sh/schemas/bounded.schema.json",
+  "defaultInstance": "poofnet",
+  "instances": {
+    "poofnet": {
+      "appId": "existing-app-id",
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    },
+    "poofnet-empty": {
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    }
+  },
+  "policy": "policy.json"
+}
+```
+
+Create and deploy only the empty instance, then publish its frontend:
+
+```bash
+bounded deploy --create --name poofnet-empty --instance poofnet-empty
+bounded site deploy ./dist --instance poofnet-empty
+```
+
+The create command writes the new `appId` only into `instances.poofnet-empty`.
+Use `--instance <name>` or `BOUNDED_INSTANCE`; `defaultInstance` is used when neither is present.
+If several instances exist without a default or explicit selection, the CLI refuses instead of guessing.

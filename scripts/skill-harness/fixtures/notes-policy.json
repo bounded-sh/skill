@@ -1,0 +1,18 @@
+{
+  "notes/$noteId": {
+    "description": "A private note owned by exactly one user.",
+    "tier": "durable",
+    "fields": {
+      "owner": "String!",
+      "title": "String",
+      "body": "String",
+      "updatedAt": "UInt"
+    },
+    "rules": {
+      "read": "@user.id != null && @data.owner == @user.id",
+      "create": "@user.id != null && @newData.owner == @user.id",
+      "update": "@user.id != null && @data.owner == @user.id && @newData.owner == @data.owner",
+      "delete": "@user.id != null && @data.owner == @user.id"
+    }
+  }
+}

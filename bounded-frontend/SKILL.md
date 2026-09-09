@@ -25,6 +25,7 @@ Read only the row matching the current task or term.
 |---|---|
 | SDK reads, writes, subscriptions, paging, `queryAggregate`, `count`, filters, sort, cursor, `setMany`, `set(path, null)` | [SDK reference](docs/sdk-reference.md) |
 | Build a web frontend | [web app guide](docs/building-a-webapp.md) |
+| Local dev server (`npm run dev`, Vite, localhost), login popup fails, `redirect_uri origin is not a registered origin`, CORS during local development | [develop on localhost](docs/building-a-webapp.md#develop-on-localhost) |
 | Build for React Native / mobile | [React Native guide](docs/building-for-react-native.md) |
 | App-user email OTP, OAuth, `openBoundedWidget`, unified login widget, default Turnkey auth | [app auth](docs/app-auth.md) |
 | Bring-your-own wallet login; `walletLogin`, `authMethod:'phantom'`, Phantom / Wallet-Standard | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) |
@@ -41,6 +42,7 @@ Read only the row matching the current task or term.
 - Denied reads return empty `200` responses, never `403`.
 - Batch reads for lists of computed values with `runQueryMany`; never map `runQuery` over a list. See [sdk-reference.md](docs/sdk-reference.md#batch-your-queries).
 - Put provider API keys in Bounded secrets (backend), never in frontend code.
-- **A moderate `uuid` advisory (GHSA-w5hq-g745-h8pq) rides in transitively through `@solana/web3.js -> jayson`, with no upstream fix.** Do not chase it through dependency bumps; add the app-level `overrides`/`resolutions` snippet in [sdk-reference.md](docs/sdk-reference.md#npm-audit-reports-a-moderate-uuid-advisory---here-is-the-fix), which makes `npm audit --omit=dev` exit 0. The vulnerable code path is unreachable through the SDK.
-- **Keep the auth defaults for most apps.** Do not add `authMode` or `auth.wallets` merely to enable wallets. Turnkey is the sole embedded-wallet implementation and the default is Turnkey-native auth with eager provisioning, so a completed email/social login carries a real `@user.address` alongside its stable `@user.id`. Add explicit auth config only to opt out (`auth.wallets: false`), to retain the legacy hosted login mode, or to enable BRING-YOUR-OWN wallet login - that one path does require a deployed `"auth": { "wallets": true }`, because the issuer refuses to mint a session for an external wallet without it. Browser guests and phone-only sessions are exceptions. See [embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md).
+- If `npm audit` reports `uuid` advisory GHSA-w5hq-g745-h8pq through `@solana/web3.js -> jayson`, use the scoped [override recipe](docs/sdk-reference.md#npm-audit-reports-a-moderate-uuid-advisory---here-is-the-fix).
+  It addresses that advisory; run `npm audit --omit=dev` on the installed lockfile and investigate any remaining findings separately.
+- **Keep the auth defaults for most apps.** Do not add `authMode` or `auth.wallets` to "enable wallets": default Turnkey email/social login already carries `@user.address`. Deploy `"auth": { "wallets": true }` only for an EXTERNAL-keypair session (bring-your-own wallet login, a server-SDK keypair client, the CLI keypair data lane). Full rule and the opt-outs: [embedded-wallets.md](../bounded-onchain/docs/embedded-wallets.md#the-recommended-login-for-an-onchain-app).
 - **`@user.id` (the account id) is identity/ownership; `@user.address` is the wallet.** Key ownership, membership, and auth guards on `@user.id` (always present). Reach for `@user.address` only for wallet/onchain semantics - never as the identity key.

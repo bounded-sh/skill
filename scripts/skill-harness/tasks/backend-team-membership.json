@@ -1,0 +1,13 @@
+{
+  "id": "backend-team-membership",
+  "phase": "backend",
+  "prompt": "Bounded app for teams: an org has members and docs. The org owner adds members (people can't just add themselves to an org); members can read all of the org's docs and create new ones. Write the policy.json here.",
+  "checks": [
+    { "id": "policy-json", "kind": "json-valid", "path": "policy.json" },
+    { "id": "verify-passed", "kind": "verify", "path": "policy.json", "expect": "passed" },
+    { "id": "member-create-consults-org", "kind": "policy-rule", "collection": "members", "rule": "create", "regex": "get\\(" },
+    { "id": "member-create-not-bare-self", "kind": "policy-rule", "collection": "members", "rule": "create", "regex": "^\\s*@user\\.id != null && \\$\\w+ == @user\\.id\\s*$", "expect": "nomatch", "all": true },
+    { "id": "doc-read-checks-membership", "kind": "policy-rule", "collection": "docs", "rule": "read", "regex": "get\\(" },
+    { "id": "doc-create-checks-membership", "kind": "policy-rule", "collection": "docs", "rule": "create", "regex": "get\\(" }
+  ]
+}

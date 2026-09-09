@@ -35,12 +35,9 @@ if (!existsSync(solLayer)) {
 // but use internal program naming; the published pages use the public naming.
 // Order matters: longest, most specific first.
 const REWRITES = [
-  [/tarobase contract address using @contract\.address as an escrow/gi,
+  [/bounded contract address using @contract\.address as an escrow/gi,
     'the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA)'],
   [/an accountId from @AccountPlugin/g, 'an account id (a named app PDA; see the custody guide)'],
-  [/Tarobase account[- ]id/gi, 'Bounded account id'],
-  [/TaroBase-managed/gi, 'Bounded-managed'],
-  [/tarobase/gi, 'Bounded'],
   [/—/g, '-'], // em dash is forbidden repo-wide
   [/–/g, '-'],
 ]

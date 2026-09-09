@@ -242,7 +242,13 @@ For the current Devnet program, bind `openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6
 - Arithmetic: `+` `-` `*` `//` (integer division) `**`. **Plain `/` is reserved
   for paths — using it for division is a validation error.**
 - Literals: numbers (decimals only on offchain collections), quoted strings
-  (`"..."`, `'...'`, or `` `...` ``), `true`, `false`, `null`.
+  (`"..."` or `'...'`), `true`, `false`, `null`.
+  Backticks are not a string form - the runtime grammar cannot parse one, so a
+  backtick literal never deploys, whatever `verify` says about it.
+  The empty string (`''` / `""`) is a legal literal that older validators reject;
+  to require a non-empty `String` on any platform version, use bare truthiness
+  (`@newData.body`) or `@StringUtils.length(@newData.body) > 0`, both of which
+  work offchain and onchain.
 - **No ternary, no switch, no string concatenation.** Branch with
   `(cond && A) || (!cond && B)` chained. Build paths by embedding variables
   directly: `get(/teams/@newData.teamId/members/@user.address)`.
@@ -351,7 +357,7 @@ never treated as path templates:
 |---|---|---|
 | `links` | array of link definitions | [queries.md](queries.md) |
 | `auth` | `{ anonymous: bool, wallets: bool \| { provisioning?: "lazy" \| "eager", authMode?: "bounded" \| "turnkey" } }` - app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. `wallets` covers two distinct things and the default differs for each. **Embedded-wallet provisioning** for an already-authenticated email/social user: Turnkey is the sole implementation, eager provisioning is the default, so omit `wallets` for the normal path and set `wallets: false` only to opt out. **Wallet LOGIN** (SIWS/SIWE sign-in, and any keypair client - `BOUNDED_PRIVATE_KEY`, CI, an agent's QA session): **OFF by default**, so it is refused with a `403 wallet_login_disabled` until the app sets `wallets: true` (or an enabling object) EXPLICITLY. Minting a session from a bare signature is the security-sensitive lane, so an app must declare it. If anything signs into this app with a wallet or a keypair, set it. See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md). | [auth.md](../../bounded-frontend/docs/auth.md), [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md) |
-| `functions` | `{ name: { auth, entry, timeout, secrets, environments } }` — `environments` is **CLI-only**: an allowlist naming the only environments this function deploys to | [functions.md](functions.md), [environments.md](../../bounded-deploy/docs/environments.md) |
+| `functions` | `{ name: { auth, entry, timeout, secrets, public, queueCallable, publicQueueCallable, environments, ... } }` — `environments` is **CLI-only**: an allowlist naming the only environments this function deploys to; a `public: true` function's principal is injected as `@const.BOUNDED_PUBLIC_PRINCIPAL_<NAME>` | [functions.md](functions.md), [environments.md](../../bounded-deploy/docs/environments.md) |
 | `oapp` | Optional literal `true` only. Enables the v1 oApp static restrictions from the first verify/deploy; omit the key for a regular app. | [oapps-fun](../../oapps-fun/SKILL.md) |
 | `boundaries` | App boundary metadata, including locked egress allow-list entries. | [§ oApp mode and closed egress](#oapp-mode-and-closed-egress) |
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
@@ -394,6 +400,8 @@ External egress is fully closed when every declared entry has an empty `allow` a
 
 Each egress entry accepts `id`, optional `title` and `description`, an `allow` array, and literal `"mode": "locked"`.
 Nonempty `allow` values are exact hostnames, `*.suffix` wildcards, or `service:<name>` integration ids.
+A `service:<name>` id is a capability grant, not a host: it enables `ctx.services` and never widens raw `fetch` or `ctx.browser`.
+On an oApp, an allow list that carries only `service:` grants (the starter shape: `service:cap` and `service:x402`) is therefore closed for hosts exactly like an empty allow list, and the runtime refuses every outside destination; on a regular app a service-only list leaves raw `fetch` unrestricted, as before.
 
 #### Per-function egress
 

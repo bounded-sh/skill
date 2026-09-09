@@ -12,123 +12,13 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | **CLI/admin auth** | you / your agent | normally a Bounded web account session selected by `bounded init`; local signing is an advanced alternative | owns/administers apps and is documented in the deploy skill |
 | **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP). **Turnkey-native auth with eager embedded-wallet provisioning is the default**, so supported email/social users carry both `@user.id` and `@user.address` without an `authMode` or `auth.wallets` override. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
 
-## CLI auth boundary
+## Developer and server authentication
 
-`bounded init` writes public `bounded.json`, reuses a web session, and opens
-hosted browser login when needed. That is the normal onboarding flow. Full
-developer-account guidance lives in
-[accounts.md](../../bounded-deploy/docs/accounts.md).
-
-The CLI also has advanced local signing sources:
-
-- **Wallet/keypair mode** (advanced): `global` (`~/.bounded/credentials`),
-  `project` (`<project>/.bounded/credentials`), `profile`
-  (`~/.bounded/accounts/<profile>/credentials`), or `env`
-  (`BOUNDED_PRIVATE_KEY`). The keypair is the signing identity; it owns apps
-  created with it and signs data-plane writes. It needs no other credential:
-  a key that signs in from a CLI or server, and never from a browser wallet,
-  is cleared for server-side sessions automatically. Use a dedicated key for
-  automation - if the same key also signs in to the app through a browser
-  wallet, its server-side sessions stop working and every server call fails
-  with `relying party not allowed for app`.
-- **Web account mode** (default): `bounded init` opens the hosted email/social
-  sign-in page and completes Authorization Code + PKCE through a temporary
-  loopback callback. It stores refreshable Bounded Auth credentials in
-  `~/.bounded/web-session.json`, uses the web account directly, and selects
-  `account.keySource:"web"` for an existing current project. It does **not**
-  create, link, or reuse a local wallet key. Use `bounded login --email
-  you@example.com` for terminal OTP when a browser is unavailable.
-
-```bash
-bounded whoami                    # shows wallet address or web identity, environment, and source
-bounded login                     # hosted email/social sign-in
-# bounded login --email you@example.com  # headless terminal OTP fallback
-```
-
-> **Advanced wallet-mode warning.** A wallet credentials file is auto-generated, never
-> shown, and never backed up. Lose it without having linked, shared, or backed it
-> up first and its apps are unrecoverable (there is no key-recovery command;
-> `bounded account transfer-to-web` requires the key to still exist). Treat it
-> like an SSH private key and
-> set up a recovery path if you deliberately choose wallet/keypair mode. Full
-> guidance: [key-and-account-safety.md](../../bounded-deploy/docs/key-and-account-safety.md).
-
-- Use `bounded account use <profile>` to run one project under another named
-  wallet account without committing secrets. Use `bounded account use --project`
-  for an isolated repo-local wallet key, `bounded account use --env` plus
-  **`BOUNDED_PRIVATE_KEY`** for CI/automation, or `bounded account use --web` for
-  a human web account. Never reuse a human's wallet keypair for an autonomous
-  agent unless that is explicitly intended.
-
-### Linking & teams
-
-Wallet/keypair mode does not need a web account to build, verify, deploy, or
-read/write. But the **canonical identity is your web account's user id** —
-wallet keys are detachable signing credentials, and email is a verified
-contact/login method for the web account. You can **link** a wallet key to a web
-account, and **share** apps with teammates — without anyone juggling raw wallet
-keys:
-
-- **`bounded login`** is a plain **web login** — it opens the hosted sign-in page
-  and signs you in to your web account (the same account you'd use at
-  bounded.sh). No key is involved, and a `bounded login` web session does
-  **not** link any local key. Headless agents can use `--email` for terminal OTP.
-- **`bounded link`** is wallet-only: it **explicitly attaches THIS device's
-  local wallet key** to a **remote Bounded web account**; the current headless
-  approval method is email OTP. It runs an OAuth-style **device flow**: the CLI
-  prints a device code, you approve the fingerprint at **bounded.sh/link** in a
-  browser with the remote web account (agents should print that URL for their
-  user), and the CLI records the linkage. For headless/agent workflows, use
-  `bounded link --email you@example.com`: the CLI sends the OTP, reads the code
-  from stdin, approves the same fingerprint-checked device flow, and records the
-  linkage without opening a browser. After linking, your keypair address and the
-  web account become admin-collaborators on each other's apps. **Your keypair
-  keeps signing for everything** — linking adds an account association, it never
-  replaces or rolls your key. In web account mode, use `bounded login`; there is
-  no local key to link.
-  The link is one explicit wallet-key <-> web-account pair. One local key can be
-  linked to one remote account, and that email/wallet combo is the durable
-  association. Linking is **refused** if it would merge two unlinked accounts
-  that both already own projects. When the current web login method is email,
-  that email is also the owner notification surface for plan/usage alerts. You can
-  run **`bounded account transfer-to-web`** (after `bounded login`; no link
-  required, `--app <appId>` for a subset) to make the web account the
-  owner-of-record, so the key is fully detachable. This is also the way to
-  consolidate apps built on several machines onto one web account when linking
-  is refused.
-- **`bounded share <wallet|email> --role developer|admin|viewer|billing --app-id <id>`** adds a
-  collaborator (`policy` is a legacy alias for `developer`). **Roles are plan-gated by the
-  app OWNER's plan** — Free: none; Pro: 3 seats, `developer` only; Team+: 25 seats, every
-  role - so default to `--role developer` unless the owner is Team+. Pass a **wallet** to add it directly. Pass an **email** and
-  Bounded stores the verified email as the canonical collaborator subject; it
-  does not resolve the email through an embedded-wallet provider. When that
-  person signs in, the account's default Turnkey flow separately provisions the
-  wallet exposed as `@user.address`. Bounded sends an invite email when outbound
-  email is configured. `policy` may update the
-  policy; `admin` may also act/sign on the app's data the way the owner can.
-  Only the owner can add collaborators; the server enforces it against the active
-  CLI identity. List with `bounded collaborators`.
-
-Collaboration is **control-plane** authority (manage the app). It is **not** a
-data-plane bypass — see [admin-and-ownership.md](../../bounded-backend/docs/admin-and-ownership.md). Command
-detail: [cli-reference.md](../../bounded-deploy/docs/cli-reference.md).
-
-On the server, `@bounded-sh/server` still uses explicit keypairs for
-server-signed writes:
-
-```ts
-import { init, createWalletClient } from "@bounded-sh/server";
-await init({ appId: "<appId>" });   // no keypair needed here
-const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });  // base58 or JSON array
-vault.address;   // the signer this app acts as
-```
-
-`init()` on the server takes only `{ appId, network }` — it does **not** require
-a keypair. Each `createWalletClient({ keypair })` carries its own signer, so one
-process can act as many keypairs. If instead you want a single process-wide
-signer for the global `set`/`get` helpers (no explicit client), set
-**`BOUNDED_PRIVATE_KEY`** (same env var the CLI uses; a base58 secret or JSON
-array). The keypair is read lazily — only the first signed write needs it.
+For CLI login, read [developer accounts](../../bounded-deploy/docs/accounts.md).
+For explicitly requested local keys, linking, profiles, transfer, or recovery, read [key and account safety](../../bounded-deploy/docs/key-and-account-safety.md).
+For control-plane collaboration, read [access playbook](../../bounded-deploy/docs/access-playbook.md); collaborator roles do not bypass data policy.
+For server-side auth, use an explicit `createWalletClient({ keypair })` and its methods; see [server SDK](sdk-reference.md#bounded-shserver---createwalletclient).
+Never expose developer credentials to app users.
 
 ## End-user auth — the `user` object
 
@@ -161,7 +51,7 @@ There are **two issuers**: wallet/guest auth (Phantom / anonymous,
   must pass one (an https universal link). Works web and React Native (deep links).
 
 App-origin email/text OTP and guest-link helpers are retired and are not exported
-by `@bounded-sh/client@0.0.42`. A guest who signs in through hosted auth gets a
+by the published `@bounded-sh/client`. A guest who signs in through hosted auth gets a
 distinct real `@user.id`; transfer guest-owned data explicitly when needed.
 
 > Pick the methods (email / phone / social / wallet / guest) and hosted presentation
@@ -207,8 +97,10 @@ but not the credential form.
 `redirect_uri origin is not a registered origin for this app`. Fix it by registering
 the app's web origin — claim a vanity slug (`bounded domains slug <name> --app-id <id>`
 → `<slug>.bounded.page`) or add a custom domain (`bounded domains add <host> --app-id
-<id>`); both wire `allowedOrigins` automatically. `localhost` (for dev) and Bounded's own
-first-party `*.bounded.sh` origins are always allowed without registration.
+<id>`); both wire `allowedOrigins` automatically. `localhost` is **not** allowed
+automatically — a local dev server's origin must be registered too, port-exact:
+`bounded domains origins add http://localhost:5173 --app-id <id>`. See
+[develop on localhost](building-a-webapp.md#develop-on-localhost).
 
 ### Login-method matrix — the whole menu
 
@@ -235,11 +127,22 @@ first-party `*.bounded.sh` origins are always allowed without registration.
 > overwrites it.
 
 When enabled, wallet login lets a user **connect their own Solana browser wallet**
-(Phantom, or any Wallet-Standard `window.solana`) and sign in with it. Their **real
-wallet address becomes `@user.address`** (and `@user.id`) everywhere — SIWS: the SDK
-fetches a nonce, the wallet signs the canonical challenge locally, and the session is
+and sign in with it. Their **real wallet address becomes `@user.address`** (and
+`@user.id`) everywhere — Sign In With Solana: the SDK fetches a nonce, the wallet
+renders the standard sign-in text for the page that asked (the SDK leaves the domain
+unset, so the wallet stamps the requesting origin's host, and the issuer refuses any
+other domain for that origin), signs it locally, and the session is
 minted by `wallet-auth.bounded.sh`. It rides the injected wallet provider — **no heavy
 wallet SDK, no React dependency, no popup**.
+
+**The wallet must implement the Wallet Standard `solana:signIn` feature.** That is
+what binds the signature to the page, so a phishing page cannot obtain a login
+signature for another site. Phantom, Solflare, Backpack, and the Solana Mobile
+wallet (Mobile Wallet Adapter 2.0 and later) do; a wallet that offers only plain
+message signing is refused with the message "This wallet cannot sign in to Bounded
+apps" instead of being downgraded. Browser guest accounts sign the same text with
+their device key; the CLI, the server SDK, and React Native keep the legacy challenge
+because they send no browser Origin.
 
 **Two knobs, not one.** `walletLogin` is the CLIENT opt-in; the issuer additionally refuses to mint an external-wallet session unless the app's policy allows it, so a deployed `"auth": { "wallets": true }` is a prerequisite (without it login fails with "wallet login is not enabled for this app").
 The browser origin matters too: SIWS binds to it, so a non-first-party host (a tunnel, a preview domain) must be registered with `bounded domains origins add https://<host> --app-id <id> --env <env>`.
@@ -273,11 +176,12 @@ first signing call reconnects (that is `confirmWalletAction`'s `"connect"`).
 import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
 
 // Add bring-your-own wallet login alongside the canonical email/social login.
-// `chain` + a TOP-LEVEL `rpcUrl` are what let the signed transaction actually
-// be submitted below; a nested walletLogin.rpcUrl is not a substitute, and
-// without them signAndSubmitTransaction / an onchain set() throws
-// "Pre-built Solana transaction submission requires init({ rpcUrl })" AFTER
-// the user has signed.
+// `chain` + a TOP-LEVEL `rpcUrl` are what keep the transaction's blockhash alive
+// up to the moment of approval and let the signed transaction actually be
+// submitted below; a nested walletLogin.rpcUrl is not a substitute, and without
+// them signAndSubmitTransaction / an onchain set() throws
+// "Pre-built Solana transaction submission requires init({ rpcUrl })" BEFORE
+// the user is asked to sign.
 await init({
   appId: "<appId>",
   authMethod: "phantom",
@@ -297,8 +201,9 @@ await signTransaction(tx);                        // returns the signed tx
 await signAndSubmitTransaction(tx);               // wallet signs, SDK verifies + submits, returns the tx hash
 ```
 
-Both transaction calls verify, before handing the transaction back or putting it on the network, that the message is the one you passed and that **the account your session was authenticated with actually signed it**.
-That check exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
+Both transaction calls verify, before handing the transaction back or putting it on the network, that the transaction still MEANS what you passed and that **the account your session was authenticated with actually signed it**.
+The signer half exists because a wallet can move accounts inside the signing call - Solana Mobile re-authorizes there, and ignores the account the request names - so a transaction can come back signed by an identity your session never proved.
+The message half is deliberately not a byte comparison: a wallet may add its own guard instructions (Phantom injects Lighthouse on mainnet), renumber the account table, and retune the compute budget, and all of that is accepted. What it may not do is move the blockhash, change who must sign, alter any instruction you sent other than the compute budget, or add another call to a program your transaction already uses. See [onchain-troubleshooting.md](../../bounded-onchain/docs/onchain-troubleshooting.md#a-wallet-returned-a-different-transaction) for the clause-by-clause meaning.
 One consequence: a wallet that can ONLY sign-and-send cannot be used through `signAndSubmitTransaction`, because it broadcasts before anything can be checked; it refuses and tells you so.
 If you want that wallet's own broadcast anyway, drive it yourself - outside the guarantee, knowingly.
 Doing that means doing by hand everything the SDK was doing for you, in this order; skip a step and it fails on a phone rather than on your desk:
@@ -575,7 +480,7 @@ out of a rule (Supabase parity).
 > Native does not provide IndexedDB, and configuring the RN session adapter does
 > not add it, so guest auth fails closed there. Use hosted RN login or the explicit
 > Privy Expo bridge. For Node/server code use **`@bounded-sh/server`** with a
-> keypair (`createWalletClient({ keypair })` or `BOUNDED_PRIVATE_KEY`).
+> keypair passed explicitly to `createWalletClient({ keypair })`.
 
 `authMethod` selects the **identity system**, not a login UI. The supported
 documented choices are:

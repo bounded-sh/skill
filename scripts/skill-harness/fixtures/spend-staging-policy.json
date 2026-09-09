@@ -1,0 +1,11 @@
+{
+  "constants": { "ADMIN": "StgAdm7Gq4wNx2rVfK8pLm3Hs9TzYbC5dJ6eRuWq", "DAILY_CAP": 50 },
+  "roles": { "admin": { "members": ["@const.ADMIN"], "read": "*" } },
+  "spend/$id": {
+    "description": "One spend record per id; capped per 24h by the DAILY_CAP constant.",
+    "tier": "durable",
+    "fields": { "amount": "UInt", "memo": "String" },
+    "rules": { "read": "@user.id != null", "create": "@user.id != null", "update": "false", "delete": "false" },
+    "invariants": [ { "type": "rollingSum", "name": "cap", "field": "amount", "windowSeconds": 86400, "limit": "@const.DAILY_CAP" } ]
+  }
+}

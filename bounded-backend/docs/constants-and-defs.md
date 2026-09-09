@@ -42,11 +42,16 @@ They are computed from the target app id and merged into the policy's `constants
 |---|---|
 | `BOUNDED_APP_ID` | The app's own 24-hex id. |
 | `BOUNDED_TREASURY_PDA` | The app's treasury address: the PDA of its `treasury` named account (the same address `@AccountPlugin.getAccountAddress("treasury")` resolves to). Point revenue directions here. |
+| `BOUNDED_PUBLIC_PRINCIPAL_<FN>` | The reserved principal a `public: true` function runs as when the caller presents no Bounded identity (`__bounded_public_v1__:<sha256>`), one per public function. `<FN>` is the function name uppercased, non-alphanumerics as `_`: `broker` gives `BOUNDED_PUBLIC_PRINCIPAL_BROKER`. `bounded functions list` and a public deploy print the same value. |
+| `BOUNDED_BROWSER_PRINCIPAL_<FN>` / `BOUNDED_WEBHOOK_PRINCIPAL_<FN>` | The same for a `browser`-public or `webhook` function (`__bounded_browser_v1__:` / `__bounded_webhook_v1__:` namespaces). |
+
+Naming the principal is what makes it usable in rules: `@user.id == @const.BOUNDED_PUBLIC_PRINCIPAL_BROKER` admits exactly that route, and `@user.id != null && @user.id != @const.BOUNDED_PUBLIC_PRINCIPAL_BROKER` keeps the anonymous route out of a collection a bare `@user.id != null` would open to it (the public principal has a non-null id). See [public functions](public-functions.md#who-is-calling).
 
 Rules:
 - A policy MAY declare a `BOUNDED_*` name to self-document, but only with the exact platform value — a divergent value fails deploy and verify closed.
   Never hand-write a different address; that is exactly the smuggle the injection exists to prevent.
 - Verify without a target app (no appId, pre-create) cannot derive them, so a policy referencing `BOUNDED_*` must be verified with the app id or after creation.
+- The three `BOUNDED_*_PRINCIPAL_*` namespaces are platform-managed: two public-surface functions whose names differ only by case (`getUser` and `GETUSER`) would share one constant and are refused at deploy and verify; a declared name in those namespaces that no function produces is a stale value from a withdrawn surface (dropped, and a rule still naming it then fails with `@const.X is not defined`) unless it is not even a well-formed principal, in which case it is refused. Author constants outside those namespaces may still start with `BOUNDED_`.
 - Local apps get the same treatment automatically: the local control plane derives from the local app id, so a local policy's `BOUNDED_TREASURY_PDA` is the local app's own treasury PDA.
   Policy-test fixtures may declare any `BOUNDED_*` value (the sandbox is the mock lane); real deploys recompute and reject a mismatch.
 - On graduation the treasury constant is frozen (`constants.BOUNDED_TREASURY_PDA` joins the lock), so a graduated app's revenue destination cannot be repointed by a later policy edit.

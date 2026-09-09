@@ -4,9 +4,15 @@
 by purpose. Every flag below exists in the CLI; `bounded <cmd> --help` prints the
 same with an Example block.
 
-**Global flags** (any command): `--json` (structured output for agents —
+**Global flags** (any command): `--json` (structured output for agents -
 errors are emitted as JSON too), `--quiet` (minimal output), `--env`
-(`production`; also `BOUNDED_ENV`).
+(`production`; also `BOUNDED_ENV`), and `--instance` (a named `bounded.json`
+deployment instance; also `BOUNDED_INSTANCE`).
+
+Billing status distinguishes zero credit from “Billing temporarily unavailable.”
+For account credit, read `.credits.pool.available` from a successful `bounded billing status --json` response.
+A billing error is not a zero balance; retry the read and avoid paying again for an already-paid checkout.
+See [billing.md](../../bounded/docs/billing.md#checking-status) for settlement guidance.
 
 ## Identity & teams
 
@@ -56,14 +62,15 @@ source remains an intentional wallet-mode selection.
 | Command | Does | Example |
 |---|---|---|
 | `version` | Print which CLI build you're on (version/commit/date). Same info via `bounded --version` / `-v`. Use after rebuilding the bundle to confirm you picked up the latest. No network/key. `--json` for fields. | `bounded version` |
-| `update` | Update this release build to the latest CLI from its configured HTTPS release host. Downloads the immutable binary for this OS/architecture, verifies the version-bound release signature against the public key compiled into the CLI, then checks the SHA-256 checksum and Go build metadata, and atomically replaces the running executable. Reads no project config, account, or credentials. Builds before `0.0.99` have no trust anchor and must reinstall with the curl installer. | `bounded update` |
-| `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. Wallet mode may create the selected key on first run. | `bounded whoami` |
+| `update` | Update this release build to the latest CLI from its configured HTTPS release host. Downloads the immutable binary for this OS/architecture, verifies the version-bound release signature against the public key compiled into the CLI, then checks the SHA-256 checksum and Go build metadata, and atomically replaces the running executable. Reads no project config, account, or credentials. Builds before `0.0.99` have no trust anchor and must reinstall with the curl installer. A CLI installed from npm (`@bounded-sh/cli`, the project dev dependency) is updated by npm instead: `update` prints `npm install -D @bounded-sh/cli@latest` and changes nothing. | `bounded update` |
+| `whoami` | Show the active CLI identity: wallet address or web user id, environment, account source, login/link hint if any, and this folder's app marker if present. In JSON, `linkedAccount` names the linked account: the email for an email-approved link, the approving **wallet** for a wallet-approved one, `""` when this key is not linked; read it rather than `email` to decide whether a device still needs `bounded link`. Wallet mode may create the selected key on first run. | `bounded whoami` |
 | `login` | Log the CLI into your Bounded **web account** (the canonical identity; no key involved). By default it opens the hosted sign-in page, completes Authorization Code + PKCE through a temporary loopback callback, stores refreshable credentials in `~/.bounded/web-session.json`, and selects `account.keySource:"web"` for the current project. Use `--email <addr>` or `--no-browser` for terminal OTP when a browser is unavailable. **Headless agents:** run `bounded login --email <email>` with stdin held open, relay the 6-digit code from the user, then feed it to stdin. Never ask for or embed a reusable credential. | `bounded login` |
-| `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your web account via an **OAuth device flow** (device code + fingerprint approval at `bounded.sh/link` — agents should print that URL for their user), or use `--email` for headless OTP approval. The link is one explicit wallet-key <-> web-account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
+| `link` | **Wallet-mode anti-loss.** Explicitly attach THIS device's local wallet keypair to your Bounded account via an **OAuth device flow** (device code + fingerprint approval at the dashboard `/link` page — agents should print the URL the CLI reports for their user), or use `--email` for headless OTP approval. On that page the human signs in with email/social **or a Solana wallet**; a wallet approval keys the linked account by that wallet address, so the link records no email. The link is one explicit wallet-key <-> account pair; `bounded login` does not create it. The keypair keeps signing — linking only adds an account association, it never rolls or replaces the key. Linking is **refused** if it would merge two unlinked accounts that both already own projects. Not used for `account.keySource:"web"`. | `bounded link --email you@example.com` |
 | `account` / `account use` | Show or set this project's account source in `bounded.json`: global, project, profile, env, or web. | `bounded account use --web` |
 | `account transfer-to-web` | Move ownership of this key's apps to your web account (run after `bounded login`; linking is NOT required, the CLI proves key possession automatically; `--yes` to confirm, `--app <appId>` repeatable for a subset). Makes the web account the owner-of-record so the key becomes a fully detachable signing credential. Works even when `bounded link` is refused because both sides already own projects. | `bounded account transfer-to-web --yes` |
 | `apps list` | Read-only inventory of every app the active account owns or collaborates on. The `projects` alias is equivalent. JSON output contains `appId`, `name`, `environment`, `protocol`, and optional `sitePrivate`. Confirm the target with `bounded access` before reuse. | `bounded apps list --json` |
 | `apps inspect` | Read-only exact active-publication proof for one owned or shared app. Returns policy and runtime digests, committed operation and revision numbers, availability, protocol, and site privacy without returning policy bytes, a runtime bundle, or a hosted URL. `--app-id` defaults to `bounded.json`. | `bounded apps inspect --app-id <id> --json` |
+| `wallet fund <wallet>` | Add simulated SOL, USDC, or another mint to any wallet inside one `realtime_offchain` app. Requires the app owner, an admin, or a developer. `--mint` defaults to `SOL`; pass `USDC` or a Solana mint address. An unregistered custom mint also requires `--decimals <0-18>`. This never creates real onchain assets. | `bounded wallet fund <wallet> --app-id <id> --mint USDC --amount 1000` |
 | `apps delete` | Permanently delete an owned app: its data, realtime state, hosted site, addresses, functions, secrets, and schedules. Owner only (non-delegable; no collaborator role or grant can reach it) and NEVER one-shot: the command creates a short-lived delete request, opens a hosted confirmation page in the browser where the human types the app name, and polls until the deletion completes. There is no `--yes`. See the `apps delete` section below for the exact flow, refusal codes, and JSON mode. | `bounded apps delete --app-id <id>` |
 | `dashboard [page]` | Open the hosted dashboard. In a linked project it opens that app directly; optional pages include `data/<path>`, `policy/tests`, `boundaries/change`, and `activity/logs`. `--app-id` overrides the project, `--no-open` prints guidance without launching, and `--print` emits only the URL. Staging opens the staging dashboard. The app-ID handoff is replaced by the dashboard's readable app-name URL after load. | `bounded dashboard data/orders` |
 | `share <wallet\|email> --role developer\|admin\|viewer\|billing --app-id <id>` | Grant a control role. **Wallet** → direct. **Email** → tracked **by the email** and bound when that person verifies it at signup, so it works for a registered OR brand-new address (invite email sent when outbound email is configured). `policy` is accepted as a legacy alias for `developer`. Owner only. **Plan-gated by the OWNER's plan**: Free = no collaborators; Pro = up to 3, **`developer` only** (admin/viewer/billing 402 with an upgrade hint); Team+ = 25 seats and every role — default to `--role developer` unless the owner is Team+. Share BEFORE loss — there is no key-recovery command (the only ownership move is `account transfer-to-web` to your own web account). See [access-control.md](../../bounded-backend/docs/access-control.md) for what each role can do. | `bounded share teammate@example.com --role developer --app-id <id>` |
@@ -87,10 +94,14 @@ outlives its apps), the PEOPLE who signed in (their Bounded user account and
 wallet, which are theirs and span every app), and short-lived operational logs
 that expire on their own (function invocation logs age out within 30 days).
 
-If the app was deployed onchain (devnet), its **onchain accounts remain onchain**.
-Deletion removes everything Bounded runs and bills you for, but the deployed
-program has no instruction that closes an app account, so nothing offchain can
-retract it. Its rent stays where it is, and the address keeps resolving.
+If the app was deployed onchain (devnet or mainnet), its **onchain accounts
+remain onchain**. Deletion removes everything Bounded runs and bills you for,
+but the deployed program has no instruction that closes an app account, so
+nothing offchain can retract it. Its rent stays where it is, the address keeps
+resolving, and any funds it holds stay exactly where they are - with no
+Bounded backend left to interact with them. For a mainnet app, move funds out
+BEFORE deleting; the deleted app record was the only Bounded-side pointer to
+that onchain state.
 
 The flow is deliberately two-step so a single mistyped command can never
 delete an app:
@@ -116,10 +127,11 @@ Refusals worth recognizing (409 with a `code`):
 
 - `oapp_launched` - an open/launched oApp belongs to its venue and holders;
   it cannot be deleted.
-- `app_delete_blocked_mainnet` - apps deployed to Solana mainnet keep their
-  record (it is the only pointer to their on-chain state).
 - `app_delete_blocked_deploy_in_flight` - retry after the active policy
   deploy settles.
+- `app_delete_blocked_onchain_creation_pending` /
+  `app_delete_blocked_governance_mutation` - an onchain operation is still in
+  flight; retry once it settles.
 - `app_delete_in_progress` - a confirmed deletion is already executing.
 
 JSON mode never opens a browser. `bounded apps delete --json` creates the
@@ -145,8 +157,10 @@ Native replacement supports release builds on macOS and Linux, on amd64 and
 arm64. It refuses development builds, unsupported platforms, unsafe executable
 permissions, and symlinked launch paths (including common package-manager
 installations). If a package manager owns the binary, use that package manager;
-the CLI cannot identify every manager-owned regular file. If an older CLI does
-not recognize `update`, run
+the CLI cannot identify every manager-owned regular file. A CLI installed from
+npm is updated with `npm install -D @bounded-sh/cli@latest`; `bounded update`
+prints that command instead of replacing the binary. If an older shell-installed
+CLI does not recognize `update`, run
 `curl -fsSL https://get.bounded.sh/install.sh | sh` once.
 
 `BOUNDED_BASE_URL` is a security-sensitive release-host override shared with the
@@ -171,7 +185,7 @@ powers explicitly via policy rules ([admin-and-ownership.md](../../bounded-backe
 ### Machine-readable onboarding
 
 Onboarding commands in `--json` mode keep stdout to exactly one JSON document and keep stderr free of human progress text, including first-use key-creation guidance.
-The successful `bounded init --json` result has `action: "init"`, the written policy and project-config paths, the selected account source and environment, and `nextCommands`.
+The successful `bounded init --json` result has `action: "init"`, the written policy and project-config paths, `projectConfigWritten` (false when `bounded.json` was already configured and left unchanged), the selected account source and environment, and `nextCommands`.
 The successful `bounded account use ... --json` result has `action: "accountUse"`, the selected `keySource`, project context, and safe next commands.
 When a wallet source and a saved web session are separate, `bounded whoami --json` reports the condition in `warnings[]` with stable code `unlinked_web_account`, the public wallet address, the web email, and next commands instead of printing a warning beside the JSON.
 Running `bounded account transfer-to-web --json` without `--yes` returns an `action: "transferToWebPreview"` document with `requiresConfirmation: true` and replayable `confirmationArgs`; its `ok: true` means the preview completed, not that ownership moved.
@@ -192,6 +206,7 @@ An explicit public `message` field may supply human detail, but an absent messag
 ### Project config — `bounded.json`
 
 `bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
+Init refuses to run from inside another Bounded project's directory tree (upward discovery would anchor the scaffold at that ancestor); run it from the project root it names, or pass `--project-root .` to deliberately make the current directory its own project root.
 Agents should read this file first. It is safe to commit and contains no private
 key material. This example explicitly opts into cloud source sync:
 
@@ -247,7 +262,8 @@ For wallet/keypair projects, a non-empty `BOUNDED_PRIVATE_KEY` overrides `accoun
 Check `bounded whoami --json` before an identity-sensitive deploy instead of assuming the public project config selected the active key.
 An explicit project `account.keySource:"web"`, and projectless control-plane commands, use the web session.
 App-bound data-plane operations (`data`, `subscribe`, `functions invoke`, `runtime invoke`) also run under the web session **on cloud apps**: the CLI exchanges the platform login for an app-pinned session server-side, so `@user.id` matches the same email's identity on the app's own site.
-A web session cannot SIGN, so writes to `onchain: true` collections that need a client-signed Solana transaction still require a local keypair (`bounded account use --global`, with `"auth": { "wallets": true }` deployed).
+A web session holds no local signing key, so writes to `onchain: true` collections that need a client-signed Solana transaction still require a local keypair (`bounded account use --global`, with `"auth": { "wallets": true }` deployed).
+The one signature a web session CAN produce is the mainnet policy-deploy authority permit: `bounded deploy` routes it through a per-deploy browser approval where the account's own wallet signs (see the **bounded-onchain** skill's mainnet section); devnet and offchain deploys stay keyless with no approval.
 On a **Bounded Local** connection the web lane is refused outright: the app lives only in your stack while web login is brokered by the shared staging issuer, so local data commands use the keypair lane.
 Older projects with only `.bounded/app.json` still work; the CLI falls back to that marker when `bounded.json` is absent.
 
@@ -274,6 +290,34 @@ project source tree to the app's cloud source repository. See
 [source-sync.md](source-sync.md). A legacy `liveEdit` block in `bounded.json`
 is ignored with a deprecation notice (`liveEdit.artifactPush: true` is honored
 as `sourcePush: true`).
+
+For several app IDs that share policy and frontend targets, declare named instances:
+
+```json
+{
+  "defaultInstance": "poofnet",
+  "instances": {
+    "poofnet": {
+      "appId": "existing-app-id",
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    },
+    "poofnet-empty": {
+      "controlPlane": "production",
+      "policyTarget": "poofnet",
+      "buildTarget": "poofnet"
+    }
+  },
+  "policy": "policy.json"
+}
+```
+
+`--instance <name>` or `BOUNDED_INSTANCE` selects the complete tuple.
+Without either, the CLI uses `defaultInstance`, automatically selects the only declared instance, or refuses when several instances are ambiguous.
+Every instance must declare `controlPlane`, `policyTarget`, and `buildTarget`; `appId` may be absent only until `deploy --create` fills it for the selected instance.
+An explicit `--env` or policy `--environment` that conflicts with the selected tuple is refused.
+Legacy top-level `appId` and `environment` configuration remains supported when `instances` is absent.
 
 ### The per-app marker — `.bounded/app.json`
 
@@ -306,8 +350,10 @@ folder maps to:
   source does this app use?"
 - `sitePrivate` — true when the hosted static site was created behind the
   private site gate. Older/public apps may omit it.
-- `linkedAccount` — the linked or logged-in web account hint when known, blank if
-  none.
+- `linkedAccount` - the linked or logged-in account hint when known, blank if
+  none. An email for an email-approved link or web login; the approving
+  **wallet address** for a wallet-approved link, which records no email. Do not
+  assume this field is an email address.
 
 `deploy --create` also maintains a managed `.gitignore` block that ignores every
 secret-bearing path (`.bounded/credentials`, `*.key`, `*.keypair.json`, `.env`,
@@ -319,15 +365,16 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | Command | Does | Key flags |
 |---|---|---|
 | `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
-| `verify [policy.json]` | Run the proof engine, print the report + counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--json` |
+| `verify [policy.json]` | Run the proof engine, print exact counts plus blocking failures and counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--verbose` (every obligation), `--json` |
 | `plugins list` | List the callable plugin projection offline | `--family`, `--grep`, `--json`, `--quiet` |
 | `plugins describe <plugin.function>` | Print one plugin function's exact argument, return, auth, support, and verification contract offline | `--json`, `--quiet` |
 | `tests run [dir\|file]` | Run policy test files against a sandboxed app, print per-file PASS/FAIL | `--app-id`, `--deployed-policy`, `--file` (repeatable), `--json` |
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation` |
+| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
 | `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
+| `deploy preflight` | Read-only: whether a deploy will land - your credit balance (deploys are metered against credits, no per-tier cap), the deploy rate-limit, and the structural size caps. Advice, never a promise; never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
 | `pull` | Fast-forward a bounded clone to its current cloud source | `--dry-run`, `--reset` |
 
@@ -341,7 +388,10 @@ bounded deploy                                          # redeploy using bounded
 ```
 
 `verify` and `deploy --create` reject an unknown `--protocol` locally before any network call and list the valid app protocols.
-When the verifier returns a valid result, `bounded verify --json` emits exactly one schema-version-2 document with `status`, `passed`, `safeToDeploy`, exact counts, structured proof details and counterexamples, the access report, and `capabilityReadiness`.
+Normal human output reports exact total, proven, unproven-advisory, and failed counts.
+A failed run also prints every blocking failure and counterexample, while passing and non-blocking advisory details stay summarized.
+Add `--verbose` to print every proof obligation and explanation.
+When the verifier returns a valid result, `bounded verify --json` emits exactly one schema-version-3 document with `status`, `passed`, `safeToDeploy`, `policyPath` (the absolute path of the policy file the run actually proved) and `projectRoot` (the discovered `bounded.json` root, empty without one), exact counts, structured proof details and counterexamples, the access report, and `capabilityReadiness`.
 Local argument, file, JSON, environment, configuration, authentication, transport, and malformed-response failures that occur before a valid verifier result instead use the ordinary one-document root error shape and exit nonzero.
 `status` is one of `PROVEN`, `DISPROVED`, `INVALID`, or `UNPROVEN`.
 `safeToDeploy` describes the whole-policy schema and proof gate and can be true only for the default `verifyForDeploy` operation.
@@ -365,7 +415,7 @@ bounded plugins describe buyExactSolIn --json
 
 These commands need no account, project, or network.
 `list` reports each callable identifier, signature, return type, and network-scoped capability state; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
-The embedded plugin projection has its own catalog `schemaVersion`, which is separate from the verify report's schema version 2.
+The embedded plugin projection has its own catalog `schemaVersion`, which is separate from the verify report's own `schemaVersion`.
 Capability state describes onchain reachability for the catalog's named network, not a deploy verdict: `unverified` means no retained live proof exists, while `unsupported` also covers offchain-only functions and functions unavailable on that network.
 An unambiguous bare function name is accepted, but use the returned canonical identifier in policy source.
 Namespaced entries use `@Namespace.function`, while core entries such as `get` and `getAfter` remain bare.
@@ -522,6 +572,34 @@ For a Solana Devnet policy recovery, the server reads the finalized onchain poli
 - If finalized state is partial or contradictory, the operation remains locked for manual intervention.
   Do not run a normal deploy or attempt a guessed repair.
 
+### Will this deploy land? (`bounded deploy preflight`)
+
+`bounded deploy preflight --json` is the read-only answer to "will a deploy succeed right now".
+Deploys are **metered against your credit balance** - each deploy leg charges its actual Cloudflare
+infra cost (sub-cent; there is **no per-tier deploy cap and no minimum charge**), so the real gate is
+whether you have credits. Run it before a deploy so an agent can tell the user exactly what will
+happen ("you have N credits, this will land" / "0 credits - top up or upgrade first").
+
+```json
+{
+  "appId": "<id>",
+  "plan": "free",
+  "verdict": "would_likely_admit",
+  "metering": { "basis": "infra_usage_cost", "minimumMicroUsd": 0 },
+  "legs": {
+    "credits": { "verdict": "would_likely_admit", "availableCredits": 5 },
+    "ownerRateLimit": { "verdict": "would_likely_admit" },
+    "site": { "verdict": "would_likely_admit", "maxFiles": 5000 }
+  }
+}
+```
+
+Each verdict is **advice, never a promise** (`would_likely_admit` / `would_likely_refuse` /
+`unknown`): a parallel deploy can move the balance between the preflight and the deploy, and the
+deploy-time charge stays authoritative. `unknown` means a backing store could not be read - treat it
+as "cannot confirm", never as "safe". The `site`/`backendSource` caps are structural size limits that
+apply to every tier.
+
 ### Is a fresh deploy safe? (`bounded deploy status`)
 
 `bounded deploy status --json` is the read-only answer to "what is holding this
@@ -574,6 +652,21 @@ resumable - `recoveryCommand`:
   manual-intervention outcomes): NO `recoveryCommand` is emitted, because
   re-running the operation can never commit. The message says whether to run a
   fresh `bounded deploy` or to escalate for operator review.
+- **Mainnet creation fence** (`409` with `onchain_creation_pending`,
+  `onchain_creation_unreadable`, `onchain_creation_superseded`, or
+  `onchain_creation_owner_conflict`): classified definitive, so no
+  `recoveryCommand` is emitted - but the remedy is different from the outcomes
+  above. These refusals mean the app's mainnet creation never finished: its
+  on-chain owner is not proven at finalized yet. They are raised BEFORE any
+  permit is minted or signed, so nothing was spent and no signature was burned.
+  Re-run the same `bounded deploy` against the same app id; the platform makes
+  one finalized read, resumes the original creation from the app's own journaled
+  operation, and lifts the fence when the account is there. Do not re-run
+  `--create` and do not create a replacement app - the original app's on-chain
+  account is already rent-paid, and a second app strands it.
+  `onchain_creation_owner_conflict` is the one exception: the account is
+  finalized under a wallet the creation did not intend, which is an integrity
+  fault to escalate rather than retry.
 
 The operation id the CLI minted stays authoritative: a response carrying a
 different id is refused rather than followed, so a recovery can never be bound to
@@ -860,18 +953,46 @@ It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `
 
 ## Billing
 
-`bounded billing ...` manages the caller's own Bounded account: monthly Pro or
-Team subscription and Stripe Customer Portal.
+`bounded billing ...` manages the caller's own Bounded account: a Pro or Team
+subscription, Bounded credits, and the Stripe Customer Portal.
 
 | Command | Does | Example |
 |---|---|---|
 | `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
-| `billing checkout` | Start monthly Bounded Pro or Team | `bounded billing checkout --plan pro` |
+| `billing checkout` | Start Bounded Pro or Team. `--plan pro\|team`, `--print`, `--no-open`, `--no-wait` | `bounded billing checkout --plan pro` |
+| `billing topup` | Buy Bounded credits. `--credits` (20-10,000; $0.05 each), `--print`, `--no-open`, `--no-wait` | `bounded billing topup --credits 100` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |
 | `upgrade` | Alias for `billing checkout --plan pro` | `bounded upgrade` |
 
-`billing checkout --plan pro|team` creates Bounded's own monthly subscription.
-It does not create subscriptions for an app's end users.
+`billing checkout` creates Bounded's own subscription. It does not create
+subscriptions for an app's end users.
+
+Checkout and top-up open Stripe, then WAIT for the payment to be applied and say
+whether it landed - a completed Stripe checkout is not yet an applied plan.
+`--no-wait` skips the wait; check with `bounded billing status` instead.
+
+Credits are one fungible pool spendable on anything metered: managed services,
+AI, and infrastructure. The old per-bucket top-ups are retired.
+
+## Capabilities - `services`
+
+The managed capability catalog, and the request lane for what is not on it.
+Reads never bill; `invoke` from a function does (see the bounded-backend
+`ctx.services` page).
+
+| Command | Does | Example |
+|---|---|---|
+| `services search <query>` | Search the catalog. Each item carries a readiness: `live` (call it now with `ctx.services.invoke(slug)`), `callable` (an x402-priced API; call it now through `ctx.services.invoke("X402_FETCH", { url })`), `requestable` (not on Bounded yet), or `disabled` (Bounded has it but it is switched off here; `unavailableReason` says why - do not file a request for it). `--limit` | `bounded services search "current weather" --json` |
+| `services describe <slug>` | One toolkit or tool with its input schema and readiness. An unknown target answers `capability_not_supported` with the Hub link and exits nonzero. `--limit` | `bounded services describe CAP_WEATHER_NOW --json` |
+| `services request "<what you need>"` | File a capability request with the Capability Hub under your account, once, platform-wide. `--title`, `--desired-action`, `--approach`, `--provider`, `--transport`, `--idempotency-key` (replays file nothing new) | `bounded services request "current weather for a lat/lng pair"` |
+| `services status [requestId]` | Every request filed under this account, or one, with its status and the slug once live | `bounded services status` |
+
+## Open Apps - `oapp`
+
+| Command | Does | Example |
+|---|---|---|
+| `oapp preflight` | Dry-run the openapps.xyz Open gate on the deployed app: source, dist, the `service:cap` / `service:x402` grants, and every finding Open would refuse on with its capability-ladder verdict (`native`, `live`, `callable`, `request`). Exits nonzero when Open would refuse. `--app-id` | `bounded oapp preflight --json` |
+| `oapp rehearse` | An ephemeral, budget-sealed rehearsal of the app from zero data; runs the preflight first and never blocks on it. `--status`, `--fresh`, `--down`, `--budget-credits`, `--ttl-hours`, `--skip-deploy`, `--skip-bootstrap`; `--json` is one document (`rehearsal` + `preflight`) | `bounded oapp rehearse` |
 
 ### `verify --operation`
 
@@ -944,14 +1065,38 @@ Full treatment: [environments.md](environments.md).
 | `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values) | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret | `bounded secret rm STRIPE_KEY --app-id <id>` |
-| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to the app's mapped slug/custom host; if no app is linked, creates a private app unless `--public` is passed; deploys are versioned for static-host rollback. Canonical `--with-source` deploys also preflight and establish the exact hosted-widget editing base before reporting success. Add `--variant <var_id>` to upload a preview frontend branch without replacing that canonical site or editing base. | `bounded site deploy ./dist --with-source --app-id <id>` |
+| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`) to the app's mapped slug/custom host as one deterministic gzip-tar artifact. Small artifacts use one upload; larger artifacts use resumable multipart chunks of that archive, never per-file uploads. Project source is not synced unless `sourcePush` or `--with-source` explicitly requests it. If no app is linked, creates a private app unless `--public` is passed. Deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. A `402 deploy_credit_insufficient` means the deploying account has no spendable credit for the deploy's infra cost (the CLI prints the credits needed against the balance): `bounded billing status`, then `bounded billing topup --credits <n>`, then retry; it is never an identity problem. | `bounded site deploy ./dist --app-id <id>` |
 | `site seed-build-base [dir]` | Prepare the current canonical CLI deployment for hosted-widget editing from the filtered local source and exact local frontend bytes (default `./dist`). `--deploy-id` pins the expected current deployment; any deployment, file-digest, or receipt mismatch exits nonzero. | `bounded site seed-build-base --app-id <id> --deploy-id <deploy-id> -- ./dist` |
 | `site variants` | List current frontend variants for owner/admin review: status, deploy id, preview/switch paths, and affected files. | `bounded site variants --app-id <id>` |
-| `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
+| `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. Only RETAINED versions are restorable (the newest 10 plus pins); a version that aged out answers `410 site_deploy_expired` - run `site versions` to see what is restorable. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
+| `site versions` | List retained (restorable) canonical site versions with timestamps, the live version, and pin state. The newest 10 successful canonical versions are kept automatically, whether produced by a direct site deploy or a prompt build/edit promotion; pinned versions are kept in addition; older versions age out. | `bounded site versions --app-id <id> --json` |
+| `site pin <deployId>` | Pin a retained version so it never ages out (additional to the automatic newest 10; user pins are bounded by a per-app cap). Owner/admin only. | `bounded site pin d_ext_abc --app-id <id>` |
+| `site unpin <deployId>` | Remove a pin so the version can age out with normal retention. Owner/admin only. | `bounded site unpin d_ext_abc --app-id <id>` |
 | `site promote <variantId>` | Promote a frontend variant into the canonical hosted site after owner/admin authorization. Backend rules, data, functions, and policies stay unchanged. | `bounded site promote var_amit_refunds --app-id <id>` |
 | `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to vanity slug and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
-| `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. The router currently requires an exact app-bound wallet token for preview minting; the platform-scoped browser session is not accepted. The link is a bearer secret until it expires - don't post it publicly. | `bounded site preview --app-id <id> --open` |
+| `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. Authorized web accounts and wallets are supported: the CLI obtains the required app-bound identity token by exchanging the platform session or signing with the selected wallet. The link is a bearer secret until it expires - don't post it publicly. | `bounded site preview --app-id <id> --open` |
 | `site proof [status\|on\|off]` | Opt-in public proof surface: the /__bounded/boundaries page (proof stamp, plain-English invariants, decline count) + the site's Boundaries corner badge. OFF by default | `bounded site proof on --app-id <id>` |
+
+### Publication history and concurrent deployments
+
+On servers supporting publication receipts, `bounded site versions --app-id <id>` includes server-recorded publication history as well as restorable asset versions.
+Use `--json` for the full receipt, `--limit 20` to select a page size, and `--cursor <historyCursor>` to read the next page.
+Each new receipt identifies the operation, authenticated actor, server time, previous and resulting deployment, artifact digest, and outcome.
+A `prepared` receipt is not a confirmed publication.
+Older deployments have unknown actors; history cannot reconstruct identities that were never recorded.
+Compact history survives asset pruning, so a receipt does not imply its old files are still restorable.
+
+The CLI reports its version and, when available, the local Git commit and dirty state separately as `clientProvenance`.
+Those fields are client assertions, not server-verified source provenance or proof that uploaded bytes were built from that commit.
+Authenticated actor identity comes from the server, never those client fields.
+
+Deploy, promotion, and rollback carry the canonical deployment and publication identity the CLI observed before publication.
+The publication identity distinguishes restoring an old version from that version’s original publication, so a rollback cannot make a stale request current again.
+If another publication wins first, `site_deployment_changed` refuses the stale request; inspect `site versions` before deciding what to publish next.
+The CLI never refreshes the expected parent and silently retries an overwrite.
+After an app enables this protection with a guarded publication, clients that omit the expected parent receive `site_parent_precondition_required` and must update.
+Use an explicit `site rollback <deployId>` to restore an older retained deployment.
+The CLI negotiates these fields from the server’s versions response; older servers retain their legacy request format and do not gain the new protection until upgraded.
 
 For release-critical public sites, retain the exact successful `site deploy
 --json` receipt and independently verify every uploaded byte through the
@@ -987,7 +1132,8 @@ key alone as proof that every requested file landed.
 
 The backend runs with a sealed `ctx` (store / ai / schedule / fetch / identity) — see
 [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md). Frontend hosting: [frontend-hosting.md](../../bounded-frontend/docs/frontend-hosting.md).
-`<slug>-api.bounded.page` routes to your backend; `<slug>.bounded.page` serves the site.
+`<slug>-api.bounded.page/agents/<name>/<session>` invokes the runtime; `<slug>.bounded.page` serves the site.
+Arbitrary HTTP paths on the API host belong to [public functions](../../bounded-backend/docs/public-functions.md), not the runtime.
 
 ## Domains
 
@@ -1152,7 +1298,7 @@ so failing txs still land on-chain. No effect on the realtime data plane.
 ## Debugging denied writes — `bounded decisions`
 
 When a write returns `403`, `bounded decisions` shows the realtime backend's
-recent **WRITE policy decisions** for the app (most-recent-first) so you can see
+recent **policy outcomes** for the app (most-recent-first) so you can see
 *why* — each deny carries the failing rule/clause reason.
 
 ```sh
@@ -1169,11 +1315,17 @@ bounded decisions --app-id <id> --json           # one JSON object per line (age
 | `--limit N` | Max rows, most-recent-first (0 = server default) |
 | `--json` | Emit one compact JSON object per decision line |
 
-Each entry: `ts`, `collection`, `path`, `action` (create/update/delete),
-`actor` (wallet address or `(anon)`), `decision` (allow/deny), `reason`, and
-`roomId` (for session/partition writes). Owner/collaborator gated (same auth as
-`bounded share`/collaborators). The buffer is **in-memory and bounded** (~200
+Each entry: `ts`, `collection`, `path`, `action` (create/update/delete/read),
+`actor` (wallet address or `(anon)`), `decision` (allow/deny/error), `reason`,
+and `roomId` (for session/partition writes). Owner/collaborator gated (same auth
+as `bounded share`/collaborators). The buffer is **in-memory and bounded** (~200
 entries per app, denies retained over allows) — make a write, then re-run.
+
+`decision: "error"` is not a verdict: the rule was reached and could not be
+EVALUATED, so nothing decided and nothing was read or written. The caller saw
+`500 rule_evaluation_failed` (never a `403`, and never a retryable `409`). This
+is the only place such a rule is visible, and the only reason `read` appears as
+an action — a served or denied read is not recorded.
 
 Typical loop: a `data set` returns `403 Policy failed: ...` → run
 `bounded decisions --app-id <id> --denied-only` → read the failing-rule reason →
@@ -1184,7 +1336,8 @@ fix the policy or the calling identity.
 ```sh
 bounded functions deploy <name> --entry <file> --app-id <id> \
   --auth '<rule>' [--timeout <sec>] [--secret NAME] \
-  [--act-as <address>] [--logs-auth '<rule>'] [--sandbox]
+  [--act-as <address>] [--logs-auth '<rule>'] [--sandbox] \
+  [--public [--method <VERB>]... [--cors app|passthrough]]
 bounded functions deploy --all --policy policy.json --environment <env>
 printf '%s' "$VALUE" | bounded secret put NAME --value-stdin --app-id <id>
 bounded functions list   --app-id <id>
@@ -1194,7 +1347,8 @@ bounded functions logs   [name] --app-id <id> [--since 2h] [--limit N] [--errors
 
 `deploy` uploads the function's code and updates its policy entry for a caller with `functions:deploy`.
 `--auth` is required.
-Explicit optional metadata overrides the existing entry, while omitted optional metadata such as timeout, secrets, runtime, sandbox, webhook, egress, browser origins, `actAs`, `logsAuth`, and build capability is preserved by the deploy service.
+Explicit optional metadata overrides the existing entry, while omitted optional metadata such as timeout, secrets, runtime, sandbox, webhook, egress, browser origins, `public`/`methods`/`cors`, `actAs`, `logsAuth`, and build capability is preserved by the deploy service.
+`--public` (requires `--auth true`) serves the function at `https://<slug>-api.bounded.page/<name>/...` with no Bounded session required; `--method` (repeatable) picks the verbs, `--cors app|passthrough` the CORS mode, and the success output prints the public URL and the public principal (the `__bounded_public_v1__:` identity anonymous callers run it as, injected into the policy as `@const.BOUNDED_PUBLIC_PRINCIPAL_<NAME>`; `functions list` prints it as `runs as:` under each public function, and `--json` carries `publicPrincipal` / `publicPrincipals`). See [public functions](../../bounded-backend/docs/public-functions.md).
 A bare `--secret NAME` declares a name without exposing its value in argv.
 `deploy --all` (CLI 0.0.88+) is the batch form and the right default after a
 policy deploy: it reads every function from the policy file (metadata included,
@@ -1211,7 +1365,9 @@ Bounded gates the call on the `auth` rule, then prints the function's JSON (or
 the platform error — `403` if the rule denies you). Caller-scoped functions may
 be invoked by any caller their `auth` rule admits; functions that declare
 `actAs` in policy are service-identity functions and must be admin-gated at
-verify/deploy. `logs` (CLI 0.0.89+) reads the durable per-invocation log store:
+verify/deploy: the `auth` rule must imply the control-plane roster
+(`get(/__admins__/@user.id) != null`, the owner plus `--role admin`
+collaborators) or an app-data `admins/$userId` membership. `logs` (CLI 0.0.89+) reads the durable per-invocation log store:
 every invoke — end-user and scheduled runs included — is persisted with status,
 latency, error, and console output for 30 days, and the readable window/entry
 count is plan-tiered (free reads the recent days; Pro the full history). Name a

@@ -44,19 +44,14 @@ const vault = await createWalletClient({ keypair: process.env.VAULT_KEY! });
 
 ### `npm audit` reports a moderate `uuid` advisory - here is the fix
 
-Installing `@bounded-sh/client` pulls a **moderate** advisory that is not yours and
-has no upstream fix:
+Some `@bounded-sh/client` dependency trees report this **moderate** advisory through `jayson`:
 
 ```
 GHSA-w5hq-g745-h8pq  (uuid < 11.1.1)
 @solana/web3.js@1.98.x -> jayson -> uuid@8.3.2
 ```
 
-`npm audit` reports `fixAvailable: false` accurately: web3.js 1.98.4 is the latest
-1.x, no jayson release ships a fixed `uuid`, and `@coral-xyz/anchor` pins the whole
-ecosystem to the web3.js 1.x line, so no dependency bump anywhere clears it.
-
-**The verified app-level fix** is to force the transitive version yourself:
+If the installed lockfile has this chain, apply the scoped transitive override rather than assuming an unrelated SDK upgrade resolves it:
 
 ```jsonc
 // package.json (npm / pnpm)
@@ -66,21 +61,18 @@ ecosystem to the web3.js 1.x line, so no dependency bump anywhere clears it.
 "resolutions": { "jayson/uuid": "^11.1.1" }
 ```
 
-With that in place `npm audit --omit=dev` exits `0`.
-
-**The vulnerable code path was never reachable anyway.** The advisory concerns
-`uuid`'s v3/v5/v6 buffer-writing path; jayson only ever calls `uuid.v4()` with no
-buffer argument, so nothing in the SDK's dependency graph can reach it. The
-override is for a clean audit report, not for a live exposure. When jayson
-eventually ships a fixed `uuid`, fresh installs clear on their own and the override
-can be dropped.
+This override addresses the named `uuid` advisory; it does not guarantee a clean production audit.
+Run `npm audit --omit=dev` on the installed lockfile and investigate remaining findings independently.
+In this dependency path, jayson uses `uuid.v4()` without a buffer argument, rather than the advisory's v3/v5/v6 buffer-writing path; that observation does not establish the safety of other dependency paths.
+Remove the override only after verifying that the installed dependency chain resolves the advisory without it.
 
 `init(config)` takes `{ appId, authMethod?, network?, authMode?, chain?, rpcUrl?, walletLogin?, requireEmail?, loginWidget? }`. **It points at Bounded
 production by default** - `init({ appId })` just works, no endpoints to set (the
 network is `'bounded-production'`).
 **Onchain apps need two more keys**: `chain` (the app's Solana network, e.g.
-`'solana_devnet'`) and a TOP-LEVEL `rpcUrl` (the endpoint the SDK submits
-pre-built onchain transactions through). Without them the first onchain `set()`
+`'solana_devnet'`) and a TOP-LEVEL `rpcUrl` (the endpoint the SDK reads a current
+blockhash from just before the wallet approves, and submits the pre-built onchain
+transaction through). Without them the first onchain `set()`
 fails with `Pre-built Solana transaction submission requires init({ rpcUrl })`;
 a nested `walletLogin.rpcUrl` configures wallet login only and is not a
 substitute. See [Browser/SDK submission needs an explicit RPC endpoint](../../bounded-onchain/docs/onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint). **Email + OAuth/social + text** work through
@@ -88,9 +80,9 @@ the hosted flow `loginWithRedirect` / `loginWithPopup`; the credential is entere
 on `auth.bounded.sh`, never your origin. Pass `methods: ["email", "google"]` for
 a chooser, or `provider: "google"` to jump straight to one from your own button.
 App-origin OTP helpers are retired and are not exported by
-`@bounded-sh/client@0.0.42`.
+the published `@bounded-sh/client`.
 The wallet option is `'phantom'`, reserved for crypto/onchain apps that need a
-real Solana wallet. There is no `authMethod: 'none'` provider in 0.0.42; for a
+real Solana wallet. There is no `authMethod: 'none'` provider; for a
 public-read app, initialize normally and simply do not start a login flow.
 Browser anonymous accounts are via `signInAnonymously()` and coexist with
 Bounded Auth.
@@ -531,7 +523,7 @@ await signInAnonymously();
 ```
 
 > **Hosted credentials only.** Use `loginWithRedirect` or `loginWithPopup`, with
-> `completeLoginFromRedirect()` on web app load. The published 0.0.42 client no
+> `completeLoginFromRedirect()` on web app load. The published client no
 > longer exports app-origin email or text OTP helpers. See [auth.md](auth.md).
 
 ### The unified login widget - `openBoundedWidget`
@@ -556,21 +548,30 @@ before enabling it and supplying `walletLogin.confirmWalletAction` - see
 
 Options: `methods` (default `["email", "google"]`), `wallet` (enable the native
 Solana wallet lane - Wallet Standard enumeration: Phantom, Solflare, Backpack,
-etc., detected at runtime, names not hardcoded), `redirectUri`, `title`,
+etc., detected at runtime, names not hardcoded; login requires the wallet's
+`solana:signIn` feature, and a wallet without it is refused with a clear
+message - see [auth.md](auth.md#solana-wallet-login-bring-your-own)), `redirectUri`, `title`,
 `subtitle`, and a per-call `authMode` override (falls back to the init config).
 `requireEmail: true` in the init config suppresses the wallet lane. For
 headless flows, `startTurnkeyEmailLogin(email)` returns
 `{ verify(code): Promise<User> }`; `signSolanaMessageViaTurnkey` and
-`getOrCreateTurnkeyWallet` (the Turnkey signer bridge) handle passkey
-(Face ID / Touch ID) signing and wallet provisioning after login.
+`getOrCreateTurnkeyWallet` (the Turnkey signer bridge) handle email-session
+signing and wallet provisioning after login.
 The default email login provisions the wallet eagerly at login (so
-`@user.address` exists immediately), and the FIRST signature then runs a
-one-time setup in the signer window: the user creates their passkey and
-confirms a code emailed to them, which attaches the passkey to their existing
-wallet (the address never changes). Every later signature is a passkey tap
-only. `openTurnkeyKeyExport()` opens the hosted private-key export page for the
-session's wallet and works for both login modes (it carries its own
-authorization, so it does not depend on an issuer cookie).
+`@user.address` exists immediately), and the login code itself also establishes
+a 24-hour SIGNING SESSION on the signer origin.
+Every signature shows an in-app approve card (wallet address, requesting
+origin, Approve/Cancel):
+within a live signing session it is one Approve click; when the session has
+expired (or the user is on a hosted/social login, a new device, or cleared
+storage), the card collects a fresh Turnkey-emailed one-time code inline, which
+establishes the session for the next 24 hours, and the same click completes the
+signature. There is no renewal - expiry always costs one code. Wallet creation
+and address reads never prompt. `openTurnkeyKeyExport()` opens the hosted
+private-key export page for the session's wallet and works for both login modes
+(it carries its own authorization, so it does not depend on an issuer cookie);
+export always requires its own fresh emailed code - a live signing session never
+satisfies it.
 
 **Track the user with `onAuthStateChanged`, not a one-time `getCurrentUser()`.**
 `getCurrentUser()` is a snapshot: it does not update when a session expires, so a
@@ -675,7 +676,7 @@ browser auth. Each client has its own session - no global state.
 > Use a keypair dedicated to the server. A key that has signed in to the app
 > from a browser wallet can no longer open a server-side session, and
 > `createWalletClient` then fails with `relying party not allowed for app`.
-> Server-only keys need no extra credential or configuration.
+> Server-only keys need no extra credential, but the app must explicitly enable keypair login with `auth.wallets: true`; see [app-user auth](auth.md).
 
 There are two server setup shapes; both work:
 
@@ -708,14 +709,10 @@ const { init, createWalletClient } = await import("@bounded-sh/server");
 The wallet client (`vault` above) exposes `get`, `getMany`, `set`, `setMany`, `setFile`,
 `getFiles`, `search`, `count`, `aggregate`, `queryAggregate`, `runQuery`,
 `runQueryMany`, `runExpression`, `runExpressionMany`, `subscribe`, and `invoke`.
-Prefer these client methods over the top-level `get` /
-`subscribe` exports when you hold a `createWalletClient` instance: the top-level
-ones use the ambient `BOUNDED_PRIVATE_KEY` session and throw `No server keypair`
-if it isn't set, whereas the client methods authenticate as the client's own
-keypair. `keypair` is a base58 string or JSON array secret key - the **base58**
-form is the same value the CLI stores as the `privateKey` field in
-`~/.bounded/credentials` (and accepts via `BOUNDED_PRIVATE_KEY`), so a server can
-sign as the CLI identity by reading that key. Server tasks:
+Use these client methods: top-level server auth operations such as `get`, `set`, `subscribe`, and `functions.invoke` are unavailable, even when `BOUNDED_PRIVATE_KEY` is set.
+The client methods authenticate as the client's own keypair.
+`keypair` is a base58 string or JSON array secret key; the CLI accepts the same formats via `BOUNDED_PRIVATE_KEY`, but the server SDK requires the value passed explicitly to `createWalletClient`.
+Server tasks:
 [../guides/building-a-backend.md](../../bounded-backend/docs/building-a-backend.md).
 
 ### Verifying webhooks - `verifyWebhook`
@@ -761,13 +758,12 @@ in-memory replay protection is suitable only for a single process. Declaring web
 
 ### Invoking a function - `functions.invoke`
 
-Use the first-class `functions.invoke(name, args)` helper - exported from both
-`@bounded-sh/client` and `@bounded-sh/server`. It attaches the caller's session token
-automatically (the same token the data plane sends), so Bounded verifies your
-identity and evaluates the function's `auth` policy rule before it runs:
+In browser/React Native code, use `functions.invoke(name, args)` from `@bounded-sh/client`.
+It attaches the caller's session token automatically, so Bounded verifies the identity and evaluates the function's `auth` rule before it runs.
+On a server, use `vault.invoke(name, args)` on an explicit `createWalletClient` instead.
 
 ```ts
-import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
+import { functions } from "@bounded-sh/client";
 
 // Invoke carries only the ACTION intent, never the caller's identity. Bounded
 // attaches the session token, so the function already knows who called from
@@ -775,9 +771,8 @@ import { functions } from "@bounded-sh/client"; // or "@bounded-sh/server"
 const res = await functions.invoke("syncStripe", {});
 // → the function's JSON return value.
 // Optional 3rd arg: { timeoutMs, headers }. Throws FunctionInvokeError on
-// 401/403/404/503 (see .statusCode). Top-level uses the ambient session
-// (BOUNDED_PRIVATE_KEY on server); `await vault.invoke("syncStripe", {})` invokes
-// as a specific keypair with no env var, on a createWalletClient.
+// 401/403/404/503 (see .statusCode). The browser helper uses its current session.
+// On the server, `await vault.invoke("syncStripe", {})` uses the wallet client.
 ```
 
 > **Arguments are untrusted; resolve the customer server-side.** A caller can pass

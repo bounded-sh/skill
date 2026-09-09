@@ -39,7 +39,9 @@ test('2: domains documents the frame-ancestors default as shipped, plus how an a
   // bounded-monorepo's router owns this header and its platform default carries the
   // wildcard. Documenting a narrower list here would tell app authors that sibling
   // apps cannot frame them, which is the dangerous direction to be wrong in.
-  for (const host of ['https://oapps.fun', 'https://*.oapps.fun', 'https://bounded.page', 'https://*.bounded.page']) {
+  // PLATFORM_VENUE_FRAME_ANCESTORS in bounded-router/src/index.ts, verbatim (the venue moved
+  // from oapps.fun to openapps.xyz; the old host only redirects and is no longer framed).
+  for (const host of ['https://openapps.xyz', 'https://*.openapps.xyz', 'https://bounded.page', 'https://*.bounded.page']) {
     assert.ok(directive.includes(host), `the documented default must match the router's list: ${host}`)
   }
   // ...and the wildcard must be called out as reachable by other apps, with the

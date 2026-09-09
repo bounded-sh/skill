@@ -64,11 +64,14 @@ me.isAnonymous   // true
 me.id            // the guest's stable identity — use for ownership; durable across reloads
 ```
 
+The successful return value includes the same normalized identity fields as `getCurrentUser()`, including `id`, `address`, `email`, and `isAnonymous`.
+This also applies when reusing or restoring a guest session.
+
 `signInAnonymously()` generates a non-extractable ed25519 key (an XSS can *sign* but
 never read it), runs nonce → sign → session. It's the wallet-signature path with a
 local key — durable across reloads. `logout()` ends the session but keeps the
-device key, so a later anonymous login returns to the same guest. The 0.0.42
-public package does not export a `forgetGuest()` helper; clearing the browser's
+device key, so a later anonymous login returns to the same guest. The published
+package does not export a `forgetGuest()` helper; clearing the browser's
 site data removes the IndexedDB key and creates a new guest on the next login.
 
 ## 2. Gate guests in policy with `@user.isAnonymous`
@@ -96,17 +99,21 @@ guest, must sign up to post**". Gate it in the rule (Supabase `is_anonymous` par
 > proves someone is authenticated; `@user.isAnonymous` only narrows *which kind*
 > of authenticated user it is.
 
-## 2b. Guests are offchain-only on mainnet - and warn your users
+## 2b. Guests are offchain-only - and warn your users
 
 Treat a guest as a **temporary, try-the-app identity**. Two things the platform does, and one
 thing you must do:
 
-- **The platform blocks guests from writing to MAINNET onchain**, fail-closed - a guest write to
-  a `realtime_mainnet`/`solana_mainnet` (or `*_mainnet_preview`) collection returns
-  **403 `anonymous_onchain_blocked`** before any transaction is built. Devnet/testnet, poofnet
-  simulation, offchain writes, and onchain reads are all still allowed, so a guest can fully
-  explore your app. (See
-  [onchain.md](../../bounded-onchain/docs/onchain.md#guests-cannot-write-to-mainnet-onchain-platform-invariant).)
+- **A guest cannot write to an `onchain: true` collection, on ANY network.** The platform
+  refuses it fail-closed, returning **403 `anonymous_onchain_blocked`** before any transaction
+  is built. This is keyed on the collection being onchain, not on the network, so poofnet
+  (`realtime_offchain`), devnet, and mainnet all behave identically - a guest write you see
+  succeed locally will not turn into a 403 the day you promote the app. The browser SDK refuses
+  independently too: a guest session's `signTransaction` throws `Guest (anonymous) auth is
+  offchain-only`, and the guest device key (a non-extractable WebCrypto Ed25519 key) has no
+  transaction-byte signing path. Onchain **reads** and **offchain** writes are always allowed,
+  so a guest can still explore the offchain surface of your app. (See
+  [onchain.md](../../bounded-onchain/docs/onchain.md#guests-cannot-write-to-an-onchain-collection).)
 - **A guest is dropped on upgrade.** Signing in with email or a wallet creates a **new** real
   account - the guest's keypair, its data, and any funds sitting in the guest device wallet do
   **not** carry over (see §3/§4 for the deliberate patterns to migrate data before upgrading).
@@ -324,6 +331,9 @@ to B ✅ · A writes again ❌403 · B writes ✅.
 
 - Anonymous is **opt-in** — set `"auth": { "anonymous": true }` in policy or guest sign-in is 403'd.
 - `@user.isAnonymous == false` (not `!@user.isAnonymous`); offchain-only.
+- Guests can never write an **`onchain: true`** collection, on any network (§2b). Design the
+  guest-reachable part of your app out of offchain collections, and prompt the upgrade before
+  the first onchain write rather than surfacing the platform's 403.
 - Hosted `loginWithRedirect` yields a **distinct** real `@user.id`; the current
   client has no exported id-preserving link helper. A real session cannot directly
   transfer data still owned by the guest. Use the two-login handoff (§3) with

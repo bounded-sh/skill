@@ -6,7 +6,6 @@ One screen of the things every policy uses. Full semantics: [policy reference](p
 
 ```json
 {
-  "auth": { "wallets": true },
   "constants": { "ADMIN": "8f...Yk" },
   "tenants/$tenantId/invoices/$invoiceId": {
     "description": "what this collection is",
@@ -21,6 +20,14 @@ One screen of the things every policy uses. Full semantics: [policy reference](p
 ```
 
 Paths alternate collection/`$variable` (always an even number of segments). An omitted rule denies. Two templates may not collide modulo variable names.
+
+**No `auth` block by default.** Turnkey embedded wallets are provisioned eagerly, so an email/social login already carries `@user.address` - adding `auth.wallets` "to enable wallets" is redundant. Add it only when an EXTERNAL-keypair session signs in: bring-your-own wallet login, a `@bounded-sh/server` keypair client, or the CLI keypair data lane (a Bounded Local app is reachable only that way). `auth.anonymous: true` is the separate opt-in for browser guests; `auth.wallets: false` opts out of embedded wallets.
+
+```json
+{ "auth": { "wallets": true } }
+```
+
+Details: [embedded wallets](../../bounded-onchain/docs/embedded-wallets.md).
 
 ## Field types
 

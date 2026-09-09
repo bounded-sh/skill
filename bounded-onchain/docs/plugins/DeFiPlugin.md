@@ -155,7 +155,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
 | `tokenMintAAddress` | string | yes | - | The mint address of the token A |
 | `tokenMintBAddress` | string | yes | - | The mint address of the token B |
 | `tokenAAmount` | string | yes | - | The amount of token A to deposit |
@@ -235,7 +235,7 @@ Fields of `config`:
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
-| `sourceAddress` | string | yes | **yes** | The address of the source account, bounded contract address using @contract.address as an escrow or an account id (a named app PDA; see the custody guide) |
+| `sourceAddress` | string | yes | **yes** | The address of the source account, the `@contract.address` program-ID sentinel (resolved by the plugin to the app escrow PDA) or an account id (a named app PDA; see the custody guide) |
 | `tokenMintAAddress` | string | yes | - | The mint address of the token A |
 | `tokenMintBAddress` | string | yes | - | The mint address of the token B |
 | `tokenAAmount` | string | yes | - | The amount of token A to swap |

@@ -37,14 +37,23 @@ Deploy a backend project (`bounded.manifest` + TS) with capabilities handed in a
 a sealed, metered, spend-capped `ctx`:
 - You need **arbitrary npm deps** (cooldown-resolved + bundled for you), a real build, or **persistent state**.
 - You need **scheduling** (`ctx.schedule`), **AI** (`ctx.ai`, spend-capped), or **outbound `fetch`** to an allowlist.
-- You want an **agent** (`onInvoke`/`onSchedule`) or a backend HTTP handler at
-  the app's mapped API host, for example `<slug>-api.bounded.page`.
+- You want an **agent** (`onInvoke`/`onSchedule`) invoked through
+  `/agents/<name>/<session>` on the app's API host. (A public HTTP route at
+  `<slug>-api.bounded.page/<name>` is a [public function](public-functions.md),
+  not a runtime.)
 - You want a **multi-step agentic loop** (LLM drives tool calls toward a goal) → the **Flue agent runtime** (`bounded-flue@2026.07`), [agents-flue.md](agents-flue.md).
 - You need **long-running / batch / background** work — use resumable scheduled steps instead of one long function call.
 
-You keep Bounded auth identity, the AI/external-services bucket, versioning, and billing
+You keep Bounded auth identity, the credit pool, versioning, and billing
 ([billing.md](../../bounded/docs/billing.md)). Deploy with `bounded runtime deploy`. This is the normal upgrade
 from a Bounded function.
+
+> **"Keep auth identity" is not "auth is handled."** The runtime verifies the caller's
+> token and that it belongs to your app - but an agent/backend invocation runs no policy
+> `auth` rule, so authorizing WHO may invoke a secret-bearing handler is still yours. A
+> graduated agent that omits the check lets any signed-in user drive its secrets, services
+> and queues. Gate on `ctx.identity.user` / `env.identity.user` before touching them -
+> see [agents-flue.md](agents-flue.md) and [backend-runtime.md](backend-runtime.md).
 
 ### Tier 3 — eject to your own server (the final off-ramp; only if you must)
 Reach for this only when you want full control of hosting/billing or something

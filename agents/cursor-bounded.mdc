@@ -36,9 +36,15 @@ declared policy surface as proved.
 ## Install
 
 ```bash
-curl -fsSL https://get.bounded.sh/install.sh | sh
-bounded init
+npm install -D @bounded-sh/cli
+npx bounded init
 ```
+
+The CLI is a project dev dependency (macOS, Linux, Windows; Node 20 or later):
+run every command as `npx bounded <command>`. Without Node, the shell installer
+`curl -fsSL https://get.bounded.sh/install.sh | sh` installs a global `bounded`
+on macOS and Linux. If the install is blocked or `bounded` is not found
+afterward, ask the user to run it in their own terminal, then continue.
 
 ## Flow
 
@@ -73,7 +79,9 @@ bounded init
   Retain the receipt `url`, or run `bounded domains list --app-id <id> --env <environment> --json` and use the JSON `slugUrl`; `bounded apps inspect` proves policy/runtime publication and does not return a hosted URL.
 
 Runtime rejections are fail-closed: 409 for a violated invariant, 403 for a denied
-write or invoke rule.
+write or invoke rule, and 500 `rule_evaluation_failed` when the rule could not be
+evaluated at all (no verdict; not a denial and not a retryable `409`). Read
+`bounded decisions` for the cause; do not assume a retry will fail.
 
 ## SDKs
 

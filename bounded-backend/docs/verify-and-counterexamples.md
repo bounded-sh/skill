@@ -49,16 +49,15 @@ A clean run:
 ```
 $ bounded verify
 
-policy.json — 1 collection, 1 invariant
+Proofs: 4 total - 4 proven, 0 unproven advisories, 0 failed.
 
-  create rule is satisfiable                                PROVED   (38ms)
-  create requires authentication                            PROVED   (41ms)
-  read requires authentication                              PROVED   (40ms)
-  transaction postcondition spend_cap
-    append-only rolling limit algebra                       PROVED  (106ms)
-
-4 obligations · 0 failed · every guarantee holds for all inputs — safe to deploy
+✓ Proven - safe to deploy.
+  Add --verbose to print every obligation and explanation.
 ```
+
+The default stays proportional to the verdict rather than the policy size.
+Run `bounded verify --verbose` when you need the complete `[PASS]`, `[UNPROVEN]`, and explanation list.
+A failed default run still prints every blocking `[FAIL]` item and its counterexample, so `--verbose` is never required to fix a rejection.
 
 ## Reading counterexamples
 
@@ -154,7 +153,7 @@ blocking validation errors.
 | Obligation | Proves |
 |---|---|
 | `function <name>: caller-scoped invocation` | The function has no `actAs`, so `ctx.bounded` writes as the verified caller. Public/authenticated caller gates are allowed; writes still run through the caller's normal rules and every invariant. This is surfaced as a report entry, not a deploy-blocking admin proof. |
-| `function <name>: actAs service identity is admin-gated` | The function declares `actAs`, so its `auth` rule must **imply** the admin predicate - i.e. every caller who can invoke the service identity is an admin. Declare a bootstrap-safe `admins/$userId` scope and use the runtime-valid gate `get(/admins/@user.id) != null` (valid for a registry with **no** `active` field - revoke by deleting the row) or, for a reversible off-switch, `get(/admins/@user.id).active == true` (see [admin-and-ownership.md](admin-and-ownership.md)); either satisfies the deploy gate since `.active == true` implies the row exists. An over-permissive hatch (`auth: "true"` or `"@user.id != null"`) is disproved with a non-admin counterexample and fails `bounded verify`. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
+| `function <name>: actAs service identity is admin-gated` | The function declares `actAs`, so its `auth` rule must **imply** the admin predicate - i.e. every caller who can invoke the service identity is an admin. Two gates satisfy it. The control-plane roster (owner plus `bounded share --role admin` collaborators): `get(/__admins__/@user.id) != null` or `get(/__owners__/@user.id) != null`, keyed by `@user.id` (the runtime resolves the reserved sets under the caller's universal id, so an address-keyed read is not accepted). Or an app-data `admins/$userId` scope, declared bootstrap-safe and gated as `get(/admins/@user.id) != null` (a registry with **no** `active` field - revoke by deleting the row) or `get(/admins/@user.id).active == true` for a reversible off-switch (see [admin-and-ownership.md](admin-and-ownership.md)); `.active == true` implies the row exists. `__managers__` (every collaborator role) is not admin evidence. An over-permissive hatch (`auth: "true"` or `"@user.id != null"`) is disproved with a non-admin counterexample and fails `bounded verify`. `auth.*`/`args.*` in the rule are modeled as the caller's `@user.*` / call `@data.*`. |
 
 > **Parser boundary:** `hasRole()` exists in the proof grammar only; the current
 > runtime parser rejects it and fails closed. Do not put it in a collection rule,

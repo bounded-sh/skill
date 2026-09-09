@@ -469,6 +469,10 @@ The per-action object may contain only `create`, `update`, and `delete`, with at
 A referenced `$variable` must be bound by the declaring collection's own path template.
 The required path must address another collection declared in the same policy and cannot be a vacuous reference to the declaring collection itself.
 
+That binding rule is what puts an **identity-keyed** companion out of scope: a per-caller rate log lives under `users/@user.id/...`, and the caller's identity is not a path variable of the action's template.
+Require that pairing in the action's own `create` rule instead - `get(/users/@user.id/rate/$id) == null && getAfter(/users/@user.id/rate/$id).weight == 1`, where the absence check is what stops a caller spending rows appended in an earlier window.
+The full recipe is in [invariants.md](invariants.md#recipe--rate-limit-an-action-with-a-separate-event-log).
+
 A single-document set or delete is still a batch of one and is refused when it lacks a required companion.
 Any real mutation of the required path satisfies the presence check.
 A delete of a nonexistent document is a no-op and satisfies nothing.
