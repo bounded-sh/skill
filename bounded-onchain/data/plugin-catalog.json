@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "71dcfd36c4f65c0cb5c58849a08db465d1bef84d",
+  "monorepoCommit": "663ac224b65d037b000925eecd126a6b33409546",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -5838,8 +5838,8 @@
      "name": "withdrawFunds",
      "callName": "@PhoenixPerpsPlugin.withdrawFunds",
      "category": "transactional",
-     "signature": "withdrawFunds(source, amount, subaccountIndex?)",
-     "usage": "@PhoenixPerpsPlugin.withdrawFunds(source, amount, subaccountIndex?) - Withdraws Phoenix tokens from protocol margin back to trader's token account. subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.",
+     "signature": "withdrawFunds(source, amount?, subaccountIndex?)",
+     "usage": "@PhoenixPerpsPlugin.withdrawFunds(source, amount?, subaccountIndex?) - Withdraws Phoenix tokens from protocol margin back to trader's token account. Omit amount (or pass null) to withdraw the trader's whole collateral balance: the platform resolves the balance when it builds the transaction and the program withdraws exactly that attested amount; an empty balance is refused. subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -5858,9 +5858,9 @@
        "index": 1,
        "name": "amount",
        "type": "number",
-       "optional": false,
+       "optional": true,
        "signer": null,
-       "description": "Amount of Phoenix tokens to withdraw (in smallest units)",
+       "description": "Amount of Phoenix tokens to withdraw (in smallest units). Omit or pass null to withdraw the trader's whole collateral balance, resolved by the platform when the transaction is built and attested to the program.",
        "fields": null
       },
       {
@@ -6905,7 +6905,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees",
+       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator).",
        "fields": null
       },
       {
@@ -6988,7 +6988,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees",
+       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator).",
        "fields": null
       },
       {

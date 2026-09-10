@@ -108,7 +108,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@PhoenixPerpsPlugin.syncParentToChild` | `syncParentToChild(source, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.transferToCross` | `transferToCross(source, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.transferToIsolated` | `transferToIsolated(source, amount, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
-| `@PhoenixPerpsPlugin.withdrawFunds` | `withdrawFunds(source, amount, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
+| `@PhoenixPerpsPlugin.withdrawFunds` | `withdrawFunds(source, amount?, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.getCollateralBalance` | `getCollateralBalance(source, subaccountIndex?)` | offchain rules, offchain named queries | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.getMarkPrice` | `getMarkPrice(market)` | offchain rules, offchain named queries | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.getPortfolioValue` | `getPortfolioValue(source, subaccountIndex?)` | offchain rules, offchain named queries | [reference](plugins/PhoenixPerpsPlugin.md) |

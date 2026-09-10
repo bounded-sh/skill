@@ -138,7 +138,7 @@ omit / `0` = cross-margin, `1`–`100` = isolated-margin subaccounts.
 | `emberDeposit` | `(source, amount)` | Bridge USDC → PhUSD (collateral currency). |
 | `emberWithdraw` | `(source, amount)` | Bridge PhUSD → USDC. |
 | `depositFunds` | `(source, amount, subaccountIndex?)` | Deposit PhUSD collateral into the margin account. |
-| `withdrawFunds` | `(source, amount, subaccountIndex?)` | Withdraw collateral. |
+| `withdrawFunds` | `(source, amount?, subaccountIndex?)` | Withdraw collateral. Omit `amount` (or pass `null`) to withdraw the whole collateral balance: the platform resolves it when it builds the transaction and attests it to the program. |
 | `placeLong` | `(source, market, sizeBaseLots, subaccountIndex?)` | Open/add a **long**. |
 | `placeShort` | `(source, market, sizeBaseLots, subaccountIndex?)` | Open/add a **short**. |
 | `closePosition` | `(source, market, sizeBaseLots, side, subaccountIndex?)` | Reduce/close. `side`: `1` = close a long (ask), `0` = close a short (bid). |
@@ -182,7 +182,7 @@ depositFunds(@contract.address, <phusd>)         // collateral in
 placeLong(@contract.address, "<market>", <lots>) // open
   … monitor getUnrealizedPnl / getMarkPrice …
 closePosition(@contract.address, "<market>", <lots>, 1)  // close the long
-withdrawFunds(@contract.address, <phusd>)
+withdrawFunds(@contract.address)                 // whole collateral, resolved and attested at build time
 ```
 
 ## DEX swaps - `@DeFiPlugin`

@@ -174,7 +174,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `PhoenixPerpsPlugin.withdrawFunds`
 
 ```
-@PhoenixPerpsPlugin.withdrawFunds(source, amount, subaccountIndex?) - Withdraws Phoenix tokens from protocol margin back to trader's token account. subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.
+@PhoenixPerpsPlugin.withdrawFunds(source, amount?, subaccountIndex?) - Withdraws Phoenix tokens from protocol margin back to trader's token account. Omit amount (or pass null) to withdraw the trader's whole collateral balance: the platform resolves the balance when it builds the transaction and the program withdraws exactly that attested amount; an empty balance is refused. subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.
 ```
 
 - Callable from: `hooks.onchain`
@@ -183,7 +183,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
 | `source` | string | yes | **yes** | Trader address (wallet, @contract.address for escrow, or account ID) |
-| `amount` | number | yes | - | Amount of Phoenix tokens to withdraw (in smallest units) |
+| `amount` | number | no | - | Amount of Phoenix tokens to withdraw (in smallest units). Omit or pass null to withdraw the trader's whole collateral balance, resolved by the platform when the transaction is built and attested to the program. |
 | `subaccountIndex` | number | no | - | Subaccount index. 0 (default) = cross-margin, 1-100 = isolated margin. |
 
 ## Read-only
