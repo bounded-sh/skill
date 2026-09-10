@@ -81,6 +81,10 @@ In JSON, read `.limits.maxProjects`; `-1` means unlimited.
 A platform-issued project-cap grant is reflected in that effective value, but
 the raw operator override record and operator metadata are never returned.
 
+The hosted dashboard's Billing tab shows, per app, the metered usage at posted prices and what it actually charged the pool, the app's closed months, and the account's spend grouped by app.
+When an account's pool is empty, every app it pays for is paused (requests, realtime connections and scheduled jobs are refused; static pages stay up), the dashboard shows a banner on each such app, and the account's email receives a notice, then a weekly reminder while it stays empty.
+An email also goes out once when the week's spend rate would empty the pool within three days.
+
 When usage data is available, explain it in user terms:
 
 - request operations,
