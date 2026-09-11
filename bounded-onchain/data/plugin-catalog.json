@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "71dcfd36c4f65c0cb5c58849a08db465d1bef84d",
+  "monorepoCommit": "ac930e1efb764e3a76a30c7f352208097d190496",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -6905,7 +6905,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees",
+       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator).",
        "fields": null
       },
       {
@@ -6988,7 +6988,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees",
+       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator).",
        "fields": null
       },
       {

@@ -93,7 +93,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `name` | string | yes | - |  |
 | `symbol` | string | yes | - |  |
 | `uri` | string | yes | - |  |
-| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
+| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator). |
 | `config` | object | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
 
 Fields of `config`:
@@ -117,7 +117,7 @@ Fields of `config`:
 | `name` | string | yes | - |  |
 | `symbol` | string | yes | - |  |
 | `uri` | string | yes | - |  |
-| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees |
+| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator). |
 | `isMayhemMode` | boolean | yes | - | Enable mayhem mode for token (default: false) |
 | `config` | object | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
 
