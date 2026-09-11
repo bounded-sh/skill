@@ -12,6 +12,12 @@ Bounded has **two distinct identity systems**. Don't conflate them:
 | **CLI/admin auth** | you / your agent | normally a Bounded web account session selected by `bounded init`; local signing is an advanced alternative | owns/administers apps and is documented in the deploy skill |
 | **End-user auth** | your app's users | Bounded Auth (email OTP + OAuth/social + optional text OTP). **Turnkey-native auth with eager embedded-wallet provisioning is the default**, so supported email/social users carry both `@user.id` and `@user.address` without an `authMode` or `auth.wallets` override. Browser guests use a device keypair; a connected Solana wallet (`walletLogin`) is the bring-your-own companion. | `@user.id` / `@user.address` / `@user.email` / `@user.isAnonymous` in policy rules |
 
+New apps use an embedded wallet specific to that account and app, while existing apps keep their existing shared wallet.
+Use `@bounded-sh/client` 0.0.99 or later; scope comes from authenticated server metadata, not a frontend option.
+Email login and normal signing share a retained Bounded iframe; blocked frame storage uses its in-memory session and may require a fresh code after reload.
+Social-provider redirects and popups keep their current behavior.
+See [embedded wallets](../../bounded-onchain/docs/embedded-wallets.md#wallets-are-scoped-to-the-app) for balances, guest identity, and recovery after app deletion.
+
 ## Developer and server authentication
 
 For CLI login, read [developer accounts](../../bounded-deploy/docs/accounts.md).

@@ -17,6 +17,12 @@ has:
 Use `@user.id` for ordinary authorization. Never key ordinary ownership on a
 wallet address.
 
+New apps use separate embedded wallets per account and app; existing apps retain their shared wallets.
+Use client 0.0.99 or later and let authenticated server metadata select the wallet scope.
+Email code entry and signing share an in-page trusted iframe.
+The frame can keep its signing key in memory when storage is blocked, while a reload can require another code.
+Social login still uses its existing popup or redirect.
+
 ## Unified widget
 
 ```ts

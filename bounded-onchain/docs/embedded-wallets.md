@@ -20,6 +20,31 @@ Browser guests and phone-only sessions are exceptions. A bring-your-own wallet
 login also behaves differently: its `@user.address` is the wallet the user
 connected.
 
+## Wallets are scoped to the app
+
+New apps use a separate embedded wallet for each signed-in account and app.
+The same person has different addresses and balances in different new apps.
+Existing apps keep their existing shared wallet and address.
+The server selects the scope; do not add `walletScope` to SDK initialization or policy.
+Use `@bounded-sh/client` 0.0.99 or later for the scoped wallet protocol.
+An older client receives a compatibility error when attempting unsupported wallet operations, with no shared-wallet fallback.
+
+The account identity and any linked guest principal remain stable.
+Continue using `@user.id` for ownership; `@user.address` identifies the active app wallet.
+Connected external wallets, the developer account wallet, and OpenApps runtime wallets retain their own behavior.
+
+Email-code entry and normal signing use a Bounded-controlled iframe inside the app page.
+The same frame retains its private signing session in memory when third-party storage is unavailable.
+A full reload may require another email code.
+Social login keeps its existing redirect/popup flow.
+Authentication can succeed while the wallet still needs verification; the next wallet operation can request a fresh code.
+
+`getTurnkeyWalletRecoveryUrl()` returns a link for the current embedded wallet that the user can save.
+It opens a trusted top-level Bounded page, requires fresh owner email verification, and supports key export even after app deletion.
+Deleting an app disables its signing integration but does not delete the user's wallet or funds.
+The recovery link selects a wallet; possessing the link does not authorize access.
+Private keys and provider authentication proofs stay inside trusted Bounded pages.
+
 ## The recommended login for an onchain app
 
 Use the shared widget with no auth-mode override:
