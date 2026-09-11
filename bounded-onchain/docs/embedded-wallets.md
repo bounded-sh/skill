@@ -219,12 +219,18 @@ Turnkey organization must have its application brand and email OTP activity
 configured by the platform. That is an issuer prerequisite, not a client-side
 setting.
 
-For a headless email flow, the client also exposes the Turnkey bridge:
+For a custom browser email flow, the client exposes a bridge to the trusted Bounded iframe.
+Mount an iframe in your login UI and pass it to the handle; the code input and verification stay inside that frame.
 
 ```ts
+import { startTurnkeyEmailLogin } from "@bounded-sh/client";
+
 const attempt = await startTurnkeyEmailLogin(email);
-const user = await attempt.verify(code);
+const user = await attempt.run(iframe); // a mounted HTMLIFrameElement
 ```
+
+For an app-scoped wallet, keep the iframe mounted after login so its in-memory signing session survives; hide and show it as needed.
+Use the standard login widget if you do not want to manage this lifecycle.
 
 Turnkey provisioning and signing helpers include `getOrCreateTurnkeyWallet`,
 `signSolanaMessageViaTurnkey`, and the normal auth-provider methods
