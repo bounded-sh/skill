@@ -324,3 +324,8 @@ extra command is needed.
 curl -A "Twitterbot/1.0" https://<slug>.bounded.page/s/<id> | grep -iE 'og:|twitter:|<title>'
 # → expect per-resource og:title / og:description / og:image + a per-resource <title>
 ```
+
+## Interrupted publication
+
+For `canonical_apply_pending`, `canonical_apply_in_progress`, or `external_apply_unavailable` during a site upload, see [deployment attempts and reservation recovery](../../bounded-deploy/docs/cli-reference.md#interrupted-site-deployments).
+Inspect `bounded site versions --app-id <id> --json` before retrying.
