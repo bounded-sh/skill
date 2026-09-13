@@ -84,7 +84,7 @@ bounded site deploy ./dist --app-id <id>
 ## Repeated-load asset caching
 
 Bounded supports an opt-in asset namespace for static builds with relative JavaScript imports and CSS resource URLs.
-For Vite, set `base: "./"` and add this tag to the source `index.html` head:
+For Vite, add this tag to the source `index.html` head and use the public-only URL hook below alongside `base: "./"`:
 
 ```html
 <meta name="bounded-assets" content="relative-v1">
@@ -94,14 +94,24 @@ For Vite, set `base: "./"` and add this tag to the source `index.html` head:
 // vite.config.ts - preserve your existing plugins and other options.
 export default defineConfig({
   base: "./",
+  experimental: {
+    renderBuiltUrl(filename, { type }) {
+      if (type === "public") return `/${filename}`;
+    },
+  },
   plugins: [react()],
 });
 ```
 
+The hook keeps files from Vite's `public/` directory at root URLs, so font preloads, icons, and public images also work on deep SPA routes.
+Those unmounted URLs use ordinary conditional revalidation, including fonts referenced by a copied public stylesheet.
+HTML script and stylesheet entries still participate in Bounded's rewrite even when their original files came from `public/`.
+Leave bundled assets on Vite's relative fallback; returning a root URL for every asset breaks the shared namespace for lazy CSS preload dependencies.
+
 Deploy the entire built directory with the ordinary `bounded site deploy` command.
 Bounded rewrites the built HTML's local script, modulepreload, and stylesheet URLs into a directory identified by the complete published file map's SHA256 digest.
 Relative imports and preload links share that directory, so the same module keeps one browser identity.
-Public asset responses are immutable only after the requested namespace matches the current publication and the file bytes match its pinned digest.
+Responses in the verified namespace are immutable only after the requested namespace matches the current public publication and the file bytes match its pinned digest.
 Private sites and preview variants remain `private, no-store`.
 HTML always stays current and is never an immutable asset.
 A changed file map gets a new namespace; an old namespace request that reaches the server returns `404`, rather than mixing generations.
