@@ -4,9 +4,8 @@ Ship a built **static** frontend (Vite/CRA/any `dist/`) to Bounded hosting —
 no separate host, no DNS. Claim a vanity slug and your app gets two mapped
 subdomains on the same SSL:
 
-- **`<slug>.bounded.page`** — your static site (SPA fallback;
-  content-hashed assets cached immutably, HTML + un-fingerprinted assets always
-  revalidated so a redeploy goes live instantly without a hard-refresh).
+- **`<slug>.bounded.page`** - your static site, with SPA fallback.
+  Verified content-addressed assets can be cached immutably; HTML and other assets revalidate so a new deployment becomes visible on navigation.
 - **`<slug>-api.bounded.page`** - your app's API host: public functions at
   `/<functionName>/...` (see [public-functions.md](../../bounded-backend/docs/public-functions.md))
   and the backend runtime at `/agents/<name>/<session>` (see
@@ -81,6 +80,39 @@ bounded site deploy ./dist --app-id <id>
   Authorized web accounts and wallet accounts are both supported: the CLI obtains the app-bound identity token needed by the gate.
   Keep the current authorized account; no wallet switch is required for web login.
   Treat the link as a bearer secret until it expires - anyone who opens it gets in.
+
+## Repeated-load asset caching
+
+Bounded supports an opt-in asset namespace for static builds with relative JavaScript imports and CSS resource URLs.
+For Vite, set `base: "./"` and add this tag to the source `index.html` head:
+
+```html
+<meta name="bounded-assets" content="relative-v1">
+```
+
+```ts
+// vite.config.ts - preserve your existing plugins and other options.
+export default defineConfig({
+  base: "./",
+  plugins: [react()],
+});
+```
+
+Deploy the entire built directory with the ordinary `bounded site deploy` command.
+Bounded rewrites the built HTML's local script, modulepreload, and stylesheet URLs into a directory identified by the complete published file map's SHA256 digest.
+Relative imports and preload links share that directory, so the same module keeps one browser identity.
+Public asset responses are immutable only after the requested namespace matches the current publication and the file bytes match its pinned digest.
+Private sites and preview variants remain `private, no-store`.
+HTML always stays current and is never an immutable asset.
+A changed file map gets a new namespace; an old namespace request that reaches the server returns `404`, rather than mixing generations.
+An already-open tab that needs a previously unloaded chunk after a deployment may therefore need a refresh.
+The namespace optimizes repeat visits to one deployment, not reuse of unchanged vendor chunks across deployments.
+
+The opt-in applies to build-time relative imports and CSS references.
+Application-authored root-relative resource strings, API calls, inline scripts, remote URLs, and navigation links retain their existing meaning.
+Do not add only the HTML tag to a build whose module graph still uses absolute paths.
+Vite's ordinary output hash is not a SHA256 prefix, so its filename alone does not qualify for immutable caching.
+Without this opt-in, ordinary assets use conditional revalidation; a successful unchanged GET can return `304` without the body.
 
 ## Public proof page (opt-in)
 
