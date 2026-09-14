@@ -361,7 +361,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: not listed in the capability table.
+- Status: **unverified** (local policy verified (fee authority pays a treasury it does not control); live not run); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

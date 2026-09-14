@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "932e02ee1d85633b7bfee6aae86bd59a5571adc0",
+  "monorepoCommit": "0beeced638efe516ede025d2f855daf23c7afe98",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -2896,7 +2896,12 @@
      "contexts": [
       "onchain.hooks"
      ],
-     "status": null
+     "status": {
+      "lane": "descriptor CPI",
+      "support": "unverified",
+      "verification": "local policy verified (fee authority pays a treasury it does not control); live not run",
+      "markers": "LIVE-PENDING"
+     }
     },
     {
      "name": "transferLamports",
@@ -8566,7 +8571,7 @@
      "callName": "@TokenPlugin.withdrawWithheldTokens",
      "category": "transactional",
      "signature": "withdrawWithheldTokens(string, string, string, string)",
-     "usage": "@TokenPlugin.withdrawWithheldTokens(mintAddress, withdrawAuthority, feeReceiverOwner, sourceOwner) - Withdraws withheld transfer fees from a source token account to a fee receiver. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to get mintAddress. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get the withdrawAuthority.",
+     "usage": "@TokenPlugin.withdrawWithheldTokens(mintAddress, withdrawAuthority, feeReceiverOwner, sourceOwner) - Withdraws withheld transfer fees from a source token account to a fee receiver. The withdraw authority signs (a named account or the app escrow signs through the program); the fee receiver may be any owner, and sourceOwner may equal feeReceiverOwner to convert an account's own withheld fees back into its spendable balance. A source that holds no token account (never created or closed) or no withheld fees is a successful no-op that moves nothing and needs no receiver account, so a hook may sweep a receiver before the transfer that creates it. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to get mintAddress. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get the withdrawAuthority.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,

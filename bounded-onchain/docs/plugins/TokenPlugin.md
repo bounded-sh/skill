@@ -142,7 +142,7 @@ Fields of `extensions`:
 ### `TokenPlugin.withdrawWithheldTokens`
 
 ```
-@TokenPlugin.withdrawWithheldTokens(mintAddress, withdrawAuthority, feeReceiverOwner, sourceOwner) - Withdraws withheld transfer fees from a source token account to a fee receiver. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to get mintAddress. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get the withdrawAuthority.
+@TokenPlugin.withdrawWithheldTokens(mintAddress, withdrawAuthority, feeReceiverOwner, sourceOwner) - Withdraws withheld transfer fees from a source token account to a fee receiver. The withdraw authority signs (a named account or the app escrow signs through the program); the fee receiver may be any owner, and sourceOwner may equal feeReceiverOwner to convert an account's own withheld fees back into its spendable balance. A source that holds no token account (never created or closed) or no withheld fees is a successful no-op that moves nothing and needs no receiver account, so a hook may sweep a receiver before the transfer that creates it. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to get mintAddress. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get the withdrawAuthority.
 ```
 
 - Callable from: `hooks.onchain`
