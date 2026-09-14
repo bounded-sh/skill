@@ -18,8 +18,11 @@ The registered generic CPI collection primitives are:
 - `@CPI.token2022RevokeFeeAuthority(source, mint)` removes the authority to change the transfer-fee rate.
 - `@CPI.token2022HarvestFees(source, mint, accounts)` harvests a pipe-separated list of actual token-account addresses into the mint accumulator.
 - `@CPI.token2022WithdrawMintFees(source, mint)` withdraws the mint accumulator into the source authority's Token-2022 associated token account.
+- `@CPI.token2022WithdrawMintFeesTo(source, mint, recipient)` withdraws the mint accumulator into the recipient's Token-2022 associated token account while `source` signs as the withdrawal authority.
 
-Use the treasury's named account id as `source` when it is the mint's withdrawal authority.
+Prefer a dedicated named account as the mint's withdrawal authority and `token2022WithdrawMintFeesTo` with the treasury as `recipient`.
+The authority then holds nothing and can only move withheld tax, and the treasury never signs a fee withdrawal, including the withdrawals that run inside user transactions such as fee-neutral staking.
+Use the treasury's own named account id as `source` only when it is itself the withdrawal authority; the self-paying variant sends the fees to whoever signs.
 These are mutating onchain hook calls; confirm their exact signatures and target-environment availability in the [plugin catalog](plugins.md).
 A harvest by another caller does not change the withdrawal authority.
 An already-empty source, or one that closed between discovery and execution, must not invalidate an otherwise valid harvest.
