@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "ac930e1efb764e3a76a30c7f352208097d190496",
+  "monorepoCommit": "0beeced638efe516ede025d2f855daf23c7afe98",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -2851,6 +2851,55 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "local policy verified; live not run",
+      "markers": "LIVE-PENDING"
+     }
+    },
+    {
+     "name": "token2022WithdrawMintFeesTo",
+     "callName": "@CPI.token2022WithdrawMintFeesTo",
+     "category": "transactional",
+     "signature": "token2022WithdrawMintFeesTo(string, string, string)",
+     "usage": "@CPI.token2022WithdrawMintFeesTo(source, mint, recipient) - withdraws all fees already harvested into the Token-2022 mint to the recipient's ATA, creating it if needed. Source must be the mint's withdraw-withheld authority (wallet, @contract.address, or named account) and signs; recipient is any wallet, the app escrow, or a named account, so a dedicated fee-authority PDA can collect into a treasury it never controls. The withdrawal is not a transfer and levies no transfer fee. Does not collect fees still held on individual token accounts; harvest those first with @CPI.token2022HarvestFees.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Withdraw-withheld authority: wallet, app escrow, or named account.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "Token-2022 mint with harvested withheld fees.",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "recipient",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "Owner of the receiving associated token account: wallet, app escrow, or named account.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ],
+     "status": {
+      "lane": "descriptor CPI",
+      "support": "unverified",
+      "verification": "local policy verified (fee authority pays a treasury it does not control); live not run",
       "markers": "LIVE-PENDING"
      }
     },
@@ -5838,8 +5887,8 @@
      "name": "withdrawFunds",
      "callName": "@PhoenixPerpsPlugin.withdrawFunds",
      "category": "transactional",
-     "signature": "withdrawFunds(source, amount, subaccountIndex?)",
-     "usage": "@PhoenixPerpsPlugin.withdrawFunds(source, amount, subaccountIndex?) - Withdraws Phoenix tokens from protocol margin back to trader's token account. subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.",
+     "signature": "withdrawFunds(source, amount?, subaccountIndex?)",
+     "usage": "@PhoenixPerpsPlugin.withdrawFunds(source, amount?, subaccountIndex?) - Withdraws Phoenix tokens from protocol margin back to trader's token account. Omit amount (or pass null) to withdraw the amount Phoenix reports as safe in the same transaction: min(max(free collateral, 0), withdrawable collateral). An empty safe amount is refused. subaccountIndex 0 (default) = cross-margin, 1-100 = isolated margin subaccount.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -5858,9 +5907,9 @@
        "index": 1,
        "name": "amount",
        "type": "number",
-       "optional": false,
+       "optional": true,
        "signer": null,
-       "description": "Amount of Phoenix tokens to withdraw (in smallest units)",
+       "description": "Amount of Phoenix tokens to withdraw (in smallest units). Omit or pass null to use Phoenix Hawkeye in the same transaction and withdraw min(max(free collateral, 0), withdrawable collateral).",
        "fields": null
       },
       {
@@ -8522,7 +8571,7 @@
      "callName": "@TokenPlugin.withdrawWithheldTokens",
      "category": "transactional",
      "signature": "withdrawWithheldTokens(string, string, string, string)",
-     "usage": "@TokenPlugin.withdrawWithheldTokens(mintAddress, withdrawAuthority, feeReceiverOwner, sourceOwner) - Withdraws withheld transfer fees from a source token account to a fee receiver. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to get mintAddress. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get the withdrawAuthority.",
+     "usage": "@TokenPlugin.withdrawWithheldTokens(mintAddress, withdrawAuthority, feeReceiverOwner, sourceOwner) - Withdraws withheld transfer fees from a source token account to a fee receiver. The withdraw authority signs (a named account or the app escrow signs through the program); the fee receiver may be any owner, and sourceOwner may equal feeReceiverOwner to convert an account's own withheld fees back into its spendable balance. A source that holds no token account (never created or closed) or no withheld fees is a successful no-op that moves nothing and needs no receiver account, so a hook may sweep a receiver before the transfer that creates it. Use @TokenPlugin.getTokenMintAddress(tokenId, name, symbol) to get mintAddress. Use @TokenPlugin.getWithdrawWithheldAuthority(mintAddress) to get the withdrawAuthority.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,

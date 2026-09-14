@@ -354,6 +354,21 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `source` | address | yes | **yes** | Withdraw-withheld authority and fee recipient: wallet, app escrow, or named account. |
 | `mint` | address | yes | - | Token-2022 mint with harvested withheld fees. |
 
+### `CPI.token2022WithdrawMintFeesTo`
+
+```
+@CPI.token2022WithdrawMintFeesTo(source, mint, recipient) - withdraws all fees already harvested into the Token-2022 mint to the recipient's ATA, creating it if needed. Source must be the mint's withdraw-withheld authority (wallet, @contract.address, or named account) and signs; recipient is any wallet, the app escrow, or a named account, so a dedicated fee-authority PDA can collect into a treasury it never controls. The withdrawal is not a transfer and levies no transfer fee. Does not collect fees still held on individual token accounts; harvest those first with @CPI.token2022HarvestFees.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (local policy verified (fee authority pays a treasury it does not control); live not run); markers: LIVE-PENDING.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Withdraw-withheld authority: wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint with harvested withheld fees. |
+| `recipient` | address | yes | - | Owner of the receiving associated token account: wallet, app escrow, or named account. |
+
 ### `CPI.transferLamports`
 
 ```

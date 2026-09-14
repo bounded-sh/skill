@@ -23,7 +23,7 @@ The rows below were classified against the runtime-v4 minimum and have not been 
 Runtime v6 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`.
+The current totals are 126 `unverified`, 32 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -98,6 +98,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@CPI.token2022RevokeFeeAuthority` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
 | `@CPI.token2022HarvestFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING, NEEDS-RUNTIME-V4 |
 | `@CPI.token2022WithdrawMintFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
+| `@CPI.token2022WithdrawMintFeesTo` | descriptor CPI | unverified | local policy verified (fee authority pays a treasury it does not control); live not run | LIVE-PENDING |
 | `@CPI.memoNote` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.transferLamports` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.stakePoolDepositSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
