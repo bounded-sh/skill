@@ -67,6 +67,23 @@ returns the same shape with zeroed values and a `metadata.message` hint rather t
 > couple of minutes** — a brand-new event won't appear instantly. Counts are
 > sample-interval-weighted estimates, not exact transactional counters.
 
+## Backend function analytics
+
+`GET /app/:id/analytics/backend` (same owner gate, same `range`/`metric`/`limit` params) covers function execution rather than the hosted site.
+Since event schema v2 every handled request produces exactly one disposition event, and the reader counts each on its own:
+
+| Event | Meaning | Counted as |
+|---|---|---|
+| `function_invoked` | a funded attempt ran and ended without a canonical failure | execution |
+| `function_failed` | a funded attempt ran and ended in a failure, including a terminal `4xx` rejection your function returned | execution and failure |
+| `function_refused` | nothing ran: a funding, cap, conflict or admission refusal (`topRefusalReasons` lists the codes) | refusal |
+| `function_replayed` | a stored terminal response or completion receipt was returned without running | replay |
+
+`summary` reports `executions`, `failures`, `refusals`, `replays` and `legacyEvents`; `errorRate` is `failures / executions`, so a payer that ran out of credits shows a rising `refusals` count, not a rising error rate.
+`invocations` remains as an alias of `executions`.
+Rows written before v2 are labelled `legacyEvents` (they wrote refusals and duplicates as failures) and `metadata.legacyEventsNote` explains how they were counted; they are never relabelled.
+The recorded status of an executed request is the status the caller received, so a returned `403` counts as a `4xx` failure and a redirect turned into a `502` counts as a `5xx`, never as a success.
+
 ## Notes
 
 - Analytics is **strictly additive** to hosting — every write is fire-and-forget and a

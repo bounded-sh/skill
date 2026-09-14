@@ -1370,7 +1370,13 @@ verify/deploy: the `auth` rule must imply the control-plane roster
 collaborators) or an app-data `admins/$userId` membership. `logs` (CLI 0.0.89+) reads the durable per-invocation log store:
 every invoke — end-user and scheduled runs included — is persisted with status,
 latency, error, and console output for 30 days, and the readable window/entry
-count is plan-tiered (free reads the recent days; Pro the full history). Name a
+count is plan-tiered (free reads the recent days; Pro the full history). The
+entitlement is resolved through the caller's linked web account, not the CLI
+key alone, and the response says which it found: `retention.entitlementStatus`
+is `pro`, `free`, or `unknown`. `unknown` (the account lookup did not answer)
+serves the narrow window and prints "Plan entitlement could not be confirmed";
+an upgrade prompt is printed only for a confirmed `free` plan, never for
+`unknown`. Name a
 function to filter to it, or omit the name for all of them; owner/admin gated,
 with per-function `logsAuth` delegation for other viewers. Every invoke also
 returns an `x-bounded-invocation-id` response header; the same id is stamped on

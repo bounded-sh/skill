@@ -99,9 +99,59 @@ What crosses in and out:
 - `req.url` is the entry origin plus the sub-path and query: `https://<slug>-api.bounded.page/v0/tokens?x=1` on the app host, `https://functions.bounded.sh/v0/tokens?x=1` on the dispatcher host. Route on `pathname`.
 - Your caller's headers reach you as sent, including `Authorization` (so your own tokens work), minus `cookie`, `x-bounded-*`, `x-internal-*`, `x-test-*`, and hop-by-hop fields.
 - Request bodies are UTF-8 text up to 128 KiB, never compressed. `GET`/`HEAD` carry no body.
-- Response headers cross only from this allowlist: `content-type`, `cache-control`, `etag`, `last-modified`, `expires`, `vary`, `content-language`, `content-disposition`, `allow`, `retry-after`, `www-authenticate`, `link`, plus the `Access-Control-*` set under `cors: "passthrough"`. `Set-Cookie` never does, and a `3xx` becomes a `502` - public functions cannot redirect.
+- Response headers cross only from this allowlist: `content-type`, `cache-control`, `etag`, `last-modified`, `expires`, `vary`, `content-language`, `content-disposition`, `allow`, `retry-after`, `www-authenticate`, `link`, plus the `Access-Control-*` set under `cors: "passthrough"`. `Set-Cookie` never does.
 - A thrown error is a `500 { "error": "<message>" }`. Every response carries `x-bounded-invocation-id`, which matches the durable log entry in `bounded functions logs`.
-- Cost-bearing calls (`ctx.ai`, `ctx.services`) still need an idempotency key; a caller may supply an outer `Idempotency-Key` header exactly as on `/invoke`.
+- Cost-bearing calls (`ctx.ai`, `ctx.services`) still need an idempotency key; a caller may supply an outer `Idempotency-Key` header exactly as on `/invoke`. That header is also what makes a request replayable (below).
+
+## What the caller gets, and what the platform records
+
+The status your function returns is the status the caller receives, and it is also the status the platform settles, logs and counts.
+The platform decodes your response before it records anything, so a `Response` with status `403` is a rejection everywhere (`bounded functions logs`, analytics, billing), never a "200 OK" wearing a 403.
+
+| Your function | Caller receives | Recorded as | Same `Idempotency-Key` again |
+|---|---|---|---|
+| Returns `2xx` | that status and body | `completed` | replays the stored response |
+| Returns `4xx` other than `408`, `425`, `429` | that status and body | `rejected` (terminal) | replays the stored rejection |
+| Returns `408`, `425` or `429` | that status and body | `failed` (retryable) | runs again |
+| Returns `5xx`, or throws | that status (`500` for a throw) | `failed` (retryable) | runs again |
+| Returns a `3xx` | `502 { "code": "public_function_redirect", "repairRequired": true }` | `repair_required` | replays the `502` until you redeploy |
+| Returns a non-HTTP status | `502 { "code": "public_function_invalid_status", "repairRequired": true }` | `repair_required` | replays the `502` until you redeploy |
+| Escapes the public envelope entirely | `503 { "code": "public_function_protocol_invalid", "repairRequired": true }` | `repair_required` | replays the `503` until you redeploy |
+
+`repairRequired` means the platform classified your code, not the request: nothing about retrying the call changes the answer.
+The body names the `failingGeneration` (code version and policy revision); deploying a new code version or promoting a new policy revision reopens the operation, and the next call with the same key runs your new code.
+Public functions cannot redirect; answer with a body that carries the location instead.
+
+A function whose pinned code predates the public HTTP contract answers `503 { "code": "public_function_runtime_stale", "retry": { "condition": "none" } }` before anything runs; redeploy it.
+
+### Replays
+
+Send an `Idempotency-Key` and the platform remembers the terminal outcome of that request for **seven days from its completion**:
+
+- The same request again (same method, path, query, body and credential headers) receives the recorded response with `x-bounded-replay: response`, without running your function or charging your payer. A verified Bounded bearer counts as the same caller even after a token refresh.
+- A request that presents only the platform's receipt capability (`x-bounded-replay-receipt`, returned on the original response) receives the recorded **status alone** (`x-bounded-replay: receipt`, empty body): enough for a redelivering caller to know the work is done, never the original payload.
+- Any other caller under the same key gets `409 { "code": "idempotency_replay_unauthorized" }`: the platform never hands one caller another caller's response, and never confirms the operation exists.
+- A **different** request under the same key is `409 { "code": "idempotency_conflict", "retry": { "condition": "request_changed" } }` and does not run.
+- A request whose recorded result has aged out (or was too large to keep, above 128 KiB) is `409 { "code": "idempotency_result_unavailable" }`; it was not executed again.
+- While the first attempt is still running, a duplicate is `409 { "code": "invocation_in_progress" }` with `Retry-After`.
+
+Without an `Idempotency-Key` every request is its own operation and nothing is replayed.
+Bodies over 128 KiB are recorded as a receipt (status only) rather than stored.
+
+### Refusals - nothing ran, nothing was charged
+
+Every function run is funded by the app's payer before it starts.
+When it cannot be, the caller gets a stable code and a `retry` block, and your function never ran:
+
+| Status | `code` | `retry.condition` | Meaning |
+|---|---|---|---|
+| `402` | `insufficient_funds` | `funding_available` | The payer has no credits. Top up; the very next call runs. |
+| `402` | `allocation_exceeded`, `allocation_closed`, `allocation_not_found`, `spend_limit_exceeded` | `allocation_restored` | The app's spending allocation cannot cover a run. |
+| `429` | `usage_cap_exceeded` | `cap_reset` | A per-app cap (`dimension` names it) is reached for the period. |
+| `503` | `services_billing_unavailable`, `courtesy_renewal_unavailable`, `ledger_capacity_exhausted`, `admission_protocol_unavailable`, `app_billing_unavailable` | `service_recovery` | Billing could not decide right now; honor `Retry-After`. |
+
+A refusal is not an attempt: it does not appear as a failed run in `bounded functions logs` or in the failure rate, it is counted separately (see [analytics](../../bounded/docs/analytics.md)), and it is safe to retry under the same `Idempotency-Key` once the condition clears.
+Every refusal still carries `x-bounded-invocation-id`.
 
 ## Who is calling
 
@@ -179,7 +229,8 @@ declaration cannot ask for them.
 - 120 requests per minute per app+function per Cloudflare location, before any config or body read; exhausted returns `429` with `Retry-After: 60`.
 - 128 KiB body, UTF-8 only, no `Content-Encoding`. Function timeout as declared (`timeout`, default 30s).
 - Single-surface: a public function is invisible to `/invoke` (`404`), cannot be a schedule, `dueRows`, live-call, queue, or Open Apps target (neither `queueCallable` nor `publicQueueCallable`), and the validator refuses those references.
-- Removing `public: true` closes the route on the next request. Deploying `public: true` on a function whose code predates this contract answers `503 public_function_runtime_stale` until you redeploy it.
+- Removing `public: true` closes the route on the next request. Deploying `public: true` on a function whose code predates this contract answers `503 public_function_runtime_stale` before anything runs, until you redeploy it.
+- Every run is funded before it starts (see [billing](../../bounded/docs/billing.md#function-runs-are-funded-before-they-start)); a payer at zero gets `402 insufficient_funds`, never a run the platform absorbs.
 
 ## The two narrower public modes
 
