@@ -82,8 +82,28 @@ A platform-issued project-cap grant is reflected in that effective value, but
 the raw operator override record and operator metadata are never returned.
 
 The hosted dashboard's Billing tab shows, per app, the metered usage at posted prices and what it actually charged the pool, the app's closed months, and the account's spend grouped by app.
-When an account's pool is empty, every app it pays for is paused (requests, realtime connections and scheduled jobs are refused; static pages stay up), the dashboard shows a banner on each such app, and the account's email receives a notice, then a weekly reminder while it stays empty.
-An email also goes out once when the week's spend rate would empty the pool within three days.
+
+## Function runs are funded before they start
+
+Every Bounded Function run (public HTTP, `/invoke`, scheduled, queued, webhook, browser, live) takes a reservation on the payer's credit pool before any code loads, and settles it at the run's measured cost when the run ends.
+A payer with no available credits gets no run: the caller receives `402 insufficient_funds` (or an `allocation_*` code when an app spending allocation is the limit) with a `retry` block, nothing executes, nothing is charged, and the very next call after credits arrive runs with no reset or redeploy.
+A Free account's monthly courtesy credit is minted on the first run of the month before that check, so an idle Free app wakes up on its own.
+When billing itself cannot answer, the caller receives `503` with `services_billing_unavailable`, `courtesy_renewal_unavailable`, `ledger_capacity_exhausted` or `admission_protocol_unavailable` and a `Retry-After`; that is an outage, not a balance, and the run is safe to retry.
+Per-app usage caps still refuse with `429 usage_cap_exceeded` before any money moves.
+A refused run is not a failed run: it is reported separately in analytics (`function_refused`) and never appears in `bounded functions logs` as an execution.
+A run's own datastore reads and writes are covered by that run's reservation, so a running function is never cut off mid-flight by a balance that reached zero while it was executing.
+The exact caller-facing codes are listed in [public functions](../../bounded-backend/docs/public-functions.md#refusals---nothing-ran-nothing-was-charged).
+
+## Credit alerts
+
+The account's email receives three kinds of notice, each derived from the pool's real readings:
+
+- **Credits run out in N days** - sent once when the past week's spend rate would empty the pool within three days. The message states the available credits and the derived daily burn as whole credits per day (a fractional rate is rounded UP to whole credits per day, so any positive spend shows at least one credit a day and never a raw fraction or zero); when there is no positive spend rate to forecast from, no forecast is sent.
+- **Your credit pool is empty** - sent when the pool reaches zero, listing the apps linked to this account.
+- **Reminder: your credit pool is still empty** - weekly while it stays empty, up to a fixed number of reminders.
+
+Each says exactly what stops: functions that need those credits cannot start new runs; runs already in progress and live data connections may continue; static pages stay online; new credits may also cover earlier usage.
+The dashboard shows a banner on each app whose payer is empty.
 
 When usage data is available, explain it in user terms:
 

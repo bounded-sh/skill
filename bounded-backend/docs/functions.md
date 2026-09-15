@@ -291,6 +291,28 @@ caller, so the identity the function sees is exactly the one your data rules
 would see. On failure it throws `FunctionInvokeError` with the public status
 code and message.
 
+Every run is funded before it starts: the app's payer must hold credits for the
+worst case of the run (its declared timeout, one worker load, an allowance of
+datastore work), settled at the measured cost when it ends. A payer at zero gets
+`402` with `code: "insufficient_funds"` and `retry: { condition: "funding_available" }`
+(an app spending allocation at its limit gets an `allocation_*` code); a per-app
+cap gets `429 usage_cap_exceeded`; and billing that cannot answer gets `503`
+with `services_billing_unavailable` (or `courtesy_renewal_unavailable`,
+`ledger_capacity_exhausted`, `admission_protocol_unavailable`) and a
+`Retry-After`. In every one of those cases the function did not run and nothing
+was charged; the same `Idempotency-Key` is safe to send again once the condition
+clears. A run that ended (2xx, or a terminal 4xx it returned) is remembered for
+seven days: a second `/invoke` with the same `Idempotency-Key` and the same
+arguments is refused with `409 invocation_replayed` and `canonicalStatus`
+instead of running twice; a different payload under the same key is
+`409 idempotency_conflict`; a duplicate that arrives while the first is still
+running is `409 invocation_in_progress` with `Retry-After`. Public HTTP routes
+replay the original response instead; see
+[public functions](public-functions.md#what-the-caller-gets-and-what-the-platform-records).
+The rules that decide what your function's return value means to the platform
+(which statuses are terminal, which retry, why a redirect is a `502` you must
+fix) are in the same section; they apply to every lane.
+
 ## Deploy a function
 
 ```sh
