@@ -57,7 +57,7 @@ that has not opted in has its queued replay dropped (fail-closed):
   function may enqueue another function or itself; validated at enqueue time).
 - **How it runs:** a queued replay is **never deputized as the enqueuer**. From a trusted enqueuer it runs as the **null system principal** (`ctx.user` is `{ id: null, address: null, email: null, system: true }`, `ctx.auth.system == true`, and every `@user.*` resolves to null), whoever enqueued it. (A job that descends from a public route is the one exception to the null principal, not to the no-deputizing rule: it replays as that ROUTE's principal, never as the caller who hit the route — see [§ Public-origin jobs](#public-origin-jobs).)
   Because the human `auth` rule is written against a real caller, it cannot authorize a null-user run, so the queued lane instead requires the **target** to opt in with `queueCallable: true` in its policy `functions` entry.
-  A target that has not opted in is **rejected fail-closed**: the queued message is dropped (a `function_failed` analytics event is emitted for operators) and the human `auth` rule is never evaluated under a null user.
+  A target that has not opted in is **rejected fail-closed**: the queued message is dropped (a `function_refused` analytics event is emitted for operators; refusals are never counted as failed executions) and the human `auth` rule is never evaluated under a null user.
   Pass any caller identity or context the job needs through the `payload` (it arrives as `args`); do **not** expect the enqueuer in `ctx.user`.
   `ctx.bounded` writes from the queued run still pass your `rules` + invariants as the system principal.
 - **Public-origin jobs:** `queueCallable` authorizes **trusted** callers (a cron/heartbeat schedule, an internal run, or a user-authenticated function) to drive a system-principal background run - it does **not** authorize the anonymous internet.
@@ -97,7 +97,7 @@ with `publicQueueCallable`, and the natural gate is the constant:
 - **Smaller budgets:** a public root gets a fan-out breadth budget of 100 (chains stay free) and at most **10** intents per invocation (`enqueue_public_intent_cap_exceeded`).
 - A public HTTP call that carried a valid Bounded bearer still enqueues as the **route**, never as that user: a queued replay is never deputized. Pass what the job needs in the payload.
 - The replay's `ctx.bounded` writes pass rules and invariants as the public principal, so a collection that should accept only those jobs can say `"create": "@user.id == @const.BOUNDED_PUBLIC_PRINCIPAL_INTAKE"`.
-- Operators see these runs as `run_type: queued_public` in the backend-execution analytics; a refused replay emits `function_failed` under the same run type.
+- Operators see these runs as `run_type: queued_public` in the backend-execution analytics; a refused replay emits `function_refused` under the same run type (see [analytics](../../bounded/docs/analytics.md#backend-function-analytics)).
 - **Limits:** `payload` must be JSON-serializable and ≤ 96,000 UTF-8 bytes;
   `delaySeconds`
   is 0..86400 (24h). One invocation may emit at most 50 enqueue intents.

@@ -137,6 +137,7 @@ Send an `Idempotency-Key` and the platform remembers the terminal outcome of tha
 
 Without an `Idempotency-Key` every request is its own operation and nothing is replayed.
 Bodies over 128 KiB are recorded as a receipt (status only) rather than stored.
+In the rare case the platform could not record a finished run's outcome, the response still carries the run's real status and body but no receipt capability and the header `x-bounded-replay: unrecorded`; a repeat of that request is a new run, so treat it like any at-least-once delivery.
 
 ### Refusals - nothing ran, nothing was charged
 

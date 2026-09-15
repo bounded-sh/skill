@@ -98,7 +98,7 @@ The exact caller-facing codes are listed in [public functions](../../bounded-bac
 
 The account's email receives three kinds of notice, each derived from the pool's real readings:
 
-- **Credits run out in N days** - sent once when the past week's spend rate would empty the pool within three days. The message states the available credits and the derived daily burn as whole credits per day (a fractional rate is rounded to the nearest whole credit per day, never shown as a raw fraction); when there is no positive spend rate to forecast from, no forecast is sent.
+- **Credits run out in N days** - sent once when the past week's spend rate would empty the pool within three days. The message states the available credits and the derived daily burn as whole credits per day (a fractional rate is rounded UP to whole credits per day, so any positive spend shows at least one credit a day and never a raw fraction or zero); when there is no positive spend rate to forecast from, no forecast is sent.
 - **Your credit pool is empty** - sent when the pool reaches zero, listing the apps linked to this account.
 - **Reminder: your credit pool is still empty** - weekly while it stays empty, up to a fixed number of reminders.
 
