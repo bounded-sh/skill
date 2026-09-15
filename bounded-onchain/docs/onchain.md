@@ -135,7 +135,7 @@ Run `bounded plugins list --json` for the CLI's offline callable projection, the
 These commands need no account or network connection and their capability state is advisory, not a deploy verdict.
 Run `bounded verify --protocol <protocol> --json` against the actual policy and inspect `capabilityReadiness`; it reports applicable plugin and return-type advisories but never proves live-network execution.
 An invalid `--protocol` is rejected locally before any network request.
-The deployed program is recorded as runtime v6 on both devnet and mainnet-beta (2026-09-04), but the runtime version does not prove that an external protocol is deployed or configured.
+The deployed program is recorded as runtime v7 on both devnet and mainnet-beta (2026-09-15), but the runtime version does not prove that an external protocol is deployed or configured.
 Consult the [157-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
 Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
