@@ -111,10 +111,13 @@ or spoof it.
 ```
 
 - **`@origin.kind` is ALWAYS set** (never null). **Produced today: `'live'`** = a
-  live game tick, and **`'user'`** = a direct end-user/SDK call (the
-  **no-live-origin sentinel**). `'scheduled'`, `'function'`, `'webhook'` are
-  **reserved for future dispatch paths** (not stamped yet - don't gate on them
-  today; such a rule verifies but never matches at runtime).
+  write made by a live game tick (or by a function that tick called),
+  **`'function'`** = a write made from inside a directly invoked Bounded function
+  (`@origin.module` is the function name, `@origin.path` is `functions/<name>`),
+  and **`'user'`** = a direct end-user/SDK write (the sentinel when neither claim
+  is present). `'scheduled'` and `'webhook'` are **reserved for future dispatch
+  paths** (not stamped yet - don't gate on them today; such a rule verifies but
+  never matches at runtime).
 - **For a privileged action, allow-list the exact origin you mean.** Use the
   positive form `@origin.kind == 'live'` (optionally `&& @origin.module ==
   '<game>'` plus a path/room bind). An allow-list names what is permitted and

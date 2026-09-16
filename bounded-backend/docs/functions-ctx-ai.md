@@ -167,7 +167,7 @@ The essentials:
   `aiJobs/$jobId` (any non-storage collection) in policy and the frontend gets
   completion via ordinary `subscribe` — no polling loop. Jobs that stall are
   failed + **fully refunded** after a 15-minute timeout; terminal job records
-  prune after ~7 days (the FILE is app data and is never pruned).
+  prune after 90 days (the FILE is app data and is never pruned).
 - **Models are config, not code.** Current lineup: images —
   `@cf/black-forest-labs/flux-2-klein-4b` (default, ~1¢), `flux-2-klein-9b`,
   Leonardo `lucid-origin`/`phoenix-1.0` (all keyless `@cf`), and
