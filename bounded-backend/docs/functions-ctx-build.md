@@ -139,12 +139,14 @@ It starts the existing approval/veto window on the same frozen candidate; it doe
 Repeated calls for that digest keep the original review clock.
 A moved production base, changed authority/protocol, changed digest, or expired preview refuses proposal.
 Integrate onto the current shipped source if the production base moved.
-A legacy preview with insufficient lifetime for a full review refuses with `preview_review_horizon_unavailable`; create a fresh candidate from its retained source.
+Build renews preview hosting to cover the full review before opening its window; if renewal is unavailable, review refuses with `preview_review_horizon_unavailable`.
 Read `previewOnly`, `previewProposedAtMs`, `parkReason`, `previewExpiresAtMs`, and `targetProtocol` to distinguish candidate state and destination.
 
 For ongoing work at one URL, a function with `apps: true` can create an expiring Poofnet app with `ctx.apps.create`, bootstrap it with `ctx.apps.cloneRelease`, and target it in later `ctx.build.edit` calls.
 Each edit preserves that app's database and creates a new immutable source version.
 The preview's lifetime runtime allowance is separate from the build's AI funding; use `ctx.apps.inspect`, `setSpendCeiling`, `extendPreview`, and `retire` to manage it.
+Extend previews before they expire; there is no fixed lifetime ceiling, but a child cannot outlive its parent.
+An active release review prevents retirement of the preview it depends on.
 Preview allocations protect $1 of payer credit; reservations and settlement enforce the cap and protected balance.
 Controlled active Poofnet previews allow fabricated records through `ctx.apps.setMany`, while retaining schema and invariant enforcement.
 For a small edit, use `ctx.build.edit` with `effort: "low"` within the profile's limits.
