@@ -124,7 +124,7 @@ await ctx.build.edit({
 
 ### Preview iteration
 
-An edit on an `approval-required` or `veto-window` profile can set `buildOptions: { previewOnly: true }`.
+An edit on an `approval-required`, `veto-window`, or `policy-review` profile can set `buildOptions: { previewOnly: true }`.
 The resulting candidate parks without a publication timer and releases its execution resources.
 Use `buildOptions.base: { buildId, commitSha }` to continue or fork an exact retained source from the same app.
 Add `proposals: [{ buildId, commitSha }]` to combine candidates onto that base, or omit `base` to use the target's currently published source; `onConflict` is `agent` or `fail`.
@@ -135,11 +135,14 @@ There is no `baseBuildRunId` API.
 
 After inspecting the candidate, read its `attestation.sourceSha256` with `ctx.build.get(runId)` and call `ctx.build.propose(runId, sourceSha256)`.
 This requires `edit` plus `view: "originated"` and can propose only a run originated by that function under its current authority.
-It starts the existing approval/veto window on the same frozen candidate; it does not rebuild, approve, or bypass publication checks.
+It starts the profile's existing review on the same frozen candidate; it does not rebuild, approve, or bypass publication checks.
+OpenApps uses `policy-review`: its unified governance proposal authorizes publication without a second Build approval gate.
 Repeated calls for that digest keep the original review clock.
 A moved production base, changed authority/protocol, changed digest, or expired preview refuses proposal.
 Integrate onto the current shipped source if the production base moved.
-Build renews preview hosting to cover the full review before opening its window; if renewal is unavailable, review refuses with `preview_review_horizon_unavailable`.
+Preview hosting must cover the review before publication can proceed.
+Build renews hosting for its gates; OpenApps Owned governance retains the preview through the proposal's captured review and execution deadline before acknowledging it.
+Renewing hosting for longer does not extend the proposal's approval window.
 Read `previewOnly`, `previewProposedAtMs`, `parkReason`, `previewExpiresAtMs`, and `targetProtocol` to distinguish candidate state and destination.
 
 For ongoing work at one URL, a function with `apps: true` can create an expiring Poofnet app with `ctx.apps.create`, bootstrap it with `ctx.apps.cloneRelease`, and target it in later `ctx.build.edit` calls.
