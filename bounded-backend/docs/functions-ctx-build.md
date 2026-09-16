@@ -94,6 +94,7 @@ interface CtxBuild {
   edit(input):   Promise<{ runId, targetAppId, status } | { ok: false, reason }>;
   fork(input):   Promise<{ runId, targetAppId, status } | { ok: false, reason }>;
   get(runId):    Promise<RunView | { ok: false, reason }>;
+  propose(runId, sourceSha256): Promise<{ ok: true, runId, state } | { ok: false, reason }>;
   cancel(runId): Promise<{ runId, state, outcome } | { ok: false, reason }>;
 }
 ```
@@ -120,6 +121,30 @@ await ctx.build.edit({
   // funding?: { aiEnvelopeMicroUsd: 3000000 }   // per-run AI cap; see below
 });
 ```
+
+### Preview iteration
+
+An edit on an `approval-required` or `veto-window` profile can set `buildOptions: { previewOnly: true }`.
+The resulting candidate parks without a publication timer and releases its execution resources.
+Use `buildOptions.base: { buildId, commitSha }` to continue or fork an exact retained source from the same app.
+Add `proposals: [{ buildId, commitSha }]` to combine candidates onto that base; `onConflict` is `agent` or `fail`.
+Continuation and integration inherit preview-only mode from preview candidates; `previewOnly: false` cannot discard that requirement.
+Exact source choices are verified before funding.
+There is no `baseBuildRunId` API.
+
+After inspecting the candidate, read its `attestation.sourceSha256` with `ctx.build.get(runId)` and call `ctx.build.propose(runId, sourceSha256)`.
+This requires `edit` plus `view: "originated"` and can propose only a run originated by that function under its current authority.
+It starts the existing approval/veto window on the same frozen candidate; it does not rebuild, approve, or bypass publication checks.
+Repeated calls for that digest keep the original review clock.
+A moved production base, changed authority/protocol, changed digest, or expired preview refuses proposal.
+Integrate onto the current shipped source if the production base moved.
+A legacy preview with insufficient lifetime for a full review refuses with `preview_review_horizon_unavailable`; create a fresh candidate from its retained source.
+Read `previewOnly`, `previewProposedAtMs`, `parkReason`, `previewExpiresAtMs`, and `targetProtocol` to distinguish candidate state and destination.
+
+Preview apps use Poofnet simulated money.
+They do not prove execution on Solana devnet or mainnet.
+Publication can deploy onchain policy to mainnet and affect real assets; use the verified target protocol, not a hostname or Git branch name, to determine the network.
+These options do not widen preview audience or grant gate-decision authority.
 
 **Per-run funding cap.** When the profile opts in with `funding.allowPerRunEnvelope: true`, **any** submission (`create`, `edit`, or `fork`) may carry `funding: { aiEnvelopeMicroUsd }` (a positive safe integer) to narrow **that run's** AI envelope.
 The effective envelope is `min(requested, profile.funding.aiEnvelopeMicroUsd)`, so the profile value is a ceiling and is never raisable per-run.
