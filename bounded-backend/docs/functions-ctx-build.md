@@ -147,8 +147,8 @@ Each edit preserves that app's database and creates a new immutable source versi
 The preview's lifetime runtime allowance is separate from the build's AI funding; use `ctx.apps.inspect`, `setSpendCeiling`, `extendPreview`, and `retire` to manage it.
 Preview allocations protect $1 of payer credit; reservations and settlement enforce the cap and protected balance.
 Controlled active Poofnet previews allow fabricated records through `ctx.apps.setMany`, while retaining schema and invariant enforcement.
-For a small edit, `buildOptions.patch: { baseRev, diff }` accepts a unified diff up to 4000 UTF-8 bytes against the current Git revision, skipping source-generation AI while keeping compilation and verification.
-Do not combine `patch` with `base` or `proposals`.
+For a small edit, use `ctx.build.edit` with `effort: "low"` within the profile's limits.
+Build selects Bind's existing edit mode; ordinary edits use `quick-edit` unless the policy or invocation selects another mode.
 You can keep editing version B on the preview while exact version A is under live release review; approval of A never publishes B.
 
 Preview apps use Poofnet simulated money.
