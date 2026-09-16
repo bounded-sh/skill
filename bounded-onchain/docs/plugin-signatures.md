@@ -57,6 +57,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@CPI.token2022HarvestFees` | `token2022HarvestFees(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022RevokeFeeAuthority` | `token2022RevokeFeeAuthority(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022WithdrawMintFees` | `token2022WithdrawMintFees(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022WithdrawMintFeesTo` | `token2022WithdrawMintFeesTo(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.transferLamports` | `transferLamports(string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@DeFiPlugin.addCpAmmLiquidity` | `addCpAmmLiquidity(string, string, string, string, string, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.claimDammV2PoolFees` | `claimDammV2PoolFees(string, string, string?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
@@ -108,7 +109,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@PhoenixPerpsPlugin.syncParentToChild` | `syncParentToChild(source, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.transferToCross` | `transferToCross(source, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.transferToIsolated` | `transferToIsolated(source, amount, subaccountIndex)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
-| `@PhoenixPerpsPlugin.withdrawFunds` | `withdrawFunds(source, amount, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
+| `@PhoenixPerpsPlugin.withdrawFunds` | `withdrawFunds(source, amount?, subaccountIndex?)` | `hooks.onchain` | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.getCollateralBalance` | `getCollateralBalance(source, subaccountIndex?)` | offchain rules, offchain named queries | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.getMarkPrice` | `getMarkPrice(market)` | offchain rules, offchain named queries | [reference](plugins/PhoenixPerpsPlugin.md) |
 | `@PhoenixPerpsPlugin.getPortfolioValue` | `getPortfolioValue(source, subaccountIndex?)` | offchain rules, offchain named queries | [reference](plugins/PhoenixPerpsPlugin.md) |

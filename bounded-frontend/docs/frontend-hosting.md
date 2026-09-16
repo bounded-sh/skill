@@ -161,28 +161,15 @@ Completed Open publishes the governed workload site and source together at `http
 Commence later adds those surfaces without changing the direct workload host's public source visibility.
 The venue page is `/a/<rootAppId>` before and after Commence (older `/l/` links redirect).
 
-On a launched oApp the in-app widget also switches to a dedicated launched
-face: a public trust rundown (rules, source link, constitution, the Gauntlet,
-fuel state, the venue's own surfaces) instead of the owner console.
-The rundown states only what the venue's published sources support, in the
-venue's own words.
-A Gauntlet row reads `12 of 15 passed` from the per-check outcomes, `no
-gauntlet attempt yet` where no attempt exists, and `checks not readable` where
-the projection cannot be read; it is never derived from an aggregate bit.
-Fuel uses the venue's five labels (running, low, conserving, asleep, waking)
-with one label per reading, the cause carried in the headline rather than the
-label, and dollars rather than raw credits.
-Where a veto window is open the widget links to the venue's brain-veto surface
-instead of rendering a countdown of its own.
-Venue rows (overview, analytics, constitution, versions, and the rest) are
-composed server-side from the launch record's venue, never guessed from the
-serving hostname, and a surface the venue does not publish gets no row.
-Each destination appears once: the surfaces a visitor acts on (Discussion, the
-treasury, a live sale, the token, an open veto window) are offered as action
-rows and are not repeated in the venue-row list.
-Writes are widget-initiated and venue-completed: an action row opens the
-venue's own page as a top-level document, and the widget never performs a
-venue write from the app's origin.
+On a launched oApp the in-app widget also switches to a dedicated launched face instead of the owner console.
+That face is a compact mirror of the venue's own app overview: the app's identity (name, `Open` or `Owned`, fuel), the sale banner while the public sale is live, the Treasury and Operating burn tiles, the agent's status card, Raise funds, a review strip while a decision is in flight, recent agent activity, the venue's workspace links, the app's Boundaries, and its published source.
+The agent chat is one tap from the status card, and a signed-out visitor's conversation stays on that device.
+Every word and every state comes from the venue's own copy modules and the same anonymous public reads the venue's app page makes, so the widget and the venue cannot disagree about an app.
+A read the platform refuses or cannot serve renders the venue's "Unavailable" wording, never a zero, an empty list, or an invented state.
+Fuel uses the venue's five labels (running, low, conserving, asleep, waking) with one label per reading, the cause carried in the headline rather than the label, and dollars rather than raw credits.
+The launched face renders only in the venue's light Paper register: `openApps.widget.theme`, a dark OS preference, and a partner venue's skin select no dark register there, while `openApps.widget.accent` still applies.
+Venue links are composed server-side from the launch record's venue, never guessed from the serving hostname, and a surface the venue does not publish gets no link.
+Writes are widget-initiated and venue-completed: a deposit, bid, vote, or veto opens the venue's own page as a top-level document, and the widget never performs a venue write from the app's origin.
 Owner-console actions are refused on launched apps with `launched_locked` /
 `oapp_launched` errors - changes ship only through the app's governed build
 lane on its venue.
