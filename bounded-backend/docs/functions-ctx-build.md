@@ -69,7 +69,7 @@ admin gate - a broken permission check on a money-spending build function.
 |---|---|
 | `profile` | The named `build.profiles.<name>` this function submits under. Profile selection is an **authority** decision — a function submits only under the profile policy assigns it, never one the caller picks. |
 | `create` | `true` lets it originate a **new** app (`ctx.build.create`). |
-| `edit` | `"self"` lets it edit **this** app only (`targetAppId == ctx.appId`); cross-app editing is out of v1. |
+| `edit` | `"self"` enables edits to the calling app; `"function-created"` also permits authorized children. With the function's `apps: true` grant, Apps can authorize edits to controlled targets. |
 | `fork` | `true` lets it fork an app it can read (`ctx.build.fork`). |
 | `view` | `"originated"` — may read only runs **it** started (`ctx.build.get`). |
 | `cancel` | `"originated"` — may cancel only runs **it** started (`ctx.build.cancel`). |
@@ -94,6 +94,7 @@ interface CtxBuild {
   edit(input):   Promise<{ runId, targetAppId, status } | { ok: false, reason }>;
   fork(input):   Promise<{ runId, targetAppId, status } | { ok: false, reason }>;
   get(runId):    Promise<RunView | { ok: false, reason }>;
+  propose(runId, sourceSha256): Promise<{ ok: true, runId, state } | { ok: false, reason }>;
   cancel(runId): Promise<{ runId, state, outcome } | { ok: false, reason }>;
 }
 ```
@@ -120,6 +121,46 @@ await ctx.build.edit({
   // funding?: { aiEnvelopeMicroUsd: 3000000 }   // per-run AI cap; see below
 });
 ```
+
+### Preview iteration
+
+An edit on an `approval-required`, `veto-window`, or `policy-review` profile can set `buildOptions: { previewOnly: true }`.
+The resulting candidate parks without a publication timer and releases its execution resources.
+Use `buildOptions.base: { buildId, commitSha }` to continue or fork an exact retained source from the same app.
+Add `proposals: [{ buildId, commitSha }]` to combine candidates onto that base, or omit `base` to use the target's currently published source; `onConflict` is `agent` or `fail`.
+Proposals may include immutable builds from this controller's managed previews.
+Continuation and integration inherit preview-only mode from preview candidates; `previewOnly: false` cannot discard that requirement.
+Exact source choices are verified before funding.
+There is no `baseBuildRunId` API.
+
+After inspecting the candidate, read its `attestation.sourceSha256` with `ctx.build.get(runId)` and call `ctx.build.propose(runId, sourceSha256)`.
+This requires `edit` plus `view: "originated"` and can propose only a run originated by that function under its current authority.
+It starts the profile's existing review on the same frozen candidate; it does not rebuild, approve, or bypass publication checks.
+OpenApps uses `policy-review`: its unified governance proposal authorizes publication without a second Build approval gate.
+Repeated calls for that digest keep the original review clock.
+A moved production base, changed authority/protocol, changed digest, or expired preview refuses proposal.
+Integrate onto the current shipped source if the production base moved.
+Preview hosting must cover the review before publication can proceed.
+Build renews hosting for its gates; OpenApps Owned governance retains the preview through the proposal's captured review and execution deadline before acknowledging it.
+Renewing hosting for longer does not extend the proposal's approval window.
+Read `previewOnly`, `previewProposedAtMs`, `parkReason`, `previewExpiresAtMs`, and `targetProtocol` to distinguish candidate state and destination.
+
+For ongoing work at one URL, a function with `apps: true` can create an expiring Poofnet app with `ctx.apps.create`, bootstrap it with `ctx.apps.cloneRelease`, and target it in later `ctx.build.edit` calls.
+Each edit preserves that app's database and creates a new immutable source version.
+The preview's lifetime runtime allowance is separate from the build's AI funding; use `ctx.apps.inspect`, `setSpendCeiling`, `extendPreview`, and `retire` to manage it.
+Extend previews before they expire; there is no fixed lifetime ceiling, but a child cannot outlive its parent.
+An active release review prevents retirement of the preview it depends on.
+Preview allocations protect $1 of payer credit; reservations and settlement enforce the cap and protected balance.
+Controlled active Poofnet previews allow fabricated records through `ctx.apps.setMany`, while retaining schema and invariant enforcement.
+For a small edit, use `ctx.build.edit` with `effort: "low"` within the profile's limits.
+Effort adjusts the budget within the selected Bind mode; it does not select `quick-edit`.
+A policy profile can explicitly select an edit mode with `bindMode.edit`.
+OpenApps steward and reusable preview edits use `repair-maintenance`; `quick-edit` is a separate lighter workflow for small changes when selected by policy.
+You can keep editing version B on the preview while exact version A is under live release review; approval of A never publishes B.
+
+Preview apps use Poofnet simulated money.
+Publication can deploy onchain policy to mainnet and affect real assets; use the verified target protocol, not a hostname or Git branch name, to determine the network.
+These options do not widen preview audience or grant gate-decision authority.
 
 **Per-run funding cap.** When the profile opts in with `funding.allowPerRunEnvelope: true`, **any** submission (`create`, `edit`, or `fork`) may carry `funding: { aiEnvelopeMicroUsd }` (a positive safe integer) to narrow **that run's** AI envelope.
 The effective envelope is `min(requested, profile.funding.aiEnvelopeMicroUsd)`, so the profile value is a ceiling and is never raisable per-run.
@@ -186,4 +227,3 @@ A **veto-window** profile auto-promotes when its window elapses with no
 objection, so its `parked` hook is **mandatory** — a veto window nobody is told
 about is auto-promotion with extra steps, and the validator/runtime enforce that
 a `veto-window` profile declares `hooks.parked`.
-
