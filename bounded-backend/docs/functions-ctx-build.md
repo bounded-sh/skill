@@ -153,7 +153,9 @@ An active release review prevents retirement of the preview it depends on.
 Preview allocations protect $1 of payer credit; reservations and settlement enforce the cap and protected balance.
 Controlled active Poofnet previews allow fabricated records through `ctx.apps.setMany`, while retaining schema and invariant enforcement.
 For a small edit, use `ctx.build.edit` with `effort: "low"` within the profile's limits.
-Build selects Bind's existing edit mode; ordinary edits use `quick-edit` unless the policy or invocation selects another mode.
+Effort adjusts the budget within the selected Bind mode; it does not select `quick-edit`.
+A policy profile can explicitly select an edit mode with `bindMode.edit`.
+OpenApps steward and reusable preview edits use `repair-maintenance`; `quick-edit` is a separate lighter workflow for small changes when selected by policy.
 You can keep editing version B on the preview while exact version A is under live release review; approval of A never publishes B.
 
 Preview apps use Poofnet simulated money.
