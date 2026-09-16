@@ -69,7 +69,7 @@ admin gate - a broken permission check on a money-spending build function.
 |---|---|
 | `profile` | The named `build.profiles.<name>` this function submits under. Profile selection is an **authority** decision — a function submits only under the profile policy assigns it, never one the caller picks. |
 | `create` | `true` lets it originate a **new** app (`ctx.build.create`). |
-| `edit` | `"self"` lets it edit **this** app only (`targetAppId == ctx.appId`); cross-app editing is out of v1. |
+| `edit` | `"self"` enables edits to the calling app; `"function-created"` also permits authorized children. With the function's `apps: true` grant, Apps can authorize edits to controlled targets. |
 | `fork` | `true` lets it fork an app it can read (`ctx.build.fork`). |
 | `view` | `"originated"` — may read only runs **it** started (`ctx.build.get`). |
 | `cancel` | `"originated"` — may cancel only runs **it** started (`ctx.build.cancel`). |
@@ -127,7 +127,8 @@ await ctx.build.edit({
 An edit on an `approval-required` or `veto-window` profile can set `buildOptions: { previewOnly: true }`.
 The resulting candidate parks without a publication timer and releases its execution resources.
 Use `buildOptions.base: { buildId, commitSha }` to continue or fork an exact retained source from the same app.
-Add `proposals: [{ buildId, commitSha }]` to combine candidates onto that base; `onConflict` is `agent` or `fail`.
+Add `proposals: [{ buildId, commitSha }]` to combine candidates onto that base, or omit `base` to use the target's currently published source; `onConflict` is `agent` or `fail`.
+Proposals may include immutable builds from this controller's managed previews.
 Continuation and integration inherit preview-only mode from preview candidates; `previewOnly: false` cannot discard that requirement.
 Exact source choices are verified before funding.
 There is no `baseBuildRunId` API.
@@ -141,8 +142,16 @@ Integrate onto the current shipped source if the production base moved.
 A legacy preview with insufficient lifetime for a full review refuses with `preview_review_horizon_unavailable`; create a fresh candidate from its retained source.
 Read `previewOnly`, `previewProposedAtMs`, `parkReason`, `previewExpiresAtMs`, and `targetProtocol` to distinguish candidate state and destination.
 
+For ongoing work at one URL, a function with `apps: true` can create an expiring Poofnet app with `ctx.apps.create`, bootstrap it with `ctx.apps.cloneRelease`, and target it in later `ctx.build.edit` calls.
+Each edit preserves that app's database and creates a new immutable source version.
+The preview's lifetime runtime allowance is separate from the build's AI funding; use `ctx.apps.inspect`, `setSpendCeiling`, `extendPreview`, and `retire` to manage it.
+Preview allocations protect $1 of payer credit; reservations and settlement enforce the cap and protected balance.
+Controlled active Poofnet previews allow fabricated records through `ctx.apps.setMany`, while retaining schema and invariant enforcement.
+For a small edit, `buildOptions.patch: { baseRev, diff }` accepts a unified diff up to 4000 UTF-8 bytes against the current Git revision, skipping source-generation AI while keeping compilation and verification.
+Do not combine `patch` with `base` or `proposals`.
+You can keep editing version B on the preview while exact version A is under live release review; approval of A never publishes B.
+
 Preview apps use Poofnet simulated money.
-They do not prove execution on Solana devnet or mainnet.
 Publication can deploy onchain policy to mainnet and affect real assets; use the verified target protocol, not a hostname or Git branch name, to determine the network.
 These options do not widen preview audience or grant gate-decision authority.
 
@@ -211,4 +220,3 @@ A **veto-window** profile auto-promotes when its window elapses with no
 objection, so its `parked` hook is **mandatory** — a veto window nobody is told
 about is auto-promotion with extra steps, and the validator/runtime enforce that
 a `veto-window` profile declares `hooks.parked`.
-
