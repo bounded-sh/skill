@@ -113,6 +113,36 @@ Notes:
   to Cloudflare for CNAME flattening (Cloudflare and Namecheap handle this case).
 - Each custom hostname maps to exactly one app; nothing is shared.
 
+## After adding DNS: refresh through the CLI
+
+Do not leave the user waiting after they have entered the records.
+Run the app-scoped status command again:
+
+```bash
+bounded domains list --app-id <id> --env production --json
+```
+
+Use the app's actual environment instead of `production` when applicable.
+For pending domains, this command asks Bounded to recheck provider status and reconcile routing and allowed origins when validation completes.
+Once the domain reports `active`, verify HTTPS and that the app loads on the custom hostname.
+A DNS lookup alone does not prove that the certificate or app routing is ready.
+
+If it remains pending:
+
+1. Compare the CNAME and every ownership/certificate TXT value returned by the CLI with public DNS and, if they disagree, the authoritative nameservers.
+   Keep multiple certificate TXT values at the same name as separate records.
+   Use the CNAME target returned by Bounded; a shared target such as `fallback.bounded.page` is intentional and does not need to be replaced by the app's vanity hostname.
+2. After DNS is visible, wait 30-60 seconds and rerun the same `domains list` command once.
+   Inspect `status`, `lastError`, and any reconciliation refusal rather than assuming success.
+3. If correct authoritative DNS still produces the same validation error, report the hostname, app ID, environment, exact error, and DNS evidence to Bounded support.
+   Explain that provider validation is still unresolved; do not promise that more waiting will fix it.
+
+**Current limitation:** `domains list` rechecks provider status, but does not generally restart the provider's hostname/certificate validation job.
+Repeated listing is not equivalent to an explicit provider validation retry.
+The public CLI currently has no dedicated validation-retry command.
+Do not invent `domains retry` or `domains refresh`, tell app developers to use Bounded's provider dashboard, or delete and re-add the domain to force a retry.
+A provider-side validation restart must currently be handled by Bounded support.
+
 ## How it routes (mental model)
 
 All app assets live keyed by `appId`. Bounded resolves the request host to that

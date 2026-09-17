@@ -98,6 +98,9 @@ account profile, or recovery of an existing key-owned app.
   deploying account has no spendable credit for the deploy's infra cost. Run
   `bounded billing status`, add credit with `bounded billing topup --credits <n>`,
   then retry under the same identity. Switching accounts never helps here.
+- Custom domain still pending after DNS is configured: rerun `bounded domains list --app-id <id> --env <environment> --json` to refresh status and reconcile activation.
+  Verify DNS and follow the bounded retry/escalation steps in [domains](docs/domains.md#after-adding-dns-refresh-through-the-cli).
+  Listing does not generally restart provider validation; do not substitute provider-dashboard instructions for a public CLI workflow.
 - `site_control_denied` (a `403`), wrong owner, or unexpected `401`/`403`: run
   `bounded whoami` and `bounded access --app-id <id>` before changing identity.
   See [access playbook](docs/access-playbook.md).
