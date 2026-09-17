@@ -26,12 +26,22 @@ Social login still uses its existing popup or redirect.
 ## Unified widget
 
 ```ts
-import { init, openBoundedWidget, getCurrentUser } from '@bounded-sh/client'
+import { init, completeLoginFromRedirect, openBoundedWidget, getCurrentUser } from '@bounded-sh/client'
 
 await init({ appId: '<appId>' })
-await openBoundedWidget({ methods: ['email', 'google'], wallet: true })
-const user = getCurrentUser()
+await completeLoginFromRedirect() // Run on page startup, before rendering the app.
+
+// Call from the sign-in button, not automatically on page startup.
+async function signIn() {
+  await openBoundedWidget({ methods: ['email', 'google'], wallet: true })
+  return getCurrentUser()
+}
 ```
+
+On web, the widget's social login returns to the app in a popup.
+Call `completeLoginFromRedirect()` on that page's startup even when using the widget: it returns the authorization result to the opener and closes the popup, or completes a full-page redirect.
+Without this step, the popup renders the signed-out app and the original window keeps waiting.
+The call is a no-op when no callback is present.
 
 The widget is the normal in-app login UI. `wallet: true` adds bring-your-own
 wallet as another lane; it does not enable embedded wallets, which are already
