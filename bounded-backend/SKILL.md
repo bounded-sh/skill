@@ -99,3 +99,6 @@ term.
 - When one write is invalid without companion writes, declare `requiresInBatch` so a hostile client cannot submit only the individually valid subset.
 - Put provider API keys in Bounded secrets, not frontend code.
 - Know the acting principal before writing a rule: a function's `runAs`/`actAs` and `@origin` decide who `@user` is and whether the call is authorized.
+
+- For authenticated app actions, use the client SDK `functions.invoke`, declare the function auth rule, and use `ctx.user`. Do not send a Bounded session token in function arguments or build a JWT verifier inside a public HTTP function. Keep intentionally public data, such as today's prompt, in a separate public function without user-state access.
+- Verify private function flows as a non-owner user, including an anonymous session when the app supports guests. Save state, reload, and resume it; owner CLI calls can mask data-read permission failures. A denied read may appear as missing data, so investigate authorization before recreating state or weakening rules.

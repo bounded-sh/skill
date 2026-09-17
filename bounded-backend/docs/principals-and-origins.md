@@ -123,16 +123,11 @@ or spoof it.
   '<game>'` plus a path/room bind). An allow-list names what is permitted and
   stays tight as the platform grows.
 - **Do NOT gate a privileged action on the deny-list `@origin.kind != 'user'`.**
-  It happens to mean "live only" *today* only because `live` and `user` are the
-  sole origins that exist. The instant `scheduled`, `webhook`, or `function`
-  callers ship, they all satisfy `!= 'user'` and are silently admitted - a latent
-  privilege escalation that appears with no change to your app and with the proof
-  still green, because soundness here rests on which caller types happen to exist
-  right now. `!= 'user'` is acceptable only for **non-privileged reads**, and even
-  there, understand that it broadens automatically as new origins go live.
+  It permits every current non-user origin and silently widens when another origin is introduced.
+  Match the exact supported origin and module instead; for example, function-only writes can require `@origin.kind == 'function' && @origin.module == 'game'`.
 - `path` / `module` / `room` / `tick` are **null when not applicable** (e.g. all
   null for `kind: 'user'`). So a rule gating on `@origin.module` should also
-  require `@origin.kind == 'live'`.
+  require the matching `@origin.kind`, such as `'live'` or `'function'`.
 - **Usable in function `auth` rules and read/create/update/delete rules, OFFCHAIN
   only.** `@origin.*` is **FORBIDDEN in `onchain: true` rules** (same restriction
   as `@user.id`).
