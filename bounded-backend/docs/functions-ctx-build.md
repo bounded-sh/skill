@@ -122,6 +122,43 @@ await ctx.build.edit({
 });
 ```
 
+### Image and video builds
+
+A build can deliver an **image or a video** instead of an app change: pass a
+`deliverable`. A media build always belongs to the calling app (it never creates a
+child app), runs under the same profile, funding and landing rules as an app build,
+and publishes a **release** of one of the app's media assets. Each design round
+serves candidates; the owner (or the profile's gate audience) picks one, asks for
+changes, or approves, and the landing lands the release. The function only submits
+and reads state: it never decides a review or a landing.
+
+```ts
+// A new image asset of this app.
+const run = await ctx.build.create({
+  prompt: "A launch poster for a late-night jazz club",
+  deliverable: { kind: "image", spec: { size: "1024x1536", candidates: 2 } },
+  idempotencyKey: "poster-v1",
+});
+
+// A revision of the exact release the caller saw.
+await ctx.build.edit({
+  prompt: "Make the lettering gold",
+  deliverable: { kind: "image", assetId, expectedReleaseId },
+  idempotencyKey: "poster-gold",
+});
+```
+
+- `spec` is optional. Image: `size` (`1024x1024`, `1024x1536`, `1536x1024`), `quality`, `format` (`png`, `webp`, `jpeg`), `background`, `candidates` (1 to 4, default 2), `model` (`default` or `fast`). Video (`kind: "video"`): `durationSeconds` (4 to 30, default 5), `resolution` (`480p` or `720p`), `aspectRatio`, `audio`, `candidates` (1 or 2), first/last frame and reference `images`, and multi-scene `scenes` with `captions`.
+- An edit names the asset and, ideally, the release it expects. If that release is no longer current, the edit is refused `409 base_moved` before any spend, so read the current release and resubmit.
+- A create with `forkOf: { assetId, releaseId }` starts a new asset from any retained release of this app.
+- An **app** build can use released images of its app, pinned by digest: `mediaSlots: [{ slot: "hero-image", assetId }]` places the released bytes at `media/hero-image.png` in the app. A later edit of the image never changes the app until an app edit pins the new release.
+- Media builds refuse application build options (`buildOptions`, `source`, `previewOnly`, `models`, `viewerGrantSubjects`): `400 deliverable_shape_unsupported`. Where an environment has media builds switched off: `503 deliverable_unavailable`. An app that retains 20 GiB of media builds: `409 media_storage_quota` (a build that ends without a release is collected a week after it ends).
+- `ctx.build.get(runId)` reports the run's state. The released asset, its candidates and signed downloads are read by the owner through the builds API (`builds.media`, `builds.mediaDownloadUrl` in `@bounded-sh/client`).
+
+Use an image or video build for an asset someone reviews and releases, then edits,
+forks or rolls back. For one-off media generated inside a running app, use
+`ctx.ai.generateImage` / `ctx.ai.generateVideo` ([functions-ctx-ai.md](functions-ctx-ai.md)).
+
 ### Preview iteration
 
 An edit on an `approval-required`, `veto-window`, or `policy-review` profile can set `buildOptions: { previewOnly: true }`.

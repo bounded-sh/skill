@@ -114,6 +114,10 @@ before generation; the actual is settled and the difference refunded; every
 failure refunds in full). **Never wire an image/video provider with `fetch` +
 your own key — this is built in.**
 
+This is one-off generation inside a running app. When the image or video is an
+asset someone reviews, releases, and later edits, forks or rolls back, use an image
+or video build instead ([ctx.build](functions-ctx-build.md#image-and-video-builds)).
+
 ```ts
 // IMAGE — synchronous (seconds). Default model needs zero config.
 export default async function makeAvatar(args, ctx) {
