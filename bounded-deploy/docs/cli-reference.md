@@ -420,16 +420,22 @@ Capability state describes onchain reachability for the catalog's named network,
 An unambiguous bare function name is accepted, but use the returned canonical identifier in policy source.
 Namespaced entries use `@Namespace.function`, while core entries such as `get` and `getAfter` remain bare.
 
-On Free, `deploy --create` stops with HTTP `402` after 3 owned projects.
-Do not retry with another identity.
-Run `bounded apps list --json`, then use `bounded access --app-id <id> --json`
-to confirm an exact user-approved project and its deploy rights before reuse.
+On Free, `deploy --create` stops with HTTP `429 project_daily_limit_exceeded`
+once the account has created 20 projects in the last 24 hours; `resetsAtMs`
+and `Retry-After` say when the next create fits.
+Do not retry with another identity, and do not retry before the window reopens.
+To continue sooner, run `bounded apps list --json`, then use
+`bounded access --app-id <id> --json` to confirm an exact user-approved
+project and its deploy rights before reuse.
 The listed `protocol` must already match the intended runtime because
 `--protocol` applies only during creation.
 Configure the approved `appId` and run `bounded deploy` without `--create`.
-Never delete or repurpose an app automatically to bypass the limit.
-If no compatible project is approved, follow the account upgrade flow in
-[billing.md](../../bounded/docs/billing.md).
+Never delete or repurpose an app automatically to bypass the limit; deleting
+apps does not free the window.
+If no compatible project is approved and the user does not want to wait,
+follow the account upgrade flow in
+[billing.md](../../bounded/docs/billing.md#project-creation-limits); paid
+plans have no creation limit.
 
 In JSON mode, a successful direct policy deploy emits exactly one committed receipt instead of mixing human status text into stdout:
 
@@ -847,9 +853,10 @@ last-seen state.
 and `edit`, one run id per line for `builds list`, the resulting state for
 `cancel` and `gate`.
 
-Refusals keep the server's own code and detail: `project_limit_exceeded` (with
-`planId`/`usage`/`limit`), `insufficient_funding`, `free_builds_exhausted`,
-`usage_settlement_pending`, `prompt_too_long`, `app_unknown`, `auth_required`.
+Refusals keep the server's own code and detail: `project_daily_limit_exceeded`
+(with `planId`/`usage`/`limit`/`resetsAtMs`), `insufficient_funding`,
+`free_builds_exhausted`, `usage_settlement_pending`, `prompt_too_long`,
+`app_unknown`, `auth_required`.
 Creation is journaled by idempotency key, so a create that reports the prior
 attempt as still converging is waited out on the same key rather than creating a
 second app.
@@ -958,7 +965,7 @@ subscription, Bounded credits, and the Stripe Customer Portal.
 
 | Command | Does | Example |
 |---|---|---|
-| `billing status` | Show the current Bounded plan, effective project cap, and bucket status | `bounded billing status` |
+| `billing status` | Show the current Bounded plan, daily project-create limit, and bucket status | `bounded billing status` |
 | `billing checkout` | Start Bounded Pro or Team. `--plan pro\|team`, `--print`, `--no-open`, `--no-wait` | `bounded billing checkout --plan pro` |
 | `billing topup` | Buy Bounded credits. `--credits` (20-10,000; $0.05 each), `--print`, `--no-open`, `--no-wait` | `bounded billing topup --credits 100` |
 | `billing portal` | Open Stripe Customer Portal for the Bounded account | `bounded billing portal` |

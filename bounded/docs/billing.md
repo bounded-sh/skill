@@ -76,9 +76,9 @@ Retry the status read later, and do not initiate another payment to recover one 
 Checkout refuses a known ledger outage, but a failure after the payment page opens can still delay settlement.
 Use the original checkout's settlement check and wait for applied credit before retrying paid work.
 
-`bounded billing status` reports the account's effective project cap.
-In JSON, read `.limits.maxProjects`; `-1` means unlimited.
-A platform-issued project-cap grant is reflected in that effective value, but
+`bounded billing status` reports the account's daily project-create limit.
+In JSON, read `.limits.maxProjectCreatesPerDay`; `-1` means no daily limit.
+A platform-issued limit grant is reflected in that effective value, but
 the raw operator override record and operator metadata are never returned.
 
 The hosted dashboard's Billing tab shows, per app, the metered usage at posted prices and what it actually charged the pool, the app's closed months, and the account's spend grouped by app.
@@ -143,32 +143,51 @@ Do not invent thresholds. Use the values returned in the usage snapshot.
 
 ## Project Creation Limits
 
-Project creation is account-scoped. Free accounts can create 10 projects; Pro,
-Team, and Enterprise accounts can create unlimited projects.
+Project creation is account-scoped and rate-limited, not capped in total.
+A Free account can hold any number of projects but can create at most 20 per
+rolling 24 hours; Pro, Team, and Enterprise accounts have no creation limit.
+Only user-owned project creations count: managed OpenApps child apps and
+preview apps are exempt, and bringing an existing app into OpenApps is not a
+creation.
+Deleting apps never frees the window; a creation counts from its birth time
+until it leaves the 24-hour window.
 
-When project creation returns `project_limit_exceeded` or a usage error with
-`dimension: "maxProjects"`:
+When project creation returns `429 project_daily_limit_exceeded` (every
+creation lane, including `bounded create`, `bounded deploy --create`, and
+`ctx.apps.create`, refuses with this same code):
 
-1. Do not retry the create operation.
-2. Run `bounded billing status --json` and use `.limits.maxProjects` as the
-   effective account cap.
-   The value `-1` means unlimited.
-3. Tell the user how many owned projects they have and what their current plan
-   limit is, if `usage`, `limit`, or `projectedUsage` are present.
-4. Run `bounded apps list --json` to inspect every app the active account owns
-   or collaborates on.
+1. Do not retry the create operation before the window reopens.
+2. Read the response: `limit` is the account's creations per window, `usage`
+   is how many it created inside the current window, `windowMs` is the window
+   length, and `resetsAtMs` is the millisecond timestamp at which the oldest
+   counted creation leaves the window and one more create fits.
+   The same fields are mirrored under `details`.
+   The `Retry-After` header carries the same wait in seconds.
+   A `resetsAtMs` of `null` (and no `Retry-After`) means nothing counted will
+   free capacity: the account's limit is `0`, so waiting will not help and only
+   an upgrade or an operator change can.
+3. Tell the user when the next create fits, using `resetsAtMs`.
+   The server's `message` already says this in plain words.
+4. If the user does not want to wait, run `bounded apps list --json` to
+   inspect every app the active account owns or collaborates on.
    Its safe fields are `appId`, `name`, `environment`, `protocol`, and
    `sitePrivate`.
-5. Before reusing an app, run `bounded access --app-id <id> --json` and confirm
-   both ownership or deploy rights and protocol compatibility.
-   Reuse only the exact app the user approves, and run `bounded deploy` without
-   `--create`.
-6. Never delete or repurpose a project automatically to work around the limit.
-7. If the response says the key is unlinked, recommend `bounded link --email
-   <their email>` first so the CLI key and web account share one account limit.
-8. If no approved compatible project can be reused, help the user upgrade to
-   Pro through the public billing checkout flow.
+   Before reusing an app, run `bounded access --app-id <id> --json` and
+   confirm both ownership or deploy rights and protocol compatibility.
+   Reuse only the exact app the user approves, and run `bounded deploy`
+   without `--create`.
+5. Never delete or repurpose a project to work around the limit: deleting
+   does not free the window, and a repurposed app is a lost app.
+6. If the response says the key is unlinked, recommend `bounded link --email
+   <their email>` first so the CLI key and web account share one account
+   window.
+7. If the user wants the limit gone, help them upgrade to Pro through the
+   public billing checkout flow; paid plans have no creation limit.
    Do not initiate billing changes without approval.
+
+A function that creates user-owned apps can ask `ctx.apps.canCreate({
+ownership: "invoking-user" })` before provisioning anything; see
+[ctx.build](../../bounded-backend/docs/functions-ctx-build.md).
 
 ## Handling Limit Errors
 
@@ -196,11 +215,14 @@ Common axes:
 | AI-eligible credits | Free courtesy credits exclude AI; purchased or paid subscription credits can fund it |
 | app spending cap | reduce usage or adjust the app cap; purchasing credits alone does not raise it |
 
-A `429` is separate from funded usage. It can mean either a short operational
-burst/shared-capacity guard or an app-authored daily, monthly, or participant
-policy window. Preserve the idempotency key and saved input, name the exact
-server reason, honor `Retry-After`, and retry after that delay. Do not describe
-it as a plan Build allowance.
+A `429` is separate from funded usage. It can mean a short operational
+burst/shared-capacity guard, an app-authored daily, monthly, or participant
+policy window, or the Free tier's daily project-create limit
+(`project_daily_limit_exceeded`, a plan limit an upgrade removes; see
+[Project Creation Limits](#project-creation-limits)). Preserve the idempotency
+key and saved input, name the exact server reason, honor `resetsAtMs` and
+`Retry-After`, and retry after that delay. Do not describe it as a plan Build
+allowance.
 
 ## App Payments
 

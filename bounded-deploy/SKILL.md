@@ -104,10 +104,12 @@ account profile, or recovery of an existing key-owned app.
 - `site_control_denied` (a `403`), wrong owner, or unexpected `401`/`403`: run
   `bounded whoami` and `bounded access --app-id <id>` before changing identity.
   See [access playbook](docs/access-playbook.md).
-- `project_limit_exceeded`: inventory apps; never delete or repurpose one
-  automatically. If the user decides an app should go, `bounded apps delete`
-  exists but always requires the human to confirm in the browser. See
-  [billing](../bounded/docs/billing.md).
+- `project_daily_limit_exceeded` (a `429`): a Free account may create 20 apps
+  per rolling 24 hours, and this one has. Read `limit` and `resetsAtMs` (also
+  `Retry-After`) and tell the user when the next create fits; wait for it or
+  reuse an existing app the user approves. Upgrading removes the limit;
+  deleting apps does not free it. Never delete or repurpose an app
+  automatically. See [billing](../bounded/docs/billing.md#project-creation-limits).
 - `boundary_violation`: changing accounts will not bypass an app boundary. Use
   the boundary-lock section of the access playbook.
 

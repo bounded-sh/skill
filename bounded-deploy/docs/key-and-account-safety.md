@@ -384,9 +384,11 @@ When you (an AI agent) operate Bounded on a human's behalf:
 6. **On a new machine, do not silently spawn a second wallet identity.** Reuse the
    same wallet key, link both wallet keys to one web account, or switch the project
    to `web` and log in intentionally.
-7. **A project-limit error is not deletion or reuse authorization.**
-   Run `bounded apps list --json` to inspect visible apps and
-   `bounded access --app-id <id> --json` to confirm a candidate.
+7. **A daily create-limit error (`project_daily_limit_exceeded`) is not
+   deletion or reuse authorization.**
+   Deleting apps does not free the window, so deletion cannot help.
+   Wait for `resetsAtMs`, or run `bounded apps list --json` to inspect visible
+   apps and `bounded access --app-id <id> --json` to confirm a candidate.
    Reuse requires an exact app ID, protocol compatibility, and explicit user
    approval for that target.
    Never delete or repurpose another app automatically.

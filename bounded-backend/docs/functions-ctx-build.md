@@ -195,6 +195,13 @@ A policy profile can explicitly select an edit mode with `bindMode.edit`.
 OpenApps steward and reusable preview edits use `repair-maintenance`; `quick-edit` is a separate lighter workflow for small changes when selected by policy.
 You can keep editing version B on the preview while exact version A is under live release review; approval of A never publishes B.
 
+`ctx.apps.create` defaults to a managed child under the calling app's control; `ownership: "invoking-user"` instead creates a project the invoking user owns.
+A user-owned create counts against that user's daily project-create limit (a Free account may create 20 projects per rolling 24 hours; paid plans have no limit, and managed children and previews never count), so a Free user who has reached it gets `{ ok: false, reason: "project_daily_limit_exceeded", status: 429 }` and nothing is created.
+Ask first with `ctx.apps.canCreate({ ownership: "invoking-user" })`: it answers `{ ok: true, ownership: "invoking-user", allowed: true, planId, limit, usage, windowMs, resetsAtMs }` when the next create fits, or the same fields with `allowed: false`, `code: "project_daily_limit_exceeded"`, and a `message` you can show the user when it does not.
+`limit` and `usage` are `null` on an uncapped plan, and `resetsAtMs` is when the oldest counted creation leaves the window (`null` when nothing is counted).
+The read is advisory and writes nothing: it takes no guard, so the create itself is still gated and can still refuse in a race; refuse on `allowed: false` before provisioning anything, and still handle the create's own refusal.
+A failure is `{ ok: false, reason, status }`, for example `invoking_user_required` (`403`) when the run has no invoking user or `billing_unavailable` (`503`).
+
 Preview apps use Poofnet simulated money.
 Publication can deploy onchain policy to mainnet and affect real assets; use the verified target protocol, not a hostname or Git branch name, to determine the network.
 These options do not widen preview audience or grant gate-decision authority.
