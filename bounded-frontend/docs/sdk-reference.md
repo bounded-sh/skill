@@ -758,6 +758,11 @@ in-memory replay protection is suitable only for a single process. Declaring web
 
 ### Invoking a function - `functions.invoke`
 
+Do not put Bounded session tokens in the JSON arguments of a public HTTP function.
+Use this authenticated invocation path and the function's declarative `auth` rule; the runtime verifies the session before your code runs.
+Load public page data independently of session restoration so login and private-state latency do not block the first useful screen.
+
+
 In browser/React Native code, use `functions.invoke(name, args)` from `@bounded-sh/client`.
 It attaches the caller's session token automatically, so Bounded verifies the identity and evaluates the function's `auth` rule before it runs.
 On a server, use `vault.invoke(name, args)` on an explicit `createWalletClient` instead.
