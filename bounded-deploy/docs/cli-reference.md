@@ -14,6 +14,23 @@ For account credit, read `.credits.pool.available` from a successful `bounded bi
 A billing error is not a zero balance; retry the read and avoid paying again for an already-paid checkout.
 See [billing.md](../../bounded/docs/billing.md#checking-status) for settlement guidance.
 
+## Execution limits
+
+The CLI bounds every invocation, including streams, to one hour by default.
+Set `BOUNDED_COMMAND_TIMEOUT` to a positive duration such as `30s`, `10m`, or `2h` when a different limit is appropriate.
+Zero and negative durations are refused.
+A timeout exits nonzero; server-side work already accepted may continue, so inspect its status before resubmitting a mutation.
+
+Authentication requests default to 30 seconds, file-lock contention to 5 seconds, and interactive prompts to 2 minutes.
+Piped secret input has a 30-second limit and is rejected above 1 MiB.
+Git source subprocesses have a 2-minute limit, skill-install subprocesses 2 minutes, proof runtimes 10 minutes, and rehearsal subprocesses 30 minutes.
+Cancellation also bounds inherited output pipes and terminates subprocess groups on Unix or attempts tree termination on Windows.
+
+`bounded subscribe` allows at most five reconnections with exponential backoff and stops on explicit server refusals or session failures.
+The first snapshot must arrive within 30 seconds, or within the supplied `--timeout`; keepalive frames do not extend that initial deadline.
+Build watches stop after five consecutive failed status or event reads, and their timeout also applies while reads fail.
+These limits do not replay failed mutations automatically.
+
 ## Identity & teams
 
 The normal CLI identity is your **web account's user id**. `bounded init` reuses
