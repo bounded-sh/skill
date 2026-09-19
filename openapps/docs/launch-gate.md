@@ -1,6 +1,6 @@
 # The launch gate: boundaries, reproducible dist, and the freeze
 
-**What's in here:** what `publish-oapp` refuses and why: the required `boundaries` rows, the two app shapes and the reproducible-dist rule, the `gov-frozen` freeze that covers `openApps` only, and the current state of community code contributions. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** what `publish-oapp` refuses and why: the required `boundaries` rows, the two app shapes and the reproducible-dist rule, the `gov-frozen` freeze that covers `openApps` only, and the current state of community code contributions. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## The launch gate
 

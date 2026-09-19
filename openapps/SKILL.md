@@ -1,5 +1,5 @@
 ---
-name: oapps-fun
+name: openapps
 description: >-
   Build an app destined for openapps.xyz (an oApp): the zero-secrets discipline,
   why every capability must be steward-owned ("if Bounded can't do it, you
@@ -43,7 +43,7 @@ So for oApps:
 app is already on openapps.xyz. The rules above apply to you in full; the
 Local, Bounded, Open and Commence lifecycle below is the creator's journey,
 not yours. How you change the app from its computer (previews, releases,
-proposals) is in the `openapps` skill installed beside this one.
+proposals) is in the `openapps-internal` skill installed beside this one.
 
 ## Reference router
 

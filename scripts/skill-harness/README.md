@@ -117,7 +117,7 @@ The subject must behave like a real user's agent, not like one that has read
 this repo, its tests, or the conversation that designed the task. Each run:
 
 - runs in its own fixture directory outside the repo, with the skill COPIED in
-  (`bounded*/`, `oapps-fun/`), never `scripts/`, `.git`, or the root `CLAUDE.md`;
+  (`bounded*/`, `openapps/`), never `scripts/`, `.git`, or the root `CLAUDE.md`;
 - scrubs every `CLAUDE*` variable so it is not a child of the orchestrating session;
 - passes `--setting-sources project --strict-mcp-config --no-session-persistence
   --disallowedTools WebFetch,WebSearch`, verified by `tasks/probe-isolation.json`

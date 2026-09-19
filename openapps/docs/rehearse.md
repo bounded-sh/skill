@@ -1,6 +1,6 @@
 # Preflight and rehearse before you open
 
-**What's in here:** `bounded oapp preflight` (the Open gate as a dry run, with the capability ladder for every dependency), and `bounded oapp rehearse`: an ephemeral, budget-sealed copy that starts from zero data, and the idempotent bootstrap it runs. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** `bounded oapp preflight` (the Open gate as a dry run, with the capability ladder for every dependency), and `bounded oapp rehearse`: an ephemeral, budget-sealed copy that starts from zero data, and the idempotent bootstrap it runs. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## Preflight: what Open would refuse (`bounded oapp preflight`)
 

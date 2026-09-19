@@ -84,7 +84,7 @@ Never put a key in frontend code or a repo.
 | Email vendors (SendGrid, Postmark, Resend) | `ctx.email` from a function; no vendor key | [functions](../../bounded-backend/docs/functions.md) |
 | Vendor AI keys (OpenAI, Anthropic, Replicate) | `ctx.ai`; no key, billed to the app's credit pool | [ctx.ai](../../bounded-backend/docs/functions-ctx-ai.md) |
 | Object storage (S3, GCS, Cloudinary) | Files, governed by the same rules | [functions](../../bounded-backend/docs/functions.md) |
-| Stripe and card processing | Crypto acceptance and Bounded's provider payment rails; for an oApp a card processor billed to a person is a call-out, not a key | [accept crypto](../../bounded-onchain/docs/accept-crypto.md), [capability ladder](../../oapps-fun/docs/capability-ladder.md) |
+| Stripe and card processing | Crypto acceptance and Bounded's provider payment rails; for an oApp a card processor billed to a person is a call-out, not a key | [accept crypto](../../bounded-onchain/docs/accept-crypto.md), [capability ladder](../../openapps/docs/capability-ladder.md) |
 | Any other third-party API | The capability ladder: `live`, `callable` through `X402_FETCH`, or `bounded services request` | [ctx.services](../../bounded-backend/docs/functions-ctx-services.md) |
 
 Data migrations are out of scope for this guide: Bounded moves the app's
