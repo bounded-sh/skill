@@ -16,6 +16,7 @@ See [billing.md](../../bounded/docs/billing.md#checking-status) for settlement g
 
 ## Execution limits
 
+The following limits apply to CLI version 0.0.135 and later.
 The CLI bounds every invocation, including streams, to one hour by default.
 Set `BOUNDED_COMMAND_TIMEOUT` to a positive duration such as `30s`, `10m`, or `2h` when a different limit is appropriate.
 Zero and negative durations are refused.
