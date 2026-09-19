@@ -1,6 +1,6 @@
 # The oApp lifecycle: local, Bounded, Open, Commence
 
-**What's in here:** the four states an oApp passes through, why every oApp is a mainnet app you do not create yourself, what completed Open publishes, and source sync. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** the four states an oApp passes through, why every oApp is a mainnet app you do not create yourself, what completed Open publishes, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## The four states
 

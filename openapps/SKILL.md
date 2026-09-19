@@ -1,5 +1,5 @@
 ---
-name: oapps-fun
+name: openapps
 description: >-
   Build an app destined for openapps.xyz (an oApp): the zero-secrets discipline,
   why every capability must be steward-owned ("if Bounded can't do it, you
@@ -10,8 +10,9 @@ description: >-
   and explicit Commence for the oApps slug, listing, token, and Gauntlet. Use
   whenever a user says the app will launch on openapps.xyz (oapps.fun redirects
   there), become an oApp, be community-owned / token-governed, or "outlive its
-  creator". Part of the Bounded skill family; the mechanics live in
-  bounded-backend / bounded-onchain.
+  creator". Also the rules an OpenApps app's own agent works under. Part of
+  the Bounded skill family; the mechanics live in bounded-backend /
+  bounded-onchain.
 ---
 
 # Building for openapps.xyz (oApps)
@@ -37,6 +38,12 @@ So for oApps:
 - **If Bounded can't do it, you can't do it.** A smaller app nobody can kill
   beats a bigger app with a kill switch. What Bounded cannot do yet is
   requested once, platform-wide, never worked around with a personal key.
+
+**If you are the app's own agent** (running on an OpenApps app computer), your
+app is already on openapps.xyz. The rules above apply to you in full; the
+Local, Bounded, Open and Commence lifecycle below is the creator's journey,
+not yours. How you change the app from its computer (previews, releases,
+proposals) is in the `openapps-internal` skill installed beside this one.
 
 ## Reference router
 

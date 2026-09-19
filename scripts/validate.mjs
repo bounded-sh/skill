@@ -146,7 +146,7 @@ const expectedPublicSkills = [
   'bounded-deploy',
   'bounded-frontend',
   'bounded-onchain',
-  'oapps-fun',
+  'openapps',
 ]
 if (publicSkills.sort().join('\n') !== expectedPublicSkills.join('\n')) {
   fail(`public skill set mismatch: received ${publicSkills.sort().join(', ')}`)

@@ -1,6 +1,6 @@
 # The capability ladder and the x402 relay
 
-**What's in here:** how to resolve every requested capability (native, x402 relay, or call it out), what counts as a forbidden dependency, and how to use the relay from a function. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** how to resolve every requested capability (native, x402 relay, or call it out), what counts as a forbidden dependency, and how to use the relay from a function. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## The capability ladder
 

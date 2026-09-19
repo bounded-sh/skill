@@ -11,7 +11,7 @@ import { addContextMetrics, finishContextMetrics } from './lib/summary.mjs'
 const [labelDir, skillDirArg] = process.argv.slice(2)
 if (!labelDir) { console.error('usage: usage.mjs <labelDir> [skillDir]'); process.exit(2) }
 const skillDir = path.resolve(skillDirArg || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..'))
-const FAMILY = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'oapps-fun']
+const FAMILY = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'openapps']
 
 const runs = []
 const root = path.join(labelDir, 'runs')
