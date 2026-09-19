@@ -56,7 +56,7 @@ family.
 | "Move my existing app to Bounded", "bring this repo", porting a Supabase/Firebase/Express/Next app, replacing a key-holding backend | **bounded-deploy** ([porting guide](../bounded-deploy/docs/porting-an-existing-app.md)) |
 | A third-party API the app needs: is it on Bounded, callable through x402, or requestable | **bounded-backend** ([ctx.services](../bounded-backend/docs/functions-ctx-services.md)) |
 | Embedded wallets, Solana, tokens, onchain transactions, onramp | **bounded-onchain** |
-| An app destined for openapps.xyz, "make it an oApp", "go open", "outlive its creator" | **oapps-fun** |
+| An app destined for openapps.xyz, "make it an oApp", "go open", "outlive its creator" | **openapps** |
 
 For a complete app, work through backend, frontend, then deploy. Add onchain
 only when requested.

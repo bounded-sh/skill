@@ -14,7 +14,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node
 import path from 'node:path'
 import { writeShim } from './shim.mjs'
 
-export const SKILL_FAMILY = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'oapps-fun']
+export const SKILL_FAMILY = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'openapps']
 
 export function scrubEnv(env) {
   const out = {}

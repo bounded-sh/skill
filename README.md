@@ -67,6 +67,10 @@ read `SKILL.md`:
 npx skills add bounded-sh/skill -y
 ```
 
+The public `oapps-fun` skill is now named `openapps`.
+After refreshing, replace any explicit `oapps-fun` skill selection and remove its old installed copy to avoid duplicate guidance.
+Managed app-computer bundles remain on their pinned commit; updating that pin also requires renaming their local runtime skill to avoid colliding with the public `openapps` skill.
+
 Using Codex, Cursor, or Windsurf instead of Claude? Grab the drop-in blocks in
 [`agents/`](agents/).
 
@@ -81,7 +85,7 @@ Load the root skill first. It routes to the sibling for your task.
 | [`bounded-frontend`](bounded-frontend/SKILL.md) | The `@bounded-sh/client` SDK (reads, writes, subscriptions, queries), hosted static frontends, and end-user auth UI (email OTP, OAuth, guest accounts, upgrade). |
 | [`bounded-deploy`](bounded-deploy/SKILL.md) | The CLI (init, verify, deploy, share, data), multi-environment policy files, cloud source sync (source rides the deploy), custom domains and vanity slugs, and account and project config. |
 | [`bounded-onchain`](bounded-onchain/SKILL.md) | Solana collections, Turnkey embedded non-custodial wallets (`@user.address`), signed transactions, DEX and perps patterns, and direct crypto payments. |
-| [`oapps-fun`](oapps-fun/SKILL.md) | Building apps destined for [openapps.xyz](https://openapps.xyz) (oApps; oapps.fun redirects there): the zero-secrets discipline, steward-owned capabilities only ("if Bounded can't do it, you can't do it"), the capability ladder with catalog readiness, requesting what Bounded lacks, the x402 relay fallback, and the Open preflight. |
+| [`openapps`](openapps/SKILL.md) | Building apps destined for [openapps.xyz](https://openapps.xyz) (oApps; oapps.fun redirects there): the zero-secrets discipline, steward-owned capabilities only ("if Bounded can't do it, you can't do it"), the capability ladder with catalog readiness, requesting what Bounded lacks, the x402 relay fallback, and the Open preflight. |
 
 ## SDKs
 

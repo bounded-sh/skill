@@ -9,7 +9,7 @@ import path from 'node:path'
 
 export function familyHash(dir) {
   const h = createHash('sha256')
-  const stack = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'oapps-fun'].map((s) => path.join(dir, s))
+  const stack = ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'openapps'].map((s) => path.join(dir, s))
   const files = []
   while (stack.length) {
     const d = stack.pop()

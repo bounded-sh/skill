@@ -1,6 +1,6 @@
 # Checklist before Open and Commence
 
-**What's in here:** the full pre-Open and pre-Commence checklist. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** the full pre-Open and pre-Commence checklist. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## Practical checklist before Open and Commence
 

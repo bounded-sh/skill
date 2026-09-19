@@ -1,6 +1,6 @@
 # The capability ladder and the x402 relay
 
-**What's in here:** how to resolve every requested capability (native, x402 relay, or call it out), what counts as a forbidden dependency, and how to use the relay from a function. Part of the **oapps-fun** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** how to resolve every requested capability (native, x402 relay, or call it out), what counts as a forbidden dependency, and how to use the relay from a function. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## The capability ladder
 
@@ -24,14 +24,14 @@ skip to a workaround. The catalog tells you which rung you are on: every
 2. **Callable through x402 second.** No native integration, but the
    counterparty prices itself with [x402](https://www.x402.org) (HTTP 402
    payment-required, machine-to-machine)? The catalog marks it `callable`, and
-   Bounded pays that API per call **on the app's behalf** with no approval
-   step, through `ctx.services.invoke("X402_FETCH", ...)` under the app's
-   `service:x402` grant — see the next section.
+   Bounded pays that API per call **on the app's behalf** through `ctx.services.invoke("X402_FETCH", ...)` under the app's
+   `service:x402` grant - see the next section.
+   This removes a separate vendor account setup step; calls still spend app credits and must stay within the task's authorized budget and the app's policy.
 3. **Request it, then call it out.** Neither exists? File it once,
    platform-wide: `bounded services request "<what you need>"`. A steward
    reviews it, and the Hub emails you when it is live; follow it with
    `bounded services status`. Then say so, plainly, BEFORE building around
-   it, and build the compliant version without it. Do not quietly wire a
+   it, and continue the independent work within the requested scope. Do not quietly wire a
    dependency that a person controls. A brain running an opened app climbs
    the same ladder on its own (`search_capabilities`, `describe_capability`,
    `request_capability`, `capability_request_status`), and a request that
@@ -56,9 +56,9 @@ When a requested capability fails the ladder, tell the user:
 - **The nearest compliant alternative** (a native service, an x402-priced
   competitor, a reduced feature, or a manual/off-app step).
 
-Then build the compliant version. Never "temporarily" add a user-held secret
-to an oApp — the whole point of launch is that the frozen rules and the
-runtime are the only trust surface.
+Continue independent work within the user's scope.
+If the alternative changes a required feature, ask the user to choose before implementing that substitution.
+Never "temporarily" add a user-held secret to an oApp.
 
 ### What counts as a forbidden dependency
 

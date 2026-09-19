@@ -65,7 +65,7 @@ update.
 (One exception, and you never create these yourself: an **oApp** root and
 workload are also mainnet apps, but the platform mints them owned by a
 Bounded-custodied key so it can co-sign their policy updates without a person
-holding that key. See the **oapps-fun** skill. Everything below is about the
+holding that key. See the **openapps** skill. Everything below is about the
 mainnet apps *you* create.)
 
 What follows from that:

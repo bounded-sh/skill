@@ -166,7 +166,7 @@ test('report and usage commands show measured tool text separately from legacy f
     const lift = execFileSync(process.execPath, [reportPath, label], { encoding: 'utf8' })
     assert.match(lift, /1\.0 \(n=1\/2\)/)
     const skill = path.join(tmp, 'skills')
-    for (const name of ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'oapps-fun']) mkdirSync(path.join(skill, name), { recursive: true })
+    for (const name of ['bounded', 'bounded-backend', 'bounded-frontend', 'bounded-deploy', 'bounded-onchain', 'openapps']) mkdirSync(path.join(skill, name), { recursive: true })
     const usagePath = fileURLToPath(new URL('../skill-harness/usage.mjs', import.meta.url))
     const usage = execFileSync(process.execPath, [usagePath, label, skill], { encoding: 'utf8' })
     assert.match(usage, /1\.0 \(n=1\)/)
