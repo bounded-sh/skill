@@ -67,6 +67,10 @@ read `SKILL.md`:
 npx skills add bounded-sh/skill -y
 ```
 
+The public `oapps-fun` skill is now named `openapps`.
+After refreshing, replace any explicit `oapps-fun` skill selection and remove its old installed copy to avoid duplicate guidance.
+Managed app-computer bundles remain on their pinned commit; updating that pin also requires renaming their local runtime skill to avoid colliding with the public `openapps` skill.
+
 Using Codex, Cursor, or Windsurf instead of Claude? Grab the drop-in blocks in
 [`agents/`](agents/).
 

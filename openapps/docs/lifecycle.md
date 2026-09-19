@@ -61,8 +61,8 @@ against real mainnet rather than the simulator, but the Open rail does not yet r
 collections on the app's program account - so Open refuses the policy outright with
 `oapp_opening_onchain_policy_unsupported` rather than publishing an app the chain cannot serve.
 Everything else onchain still works: embedded wallets, payments, DEX/token plugin calls, and reads.
-If you need onchain state collections in an oApp, say so plainly and stop, per
-"calling it out" in [capability-ladder.md](capability-ladder.md#what-calling-it-out-looks-like) - do not work around it.
+If the request requires onchain state collections, explain that publication is blocked and offer a compliant alternative using the [capability ladder](capability-ladder.md#what-calling-it-out-looks-like).
+Continue independent work within the requested scope; do not bypass the Open restriction or silently replace the required feature.
 
 
 ## What Open publishes (read before you let go)
@@ -80,7 +80,8 @@ Spell these implications out before starting Open:
    People can inspect and participate in the public app while it is `awaiting_commence`.
 5. **Commence is a later, explicit boundary.** It claims the requested oApps slug, writes the venue listing, creates the token sale, and starts the Gauntlet.
    It does not clone or publish the app again.
-   The fee model is fixed as part of that token launch (the venue policy's `CCA_*` constants and `ccaEngine.launchWaterfall` are the authority). The sale is a 24h continuous clearing auction of 65% of supply: each bid pays 3% admission plus the launch's gauntlet fee (0.9% by default), win or lose, and escrows the rest. The gauntlet fee is the one rate that can differ per launch: the operator may waive it to 0% while the sale still has zero demand, which zeroes the per-bid fee (the gauntlet then runs on fuel top-ups, and a failed sale refunds 100%). The waiver is one-way and steward-only - a creator cannot set it, and it is never raised. At settlement the raise pays out of escrow in a fixed waterfall: 3% creator, 2% OpenApps, 30% locked liquidity, and the remainder to the app reserve; the gauntlet draw and fuel tank legs exist in the waterfall but are set to 0% in the current terms. Pool trading fees are 1% flat; claimed launch-token units split 50% app reserve escrow, 20% founding creator, 20% steward, and the remainder to the venue.
+   The fee model is fixed as part of that token launch; use the sealed model's [launch economics](launch-economics.md).
+
 
 Source sync is load-bearing because completed Open publishes the synchronized tree rather than an unsynchronized checkout.
 No synced source means Open cannot complete.
