@@ -825,6 +825,12 @@ Name each such collection exactly once in `proofs.publicReads`:
 }
 ```
 
+If `bounded verify` reports that a read allows unauthenticated access, decide whether that access is intentional.
+For an intentionally public subset, name the exact collection in `proofs.publicReads` and keep its read restriction.
+For private data, require `@user.id != null` before the ownership or membership check instead.
+Do not declare a scope public just to silence an accidental `null == null` ownership match.
+The verifier's `suggestion` field explains these choices; the CLI preserves it in JSON and displays it in readable output.
+
 This declaration changes only the deploy-time authentication posture.
 It never widens runtime access, and the collection's `rules.read` expression still decides which documents are visible.
 Use exact declared collection paths with no surrounding whitespace or duplicates.
