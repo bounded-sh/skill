@@ -69,3 +69,8 @@ Child processes must inherit both selectors and the same `HOME` to use the same 
 An unreadable or invalid account file fails instead of silently falling back to the project's account.
 Unset `BOUNDED_ACCOUNT_FILE` before using `bounded account use` to change project defaults.
 The override does not grant authorization, change app IDs, or bypass connection restrictions.
+
+A platform-managed agent session uses the same app-token exchange as a human CLI session, preserving the agent's wallet identity in the target app.
+The target app's data rules still apply; developer access to deploy code does not grant unrestricted data access.
+If the CLI reports `agent credential rejected` with `invalid_token`, authentication failed before app data access.
+The platform must check session issuance or renewal; do not replace the agent's identity with `bounded login` or repeatedly retry the same rejected credential.

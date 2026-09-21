@@ -160,13 +160,17 @@ key-recovery and the roster; **capability** is what gates the deploy.
 
 ### 4. Stale token / expired web session
 
-A `401` under a web source often just means the session lapsed. Re-establish it,
-then re-run the check:
+For a human login, a `401` under a web source often means the session lapsed.
+Re-establish it, then re-run the check:
 
 ```bash
 bounded login --email you@example.com    # refresh ~/.bounded/web-session.json
 bounded access --app-id <id>
 ```
+
+For a platform-managed agent session, follow the CLI's agent-credential guidance instead.
+An `invalid_token` rejection during app-session exchange is an authentication failure before data access, not an app-policy denial.
+Have the platform check the managed session's issuance or renewal; do not replace it with a human login.
 
 ### 5. "Blocked by this app's boundaries" — the 403 that is NOT an identity problem
 
