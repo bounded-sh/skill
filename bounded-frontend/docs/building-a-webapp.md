@@ -170,6 +170,13 @@ function Notes() {
 A subscription only ever delivers documents the user is allowed to read — the
 read rule is enforced per delivered row, so live UIs can't leak.
 
+**Never put a collection read on a `setInterval`.** The subscription already
+pushes every change, so a refresh timer only adds cost and latency. A countdown
+or "time left" display ticks on *local clock state* against a deadline field the
+subscription delivered - it needs no network call per tick. The rare non-live
+surfaces, and how to poll them without hammering, are in
+[sdk-reference.md](../docs/sdk-reference.md#never-poll-a-collection).
+
 ## Develop on localhost
 
 Run your dev server as usual (`npm run dev` — Vite, Next, anything) against the

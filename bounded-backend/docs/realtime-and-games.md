@@ -21,6 +21,9 @@ honest limit on what anti-cheat can prove is in
 
 Every collection is live. There are two ways to consume a live feed; **in React,
 reach for the hook first.**
+Neither of them is a timer: a client that re-reads a path on `setInterval` is
+working around the live feed, not using it. See
+[never poll a collection](../../bounded-frontend/docs/sdk-reference.md#never-poll-a-collection).
 
 ### React: `useQuery` (recommended — no callback to get wrong)
 

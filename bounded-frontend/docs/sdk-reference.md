@@ -372,6 +372,54 @@ Note the contrast - `get("c", { limit })` returns `{ data, nextCursor }` but
 the same `_id` (full path) + `id` (bare leaf key) pair as `get` - use `row.id` for
 React keys and child paths. More: [realtime-and-games.md](../../bounded-backend/docs/realtime-and-games.md).
 
+### Never poll a collection
+
+Bounded data is push-based. A `setInterval` that re-reads a path is always the
+wrong answer: `useQuery` / `subscribe` already deliver the new set the instant
+any writer changes it, faster than any timer and at a fraction of the cost.
+Replace the timer with a subscription; do not "tune" its interval.
+
+```tsx
+// WRONG - a request every 15s per open tab, forever, whether or not anything changed
+useEffect(() => {
+  const t = setInterval(() => get("sales/" + id).then(setSale), 15_000);
+  return () => clearInterval(t);
+}, [id]);
+
+// RIGHT - one connection, updates only when the document actually changes
+const { data: sale } = useQuery("sales/" + id);
+```
+
+Two things that look like they need a timer, and do not:
+
+- **A countdown or progress bar.** The deadline is a field on the live document.
+  Subscribe once, then tick `setInterval` over *local clock state* to re-render
+  the remaining time - no network call per tick. A re-read only tells you what
+  the subscription already told you.
+- **A derived total, price, or balance that another write changes.** It changes
+  because a *document* changed, and that document is live. Subscribe to the
+  source and compute in the client, or keep the derived value in a document the
+  writer updates in the same atomic `setMany`.
+
+**Where a timer is genuinely the only option** - `runQuery` / `runExpression`
+results, `functions.invoke` side-effects, an onchain confirmation, or a
+third-party surface Bounded does not host - poll deliberately, never in a bare
+`setInterval`:
+
+- **Stop when the tab is hidden** (`document.visibilityState`), and refresh once
+  on `visibilitychange` back to `visible`. An idle background tab must cost zero.
+- **Stop when there is nothing to watch.** Scope the timer to the state that
+  needs it (a pending transaction, a live window) and clear it the moment that
+  state resolves. No app-lifetime timer.
+- **Back off.** Start no faster than a few seconds, widen on each unchanged
+  result, and widen hard on an error.
+- **Subscribe to the settled result where one exists.** An onchain write settles
+  into the Bounded mirror, which is live: confirm the signature, then `useQuery`
+  the mirror path instead of re-reading it on a timer. See
+  [onchain.md](../../bounded-onchain/docs/onchain.md#the-mirror-is-eventually-consistent--dont-read-after-write).
+- **Bound it.** A finite attempt budget with a visible give-up state, never an
+  unbounded retry loop. A `429` ends the schedule; it never feeds it.
+
 ## Files - `setFile` / `getFiles`
 
 For `type: "storage"` collections (same path-scoped auth as data).

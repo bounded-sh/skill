@@ -375,6 +375,11 @@ useEffect(() => {
 
 - **Metro entry**: ensure your bundler honors the `react-native` condition so the
   RN-safe entry is picked. Don't import web provider modules directly.
+- **Don't poll; and if you must, respect `AppState`.** Collections are live, so
+  use `useQuery`/`subscribe` rather than a refresh timer. For the non-live
+  surfaces, clear the timer on `AppState` `background`/`inactive` and refresh
+  once on return to `active` - a backgrounded phone must not keep firing
+  requests. Rules in [sdk-reference.md](../docs/sdk-reference.md#never-poll-a-collection).
 - **Hosted-redirect login on RN** works via `expo-web-browser` + an **https
   universal-link** `redirectUri` registered in `allowedOrigins` (see above). It
   resolves inline with the user — do **not** call `completeLoginFromRedirect()` on

@@ -26,6 +26,7 @@ Read only the row matching the current task or term.
 | SDK reads, writes, subscriptions, paging, `queryAggregate`, `count`, filters, sort, cursor, `setMany`, `set(path, null)` | [SDK reference](docs/sdk-reference.md) |
 | Build a web frontend | [web app guide](docs/building-a-webapp.md) |
 | Local dev server (`npm run dev`, Vite, localhost), login popup fails, `redirect_uri origin is not a registered origin`, CORS during local development | [develop on localhost](docs/building-a-webapp.md#develop-on-localhost) |
+| Refresh timer, `setInterval`, polling, "keep it fresh", countdown, stale UI | [SDK reference](docs/sdk-reference.md#never-poll-a-collection) |
 | Build for React Native / mobile | [React Native guide](docs/building-for-react-native.md) |
 | App-user email OTP, OAuth, `openBoundedWidget`, unified login widget, default Turnkey auth | [app auth](docs/app-auth.md) |
 | Bring-your-own wallet login; `walletLogin`, `authMethod:'phantom'`, Phantom / Wallet-Standard | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) |
@@ -40,6 +41,7 @@ Read only the row matching the current task or term.
 
 - Every client write is governed by policy; a `403` on a write is a rule denial, not a client bug. See the bounded-backend skill for the rule.
 - Denied reads return empty `200` responses, never `403`.
+- **Live by default; never poll.** Every collection is push-based, so a `setInterval` that re-reads a path is a bug, not a tuning choice - use `useQuery` (React) or `subscribe`. Countdowns tick on local clock state, not on a re-read. For the few surfaces that are not live (`runQuery`, `functions.invoke`, third-party), poll deliberately: pause on a hidden tab, scope the timer to the state that needs it, back off, and bound it. See [sdk-reference.md](docs/sdk-reference.md#never-poll-a-collection).
 - Batch reads for lists of computed values with `runQueryMany`; never map `runQuery` over a list. See [sdk-reference.md](docs/sdk-reference.md#batch-your-queries).
 - Put provider API keys in Bounded secrets (backend), never in frontend code.
 - If `npm audit` reports `uuid` advisory GHSA-w5hq-g745-h8pq through `@solana/web3.js -> jayson`, use the scoped [override recipe](docs/sdk-reference.md#npm-audit-reports-a-moderate-uuid-advisory---here-is-the-fix).

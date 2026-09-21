@@ -50,5 +50,11 @@
 - Running costs (AI spend, service calls, relayed calls + surcharge) are
   sane against the app's expected build-fund inflow — out of budget means
   frozen, and you should be able to say at what usage level that happens.
+- **No refresh timers in the frontend.** Collections are live, so poll loops buy
+  nothing and bill the app's own buckets for every open tab, forever. An oApp
+  has no creator standing by to tune an interval later, so a `setInterval` that
+  re-reads data is a permanent, unbounded drain on the build fund. Use
+  `useQuery`/`subscribe`; see
+  [never poll a collection](../../bounded-frontend/docs/sdk-reference.md#never-poll-a-collection).
 - Anything you had to rule out is in your handoff to the user, with the
   reasoning, not silently dropped.
