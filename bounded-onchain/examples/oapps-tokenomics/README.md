@@ -33,7 +33,7 @@ for the full walkthrough. This directory is the runnable artifact behind it.
 
 ```
 bounded verify --experimental                                   # uses policy.json (per bounded.json)
-bounded verify --experimental --policy policy.verify-today.json
+bounded verify --experimental policy.verify-today.json
 ```
 
 The policy itself is the reference; the report is opt-in ([formal verification](../../../bounded-backend/docs/formal-verification.md)).
