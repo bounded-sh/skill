@@ -31,7 +31,7 @@ Details: [embedded wallets](../../bounded-onchain/docs/embedded-wallets.md).
 
 ## Field types
 
-Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain only), `Address`; suffixes `?` optional, `!` readonly-after-create, `!?` both. No arrays or objects - use sub-collections. No `Timestamp` - use `UInt` seconds. Every `!` field needs `@newData.x == @data.x` in the update rule (or `update: "false"`). Leading `_` names are reserved system fields. `fields` may be omitted, but then each field's type is inferred from the rules, so declare a field's type whenever rules compare it as more than one type - a fieldless collection whose rules compare one field to both a string and a number is refused at deploy and named.
+Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain only), `Address`; suffixes `?` optional, `!` readonly-after-create, `!?` both. No arrays or objects - use sub-collections. No `Timestamp` - use `UInt` seconds. The runtime rejects any later write that changes a `!` field, so no update-rule clause is needed. Leading `_` names are reserved system fields. `fields` may be omitted, but then each field's type is inferred from the rules, so declare a field's type whenever rules compare it as more than one type - a fieldless collection whose rules compare one field to both a string and a number is refused at deploy and named.
 
 ## Rule variables
 
@@ -73,7 +73,7 @@ Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain onl
 ## Five most common rejections
 
 1. `Boolean` as a type (use `Bool`); `Number`/`Timestamp` (use `UInt`).
-2. `!` field without a preservation clause in the update rule.
+2. A later write that changes a `!` field (the runtime rejects it; no update-rule clause helps or is needed).
 3. Mutating plugin call in `rules` or in `hooks.offchain` (belongs in `hooks.onchain`).
 4. Client-computed "now" compared against `@time.now` (use `serverTimestamp()`).
 5. `@user.id`, `@origin.*`, or `Float` inside an `onchain: true` collection.

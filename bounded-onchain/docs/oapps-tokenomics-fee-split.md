@@ -270,7 +270,7 @@ this is a *self-refilling* budget backed by real claimed fees):
   [invariants.md](../../bounded-backend/docs/invariants.md).
 - **Credited by fees.** Claimed on-chain fees raise the effective budget (set
   `BUILD_ALLOWANCE`, or a per-app constant, from realized treasury inflow); the cap
-  is what makes "spend up to what the app earned" a *provable* boundary rather than a
+  is what makes "spend up to what the app earned" an *enforced* boundary rather than a
   hope.
 
 ## ENFORCED vs TRUSTED vs NEEDS LIVE PROOF

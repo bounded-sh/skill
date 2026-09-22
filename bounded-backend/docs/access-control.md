@@ -275,9 +275,9 @@ easily:
 bounded share ops@yourco.com --role admin --app-id <platformAppId>
 ```
 
-**2. In-app super-admins (data plane), provably closed.** When *your platform's own users*
+**2. In-app super-admins (data plane), closed by construction.** When *your platform's own users*
 include super-admins (e.g. moderators who can act across every tenant), declare them as a
-flat, provable admin registry and gate rules on it:
+flat admin registry and gate rules on it:
 
 ```jsonc
 {
@@ -352,7 +352,7 @@ so one tenant can never touch another's data.
 ## Related
 
 - Hit `requires a keypair`/`401`/`403` or about to conclude "no access / blocked on the owner"? → the [access playbook](../../bounded-deploy/docs/access-playbook.md) (check identity + `bounded access` before surrendering)
-- Data-plane admin/owner patterns + `authorityClosure` → [admin-and-ownership.md](admin-and-ownership.md)
-- Top-level provable `roles` block (cross-collection read/write grants) → [roles.md](roles.md)
+- Data-plane admin/owner patterns and a closed admin set → [admin-and-ownership.md](admin-and-ownership.md)
+- Top-level `roles` block (cross-collection read/write grants) → [roles.md](roles.md)
 - Sharing, linking, teams, login → [auth.md](../../bounded-frontend/docs/auth.md)
 - Tenant isolation invariants → [invariants.md](invariants.md#tenanttag--documents-carry-their-tenant)

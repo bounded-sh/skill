@@ -73,5 +73,5 @@ Live proof must still confirm that the 45% creator leg actually lands in `feepoo
 
 The placeholder constants (`OAPP_MINT`, `CREATOR`, `POOF`, `KEEPER`, `FOUNDER`) are
 swapped for the real mint, recipient wallets, and founder user id at launch.
-`FOUNDER` must stay a plain alphanumeric constant - the verifier rejects any
-other shape for the `authorityClosure` initial member.
+`FOUNDER` must stay a plain alphanumeric constant (the optional proof report
+rejects any other shape for its `authorityClosure` initial member).

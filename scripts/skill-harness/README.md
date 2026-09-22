@@ -10,10 +10,10 @@ For each frozen task under `tasks/`, the runner builds a fresh fixture
 directory, installs the skill family into `<fixture>/.claude/skills/` (or
 nothing, for the control condition), and drives a headless `claude -p` subject
 with the task prompt. It then scores OUTCOMES: does the produced `policy.json`
-pass `bounded verify`, does it have the invariant the task demanded, did the
-agent retry `verify` unchanged through a transient prover error without
-touching `deploy`, is the API key absent from frontend code, and so on. It
-never scores whether the subject paraphrased a doc sentence.
+pass the (maintainer-run, experimental) `bounded verify --experimental` check,
+does it have the invariant the task demanded, did the agent never touch
+`deploy`, is the API key absent from frontend code, and so on. It never scores
+whether the subject paraphrased a doc sentence.
 
 Two conditions per task give the **skill lift**: `pass(with) - pass(without)`.
 Only tasks with real lift are informative for ablation; a task the model passes
@@ -132,8 +132,7 @@ this repo, its tests, or the conversation that designed the task. Each run:
   consumes the next token, so a filter-based classifier reads one subcommand
   while the real CLI resolves another - an external review demonstrated exactly
   that bypass, and `selftest.mjs` now pins it). Everything else is refused with
-  a neutral error and logged. The shim can fault the first N `verify` calls with
-  the documented retryable prover-busy error.
+  a neutral error and logged.
 
 Known limits of Tier A, on purpose so nobody over-trusts a number:
 

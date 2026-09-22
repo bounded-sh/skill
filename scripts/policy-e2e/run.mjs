@@ -8,7 +8,7 @@
 //      (the page is the single source of truth - no duplicated policy files),
 //   2. deploys it as a fresh app on the LOCAL Bounded platform
 //      (bounded-monorepo ./dev; boot it with `./dev fresh smoke --yes --profile full --detach`),
-//   3. runs `bounded verify`, then the spec's allow/deny/query steps.
+//   3. runs `bounded verify --experimental` (the optional proof report), then the spec's allow/deny/query steps.
 //
 // Usage:
 //   node scripts/policy-e2e/run.mjs               # all specs (SKIPS if no stack)
@@ -214,7 +214,7 @@ for (const file of specFiles) {
     const label = `${step.kind}${step.path ? ` ${cleanPath(step.path, runId)}` : ''}`
     try {
       if (step.kind === 'verify') {
-        const result = sh(['verify', 'policy.json', '--app-id', appId], { cwd: workspace })
+        const result = sh(['verify', '--experimental', 'policy.json', '--app-id', appId], { cwd: workspace })
         if (!/Proven/i.test(result.output)) throw new Error(`verify did not prove:\n${result.output.slice(0, 400)}`)
         rows.push([label, 'PASS', ''])
       } else if (step.kind === 'set') {

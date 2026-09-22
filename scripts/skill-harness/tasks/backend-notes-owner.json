@@ -9,7 +9,6 @@
     { "id": "read-by-user-id", "kind": "policy-rule", "collection": "notes", "rule": "read", "regex": "@user\\.id" },
     { "id": "create-by-user-id", "kind": "policy-rule", "collection": "notes", "rule": "create", "regex": "@user\\.id" },
     { "id": "update-by-user-id", "kind": "policy-rule", "collection": "notes", "rule": "update", "regex": "@user\\.id" },
-    { "id": "no-foreign-types", "kind": "regex", "path": "policy.json", "regex": "\"(Boolean|Timestamp|Number|Date)\"", "expect": "absent" },
-    { "id": "readonly-preserved", "kind": "policy-expr", "expr": "cols.every(([k,v]) => Object.entries(v.fields||{}).filter(([f,t])=>String(t).includes('!')).every(([f]) => /^\\s*false\\s*$/.test(String((v.rules||{}).update)) || String((v.rules||{}).update||'').includes('@newData.'+f+' == @data.'+f) || String((v.rules||{}).update||'').includes('@data.'+f+' == @newData.'+f)))" }
+    { "id": "no-foreign-types", "kind": "regex", "path": "policy.json", "regex": "\"(Boolean|Timestamp|Number|Date)\"", "expect": "absent" }
   ]
 }

@@ -14,8 +14,8 @@ what the policy grants its address. **A service identity is the app developer's
 own backend actor — Bounded never custodies *user* funds.**
 
 Because `actAs` changes who `ctx.bounded` writes as, it is the privileged
-Functions mode. Deploy requires every `actAs` function's `auth` rule to imply
-the app's admin predicate through a runtime-valid gate. When the people who may
+Functions mode. Gate every `actAs` function's `auth` rule on the app's admin
+predicate through a runtime-valid gate; nothing checks that for you. When the people who may
 run it are your own team, gate on the control-plane roster and declare nothing:
 `@user.id != null && (get(/__owners__/@user.id) != null || get(/__admins__/@user.id) != null)`
 admits the owner and every `bounded share --role admin` collaborator. When they

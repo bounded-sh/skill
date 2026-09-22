@@ -1,6 +1,6 @@
 # Quality Checklist
 
-Run this before `bounded deploy`. A policy that verifies clean can still be a *bad*
+Run this before `bounded deploy`. A policy that deploys clean can still be a *bad*
 policy — green but hollow (no invariants on money), or green but leaky (a write
 rule that an unauthenticated caller satisfies). This checklist is distilled from
 the eval rubrics that grade generated policies; it catches the difference between
@@ -98,7 +98,7 @@ the eval rubrics that grade generated policies; it catches the difference betwee
   to its own `onchain: true` collection: `conserve` (direct, materialized, or
   sharded), `tenantTag`, full-path `tenantEdge` without `targetPathVariable`, or
   `rollingSum` within the onchain window cap and without `resetAtMs`.
-  The verifier rejects every unsupported form.
+  Deploy validation rejects every unsupported form.
 - [ ] **No silent underclaim either.** An invariant on an `onchain: true`
   collection with `onchain` OMITTED is enforced offchain only - onchain program
   writes are not checked against it, and nothing fails. Declare

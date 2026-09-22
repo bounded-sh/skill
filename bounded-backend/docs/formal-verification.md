@@ -26,7 +26,7 @@ Verdicts per obligation:
 - `UNSUPPORTED`: the engine cannot prove that obligation.
 
 In `--json` (schema version 4) each check carries `blocking`, independent of `proofStatus`.
-`passed` and `safeToDeploy` report the gate; `status` (`PROVEN`, `DISPROVED`, `INVALID`, `UNPROVEN`) reports completeness.
+`passed` and `safeToDeploy` report the verify run's result (deploy does not read them); `status` (`PROVEN`, `DISPROVED`, `INVALID`, `UNPROVEN`) reports completeness.
 A `DISPROVED` with `blocking: false` is an advisory, not a correction.
 Advisories never fail the run: literal `false` rules (the intentional deny idiom), public `read: "true"` rules, the strict-ownership check on a rule that admits another participant, runtime-only invariants, and bare-string attestations.
 Rerunning unchanged policy cannot resolve an advisory.
@@ -41,7 +41,7 @@ Strengthen the expression, never weaken the property: the counterexample is a wr
 A rule can also be too large to decide.
 "Update rule exact decomposition exceeds aggregate branch budget" is a complexity limit, not a logic error; move a per-case check to a sibling document's rule that must accompany the write anyway.
 
-Operational limits: the endpoint is rate-limited to about five requests per minute per app owner (`429`).
+Operational limits: the endpoint is rate-limited to about twenty requests per minute per app owner (`429`).
 A `503` with `proof_substrate_unavailable` (`retryable: true`) means the prover lane is warming up or busy: wait 30 seconds and rerun the same command, at most three attempts in total, then report the proving service as degraded with the `correlationId`.
 Never apply that retry to `bounded deploy`, and never retry `bounded deploy --create`, which can create another app.
 
@@ -115,7 +115,7 @@ Hook, function, tick, and scheduled outputs stay outside a `roleGatedRead` proof
 
 ## `--operation`
 
-The default `verifyForDeploy` proves the whole policy. The others probe one expression:
+The default `verifyForDeploy` proves the whole policy (the name is historical; deploy does not run it). The others probe one expression:
 
 | `--operation` | Needs | Proves |
 |---|---|---|

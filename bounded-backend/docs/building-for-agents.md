@@ -5,7 +5,7 @@ the agent controls, and a local dashboard running beside the CLI for visibility.
 Generate a policy, deploy it, inspect it, then read and write.
 
 This is what Bounded is built for: an autonomous agent that needs a real,
-provably-safe backend (a spend ledger, a task store, a multi-tenant data plane)
+rule-enforced backend (a spend ledger, a task store, a multi-tenant data plane)
 without a person clicking through a console.
 
 ## Why agents fit Bounded
@@ -155,7 +155,7 @@ and offchain deploys never ask at all. See the **bounded-onchain** skill.
 
 ## Related
 
-- [../docs/policy-generation-guide.md](../docs/policy-generation-guide.md) — turning the task into a provable policy
+- [../docs/policy-generation-guide.md](../docs/policy-generation-guide.md) — turning the task into an enforced policy
 - [../docs/cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — every `bounded data` command
 - [building-a-backend.md](building-a-backend.md) — the `@bounded-sh/server` path
 - [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md) — what Bounded does and doesn't do

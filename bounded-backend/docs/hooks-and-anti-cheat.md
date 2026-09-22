@@ -171,7 +171,7 @@ at *human-plausible* timing, but with superhuman accuracy or decision quality,
 sends nothing the rules can reject — every input is individually valid. No
 backend, Bounded included, can prove an input was produced by a human rather
 than a script. Be explicit with users about this: Bounded gives the strongest
-available tools — proven per-player timing caps, the tamper-proof input log,
+available tools — enforced per-player timing caps, the tamper-proof input log,
 and webhooks to behavioral detection — but the residual is a statistical/ML
 detection problem on legal inputs, and **no one fully cures it**. Do not let a
 user believe Bounded "solves" cheating; it solves the part that is structural

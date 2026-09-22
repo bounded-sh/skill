@@ -90,7 +90,7 @@ Read-only plugin calls are legal in rules, on onchain collections too - `@String
 
 ## Immutable fields
 
-Mark set-once fields `!` and preserve them in `update` (`@newData.x == @data.x`), or make the collection append-only. Typical: `owner`, `creator`, `createdAt`, foreign keys. Onchain, also omit `!` fields from update payloads entirely - updates are patches and resending the key is rejected with `FieldReadOnly`.
+Mark set-once fields `!`; the runtime rejects a later change, so no update clause is needed. Or make the collection append-only. Typical: `owner`, `creator`, `createdAt`, foreign keys. Onchain, also omit `!` fields from update payloads entirely - updates are patches and resending the key is rejected with `FieldReadOnly`.
 
 ## Existence-gated (cross-document prerequisites)
 

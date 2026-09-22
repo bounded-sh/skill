@@ -386,7 +386,7 @@ A policy that verifies on Poofnet still needs every called function checked agai
   would, inside the tx), then offchain (post-commit) - matching real-network
   semantics.
 - **Offchain-only plugin reads have no working chain-query placement today.**
-  Source examples include `@PhoenixPerpsPlugin.getPositionSize` and `@DeFiPlugin.getMeteoraSwapQuote`, which verify rejects inside `onchain: true` collections.
+  Source examples include `@PhoenixPerpsPlugin.getPositionSize` and `@DeFiPlugin.getMeteoraSwapQuote`, which deploy validation rejects inside `onchain: true` collections.
   The current named-query executor does not activate standalone chain execution for an `onchain: false` path.
   Do not recommend an offchain view collection as a workaround until the runtime is fixed.
 - **Query errors are explicit.** A failed or undeclared named query returns a
@@ -596,9 +596,9 @@ return {
 
 For a live tick, put the funded service identity on `session.live.runAs` and gate
 the function with `@origin`. Function-local `actAs` is still the right tool for
-admin/scheduled service actions, but deploy requires every `actAs` function's
-`auth` rule to imply the app admin predicate; don't pair `actAs` with
-`auth: "true"`.
+admin/scheduled service actions, but gate every `actAs` function's `auth`
+rule on the app admin predicate yourself; nothing checks it at deploy, so never
+pair `actAs` with `auth: "true"`.
 
 The settle function signs with its own service keypair (a function secret, never
 the user's key) and submits the tx. Good for **"the game settles"** - the house

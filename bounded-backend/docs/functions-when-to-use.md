@@ -52,7 +52,7 @@ If it only *reacts to a write* and stays inside the DB, it's a hook. If it must
 | "Every night, pull FX rates from an API and write a rollup" | **function on a `schedule`** | Scheduled **external** work. (A nightly reset that touches only local docs is a scheduled **hook**, not a function — stay on rung 2.) |
 
 Notice the symmetry: every "use a function" row crosses the boundary (Stripe,
-Clearbit, an LLM, an FX API). Every "don't" row is access control, a provable
+Clearbit, an LLM, an FX API). Every "don't" row is access control, an enforced
 constraint, or an in-boundary cascade — declarative or contained tiers that a
 function would only weaken.
 

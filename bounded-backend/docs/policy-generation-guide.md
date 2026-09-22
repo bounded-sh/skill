@@ -1,12 +1,13 @@
 # Policy Generation Guide
 
 **What's in here / when to read this:** the method for turning a plain-English
-app description into a correct `policy.json` that verifies clean. Read it before
+app description into a correct `policy.json` that deploys clean and does what
+the description asked. Read it before
 writing any policy.
 
 The product is the policy. A backend that "works" but lets an agent overspend, or
 lets one tenant read another's data, is broken-but-compiling. A good policy makes
-those failures *provably impossible*.
+those failures *impossible by construction*.
 
 ## The method (eight steps)
 

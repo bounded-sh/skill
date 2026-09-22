@@ -231,7 +231,7 @@ The snippet shows source syntax only because the Jupiter-backed `swap` function 
 ## Making it safe (the Bounded part)
 
 Plugin **bodies are trusted** (they build the Solana tx), but everything *around*
-the trade is provable on the collection - that's where you put the guardrails:
+the trade is governed by the collection's rules - that's where you put the guardrails:
 
 - **Who can trade** → `rules.create` (owner-only; the desk's backend identity for an autonomous desk).
 - **What/where** → `rules` + field validation on `market`, `side`, `size` (e.g. only whitelisted markets, `size <= cap`).

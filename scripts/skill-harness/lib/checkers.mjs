@@ -181,7 +181,7 @@ async function one(c, ctx) {
     case 'shim': {
       const fn = new Function('log', 'return (' + c.expr + ')')
       const v = fn(shimLog)
-      return { pass: Boolean(v), detail: `${shimLog.length} cli call(s): ${shimLog.map((e) => (e.blocked ? 'BLOCKED ' : '') + (e.faulted ? 'FAULT ' : '') + e.args.join(' ')).join(' ; ').slice(0, 300)}` }
+      return { pass: Boolean(v), detail: `${shimLog.length} cli call(s): ${shimLog.map((e) => (e.blocked ? 'BLOCKED ' : '') + e.args.join(' ')).join(' ; ').slice(0, 300)}` }
     }
     case 'any-of': {
       // Passes when any alternative passes; records which one. Use when the docs

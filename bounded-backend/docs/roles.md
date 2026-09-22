@@ -1,4 +1,4 @@
-# Roles — provably-scoped admin / editor / viewer
+# Roles — strictly scoped admin / editor / viewer
 
 **What's in here:** the top-level `roles` block — declare a role whose members
 get cross-collection `read`/`write` access, governed entirely by the policy (not
@@ -70,7 +70,7 @@ Concretely, for a caller who is a member of `admin` with `read:"*"`:
 
 Anonymous callers (no authenticated identity — `@user.id == null`) are **never** granted a role.
 
-## Why this is "provably-scoped", not god-mode
+## Why this is "strictly scoped", not god-mode
 
 The grant lives in the compiled policy (`app.roles`), so it is inspectable and
 runtime-enforced as an additive authorization grant — not a hidden bypass flag.

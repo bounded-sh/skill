@@ -36,7 +36,7 @@ A complete native live room is **four artifacts** and no infrastructure:
 | Artifact | Where it lives | Who runs it |
 |---|---|---|
 | 1. The live module (3 pure fns) | `pong.live.ts` (your repo) | Bounded, inside the room runtime, ~30Hz |
-| 2. The `session.live` policy block | `policy.json` on a `rooms/$roomId` template | verify/deploy + runtime enforcement |
+| 2. The `session.live` policy block | `policy.json` on a `rooms/$roomId` template | deploy + runtime enforcement |
 | 3. `bounded live deploy <module>.live.ts` | deployed live module | you, once per code change |
 | 4. The SDK client (subscribe + intents) | your web/RN/server app | each client's device |
 
@@ -167,14 +167,14 @@ client below would subscribe successfully yet have all its `join`/`move` intents
 rejected - the room is watchable but unplayable. `"@user.id != null"` admits any
 signed-in player; use a room-membership check to restrict it further.
 
-## Tiers: ephemeral (live) vs checkpointed (provable)
+## Tiers: ephemeral (live) vs checkpointed (durable)
 
 The room template's `tier` decides what survives:
 
 | Layer | Tier | Durability | Who writes |
 |---|---|---|---|
-| Room state | `ephemeral` | live runtime state; not persisted as a provable data record | native `tick` only |
-| Room state | `checkpointed` | folded **through invariants** into the provable store on the checkpoint cadence — survives + is provable/replayable | native `tick`, then the checkpoint |
+| Room state | `ephemeral` | live runtime state; not persisted as a governed data record | native `tick` only |
+| Room state | `checkpointed` | folded **through invariants** into the governed store on the checkpoint cadence — survives + is replayable | native `tick`, then the checkpoint |
 | `view/$userId` | **always `ephemeral`** | a live projection, never source of truth | `views(state)` fan-out |
 
 Two **distinct** persistence mechanisms, do not conflate them:
@@ -187,7 +187,7 @@ Two **distinct** persistence mechanisms, do not conflate them:
   Purpose: durability + replayability. Only happens on `checkpointed`.
 
 `ephemeral` = live fan-out only (snapshots bound replay loss, nothing is
-provable). `checkpointed` = the authoritative state becomes provable on every
+durable). `checkpointed` = the authoritative state becomes durable on every
 checkpoint. The per-client `view/$userId` is **always ephemeral** because it is a
 projection — the source of truth is the room, not the view.
 

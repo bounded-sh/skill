@@ -1347,8 +1347,8 @@ attaches your session token automatically (same token as `data`) so the
 Bounded gates the call on the `auth` rule, then prints the function's JSON (or
 the platform error — `403` if the rule denies you). Caller-scoped functions may
 be invoked by any caller their `auth` rule admits; functions that declare
-`actAs` in policy are service-identity functions and must be admin-gated at
-deploy: the `auth` rule must imply the control-plane roster
+`actAs` in policy are service-identity functions and must be admin-gated by
+you (nothing checks it at deploy): the `auth` rule must imply the control-plane roster
 (`get(/__admins__/@user.id) != null`, the owner plus `--role admin`
 collaborators) or an app-data `admins/$userId` membership. `logs` (CLI 0.0.89+) reads the durable per-invocation log store:
 every invoke — end-user and scheduled runs included — is persisted with status,

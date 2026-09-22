@@ -193,7 +193,7 @@ deploy`.
 ## A rejection for the wrong reason is a FALSE GREEN
 
 Adversarial suites — the ones where every assertion is "this write must be
-refused" — are the suites that catch the bugs a green `verify` does not. They
+refused" — are the suites that catch the bugs a clean deploy does not. They
 also fail silently in a way that is worse than no suite at all: **a write can be
 refused because your test document was malformed, and be counted as blocked.**
 

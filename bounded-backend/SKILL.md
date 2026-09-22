@@ -42,7 +42,7 @@ term.
 | Complete policy examples by intent (marketplace, escrow, vaults, staking, tokens, ...) | [examples index](docs/examples.md) |
 | Worked multi-collection policies (team SaaS, marketplace, realtime game) | [examples](docs/policy-examples.md) |
 | Rule recipes: owner-only, admin-or-owner, membership, time windows, validation, immutable fields, atomic batches | [access patterns](docs/access-patterns.md) |
-| Rules, fields, expressions, `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()`, `transferAuthority` | [policy reference](docs/policy-reference.md) |
+| Rules, fields, expressions, `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()`, ownership fields | [policy reference](docs/policy-reference.md) |
 | Caps, balances, supply, tenant isolation, hard bounds; `rollingSum`, `windowSum`, `flowBound`, `conserve`, `tenantTag`, `tenantEdge`, `bound` | [invariants](docs/invariants.md) |
 | Trending feeds, leaderboards, ranked `windowSum` reads | [trending feeds](docs/trending-feeds.md) |
 | Browser CSP / restrict what app pages may reach | [browser boundary](docs/browser-boundary.md) |

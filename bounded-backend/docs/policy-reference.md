@@ -225,7 +225,7 @@ For the current Devnet program, bind `openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6
 - Literals: numbers (decimals only on offchain collections), quoted strings
   (`"..."` or `'...'`), `true`, `false`, `null`.
   Backticks are not a string form - the runtime grammar cannot parse one, so a
-  backtick literal never deploys, whatever `verify` says about it.
+  backtick literal never deploys.
   The empty string (`''` / `""`) is a legal literal that older validators reject;
   to require a non-empty `String` on any platform version, use bare truthiness
   (`@newData.body`) or `@StringUtils.length(@newData.body) > 0`, both of which
@@ -339,15 +339,15 @@ never treated as path templates:
 | `links` | array of link definitions | [queries.md](queries.md) |
 | `auth` | `{ anonymous: bool, wallets: bool \| { provisioning?: "lazy" \| "eager", authMode?: "bounded" \| "turnkey" } }` - app-wide auth options. `anonymous: true` opts the app into zero-friction guest sign-in (`signInAnonymously()`); **OFF by default**, so guest sign-in is otherwise refused with a `403 anonymous_auth_disabled`. `wallets` covers two distinct things and the default differs for each. **Embedded-wallet provisioning** for an already-authenticated email/social user: Turnkey is the sole implementation, eager provisioning is the default, so omit `wallets` for the normal path and set `wallets: false` only to opt out. **Wallet LOGIN** (SIWS/SIWE sign-in, and any keypair client - `BOUNDED_PRIVATE_KEY`, CI, an agent's QA session): **OFF by default**, so it is refused with a `403 wallet_login_disabled` until the app sets `wallets: true` (or an enabling object) EXPLICITLY. Minting a session from a bare signature is the security-sensitive lane, so an app must declare it. If anything signs into this app with a wallet or a keypair, set it. See [embedded-wallets.md](../../bounded-onchain/docs/embedded-wallets.md). | [auth.md](../../bounded-frontend/docs/auth.md), [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md) |
 | `functions` | `{ name: { auth, entry, timeout, secrets, public, queueCallable, publicQueueCallable, environments, ... } }` — `environments` is **CLI-only**: an allowlist naming the only environments this function deploys to; a `public: true` function's principal is injected as `@const.BOUNDED_PUBLIC_PRINCIPAL_<NAME>` | [functions.md](functions.md), [environments.md](../../bounded-deploy/docs/environments.md) |
-| `oapp` | Optional literal `true` only. Enables the v1 oApp static restrictions from the first verify/deploy; omit the key for a regular app. | [openapps](../../openapps/SKILL.md) |
+| `oapp` | Optional literal `true` only. Enables the v1 oApp static restrictions from the first deploy; omit the key for a regular app. | [openapps](../../openapps/SKILL.md) |
 | `boundaries` | App boundary metadata, including locked egress allow-list entries. | [§ oApp mode and closed egress](#oapp-mode-and-closed-egress) |
-| `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
+| `roles` | `{ name: { members, read?, write? } }` — strictly scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
 | `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
 | `environments` | `{ name: { appId, constants, schedules } }` — **CLI-only**, resolved client-side | [environments.md](../../bounded-deploy/docs/environments.md) |
 
-`constants`/`defs` are resolved at compile time (deploy + verify) so rules carry
+`constants`/`defs` are resolved at compile time (deploy) so rules carry
 only literals; the top-level `environments` block and each function's own
 `environments` allowlist are both stripped by the CLI before the policy is sent.
 

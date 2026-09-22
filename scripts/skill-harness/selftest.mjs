@@ -22,7 +22,7 @@ const test = (name, fn) => { try { fn(); console.log('ok  ' + name) } catch (e) 
 
 // --- shim: the gate is positional-literal, no flag may precede the subcommand
 const bin = path.join(tmp, 'bin'); mkdirSync(bin)
-writeShim({ binDir: bin, runDir: tmp, faults: 0 })
+writeShim({ binDir: bin, runDir: tmp })
 const shim = (args) => { try { return { out: execFileSync(path.join(bin, 'bounded'), args, { encoding: 'utf8', cwd: tmp }), code: 0 } } catch (e) { return { out: String(e.stdout || '') + String(e.stderr || ''), code: e.status ?? 1 } } }
 const BLOCKED = [
   ['--instance', 'verify', 'deploy', '--help'],   // the verified bypass: --instance consumes "verify"
@@ -49,7 +49,7 @@ test('shim allows read-only verify and logs it', () => {
 const bin2 = path.join(tmp, 'bin2'); mkdirSync(bin2)
 const rec = path.join(tmp, 'rec.sh')
 writeFileSync(rec, '#!/bin/sh\necho "VIA $@"\n'); execFileSync('chmod', ['+x', rec])
-writeShim({ binDir: bin2, runDir: tmp, faults: 0, execVia: [rec, 'exec', '--', 'bounded'] })
+writeShim({ binDir: bin2, runDir: tmp, execVia: [rec, 'exec', '--', 'bounded'] })
 const shim2 = (args) => { try { return { out: execFileSync(path.join(bin2, 'bounded'), args, { encoding: 'utf8', cwd: tmp }), code: 0 } } catch (e) { return { out: String(e.stdout || '') + String(e.stderr || ''), code: e.status ?? 1 } } }
 test('local-mode shim still blocks deploy', () => { const r = shim2(['deploy', '--create']); assert.equal(r.code, 1); assert.match(r.out, /command_unavailable/) })
 test('local-mode shim routes verify through the exec prefix', () => { const r = shim2(['verify', './x.json']); assert.match(r.out, /^VIA exec -- bounded verify \.\/x\.json/m) })

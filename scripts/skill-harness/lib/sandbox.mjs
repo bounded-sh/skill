@@ -45,7 +45,7 @@ export function buildFixture({ runDir, skillDir, withSkill, files = {}, shim = {
   }
   const bin = path.join(runDir, 'bin')
   mkdirSync(bin, { recursive: true })
-  writeShim({ binDir: bin, runDir, faults: shim.verifyFaults || 0 })
+  writeShim({ binDir: bin, runDir })
   return { work, bin }
 }
 

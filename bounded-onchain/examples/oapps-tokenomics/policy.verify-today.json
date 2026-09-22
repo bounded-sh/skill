@@ -171,7 +171,7 @@
   },
 
   "builds/$buildId": {
-    "description": "Fee-funded build allowance: append-only spend log with a proven rolling burn cap. Fees claimed into the treasury credit this budget; the rollingSum invariant caps spend over a rolling window.",
+    "description": "Fee-funded build allowance: append-only spend log with an enforced rolling burn cap. Fees claimed into the treasury credit this budget; the rollingSum invariant caps spend over a rolling window.",
     "tier": "durable",
     "fields": { "amount": "UInt" },
     "rules": {

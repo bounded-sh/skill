@@ -8,9 +8,7 @@
 // whoami, version, tests run) and refuses the rest with a neutral error.
 //
 // It also records every invocation (with the sha256 of a verified policy) so a
-// task can assert behaviour: "retried verify unchanged", "never attempted
-// deploy". Optional fault injection makes the first N verify calls return the
-// documented retryable prover-busy error.
+// task can assert behaviour: "ran verify", "never attempted deploy".
 import { execSync } from 'node:child_process'
 import { chmodSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
@@ -23,7 +21,7 @@ export function resolveRealBounded() {
   return realBounded
 }
 
-export function writeShim({ binDir, runDir, faults = 0, execVia } = {}) {
+export function writeShim({ binDir, runDir, execVia } = {}) {
   // execVia: argv prefix that replaces the real binary, e.g.
   // ['/path/to/monorepo/dev', 'exec', '--', 'bounded'] to target the local stack.
   const real = execVia && execVia.length ? null : resolveRealBounded()
@@ -36,7 +34,6 @@ const { createHash } = require('node:crypto')
 const path = require('node:path')
 const EXEC = ${JSON.stringify(execVia && execVia.length ? execVia : [real])}
 const LOG = ${JSON.stringify(logPath)} // invocation journal
-const WARMUP_RESPONSES = ${Number(faults)}
 const args = process.argv.slice(2)
 // args[0] must literally be an allowed subcommand: no flags before it. A global
 // flag that takes a value (--instance, --env, --project-root) consumes the next
@@ -46,30 +43,18 @@ const positional = args.filter((a) => !a.startsWith('-'))
 const bareHelp = args.length <= 1 && (args.length === 0 || args[0] === '--help' || args[0] === '-h')
 const sub = bareHelp ? '' : args[0]
 const ALLOW = new Set(['verify', 'plugins', 'whoami', 'version', 'help', ''])
-function priorVerifies() {
-  if (!existsSync(LOG)) return 0
-  return readFileSync(LOG, 'utf8').split('\\n').filter(Boolean).map((l) => JSON.parse(l)).filter((e) => e.sub === 'verify').length
-}
 let policyHash = null
 if (sub === 'verify') {
   const p = positional[1] && positional[1].endsWith('.json') ? positional[1] : 'policy.json'
   const abs = path.resolve(process.cwd(), p)
   if (existsSync(abs)) policyHash = createHash('sha256').update(readFileSync(abs)).digest('hex').slice(0, 16)
 }
-const entry = { ts: new Date().toISOString(), cwd: process.cwd(), args, sub, policyHash, faulted: false, blocked: false }
+const entry = { ts: new Date().toISOString(), cwd: process.cwd(), args, sub, policyHash, blocked: false }
 const allowed = (ALLOW.has(sub) || (sub === 'tests' && args[1] === 'run')) && !args.slice(1).some((a) => a === '--instance' || a === '--project-root')
 if (!allowed) {
   entry.blocked = true
   appendFileSync(LOG, JSON.stringify(entry) + '\\n')
   process.stderr.write(JSON.stringify({ error: 'command_unavailable', message: 'bounded ' + sub + ' is not available in this environment. Read-only commands (verify, plugins, whoami, version) are available.' }) + '\\n')
-  process.exit(1)
-}
-if (sub === 'verify' && priorVerifies() < WARMUP_RESPONSES) {
-  entry.faulted = true
-  appendFileSync(LOG, JSON.stringify(entry) + '\\n')
-  const body = { error: 'proof_substrate_unavailable', status: 503, retryable: true, message: 'The proof substrate is unavailable or busy. Retry the same request.', correlationId: 'c0rr-' + createHash('sha256').update(entry.ts).digest('hex').slice(0, 12) }
-  if (args.includes('--json')) process.stdout.write(JSON.stringify(body, null, 2) + '\\n')
-  else process.stderr.write('Error: 503 proof_substrate_unavailable (retryable: true): ' + body.message + ' correlationId=' + body.correlationId + '\\n')
   process.exit(1)
 }
 appendFileSync(LOG, JSON.stringify(entry) + '\\n')

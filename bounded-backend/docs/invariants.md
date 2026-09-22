@@ -280,8 +280,8 @@ under-enforce). Onchain capped collections remain fully no-delete; expired-delet
 retention is offchain-only. See [onchain coverage](#onchain-coverage).
 
 Declaring the claim is what turns onchain enforcement ON: a `rollingSum` on an
-onchain collection **without** `onchain: "onchainSupported"` still verifies,
-deploys, and is enforced by the offchain runtime, but onchain program writes are
+onchain collection **without** `onchain: "onchainSupported"` still deploys and
+is enforced by the offchain runtime, but onchain program writes are
 not checked against it. See the omitted-default warning under
 [Onchain coverage](#onchain-coverage).
 
