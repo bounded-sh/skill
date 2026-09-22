@@ -91,6 +91,10 @@ term.
 | `DISPROVED` + counterexample | The proof found a breaking assignment. Fix every blocking result and verify again; only non-blocking advisories are reviewable. |
 | Static validation error | Fix policy syntax, field types, tier/invariant pairing, constants, or expression use. |
 
+Use each JSON check's `blocking` flag to distinguish required corrections from advisories, independently of `proofStatus`.
+Review intentional advisories once and continue; rerunning unchanged policy cannot resolve them.
+See [verification reports](docs/verify-and-counterexamples.md#blocking-checks-versus-advisories).
+
 ## Rules Of Thumb
 
 - Use `@user.id` for normal ownership and membership checks; `@user.address` only for wallet/onchain semantics.

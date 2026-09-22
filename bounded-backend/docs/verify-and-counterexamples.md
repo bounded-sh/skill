@@ -1,16 +1,9 @@
 # `bounded verify` — Proof Reports & Counterexamples
 
-`bounded verify` compiles the policy into proof obligations and discharges
-them with an SMT solver (Z3). It is the proof loop you run before deploy.
-`bounded deploy` runs the same gate again server-side: it validates and
-compiles the policy, then **re-runs the prover's deploy gate and fails
-closed** — a policy whose *blocking* proof obligations fail is rejected
-(`dev-api 400: Formal deploy verification failed: N of M obligations failed
-— deploy blocked`) and never ships. So `bounded verify` is where you read
-counterexamples and fix them *before* you hit the gate; an unfixed blocking
-DISPROVED will block the deploy. (Non-blocking advisories — literal `false`
-rules, bare-string attestation TODOs, and runtime-only declarations such as
-`flowBound` — never block; see below.)
+`bounded verify` compiles the policy into proof obligations and checks them with an SMT solver (Z3).
+Proof verification is explicit and optional; normal deployment validates and compiles the policy without requiring proof evidence.
+A blocking verification failure means the verification command fails, while nonblocking advisories remain findings to review.
+Passing verification is not a guarantee that every property was proved or that the app behaves correctly.
 
 ## Proofs vs policy tests
 
@@ -27,7 +20,7 @@ scenario catches what the proof structurally can't. Use both. See
 
 - **PROVED** — holds over *all* inputs (every document state, payload,
   caller). The report records the discharged obligation (expression, solver
-  result, timing); the same deploy gate re-proves it server-side at deploy.
+  result, timing).
   (`bounded verify` does not persist local proof-certificate files.)
 - **DISPROVED** — a concrete counterexample exists, and the report gives it
   to you: the exact variable assignments that break the property.
@@ -58,6 +51,16 @@ Proofs: 4 total - 4 proven, 0 unproven advisories, 0 failed.
 The default stays proportional to the verdict rather than the policy size.
 Run `bounded verify --verbose` when you need the complete `[PASS]`, `[UNPROVEN]`, and explanation list.
 A failed default run still prints every blocking `[FAIL]` item and its counterexample, so `--verbose` is never required to fix a rejection.
+
+## Blocking checks versus advisories
+
+In `bounded verify --json`, each check's `blocking` flag is separate from its `proofStatus`.
+`blocking: true` requires correction; `blocking: false` does not turn a `DISPROVED`, `UNKNOWN`, or `UNSUPPORTED` finding into a proof.
+The top-level `passed` and `safeToDeploy` fields report the verification gate, while `status` reports proof completeness.
+For example, a friendship that either participant may delete can disprove the strict owner-only advisory without failing the gate.
+Review whether the extra access is intentional; an `ownershipOverride` attestation is optional for proving a stronger owner-or-override claim, not a prerequisite for proceeding.
+After reviewing intentional advisories, continue building or testing the app.
+Repeating verification on unchanged policy does not resolve an advisory; rerun after a relevant policy change or to investigate an actual transient error.
 
 ## Reading counterexamples
 
