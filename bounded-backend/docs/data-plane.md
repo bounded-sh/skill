@@ -113,7 +113,7 @@ unbounded storage or encode these numbers into application behavior.
 | **Read** rule denied | **`200`** with `{"data": null}` (single) or `{"data": []}` (list) | **no `403`** — denied reads are *hidden*, not errored (see below) | n/a |
 | Update, or a non-expired `rollingSum` delete | `409` invariant violation | live rolling-cap history cannot be rewritten; only a policy-authorized offchain row strictly older than every effective window may be deleted | nothing |
 | Update/delete on a `windowSum` event collection | `409` invariant violation | maintained-aggregate event history is fully append-only | nothing |
-| Policy fails verification at deploy | deploy fails | the proof report with counterexamples | previous-good policy stays active |
+| Policy fails validation at deploy | deploy fails | the validation errors, by name | previous-good policy stays active |
 
 > **How much detail you get back is governed by `errorDisclosure`.** The
 > detailed formula, numeric limits, raw message, and failed-rule trace in the
@@ -397,9 +397,8 @@ any mutating write unless the same atomic batch also writes the named path(s):
   operation through one `setMany`.
 - Presence is sufficient: the batch is all-or-nothing, so a required write that
   is present but fails its own rule aborts everything anyway.
-- It is a runtime obligation, not a proof obligation — `bounded verify` output
-  does not change, and the enforcement is fail-closed on every client batch
-  (HTTP and WebSocket alike).
+- It is a runtime check, fail-closed on every client batch (HTTP and WebSocket
+  alike).
 
 Declare it on every collection whose writes only make sense alongside an
 aggregate, escrow, or ledger leg. The cross-referencing technique below remains
@@ -483,12 +482,11 @@ Platform-derived hook, reveal, room-settlement, and other system writes are outs
 An incomplete batch returns HTTP 403 or a WebSocket error with code `incomplete_batch`.
 The message names the triggering write, declaring collection, and missing concrete paths, and the decision log records the refusal.
 `requiresInBatch` is runtime-enforced and structurally validated.
-It is not an SMT proof obligation, so a green proof report does not replace an allow and deny policy test for the complete batch.
+It is runtime enforcement, not a proof obligation; write an allow and a deny policy test for the complete batch.
 
-For one-click market settlement, pair this with
-[`proofs.transferAuthority`](policy-reference.md#conditional-transfer-authority):
-put the shared sale predicate in `defs`, use it in the good's `holder` update
-rule, and reference the same def from the proof declaration. The wallet
+For one-click market settlement, put the shared sale predicate in `defs` and use
+it in the good's `holder` update rule
+([ownership fields](policy-reference.md#ownership-fields)). The wallet
 collection uses `conserve` so the Ink/payment leg cannot mint or burn. The buyer
 submits the good move plus both wallet updates in one `setMany`; a missing or
 wrong payment rejects the whole batch.
@@ -530,5 +528,3 @@ await setMany([
 - [policy-generation-guide.md](policy-generation-guide.md) — designing the policy these writes hit
 - [queries.md](queries.md) — reads: filters, sort, paging, aggregations, joins
 - [invariants.md](invariants.md) — what produces the 409s
-- [verify-and-counterexamples.md](verify-and-counterexamples.md) — the same examples at proof time
-- [proof-coverage.md](proof-coverage.md) — which runtime enforces which check

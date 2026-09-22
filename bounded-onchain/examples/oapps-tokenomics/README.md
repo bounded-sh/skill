@@ -2,7 +2,7 @@
 
 The policy a **launched oApp ran** under the retired DBC model: a Meteora DBC launch (bonding-curve → DAMM v2
 graduation) with the **55% treasury / 25% creator-of-record / 20% Poof** fee split,
-expressed as a Bounded policy and proven by Z3. **Verify-only - this deploys
+expressed as a Bounded policy. **Reference-only - this deploys
 nothing** (`bounded.json` has no `appId`; never `--create`/deploy it).
 
 > **HISTORICAL MODEL.** This example encodes the retired DBC 55/25/20 fee model.
@@ -14,7 +14,7 @@ nothing** (`bounded.json` has no `appId`; never `--create`/deploy it).
 
 > **Current devnet status: unverified, not blocked.**
 > The earlier retired-authority blocker was cleared on 2026-07-29; the replacement DAMM v2 config is deployed on devnet and the deployed runtime targets it.
-> Keep this example verify-only until live acceptance closes, but nothing external prevents producing that evidence.
+> Keep this example reference-only until live acceptance closes, but nothing external prevents producing that evidence.
 
 Read [../../docs/oapps-tokenomics-fee-split.md](../../docs/oapps-tokenomics-fee-split.md)
 for the full walkthrough. This directory is the runnable artifact behind it.
@@ -27,22 +27,24 @@ for the full walkthrough. This directory is the runnable artifact behind it.
   4 trailing decay params (12-arg form). It is a compatibility verification fixture, not devnet support evidence.
 - `keeper.js` - the scheduled keeper function body (fires the permissionless claim;
   the distribute leg is left as commented app logic - see the doc's keeper section).
-- `bounded.json` - `protocol: realtime_mainnet`, verify-only.
+- `bounded.json` - `protocol: realtime_mainnet`, reference-only.
 
-## Verify it
+## Proof report (optional, experimental)
 
 ```
-bounded verify                       # uses policy.json (per bounded.json)
-bounded verify --policy policy.verify-today.json
+bounded verify --experimental                                   # uses policy.json (per bounded.json)
+bounded verify --experimental --policy policy.verify-today.json
 ```
 
-- **`policy.verify-today.json` (12-arg):** a green result covers the policy proof obligations and source contracts only.
-  It does not prove that a Meteora transaction can execute on devnet.
+The policy itself is the reference; the report is opt-in ([formal verification](../../../bounded-backend/docs/formal-verification.md)).
+
+- **`policy.verify-today.json` (12-arg):** a green report covers the policy obligations and source contracts only.
+  It does not show that a Meteora transaction can execute on devnet.
 - **`policy.json` (16-arg):** current monorepo source accepts the four decay arguments through `paramCount: { min: 6, max: 16 }`.
   If a deployed verifier reports `expects 6-12 argument(s)`, that endpoint is older than the source contract.
-  Either verifier result remains separate from live network verification.
+  Either result remains separate from live network verification.
 
-## The 11 collections (all proven)
+## The 11 collections
 
 | Collection | Onchain | Role |
 |---|---|---|
@@ -58,10 +60,10 @@ bounded verify --policy policy.verify-today.json
 | `builds/$buildId` | no | fee-funded build allowance (`rollingSum` burn cap) |
 | `heartbeat/$id` | no | keeper heartbeat + `schedule` → `functions.keeper` (`actAs`) |
 
-## What's proven vs trusted
+## What's enforced vs trusted
 
-See the doc's [PROVEN vs TRUSTED vs NEEDS LIVE PROOF](../../docs/oapps-tokenomics-fee-split.md#proven-vs-trusted-vs-needs-live-proof)
-block. In short: Z3 proves **who may trigger** each write, that the **split bps are
+See the doc's [ENFORCED vs TRUSTED vs NEEDS LIVE PROOF](../../docs/oapps-tokenomics-fee-split.md#enforced-vs-trusted-vs-needs-live-proof)
+block. In short: the policy enforces **who may trigger** each write, that the **split bps are
 fixed literals**, and the **build-allowance cap**. Trusted (per design, no
 `conserve`): the plugin bodies and the caller-asserted claimed `amount`.
 Not derivable today: a fee-attributed total per recipient, because no primitive

@@ -63,7 +63,7 @@ An automation can set `BOUNDED_ACCOUNT_FILE` to an absolute path to a JSON accou
 
 The file uses the same fields as `bounded.json.account` and selects the account for this process without rewriting the project's committed defaults.
 It contains selectors, never passwords, private keys, or session tokens; the selected account must already have a valid login or credentials in the normal store.
-`BOUNDED_PROJECT_ROOT` still points to the actual source project, so `bounded verify` and `bounded tests run` find its policy and test files.
+`BOUNDED_PROJECT_ROOT` still points to the actual source project, so `bounded deploy` and `bounded tests run` find its policy and test files.
 Child processes must inherit both selectors and the same `HOME` to use the same account and files.
 `bounded account --json` reports the effective account, `accountFile`, and source `projectRoot`; `bounded whoami --json` confirms the authenticated identity.
 An unreadable or invalid account file fails instead of silently falling back to the project's account.

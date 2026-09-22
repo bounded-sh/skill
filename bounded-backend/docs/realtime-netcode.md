@@ -371,4 +371,4 @@ use `WalletClient.live.subscribeView` + `WalletClient.live.intent` from
 - [realtime-and-games.md](realtime-and-games.md) — sessions, tick, fog-of-war, tiers
 - [live-runtime.md](live-runtime.md) — the native `init/tick/views` module; the tick `call` primitive
 - [ai-npcs.md](ai-npcs.md) — a tick that `call`s a function = an AI NPC / in-game settlement
-- [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — what the proof gate can/can't enforce
+- [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — what policy can/can't enforce

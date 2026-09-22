@@ -78,7 +78,7 @@ Updates and deletes are disabled on both paths, so there are no patch payloads h
 - **Mint gating is anchored to stored state, not client input**: the mint rule re-reads `/collections/<id>` and compares its `creator` to `@user.address`, so no payload field can grant mint rights, and minting into a nonexistent collection is denied by the `!= null` check.
 - **Metadata cannot drift from chain**: `update` and `delete` are `"false"` on both collections, so the `Address!`/`String!`/`UInt!` fields recorded at create time stay exactly what the hook used onchain.
 - **Custody is explicit at the destination**: `mintNFT`'s `destinationAddress` follows the uniform custody rule - `@newData.owner` is a wallet address, so the recipient self-custodies the asset from the first slot; nothing is parked in the app escrow.
-- **Atomicity**: rules are pure boolean gates proven by `bounded verify`; the mutating calls live only in `hooks.onchain.create`, and a hook failure reverts the whole write.
+- **Atomicity**: rules are pure boolean gates enforced on every write; the mutating calls live only in `hooks.onchain.create`, and a hook failure reverts the whole write.
 
 ## Related
 

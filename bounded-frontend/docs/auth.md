@@ -575,9 +575,7 @@ ownership** rule:
 ```
 
 The leading `@user.id != null` is mandatory — without it an unauthenticated
-caller writing `owner: null` satisfies `null == null`. The proof engine hands
-you that exact counterexample if you forget it
-([verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md)).
+caller writing `owner: null` satisfies `null == null`.
 
 Use `@user.id` - **not** `@user.address` - for ownership, membership, allowlist
 gates, and bare auth guards. `@user.id` is always present the instant a user is

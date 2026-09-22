@@ -27,7 +27,7 @@ the eval rubrics that grade generated policies; it catches the difference betwee
   declares a `tenant` (or org / team) field, every privileged `create` / `update` /
   `delete` compares it (`get(/.../@user.id).tenant == @newData.tenant`); a
   declared-but-ignored scope field lets an admin of one tenant act on another.
-  `authorityClosure` proves the set grows through existing admins, not tenant scope.
+  Closure through existing admins does not cover tenant scope by itself.
 - [ ] **Sensitive reads are scoped.** A user's private data uses `$userId ==
   @user.id` or a membership `get()`, not `read: "true"`.
 - [ ] **Identity uses `@user.id`, not `@user.address`.** `@user.id` is the
@@ -42,11 +42,11 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 
 ### No trivial, dead, or unsatisfiable rules
 
-- [ ] **No accidental `"true"` on a write** that should be gated. `bounded verify`
-  flags always-true rules — treat each as a question.
-- [ ] **No dead rules** (contradictions that silently deny everything). The
-  satisfiability obligation surfaces these; a rule you meant to allow something
-  that can never be true is a bug.
+- [ ] **No accidental `"true"` on a write** that should be gated; treat each
+  always-true rule as a question.
+- [ ] **No dead rules** (contradictions that silently deny everything); a rule
+  you meant to allow something that can never be true is a bug. An allow test
+  that unexpectedly fails for the owner is how you catch one.
 - [ ] **No always-false `update`/`delete` you actually need.** `"false"` is correct
   for immutable/append-only data — make sure you meant it.
 
@@ -73,15 +73,14 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 
 - [ ] **`rollingSum` fields are `UInt`**; **`conserve` fields are `Int`/`UInt`**;
   **tenant tag fields are `String`.**
-- [ ] **Set-once fields are `!`** (owner, author, tenant) so immutability is
-  proven, not hoped.
+- [ ] **Set-once fields are `!`** (owner, author, tenant) so the runtime
+  rejects a later change.
 - [ ] **Optional fields used in numeric/comparison rules are null-guarded** — or
-  made required. Otherwise the `null` counterexample appears.
+  made required. Otherwise a null value slips past the comparison.
 - [ ] **A field compared as more than one type is declared in `fields`.** A
   fieldless collection infers each field's type from its rules, so a field
-  compared to a string in one rule and a number in another is ambiguous.
-  `bounded verify` / deploy refuses it and names the field; declare that field's
-  type to resolve it.
+  compared to a string in one rule and a number in another is ambiguous;
+  declare that field's type to resolve it.
 
 ### Tiers justified
 
@@ -104,8 +103,7 @@ the eval rubrics that grade generated policies; it catches the difference betwee
   collection with `onchain` OMITTED is enforced offchain only - onchain program
   writes are not checked against it, and nothing fails. Declare
   `"onchainSupported"` where supported, or `"offchainOnly"` to record the
-  offchain-only choice as deliberate; `bounded verify` surfaces the omission as
-  an advisory.
+  offchain-only choice as deliberate.
 
 ### Extras are warranted
 
@@ -118,16 +116,16 @@ the eval rubrics that grade generated policies; it catches the difference betwee
 - [ ] **Search declares only fields you search**; storage collections scope file
   access by path.
 
-### Verify passes clean
+### Tests pass clean
 
-- [ ] **`bounded verify` reports 0 failed obligations.**
-- [ ] **Every DISPROVED was fixed by strengthening the policy**, never by deleting
-  the property or weakening the rule.
-- [ ] **You re-ran verify after the last edit.**
-- [ ] **Policy tests cover each sensitive seam's allow AND deny.** A green
-  `verify` alone doesn't catch a trivially-true rule or a `rollingSum`/`conserve`
-  that never actually fires on the real write path — those hide behind passing
-  proof obligations. `bounded tests run` a concrete scenario to catch both. See
+- [ ] **`bounded tests run` passes**, with an allow and a deny test for each
+  sensitive seam.
+- [ ] **Every failing test was fixed by strengthening the policy**, never by
+  deleting the property or weakening the rule.
+- [ ] **You re-ran the tests after the last edit.**
+- [ ] **Every invariant has a test that fires it.** A trivially-true rule or a
+  `rollingSum`/`conserve` that never actually fires on the real write path
+  deploys fine; a concrete scenario catches both. See
   [policy-tests.md](policy-tests.md).
 
 ## The two failures that hide in green policies
@@ -136,13 +134,12 @@ the eval rubrics that grade generated policies; it catches the difference betwee
    Nothing is actually protected. Fix: do step 4; add the invariant.
 2. **Leaky** — compiles, but a write rule is satisfiable by an unauthenticated or
    wrong caller (`@user.id == null` matching a `null` owner, missing role check).
-   Fix: lead with the auth guard; check ownership/role concretely. `bounded verify`'s
-   `requires authentication` obligation catches the first; your own review catches
-   the second.
+   Fix: lead with the auth guard; check ownership/role concretely. A deny test
+   with no session catches the first; your own review catches the second.
 
 ## Is the product real? (don't ship a stub)
 
-A proven backend under a faked product is **not done** — and it's a worse outcome
+A governed backend under a faked product is **not done** — and it's a worse outcome
 than no app, because it *looks* finished. The policy can be flawless while the thing
 the user actually wanted is hollow. Before you call it done:
 
@@ -161,11 +158,10 @@ the user actually wanted is hollow. Before you call it done:
 - [ ] **You stated the honest scope.** If something is a placeholder, say so up
   front; never present a demo as a finished product.
 
-> The proofs are the *guarantee* layer: they make a real app unbreakable, but they
+> The invariants are the *guarantee* layer: they make a real app unbreakable, but they
 > do not make a stub real. Build the product, then let the invariants bound it.
 
 ## Related
 
 - [policy-generation-guide.md](policy-generation-guide.md) — the method that produces this by construction
-- [verify-and-counterexamples.md](verify-and-counterexamples.md) — the obligations behind these checks
 - [invariants.md](invariants.md) — RULES vs INVARIANTS, so the right things are covered

@@ -48,10 +48,10 @@ A code pin that omits the flags preserves `public`, `methods`, and `cors`
 together; an explicit `--public=false` (or `public: false` in policy) drops all
 three. Withdrawing the route makes the function ordinary again, so give it a
 caller-gated `auth` at the same time (for example `@user.id != null`) or delete
-it: the deploy gate refuses an ordinary function whose rule is the literal
-`"true"`, because Z3 proves that rule needs no authenticated caller. That same
-refusal is what stops `auth: "true"` from ever opening a route on its own.
-`bounded verify` refuses every invalid combination by name.
+it: an ordinary function whose rule is the literal `"true"` has no caller gate
+at all, and nothing refuses that for you. `auth: "true"` never opens a route on
+its own; only the explicit public declaration does, and deploy validation
+refuses every invalid combination by name.
 
 ## Where it answers
 

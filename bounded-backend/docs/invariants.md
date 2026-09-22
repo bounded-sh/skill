@@ -9,21 +9,12 @@ Write-gating invariants are **transaction postconditions**. On documented
 offchain mutation surfaces that route through invariant evaluation, they run
 before commit and `set-many` batches remain atomic. Coverage does not extend to
 unsupported type/plane combinations or inherited rows merely because a declaration was
-enabled; onchain coverage is type-specific. Four types
-(`conserve`, `rollingSum`, `tenantTag`, `tenantEdge`) have general invariant
-encodings **discharged by SMT** during `bounded verify`; `bound` is shape-specific
-(scalar offchain fields are proved, while `.values` maps remain `UNKNOWN`)
-([verify-and-counterexamples.md](verify-and-counterexamples.md)). `flowBound` is
-runtime-enforced but **not SMT-proven** and produces a non-blocking advisory with
-proof status `UNKNOWN`, not a proof certificate. `windowSum` is structurally
-validated and runtime-maintained. It is primarily a readable aggregate, has no
-SMT aggregate obligation, and still write-gates updates/deletes on its event leg
-to keep that history append-only. `windowSum` adds no SMT aggregate obligation
-and is excluded from the combined formal claim. The current summary still
-reserves one top-level `obligationCount` slot for its advisory declaration, but a
-well-formed advisory adds no failure. An offchain `rollingSum` counts two slots:
-live-append cap algebra plus expired-delete no-op algebra; an
-`onchainSupported` one counts live-append algebra plus epoch-bucket conservatism.
+enabled; onchain coverage is type-specific (see [onchain coverage](#onchain-coverage)).
+The six boundary types (`conserve`, `rollingSum`, `flowBound`, `bound`,
+`tenantTag`, `tenantEdge`) are enforced by the offchain realtime runtime on every
+write they cover. `windowSum` is structurally validated and runtime-maintained:
+it is primarily a readable aggregate, and it still write-gates updates/deletes
+on its event leg to keep that history append-only.
 
 Every invariant accepts an optional `name`, surfaced in the `409` when a write
 violates it. **Name them like error codes:** `spend_cap`, `no_minting`,
@@ -71,8 +62,7 @@ protects what matters; get it wrong and it's green but hollow.
 | "A reference never crosses tenants" | invariant (`tenantEdge`) | property of cross-document state |
 
 Rule of thumb: **if violating it means an app bug, write a rule. If violating it
-means losing money or leaking a tenant, write an invariant.** Then check its
-reported proof status: `PROVED` and `UNKNOWN` are materially different guarantees.
+means losing money or leaking a tenant, write an invariant.**
 Declaring rule-shaped conditions as invariants buys nothing and costs flexibility
 — invariants bind supported mutation paths once enabled, so plan migrations and
 inherited-state validation explicitly.
@@ -111,7 +101,7 @@ that debits one document must credit another **in the same batch**.
 > caller-chosen `$accountId` (with an `owner` field) is a name-squat: whoever creates
 > `accounts/alice` first owns it, and since ownership is immutable and `delete` is
 > `false`, every credit meant for alice lands in the squatter's row **permanently** -
-> and `conserve` freezes the money there, all while the proof passes cleanly because
+> and `conserve` freezes the money there, because
 > conservation holds perfectly. If you want friendly handles, add a separate
 > `handles/$handle -> userId` directory so squatting a handle costs a nickname, not money.
 
@@ -129,9 +119,8 @@ that debits one document must credit another **in the same batch**.
 | `scope` | no | Alternate path template to bind |
 | `name` | no | Stable name surfaced on `409` |
 
-**What gets proven:** the runtime postcondition is *equivalent* to "affected
-after-sum == affected before-sum" (delta equivalence), plus an induction step over
-arbitrary multi-document write sets — so no batch, of any size, can change the
+**What gets enforced:** the runtime postcondition is "affected after-sum ==
+affected before-sum" over the whole batch — so no batch, of any size, can change the
 total.
 
 **When:** balances, token supply, pooled funds, anything where value must move but
@@ -139,7 +128,7 @@ not appear or vanish.
 
 **Genesis — how value enters (read this before you ship).** `conserve` locks the
 total at *whatever the sum already is the moment the invariant goes live*. The
-proof has no concept of a privileged mint: a `create` or `set` that raises the
+invariant has no concept of a privileged mint: a `create` or `set` that raises the
 sum is rejected as minting, even for the app owner, even server-side. So the
 example above — `create: balance == 0` **and** `update: balance >= 0` — is a
 **frozen-at-0** system: every account is born at 0, can never go negative, and
@@ -179,7 +168,7 @@ the sum can never move off 0, so nothing can ever hold value. That schema is a
 
 The takeaway: there is no "admin mint" escape hatch — that is the entire point of
 `conserve`. Decide genesis by *deploy order* (seed before the invariant) or by
-*model* (credit/debt nets to 0), not by trying to write past the proof.
+*model* (credit/debt nets to 0), not by trying to write past the invariant.
 
 **Authorizing a transfer — the simple self-only rule blocks cross-owner credits.** A peer
 transfer debits one account and credits *another user's* account in the same batch. But
@@ -216,9 +205,7 @@ creation time is the clock.
 > **`"update": "false"` / `"delete": "false"` is the correct idiom** for an
 > append-only collection (and for any server-authoritative or immutable
 > collection). A literal `false` rule is an **intentional deny**, not a mistake —
-> it says "no caller may ever take this action." `bounded verify` surfaces it as a
-> **non-blocking advisory** (an intentional-deny note); it is *not* reported as
-> "unsatisfiable (dead code)" and does *not* fail verification or deploy. The
+> it says "no caller may ever take this action." Deploy accepts it. The
 > canonical example below is correct and deployable. The alternative — omitting
 > the rule entirely — also denies (omitted ⇒ deny), but writing `false` explicitly
 > documents the intent.
@@ -239,8 +226,8 @@ creation time is the clock.
 }
 ```
 
-> **A proven cap says nothing about who may add to it, or whether the amount is
-> honest.** `rollingSum` proves the *sum* stays within `limit`; it does not restrict
+> **A cap says nothing about who may add to it, or whether the amount is
+> honest.** `rollingSum` keeps the *sum* within `limit`; it does not restrict
 > *who* appends or trust the client's `amount`. So the `create` rule must bind the
 > spend record to its owner: here you may append only under your own agent
 > (`$agentId == @user.id`) or an agent you are a listed member of
@@ -261,19 +248,17 @@ creation time is the clock.
 The public authoring contract requires `tier: "durable"` for `rollingSum` and
 rejects `materialization` / `pathVariable` metadata.
 
-**What gets proven:** if the runtime admits only nonnegative appended records and
-the projected window sum is within `limit`, the resulting sum stays within
-`limit` for every possible sequence of appends. Offchain verification counts a
-second, independent expired-delete no-op obligation: removing a trusted record
-strictly older than the effective window start cannot change the live window
-sum. Onchain-supported caps instead count epoch-bucket conservatism as their
-second obligation because onchain deletes remain forbidden.
+**What gets enforced:** the runtime admits only nonnegative appended records
+whose projected window sum stays within `limit`, for every sequence of appends.
+Offchain, removing a record strictly older than the effective window start
+cannot change the live window sum. Onchain caps are epoch-bucketed and
+conservative, and onchain deletes remain forbidden.
 
 ### Partitioned caps (`scopeVariable`)
 
 With `"scopeVariable": "$agentId"`, the cap holds **per value** of that variable:
 every agent gets its own 100/hr budget instead of all agents sharing one pool. The
-proof is the same rolling-limit algebra, quantified per partition. Use partitioned
+cap is enforced independently per partition. Use partitioned
 caps for per-agent budgets, per-user quotas, per-tenant rate ceilings; use an
 unpartitioned cap for global ceilings. Both can coexist on the same field (above:
 per-agent hourly + global daily).
@@ -281,7 +266,7 @@ per-agent hourly + global daily).
 ### Multi-window caps
 
 Declare several `rollingSum` invariants on the **same field** with different
-`windowSeconds` — each window is tracked and proven independently. Changing a
+`windowSeconds` — each window is tracked and enforced independently. Changing a
 window's length starts that window's tracking fresh. A delete is accepted only
 when the row is expired under **every** matching window; equivalently, it must be
 strictly earlier than the earliest effective start (the longest-live boundary).
@@ -292,13 +277,13 @@ A `rollingSum` may claim `onchain: "onchainSupported"` only on an onchain
 collection and only with `windowSeconds <= 31536000`; the onchain runtime enforces
 it epoch-bucketed (conservatively — it can over-enforce near the boundary, never
 under-enforce). Onchain capped collections remain fully no-delete; expired-delete
-retention is offchain-only. See [proof-coverage.md](proof-coverage.md).
+retention is offchain-only. See [onchain coverage](#onchain-coverage).
 
 Declaring the claim is what turns onchain enforcement ON: a `rollingSum` on an
 onchain collection **without** `onchain: "onchainSupported"` still verifies,
 deploys, and is enforced by the offchain runtime, but onchain program writes are
 not checked against it. See the omitted-default warning under
-[`onchain` — coverage claims](#onchain--coverage-claims-are-verified-not-trusted).
+[Onchain coverage](#onchain-coverage).
 
 ### Recipe — rate-limit an action with a separate event log
 
@@ -442,18 +427,14 @@ Semantics and constraints (validated at deploy):
    deletion is blocked while the field is governed. If legacy/corrupt state is
    nevertheless missing the target at expiry, maintenance drains the queued
    work without resurrecting the document.
-6. `bounded verify` reports a declared `windowSum` as a **non-blocking advisory**
-   ("structurally validated, runtime-maintained") — it is an aggregate, not a
-   write-gating cap, so it has no SMT certificate and cannot wedge a deploy. A
-   well-formed declaration occupies one advisory slot in the current summary's
-   `obligationCount` but does not increment `failedCount`.
+6. A declared `windowSum` is validated structurally at deploy and maintained by
+   the runtime — it is an aggregate, not a write-gating cap.
 7. **A declaration is fixed while contributions are live.** Once a maintained
    target has active contributions, changing OR removing that `windowSum`
    declaration is refused at runtime config activation ("windowSum declarations
    cannot change while maintained target contributions are active"). This is
-   NOT visible to `bounded verify`: whether contributions are active is runtime
-   state, not something a static proof can see, so verify passes and the change
-   fails when the config activates. Plan the window and field before the first
+   NOT visible at deploy: whether contributions are active is runtime state, so
+   the change fails when the config activates. Plan the window and field before the first
    contribution lands. To retire one, drain or expire its contributions first;
    to retire the *data* it ranks, prefer a status flag over deleting the target
    document, since a governed target cannot be deleted directly either.
@@ -553,9 +534,9 @@ Semantics and structural requirements:
 ### v1 state and scaling limits
 
 - **Activation is not a corpus migration.** Enabling `flowBound` does not scan,
-  validate, or repair existing inflow/outflow rows. `bounded verify` validates
-  policy structure and reports the runtime advisory; it does not prove that
-  pre-existing stored state satisfies the inequality or value requirements.
+  validate, or repair existing inflow/outflow rows. Deploy validates policy
+  structure; nothing checks that pre-existing stored state satisfies the
+  inequality or value requirements.
   Audit and, if needed, repair the inherited corpus before enabling append-only
   enforcement.
 - **Outflow checks use full committed-corpus scans.** v1 reads both relative
@@ -580,16 +561,10 @@ Use narrow create authorization and minimal disclosure when balances or remainin
 capacity are sensitive; redaction cannot remove the accept/decline predicate.
 See [Error disclosure](policy-reference.md#error-disclosure).
 
-> **Current verification status: runtime-enforced, not SMT-proven.** Structural
-> validation checks relationship metadata such as the two collection templates,
-> scope variable, field types, tier, and onchain mode, and rejects malformed
-> declarations.
-> A well-formed declaration is then emitted by `bounded verify` as a non-blocking
-> `flowBound ... (runtime-enforced advisory)` with proof status `UNKNOWN`. The
-> offchain realtime Worker enforces the inequality at write time, but the
-> verifier does **not** generate or discharge an SMT obligation for its algebra
-> today. Do not interpret a green overall verify verdict, structural validation,
-> or the advisory's non-blocking `passed` flag as a formal proof or certificate.
+> **Current status: runtime-enforced.** Structural validation checks
+> relationship metadata such as the two collection templates, scope variable,
+> field types, tier, and onchain mode, and rejects malformed declarations. The
+> offchain realtime Worker enforces the inequality at write time.
 
 Choose `conserve` when a total must stay constant; `rollingSum` to cap a windowed
 sum; `windowSum` to READ a windowed sum; `flowBound` when one flow must never
@@ -603,12 +578,9 @@ comparison against a constant `limit`. Enforced on the **standard** write paths
 checkpoint) — so a server-authoritative game's score, a counter, or a level can't be
 stored out of range, no matter what a client (or a buggy tick) proposes.
 
-> **`bound` proof status depends on its shape.** A scalar `bound` on an offchain
-> authoritative collection has an SMT-proved field-bound postcondition: every
-> accepted write satisfies `field op limit`. A `.values` map is still a
-> non-blocking runtime-enforced advisory with proof status `UNKNOWN`, because the
-> proof obligation does not yet quantify over every map value even though the
-> runtime checks them all. An onchain `bound` is not enforced by the onchain
+> **`bound` is enforced offchain for scalars and `.values` maps alike:** every
+> accepted write satisfies `field op limit`, and the runtime checks every map
+> value. An onchain `bound` is not enforced by the onchain
 > runtime and must not be used for an onchain guarantee. In every supported
 > offchain shape, enforcement applies to authoritative durable writes and the live
 > checkpoint; ephemeral per-player views remain read-rule-governed projections.
@@ -634,11 +606,10 @@ stored out of range, no matter what a client (or a buggy tick) proposes.
 | `limit` | yes | The constant compared against (use `@const.NAME` to name it) |
 | `name` | no | Stable name surfaced on the `409` |
 
-**What gets enforced and proved:** offchain, any write whose post-state has the
+**What gets enforced:** offchain, any write whose post-state has the
 bounded field (or any value of the bounded map) violating `op limit` is rejected
 (`409` + `name`). At a live checkpoint, the room snapshot is gated before it
-reaches the authoritative store. `bounded verify` proves the scalar offchain
-postcondition; `.values` remains runtime-enforced with an `UNKNOWN` advisory.
+reaches the authoritative store.
 Declare a `bound` on the **authoritative collection** — the room/durable state the
 checkpoint persists — not on a `.../view/$x` subcollection. A per-player view is
 a read-rule-governed projection, not a source of truth, so invariants do not apply
@@ -661,17 +632,17 @@ while claiming another.
 | `field` | yes | `String` tag field |
 | `pathVariable` | yes | `$variable` that must exist in the (scoped) path |
 
-**What gets proven:** an accepted write implies the tag field equals the declared
+**What gets enforced:** an accepted write has the tag field equal to the declared
 path variable — there is no payload that tags a document with the wrong tenant.
 
 `tenantTag` does not accept `materialization` or `scopeVariable`.
 
 > ⚠️ **Isolation needs the READ RULE too — `tenantTag`/`tenantEdge` are write-time
-> *integrity*, not read access.** They prove a doc can't be mis-tagged and a reference
-> can't cross tenants. They do **not** govern who can *read*. If your read rule is just
+> *integrity*, not read access.** They keep a doc from being mis-tagged and a reference
+> from crossing tenants. They do **not** govern who can *read*. If your read rule is just
 > `"@user.id != null"`, **every signed-in user can read every tenant** — a cross-tenant
-> read leak — and `bounded verify` still says `✓ Proven` (it proved the integrity
-> invariants, not read isolation). Validated by dogfooding: with a permissive read rule,
+> read leak — and deploy accepts it (the integrity invariants say nothing about
+> read isolation). Validated by dogfooding: with a permissive read rule,
 > tenant B's user read tenant A's task verbatim. For true "data can't leak between
 > tenants," **gate reads (and member-only writes) on tenant membership**:
 >
@@ -680,9 +651,8 @@ path variable — there is no payload that tags a document with the wrong tenant
 > "create": "@user.id != null && get(/tenants/$tenantId/members/@user.id) != null"
 > ```
 >
-> (Keep the `@user.id != null &&` guard — a bare `get(/.../@user.id) != null` can't yet
-> be *proven* auth-requiring by the verifier, so the guard makes the auth obligation
-> pass.) Membership must **not** be self-service: gate the members `create` rule on a
+> (Keep the `@user.id != null &&` guard so the rule states that it requires a
+> signed-in user.) Membership must **not** be self-service: gate the members `create` rule on a
 > tenant-issued invite (`... && get(/tenants/$tenantId/invites/@user.id) != null`), never
 > on `$memberId == @user.id` alone — that lets anyone join any tenant and read its data.
 > See the `tenantEdge` example below for the invite-gated members + invites collections.
@@ -758,7 +728,7 @@ cross-tenant reference is rejected `409` - while a member reads their own tenant
 | `targetField` | yes | Tenant tag field on the target (`String`) — must be `String` in the target's `fields` |
 | `targetPathVariable` | no | For bare-id references: which target path variable the id fills |
 
-**What gets proven:** an accepted reference write implies the source and target
+**What gets enforced:** an accepted reference write requires that the source and target
 tenant tags match — a task can never reference another tenant's member. **Tag both
 ends:** `tenantEdge` compares tags, so source and target scopes each need their own
 `tenantTag`. (`tenantEdge` with `targetPathVariable` stays offchain-only.)
@@ -772,250 +742,50 @@ tenant, and **the target must already exist** or the write is rejected (*"requir
 tenants/A/members/A1 to exist before … can reference it"*). So order writes
 target-first: create the member, then the task that references it.
 
-## `onchain` — coverage claims are verified, not trusted
+## Onchain coverage
 
 Invariant declarations can generally state an `"onchain"` coverage claim:
 `"offchainOnly"`, `"onchainUnsupported"`, or `"onchainSupported"`. Type-specific
 restrictions still win. In particular, `flowBound` and `windowSum` v1 are
 **offchain-only**: omit `onchain` or use `"offchainOnly"`; an onchain collection
-or any stronger claim is structurally rejected.
+or any stronger claim is structurally rejected at deploy.
 
-The offchain realtime runtime enforces all six boundary invariant types and
-maintains `windowSum`. Do not infer onchain parity from that statement: an
-`"onchainSupported"` claim is valid only where the onchain runtime has the
-corresponding implementation and the collection is declared `"onchain": true`.
-For `flowBound`, structural rejection is the current fail-closed boundary; there
-is no onchain implementation. See [proof-coverage.md](proof-coverage.md) for the
-coverage matrix.
+| Invariant | Offchain (realtime) | Onchain |
+|---|---|---|
+| `conserve` (direct, materialized, sharded) | enforced | enforced |
+| `rollingSum` | enforced (exact window) | enforced (epoch-bucketed, conservative) |
+| `windowSum` | runtime-maintained aggregate | structurally rejected (offchain-only v1) |
+| `tenantTag` | enforced | enforced |
+| `tenantEdge` (full-path) | enforced | enforced |
+| `bound` | enforced (scalars and `.values` maps) | not enforced; do not use for onchain guarantees |
+| `flowBound` | enforced | structurally rejected (offchain-only v1) |
+
+The advanced variants `tenantEdge.targetPathVariable`, `rollingSum.resetAtMs`,
+and cross-scope forms are rejected at deploy if a policy claims onchain support
+for them, and an onchain runtime receiving invariant metadata it does not
+support rejects the write rather than skipping the check.
 
 **Omitting `onchain` is not neutral on an onchain collection.** The omitted
-default is offchain-only enforcement: the invariant still verifies, deploys, and
-is enforced by the offchain runtime, but onchain program writes are NOT checked
-against it. In the proof summary this shows up only as the word "offchain"
-inside a green PASS line, which is easy to read past (a devnet probe shipped
-exactly this mistake); `bounded verify` also surfaces the omission as an
-"Invariant enforcement plane" advisory in the capability-readiness section. On
-an `onchain: true` collection, declare the claim explicitly every time:
-`"onchainSupported"` only when the invariant is scoped to that same collection
-and the runtime supports the form (`conserve` in all three materializations,
-`tenantTag`, full-path `tenantEdge` without `targetPathVariable`, or `rollingSum`
-within the window cap and without `resetAtMs`), or
-`"offchainOnly"` to record offchain-only enforcement as a deliberate choice -
-the explicit spelling is also what silences the advisory.
-
-<a id="publicreads-exact-conditional-public-read-posture"></a>
-
-## `proofs.publicReads`: exact conditional public-read posture
-
-The deploy verifier normally requires a non-literal read rule to imply an authenticated caller.
-Some collections intentionally allow a public subset, such as a published launch while keeping its private draft hidden.
-Name each such collection exactly once in `proofs.publicReads`:
-
-```json
-{
-  "proofs": {
-    "publicReads": ["launches/$slug"]
-  },
-  "launches/$slug": {
-    "fields": { "visibility": "String", "owner": "String" },
-    "rules": {
-      "read": "@doc.visibility == 'public' || @doc.owner == @user.id"
-    }
-  }
-}
-```
-
-If `bounded verify` reports that a read allows unauthenticated access, decide whether that access is intentional.
-For an intentionally public subset, name the exact collection in `proofs.publicReads` and keep its read restriction.
-For private data, require `@user.id != null` before the ownership or membership check instead.
-Do not declare a scope public just to silence an accidental `null == null` ownership match.
-The verifier's `suggestion` field explains these choices; the CLI preserves it in JSON and displays it in readable output.
-
-This declaration changes only the deploy-time authentication posture.
-It never widens runtime access, and the collection's `rules.read` expression still decides which documents are visible.
-Use exact declared collection paths with no surrounding whitespace or duplicates.
-Every named collection must exist and declare a non-empty, non-literal `rules.read` expression.
-Do not list a literal `true` read because it is already explicitly public, and do not list a literal `false` read because it is never public.
-An unknown, duplicate, malformed, always-public, or always-denied entry invalidates the whole declaration and makes verification fail closed.
-
-<a id="attestations--global-policy-wide-claims"></a>
-
-## `proofs.attestations` — GLOBAL, policy-wide claims
-
-Invariants (above) attach to **one** collection. Some guarantees are **global** —
-they span every collection and every read/write surface in the policy. Declare
-those in **`proofs.attestations`**. This is proof-only metadata: it adds
-`bounded verify` obligations but does not change runtime authorization or
-invariant enforcement.
-
-```json
-{
-  "members/$memberId": { "fields": { "active": "Bool" },
-    "rules": { "read": "@user.id != null && get(/members/@user.id) != null", "create": "@user.id != null && get(/members/@user.id) != null" } },
-  "projects/$projectId": { "fields": { "owner": "String", "name": "String" },
-    "rules": { "read": "@user.id != null && get(/members/@user.id) != null", "create": "@user.id != null" } },
-  "agents/$agentId/spend/$spendId": { "fields": { "amount": "UInt" }, "tier": "durable",
-    "rules": { "read": "true", "create": "@user.id != null && ($agentId == @user.id || get(/agentMembers/$agentId/@user.id) != null)", "update": "false", "delete": "false" } },
-
-  "proofs": {
-    "attestations": [
-      { "claim": "admins cannot read projects they are not a member of",
-        "kind": "roleGatedRead", "scope": "projects/$projectId", "role": "members/$memberId" },
-      { "claim": "no agent can exceed its daily spend cap",
-        "kind": "rollingSum", "scope": "agents/$agentId/spend/$spendId",
-        "field": "amount", "windowSeconds": 86400, "limit": 1000, "scopeVariable": "$agentId" }
-    ]
-  }
-}
-```
-
-The older top-level `attestations` array is still accepted for backward
-compatibility, but new policies should use `proofs.attestations`.
-
-### Human text vs. machine obligation
-
-Every attestation has two halves, kept together:
-
-- **`claim`** — the human sentence (what you'd tell a user/auditor).
-- **`kind` + params** — the machine obligation Bounded actually proves with Z3.
-
-The proof report echoes the `claim` onto each result, so the English statement and
-its `PROVED` / `DISPROVED` (+ counterexample) sit side by side.
-
-| `kind` | Use it for | Key params |
-|---|---|---|
-| `roleGatedRead` | "only the exact declared role or typed actors can read `<scope>`/`<field>`" — closes every modeled policy data-plane exposure (rules, relationships, queries, fields/schemaless scopes, top-level role grants) | exactly one of flat `role` or non-empty typed `actors`, plus `scope` or `field` |
-| `authorityClosure` | "membership of `<roleScope>` only grows through gated additions — no side doors" | `roleScope` (**flat `<collection>/$docId` only**), optional `initialMember` |
-| `rollingSum` | a windowed cap proven **globally** (same algebra as the per-collection invariant) | `scope`, `field`, `windowSeconds`, `limit`, optional `scopeVariable` |
-
-### Nested role scopes — use typed `actors`
-
-The legacy `role` form derives one canonical membership predicate and therefore
-accepts only a flat `<collection>/$docId` path such as `members/$memberId`.
-Free-form `gatedBy` is never substituted into a proof; when present on the
-legacy form it must equal that exact canonical flat-role predicate.
-
-For a multi-tenant app whose membership lives under the tenant, declare a typed
-role actor instead.
-The actor names the nested scope, caller principal, and declared Boolean
-membership field, so the verifier constructs the predicate rather than trusting
-policy text:
-
-```json
-{ "claim": "only members of an org can read that org's tasks",
-  "kind": "roleGatedRead",
-  "scope": "tenants/$tenantId/tasks/$taskId",
-  "actors": [
-    { "kind": "role", "scope": "tenants/$tenantId/members/$memberId",
-      "principal": "id", "field": "active" }
-  ] }
-```
-
-The target read rule must imply
-`get(/tenants/$tenantId/members/@user.id).active == true`.
-The `actors` array may contain multiple typed roles or exact fixed identities;
-it cannot be combined with `role` or `gatedBy`.
-Hook, function, tick, and scheduled outputs plus cross-app sinks remain outside
-this read-exposure proof and require separate source-to-sink review.
-An `onchain: true` scope is public-chain storage and cannot satisfy a
-role-gated privacy claim, regardless of its policy read rule.
-This proves an upper bound on readers, not who can grant membership.
-Use `authorityClosure` for each flat role when the human claim depends on a
-closed roster.
-Nested roster closure remains unsupported and unproven, so do not make a
-closed-roster claim for the nested actor example.
-
-### Nested authority — `authorityClosure` is flat-only (known limitation)
-
-`authorityClosure` currently supports **only a flat `<collection>/$docId` role
-scope**; a nested `tenants/$tenantId/members/$memberId` is rejected (`not a simple
-<collection>/$docId path`) and there is **no** keying param that makes a nested
-scope work today (this is a known limitation). For a multi-tenant admin set, the
-recommended pattern is a **flat `admins/$userId` registry** alongside the nested
-tenant data:
-
-```json
-{
-  "constants": { "FOUNDER": "<the-creators-user-id>" },
-  "admins/$userId": {
-    "fields": { "tenant": "String", "active": "Bool" },
-    "tier": "durable",
-    "rules": {
-      "read": "@user.id != null",
-      "create": "@user.id != null && ((get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @newData.tenant) || @user.id == @const.FOUNDER)",
-      "update": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant && @newData.tenant == @data.tenant",
-      "delete": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant"
-    }
-  },
-  "proofs": {
-    "attestations": [
-      { "claim": "the admin set only grows through existing admins",
-        "kind": "authorityClosure", "roleScope": "admins/$userId",
-        "initialMember": "@const.FOUNDER" }
-    ]
-  }
-}
-```
-
-Tenant scoping is enforced **in the rules**, not by the attestation: `create` and
-`update` require `get(/admins/@user.id).tenant == @newData.tenant` /
-`== @data.tenant`, so an active admin of one tenant cannot create or edit an admin
-of another (and `update` also pins `@newData.tenant == @data.tenant` so a row cannot
-be relocated to a foreign tenant). The `authorityClosure` proof rides the flat
-`admins/$userId` scope and proves only that the admin set **grows through existing
-admins** - it is silent on tenant scope, so that tenant-equality clause is the check
-that confines an admin to its own tenant, not the attestation. Keep the
-`@const.FOUNDER` branch **outside** the tenant-equality so genesis can still seed the
-first admin of any tenant. Use nested typed `roleGatedRead.actors` (above) for the
-per-tenant read isolation.
-
-Every privileged rule also gates on `get(/admins/@user.id).active == true`, not on
-mere existence, so `active: false` is a real off-switch (revoke a misbehaving
-admin by writing it; `update` also requires `.active == true`, so they cannot
-reactivate themselves). `.active == true` implies the row exists, so the
-`authorityClosure` attestation still proves clean over the flat scope.
-
-### Plain-string shorthand — and the rule you MUST follow
-
-You may write a bare sentence:
-
-```json
-"proofs": {
-  "attestations": ["no agent can exceed its daily spend cap"]
-}
-```
-
-But a sentence on its own proves **nothing**. The verifier surfaces it as a
-**non-blocking advisory**: status `UNSUPPORTED` with a "NOT proven (advisory) —
-bind to prove" note. It is **never counted as proven** (that preserves soundness —
-a bare claim is never treated as attested), but it also **does not fail the run or
-block deploy**. **A natural-language claim is never trusted until you compile it
-into a bound `{ claim, kind, ... }` obligation.** That compilation is YOUR job
-when generating a policy: read the user's English guarantee, pick the `kind` that
-captures it, and fill in the params. A bare string is fine as a visible TODO
-marker you can ship with — it just buys no guarantee until you bind it.
-
-Mapping intent → kind:
-- "X can only be read by members/owners/admins" → `roleGatedRead`.
-- "only existing admins can add admins" / "the admin set can't be hijacked" → `authorityClosure`.
-- "no more than N per window" / "spend/rate cap" → `rollingSum` (add `scopeVariable` for per-entity caps).
-- A cross-collection sum that must stay constant → usually a per-collection `conserve` invariant, not an attestation (attestations don't yet have a `conserve` kind).
-
-Attestations run in the same `verify` pass as invariants and show up under the
-`__policy__/attestations` scope of the report.
+default is offchain-only enforcement: the invariant still deploys and is
+enforced by the offchain runtime, but onchain program writes are NOT checked
+against it (a devnet probe shipped exactly this mistake). On an `onchain: true`
+collection, declare the claim explicitly every time: `"onchainSupported"` only
+when the invariant is scoped to that same collection and the runtime supports
+the form (`conserve` in all three materializations, `tenantTag`, full-path
+`tenantEdge` without `targetPathVariable`, or `rollingSum` within the window cap
+and without `resetAtMs`), or `"offchainOnly"` to record offchain-only
+enforcement as a deliberate choice.
 
 ## When NOT to use an invariant
 
 See the RULES-vs-INVARIANTS table at the top. In short: if the property is about
 *who* may act, or about a single write in isolation, it is a rule, not an
-invariant. Declaring rule-shaped conditions as invariants buys nothing (the rule
-path is already proven for auth/immutability) and constrains every supported
+invariant. Declaring rule-shaped conditions as invariants buys nothing and
+constrains every supported
 invariant-evaluated mutation path once enabled. Validate inherited state and plan
 migrations separately.
 
 ## Related
 
 - [policy-generation-guide.md](policy-generation-guide.md) — choosing invariants from a description
-- [verify-and-counterexamples.md](verify-and-counterexamples.md) — what each invariant compiles to in the proof report
 - [data-plane.md](data-plane.md) — how violations surface at runtime (409 + name)
-- [proof-coverage.md](proof-coverage.md) — which runtime enforces what

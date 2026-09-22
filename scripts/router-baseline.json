@@ -24,7 +24,6 @@
     "docs/policy-reference.md",
     "docs/policy-tests.md",
     "docs/principals-and-origins.md",
-    "docs/proof-coverage.md",
     "docs/quality-checklist.md",
     "docs/queries.md",
     "docs/realtime-and-games.md",
@@ -34,8 +33,7 @@
     "docs/secrets.md",
     "docs/service-keys.md",
     "docs/testing-authed-apps.md",
-    "docs/trending-feeds.md",
-    "docs/verify-and-counterexamples.md"
+    "docs/trending-feeds.md"
   ],
   "bounded-onchain/SKILL.md": [
     "../bounded-frontend/docs/auth.md",

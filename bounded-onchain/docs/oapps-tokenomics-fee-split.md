@@ -24,15 +24,15 @@
 trading fees to more than two parties*. This historical oApps model is **55%
 treasury / 25% creator-of-record / 20% Poof**. Meteora's config is only 2-party
 (creator vs partner), so the third leg and the exact bps are **composed in Bounded
-policy** and proven by Z3. This doc is the worked example that
+policy** and enforced on every write. This doc is the worked example that
 [meteora-token-launch.md → the fee-split reality](meteora-token-launch.md#the-fee-split-reality-honest)
 points at. It also covers the two patterns that make the split run unattended: the
 **keeper** (offchain schedule → function → onchain write) and the **fee-funded build
-allowance** (a proven rolling burn cap).
+allowance** (an enforced rolling burn cap).
 
-> Every collection below is copied from the Z3-verified reference policy at
+> Every collection below is copied from the reference policy at
 > [examples/oapps-tokenomics/policy.json](../examples/oapps-tokenomics/policy.json).
-> Signatures match `plugin-contracts.ts` exactly, which establishes source shape rather than live network availability. What Z3 proves vs what stays
+> Signatures match `plugin-contracts.ts` exactly, which establishes source shape rather than live network availability. What the policy enforces vs what stays
 > trusted is stated honestly at the end - read that block before you quote any
 > guarantee.
 
@@ -64,7 +64,7 @@ allowance** (a proven rolling burn cap).
   bps literals in policy**. `5556/4444` of the 45% pool is exactly `25/20` of the
   whole.
 - **The seam is deliberate.** Both bps live in policy, so re-tuning creator≠Poof
-  later is a one-line policy change that re-proves, not a plugin edit.
+  later is a one-line policy change, not a plugin edit.
 
 ## Tier 1 - the native legs (`launch` + `pools`)
 
@@ -182,7 +182,7 @@ claim, `5500 / 2500 / 2000` bps:
 | Claim from | `claimMeteoraPoolFees` | `claimDammV2PoolFees` (+ `withdrawLeftover`) |
 
 Same 55/25/20 outcome on both sides of graduation, reached two different ways. The
-prover checks both distribute hooks the same way: fixed recipients, fixed bps,
+policy constrains both distribute hooks the same way: fixed recipients, fixed bps,
 caller-supplied `amount` only.
 
 ## The keeper / offchain schedule → function → onchain write
@@ -232,9 +232,9 @@ export default async function keeper(_args, ctx) {
   permissionless, so if the keeper stalls, anyone can claim/distribute manually and
   get the identical policy-fixed routing. The keeper is a convenience crank, not a
   privileged party.
-  What *is* proven about it: its `actAs` signer is admin-gated (`auth: get(/admins/@user.id) != null`), and the `admins/$userId` role is bootstrap-safe rather than self-enrollable.
-  Admin `create` is gated on a founder-genesis / existing-admin clause (`get(/admins/@user.id) != null || @user.id == @const.FOUNDER`), and an `authorityClosure` attestation over `admins/$userId` proves the set only grows through the founder or an existing admin.
-  Because the role is a provably closed set, a random caller cannot enroll themselves and so cannot invoke the keeper as the signer by direct call.
+  What the policy *does* guarantee about it: its `actAs` signer is admin-gated (`auth: get(/admins/@user.id) != null`), and the `admins/$userId` role is bootstrap-safe rather than self-enrollable.
+  Admin `create` is gated on a founder-genesis / existing-admin clause (`get(/admins/@user.id) != null || @user.id == @const.FOUNDER`), so the set only grows through the founder or an existing admin.
+  Because the role is a closed set, a random caller cannot enroll themselves and so cannot invoke the keeper as the signer by direct call.
 - **Honest gap - the reference keeper only claims today.** The stub above fires only
   step 1 (`claims`). Steps 2–4 are commented out because `distributions.amount` must
   be the **claimed lamports for this cycle**, and the keeper has to *compute* that
@@ -243,7 +243,7 @@ export default async function keeper(_args, ctx) {
   distribute is safe *for whatever amount is asserted*, not that the keeper computed
   it correctly. See `amount` in the TRUSTED block.
 
-## The fee-funded build allowance / a proven rolling burn cap
+## The fee-funded build allowance / an enforced rolling burn cap
 
 oApps fund their own AI build spend from the fees they earn. Model it as an
 **append-only spend log** with a `rollingSum` invariant capping spend over a rolling
@@ -263,7 +263,7 @@ this is a *self-refilling* budget backed by real claimed fees):
 
 - **Append-only.** `update`/`delete` deny, so the log cannot be rewritten to hide
   spend. Each build appends one row carrying its `amount`.
-- **`rollingSum` is a proven cap.** Z3 proves that for *every possible sequence of
+- **`rollingSum` is an enforced cap.** For *every sequence of
   appends*, the sum of `amount` over any trailing `windowSeconds` (86400 = 24h)
   never exceeds `@const.BUILD_ALLOWANCE`. There is no sequence of writes that
   overspends the day's budget. See
@@ -273,26 +273,26 @@ this is a *self-refilling* budget backed by real claimed fees):
   is what makes "spend up to what the app earned" a *provable* boundary rather than a
   hope.
 
-## PROVEN vs TRUSTED vs NEEDS LIVE PROOF
+## ENFORCED vs TRUSTED vs NEEDS LIVE PROOF
 
-- **PROVEN (Z3, every input):**
-  - **who may trigger** each write - the `rules.create`/`update` proofs (permissionless
+- **ENFORCED (policy, every write):**
+  - **who may trigger** each write - the `rules.create`/`update` rules (permissionless
     = any authenticated wallet; the keeper's `actAs` signer is admin-gated, and the
-    `admins/$userId` set is provably closed via an `authorityClosure` attestation).
+    `admins/$userId` set is closed by its create rule).
   - **the split bps are fixed literals in policy** - `5556/4444` pre-migration and
     `5500/2500/2000` post-migration are not caller-supplied; a caller cannot move a
     leg or change a share.
   - **the build-allowance rolling burn cap** - `rollingSum` holds for every sequence
     of appends; the 24h budget cannot be overspent.
-- **TRUSTED (in-plugin, not proven - intentional, per design):**
+- **TRUSTED (in-plugin, outside the policy - intentional, per design):**
   - the Meteora / token plugin bodies that build and server-sign the txns, and that a
     `transfer` of `mulDivFloor(amount, bps, 10000)` moves exactly that many lamports.
   - the **`amount` snapshot** on `distributions` / `distributionsPost` - the claimed
     lamports for the cycle is a caller/keeper-asserted write field. This historical
     policy has **no `conserve` invariant** on the treasury. Its split amounts are
-    trusted-in-plugin while the policy proves *who-may-trigger + bps validity + the
+    trusted-in-plugin while the policy enforces *who-may-trigger + bps validity + the
     allowance cap*. This limitation does not describe the current shipped model.
-    Its treasury transitions are proven at the rule layer, and distribution is a
+    Its treasury transitions are enforced at the rule layer, and distribution is a
     permissionless update. Over-stating `amount` fails on-chain (insufficient PDA
     balance), so the failure mode is a reverted tx, not a drained pool.
 - **NOT DERIVABLE today (state it as unavailable, do not compute it):**
@@ -314,18 +314,15 @@ this is a *self-refilling* budget backed by real claimed fees):
   - that a live curve trade under the decay schedule charges the expected fee, that
     migration triggers at `migrationMarketCap`, and that `withdrawLeftover` releases
     exactly `leftover` - all live-fill residuals, same as in
-    [meteora-token-launch.md](meteora-token-launch.md#what-is-proven-vs-what-is-trusted-state-it-honestly).
+    [meteora-token-launch.md](meteora-token-launch.md#what-is-enforced-vs-what-is-trusted-state-it-honestly).
 
 ## Run it
 
-The full verified policy (all 11 collections + constants + `functions.keeper`) is at
+The full reference policy (all 11 collections + constants + `functions.keeper`) is at
 [examples/oapps-tokenomics/](../examples/oapps-tokenomics/) with a README. It is
-verify-only (no `appId`, deploys nothing). From that directory:
-
-```
-bounded verify
-```
-
-checks the policy and source contracts above.
-It does not prove that the Meteora integration works on devnet; that still needs a retained live run.
+reference-only (no `appId`, deploys nothing). `bounded verify --experimental` from
+that directory produces its proof report if you want one
+([formal verification](../../bounded-backend/docs/formal-verification.md)); a
+green report does not show that the Meteora integration works on devnet, which
+still needs a retained live run.
 See the example README for the source-verification residual.

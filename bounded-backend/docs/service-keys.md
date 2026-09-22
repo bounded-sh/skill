@@ -42,8 +42,8 @@ interchangeable:
 | Caller | Service-identity path | Notes |
 |---|---|---|
 | **A live tick** (`session.live` room) | **`session.live.runAs`** — declared once on the `live` block; all of this game's live `call`s run as it. Gate the called function with `auth: "@origin.kind == 'live' && @origin.module == '<game>'"`. | The ONLY way for a non-admin-triggered flow to act as a funded service identity. This is how `grantInk`-style conserved minting works. |
-| **A direct end-user** (SDK `invoke`, `@origin.kind == 'user'`) | **`actAs` — but it is ADMIN-GATED.** A user-invoked function can act as a service identity *only* if its `auth` provably implies admin. `auth: "@user.id != null"` + `actAs: MINT` → **verify FAIL**. | So a *non-admin* user-invoked function **cannot** be the service identity. Don't try to "mirror the live tick" inside a user-invoked function — there is no user-`runAs`. |
-| **A scheduled hook** (`@origin.kind == 'scheduled'`) | No `runAs` equivalent; it's the anonymous SYSTEM principal. Gating a privileged write on `@origin` alone trips the *"update requires auth / auth-consistency"* proof. | Route privileged scheduled writes through the live `runAs` too, or make the function admin. |
+| **A direct end-user** (SDK `invoke`, `@origin.kind == 'user'`) | **`actAs` — but it is ADMIN-GATED.** A user-invoked function may act as a service identity *only* if its `auth` rule gates on admins. `auth: "@user.id != null"` + `actAs: MINT` lets every signed-in user act as the service identity, and nothing refuses that for you: never ship it. | So a *non-admin* user-invoked function **cannot** be the service identity. Don't try to "mirror the live tick" inside a user-invoked function — there is no user-`runAs`. |
+| **A scheduled hook** (`@origin.kind == 'scheduled'`) | No `runAs` equivalent; it's the anonymous SYSTEM principal. A privileged write gated on `@origin` alone runs with no authenticated actor, so keep such a rule to the exact origin kind and module. | Route privileged scheduled writes through the live `runAs` too, or make the function admin. |
 
 **The pattern for a USER-triggered privileged/conserved write (the one people get
 wrong): split CLAIM from SETTLE.**
@@ -301,11 +301,11 @@ synthesized identity has nothing to sign with.
 For that, an app can admit an **agent identity**: a normal, non-privileged user
 whose private key the platform holds instead of you - the principal Bounded's
 agents act as inside your app. It signs in like any other user;
-its reads and writes pass the same rules and the same proven invariants;
+its reads and writes pass the same rules and the same invariants;
 `@user.id` is just an address. It gets **no implicit access to anything** — an app
 admits it by DECLARING its address as an ordinary policy constant and granting it
 whatever that app wants, in the same rule language as any other principal. That is
-what makes it safe rather than a backdoor: it is visible, the prover reasons about
+what makes it safe rather than a backdoor: it is visible, the rules treat
 it like any other principal, and on an oApp it appears in the constitution, so
 holders can see that the platform holds a key which can act in their app and
 exactly what it may do.

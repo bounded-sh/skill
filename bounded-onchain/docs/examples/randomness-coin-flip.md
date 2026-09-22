@@ -69,7 +69,7 @@ A provably fair double-or-nothing coin flip: the bet requests an ORAO roll, the 
     }
   },
   "flipreveals/$flipId": {
-    "description": "ORAO reveal target. Its shape is dictated by the deploy gate, not chosen.",
+    "description": "ORAO reveal target. Its shape is dictated by deploy validation, not chosen.",
     "isRevealPath": true,
     "onchain": true,
     "fields": {},
@@ -94,7 +94,7 @@ A provably fair double-or-nothing coin flip: the bet requests an ORAO roll, the 
 
 ## Why it holds
 
-- **Only the oracle writes reveals.** The reveal collection is `onchain: true`, fieldless, `isRevealPath: true`, with the exact mandated create rule and one path variable - no attacker-controllable content, write-once, and exempt from the create-authentication obligation by shape, which is stronger than "someone was signed in".
+- **Only the oracle writes reveals.** The reveal collection is `onchain: true`, fieldless, `isRevealPath: true`, with the exact mandated create rule and one path variable - no attacker-controllable content, write-once, and authorised by shape rather than by a signed-in user, which is stronger than "someone was signed in".
 - **Reveal writes are server-driven with no user context**, so they cannot make payer-funded calls like `createAccount` (this reveal collection declares no hooks at all); the house PDA is created in a normal user write (the funding hook) before any reveal can land.
 - **Seeing the roll early steers nothing.** The roll is readable the moment ORAO fulfils, before settlement - but the settle rule resolves only against the flip document itself: `player`, `choice`, `stake` are readonly with preservation clauses, and the rule reads no other collection via `get()`, so there is no mutable resolution basis to nudge (and no VRF-resolution-basis advisory).
 - **The roll is materialised once.** `@newData.roll == @OraclePlugin.getRandomNumber($flipId, 0, 2)` pins one paid request to one roll - no re-rolling by retrying - and downstream terms read the field, not the oracle again.

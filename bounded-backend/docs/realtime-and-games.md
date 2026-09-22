@@ -3,8 +3,8 @@
 Bounded runs every app on a realtime, policy-enforced runtime, so subscriptions and live
 queries come for free. For multiplayer and games it adds a **server-authoritative
 loop**: rooms with a fixed `tick`, fog-of-war via per-player view collections,
-proven per-player rate caps, and automatic settlement into durable storage. The
-honest limit on what anti-cheat can prove is in
+enforced per-player rate caps, and automatic settlement into durable storage. The
+honest limit on what anti-cheat can enforce is in
 [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
 
 > **Two tick runtimes.** This doc covers the **bytecode** `session.tick` model — a
@@ -194,9 +194,9 @@ tick — only the privileged `hooks.tick` advances state, and a hook can't break
 invariant. Clients never write state directly; they write **intents** to a separate
 collection.
 
-## Intents + proven rate caps
+## Intents + enforced rate caps
 
-Players write intents; a `rollingSum` with `scopeVariable` proves a per-player
+Players write intents; a `rollingSum` with `scopeVariable` enforces a per-player
 ceiling per window. The cap forces the intent collection to `durable`.
 
 ```json
@@ -259,17 +259,16 @@ final masses settle to a leaderboard. This is **worked example C** in
 — `rooms/$roomId` (ephemeral, tick + session), `intents` (durable, rate cap),
 `view/$playerId` (fog-of-war), `scores/$playerId` (settleFrom source), and a
 durable `results/$resultId`. Read it there in full; it validates with zero
-issues, every proof obligation discharges, and the only findings are the
-intentional `"false"` server-authoritative rules.
+issues, and its `"false"` rules are intentional server-authoritative denies.
 
 ## The honest anti-cheat boundary
 
-Server authority + proofs shut down a large class of cheats structurally:
+Server authority + invariants shut down a large class of cheats structurally:
 
 - **State manipulation** (teleport, set score/health) — no write path; `update:
   "false"` + tick-only advancement.
 - **Maphacks / wallhacks** — fog-of-war views; hidden data never sent.
-- **Macro / turbo-fire** — proven per-player `rollingSum` rate caps.
+- **Macro / turbo-fire** — enforced per-player `rollingSum` rate caps.
 - **Forging what a player did** — append-only, owner-attributed intent log.
 
 What **no backend can cure**: a script firing only *legal* inputs at *human*

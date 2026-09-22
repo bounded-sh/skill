@@ -134,7 +134,7 @@ instructions on the platform (~1189B alone; ~1225B chained with
 builder compresses the fixed Meteora/framework accounts through the standard
 platform lookup table (~1104B compressed). Do NOT chain further actions onto this
 hook, keep string args (ids, URIs) short, and omit optional args you don't need -
-each one is bytes you don't have. If `bounded verify` rejects your variant for
+each one is bytes you don't have. If deploy rejects your variant for
 transaction size, read the fix ladder in
 [onchain.md → Transaction-size limit](onchain.md#transaction-size-limit-one-hook--one-solana-transaction).
 
@@ -338,26 +338,26 @@ pool whose 1% flat fee claims split **50% app reserve / 20% creator / 20% app fu
 / 10% OpenApps** - the mechanics below (policy-composed splits, fixed bps literals,
 permissionless claims) are what carry over.
 
-For the full worked example - every collection copied from the Z3-verified reference
+For the full worked example - every collection copied from the reference
 policy, the keeper that turns the crank, the fee-funded build allowance, and an
-honest PROVEN-vs-TRUSTED-vs-NEEDS-DEVNET breakdown - see
+honest ENFORCED-vs-TRUSTED-vs-NEEDS-DEVNET breakdown - see
 [oapps-tokenomics-fee-split.md](oapps-tokenomics-fee-split.md).
 
-## What is PROVEN vs what is trusted (state it honestly)
+## What is ENFORCED vs what is trusted (state it honestly)
 
-- **PROVEN (Z3, every input):** the policy *around* the launch - who may call
+- **ENFORCED (policy, every write):** the policy *around* the launch - who may call
   `createMeteoraConfig` / create pools (`rules.create`, roles), which config values a
   write may carry (field validation on fee bps, caps), and any ledger invariants on
   claimed fees. An over-limit or unauthorized launch write is rejected before the
   `hooks.onchain` call ever fires.
-- **TRUSTED (not proven):** the plugin bodies that build and server-sign the Meteora
+- **TRUSTED (outside the policy):** the plugin bodies that build and server-sign the Meteora
   txns (config creation, pool creation, swaps, fee claims, migration) - trusted like
-  all plugin code. The fee schedule you declare is what the SDK receives; the proof
+  all plugin code. The fee schedule you declare is what the SDK receives; the policy
   does not model Meteora's on-chain fee math or that the chain executed the migration.
 - **RESIDUAL (needs a live fill):** that a real curve trade under the decay schedule
   charges the expected fee, that migration triggers at `migrationMarketCap`, and that
   `withdrawLeftover` releases exactly `leftover` - confirm against a live pool
-  (devnet), not the prover. Nothing external blocks that run today.
+  (devnet), not the policy. Nothing external blocks that run today.
 
 ## Notes & gotchas
 

@@ -17,10 +17,12 @@ import { fileURLToPath } from 'node:url'
 //          lets anyone enroll themselves into ANY tenant.
 //   F-006 flat tenant-admin: the admins row DECLARES a `tenant` field; create/update must
 //          gate on `get(/admins/@user.id).tenant == ...` so an admin of one tenant cannot
-//          promote into another. authorityClosure proves growth-through-admins, not scope.
+//          promote into another. Growth-through-admins alone does not cover tenant scope.
+//          (The worked example lives in admin-and-ownership.md, "Keep the admin set closed".)
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const invariants = readFileSync(path.join(root, 'bounded-backend/docs/invariants.md'), 'utf8')
+const adminOwnership = readFileSync(path.join(root, 'bounded-backend/docs/admin-and-ownership.md'), 'utf8')
 
 // Body of a "## "/"### " section up to the next heading of the same or higher level.
 function section(source, heading) {
@@ -84,7 +86,7 @@ test('F-003: membership creation is gated on a tenant-issued invite, not bare se
 })
 
 test('F-006: flat tenant-admin gates create AND update on the caller\'s own tenant', () => {
-  const nested = section(invariants, '### Nested authority')
+  const nested = section(adminOwnership, '## Keep the admin set closed')
   // The admins example declares a `tenant` field; every privileged mutation must read it.
   const tenantGate = /get\(\/admins\/@user\.id\)\.tenant ==/g
   const gateCount = (nested.match(tenantGate) || []).length

@@ -61,7 +61,6 @@ for a production environment's identity.
 ```bash
 bounded deploy ./policy.json --environment preview      # → preview appId, preview constants
 bounded deploy ./policy.json --environment production   # → production appId, production constants
-bounded verify ./policy.json --environment production   # prove the prod-resolved policy
 ```
 
 What the CLI does for `--environment <name>`:
@@ -76,8 +75,8 @@ What the CLI does for `--environment <name>`:
    `@const`/`@def` resolution ([constants-and-defs.md](../../bounded-backend/docs/constants-and-defs.md))
    inlines the now env-specific values.
 
-`bounded deploy`, `bounded verify`, and `bounded functions deploy --all` run the
-same resolution, so what you prove is what you ship.
+`bounded deploy`, `bounded tests run`, and `bounded functions deploy --all` run
+the same resolution, so what you test is what you ship.
 
 So one file gives preview and production **different admin members and different
 caps** with no flags and no copy-paste. Per-env `appId`s keep the two apps
@@ -118,13 +117,10 @@ Wire both ids into `policy.json`:
 }
 ```
 
-Resolve, prove, and deploy the policy once per environment:
+Resolve and deploy the policy once per environment:
 
 ```bash
-bounded verify ./policy.json --environment staging
 bounded deploy ./policy.json --environment staging
-
-bounded verify ./policy.json --environment production
 bounded deploy ./policy.json --environment production
 ```
 
@@ -228,7 +224,7 @@ so each way of losing it refuses instead:
   reference for the server to reject;
 - a **new** environment excludes the function until it is added to the list —
   the allowlist is the whole grant, there is no inherited default;
-- and `deploy`, `verify`, or `functions deploy --all` run **without**
+- and `deploy` or `functions deploy --all` run **without**
   `--environment` refuses outright as soon as any function carries an
   `environments` key, naming the scoped functions. An env-blind deploy has no
   environment to filter against, so rather than guess it makes you pick.
@@ -256,4 +252,4 @@ mandatory for the whole file.
 - [roles.md](../../bounded-backend/docs/roles.md) — per-env admin via `@const.ADMIN`
 - [hooks-scheduled-webhooks.md](../../bounded-backend/docs/hooks-scheduled-webhooks.md) — the `schedule` block a `schedules` override retunes
 - [functions.md](../../bounded-backend/docs/functions.md) — the function spec an `environments` allowlist rides on
-- [cli-reference.md](cli-reference.md) — every flag on `deploy`/`verify`
+- [cli-reference.md](cli-reference.md) — every flag on `deploy`

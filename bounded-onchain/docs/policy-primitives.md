@@ -106,12 +106,12 @@ plugin when one exists because it carries a narrower account contract.
 
 ## Rule arithmetic is bounded on-chain - write pins division-first
 
-`bounded verify` proves rules with **unbounded** integers (Z3), but the on-chain
+The offchain rule plane evaluates rules with **unbounded** integers, but the on-chain
 rule plane evaluates them in **fixed-width signed integers**. A pin that is
-provably correct can therefore be *runtime-dead* on-chain: the intermediate
+correct offchain can therefore be *runtime-dead* on-chain: the intermediate
 product overflows the register and the write is denied, forever, at the
-magnitudes the app actually runs at. No proof gate catches this, because the
-prover and the enforcer disagree about the number domain rather than about the
+magnitudes the app actually runs at. Nothing at deploy catches this, because the
+two planes disagree about the number domain rather than about the
 logic.
 
 This bites exactly where money lives, because lamports (1e9/SOL) and raw token
@@ -399,7 +399,7 @@ For multi-transaction financial lifecycles, read
 turning these primitives into a head/cursor/receipt protocol. In particular,
 `getAfter` falls back to committed state when a sibling is absent. Use
 `requiresInBatch` for required companions in realtime data-plane batches, but
-do not treat that realtime-only gate as an onchain proof obligation. Prefer one
+do not treat that realtime-only gate as an onchain guarantee. Prefer one
 onchain receipt hook whose derived `updateField` mutations commit together.
 
 ## Cross-app Documents (`@App`)

@@ -46,8 +46,8 @@ Is it request-time SSR that must run a server?
 1. **Model the data as collections and rules first.** Most existing endpoints
    exist only to check a condition before a write; on Bounded that check IS the
    rule, and the client writes directly. Port the schema, then write the rules,
-   then `bounded verify` until every blocking obligation passes. Do not port
-   endpoints one-to-one.
+   then `bounded tests run` until every allow and deny case you expect passes.
+   Do not port endpoints one-to-one.
 2. **Keep only the functions that need a server.** Third-party calls, batch
    computation, and anything that must run with a secret become functions.
    Read [functions](../../bounded-backend/docs/functions.md); reach for
@@ -125,7 +125,7 @@ rules refuse was never admissible under the new policy.
 
 ## Verify before you say it is ported
 
-- `bounded verify` passes with no blocking results.
+- `bounded deploy` accepted the policy and `bounded tests run` passes.
 - `bounded site deploy` served the site; a denied write returns `403`, a
   denied read returns an empty `200`.
 - For an oApp: `bounded oapp preflight` is READY and `bounded oapp rehearse`

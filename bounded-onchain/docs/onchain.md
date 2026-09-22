@@ -8,7 +8,7 @@ policy upgrade governance, and game settlement with server-signed
 transactions. Client-signed game handoff is not currently supported.
 
 This is the home for everything onchain. [data-plane.md](../../bounded-backend/docs/data-plane.md) and
-[proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) summarize and point here.
+[invariants.md](../../bounded-backend/docs/invariants.md#onchain-coverage) summarize and point here.
 Read [solana-capability-status.md](solana-capability-status.md) before selecting any Solana plugin or primitive.
 
 ## Contents
@@ -23,7 +23,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
-- [Proof coverage](#proof-coverage-onchain)
+- [Invariant coverage](#invariant-coverage-onchain)
 - [Game settlement](#game-settlement-the-two-directions)
 
 ## Default is off-chain / opt in deliberately
@@ -133,7 +133,6 @@ Protocol selection does not make every discovered plugin usable on that network.
 Bounded tracks function discovery, deployed-runtime support, and retained live verification separately.
 Run `bounded plugins list --json` for the CLI's offline callable projection, then `bounded plugins describe <plugin.function> --json` for the exact arguments, proof sorts, signer roles, return contract, and network-scoped support evidence.
 These commands need no account or network connection and their capability state is advisory, not a deploy verdict.
-Run `bounded verify --protocol <protocol> --json` against the actual policy and inspect `capabilityReadiness`; it reports applicable plugin and return-type advisories but never proves live-network execution.
 An invalid `--protocol` is rejected locally before any network request.
 The deployed program is recorded as runtime v7 on both devnet and mainnet-beta (2026-09-15), but the runtime version does not prove that an external protocol is deployed or configured.
 Consult the [157-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
@@ -455,13 +454,13 @@ restructuring fixes it.
 Bounded surfaces the limit at two points so you don't discover it when a user's
 write fails on-chain:
 
-- **`bounded verify` / `bounded deploy` (compile-time).** The validator estimates
+- **`bounded deploy` (compile-time).** The validator estimates
   each `onchain: true` collection's single-document hook transaction **after
   standard-LUT compression**. If it still exceeds the limit, deploy is **rejected**
   with a message naming the collection, the hook, the actions, the sizes and the
   fix. This gate runs for **every** Solana protocol - devnet, mainnet, mainnet-
   preview **and poofnet** (`realtime_offchain`). Poofnet enforcing it is
-  deliberate: a policy proven on poofnet is expected to move to mainnet unchanged,
+  deliberate: a policy validated on poofnet is expected to move to mainnet unchanged,
   so an unfittable hook must fail the poofnet deploy TODAY, not the mainnet deploy
   months later (sim == mainnet parity). **Never work around this gate by deploying
   poofnet-only and hoping** - the same write is rejected by poofnet's runtime
@@ -480,7 +479,7 @@ write fails on-chain:
   N× one call. An app-configured lookup table (`appConfig.lutAddress`) demotes a
   residual overage to a warning (the builder compresses with it too).
 
-### When verify rejects a hook for size - how to fix it, in order
+### When deploy rejects a hook for size - how to fix it, in order
 
 1. **Split the hook across collections/writes.** One write = one transaction, so
    independent actions belong in separate collections (each with its own small
@@ -548,16 +547,16 @@ extended and resumed without discarding progress. Chain state is authoritative:
 read it before publishing or changing `governance.upgrade`, and never downgrade a
 policy/immutable app through an offchain-only policy edit.
 
-## Proof coverage onchain
+## Invariant coverage onchain
 
 The **same compiled rule bytecode** runs in the realtime runtime and the onchain
-program, so rule properties (auth-required, immutability, implication) hold
-identically on both. The verified onchain invariant subset includes direct,
-materialized, and sharded `conserve`; epoch-bucketed `rollingSum` (including a
-path-variable scope); `tenantTag`; and full-path `tenantEdge`. Materialized and
-sharded conservation use aggregate-state PDAs. `tenantEdge.targetPathVariable`,
-`rollingSum.resetAtMs`, and cross-scope variants fail closed. Full table in
-[proof-coverage.md](../../bounded-backend/docs/proof-coverage.md).
+program, so rules behave identically on both. The onchain invariant subset
+includes direct, materialized, and sharded `conserve`; epoch-bucketed
+`rollingSum` (including a path-variable scope); `tenantTag`; and full-path
+`tenantEdge`. Materialized and sharded conservation use aggregate-state PDAs.
+`tenantEdge.targetPathVariable`, `rollingSum.resetAtMs`, and cross-scope
+variants fail closed. Full table in
+[invariants.md](../../bounded-backend/docs/invariants.md#onchain-coverage).
 
 ## Game settlement: the two directions
 
@@ -650,7 +649,7 @@ currently supported. For settlement you can ship now, use server-signed above.
 ## Related
 
 - [data-plane.md](../../bounded-backend/docs/data-plane.md) - write/read semantics; onchain summary points here
-- [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) - which invariants hold onchain; points here
+- [invariants.md](../../bounded-backend/docs/invariants.md#onchain-coverage) - which invariants hold onchain; points here
 - [policy-reference.md](../../bounded-backend/docs/policy-reference.md) - the identity triad; onchain-forbidden vars
 - [service-keys.md](../../bounded-backend/docs/service-keys.md) - `actAs` + the on-chain signing key for server-signed settle
 - [live-runtime.md](../../bounded-backend/docs/live-runtime.md) - the `call` primitive a tick uses to settle

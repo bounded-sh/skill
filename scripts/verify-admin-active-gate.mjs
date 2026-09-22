@@ -151,7 +151,7 @@ if (staticAdminActiveBlocks === 0) {
 // existence gate. But the bare-existence gate is a LEGITIMATE simpler design
 // for an admin registry that declares NO `active` field (revoke = delete the
 // row, which works). Sibling docs still teach exactly that pattern
-// (service-keys.md, verify-and-counterexamples.md, policy-generation-guide.md,
+// (service-keys.md, policy-generation-guide.md,
 // functions-when-to-use.md). If the prohibition prose reads as an UNCONDITIONAL
 // ban, it contradicts those valid examples. Three guards keep the corpus
 // internally consistent:

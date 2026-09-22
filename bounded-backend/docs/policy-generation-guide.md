@@ -23,7 +23,7 @@ Work in this order. Each step narrows the next.
    `checkpointed` only when justified.
 7. **Add the extras the description needs** — hooks, scheduled jobs, webhooks,
    search, files. Nothing the description didn't ask for.
-8. **Verify → read counterexamples → fix → deploy.**
+8. **Test → fix → deploy.**
 
 ---
 
@@ -62,29 +62,18 @@ field: members are `orgs/$orgId/members/$memberId`, never a `members` array.
 | Will an invariant conserve this total? | Use `Int` or `UInt`. |
 | Is it a tenant tag the policy will bind? | Use `String` (tenantTag/tenantEdge require String). |
 | A timestamp? | `UInt` Unix seconds. There is no Timestamp type. |
-| Set once and never changed (owner, author)? | Mark `!` to *declare* an immutability obligation — then your `update` rule must satisfy it (assert `@newData.f == @data.f`, or `update: "false"`). |
+| Set once and never changed (owner, author)? | Mark `!`; the runtime rejects any later write that changes it. |
 | Genuinely optional? | Mark `?` — but then **null-guard it in rules** (see step 8). |
 | An onchain collection? | No `Float` (use Int/UInt). |
 
-Prefer `!` aggressively, but know what it does: `!` *declares* an obligation your
-`update` rule must satisfy — it is **not** auto-enforced. Marking `createdAt:
-"UInt!"` on its own makes `bounded verify` **FAIL** ("Update rule allows
-`@data.createdAt` to change") until you either assert the field is preserved in
-the update rule or forbid updates entirely:
-
-```jsonc
-"createdAt": "UInt!",
-"rules": {
-  // satisfy the ! obligation: the field can never change on update …
-  "update": "@user.id == @data.owner && @newData.createdAt == @data.createdAt"
-  // … or, if the doc is never updated at all: "update": "false"
-}
-```
+Prefer `!` aggressively: the runtime enforces it on every update (a create sets
+the field once; a later update that changes it is rejected, and an update that
+omits it leaves it unchanged). An `update: "false"` rule forbids updates
+entirely, which covers it too.
 
 Done right, an `owner: "String!"` field (holding `@user.id`, the universal
-identity) plus `@newData.owner == @data.owner` in the update rule *proves* no
-payload can ever reassign ownership — a strong guarantee, but one your rule has
-to honor. Use `Address` only for fields that hold a real onchain wallet address.
+identity) means no payload can ever reassign ownership. Use `Address` only for
+fields that hold a real onchain wallet address.
 
 ### Step 3 — Auth rules
 
@@ -94,9 +83,7 @@ defaults to deny.** Give every collection an explicit, deliberate rule for each 
 
 > A literal `"false"` rule is the **intentional always-deny idiom** for
 > append-only / immutable / server-authoritative collections, and `bounded
-> deploy` **accepts** it. `bounded verify` surfaces it as a **non-blocking
-> advisory** (intentional deny) — it does **not** block deploy (see
-> [verify-and-counterexamples.md](verify-and-counterexamples.md#human-in-the-loop-findings)).
+> deploy` **accepts** it.
 
 The expression language (full reference in
 [policy-reference.md](policy-reference.md)):
@@ -121,7 +108,7 @@ The expression language (full reference in
 - `get(/path).field` — read another document's pre-transaction state.
 
 > **⏱ TIME UNITS — seconds (policy) vs milliseconds (client). A silent timestamp
-> bug.** The policy/proof layer is **Unix SECONDS**: `@time.now`, `rollingSum`
+> bug.** The policy layer is **Unix SECONDS**: `@time.now`, `rollingSum`
 > `windowSeconds`, `scheduledAt`, and any timestamp *field you compare against
 > `@time.now`* must be seconds. But the SDK/client side is **MILLISECONDS**: JS
 > `Date.now()`, and the auto-stamped system fields `_createdAt` / `_updatedAt`, are
@@ -163,8 +150,8 @@ guard**:
 ```
 
 Without the `@user.id != null &&`, an unauthenticated caller writing
-`owner: null` satisfies `null == null` and the rule passes. The prover will hand
-you this exact counterexample; write the guard up front. (Ownership keys off
+`owner: null` satisfies `null == null` and the rule passes. Write the guard up
+front. (Ownership keys off
 `@user.id`, the universal identity — not `@user.address`, which is `null` for
 email-only logins. Reserve `@user.address` for onchain/wallet semantics.)
 
@@ -226,7 +213,7 @@ For per-actor or per-tenant caps, make the actor/tenant a **path variable** befo
 you write the invariant. A per-agent spend cap should look like
 `agents/$agentId/spend/$spendId` with `"scopeVariable": "$agentId"` and
 `update`/`delete` set to `"false"`. Do not partition on the event id
-(`$spendId`) — that gives each event its own cap and proves the wrong property.
+(`$spendId`) — that gives each event its own cap and caps the wrong thing.
 
 If you skip this step, the policy still compiles — it just doesn't protect
 anything. This is the #1 way a generated policy is *wrong but green*.
@@ -270,11 +257,11 @@ realtime game's per-player rate-cap collection must be `durable`.
 Only what the description asks for. **Use the least-powerful tool that works** —
 prefer declarative, enforced policy surfaces over imperative code:
 
-- access control + provable constraints → **enforced rules + declared
-  invariants** (steps 3–5; call only the verifier-reported obligations proved);
+- access control + enforced constraints → **enforced rules + declared
+  invariants** (steps 3–5);
 - a simple in-boundary side-effect that reacts to a write → a **hook**;
 - logic that must **leave the boundary** (call an external API, use a secret) →
-  a **function** — imperative, un-proven logic; reach for it last.
+  a **function** — imperative logic outside the policy; reach for it last.
 
 Decide with [functions-when-to-use.md](functions-when-to-use.md). Then add:
 
@@ -298,24 +285,25 @@ Decide with [functions-when-to-use.md](functions-when-to-use.md). Then add:
 - **Realtime rooms / multiplayer** → a `session` block + `hooks.tick`. See
   [realtime-and-games.md](realtime-and-games.md).
 
-### Step 8 — Verify, read counterexamples, fix, deploy
+### Step 8 — Test, fix, deploy
 
 ```bash
-bounded verify
+bounded tests run
 ```
 
-Every DISPROVED is a concrete breaking assignment. The two you will hit most:
+Write an allow and a deny test for every security seam
+([policy-tests.md](policy-tests.md)). The two mistakes you will hit most:
 
-1. **The `null` counterexample** — an optional field makes a "tautology" false.
-   `amount <= 100 || amount > 100` is DISPROVED by `amount = null`. Fix: drop the
+1. **The `null` gap** — an optional field makes a "tautology" false.
+   `amount <= 100 || amount > 100` admits `amount = null`. Fix: drop the
    `?`, or guard (`@newData.amount != null && @newData.amount <= 100`).
 2. **The `null == null` auth bypass** — `@newData.owner == @user.id` is
    satisfied by an unauthenticated caller writing `owner: null`. Fix: prepend
    `@user.id != null &&`.
 
-Never weaken the property to make a proof pass — the counterexample is a write
-production would have accepted. Strengthen the expression, re-verify until clean,
-run the [quality checklist](quality-checklist.md), then `bounded deploy`.
+Never weaken a rule to make a test pass — the failing test is a write
+production would have accepted. Strengthen the expression, rerun the tests until
+clean, run the [quality checklist](quality-checklist.md), then `bounded deploy`.
 
 ---
 
@@ -325,7 +313,7 @@ Three complete, validator-clean policies (team SaaS, spend-cap marketplace,
 realtime game) live in **[policy-examples.md](policy-examples.md)** so this guide
 stays focused on method. Read them once you have the eight steps.
 
-## Common mistakes (caught by the validator or the prover)
+## Common mistakes
 
 | Mistake | What happens | Fix |
 |---|---|---|
@@ -337,9 +325,9 @@ stays focused on method. Read them once you have the eight steps.
 | `rollingSum` on `ephemeral`/`checkpointed` | deploy error | set `tier: "durable"` |
 | `rollingSum` field typed `Int` | rejected: must be `UInt` | use `UInt` |
 | onchain collection with `"read": "<expr>"` | rejected: onchain data is public | set `"read": "true"` |
-| Write rule without `@user.id != null` | DISPROVED (`null == null` bypass) | lead with the auth guard |
-| Optional field in a numeric guard | DISPROVED (`null` counterexample) | null-guard or make it required |
-| No invariant on a money/quota field | green but unprotected | add the invariant (step 4) |
+| Write rule without `@user.id != null` | deploys, but an unauthenticated caller matches a null owner (`null == null`) | lead with the auth guard |
+| Optional field in a numeric guard | deploys, but a null value slips past the comparison | null-guard or make it required |
+| No invariant on a money/quota field | deploys but unprotected | add the invariant (step 4) |
 
 ## Related
 
@@ -349,4 +337,3 @@ stays focused on method. Read them once you have the eight steps.
 - [admin-and-ownership.md](admin-and-ownership.md) — the "who is the admin?" model (no god-mode)
 - [functions-when-to-use.md](functions-when-to-use.md) — when to reach for a function (and when not)
 - [quality-checklist.md](quality-checklist.md) — the pre-deploy self-check
-- [verify-and-counterexamples.md](verify-and-counterexamples.md) — reading proof failures

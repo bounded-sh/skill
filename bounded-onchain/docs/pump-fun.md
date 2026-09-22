@@ -142,7 +142,7 @@ There is no matching sell primitive and no "exact tokens out" variant.
 
 Because the split lives in the on-chain config rather than in your policy, changing
 it is an `updateShareholders` transaction by the admin, not a policy redeploy - so
-if you want the split to be provably fixed, prove the *rule* that decides who may
+if you want the split to be fixed, constrain the *rule* that decides who may
 call `updateShareholders` and with what literals.
 
 ## PumpSwap liquidity (after graduation)

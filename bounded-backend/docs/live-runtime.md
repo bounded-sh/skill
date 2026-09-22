@@ -26,7 +26,7 @@ shape, not the whole of it.
 > cursor presence, layout state) you'd rather write in TypeScript.
 
 This is the imperative sibling of [functions.md](functions.md): code you upload
-with an honest proof boundary. The difference is *where* the code runs — a
+with an honest policy boundary. The difference is *where* the code runs — a
 function runs once per call; a live room runs continuously for the room.
 
 ## The four-artifact DX
@@ -181,10 +181,10 @@ Two **distinct** persistence mechanisms, do not conflate them:
 
 - **Snapshot** = the live runtime saves room state every `snapshotEveryTicks`
   ticks. Purpose: survive routine runtime churn and limit replay loss. Not a
-  proof artifact and not a normal collection document.
+  normal collection document.
 - **Checkpoint** = on the checkpoint cadence, the **authoritative** state is
-  folded **through your declared invariants** into the **provable data store**.
-  Purpose: durability + replayability + proof. Only happens on `checkpointed`.
+  folded **through your declared invariants** into the **governed data store**.
+  Purpose: durability + replayability. Only happens on `checkpointed`.
 
 `ephemeral` = live fan-out only (snapshots bound replay loss, nothing is
 provable). `checkpointed` = the authoritative state becomes provable on every
@@ -259,7 +259,7 @@ capability. If you need a durable audit trail (for example,
    Record a deterministic `eventId` in room state before returning so the same
    material event is not emitted again on every tick.
 3. Gate the Function independently by origin, for example
-   `auth: "@origin.kind == 'live' && @origin.module == 'pong'"`. `@origin` proves
+   `auth: "@origin.kind == 'live' && @origin.module == 'pong'"`. `@origin` identifies
    which live module requested the call; it does not choose the write identity.
 4. Give the call an acting principal with `session.live.runAs` or per-Function
    `actAs`, and write the audit collection's rules to authorize that identity.
@@ -289,7 +289,7 @@ What this structurally cures (same boundary as
 - **Forged ticks** — only the live runtime's native `tick` advances state.
 - **Macro / turbo-fire / write floods** — pair the room with a `rollingSum`-capped
   intent collection (the rate-cap pattern in
-  [realtime-and-games.md](realtime-and-games.md#intents--proven-rate-caps)).
+  [realtime-and-games.md](realtime-and-games.md#intents--enforced-rate-caps)).
 
 What **no backend cures**: a script firing only *legal* intents at *human* timing
 but with superhuman accuracy. Each intent is individually valid, so nothing
@@ -355,8 +355,7 @@ the call. The called function is an ordinary Bounded [function](functions.md): i
   }
   ```
 
-  `@origin` is offchain-only (forbidden in `onchain:true` rules, like `@user.id`) and is a
-  first-class proof-engine special var, so `bounded verify` earns the obligation. Because
+  `@origin` is offchain-only (forbidden in `onchain:true` rules, like `@user.id`). Because
   `@origin.module`/`room`/`tick` are null for a non-live call, a rule gating on them should
   also require `@origin.kind == 'live'`. Inside the function body, `ctx.origin` is
   `{ kind, path, module, room, tick }` (or null). See
@@ -477,8 +476,8 @@ joiner — arrived in both players' views as `winner=<P1> phase=over`; the playe
 > per-client view.
 
 Use `checkpointed` (not `ephemeral`) when you want that authoritative state **fold-gated
-by your invariants** every checkpoint (the anti-cheat proof boundary) and surviving
-runtime churn — but note `checkpointed` changes *durability/provability of the
+by your invariants** every checkpoint (the anti-cheat boundary) and surviving
+runtime churn — but note `checkpointed` changes *durability of the
 state*, **not** how you read it: still the view, never `get()`.
 
 **Cross-room leaderboard — two paths.** Folding each room's result into a shared
@@ -547,11 +546,9 @@ coordinator.
 > Mitigate with a scheduled hook or one-shot expiry that removes old entries.
 > Treat the room's own live view as ground truth.
 
-Two rule gotchas the verifier will (correctly) flag if you omit them: pin **both**
-`host` and `createdAt` immutable on `update` (`@newData.x == @data.x`) — otherwise the
-host can rewrite ownership or backdate the entry, and verify `[FAIL]`s
-field-immutability. The public `read: "true"` is fine for an open lobby (verify reports
-it as an intentional public-read advisory, not a failure).
+Two rule gotchas: pin **both** `host` and `createdAt` immutable on `update`
+(`@newData.x == @data.x`) — otherwise the host can rewrite ownership or backdate
+the entry. The public `read: "true"` is fine for an open lobby.
 
 ## Reconnection & presence (drops, rejoins, leaves)
 
@@ -736,7 +733,7 @@ example above; no raw `subscribe` + `fetch` needed.)
 - [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md) — the honest trust boundary in depth
 - [policy-reference.md](policy-reference.md) — `tier` + read-rule expression language
 - [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — `subscribe`, `getIdToken`
-- [functions.md](functions.md) — the sibling code-upload model (secrets + proof boundary)
+- [functions.md](functions.md) — the sibling code-upload model (secrets + policy boundary)
 - [principals-and-origins.md](principals-and-origins.md) — `@origin` (who may call) + the three principals & precedence (`actAs` > `runAs` > system)
 - [ai-npcs.md](ai-npcs.md) — the tick `call`s a function = an NPC; funding an LLM NPC with `session.live.runAs`
 - [onchain.md](../../bounded-onchain/docs/onchain.md) — onchain settlement from a live room

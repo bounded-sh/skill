@@ -6,9 +6,8 @@ config key. (Invariants: [invariants.md](invariants.md).)
 
 One JSON file defines the backend: collections, types, auth rules, side-effect
 hooks, schedules, webhooks, search, and invariants. Everything is validated at
-deploy. The runtime enforces authorization rules, while `bounded verify` proves
-supported declared invariants and generated safety obligations. Only a named
-`PROVED` item in the report carries proof weight. Invariants get their own doc:
+deploy. The runtime enforces authorization rules and declared invariants before
+commit. Invariants get their own doc:
 [invariants.md](invariants.md). For the method of *generating* a policy, see
 [policy-generation-guide.md](policy-generation-guide.md).
 
@@ -60,76 +59,65 @@ at deploy.
 | `Address` | Wallet / account address. |
 
 > **`Bool`, not `Boolean`.** `deploy` rejects `"Boolean"` with
-> `unrecognized data type "Boolean"` (and `verify` is being aligned to reject it
-> too — don't rely on `verify` passing it). There is no `Number`, `Timestamp`, or
+> `unrecognized data type "Boolean"`. There is no `Number`, `Timestamp`, or
 > `Date` scalar — model timestamps as `UInt` (Unix seconds) and lists as
 > sub-collections.
 
 Suffixes compose with every base type:
 
 - `?` — optional (`String?`)
-- `!` — **readonly after create** (`String!`) — adds an immutability **proof
-  obligation** the deploy gate checks. It is **opt-in per field** and does **not**
-  auto-generate the enforcement: you must still write the preservation clause in
-  the `update` rule yourself, or deploy fails (see below).
+- `!` — **readonly after create** (`String!`) — a create sets the field once and
+  the runtime rejects any later update that changes it (see below).
 - `!?` — both (`String!?`)
 
 There are **no array or object field types**. Model a list as a sub-collection.
 
-### `!` requires a preservation clause in the update rule
+### `!` is enforced by the runtime
 
-Marking a field `!` adds the obligation *"no payload satisfying the update rule
-can change this field"* — but the engine does **not** synthesize the check for
-you. If your `update` rule admits any write that changes the field, deploy fails
-with e.g. `field immutability` / `<field> is immutable on update`. You must add
-`@newData.X == @data.X` for **each** `!` field to the update rule:
+A create may set a `!` field once. A later update that re-sends it with a
+different value is rejected, and an update that omits it leaves it unchanged. An
+optional readonly field (`!?`) that is still null may be set once by a later
+update. You do not need a `@newData.X == @data.X` clause in the update rule for
+this, though one is harmless:
 
 ```json
 "posts/$id": {
   "fields": { "author": "String!", "createdAt": "UInt!", "body": "String" },
   "rules": {
     "create": "@user.id != null && @newData.author == @user.id",
-    "update": "@user.id == @data.author && @newData.author == @data.author && @newData.createdAt == @data.createdAt",
+    "update": "@user.id == @data.author",
     "delete": "@user.id == @data.author"
   }
 }
 ```
 
-Fields that typically need this: identity/ownership (`owner`, `author`,
-`creator`), creation timestamps (`createdAt`), and any set-once key. (An
-`update: "false"` rule satisfies the obligation vacuously — nothing can change
-the field because nothing can update at all — which is why server-authoritative
-collections never hit this.) Note: a tenant-tag field bound by a `tenantTag`
-invariant does **not** need `!` — the invariant rebinds it on every write.
+Fields that typically want `!`: identity/ownership (`owner`, `author`,
+`creator`), creation timestamps (`createdAt`), and any set-once key. Note: a
+tenant-tag field bound by a `tenantTag` invariant does **not** need `!` — the
+invariant rebinds it on every write.
 
 Onchain update payloads are patches.
 The onchain program starts with the stored document and applies operations only for keys present in the payload.
 Omitted fields remain in the final document and in the merged `@newData` candidate evaluated by the update rule.
 Include a `!` field on create, but omit it from every later onchain update payload.
 Supplying the readonly key again creates a field operation and the onchain program rejects it with `FieldReadOnly`, even when the supplied value is unchanged.
-The preservation clause above remains required because it proves the merged candidate cannot change the field.
 See [onchain.md](../../bounded-onchain/docs/onchain.md#onchain-updates-are-patches) for the client payload shape.
 
-## Conditional Transfer Authority
+<a id="conditional-transfer-authority"></a>
 
-Ownership-like fields (`owner`, `ownerAddress`, `holder`, or a field detected
-from rules) are protected by a deploy proof: the field may stay unchanged, or it
-may be reassigned only by its current holder. Use `proofs.transferAuthority`
-when a different atomic condition is intentionally safe, such as a listed good
-moving to a buyer only when the paired payment lands in the same `setMany`.
+## Ownership fields
+
+An ownership-like field (`owner`, `holder`) is governed by the collection's
+`update` rule like any other field. The common shape is "only the current holder
+may reassign it": `@user.id == @data.holder`. When a different atomic condition
+is intentionally safe, such as a listed good moving to the buyer only when the
+paired payment lands in the same `setMany`, put the predicate in `defs` and admit
+it in the update rule:
 
 ```json
 {
   "defs": {
     "settledSale": "@data.forSale == true && @newData.holder == @user.id && getAfter(/wallets/@data.holder).ink == get(/wallets/@data.holder).ink + @data.price && getAfter(/wallets/@user.id).ink == get(/wallets/@user.id).ink - @data.price"
-  },
-  "proofs": {
-    "transferAuthority": [{
-      "scope": "goods/$goodId",
-      "field": "holder",
-      "name": "settledSale",
-      "allow": "@def.settledSale"
-    }]
   },
   "goods/$goodId": {
     "fields": { "holder": "String", "forSale": "Bool", "price": "UInt" },
@@ -143,21 +131,14 @@ moving to a buyer only when the paired payment lands in the same `setMany`.
 }
 ```
 
-`transferAuthority` is a proof declaration, not a runtime bypass. The collection
-`update` rule still authorizes the write at runtime; deploy proves every update
-that changes the field is either current-holder authorized or satisfies the
-declared `allow` predicate, and separately proves that the declared predicate can
-only assign the ownership field to the caller (`@newData.holder == @user.id` or
-the equivalent recognized caller principal). Put money/points under `conserve`
-and submit the good move plus wallet debit/credit in one atomic `setMany`.
-The older collection-local `transferAuthority` array is still accepted for
-backward compatibility, but `proofs.transferAuthority` is the preferred shape.
+Put money/points under `conserve` and submit the good move plus wallet
+debit/credit in one atomic `setMany`; write an allow and a deny policy test for
+the complete batch.
 
 ## Rules & the expression language
 
 `rules` gates `read`, `create`, `update`, `delete` with boolean expressions. A
-false rule rejects with `403` + a trace, and the prover analyzes the same
-expressions at deploy. **An omitted rule defaults to deny.**
+false rule rejects with `403` + a trace. **An omitted rule defaults to deny.**
 
 ```json
 "rules": {
@@ -314,7 +295,7 @@ full treatment in [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md):
 Authorization lives in `rules`; cross-transaction correctness lives in
 `invariants`. By default a hook bypasses the per-actor rules (it is privileged
 server logic); set `enforceRules` to hold a hook to the same rules an external
-caller faces. A hook can never break a proven invariant. On `"onchain": true`
+caller faces. A hook can never break an invariant. On `"onchain": true`
 collections the hook plane differs: a false or erroring `hooks.onchain`
 expression aborts the whole Solana write atomically (see
 [hooks and webhooks](hooks-scheduled-webhooks.md)).
@@ -332,7 +313,7 @@ rejected):
 | `tier` | `"durable" \| "checkpointed" \| "ephemeral"` | this doc |
 | `errorDisclosure` | `"full" \| "minimal"` — how much of a rejection reason reaches the client | [§ Error disclosure](#error-disclosure) |
 | `invariants` | array of invariant objects | [invariants.md](invariants.md) |
-| `onchain` | boolean | [proof-coverage.md](proof-coverage.md) |
+| `onchain` | boolean | [invariants.md](invariants.md#onchain-coverage) |
 | `hooks` | `{ offchain, onchain, tick, scheduled, enforceRules }` | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
 | `enforceRules` | boolean (collection-level) | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) |
 | `schedule` | `{ every, run }` or an array of them. `every` (never `run`) can be retuned per environment | [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md), [environments.md](../../bounded-deploy/docs/environments.md) |
@@ -363,8 +344,6 @@ never treated as path templates:
 | `roles` | `{ name: { members, read?, write? } }` — provably-scoped cross-collection grants | [roles.md](roles.md) |
 | `constants` | `{ NAME: string\|number\|bool }` — values for `@const.NAME` | [constants-and-defs.md](constants-and-defs.md) |
 | `defs` | `{ name: "rule fragment" }` — reusable `@def.name` fragments | [constants-and-defs.md](constants-and-defs.md) |
-| `proofs` | `{ transferAuthority?, publicReads?, attestations? }` - proof-only declarations for conditional transfer authority, exact conditional public-read posture, and global attestations | [invariants.md](invariants.md#proofspublicreads-exact-conditional-public-read-posture), [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
-| `attestations` | legacy alias for `proofs.attestations` | [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims) |
 | `errorDisclosure` | `"full" \| "minimal"` — policy-global default for rejection-reason detail (per-collection wins) | [§ Error disclosure](#error-disclosure) |
 | `environments` | `{ name: { appId, constants, schedules } }` — **CLI-only**, resolved client-side | [environments.md](../../bounded-deploy/docs/environments.md) |
 
@@ -436,20 +415,6 @@ Once an app's deployed policy carries `"oapp": true`, every later policy deploy 
 There is deliberately no removal path in v1.
 Apps provisioned through the create flow with `oapp: true` start in oApp mode, and commissioned build children (create and fork runs) inherit oApp mode from the commissioning source app's deployed policy.
 
-**Attestation scope notes (nested vs flat):**
-
-- `roleGatedRead` requires exactly one boundary: a flat `role`
-  (`<collection>/$docId`, e.g. `members/$memberId`) or a non-empty typed
-  `actors` array. Use typed actors for nested roles such as
-  `tenants/$tenantId/members/$memberId`; each role actor declares its caller
-  principal and Boolean membership field. Free-form `gatedBy` is not a nested
-  escape hatch. Worked example:
-  [invariants.md](invariants.md#nested-role-scopes--use-typed-actors).
-- `authorityClosure` supports **only a flat `roleScope`** (`admins/$address`);
-  nested role scopes are not yet supported. For multi-tenant admin sets use a flat
-  `admins/$address` registry — see
-  [invariants.md](invariants.md#nested-authority--authorityclosure-is-flat-only-known-limitation).
-
 ## Error disclosure
 
 `errorDisclosure` controls **how much of a policy-rejection reason reaches the
@@ -494,5 +459,4 @@ category clients can branch on **even in minimal mode**:
 
 - [policy-generation-guide.md](policy-generation-guide.md) — turning a description into a policy
 - [invariants.md](invariants.md) — declaring the boundaries
-- [verify-and-counterexamples.md](verify-and-counterexamples.md) — proving the policy
 - [data-plane.md](data-plane.md) — writing against the deployed policy

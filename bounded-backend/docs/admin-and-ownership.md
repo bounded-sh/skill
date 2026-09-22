@@ -14,10 +14,10 @@ admin/moderator/owner with data powers (moderation, config, refunds).
 > = the reserved control-plane bridge.)
 
 > **Want "admins read/write everything"?** The cleanest path is the top-level
-> `roles` block — a provably-scoped grant the verifier surfaces. See
+> `roles` block — a scoped grant. See
 > [roles.md](roles.md). This doc covers the complementary, *per-document*
-> rule-based model (e.g. "an admin may hide any post") and the
-> `verifyAuthorityClosure` proof obligation. The two compose.
+> rule-based model (e.g. "an admin may hide any post") and how to keep the
+> admin set closed. The two compose.
 
 ## The differentiator: invariants bind EVERYONE
 
@@ -27,7 +27,7 @@ governs every actor, and **invariants bind everyone — the owner included.**
 Nobody — not the owner, not an admin, not a function — can violate an invariant.
 
 This is deliberate. "The owner can do anything" is exactly the hole that makes a
-proven backend unprovable. So Bounded splits authority into two planes:
+governed backend ungovernable. So Bounded splits authority into two planes:
 
 ## Two planes
 
@@ -80,20 +80,12 @@ admin can seed itself — see the bootstrap section below for why.
       "update": "@user.id != null && get(/admins/@user.id).active == true",
       "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
-  },
-  "proofs": {
-    "attestations": [
-      { "claim": "the admin set only grows through existing admins, seeded only by the founder",
-        "kind": "authorityClosure", "roleScope": "admins/$userId",
-        "initialMember": "@const.FOUNDER" }
-    ]
   }
 }
 ```
 
-*(Validates clean against the real PolicyValidator, and the `authorityClosure`
-attestation stays PROVED: `.active == true` implies the row exists, so it
-discharges the same closure obligation an existence check does.)*
+*(Validates clean against the real PolicyValidator; `.active == true` implies
+the row exists, so it is at least as strict as an existence check.)*
 
 - Only an **active** admin **or the founder** can mint an admin. The
   `@user.id == @const.FOUNDER` disjunct is the **genesis clause**: on a
@@ -115,8 +107,8 @@ discharges the same closure obligation an existence check does.)*
   The rule is only: never *declare* `active` and then *ignore* it.)
 - End-users default to **least privilege**: an author may create their own post;
   only an active admin may hide or delete one.
-- The admin gate is the same `get()` expression the prover already understands —
-  so "who may moderate" stays declarative and analyzable, not buried in code.
+- The admin gate is the same `get()` expression every other rule uses —
+  so "who may moderate" stays declarative and readable, not buried in code.
   Note the gate keys on `@user.id` (stable identity), so an email-login admin
   (no wallet) and a wallet-login admin are gated identically.
 
@@ -167,31 +159,46 @@ The idiom that actually works, end to end:
    `admins/<x>` write is carried by `get(/admins/@user.id).active == true`; the
    genesis clause never fires again once an active admin exists.
 
-Pair this with the `authorityClosure` attestation above (`initialMember:
-"@const.FOUNDER"`) to **prove** the founder is the *only* bootstrap — the proof
-shows every write path into the admin scope implies the writer is already an
-admin, except the founder genesis, so there is no extra side door hiding in the
-rules. (Do **not** claim `bounded data set` alone seeds the admin — it is
-governed by the same create rule and 403s without the genesis clause.)
+The `create` rule above is the only write path into the admin scope, so every
+writer is already an admin except for the founder genesis, and there is no extra
+side door hiding in the rules. (Do **not** claim `bounded data set` alone seeds
+the admin — it is governed by the same create rule and 403s without the genesis
+clause.)
 
-## Prove the admin set is well-formed
+## Keep the admin set closed
 
-The proof engine has a dedicated operation, **`verifyAuthorityClosure`**, that
-proves the role collection is *closed under the founder*: every write path into
-the admin scope (create rules, hooks, plugin calls) implies the writer is already
-an admin (no self-promotion, no side doors), and — given `initialMember` — that
-the create path forces the founder in. It's the formal version of "only an admin
-can make an admin." (`authorityClosure` currently supports only a **flat**
-`admins/$userId` role scope — see [invariants.md](invariants.md#proofsattestations--global-policy-wide-claims)
-for the multi-tenant pattern and the nested-scope limitation.)
+The admin set is closed when every write path into it (create rules, hooks,
+plugin calls) requires the writer to already be an active admin, with the
+founder genesis as the only exception. Structure the `admins` collection as
+above, and never let a hook or a function write into it.
 
-> It runs in the verification engine (the same one `bounded verify` drives). The
-> `bounded verify --operation` flag exposes a subset today
-> (`verifyForDeploy`/`checkTautology`/`checkContradiction`/`checkSatisfiability`/`checkImplication`
-> — see [cli-reference.md](../../bounded-deploy/docs/cli-reference.md)); `verifyAuthorityClosure` is an
-> engine operation, not yet a CLI `--operation` value. Structure the admins
-> collection as above so the closure property holds, and `verifyForDeploy` proves
-> the per-rule obligations.
+For a multi-tenant app, keep a **flat `admins/$userId` registry** beside the
+nested tenant data and confine each admin to its tenant in the rules:
+
+```json
+{
+  "constants": { "FOUNDER": "<the-creators-user-id>" },
+  "admins/$userId": {
+    "fields": { "tenant": "String", "active": "Bool" },
+    "tier": "durable",
+    "rules": {
+      "read": "@user.id != null",
+      "create": "@user.id != null && ((get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @newData.tenant) || @user.id == @const.FOUNDER)",
+      "update": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant && @newData.tenant == @data.tenant",
+      "delete": "@user.id != null && get(/admins/@user.id).active == true && get(/admins/@user.id).tenant == @data.tenant"
+    }
+  }
+}
+```
+
+`create` and `update` require `get(/admins/@user.id).tenant == @newData.tenant`
+(or `== @data.tenant`), so an active admin of one tenant cannot create or edit
+an admin of another, and `update` pins `@newData.tenant == @data.tenant` so a
+row cannot be relocated to a foreign tenant. Keep the `@const.FOUNDER` branch
+**outside** the tenant-equality so genesis can still seed the first admin of any
+tenant. Every privileged rule gates on `.active == true`, not on mere existence,
+so `active: false` is a real off-switch (a revoked admin cannot reactivate
+themselves because `update` also requires `.active == true`).
 
 ## Agent guidance — designing the admin model
 
@@ -218,7 +225,7 @@ Then:
    appropriate for onchain operations.
 
 If you catch yourself wanting "the owner can just do X," stop: write the rule
-that says *which* X and *to whom*, and let the prover keep everyone honest.
+that says *which* X and *to whom*, and let the runtime keep everyone honest.
 
 ## Related
 
@@ -226,4 +233,4 @@ that says *which* X and *to whom*, and let the prover keep everyone honest.
 - [policy-generation-guide.md](policy-generation-guide.md) — the "who is the admin?" step
 - [invariants.md](invariants.md) — the constraints that bind admins too
 - [functions.md](functions.md) — functions are gated by an `auth` rule, same admin pattern
-- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — `verify --operation`, `share`/`link`/`collaborators`
+- [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — `share`/`link`/`collaborators`

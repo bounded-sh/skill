@@ -1,6 +1,6 @@
 # Onchain troubleshooting
 
-Real-network failure lookup for `"onchain": true` collections: what broke, why, and the fix. Budgets and proof-vs-network boundaries live in [policy-primitives.md](policy-primitives.md#real-network-resource-budget); custody semantics in [custody and PDAs](custody-and-pdas.md).
+Real-network failure lookup for `"onchain": true` collections: what broke, why, and the fix. Budgets and policy-vs-network boundaries live in [policy-primitives.md](policy-primitives.md#real-network-resource-budget); custody semantics in [custody and PDAs](custody-and-pdas.md).
 
 ## Error to cause to fix
 

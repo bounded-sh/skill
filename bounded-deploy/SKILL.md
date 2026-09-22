@@ -2,14 +2,14 @@
 name: bounded-deploy
 description: >-
   Ship and configure a Bounded app: CLI setup, browser-backed developer login,
-  verify and deploy, hosted frontend publishing, environments, source sync,
+  deploy, hosted frontend publishing, environments, source sync,
   domains, bounded.json, collaborators, and release recovery. Part of the
   Bounded skill family.
 ---
 
 # Bounded deploy
 
-Use this skill to initialize, verify, ship, configure, and share a Bounded app.
+Use this skill to initialize, ship, configure, and share a Bounded app.
 Policy authoring belongs in **bounded-backend**; client code and app-user auth
 belong in **bounded-frontend**.
 
@@ -20,7 +20,6 @@ For a new project or a normal release, read
 
 ```bash
 bounded init
-bounded verify
 bounded deploy --create --name my-app
 ```
 
@@ -34,7 +33,7 @@ Read only the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| First setup, normal verify/deploy, publish a site, multiple app IDs from one project | [docs/quickstart.md](docs/quickstart.md) |
+| First setup, normal deploy, publish a site, multiple app IDs from one project | [docs/quickstart.md](docs/quickstart.md) |
 | Normal web account login, session refresh, headless OTP, account switching | [docs/accounts.md](docs/accounts.md) |
 | Hosted web frontend, preview, private/public access | [frontend-hosting.md](../bounded-frontend/docs/frontend-hosting.md) |
 | Multi-environment policies: per-env app id, constants, schedule cadence, function scoping | [docs/environments.md](docs/environments.md) |
@@ -55,16 +54,6 @@ account profile, or recovery of an existing key-owned app.
 
 ## Incident router
 
-- `503` + `proof_substrate_unavailable` (`retryable: true`) from `bounded verify`: the prover lane is warming up or busy.
-  This response does not establish policy correctness.
-  Retry the same policy UNCHANGED using the bounded protocol below.
-  Wait 30 seconds, then rerun the same `bounded verify`; make at most 3 attempts total, meaning the initial attempt plus 2 retries.
-  If the third attempt still returns this error, stop and tell the user the proving service is degraded.
-  Include the `correlationId` when present.
-  Do not edit the policy, switch accounts, or create a new app.
-  This retry protocol applies only to `bounded verify`.
-  Never use it to retry `bounded deploy`.
-  In particular, never retry `bounded deploy --create` because it can create another app.
 - `deploy_in_progress`, `operationId`, or `recoveryCommand`: use only the exact
   owner-visible recovery command with unchanged inputs, then let the CLI poll.
   See [deploy recovery](docs/cli-reference.md#recover-an-in-progress-policy-deploy).
@@ -116,9 +105,8 @@ account profile, or recovery of an existing key-owned app.
 ## Release rules
 
 - Read `bounded.json` first in an existing app.
-- Regenerate a generated `policy.json` before both verify and deploy.
-- `bounded verify` is an optional proof check; review nonblocking advisories instead of repeatedly verifying unchanged policy.
-- `bounded deploy` validates and compiles the policy; it does not require solver proof evidence by default.
+- Regenerate a generated `policy.json` before deploying.
+- `bounded deploy` validates and compiles the policy and refuses an invalid one before anything changes; there is no separate proof step.
 - After a release-critical deploy, use
   `bounded apps inspect --app-id <id> --json` to confirm the active policy and
   runtime publication before measuring behavior.

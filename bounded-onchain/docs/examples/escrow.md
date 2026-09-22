@@ -61,7 +61,7 @@ For a token-denominated escrow, add a `"mint": "Address!"` field, replace `@Toke
 - **Buyer identity cannot be forged.** The create rule denies any client-supplied `buyer`; the hook stamps `buyer = @user.address`, and because the funding source is `@user.address`, the buyer's own wallet must sign - the stamp, the account creation, and the deposit are one atomic transaction.
 - **Release flips exactly once.** `@data.released == false && @newData.released == true` means the first successful release consumes the only transition; a second release write is denied, so the payout hook can never run twice.
 - **Only the buyer releases, only the seller is paid.** `@user.address == @data.buyer` gates the transition, and the preservation clauses (`seller`, `amount`, `buyer` pinned) stop a release patch from redirecting or resizing the payout.
-- **Balance-gated payout.** `@TokenPlugin.getBalance($escrowId, @TokenPlugin.SOL) >= @data.amount` in the rule (the proven plane) rejects a release the pot cannot cover instead of letting the transaction revert downstream.
+- **Balance-gated payout.** `@TokenPlugin.getBalance($escrowId, @TokenPlugin.SOL) >= @data.amount` in the rule (the enforced plane) rejects a release the pot cannot cover instead of letting the transaction revert downstream.
 - **The raw id is the signing capability.** `$escrowId` is passed raw as the funding destination and the payout source; `getAccountAddress` output is for display, rules comparisons, and destination arguments, and is statically rejected in signer positions.
 - **Rules stay pure.** All value movement lives in `hooks.onchain`; a hook failure aborts the whole write, so the document state and the chain state never diverge.
 

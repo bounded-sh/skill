@@ -191,28 +191,12 @@ if (/\bbounded-observe\b/.test(publicText)) {
 // imported at validation time; keep the asserted inventory explicit so a
 // future runtime change forces an intentional skill update instead of silent
 // documentation drift.
-const expectedKaniHarnessSourceCount = 283
-const proofCoverage = readFileSync(path.join(root, 'bounded-backend/docs/proof-coverage.md'), 'utf8')
-if (!proofCoverage.includes(`**${expectedKaniHarnessSourceCount} Kani proof harnesses**`)) {
-  fail(`proof coverage: expected current source inventory ${expectedKaniHarnessSourceCount} Kani harnesses`)
-}
-if (/\b(?:263|275)[ /-](?:Kani|harness)/i.test(proofCoverage)) {
-  fail('proof coverage: contains a stale Kani harness count')
-}
-for (const expected of [
-  '`windowSum` | runtime-maintained; structurally validated; `UNKNOWN` non-blocking advisory',
-  'reserves one top-level `obligationCount` slot per invariant declaration',
-  'Do not translate `obligationCount` into "N SMT proofs passed."',
-]) {
-  if (!proofCoverage.includes(expected)) fail(`proof coverage: missing count/coverage boundary ${expected}`)
-}
-
 const invariantGuide = readFileSync(path.join(root, 'bounded-backend/docs/invariants.md'), 'utf8')
 for (const expected of [
   'The public authoring contract requires `tier: "durable"` for `rollingSum`',
   'Postgres-primary currently uses the in-memory working-set',
   'During alarm latency it can conservatively retain contributions',
-  'occupies one advisory slot in the current summary',
+  '| `bound` | enforced (scalars and `.values` maps) | not enforced; do not use for onchain guarantees |',
 ]) {
   if (!invariantGuide.includes(expected)) fail(`invariants guide: missing runtime boundary ${expected}`)
 }
@@ -477,7 +461,7 @@ for (const expected of [
   '### Require companion writes with `requiresInBatch`',
   'code `incomplete_batch`',
   'A single-document set or delete is still a batch of one',
-  'It is not an SMT proof obligation',
+  'write an allow and a deny policy test for the complete batch',
 ]) {
   if (!dataPlane.includes(expected)) fail(`Data plane: missing requiresInBatch contract ${expected}`)
 }
@@ -495,7 +479,7 @@ for (const expected of [
 const randomness = readFileSync(path.join(root, 'bounded-onchain/docs/randomness.md'), 'utf8')
 for (const expected of [
   '### Freeze the resolution basis before the roll is readable',
-  'non-blocking `UNKNOWN` advisory',
+  'resolves the draw against state that can change',
   'write-once snapshot',
 ]) {
   if (!randomness.includes(expected)) fail(`Randomness guide: missing VRF basis advisory ${expected}`)
@@ -570,8 +554,8 @@ if (!syncPolicySource) {
 }
 
 const proofBoundaryChecks = [
-  ['bounded-backend/docs/functions-when-to-use.md', 'Authorization rules are **enforced** atomically. Declared invariants and generated safety obligations are **proved where supported**'],
-  ['bounded-backend/docs/functions.md', 'A query participates in a proof only when a supported proof obligation references it.'],
+  ['bounded-backend/docs/functions-when-to-use.md', 'Authorization rules are **enforced** atomically. Declared invariants are **enforced** before commit'],
+  ['bounded-backend/docs/functions.md', '**Writes are re-checked by enforced rules and invariants**'],
   ['bounded-backend/docs/functions.md', '**enforced** — collection authorization rules on every'],
   ['bounded-backend/docs/queries.md', 'The runtime enforces the resulting authorization decision'],
   ['bounded-frontend/docs/sdk-reference.md', 'Policy `queries` are validated'],
@@ -602,7 +586,7 @@ if (process.argv.includes('--verify-policies')) {
       policies.push({ label: 'bounded-backend/docs/functions.md sync policy', file })
     }
     for (const policy of policies) {
-      const result = spawnSync('bounded', ['verify', policy.file, '--quiet'], {
+      const result = spawnSync('bounded', ['verify', '--experimental', policy.file, '--quiet'], {
         cwd: root,
         encoding: 'utf8',
       })

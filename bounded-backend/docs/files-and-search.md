@@ -37,9 +37,8 @@ data.
 - The path scopes the file. `users/$userId/files/$fileId` with
   `$userId == @user.id` means a user can only touch files under their own id —
   the runtime evaluates that authorization rule on each direct file operation.
-  `bounded verify` can additionally prove named supported properties of the rule,
-  such as requiring an authenticated caller, but the rule is not itself a blanket
-  proof of product intent. `@user.id` is the universal stable identity (always
+  The rule is not itself a guarantee of product intent. `@user.id` is the
+  universal stable identity (always
   present for an authenticated user, wallet or email/social), so it's the right
   key for ownership here.
 - Storage collections are offchain.

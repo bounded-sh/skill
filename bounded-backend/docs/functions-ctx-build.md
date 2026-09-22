@@ -59,8 +59,7 @@ is resolved server-side from the function's identity and the named profile.
 The `auth` rule uses the runtime-valid admin predicate `get(/admins/@user.id) !=
 null` (and needs an `admins` scope bootstrapped; see the caller-scoped vs service identity rules in [functions.md](functions.md)).
 Do **not** write `hasRole("admin")` in an executable `auth` rule: `hasRole(...)`
-is a proof-grammar-only construct that parses during verification but has no
-runtime evaluator, so it fails validation (fail-closed) or never resolves to the
+has no runtime evaluator, so it fails validation (fail-closed) or never resolves to the
 admin gate - a broken permission check on a money-spending build function.
 
 **The `build` capability keys** (each grants only submission-side authority):

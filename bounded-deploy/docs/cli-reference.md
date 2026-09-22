@@ -383,14 +383,14 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | Command | Does | Key flags |
 |---|---|---|
 | `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
-| `verify [policy.json]` | Run the proof engine, print exact counts plus blocking failures and counterexamples | `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--verbose` (every obligation), `--json` |
+| `verify [policy.json]` | Experimental, opt-in formal verification; refuses without `--experimental`. Not part of the deploy flow; see [formal verification](../../bounded-backend/docs/formal-verification.md) | `--experimental`, `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--verbose`, `--json` |
 | `plugins list` | List the callable plugin projection offline | `--family`, `--grep`, `--json`, `--quiet` |
 | `plugins describe <plugin.function>` | Print one plugin function's exact argument, return, auth, support, and verification contract offline | `--json`, `--quiet` |
 | `tests run [dir\|file]` | Run policy test files against a sandboxed app, print per-file PASS/FAIL | `--app-id`, `--deployed-policy`, `--file` (repeatable), `--json` |
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy (same fail-closed gate), or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
+| `deploy [policy.json]` | Validate, compile, and push the policy, or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
 | `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `deploy preflight` | Read-only: whether a deploy will land - your credit balance (deploys are metered against credits, no per-tier cap), the deploy rate-limit, and the structural size caps. Advice, never a promise; never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
@@ -400,27 +400,12 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 bounded init                                            # scaffold policy.json + bounded.json
 bounded deploy --create --name my-app                   # create app + record appId; hosted site gate defaults private
 bounded deploy --create --name my-app --public          # opt out; hosted site is public from the start
-bounded verify                                          # re-prove after edits
 bounded tests run                                       # policy-tests/*.json against LOCAL policy.json
 bounded deploy                                          # redeploy using bounded.json
 ```
 
-`verify` and `deploy --create` reject an unknown `--protocol` locally before any network call and list the valid app protocols.
-Normal human output reports exact total, proven, unproven-advisory, and failed counts.
-A failed run also prints every blocking failure and counterexample, while passing and non-blocking advisory details stay summarized.
-Add `--verbose` to print every proof obligation and explanation.
-When the verifier returns a valid result, `bounded verify --json` emits exactly one schema-version-3 document with `status`, `passed`, `safeToDeploy`, `policyPath` (the absolute path of the policy file the run actually proved) and `projectRoot` (the discovered `bounded.json` root, empty without one), exact counts, structured proof details and counterexamples, the access report, and `capabilityReadiness`.
-Local argument, file, JSON, environment, configuration, authentication, transport, and malformed-response failures that occur before a valid verifier result instead use the ordinary one-document root error shape and exit nonzero.
-`status` is one of `PROVEN`, `DISPROVED`, `INVALID`, or `UNPROVEN`.
-`safeToDeploy` describes the whole-policy schema and proof gate and can be true only for the default `verifyForDeploy` operation.
-For that operation, a passing gate with genuinely unresolved non-blocking advisories can be `UNPROVEN` with `passed: true` and `safeToDeploy: true`; a passing custom `--operation` still reports `safeToDeploy: false`.
-The command exits nonzero for a failed gate.
-
-`capabilityReadiness` is advisory and never changes `passed` or `safeToDeploy`.
-It is reported verbatim from the verifier, with one row per plugin function and execution context, the canonical capability state, an `applicability` field, and named-query return-type advisories; repeated occurrences of the same function-context pair are grouped.
-It is always an object.
-`{}` means the platform supplied no usable readiness section; otherwise the report metadata remains present even when its rows and advisories are empty.
-It does not prove live-network execution.
+`deploy --create` rejects an unknown `--protocol` locally before any network call and lists the valid app protocols.
+`bounded verify` is experimental and opt-in (`--experimental`); its report format lives in [formal verification](../../bounded-backend/docs/formal-verification.md).
 
 Use the offline plugin reference before authoring an onchain hook:
 
@@ -433,7 +418,6 @@ bounded plugins describe buyExactSolIn --json
 
 These commands need no account, project, or network.
 `list` reports each callable identifier, signature, return type, and network-scoped capability state; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
-The embedded plugin projection has its own catalog `schemaVersion`, which is separate from the verify report's own `schemaVersion`.
 Capability state describes onchain reachability for the catalog's named network, not a deploy verdict: `unverified` means no retained live proof exists, while `unsupported` also covers offchain-only functions and functions unavailable on that network.
 An unambiguous bare function name is accepted, but use the returned canonical identifier in policy source.
 Namespaced entries use `@Namespace.function`, while core entries such as `get` and `getAfter` remain bare.
@@ -566,7 +550,7 @@ For a mainnet app under onchain user custody, recovery may require a fresh owner
 The CLI retrieves the permit with the same operation ID, signs it locally, and retries only the recovery endpoint.
 It never calls `updateApp` or creates a replacement policy operation during this recovery.
 If the read-only permit requirement probe is temporarily unavailable, the CLI keeps the exact recovery operation pollable instead of falling back to a fresh deploy.
-The server may re-run the policy proof and compiler for that unchanged target before it can reconcile the retained operation safely.
+The server may re-run the policy compiler for that unchanged target before it can reconcile the retained operation safely.
 While recovery is processing, a retained candidate must not replace or hide the active publication.
 The last committed policy remains the serving policy until the candidate activates.
 HTTP `202` with `state: "processing"` means the exact recovery is still in progress.
@@ -791,8 +775,8 @@ Do not retain credentials, secret RPC URLs, policy bytes, runtime bundles, signe
 
 ### `tests` — policy tests
 
-Concrete allow/deny examples against a fresh sandbox app, complementary to
-`verify`'s exhaustive proof. Full format and semantics:
+Concrete allow/deny examples against a fresh sandbox app: the fast pre-deploy
+check for a policy. Full format and semantics:
 [policy-tests.md](../../bounded-backend/docs/policy-tests.md).
 
 `bounded tests run` defaults to reading `policy-tests/*.json` and sends them
@@ -817,7 +801,7 @@ its first build, and later prompts iterate on it. A run started from the CLI is
 the same object the widget shows, and vice versa.
 
 This is the alternative to authoring the app yourself. When YOU are writing the
-policy and the client, use `init` / `verify` / `deploy` instead - handing the
+policy and the client, use `init` / `deploy` instead - handing the
 work to the build agent is a different product, not a shortcut for the same one.
 
 | Command | Does | Key flags |
@@ -941,12 +925,6 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 `pi`, or `other`) with each prompt. Browser widget actions use a short-lived
 `X-Bounded-Live-Edit-Token`; no-Origin local agent/curl calls do not.
 
-> **`verify` / `verify-formal` is rate-limited** — about **5 requests per minute
-> per app owner** (`429: Too many formal verification requests`). The
-> "declare → verify → fix" fast loop is real, but pace it: batch edits before
-> re-running, and don't spin `verify` in a tight retry. A `429` is throttling, not
-> a policy error — back off ~60s and retry.
-
 ### `propose` / `proposals` - launched oApp contributions
 
 `bounded propose` is currently an inspection command, not a submission command.
@@ -1019,30 +997,10 @@ Reads never bill; `invoke` from a function does (see the bounded-backend
 | `oapp preflight` | Dry-run the openapps.xyz Open gate on the deployed app: source, dist, the `service:cap` / `service:x402` grants, and every finding Open would refuse on with its capability-ladder verdict (`native`, `live`, `callable`, `request`). Exits nonzero when Open would refuse. `--app-id` | `bounded oapp preflight --json` |
 | `oapp rehearse` | An ephemeral, budget-sealed rehearsal of the app from zero data; runs the preflight first and never blocks on it. `--status`, `--fresh`, `--down`, `--budget-credits`, `--ttl-hours`, `--skip-deploy`, `--skip-bootstrap`; `--json` is one document (`rehearsal` + `preflight`) | `bounded oapp rehearse` |
 
-### `verify --operation`
-
-Default is `verifyForDeploy` (prove the whole policy). The others probe one
-expression:
-
-| `--operation` | Needs | Proves |
-|---|---|---|
-| `verifyForDeploy` | — | every obligation for the whole policy |
-| `checkTautology` | `--expression` | the expression is always true |
-| `checkContradiction` | `--expression` | the expression is always false |
-| `checkSatisfiability` | `--expression` | the expression can be true |
-| `checkImplication` | `--rule` + `--property` | the rule implies the property |
-
-```bash
-bounded verify ./policy.json --app-id <id> \
-  --operation checkImplication \
-  --rule '@user.id != null && @newData.amount <= 100' \
-  --property '@newData.amount <= 100'
-```
-
 ### `--constants`
 
 CLI-side substitution for the **legacy** `@constants.NAME` token: supply values
-at deploy/verify with `--constants NAME=value` (repeatable or comma-separated).
+at deploy with `--constants NAME=value` (repeatable or comma-separated).
 Digit-only values ≤15 chars inline as numbers; everything else is wrapped as a
 string literal.
 
@@ -1066,12 +1024,12 @@ bounded deploy ./policy.json --environment preview      # preview appId + previe
 bounded deploy ./policy.json --environment production   # production appId + production constants
 ```
 
-Accepted by `deploy`, `verify`, and `functions deploy --all`, which resolve it
+Accepted by `deploy`, `tests run`, and `functions deploy --all`, which resolve it
 identically. There is no short form: the global `--env` flag is a different
 axis (it selects the Bounded control plane, not an entry in your policy).
 
 A policy that scopes **any** function with an `environments` allowlist refuses a
-`deploy`, `verify`, or `functions deploy --all` run that omits `--environment`,
+`deploy` or `functions deploy --all` run that omits `--environment`,
 rather than guessing which functions belong on the target app.
 
 Full treatment: [environments.md](environments.md).
@@ -1390,7 +1348,7 @@ Bounded gates the call on the `auth` rule, then prints the function's JSON (or
 the platform error — `403` if the rule denies you). Caller-scoped functions may
 be invoked by any caller their `auth` rule admits; functions that declare
 `actAs` in policy are service-identity functions and must be admin-gated at
-verify/deploy: the `auth` rule must imply the control-plane roster
+deploy: the `auth` rule must imply the control-plane roster
 (`get(/__admins__/@user.id) != null`, the owner plus `--role admin`
 collaborators) or an app-data `admins/$userId` membership. `logs` (CLI 0.0.89+) reads the durable per-invocation log store:
 every invoke — end-user and scheduled runs included — is persisted with status,
@@ -1421,5 +1379,5 @@ read the invocation's error and console lines. Full guide:
 - [sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) — the same operations from TypeScript
 - [auth.md](../../bounded-frontend/docs/auth.md) — CLI/admin auth sources: wallet/keypair vs web account
 - [access-control.md](../../bounded-backend/docs/access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
-- [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md) — reading `verify` output
+- [formal-verification.md](../../bounded-backend/docs/formal-verification.md) — the experimental, opt-in `verify --experimental` proof report
 - [policy-tests.md](../../bounded-backend/docs/policy-tests.md) — `bounded tests` file format and semantics

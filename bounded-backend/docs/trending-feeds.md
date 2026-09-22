@@ -7,7 +7,7 @@ cron sweep, a dirty-set, or a materialized score pipeline.
 
 > **This pattern is offchain.** `windowSum` is **offchain-only in v1** - declaring it on an
 > `onchain: true` collection is structurally rejected at deploy, and there is no onchain analog
-> ([invariants.md](invariants.md#onchain--coverage-claims-are-verified-not-trusted)). An onchain
+> ([invariants.md](invariants.md#onchain-coverage)). An onchain
 > app ranks a different way: see [Ranking an onchain feed](#ranking-an-onchain-feed).
 
 ## The three pieces
@@ -118,7 +118,7 @@ themselves instead:
   update rules - so a second vote is the same document rather than a new one and the rules decide
   whether it may change. Every id segment of a collection template must be a `$variable`;
   `@user.address` is legal inside a `get()` / `getAfter()` path but not as a collection key, and a
-  template that spells it there is rejected at verify.
+  template that spells it there is rejected at deploy.
 - **Count through the mirror.** Reads, lists, `subscribe`, and `aggregate` work on onchain
   collections
   ([onchain.md](../../bounded-onchain/docs/onchain.md#what-changes-when-a-collection-is-onchain)),

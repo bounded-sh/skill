@@ -2,7 +2,7 @@
 
 The flow when **an agent owns a backend**: no human auth ceremony, one keypair
 the agent controls, and a local dashboard running beside the CLI for visibility.
-Generate a policy, prove it, deploy it, inspect it, then read and write.
+Generate a policy, deploy it, inspect it, then read and write.
 
 This is what Bounded is built for: an autonomous agent that needs a real,
 provably-safe backend (a spend ledger, a task store, a multi-tenant data plane)
@@ -12,8 +12,8 @@ without a person clicking through a console.
 
 - **Zero-ceremony identity.** The keypair *is* the account — no signup, no email
   verification. First command generates it.
-- **Provable guardrails.** An agent's spend cap, conservation, or tenant
-  isolation is a proven invariant, not a prompt instruction it can talk itself
+- **Enforced guardrails.** An agent's spend cap, conservation, or tenant
+  isolation is an enforced invariant, not a prompt instruction it can talk itself
   out of. A constraint-breaking write is a `409`, full stop.
 - **One actor, one key.** The agent deploys and writes as the same identity; the
   policy decides what that identity may do.
@@ -30,9 +30,8 @@ bounded whoami                                          # prints the agent's add
 # 2. Generate a policy from the task description (see the generation guide)
 bounded init                                            # or write policy.json directly
 
-# 3. Prove it — read counterexamples, fix, repeat until clean
+# 3. Deploy it — an invalid policy is refused before anything changes
 bounded deploy ./policy.json --create --name agent-ledger   # creates app, prints <appId>
-bounded verify ./policy.json --app-id <appId>               # PROVED / DISPROVED
 
 # 4. Exercise the data plane
 bounded data set --app-id <appId> --path agents/<agent-id>/spend/s1 --data '{"amount":60}'
@@ -136,8 +135,8 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
   rejects deletes even after expiry because its durable decrement queue owns
   the aggregate lifecycle.
 - **Propose invariants from schema shape.** Money-like fields → cap/conserve
-  candidates; tenant-ish path vars → tenantTag. `bounded verify` renders these
-  as questions; let a human arbitrate when one is available.
+  candidates; tenant-ish path vars → tenantTag. Let a human arbitrate when one
+  is available.
 
 ## Hand the login link to your user
 

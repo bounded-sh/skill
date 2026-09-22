@@ -337,7 +337,7 @@ extra command is needed.
   falls back to the generic `index.html` card — **non-public fields can never leak into meta**.
   This is the same runtime-enforced anonymous read rule that gates your data;
   there is no separate "make this public for cards" toggle to get wrong. Do not
-  describe the rule itself as a blanket proof of product intent.
+  describe the rule itself as a guarantee of product intent.
 - **Path-based, not hash-based.** Use a real path route (`/s/:id`), not a hash fragment
   (`/#/s/:id`) — the server never sees the `#fragment`, so hash routes can't be unfurled.
   If you're on hash routing and want per-link cards, switch the shared route to a path.

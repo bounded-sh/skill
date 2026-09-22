@@ -106,9 +106,6 @@ pins it to your game's tick via `@origin`.
 > platform-set and unforgeable, so no client and no other module can satisfy it. Always
 > pair the `module` check with `@origin.kind == 'live'` — `module` is null for a
 > `user` call. The runtime enforces this gate before the function body runs.
-> `bounded verify` understands `@origin` in supported expressions and checks the
-> named generated obligations that reference the gate; that is not a blanket proof
-> of every product claim someone might infer from the rule.
 
 ### 2. The tick — emit a call, then read its `@effect` result later
 

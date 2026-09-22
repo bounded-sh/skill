@@ -3,46 +3,33 @@
 Policy tests are files in `policy-tests/*.json` that assert concrete outcomes:
 this actor, writing this document, at this time, is **allowed** or **denied**,
 and leaves the state you expect. They are the fast, example-based loop that
-guides a human or AI toward the right policy. `bounded verify` remains the
-exhaustive guarantee — a proof over every possible input. Use both; neither
-replaces the other.
+guides a human or AI toward the right policy before it is deployed, and they run
+through the same enforcement engine production writes use.
 
-## What policy tests are not
+## What policy tests are
 
-Not proofs. `bounded verify` compiles obligations and discharges them with an
-SMT solver — "no counterexample exists for this property, over every state and
-caller" (see [verify-and-counterexamples.md](verify-and-counterexamples.md)). A
-policy test proves nothing about inputs it didn't run; it just runs one
-concrete scenario through the real enforcement engine and checks the result.
-Tests give you intent-level confidence ("the creator flip actually works, the
-rate cap actually trips at write 21"); proofs give you universal confidence
-("no assignment of any field bypasses auth"). A policy can pass every proof
-obligation and still not do what you meant — see below.
+A policy test runs one concrete scenario through the real enforcement engine and
+checks the result. It says nothing about inputs it did not run, so cover each
+security seam from both sides: the creator flip actually works, the rate cap
+actually trips at write 21, the non-owner is actually denied.
 
 ## When to write them
 
 - **Every security seam gets an allow test and a deny test.** "Owner can
   update" is only half specified without "non-owner cannot."
-- **After every counterexample fix.** Once `bounded verify` shows a DISPROVED
-  and you strengthen the rule, add a test that pins the fixed behavior so it
-  can't regress silently.
-- **Before trusting a green `verify`.** A green run does not mean the policy
-  does what you intended. Two failure modes hide behind green: a **trivially
-  true** rule (`"create": "true"`) satisfies "no assignment bypasses auth"
-  because there's no auth to bypass, and shows only as a non-blocking
-  advisory, not a failure. A **vacuous invariant** (a `rollingSum` whose
-  `scopeVariable` never matches real write paths, a `conserve` on a field the
-  intended write path never touches) proves its own algebra sound without
-  proving it ever fires. A policy test that runs the real 21st write in a
-  window, or the real transfer, catches both — the proof can't, because
-  neither is a counterexample to the property as stated.
+- **Every invariant gets a test that fires it.** A **vacuous invariant** (a
+  `rollingSum` whose `scopeVariable` never matches real write paths, a
+  `conserve` on a field the intended write path never touches) deploys fine and
+  never fires. A policy test that runs the real 21st write in a window, or the
+  real transfer, catches that.
+- **After every fix.** Once a test exposes a hole and you strengthen the rule,
+  keep the test so the fix cannot regress silently.
 - **The AI edit loop:** edit `policy.json` → `bounded tests run` → read the
-  denial verbatim → fix the policy → `bounded verify` → `bounded deploy`.
-  Tests are the tight inner loop; verify is the gate before shipping.
+  denial verbatim → fix the policy → `bounded deploy`.
 
 `bounded tests run` executes the local policy in a fresh throwaway sandbox and does not modify the target app's deployed policy.
 It still needs an existing app ID for authentication and plan context.
-For a brand-new project with no app ID, run `bounded verify` first, create and record the app, then run the policy tests before the next deployment.
+For a brand-new project with no app ID, create and record the app first (`bounded deploy --create`), then run the policy tests before the next deployment.
 You may instead pass `--app-id` for another app you administer when you need the local-policy test loop before creating the new app.
 
 ## File format
@@ -128,7 +115,7 @@ With an onchain `create` rule of `@newData.author == @user.address`, that write 
 denied** and its denial is recorded — the run only fails if a write that
 should have been denied unexpectedly succeeds.
 
-**The setup-twice gate** (oApp setup-function contract): prove a `setup`
+**The setup-twice gate** (oApp setup-function contract): show a `setup`
 function is safe to re-run by invoking it twice around snapshots —
 
 ```json
@@ -190,16 +177,12 @@ after the run. Because the sandbox runs the offchain engine, an
 `onchain: true` path's **onchain hook is simulated in-worker** and its offchain
 hook runs after it — both run. Mocks apply everywhere the sandbox evaluates the
 function: rules (including read rules), hooks, and named queries. Writes go through the identical enforcement path a real caller
-would hit, so a pass means the write really would be allowed in production.
-**The Z3 proof gate is deliberately skipped** for sandbox apps — tests are not
-proofs, and sandboxes are quarantined precisely so skipping it is safe. Policy
+would hit, so a pass means the write really would be allowed in production. Policy
 tests never read or write your app's real data, and never gate `bounded
 deploy`.
 
 ## Related
 
-- [verify-and-counterexamples.md](verify-and-counterexamples.md) — the proof
-  loop policy tests complement
 - [quality-checklist.md](quality-checklist.md) — where test coverage fits in
   the pre-deploy self-check
 - [testing-authed-apps.md](testing-authed-apps.md) — end-to-end browser tests

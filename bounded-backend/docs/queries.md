@@ -5,7 +5,7 @@ filter/sort/cursor-pagination, aggregations, full-text search, policy `queries`,
 and `links`/`relationships` joins.
 
 Three ways to read more than one document by id: **runtime filters** on the data
-plane (the workhorse), **policy `queries`** (computed scalar fields proven at
+plane (the workhorse), **policy `queries`** (computed scalar fields validated at
 deploy), and **`links` / `relationships`** (point-lookup joins). Single-document
 authorization joins use `get()` inside a rule.
 
@@ -137,17 +137,15 @@ bounded data aggregate --app-id <id> --path orders --group status --sum total --
 ```
 
 > The filter / sort / aggregate API is a **runtime** feature of the data plane.
-> It is not part of the policy file and is not what `bounded verify` proves — the
-> blocking proofs cover declared invariants and generated safety obligations.
+> It is not part of the policy file.
 > Read access on every query result is still enforced by the collection's
 > `read` rule.
 
 ## Policy `queries` — computed scalar fields
 
 A `queries` block on a collection declares a named, typed expression computed
-from the document. It is validated at deploy and participates in proof
-obligations where referenced (same expression language as rules), then is
-exposed as a read.
+from the document. It is validated at deploy (same expression language as
+rules), then is exposed as a read.
 
 ```json
 {
@@ -269,9 +267,7 @@ read it inline with `get()`:
 `get()` reads pre-transaction state; `getAfter()` reads staged in-batch state (for
 guard-then-write composition — see [data-plane.md](data-plane.md)). This is the
 right tool for "only an admin may", "only if the parent is active", "capacity not
-exceeded". The runtime enforces the resulting authorization decision; the
-expression participates in a proof only when a supported generated or declared
-obligation references it.
+exceeded". The runtime enforces the resulting authorization decision.
 
 ## Picking the right tool
 
@@ -280,7 +276,7 @@ obligation references it.
 | List/filter/paginate many documents | `get(path, { filter, sort, limit, cursor })` |
 | Count / sum a single scalar | `count` / `aggregate` → `{ value }` |
 | Group + count/sum/avg/min/max | `queryAggregate(path, spec)` → rows |
-| A deploy-validated derived value, proof-participating where referenced | policy `queries` |
+| A deploy-validated derived value | policy `queries` |
 | Expand a foreign key both ways | `links` |
 | Many-to-many through a join table | `relationships` |
 | Gate one write on another document | `get()` / `getAfter()` in a rule |

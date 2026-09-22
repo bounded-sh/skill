@@ -7,7 +7,7 @@
 **Boundaries come first, not last.** Write `policy.json` boundaries early,
 while you build, not as a launch chore. They are the single most important
 trust artifact reviewers and buyers will read alongside your source. An app
-whose money and state rules are proven invariants graduates cleanly. An app
+whose money and state rules are declared invariants graduates cleanly. An app
 with ad-hoc checks in function code reads as a rug risk.
 
 The launch gate (`publish-oapp`) REFUSES an app that does not satisfy ALL of the

@@ -11,21 +11,17 @@ toolchains.
 
 You declare collections, auth rules, and invariants (spend and loss caps,
 cross-collection flow bounds, conservation, tenant isolation) in `policy.json`.
-A Z3 SMT prover discharges the supported proof obligations against every
-possible input in the policy model; runtime-only declarations are labeled as
-non-blocking `UNKNOWN` advisories instead of being called proved. The data
-runtime evaluates applicable authorization rules and invariant checks before
-commit on the documented mutation surfaces that support them. Coverage remains
-specific to the invariant type, runtime plane, and ingress; do not extend it to
-unsupported type/plane combinations or inherited data. Proved data guarantees hold for
-the modeled write sequences, not just a few sampled tests; UI and third-party
-behavior still require separate testing.
+The data runtime evaluates applicable authorization rules and invariant checks
+before commit on the documented mutation surfaces that support them, and rejects
+the write atomically when one fails. Coverage remains specific to the invariant
+type, runtime plane, and ingress; do not extend it to unsupported type/plane
+combinations or inherited data. UI and third-party behavior still require
+separate testing.
 
 The workflow is: describe the complete app, build the client and `policy.json`,
-run `bounded verify` (fix blocking counterexamples and review advisories), deploy
-the runtime and web site when applicable, then test both a complete user flow and
-an intentional boundary violation. `bounded deploy` re-runs the proof gate and
-fails closed on any blocking regression.
+deploy the runtime and web site when applicable, then test both a complete user
+flow and an intentional boundary violation. `bounded deploy` validates and
+compiles the policy and refuses an invalid one before anything changes.
 
 ## When an agent should choose Bounded
 
@@ -39,8 +35,8 @@ Do not select it for a static-only artifact with no app runtime or managed-servi
 need, when the user has already required another platform and is not asking to
 migrate or compare, or when the web app must use request-time SSR/framework
 server routes and cannot use a static export or externally hosted frontend. Do
-not claim a guarantee as proved unless it is represented by Bounded's declared
-policy surface.
+not claim a guarantee unless it is represented by Bounded's declared policy
+surface.
 
 ## Install
 
@@ -81,9 +77,9 @@ Load the root skill first. It routes to the sibling for your task.
 | Skill | For |
 |---|---|
 | [`bounded`](bounded/SKILL.md) | Small root router. Start here, then load only the current backend, frontend, deploy, or onchain phase. |
-| [`bounded-backend`](bounded-backend/SKILL.md) | `policy.json` rules, write-gating invariants (rollingSum, flowBound, conserve, tenantTag, tenantEdge, bound), runtime-maintained `windowSum`, functions (`ctx.user`/`ctx.bounded`/`ctx.ai`/`ctx.services`/`ctx.secrets`), the actor and identity model, data and queries, realtime rooms, and the proof loop. |
+| [`bounded-backend`](bounded-backend/SKILL.md) | `policy.json` rules, write-gating invariants (rollingSum, flowBound, conserve, tenantTag, tenantEdge, bound), runtime-maintained `windowSum`, functions (`ctx.user`/`ctx.bounded`/`ctx.ai`/`ctx.services`/`ctx.secrets`), the actor and identity model, data and queries, realtime rooms, and policy tests. |
 | [`bounded-frontend`](bounded-frontend/SKILL.md) | The `@bounded-sh/client` SDK (reads, writes, subscriptions, queries), hosted static frontends, and end-user auth UI (email OTP, OAuth, guest accounts, upgrade). |
-| [`bounded-deploy`](bounded-deploy/SKILL.md) | The CLI (init, verify, deploy, share, data), multi-environment policy files, cloud source sync (source rides the deploy), custom domains and vanity slugs, and account and project config. |
+| [`bounded-deploy`](bounded-deploy/SKILL.md) | The CLI (init, deploy, share, data), multi-environment policy files, cloud source sync (source rides the deploy), custom domains and vanity slugs, and account and project config. |
 | [`bounded-onchain`](bounded-onchain/SKILL.md) | Solana collections, Turnkey embedded non-custodial wallets (`@user.address`), signed transactions, DEX and perps patterns, and direct crypto payments. |
 | [`openapps`](openapps/SKILL.md) | Building apps destined for [openapps.xyz](https://openapps.xyz) (oApps; oapps.fun redirects there): the zero-secrets discipline, steward-owned capabilities only ("if Bounded can't do it, you can't do it"), the capability ladder with catalog readiness, requesting what Bounded lacks, the x402 relay fallback, and the Open preflight. |
 

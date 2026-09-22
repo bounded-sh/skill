@@ -8,7 +8,7 @@
   Open is owner-only and needs an email-backed account.
   If this is an intentionally legacy key-owned app, use the advanced deploy account-recovery reference before Open rather than inventing a new owner.
 - Boundaries were written early and cover the app's money and state rules as
-  proven invariants, not ad-hoc checks. They are the trust artifact buyers
+  declared invariants, not ad-hoc checks. They are the trust artifact buyers
   read alongside your source.
 - `bounded oapp preflight` is READY on the deployed app; every blocking finding
   it names is fixed at the source, not worked around.
@@ -18,7 +18,7 @@
   through x402; anything else was filed with `bounded services request` and the
   app was built without it.
 - `policy.json` contains **no** rule, function, or egress that depends on a
-  user-held credential; `bounded verify` passes.
+  user-held credential, and `bounded deploy` accepts it.
 - Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only — no fetches to
   key-authenticated endpoints.
 - Every external egress is declared and either credential-free, native, or

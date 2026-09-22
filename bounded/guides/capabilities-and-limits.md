@@ -1,7 +1,7 @@
 # Capabilities & Limits
 
 **What's in here / when to read this:** an honest map of what Bounded is great at,
-what it does **not** do, scale ceilings, and the proof boundary. Read it before
+what it does **not** do, scale ceilings, and what policy does not cover. Read it before
 promising a user something Bounded can't deliver.
 
 ## What Bounded is great for
@@ -11,12 +11,12 @@ promising a user something Bounded can't deliver.
 | **Complete agent-built apps** | One project can carry a client-rendered web UI or React Native client plus policy, runtime, and deployment. A complete build should exercise the user flow and an intentional boundary rejection, not stop at backend generation. |
 | **Managed app services** | Hosted auth, governed data, files/search, Functions, payments, AI services, ordinary realtime subscriptions, and live rooms share one app identity instead of requiring a separate service for each concern. |
 | **Web delivery** | Build any client UI that emits static assets, preview it, then publish it to a `bounded.page` slug or custom domain with `bounded site deploy`. React Native uses the same client/runtime while native packaging remains external. |
-| **Provable realtime backend** | One `policy.json` → collections and auth rules enforced at runtime, with declared invariants and generated safety obligations proved by Z3 at deploy. Constraint-breaking writes are `409`s, never partial. |
-| **Money / value safety** | `conserve` proves a total can't be minted or destroyed; `rollingSum` proves spend/rate caps per window and per actor. These are proofs, not prompt instructions. |
-| **Multi-tenant isolation** | `tenantTag` / `tenantEdge` prove documents and references stay inside their tenant - "nothing leaks across orgs" discharged at deploy. |
+| **Governed realtime backend** | One `policy.json` → collections, auth rules, and declared invariants enforced at runtime before commit. Constraint-breaking writes are `409`s, never partial. |
+| **Money / value safety** | `conserve` keeps a total from being minted or destroyed; `rollingSum` enforces spend/rate caps per window and per actor. These are enforced invariants, not prompt instructions. |
+| **Multi-tenant isolation** | `tenantTag` / `tenantEdge` keep documents and references inside their tenant on every write - "nothing leaks across orgs". |
 | **Agent backends** | Zero-ceremony wallet/keypair identity; an agent can go from description to deployed without a human auth step ([building-for-agents.md](../../bounded-backend/docs/building-for-agents.md)). |
-| **Realtime games** | Server-authoritative tick loop, fog-of-war views, proven per-player rate caps, automatic settlement ([../docs/realtime-and-games.md](../../bounded-backend/docs/realtime-and-games.md)). |
-| **Onchain power-ups** | A verified subset of invariants enforces on Solana too, while each function has a separate network status ([proof coverage](../../bounded-backend/docs/proof-coverage.md), [Solana devnet catalog](../../bounded-onchain/docs/solana-capability-status.md)). |
+| **Realtime games** | Server-authoritative tick loop, fog-of-war views, enforced per-player rate caps, automatic settlement ([../docs/realtime-and-games.md](../../bounded-backend/docs/realtime-and-games.md)). |
+| **Onchain power-ups** | A subset of invariants enforces on Solana too, while each function has a separate network status ([onchain coverage](../../bounded-backend/docs/invariants.md#onchain-coverage), [Solana devnet catalog](../../bounded-onchain/docs/solana-capability-status.md)). |
 | **Imperative escape hatch (Functions)** | When declarative policy can't express it - *fetch a third-party API, transform, then write* - a **Bounded Function** runs your code. We don't prove its logic, but its writes still go through invariants and only policy-authorized callers can invoke it ([functions.md](../../bounded-backend/docs/functions.md)). |
 
 ## What Bounded does NOT support
@@ -80,43 +80,42 @@ backend. The operation surface in
 [../docs/sdk-reference.md](../../bounded-frontend/docs/sdk-reference.md) is stable in shape; Bounded
 is in beta, so treat versions as pre-release.
 
-## What is NOT proven
+## What policy does not cover
 
-The proof boundary is precise - don't overclaim it:
+The boundary is precise - don't overclaim it:
 
-- Blocking proofs cover **declared invariants** and generated safety obligations.
-  Authorization rules are enforced and may be inputs to an obligation, but a
-  green report is not a blanket proof that every access rule matches product
-  intent. An invariant you did not declare is not proven (green != safe).
-- Proofs are about the policy and its enforcement algebra, **not** about
-  application code. Your frontend, agent, or server can still have bugs - they
-  just can't corrupt the declared constraints.
-- **Liveness is not claimed**: rejecting every invalid write is proven; accepting
-  every valid shape is not.
-- A subset of invariants **fails closed** onchain (rejected at verify time rather
-  than under-enforced). Full layer-by-layer map:
-  [../docs/proof-coverage.md](../../bounded-backend/docs/proof-coverage.md).
-- A function's *logic* is not proven. Its writes go through enforced rules and
-  proved invariants, and its invocation is gated by the `auth` rule. Normal
+- Rules and invariants govern **declared** constraints. An authorization rule
+  is enforced as written, but a clean deploy is not a statement that every
+  access rule matches product intent. An invariant you did not declare is not
+  enforced (deployed != safe).
+- Enforcement is about the policy and the writes that reach the runtime, **not**
+  about application code. Your frontend, agent, or server can still have bugs -
+  they just can't corrupt the declared constraints.
+- **Liveness is not claimed**: the runtime rejects every invalid write; accepting
+  every valid shape is not promised.
+- A subset of invariants **fails closed** onchain (an unsupported onchain claim
+  is rejected at deploy rather than under-enforced). Per-invariant map:
+  [../docs/invariants.md](../../bounded-backend/docs/invariants.md#onchain-coverage).
+- A function's *logic* is ordinary code. Its writes go through enforced rules and
+  invariants, and its invocation is gated by the `auth` rule. Normal
   functions write as the verified caller; `actAs`
   service-identity functions are privileged and must be admin-gated: on the
   control-plane roster (`get(/__admins__/@user.id) != null`, the owner plus
   `bounded share --role admin` collaborators) or on an app-data `admins`
-  collection. They are *un-proven logic, contained by enforced rules and proved
+  collection. They are *ordinary logic, contained by enforced rules and
   invariant walls.*
 
-## Function proof boundary
+## Function boundary
 
-Functions today are contained by enforced rules and proved invariant walls:
+Functions are contained by enforced rules and invariant walls:
 their writes must pass policy rules and invariants, and their invocation must
 pass the function `auth` rule.
-The function body's imperative logic is not itself proven, so keep hard
+The function body's imperative logic is not governed by policy, so keep hard
 guarantees in policy. Detail:
-[../docs/functions-when-to-use.md](../../bounded-backend/docs/functions-when-to-use.md#current-proof-boundary).
+[../docs/functions-when-to-use.md](../../bounded-backend/docs/functions-when-to-use.md#current-boundary).
 
 ## Related
 
-- [../docs/proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) - exactly what is proven on which runtime
 - [building-a-backend.md](../../bounded-backend/docs/building-a-backend.md) - hooks vs your own server code
 - [building-for-react-native.md](../../bounded-frontend/docs/building-for-react-native.md) - the mobile story
 - [../docs/invariants.md](../../bounded-backend/docs/invariants.md) - `conserve`/`rollingSum`/tenant invariants and sharding

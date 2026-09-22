@@ -239,12 +239,11 @@ the trade is provable on the collection - that's where you put the guardrails:
   per-desk loss collection, so the desk stops trading at the cap. The naive version
   caps *realized-loss rows the code writes at close* - which only binds losses your
   code chooses to record, not the real onchain outcome. The robust version is the
-  **reserve-at-open** pattern below, which makes the proven cap bind the realized
-  onchain loss as an upper bound. See [invariants.md](../../bounded-backend/docs/invariants.md) and
-  [proof-coverage.md](../../bounded-backend/docs/proof-coverage.md) for what the proof boundary reaches once
-  execution is on-chain.
+  **reserve-at-open** pattern below, which makes the enforced cap bind the realized
+  onchain loss as an upper bound. See [invariants.md](../../bounded-backend/docs/invariants.md#onchain-coverage)
+  for what the invariants reach once execution is on-chain.
 
-## Reserve-at-open loss cap / making the proven cap bind the *real* onchain loss
+## Reserve-at-open loss cap / making the enforced cap bind the *real* onchain loss
 
 This section documents a policy safety pattern.
 It does not make the currently unsupported Phoenix integration available on devnet.
@@ -254,14 +253,14 @@ into it. If you record a loss row *after* a trade settles (`closePosition` →
 `getUnrealizedPnl` → write the realized loss), the cap sees only the losses your
 code chooses to write. A crashed runtime, a skipped writeback, or a trade that blows
 through its stop between cycles can all produce a real onchain loss that **never
-hits the proven window**. The prover proves "the recorded sum never exceeds the cap"
+hits the capped window**. The invariant enforces "the recorded sum never exceeds the cap"
 - a true statement about a number that may not equal the money that actually left
-the escrow. That's a proof of the wrong quantity.
+the escrow. That's a cap on the wrong quantity.
 
 **The fix: reserve the worst case at OPEN, reconcile to realized at CLOSE.** For an
 **isolated-margin** perp (Phoenix subaccount `1`–`100`), the committed margin *is*
 the maximum the position can lose - liquidation closes it at the margin, so
-`realized_loss ≤ committed_margin` **always**. So at open we append **one proven
+`realized_loss ≤ committed_margin` **always**. So at open we append **one capped
 write** to the loss collection reserving exactly that margin as the worst-case loss.
 The `rollingSum` cap rejects that write - and therefore the whole atomic batch,
 including the `hooks.onchain` order - if it would push the 24h reserved-loss window
@@ -276,7 +275,7 @@ OPEN     setMany([
            lossReservations/$resId { reservedMicro: margin, kind: "reserve" } // worst-case loss, SAME batch
          ])
          │  rollingSum(reservedMicro, 24h, cap) is checked on the reservation write.
-         │  Over cap → 409 → the WHOLE setMany rolls back → no position, no order. ← CAP ENFORCED HERE (proven)
+         │  Over cap → 409 → the WHOLE setMany rolls back → no position, no order. ← CAP ENFORCED HERE
          ▼
 SUBMIT   hooks.onchain on positions/$id fires placeLong/placeShort(@contract.address, market, lots, subaccount)
          │  The escrow PDA opens the isolated position. Committed margin == reservedMicro.
@@ -288,24 +287,24 @@ CLOSE    hooks.onchain fires closePosition(...); realized = -getUnrealizedPnl(..
          ])
          │  Reconcile INTO THE SAME 24h window: realized ≤ reserved, so the net window can only shrink.
          ▼
-         Window stays ≤ cap for every sequence - proven.
+         Window stays ≤ cap for every sequence - enforced.
 ```
 
 Because `reservedMicro` is `UInt` (the cap field can't go negative), the *release*
 leg is modeled as a second append that **lowers the desk's effective reserved loss
 back toward the realized number** - e.g. credit the unused margin to a separate
-`releases` field/window, or (simplest, proven) just never release and let the
+`releases` field/window, or (simplest) just never release and let the
 reservation expire out of the 24h window on its own. Either way the invariant only
 ever sees **nonnegative reserved amounts whose window sum ≤ cap**, which is exactly
-what the prover discharges. The release is an *optimization* (frees budget sooner);
+what the invariant enforces. The release is an *optimization* (frees budget sooner);
 the *safety* (window ≤ cap) holds without it.
 
-### The proven policy (verified)
+### The policy
 
 ```json
 {
   "desks/$deskId/lossReservations/$resId": {
-    "description": "Reserve-at-open loss floor. OPEN appends the worst-case loss = committed isolated margin. The PROVEN rolling-24h cap rejects any open that would breach the daily-loss cap. CLOSE reconciles realized (≤ reserved) into the same window. Append-only.",
+    "description": "Reserve-at-open loss floor. OPEN appends the worst-case loss = committed isolated margin. The enforced rolling-24h cap rejects any open that would breach the daily-loss cap. CLOSE reconciles realized (≤ reserved) into the same window. Append-only.",
     "fields": { "reservedMicro": "UInt!", "positionId": "String?", "kind": "String?", "at": "UInt!" },
     "tier": "durable",
     "rules": {
@@ -321,42 +320,29 @@ the *safety* (window ≤ cap) holds without it.
 }
 ```
 
-`bounded verify` on this (with the parent `desks/$deskId` collection) proves the cap
-verbatim:
+### What is ENFORCED vs what is trusted (state it honestly)
 
-```
-[PASS] the running total can never exceed the cap - for every possible sequence of writes
-       Declared invariant "reserved_daily_loss_cap" has an SMT-proved offchain
-       append-only rolling-limit postcondition algebra per $deskId partition: if the
-       runtime admits only nonnegative appended records and the projected window sum
-       is within the declared limit, the resulting window sum is within that limit.
-
-✓ Proven - every [PASS] guarantee holds for all possible inputs. Safe to deploy.
-```
-
-### What is PROVEN vs what is trusted (state it honestly)
-
-- **PROVEN (Z3, every possible input):** no accepted sequence of opens can make the
+- **ENFORCED (policy, every write):** no accepted sequence of opens can make the
   24h *reserved*-loss window exceed the cap, per desk. Since for isolated margin
-  `realized_loss ≤ reserved_margin`, the proven cap is a **provable upper bound on
+  `realized_loss ≤ reserved_margin`, the cap is an **upper bound on
   the realized onchain loss**: `realized ≤ reserved ≤ cap`. An over-cap open is
   rejected `409` and - because the reservation and the `hooks.onchain` order ride
   one atomic `setMany` - the onchain order never fires. The cap binds *before* the
   trade exists.
-- **TRUSTED (imperative, not proven):** the hook body itself - `placeLong` /
+- **TRUSTED (imperative, outside the policy):** the hook body itself - `placeLong` /
   `closePosition` building and server-signing the Solana tx - is trusted plugin code
-  (as all plugin bodies are). The proof says no *accepted* open can over-reserve; it
-  does not prove the chain executed the tx, nor that the fill matched the intent.
+  (as all plugin bodies are). The invariant says no *accepted* open can over-reserve; it
+  does not show the chain executed the tx, nor that the fill matched the intent.
 - **RESIDUAL needing a live onchain fill to confirm e2e:** that the hook actually
   fires on the reservation write and that the realized-PnL writeback lands in the
   same window on a *real* Phoenix fill (margin committed == `reservedMicro`, and
   `realized ≤ margin` holding through liquidation). That's an integration test
-  against a supported live market, not an SMT obligation.
+  against a supported live market, not a policy invariant.
   Current devnet cannot close this residual because Phoenix is unavailable there.
 
 This is the resolution to **B-2**: the cap no longer binds only the losses the code
 remembers to write; it binds the worst case at the moment of opening, which the
-isolated-margin guarantee (`realized ≤ margin`) turns into a proven ceiling on the
+isolated-margin guarantee (`realized ≤ margin`) turns into a hard ceiling on the
 real money that can leave the escrow in any 24h window.
 
 ## Notes & gotchas

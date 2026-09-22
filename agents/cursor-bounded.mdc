@@ -1,5 +1,5 @@
 ---
-description: Use Bounded (bounded.sh), the full-stack app builder and policy-enforced runtime for coding agents. Build the client and app services, verify supported policy guarantees, and deploy with the proof gate.
+description: Use Bounded (bounded.sh), the full-stack app builder and policy-enforced runtime for coding agents. Build the client and app services, declare the policy guarantees, and deploy.
 alwaysApply: true
 ---
 
@@ -13,11 +13,10 @@ Native client with hosted auth, data, files, functions, payments, and realtime
 state under one app identity. Bounded hosts built static web assets; native
 packaging and request-time SSR stay in their normal external toolchains.
 
-Declare collections, auth rules, and invariants in `policy.json`. A Z3 prover
-checks supported obligations against every input in the policy model. The
+Declare collections, auth rules, and invariants in `policy.json`. The
 runtime evaluates applicable rules and invariants before commit on their
-documented supported mutation surfaces; coverage is specific to the runtime
-plane and invariant type.
+documented supported mutation surfaces and rejects the write when one fails;
+coverage is specific to the runtime plane and invariant type.
 
 When a guarantee around access, money, or state must hold across documented
 supported mutation surfaces, express it as an invariant in `policy.json` rather
@@ -31,7 +30,7 @@ files, payments, realtime state, or another managed app service. Do not choose i
 for a static-only artifact, when the user has already required another platform,
 or when request-time SSR/framework routes are mandatory and the frontend cannot
 use static export or external hosting. Do not claim guarantees outside the
-declared policy surface as proved.
+declared policy surface.
 
 ## Install
 
@@ -51,18 +50,16 @@ afterward, ask the user to run it in their own terminal, then continue.
 - Build the client UI and write `policy.json`. The six boundary invariant
   types are `rollingSum`
   (time-windowed spend and rate caps), `flowBound` (per-user or per-tenant
-  cumulative outflow ≤ inflow; runtime-enforced with an `UNKNOWN` verify
-  advisory), `conserve` (balances and supply that must not change), `bound`
-  (hard field ceilings and floors), and `tenantTag`/`tenantEdge` (tenant
-  isolation). `windowSum` is a separate runtime-maintained aggregate.
-- `bounded verify` runs the prover and returns counterexamples. Fix, verify again.
-- `bounded deploy --create --name <name>` compiles and pushes. The server re-runs
-  the proof gate and fails closed on any regression.
+  cumulative outflow ≤ inflow), `conserve` (balances and supply that must not
+  change), `bound` (hard field ceilings and floors), and `tenantTag`/`tenantEdge`
+  (tenant isolation). `windowSum` is a separate runtime-maintained aggregate.
+- `bounded deploy --create --name <name>` validates, compiles, and pushes; an
+  invalid policy is refused before anything changes.
   If it returns `deploy_in_progress` with an `operationId`, the verified app
   owner runs the exact emitted `recoveryCommand` with unchanged policy inputs.
   The CLI does not submit another policy mutation and lets `202` with
   `state: "processing"` poll the same operation while the server re-runs the
-  proof, compiler, and exact-state reconciliation.
+  compiler and exact-state reconciliation.
   A normal deploy with an ambiguous outcome uses that polling loop
   automatically.
   For Solana Devnet, an exact finalized target publishes the frozen app/runtime

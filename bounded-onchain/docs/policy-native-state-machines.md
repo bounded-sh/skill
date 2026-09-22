@@ -125,8 +125,8 @@ That fallback means `getAfter(/x) != null` does **not** prove this batch wrote
 2. use `requiresInBatch` to require the sibling path structurally;
 3. make the sibling bind back to the same operation/root id.
 
-`requiresInBatch` is enforced by the realtime/client data plane and is not an
-onchain proof obligation. For an onchain transition, prefer one receipt whose
+`requiresInBatch` is enforced by the realtime/client data plane and is not
+an onchain guarantee. For an onchain transition, prefer one receipt whose
 hook performs every derived sibling mutation with `@DocumentPlugin.updateField`
 inside the same transaction. Do not make Solana safety depend only on the
 realtime batch-completeness check.
@@ -255,7 +255,7 @@ exact mirror postcondition.
 ### Reserved receipt stamps are Poofnet-only. Never read them in a rule.
 
 This deserves its own hard line, because the failure mode is permanent fund
-lockup and it survives every proof and test you will run before the target
+lockup and it survives every test you will run before the target
 network.
 
 `_transaction_hash`, `_hook_completed`, and `_error_message` are written by
@@ -272,8 +272,8 @@ The trap is asymmetric in the worst way. Deposit rules rarely carry receipt
 gates, and payout rules attract them - the strict stamp check FEELS like extra
 safety on exactly the legs that move money out. Ship that and the deployed
 app becomes a one-way valve: bids, deposits, and pool seeds go in; no claim,
-refund, or payout can ever pass. Nothing catches it early, because the formal
-proof models the stamps as ordinary nullable fields and every test lane runs
+refund, or payout can ever pass. Nothing catches it early, because the policy
+models the stamps as ordinary nullable fields and every test lane runs
 on the simulator, where they exist. The first thing that notices is a real
 user on the real chain who cannot withdraw.
 
@@ -333,7 +333,7 @@ Keep these claims separate:
 | Claim | Evidence |
 |---|---|
 | policy parses and types | compiler/validator |
-| authorization and supported invariant obligations hold | `bounded verify` and its exact proof report |
+| authorization and supported invariants hold | policy tests and a preview deploy |
 | transition equations match the design | independent differential/property tests |
 | Poofnet behavior is modeled | Poofnet E2E including injected failures |
 | transaction fits and external programs behave | retained target-network execution |
@@ -366,5 +366,5 @@ returned signature do not replace that run.
 - Writer roles are distinct and commissioned in every target environment.
 - Maximum transaction bytes, account locks, compute, rent, and ATA behavior are
   exercised on the target network.
-- Documentation labels compiled, tested, proved, Poofnet-modeled, and
+- Documentation labels compiled, tested, Poofnet-modeled, and
   live-network-verified claims accurately.

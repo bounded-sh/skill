@@ -524,8 +524,7 @@ const totals = await runQueryMany(slugs.map((slug) => ({
 Parallel per-item POSTs trip the platform rate limiter (`HTTP 429`); app-level
 `catch(() => null)` often swallows the errors, so the app silently shows empty data.
 
-Policy `queries` are validated at deploy and participate in a proof where a
-supported obligation references them; see [queries.md](../../bounded-backend/docs/queries.md).
+Policy `queries` are validated at deploy; see [queries.md](../../bounded-backend/docs/queries.md).
 
 ## Collaborators - managed via the CLI (not the SDK)
 
@@ -849,8 +848,8 @@ export default async function syncStripe(_args, ctx) {
 }
 ```
 
-Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, the
-proof boundary): [functions.md](../../bounded-backend/docs/functions.md). See its
+Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, what
+policy still enforces): [functions.md](../../bounded-backend/docs/functions.md). See its
 safe sync example for the same server-side resolution in policy.
 
 ## Related

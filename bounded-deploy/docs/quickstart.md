@@ -1,7 +1,7 @@
 # Deploy quickstart
 
 Use this path for a new project and for ordinary releases: you author the policy
-and the client, and the CLI proves and ships them.
+and the client, and the CLI ships them.
 
 To have Bounded's build agent write the app from a prompt instead, and to
 iterate on it with more prompts, see [Prompt-driven builds](cli-reference.md#prompt-driven-builds---create-edit-builds).
@@ -21,24 +21,19 @@ returns to the terminal after sign-in. `init` then creates:
 
 No separate authentication command is required before `bounded init`.
 
-## Prove and deploy
+## Deploy
 
 ```bash
-bounded verify
 bounded deploy --create --name my-app
 ```
 
-A healthy proof answers in a few seconds.
-If `bounded verify` returns `503` `proof_substrate_unavailable` (`retryable: true`), the proving service is temporarily unavailable.
-This response does not establish policy correctness.
-Wait 30 seconds and rerun the same `bounded verify`.
-Make at most 3 attempts total, meaning the initial attempt plus 2 retries.
-If the third attempt still fails this way, stop and report the proving service as degraded, including the `correlationId` when present.
-This retry protocol never applies to `bounded deploy`; in particular, never retry `bounded deploy --create` because it can create another app.
-See the incident router in this skill's SKILL.md for the full protocol.
+The deploy validates and compiles the policy and refuses an invalid one before
+anything changes; fix what the message names and run it again. Never retry
+`bounded deploy --create` on an ambiguous outcome, because it can create another
+app; see the incident router in this skill's SKILL.md.
 
-Fix every blocking verify result. The create deploy records the new `appId` in
-`bounded.json`. Later policy releases use:
+The create deploy records the new `appId` in `bounded.json`. Later policy
+releases use:
 
 ```bash
 bounded deploy

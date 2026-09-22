@@ -63,7 +63,7 @@ export function runVerify(file, runDir, execVia) {
   }
   let last = { ok: false, status: 'PROVER_BUSY', passed: false, counts: {}, failures: ['no attempt succeeded'] }
   for (let attempt = 1; attempt <= 5; attempt++) {
-    const r = spawnSync(argvPrefix[0], [...argvPrefix.slice(1), 'verify', file, '--json'], { encoding: 'utf8', timeout: 240000 })
+    const r = spawnSync(argvPrefix[0], [...argvPrefix.slice(1), 'verify', '--experimental', file, '--json'], { encoding: 'utf8', timeout: 240000 })
     const raw = (r.stdout || '') + (r.stderr || '')
     if (!execVia) spawnSync('sleep', ['4']) // hosted dev-api pacing (20/min/IP); the local stack needs none
     const transient = /proof_substrate_unavailable|Too many formal verification|\b429\b|"retryable"\s*:\s*true/.test(raw)

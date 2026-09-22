@@ -1,20 +1,20 @@
 # Functions — the imperative escape hatch
 
 **What's in here / when to read this:** the full Functions reference — declare in
-policy, write the `ctx` API, invoke (CLI + TS), deploy, secrets, scheduling, the
-proof boundary. The larger `ctx` capabilities (`ctx.ai`, `ctx.services`, `ctx.browser`,
+policy, write the `ctx` API, invoke (CLI + TS), deploy, secrets, scheduling, and
+what policy still enforces. The larger `ctx` capabilities (`ctx.ai`, `ctx.services`, `ctx.browser`,
 `ctx.enqueue`, `ctx.build`) each have their own page, linked from the capabilities table. **First decide you even need one:**
 [functions-when-to-use.md](functions-when-to-use.md).
 
 Declarative policy can't express *"fetch third-party data, then update
 accordingly"*: call Stripe / an LLM / any external API, transform the result,
-then write. **Functions** close that gap — without breaking the proof thesis.
+then write. **Functions** close that gap — without breaking the policy boundary.
 
 > **The honest line.** Functions are your imperative escape hatch. Bounded **does
-> not prove their logic** — but **they can't break your declared invariants**, and **only
+> not govern their logic** — but **they can't break your declared invariants**, and **only
 > authorized callers can invoke them**.
 
-## Why functions are still safe (the proof boundary)
+## Why functions are still safe (the policy boundary)
 
 Two guarantees hold no matter what a function's code does:
 
@@ -28,31 +28,31 @@ Two guarantees hold no matter what a function's code does:
    read/create rules, **before** the function runs. Authorization stays
    declarative and analyzable; it does not live in the function body.
 
-What is **not** proven: the function's own logic (the third-party call, the
+What is **not** governed: the function's own logic (the third-party call, the
 transform). That's the deliberate trade — imperative power in exchange for
-"Bounded proves declared invariant obligations, enforces authorization rules,
-and does not prove the function body."
+"Bounded enforces declared invariants and authorization rules, and does not
+govern the function body."
 
 **Caller-scoped vs service identity.** A normal function writes as the verified
 caller, so `auth: "true"` means any logged-in caller may invoke it and
 `ctx.bounded` still cannot exceed that caller's data-plane authority. A function
 that declares `actAs` writes as a backend/service identity and is therefore
-privileged: deploy requires its `auth` rule to imply the app's admin predicate.
-Two runtime-valid gates satisfy it. The control-plane roster - the app owner and
+privileged: its `auth` rule must imply the app's admin predicate, and nothing
+checks that for you. Two runtime-valid gates satisfy it. The control-plane roster - the app owner and
 every `bounded share --role admin` collaborator, which the runtime exposes as the
 reserved `__owners__`/`__admins__` sets - needs no collection at all:
 `@user.id != null && (get(/__owners__/@user.id) != null || get(/__admins__/@user.id) != null)`.
 An app-data `admins/$userId` collection works too, gated as
-`get(/admins/@user.id).active == true` (`.active == true` implies the row exists,
-so it satisfies the deploy gate while giving you a real off-switch - see
+`get(/admins/@user.id).active == true` (`.active == true` implies the row exists
+while giving you a real off-switch - see
 [admin-and-ownership.md](admin-and-ownership.md)); declare and bootstrap that
 scope before deploying the function. Reach for the collection only when the
 people who may run the service identity are end-users rather than your team.
 
 ## When to reach for a function — read this first
 
-A Function's **imperative body is not itself proved by `bounded verify`**.
-Default to enforced rules and declared invariant obligations, then hooks; reach
+A Function's **imperative body is not governed by the policy**.
+Default to enforced rules and declared invariants, then hooks; reach
 for a function **only when the logic must leave the boundary** (external API,
 secrets, complex imperative work). The full
 decision guide — the hierarchy, the agent-facing rule, and concrete
@@ -184,7 +184,7 @@ export default async function (args, ctx) {
 |---|---|
 | `ctx.user` | `{ id, address, email, claims, system? }` — the verified caller for a normal function. `ctx.user.id` is the **universal stable identity** (always present; equals `@user.id` in policy) — use it for ownership/membership. `ctx.user.address` is a **real onchain wallet** (equals `@user.address`; present by default for supported email/social logins, null for phone-only sessions, `auth.wallets: false` apps, and the legacy lazy `authMode: "bounded"` path) — use it only for onchain/wallet semantics. For an `actAs` function, Bounded first evaluates `auth` against the original caller and then sets `ctx.user.id == ctx.user.address == actAs`; `ctx.bounded` uses that same service identity. The function body does not receive the original caller as `ctx.user`. |
 | `ctx.auth` | `{ enforced, rule, system }` — **authorization the platform ALREADY did for you.** `rule` is the exact policy `auth` expression that passed before your code ran (null for system/scheduled runs). Read this instead of re-implementing authz: if you declared an `auth` gate, it has already passed. |
-| `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.setMany([{ path, document }, ...])`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by enforced rules and proved invariant obligations** — a `409` throws. `setMany` is one atomic batch, so use it for transfers/settlement. `runQuery` runs one of your policy-declared, deploy-validated queries under the acting identity's read authority, so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). A query participates in a proof only when a supported proof obligation references it. |
+| `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.setMany([{ path, document }, ...])`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by enforced rules and invariants** — a `409` throws. `setMany` is one atomic batch, so use it for transfers/settlement. `runQuery` runs one of your policy-declared, deploy-validated queries under the acting identity's read authority, so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). |
 | `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets`. Values come from the app secret store (`bounded secret put`); bare `--secret NAME` declares exposure on a standalone deploy, while legacy `--secret NAME=VALUE` overrides the store for that function version. Nothing undeclared leaks in. |
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
 | `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's credit pool, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](functions-ctx-ai.md) and [§media](functions-ctx-ai.md#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
@@ -592,10 +592,9 @@ same data is available as `ctx.origin` (`{ kind, path, module, room, tick }` or
 null).
 
 The function's `auth` rule uses the same policy expression language as data
-rules and is **enforced before the function body runs**. `bounded verify`
-understands `@origin` as a first-class special variable and checks the supported
-generated obligations that reference the gate; that does not make every auth
-expression a blanket proof of product intent.
+rules and is **enforced before the function body runs**; `@origin` is a
+first-class special variable in it. An auth expression is not a guarantee of
+product intent.
 
 To ship a **funded** AI NPC, set `session.live.runAs` to a service wallet the owner
 funds with credits — then `ctx.ai` in the called function Just Works (capped at
@@ -641,20 +640,19 @@ through client requests.
   for native-binding npm, use your own server as a `@bounded-sh/server` client.
 - **Memory / subrequests:** bounded by the hosted function runtime.
 
-## What's proven vs not
+## What's enforced vs not
 
-The proof boundary (recap of "Why functions are still safe", above): **proved** —
-the declared invariant and generated safety obligations reported by
-`bounded verify`; **enforced** — collection authorization rules on every
-`ctx.bounded` write and the function's invocation `auth` gate before code runs;
-**NOT proven** — the function's own logic (the fetch, the transform) or whether
-an authorization rule matches unstated product intent. Keep anything that must
-be a proved state guarantee in a declared invariant, not in function code.
+The policy boundary (recap of "Why functions are still safe", above):
+**enforced** — collection authorization rules on every `ctx.bounded` write, your
+declared invariants on every write, and the function's invocation `auth` gate
+before code runs; **not governed** — the function's own logic (the fetch, the
+transform) or whether an authorization rule matches unstated product intent.
+Keep anything that must be a state guarantee in a declared invariant, not in
+function code.
 
 Use a policy rule for authorization and a supported declared invariant for a
-state guarantee. Treat function code as useful imperative logic, not as a proof
-boundary, and call a property proved only when the verifier reports its concrete
-obligation as proved.
+state guarantee. Treat function code as useful imperative logic, not as a policy
+boundary.
 
 ## Related
 

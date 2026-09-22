@@ -78,8 +78,8 @@ export default async function (args, ctx) {
   this gateway"*, that deployment's provider allowlist is off — fall back to an
   `@cf/*` model and report it. Avoid dated `@cf` model ids from memory; Workers
   AI deprecates them (a 5028 "deprecated" error means pick a current one).
-- **Cap it provably.** The account's credit pool is the platform ceiling. For a
-  *per-user* / *per-app* AI budget you can prove, write an append-only spend event
+- **Cap it in policy.** The account's credit pool is the platform ceiling. For a
+  *per-user* / *per-app* AI budget the runtime enforces, write an append-only spend event
   under a `rollingSum` in the same flow (the
   [spend-cap recipe](invariants.md#rollingsum--caps-over-time-windows)) — so "this
   desk spends ≤ $X/day on reasoning" is an invariant, not a hope.

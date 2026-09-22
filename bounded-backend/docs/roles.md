@@ -74,22 +74,10 @@ Anonymous callers (no authenticated identity — `@user.id == null`) are **never
 
 The grant lives in the compiled policy (`app.roles`), so it is inspectable and
 runtime-enforced as an additive authorization grant — not a hidden bypass flag.
-`bounded verify` **surfaces** every role grant as an advisory and flags the
-over-broad `*` ones; that advisory does not by itself prove the grant is safe:
-
-```
-[PASS] role 'admin': read grant
-       read:* — over-broad: members may read ALL collections (4: posts, comments, users, audit). Ensure the 2 member(s) are trusted.
-[PASS] role 'admin': write grant
-       write:* — over-broad: members may write ALL collections (4: ...). Ensure the 2 member(s) are trusted.
-```
-
-These advisories **PASS** (a governed grant is legitimate) — they exist so you
-can see exactly what each role exposes before you ship it. Prefer the narrowest
-grant that works: `write: ["posts"]` over `write: "*"` when an editor only
-touches posts. When you need a formal claim about role-gated exposure or who may
-grow a role set, declare the corresponding supported `roleGatedRead` or
-`authorityClosure` attestation and require its named obligation to be `PROVED`.
+Review every role grant before you ship it: an over-broad `*` grant means the
+role's members may read or write ALL collections, so make sure those members are
+trusted. Prefer the narrowest grant that works: `write: ["posts"]` over
+`write: "*"` when an editor only touches posts.
 
 ## Recipe — an admin dashboard that can read everything
 

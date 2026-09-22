@@ -182,7 +182,7 @@ Use it for "who is calling this backend route", and let policy rules on
 
 ## Boundaries
 
-- Backend runtime code is ordinary imperative code, not formally proven.
+- Backend runtime code is ordinary imperative code; only its writes are governed by policy.
 - A `kind: "backend"` `fetch` handler runs behind token verification but **not**
   behind a policy `auth` rule, so it is reachable by every signed-in user of the
   app and must authorize its own actions. `ctx.identity` is always a populated

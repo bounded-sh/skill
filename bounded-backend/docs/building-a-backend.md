@@ -9,7 +9,7 @@ bypasses the deployed policy.
 > managed live/backend runtime. Use those surfaces for logic Bounded should run.
 > `@bounded-sh/server` is specifically for code in **your own infrastructure**
 > acting as an authenticated client; it does not bypass policy or turn an
-> external process into part of the proved data model. See
+> external process into part of the governed data model. See
 > [functions.md](functions.md) and
 > [capabilities-and-limits.md](../../bounded/guides/capabilities-and-limits.md).
 

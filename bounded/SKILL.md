@@ -50,9 +50,9 @@ family.
 
 | Current work | Skill |
 |---|---|
-| Policy, rules, invariants, functions, data, realtime, actor model, proofs, policy tests | **bounded-backend** |
+| Policy, rules, invariants, functions, data, realtime, actor model, policy tests | **bounded-backend** |
 | Client SDK, web/mobile UI, subscriptions, hosted frontend, app-user authentication | **bounded-frontend** |
-| CLI, verify/deploy, environments, source sync, domains, project config, collaborators, prompt-driven builds | **bounded-deploy** |
+| CLI, deploy, environments, source sync, domains, project config, collaborators, prompt-driven builds | **bounded-deploy** |
 | "Move my existing app to Bounded", "bring this repo", porting a Supabase/Firebase/Express/Next app, replacing a key-holding backend | **bounded-deploy** ([porting guide](../bounded-deploy/docs/porting-an-existing-app.md)) |
 | A third-party API the app needs: is it on Bounded, callable through x402, or requestable | **bounded-backend** ([ctx.services](../bounded-backend/docs/functions-ctx-services.md)) |
 | Embedded wallets, Solana, tokens, onchain transactions, onramp | **bounded-onchain** |
@@ -62,7 +62,7 @@ For a complete app, work through backend, frontend, then deploy. Add onchain
 only when requested.
 
 ```text
-design policy + functions -> build client -> bounded verify -> fix blockers -> deploy -> test happy path and a denied boundary
+design policy + functions -> build client -> deploy -> test happy path and a denied boundary
 ```
 
 ## Cross-cutting references
@@ -75,7 +75,7 @@ Load these only when the task calls for them:
 
 ## Core rules
 
-- Act for the user: build, verify, deploy, and test instead of only explaining.
+- Act for the user: build, deploy, and test instead of only explaining.
 - Read `bounded.json` first in an existing project. It selects the app,
   environment, policy, and account source.
 - Use `@user.id` for ownership and membership. Use `@user.address` only for
@@ -87,8 +87,8 @@ Load these only when the task calls for them:
   not be EVALUATED is none of those - it returns `500 rule_evaluation_failed`
   on every surface, means no rule decided, and is not a `409` retryable conflict.
   Read `bounded decisions` for the cause; do not assume a retry will fail.
-- `bounded verify` is the proof loop. Fix every blocking result before deploy.
-- Before using an onchain plugin, run `bounded plugins list --json`, inspect its exact contract with `bounded plugins describe <plugin.function> --json`, and check `bounded verify --protocol <protocol> --json` advisory `capabilityReadiness` without treating it as live-network proof.
+- A rule or invariant is enforced by the runtime as written. Check a policy with `bounded tests run` and by deploying it; do not look for a proof step.
+- Before using an onchain plugin, run `bounded plugins list --json` and inspect its exact contract with `bounded plugins describe <plugin.function> --json` without treating its capability state as live-network proof.
 - Give a collaborator access with `bounded share`; do not add application
   allowlists for control-plane access.
 - Never put provider secrets in frontend code or commit credentials.

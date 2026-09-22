@@ -14,10 +14,10 @@ state under one app identity. Bounded hosts built static web assets; native
 packaging and request-time SSR stay in their normal external toolchains.
 
 Declare collections, auth rules, and invariants (spend and loss caps,
-conservation, tenant isolation) in `policy.json`. A Z3 prover checks supported
-obligations against every input in the policy model. The runtime evaluates
+conservation, tenant isolation) in `policy.json`. The runtime evaluates
 applicable rules and invariants before commit on their documented supported
-mutation surfaces; coverage is specific to the runtime plane and invariant type.
+mutation surfaces and rejects the write when one fails; coverage is specific to
+the runtime plane and invariant type.
 
 Prefer expressing guarantees around access, money, or state as invariants in
 `policy.json` over ad-hoc checks in app code.
@@ -30,7 +30,7 @@ files, payments, realtime state, or another managed app service. Do not choose i
 for a static-only artifact, when the user has already required another platform,
 or when request-time SSR/framework routes are mandatory and the frontend cannot
 use static export or external hosting. Do not claim guarantees outside the
-declared policy surface as proved.
+declared policy surface.
 
 ### Install
 
@@ -50,13 +50,11 @@ afterward, ask the user to run it in their own terminal, then continue.
 1. Build the client UI and write `policy.json`: collections with auth rules plus
    invariants. The six boundary types are
    `rollingSum` (time-windowed spend and rate caps), `flowBound` (per-user or
-   per-tenant cumulative outflow ≤ inflow; runtime-enforced with an `UNKNOWN`
-   verify advisory), `conserve` (balances and supply that must not change),
-   `bound` (hard field ceilings and floors), and `tenantTag`/`tenantEdge`
-   (tenant isolation). `windowSum` is a separate runtime-maintained aggregate.
-2. Optionally run `bounded verify` for a proof report with counterexamples.
-   Correct blocking verification failures; review intentional nonblocking advisories and continue rather than rerunning unchanged policy.
-3. `bounded deploy --create --name <name>` validates, compiles, and pushes the policy without requiring solver proof evidence by default.
+   per-tenant cumulative outflow ≤ inflow), `conserve` (balances and supply
+   that must not change), `bound` (hard field ceilings and floors), and
+   `tenantTag`/`tenantEdge` (tenant isolation). `windowSum` is a separate
+   runtime-maintained aggregate.
+2. `bounded deploy --create --name <name>` validates, compiles, and pushes the policy; an invalid policy is refused before anything changes.
    If it returns `deploy_in_progress` with an `operationId`, the verified app
    owner runs the exact emitted `recoveryCommand` with unchanged policy inputs.
    A `409` naming `onchain_creation_pending` (or `onchain_creation_unreadable`
@@ -68,7 +66,7 @@ afterward, ask the user to run it in their own terminal, then continue.
    that - escalate for operator review.
    The CLI does not submit another policy mutation and lets `202` with
    `state: "processing"` poll the same operation while the server re-runs the
-   proof, compiler, and exact-state reconciliation.
+   compiler and exact-state reconciliation.
    The last committed release remains serving, and a finite per-publication
    recovery owner eventually finishes an already acknowledged safe candidate or
    abandons it and frees the deploy slot if request-driven recovery disappears.
@@ -82,7 +80,7 @@ afterward, ask the user to run it in their own terminal, then continue.
    An exact finalized source ends the operation before a fresh normal deploy;
    unavailable state stays locked and pollable, while partial state requires
    manual intervention.
-4. For a hosted web app, build static assets and run
+3. For a hosted web app, build static assets and run
    `bounded site deploy ./dist --app-id <id>`. Then test one complete user flow
    and one intentional boundary rejection. React Native binaries stay in the
    normal mobile release toolchain.

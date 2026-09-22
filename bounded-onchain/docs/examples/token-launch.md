@@ -106,7 +106,7 @@ Creator-fee custody options (pick one before launch - the `creator` argument of 
 
 ## Why it holds
 
-- Rules stay pure boolean gates and all value movement lives in `hooks.onchain.create`, so `bounded verify` proves who can write, and a hook that fails reverts the whole write atomically - no launch record without a launched token.
+- Rules stay pure boolean gates and all value movement lives in `hooks.onchain.create`, so the rules decide who can write, and a hook that fails reverts the whole write atomically - no launch record without a launched token.
 - The launch hook hardwires `@user.address` as creator: no field a caller could point at someone else's wallet, so fee-recipient spoofing is structurally impossible.
 - `update` and `delete` are `"false"` on every collection, so nobody can rewrite `uri` or `name` after launch to re-skin a token, and no `!`-field preservation clauses are needed.
 - Buys pass the buyer's own wallet as `source`, so the buyer signs and only the buyer's funds move; `solLamports > 0` stops zero-value spam, and the required `minTokensOut > 0` guarantees every buy carries an honest, caller-priced floor the interpreter enforces verbatim rather than a floor it recomputes against a curve an attacker may have moved.

@@ -45,8 +45,8 @@ The two look identical but are NOT the same — mind the underscores:
   pattern.
 
 They only meet at the optional **bridge**: a rule *may* read `get(/__admins__/@user.id)` if
-you want your operators to also have data powers. The deploy gate for `actAs` service-identity
-functions accepts that bridge as admin evidence (`get(/__admins__/@user.id) != null` or
+you want your operators to also have data powers. An `actAs` service-identity
+function's `auth` rule may use that bridge as its admin gate (`get(/__admins__/@user.id) != null` or
 `get(/__owners__/@user.id) != null`, keyed by `@user.id`), so an app whose privileged functions
 are run by its own team needs no `admins` collection at all. Otherwise the two never touch.
 **A B2C app with end-user roles (moderators, etc.) uses an `admins`/`roles` collection and may
@@ -59,7 +59,7 @@ need no `access` block at all.**
 | `owner` | everything (one per app, transferable) |
 | `admin` | manage the app + act on data — *not* delete/transfer/manage-the-roster |
 | `developer` | **read the source** + deploy/update policy, functions, and the UI — this IS the **bounded-agent** role (renames the legacy `policy` role) |
-| `viewer` | read-only management surfaces + proofs (the "external people" tier) |
+| `viewer` | read-only management surfaces (the "external people" tier) |
 | `billing` | view + manage billing |
 
 > **⚠️ Plan gating — check the OWNER's plan before suggesting a role.** Collaboration is
@@ -68,7 +68,7 @@ need no `access` block at all.**
 > | Owner's plan | Seats | Roles you can grant |
 > |---|---|---|
 > | Free | 0 — solo | none |
-> | Pro | 3 | **`developer` only** (full build access: verify, deploy policy/functions/UI) |
+> | Pro | 3 | **`developer` only** (full build access: deploy policy/functions/UI) |
 > | Team | 25 | all of them — `developer`, `admin`, `viewer`, `billing` |
 > | Enterprise | unlimited | all |
 >
@@ -134,7 +134,7 @@ Roles are *bundles of capabilities*. The atomic capabilities (`surface:action`):
 `code:read` · `cloud:prompt` · `cloud:apply` · `data:act`.
 
 Author custom roles + grants in the **`access` block of `policy.json`** (agents edit this
-directly; it deploys with the policy and `bounded verify` reports who-can-do-what):
+directly; it deploys with the policy):
 
 ```jsonc
 {
@@ -290,8 +290,7 @@ flat, provable admin registry and gate rules on it:
       // only ACTIVE admins add admins; the founder bootstraps (genesis clause).
       // Every privileged gate reads `.active == true`, not mere existence, so
       // `active: false` is a REAL off-switch (see the revocation note below).
-      // Gate on THIS collection (/admins) — the same scope the authorityClosure
-      // proof is taken over — NOT the control-plane bridge (/__admins__). Every
+      // Gate on THIS collection (/admins), NOT the control-plane bridge (/__admins__). Every
       // write action needs `@user.id != null` so an anonymous caller can't slip in.
       "create": "@user.id != null && (get(/admins/@user.id).active == true || @user.id == @const.FOUNDER)",
       "update": "@user.id != null && get(/admins/@user.id).active == true",
@@ -305,7 +304,7 @@ flat, provable admin registry and gate rules on it:
       "read":   "true",
       "create": "@user.id != null && @newData.owner == @user.id",
       // the holder may transfer; an ACTIVE admin may moderate but NOT seize
-      // ownership (@newData.owner == @data.owner) - this proves transfer authority.
+      // ownership (@newData.owner == @data.owner).
       "update": "@user.id != null && (@user.id == @data.owner || (get(/admins/@user.id).active == true && @newData.owner == @data.owner))",
       "delete": "@user.id != null && (@user.id == @data.owner || get(/admins/@user.id).active == true)"
     }
@@ -319,21 +318,13 @@ flat, provable admin registry and gate rules on it:
       "update": "@user.id != null && (@user.id == get(/tenants/$tenantId).owner || get(/admins/@user.id).active == true)",
       "delete": "@user.id != null && get(/admins/@user.id).active == true"
     }
-  },
-  "proofs": {
-    "attestations": [{
-      "claim": "the admin set only grows through existing admins, seeded by the founder",
-      "kind": "authorityClosure", "roleScope": "admins/$userId", "initialMember": "@const.FOUNDER"
-    }]
   }
 }
 ```
 
-*(Verifies clean against the real proof engine: `✓ Proven — Safe to deploy`. The
-`authorityClosure` BASE+INDUCTION+side-door sweep passes with the `.active == true`
-gate (`.active == true` implies the record exists, so it satisfies the same closure
-obligation existence does), and tenant ownership is proven transfer-safe; the only
-advisories are the intentional public `read` rules.)*
+*(Validates clean at deploy. The `.active == true` gate implies the record
+exists, so it is at least as strict as an existence check, and the only
+intentionally public rules are the `read` rules.)*
 
 > **`active` is a REAL off-switch - use it to revoke.** Every privileged rule gates on
 > `get(/admins/@user.id).active == true`, not on mere existence, so writing
@@ -350,11 +341,12 @@ advisories are the intentional public `read` rules.)*
 > see [service-keys.md](service-keys.md) and the bare-existence gate in
 > [admin-and-ownership.md](admin-and-ownership.md).)
 
-The `authorityClosure` proof makes super-admin a **provable, closed set** — no
-self-promotion, no side doors — which is the platform-grade guarantee you can't get from a
+The admin `create` rule makes super-admin a **closed set** — only an existing active
+admin (or the founder at genesis) can add one, so there is no self-promotion and no side
+door — which is the platform-grade guarantee you can't get from a
 "service-role key." Tenant owners manage their own tenant; platform super-admins manage all;
 every write is still checked. See [admin-and-ownership.md](admin-and-ownership.md) for the
-bootstrap and proof details, and [invariants.md](invariants.md) for `tenantTag` isolation
+bootstrap details, and [invariants.md](invariants.md) for `tenantTag` isolation
 so one tenant can never touch another's data.
 
 ## Related

@@ -5,7 +5,7 @@ description: >-
   (rollingSum/windowSum/flowBound/conserve/tenantTag/tenantEdge/bound), functions (ctx.user/ctx.bounded/ctx.ai/
   ctx.services/ctx.secrets), the actor and identity model (@user, runAs/actAs,
   @origin, service keys, reserved identity sets), data and queries, realtime/live
-  rooms, and the proof loop (bounded verify, counterexamples, proof coverage). Use
+  rooms, and policy tests. Use
   when writing or changing server-side Bounded logic, policies, or the rules that
   govern who can do what. Part of the Bounded skill family; see the bounded skill
   to route across frontend, deploy, onchain, and teams.
@@ -14,13 +14,12 @@ description: >-
 # Bounded backend
 
 The server side of a Bounded app: the policy that governs documented supported
-mutation surfaces, the proof-backed and runtime-enforced invariants, the
-functions that run trusted code, and the actor model that decides who is acting.
-The proof loop is `bounded
-verify`; treat `PROVED` differently from a non-blocking runtime advisory with
-proof status `UNKNOWN`. `bounded deploy` compiles and pushes; runtime rule and
-invariant checks reject violations before commit on their documented supported
-mutation surfaces. Do not generalize that coverage to an unsupported plane,
+mutation surfaces, the runtime-enforced invariants, the functions that run
+trusted code, and the actor model that decides who is acting.
+`bounded deploy` validates, compiles, and pushes; runtime rule and invariant
+checks reject violations before commit on their documented supported mutation
+surfaces. Check a policy with concrete policy tests (`bounded tests run`) and by
+deploying it. Do not generalize that coverage to an unsupported plane,
 undocumented storage path, or inherited corpus. For CLI/deploy see the
 **bounded-deploy** skill; for the client SDK and auth UI see
 **bounded-frontend**; to route across the family, see the root **bounded** skill.
@@ -74,7 +73,6 @@ term.
 | Top-level `roles`, `members`, `read:"*"`, read/write scopes | [roles](docs/roles.md) |
 | `access`, custom/external roles, `__owners__`, `__admins__`, `__developers__`, `__viewers__` | [access control](docs/access-control.md) · [identity and logs](docs/identity-and-logs.md) |
 | Service keys, payout bots, backend identities, `runAs`, `actAs`, `@origin`, `ctx.origin` | [service keys](docs/service-keys.md) · [principals and origins](docs/principals-and-origins.md) |
-| Proof coverage, `PROVED` / `DISPROVED`, counterexamples | [proof coverage](docs/proof-coverage.md) · [verify and counterexamples](docs/verify-and-counterexamples.md) |
 | Concrete allow/deny tests; `policy-tests/*.json`, `bounded tests run/push/list/pull` | [policy tests](docs/policy-tests.md) |
 | End-to-end tests for authenticated apps | [testing authed apps](docs/testing-authed-apps.md) |
 | Completion review | [quality checklist](docs/quality-checklist.md) |
@@ -88,12 +86,7 @@ term.
 | `500 rule_evaluation_failed` | The rule was reached and could NOT be evaluated - no rule denied you, and nothing was read or written. Not a denial, not a retryable conflict. Read `bounded decisions` for the cause; the row is recorded with `decision: error`. |
 | `409` + invariant name | The transaction would violate an invariant. Fix state or policy. |
 | `403 incomplete_batch` | A collection's `requiresInBatch` declaration names companion paths missing from the atomic batch. Submit the complete `setMany`. |
-| `DISPROVED` + counterexample | The proof found a breaking assignment. Fix every blocking result and verify again; only non-blocking advisories are reviewable. |
-| Static validation error | Fix policy syntax, field types, tier/invariant pairing, constants, or expression use. |
-
-Use each JSON check's `blocking` flag to distinguish required corrections from advisories, independently of `proofStatus`.
-Review intentional advisories once and continue; rerunning unchanged policy cannot resolve them.
-See [verification reports](docs/verify-and-counterexamples.md#blocking-checks-versus-advisories).
+| Deploy validation error | Deploy refused the policy before anything changed. Fix policy syntax, field types, tier/invariant pairing, constants, or expression use as the message names. |
 
 ## Rules Of Thumb
 

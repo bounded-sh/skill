@@ -2,8 +2,8 @@
 
 Bounded functions are the **zero-config default** for server logic — write a
 `(args, ctx)` handler, declare an `auth` rule, deploy. No separate infrastructure
-setup. You inherit Bounded's auth, secrets, metering, and **proof boundary** for
-free: a function **provably cannot break an invariant** (every write is re-checked
+setup. You inherit Bounded's auth, secrets, metering, and **policy boundary** for
+free: a function **cannot break an invariant** (every write is re-checked
 → 409 → throws).
 
 They are deliberately a simple *imperative escape hatch*, not a general compute
@@ -16,7 +16,7 @@ Bounded's guarantees no matter where the compute runs**.
 
 ## The rule
 
-> **Short + stateless + proven-write → Bounded function.**
+> **Short + stateless + policy-governed write → Bounded function.**
 > **Custom deps / stateful / scheduled / an agent → Bounded runtime** — [backend-runtime.md](backend-runtime.md).
 > **Want your own server + full control → eject** (you leave the managed runtime guarantees).
 
@@ -25,8 +25,8 @@ Bounded's guarantees no matter where the compute runs**.
 - It's **request→response** or a **cron/scheduled** job (`schedule.run` / `dueRows`).
 - You only need outbound **`fetch`** (Stripe, an LLM, any REST API).
 - You want the caller's identity + auth rule enforced for you (`ctx.user`,
-  `ctx.auth`), with every write checked against authorization rules and the
-  proved obligations for your declared invariants.
+  `ctx.auth`), with every write checked against authorization rules and your
+  declared invariants.
 - No npm deps you can't inline; the result is a single JSON body.
 
 Canonical fit: charge Stripe then mark an order paid; enrich/summarize with an LLM;
@@ -61,7 +61,7 @@ the runtime does not expose. You **leave Bounded's managed runtime guarantees** 
 compute (you now own auth, secrets, scheduling, logs, the invoke route) — but your
 **data + invariants stay in Bounded**: your server calls Bounded over
 `@bounded-sh/server` (`createWalletClient({ keypair })` — same `get/set/setMany/delete/
-runQuery`, every write still through your proven policy). Hybrid is the norm.
+runQuery`, every write still through your policy). Hybrid is the norm.
 
 ## Graduating to the runtime is mechanical, not a rewrite
 

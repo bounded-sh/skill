@@ -2,7 +2,7 @@
 
 This doc is the honest map of what Bounded's server-authoritative model
 guarantees and what it cannot. Three parts: the hook policy model (who can
-break what), games anti-cheat (provably secure vs. not), and the one place a
+break what), games anti-cheat (structurally secure vs. not), and the one place a
 mainnet deploy needs a signature. For the *generation* side — exact `hooks`,
 `session`, and `rollingSum` syntax — see
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md) and
@@ -13,11 +13,11 @@ mainnet deploy needs a signature. For the *generation* side — exact `hooks`,
 Two layers protect data, and they protect against different things. Keep them
 straight or you will mis-describe a guarantee to a user.
 
-- **Invariants hold against EVERYTHING.** A proven invariant is a
+- **Invariants hold against EVERYTHING.** An invariant is a
   postcondition on committed state. Nothing breaks it — not users, not agents,
   not hooks, not cron, not settlement, not ticks. Any write from any source
   that would violate it is rejected and nothing partial is applied. There is
-  no actor with an exemption from a proven invariant.
+  no actor with an exemption from an invariant.
 - **Rules gate EXTERNAL actors.** The per-collection `rules`
   (`read`/`create`/`update`/`delete`) decide which *external* writers — users
   and agents — may attempt a write. This is the per-caller authorization
@@ -86,25 +86,25 @@ must be `durable` for a `conserve`. The `tick` hook is a named entry under
 `hooks.tick`, wired by the `session.tick.run`.)
 
 **`enforceRules` relaxes rules, never invariants.** Even with
-`enforceRules: false`, a hook's writes are still checked against every proven
+`enforceRules: false`, a hook's writes are still checked against every
 invariant. A privileged hook can do things no user can — but it still cannot
-mint money, break conservation, or exceed a rolling cap. The proofs are the
+mint money, break conservation, or exceed a rolling cap. Invariants are the
 floor; rules are an additional gate on top, applied only to external actors.
 
-## Games anti-cheat: provably secure vs. not
+## Games anti-cheat: structurally secure vs. not
 
 A cheat is an actor doing something the game should not allow. For each cheat
 the question is: *can the client do it at all?* Bounded answers that with
-server authority + proofs for a large class of cheats — and is explicit about
+server authority + invariants for a large class of cheats — and is explicit about
 the one class no backend fully cures.
 
-### SECURE — provably shut down through Bounded
+### SECURE — structurally shut down through Bounded
 
 | Cheat | How Bounded shuts it down |
 |---|---|
 | State manipulation (teleport, set health/score) | **Server-authoritative tick state.** Game state lives in a collection no external writer can update (`update: "false"`); only the tick hook advances it. Clients send *intents*, never state. There is no write path for a forged tick. |
 | Maphacks / wallhacks / seeing hidden info | **Fog-of-war via per-player view collections.** The tick projects into `view/$playerId` only what that player may see. Hidden data (other hands, fogged tiles) never reaches the client, so patching the client cannot reveal it. |
-| Macro / turbo-fire / inhuman action rate | **Provable per-player rate & timing caps.** A `rollingSum` with `scopeVariable` proves a per-player ceiling on inputs per window; reaction-time rules reject inputs arriving faster than humanly possible after the stimulus. Proven bounds, enforced per partition. |
+| Macro / turbo-fire / inhuman action rate | **Enforced per-player rate & timing caps.** A `rollingSum` with `scopeVariable` enforces a per-player ceiling on inputs per window; reaction-time rules reject inputs arriving faster than humanly possible after the stimulus. Enforced per partition. |
 | Forging / disputing what a player did | **Tamper-proof server-side input log.** Inputs are append-only, owner-attributed, immutable (`update/delete: "false"`). The authoritative record lives on the server, not editable by clients. |
 | Detection needing heavy/external analysis | **Webhooks to external detection.** The immutable input log streams to your own anomaly/ML scoring. Bounded gives the trustworthy substrate to analyze. |
 
@@ -234,4 +234,3 @@ program.
 - [realtime-and-games.md](realtime-and-games.md) — sessions, ticks, fog-of-war, settlement
 - [policy-reference.md](policy-reference.md) — `hooks` and the rule expression language
 - [invariants.md](invariants.md) — `rollingSum` + `scopeVariable` for per-player caps
-- [proof-coverage.md](proof-coverage.md) — what invariants are proven on which runtime

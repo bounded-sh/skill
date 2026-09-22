@@ -10,7 +10,7 @@ Keep its direct app address separate from its stable venue page and its later oA
 **1. Local.** You build in a normal repo.
 Nothing is deployed or public.
 
-**2. Bounded (development).** Promote the creator app with `bounded init`, `bounded verify`, `bounded deploy`, and `bounded site deploy dist`.
+**2. Bounded (development).** Promote the creator app with `bounded init`, `bounded deploy`, and `bounded site deploy dist`.
 At creation the app claims a slug derived from its name plus a random suffix, such as `myapp-x7k2.bounded.page`.
 That is a development address, not an openapps.xyz address.
 There is no openapps.xyz URL until Commence.

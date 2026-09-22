@@ -7,7 +7,7 @@ function), and outbound notifications (`webhooks`).
 Side effects, recurring work, and outbound notifications. The unifying idea:
 **invariants bind everything.** A hook, a tick, a scheduled job, and a webhook
 fan-out are all *server logic inside the trust boundary* — none of them can break
-a proven invariant, and none of them gate (only `rules` and `invariants` reject
+an invariant, and none of them gate (only `rules` and `invariants` reject
 writes). For the games/anti-cheat deep dive see
 [hooks-and-anti-cheat.md](hooks-and-anti-cheat.md).
 
@@ -81,7 +81,7 @@ postcondition (`409`). **Onchain hooks are different**: a `hooks.onchain`
 create/update/delete expression that evaluates to `false` (or errors) aborts the
 entire Solana write - the transaction reverts atomically. That makes `&&`-sequenced
 conditional moves possible in an onchain hook, but keep authorization in `rules`;
-the hook plane is not proven by `bounded verify`.
+the hook plane bypasses them unless the collection sets `enforceRules`.
 
 ## enforceRules — privileged vs. caller-bound hooks
 
@@ -116,8 +116,8 @@ already behaves.
 
 **`enforceRules` relaxes rules, never invariants.** Even with `enforceRules: false`,
 every hook write (`updateField` *and* `putDocument`) is still checked against every
-proven invariant. A privileged hook can do things no user can — but it still cannot
-mint money, break conservation, or exceed a rolling cap. Proofs are the floor; rules
+invariant. A privileged hook can do things no user can — but it still cannot
+mint money, break conservation, or exceed a rolling cap. Invariants are the floor; rules
 are an extra gate on external actors only.
 
 ## hooks.tick — the realtime game loop
@@ -187,8 +187,8 @@ Where `schedule` is "every N", `dueRows` is "once, when this row is due." A
 document carrying a numeric `scheduledAt` (Unix seconds) fires the named
 `hooks.scheduled.<run>` once when due, then is deleted or marked done.
 
-If the collection declares a schema (a non-empty `fields`), the deploy gate now
-proves the timer can actually fire and complete, and rejects the policy otherwise.
+If the collection declares a schema (a non-empty `fields`), deploy validation now
+checks the timer can actually fire and complete, and rejects the policy otherwise.
 It requires a declared `"scheduledAt": "UInt"` field (unix seconds), because on a
 schemaful collection an undeclared field cannot be written, so rows could never
 carry a firing time and the collection would silently never fire.
@@ -257,7 +257,7 @@ email, analytics, anomaly detection, or any downstream system.
 
 - `webhooks` is a non-empty array; multiple targets allowed.
 - Each `url` must be a valid **public** `https://` URL (max 2048 chars).
-  The deploy gate rejects loopback, link-local, private, multicast, and internal-only hosts (`localhost`, `*.local`, `*.internal`, `127.0.0.1`, `169.254.169.254`, `10.0.0.0/8`, `[::1]`, and the like), embedded credentials (`https://user:pass@…`), a URL `#fragment`, and any non-standard port (only the default https port is allowed).
+  Deploy validation rejects loopback, link-local, private, multicast, and internal-only hosts (`localhost`, `*.local`, `*.internal`, `127.0.0.1`, `169.254.169.254`, `10.0.0.0/8`, `[::1]`, and the like), embedded credentials (`https://user:pass@…`), a URL `#fragment`, and any non-standard port (only the default https port is allowed).
   At delivery time the platform additionally resolves the host and refuses any target (or redirect hop) that resolves to a non-public address, and it never follows a 3xx redirect - so a signed POST only ever reaches the declared public URL.
 - Target counts are bounded: at most 16 targets per collection and at most 64 across the whole policy.
   Exact duplicate `(url, operation)` deliveries are rejected.

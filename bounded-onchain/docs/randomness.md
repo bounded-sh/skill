@@ -73,8 +73,8 @@ Anything else fails with `a reveal collection must ...`. In particular
 rejected. So is declaring a `randomness` field to read the value back; you read
 it through the `roll` **query** on the request collection, not off the reveal doc.
 
-The reveal create rule deliberately carries **no `@user` term**, so it is exempt
-from the "create requires authentication" proof obligation. Authorisation comes
+The reveal create rule deliberately carries **no `@user` term**, so it carries no
+signed-in-user requirement. Authorisation comes
 from the shape above, which is strictly stronger than "someone was signed in".
 
 ## 2. Reading the roll
@@ -128,15 +128,12 @@ request and the resolution.** Two rules and one kindness:
    debt, a join timestamp) at FLUSH, or the item collects rewards from before it
    joined.
 
-The deploy gate now flags this shape for you: when a mutating rule both
-resolves VRF randomness (a `getRandomNumber` call, or a read of a reveal
-collection) and reads ANOTHER collection's mutable state via `get()`/
-`getAfter()`, `bounded verify` emits a non-blocking **"VRF resolution basis"
-advisory** naming the collection the outcome resolves against. It cannot judge
-whether your freeze is adequate — reads of your own document and of write-once
-snapshot collections (update and delete `"false"`) stay silent, everything else
-is on you to justify — so treat the advisory as the prompt to apply the rules
-above, not as a verdict either way.
+Watch for this shape yourself: when a mutating rule both resolves VRF
+randomness (a `getRandomNumber` call, or a read of a reveal collection) and
+reads ANOTHER collection's mutable state via `get()`/`getAfter()`, the outcome
+resolves against state a caller may be able to move. Reads of your own document
+and of write-once snapshot collections (update and delete `"false"`) are safe;
+everything else is on you to justify with the rules above.
 
 ## 4. Making the DRAW provable, not just the number
 
@@ -204,10 +201,9 @@ That also pins the outcome: one paid request, one roll, no re-rolling by retryin
 The random number becomes readable as soon as ORAO fulfills it, before a later client write resolves the outcome.
 If that resolving rule reads mutable state from another collection, someone who can read the roll first can change the basis and steer which prize, slot, or recipient the same roll selects.
 
-`bounded verify` now emits a non-blocking `UNKNOWN` advisory when a mutating rule both resolves `@OraclePlugin.getRandomNumber` or reads an `isRevealPath` collection and reads another mutable collection through `get()` or `getAfter()`.
-The advisory does not make the deployment unsafe by itself and is not a proof certificate.
+A mutating rule that both resolves `@OraclePlugin.getRandomNumber` (or reads an `isRevealPath` collection) and reads another mutable collection through `get()` or `getAfter()` resolves the draw against state that can change.
 Freeze the complete resolution basis for the life of the draw, or create a write-once snapshot in the same request operation and resolve only against that snapshot.
-Reads of the resolving collection itself, reveal collections, reserved identity sets, and collections whose update and delete rules are absent or literal `false` do not trigger the advisory.
+Reads of the resolving collection itself, reveal collections, reserved identity sets, and collections whose update and delete rules are absent or literal `false` are safe.
 
 ### NEVER split one roll into two picks
 
@@ -256,7 +252,7 @@ Each of these was a real hole:
   caller-supplied one can be dated far ahead so the draw can never be retired,
   freezing the pool permanently. `@newData.requestedAt <= @time.now` is enough;
   past-dating only expires the caller's own draw sooner.
-- **A swap-with-last mover must be proven to have been LAST.** Checking only
+- **A swap-with-last mover must be shown to have been LAST.** Checking only
   that it lands in the vacated slot lets an allocation slide any same-band item
   into that slot and leave a hole behind it.
 
@@ -293,14 +289,13 @@ every exit has to be guaranteed, not likely.
 
 ## 6. What is still trusted
 
-Say these plainly in your own docs rather than implying they are proved:
+Say these plainly in your own docs rather than implying they are guaranteed:
 
-- **A green `bounded verify` does not mean the draw is fair.** It proves the
-  obligations you *declared* plus generated ownership and immutability ones. It
-  cannot know that a selection should be unsteerable or that odds should be
-  unbiased. Every bug on this page passed the prover.
+- **A clean deploy does not mean the draw is fair.** The rules enforce what you
+  *declared*; nothing can know that a selection should be unsteerable or that
+  odds should be unbiased. Every bug on this page deploys cleanly.
 - **Slot compaction** is checked, not assumed — the mover names its replacement
-  and proves it was last.
+  and shows it was last.
 
 ## Related
 

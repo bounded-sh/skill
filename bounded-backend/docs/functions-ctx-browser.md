@@ -5,7 +5,7 @@
 Declaring, writing, invoking and deploying a function are in [functions.md](functions.md).
 
 Use `ctx.browser` when a function needs to SEE a real page: smoke-test your own
-deployed app, read a page that has no API, or prove something renders. It drives
+deployed app, read a page that has no API, or confirm something renders. It drives
 a managed headless browser server-side — no browser dependency in your code.
 
 ```ts
@@ -72,8 +72,8 @@ const drive = await ctx.browser.run({
 ```
 
 **You declare what it may do, and nothing else.** Put its address in `constants`
-and write rules against it in the same language as any other principal. Z3 proves
-over it like anything else, and on an oApp it is published in the constitution —
+and write rules against it in the same language as any other principal, and on an
+oApp it is published in the constitution —
 so holders can see that a key the platform holds can act in the app, and exactly
 what it may do:
 

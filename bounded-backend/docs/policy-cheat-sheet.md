@@ -59,7 +59,7 @@ Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain onl
 
 | You want | Plane |
 |---|---|
-| authorization / validation (403) | `rules` - pure boolean, proven by `bounded verify` |
+| authorization / validation (403) | `rules` - pure boolean, enforced on every write |
 | cross-transaction caps, conservation, tenant isolation (409) | `invariants`: `rollingSum`, `windowSum`, `flowBound`, `conserve`, `tenantTag`, `tenantEdge`, `bound` - [invariants](invariants.md) |
 | side effects on write | `hooks.offchain` (DocumentPlugin only; post-commit, never gates) / `hooks.onchain` (all onchain plugins; `false` aborts the whole Solana write) - [hooks](hooks-scheduled-webhooks.md) |
 | moving funds, custody | `hooks.onchain` + the custody rule - [custody and PDAs](../../bounded-onchain/docs/custody-and-pdas.md) |

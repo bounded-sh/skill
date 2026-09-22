@@ -131,9 +131,8 @@ or spoof it.
 - **Usable in function `auth` rules and read/create/update/delete rules, OFFCHAIN
   only.** `@origin.*` is **FORBIDDEN in `onchain: true` rules** (same restriction
   as `@user.id`).
-- **It RUNS and VERIFIES.** `@origin` is a first-class proof-engine special var
-  (modeled as free symbolic inputs, so the rule earns its obligation) — `bounded
-  verify` understands it.
+- **It RUNS.** `@origin` is a first-class special variable in every executable
+  rule.
 - **`ctx.origin`** is available inside the function body (`{kind,path,module,room,
   tick}`).
 

@@ -76,7 +76,7 @@ Guard payouts with the pot's real balance, not your bookkeeping alone:
 
 ## Where custody calls go in a policy
 
-Mutating plugin calls belong in `hooks.onchain.{create,update,delete}` on an `"onchain": true` collection. Rules stay pure boolean gates - they are the plane `bounded verify` proves, and they run before the hook with no attested transaction data. An onchain hook that evaluates to `false` fails the whole write and the Solana transaction reverts atomically, so a hook can sequence conditional moves with `&&`, but authorization still belongs in `rules`, not hooks.
+Mutating plugin calls belong in `hooks.onchain.{create,update,delete}` on an `"onchain": true` collection. Rules stay pure boolean gates - they are the enforced plane, and they run before the hook with no attested transaction data. An onchain hook that evaluates to `false` fails the whole write and the Solana transaction reverts atomically, so a hook can sequence conditional moves with `&&`, but authorization still belongs in `rules`, not hooks.
 
 ## Choosing quickly
 

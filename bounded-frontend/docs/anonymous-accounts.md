@@ -170,8 +170,8 @@ For a client-only migration, use this explicit two-login handoff:
 3. Call `signInAnonymously()` again. The persisted browser key restores the old
    guest; assert that its id equals the saved guest id.
 4. While acting as that guest, update each transferable owner field to the saved
-   real id. The runtime-enforced old-owner rule authorizes each handoff; the
-   generated transfer-authority obligation proves that a non-owner cannot seize it.
+   real id. The runtime-enforced old-owner rule authorizes each handoff, so a
+   non-owner cannot seize it.
 5. Run hosted login a second time to restore the real session, assert its id, and
    clear the pending migration state.
 
@@ -272,10 +272,9 @@ plain client code cannot make the new real session act as the old guest.
 
 ## 4. Carry data across with transferable ownership (ownership-as-data)
 
-This is also the proven way to move a guest's data to their real account. Bounded
+This is also the supported way to move a guest's data to their real account. Bounded
 lets you model ownership as **data** so it can be
-**transferred** between identities under an enforced old-owner rule, with the
-generated transfer-authority obligation proved by `bounded verify` — useful for
+**transferred** between identities under an enforced old-owner rule — useful for
 invite links, handing an account between agents, or moving data to a different
 key without sharing a private key. Scope data by an **account id** and store the
 owner:
@@ -299,9 +298,8 @@ owner:
 - **update** `@user.id != null && @user.id == @data.owner` — only the logged-in
   **current** owner may change it.
   Changing `owner` *is* the transfer; the rule checks the *old* owner, so it's
-  revocable, auditable, single-owner. `bounded verify`/deploy auto-proves the
-  transfer-authority obligation (ownership is transferable but **unseizable**) — see
-  [verify-and-counterexamples.md](../../bounded-backend/docs/verify-and-counterexamples.md).
+  revocable, auditable, single-owner: ownership is transferable but **unseizable**,
+  because the runtime evaluates the rule against the current owner on every write.
 - **Reject the logged-out/ownerless case explicitly.** `owner` is `String!`
   (required, never absent), and both rules require `@user.id != null`.
   A logged-out caller has `@user.id == null`; without these guards `@user.id ==

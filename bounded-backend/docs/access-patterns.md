@@ -16,7 +16,7 @@ Copy-adjust recipes for `rules`. Expression semantics: [policy reference](policy
 }
 ```
 
-Denied reads surface as empty results, not `403`. The `!` on `ownerId` needs exactly that preservation clause in `update`. Keep the `@user.id != null` guard: a bare `@data.ownerId == @user.id` is DISPROVED by `bounded verify` (`read requires authentication`) because both sides are null for a signed-out caller reading a row with no owner.
+Denied reads surface as empty results, not `403`. The runtime keeps the `!` on `ownerId` from changing after create. Keep the `@user.id != null` guard: a bare `@data.ownerId == @user.id` admits a signed-out caller reading a row with no owner, because both sides are null.
 
 ## Public read, authenticated write
 

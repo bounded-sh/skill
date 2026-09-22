@@ -3,7 +3,7 @@
 **What's in here:** two additive top-level policy blocks that keep policies DRY —
 `constants` for named values (`@const.NAME`) and `defs` for reusable rule
 fragments (`@def.name`). Both are resolved at **compile time** (server-side,
-during deploy and verify), so the stored/proved policy contains only literals.
+during deploy), so the stored policy contains only literals.
 For *per-environment* values see [environments.md](../../bounded-deploy/docs/environments.md).
 
 ## constants — named values
@@ -36,7 +36,7 @@ For *per-environment* values see [environments.md](../../bounded-deploy/docs/env
 ## Platform-injected constants (`@const.BOUNDED_*`)
 
 Every app can reference platform-computed constants without declaring them.
-They are computed from the target app id and merged into the policy's `constants` block at deploy and verify time (before macro resolution), so proofs and the runtime see the platform's value, never an author-supplied one.
+They are computed from the target app id and merged into the policy's `constants` block at deploy time (before macro resolution), so the runtime sees the platform's value, never an author-supplied one.
 
 | Name | Value |
 |---|---|
@@ -48,7 +48,7 @@ They are computed from the target app id and merged into the policy's `constants
 Naming the principal is what makes it usable in rules: `@user.id == @const.BOUNDED_PUBLIC_PRINCIPAL_BROKER` admits exactly that route, and `@user.id != null && @user.id != @const.BOUNDED_PUBLIC_PRINCIPAL_BROKER` keeps the anonymous route out of a collection a bare `@user.id != null` would open to it (the public principal has a non-null id). See [public functions](public-functions.md#who-is-calling).
 
 Rules:
-- A policy MAY declare a `BOUNDED_*` name to self-document, but only with the exact platform value — a divergent value fails deploy and verify closed.
+- A policy MAY declare a `BOUNDED_*` name to self-document, but only with the exact platform value — a divergent value fails deploy closed.
   Never hand-write a different address; that is exactly the smuggle the injection exists to prevent.
 - Verify without a target app (no appId, pre-create) cannot derive them, so a policy referencing `BOUNDED_*` must be verified with the app id or after creation.
 - The three `BOUNDED_*_PRINCIPAL_*` namespaces are platform-managed: two public-surface functions whose names differ only by case (`getUser` and `GETUSER`) would share one constant and are refused at deploy and verify; a declared name in those namespaces that no function produces is a stale value from a withdrawn surface (dropped, and a rule still naming it then fails with `@const.X is not defined`) unless it is not even a well-formed principal, in which case it is refused. Author constants outside those namespaces may still start with `BOUNDED_`.
@@ -106,15 +106,15 @@ Rules:
 ## Resolution model (where it happens)
 
 ```
-policy.json ──► (deploy / verify) ──► resolvePolicyMacros ──► validate ──► compile ──► store
+policy.json ──► (deploy) ──► resolvePolicyMacros ──► validate ──► compile ──► store
                                        @const / @def inlined          literals only
 ```
 
-- Runs **before** validation, bytecode compilation, and proof — so runtime
+- Runs **before** validation and bytecode compilation — so runtime
   enforcement only sees literals. Macros add **no runtime cost**.
 - The `constants`/`defs` blocks are kept on the stored policy for transparency
   (they are reserved keys; they are never treated as collections).
-- **Errors** (surfaced at `bounded deploy` / `bounded verify`):
+- **Errors** (surfaced at `bounded deploy`):
   - `@const.X is not defined in the constants block`
   - `@def.x is not defined` / dangling macro with no source block
   - `cyclic @def reference involving "x"`

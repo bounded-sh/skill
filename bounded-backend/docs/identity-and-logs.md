@@ -35,9 +35,8 @@ apps, and the legacy lazy `authMode: "bounded"` path.)
 "Linked to the same account" means the human's other wallets/devices (their
 embedded wallet + linked CLI keypairs) — so a teammate signing in from a
 different device still counts, with **no policy edit** when the team changes.
-Rules can check these reserved paths with `get(...) != null`, and the prover
-treats those checks soundly — e.g. a `conserve` or `bound` invariant on the same
-collection still proves cleanly.
+Rules can check these reserved paths with `get(...) != null`, and an invariant
+on the same collection is unaffected by them.
 
 ## Use them in rules
 
@@ -54,10 +53,10 @@ collection still proves cleanly.
 ```
 
 Only app managers (owner + collaborators + their linked identities) can read/create
-`ops`. Non-managers get a `403` — verified. The leading `@user.id != null &&` is
-what makes `bounded verify` *prove* the rule requires a signed-in user (a membership
+`ops`. Non-managers get a `403` — verified. The leading `@user.id != null &&`
+states that the rule requires a signed-in user (a membership
 `get(...)` alone already returns null for an anonymous caller, but stating the auth
-check explicitly keeps the proof clean — same idiom as
+check explicitly keeps the intent clear — same idiom as
 [admin-and-ownership.md](admin-and-ownership.md)). Want an alias? Define your own def:
 `"defs": { "isManager": "@user.id != null && get(/__managers__/@user.id) != null" }` and use
 `@def.isManager`.
