@@ -24,7 +24,7 @@ export default defineAgent(({ id, env }) => ({
   // prefix resolves to Bounded's gateway, so every call flows through env.ai
   // (AI_GW) and is bounded by the per-app spend cap. There is no raw provider key
   // in the isolate — the cap is inescapable.
-  model: "anthropic/claude-haiku-4-5-20251001",
+  model: "anthropic/claude-haiku-4.5",
   instructions: "You are a helpful agent. Keep replies short.",
   tools: [greet],
 }));
@@ -70,7 +70,7 @@ export default defineAgent(({ id, env }) => {
   });
 
   return {
-    model: "anthropic/claude-haiku-4-5-20251001",
+    model: "anthropic/claude-haiku-4.5",
     instructions: "Greet people using the greet tool.",
     tools: [greet],
   };
@@ -150,7 +150,7 @@ user reach every capability it declared.
 
 ## Model calls and the spend cap
 
-Model ids are `provider/model-id` (e.g. `anthropic/claude-haiku-4-5-20251001`,
+Model ids are `provider/model-id` (e.g. `anthropic/claude-haiku-4.5`,
 `openai/gpt-4.1`). Every model call — `prompt`, tool loops, sub-agents — routes
 through `env.ai` (the host AI gateway), which debits the app's credit pool
 **before** inference and fails closed when the cap or the pool is exhausted. There is no model path that bypasses the cap.

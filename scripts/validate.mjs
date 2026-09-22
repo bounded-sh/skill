@@ -225,8 +225,8 @@ for (const expected of [
   'service operation keys are app-global',
   'service_invoke_operation_conflict',
   'service_invoke_outcome_unknown',
-  'five-minute cache writes 1.25×',
-  'writes 2×.',
+  "settles the gateway's own reported cost for that request plus the documented",
+  'only a response that carries no cost falls back to',
 ]) {
   if (!paidOperationsGuide.includes(expected)) fail(`functions guide: missing paid-operation boundary ${expected}`)
 }

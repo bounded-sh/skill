@@ -16,7 +16,7 @@ with templated strings — reach for `ctx.ai`, not `Math.random()`.
 // functions/scout.ts — real inference, zero keys
 export default async function (args, ctx) {
   const operationId = `scout:${args.deskId}:${args.id}:v1`;
-  const out = await ctx.ai.run("claude-opus-4-8", {        // any model the gateway routes
+  const out = await ctx.ai.run("claude-opus-4.8", {        // any model the gateway routes
     messages: [
       { role: "system", content: "You are a markets analyst. Return ONE JSON thesis." },
       { role: "user", content: args.headlines },
@@ -34,23 +34,27 @@ export default async function (args, ctx) {
   config (swap models with no code change); `input` is the provider request shape
   (`{ messages: [...] }` for chat).
 - **Model ids — LOOK THEM UP, never guess.** The platform admits and prices
-  models from **Cloudflare's AI Gateway catalog**; a model absent from it
+  models from **Vercel AI Gateway's public catalog**; a model absent from it
   refuses with `ai_model_price_unavailable` (400) before any provider work or
   charge. The authoritative, always-current list is
-  <https://developers.cloudflare.com/ai-gateway/supported-models/> — fetch it
-  (the page has a "View as Markdown" export) whenever you are about to write a
-  `ctx.ai.run` call and are not certain the id exists, and use the id exactly
-  as listed. Do NOT trust model names from training memory: providers rename
-  and retire ids faster than any documentation snapshot, and a plausible-
-  looking id that is not in the catalog fails every call.
-- **Id shapes.** Bare ids for well-known families normalize automatically
-  (`claude-*` → `anthropic/`, `gpt-*` → `openai/`, `grok-*` → `xai/`,
-  `deepseek-*` → `deepseek/`, `kimi-*` → `moonshotai/`); `@cf/...` ids are
-  Cloudflare-hosted. Known-good, verified live 2026-08-08: `gpt-5.6-luna`
-  (cheapest frontier), `gpt-5.6-sol`, `claude-opus-4-8`, `claude-sonnet-5`,
-  `claude-haiku-4-5`, `xai/grok-4.5`, `deepseek/deepseek-v4-pro`,
-  `moonshotai/kimi-k3`, `@cf/zai-org/glm-5.2` — treat this list as examples,
-  not the catalog; the URL above is the catalog.
+  <https://ai-gateway.vercel.sh/v1/models>, a public JSON listing that needs
+  no key: each `data[]` entry's `id` is the exact string to pass and its
+  `pricing` is the list price per token. Fetch it whenever you are about to
+  write a `ctx.ai.run` call and are not certain the id exists, and use the id
+  exactly as listed, dots included (`claude-opus-4.8`, not `claude-opus-4-8`).
+  Do NOT trust model names from training memory: providers rename and retire
+  ids faster than any documentation snapshot, and a plausible-looking id that
+  is not in the catalog fails every call.
+- **Id shapes.** Every catalog id is `<creator>/<model>`. Bare ids for the
+  well-known families get their creator prefix automatically (`claude-*` →
+  `anthropic/`, `gpt-*` → `openai/`, `grok-*` → `spacexai/`, `deepseek-*` →
+  `deepseek/`, `kimi-*` → `moonshotai/`, `glm-*` → `zai/`); any other bare id
+  is refused as unpriced. Listed on 2026-09-22: `gpt-5.6-luna` (cheapest
+  frontier), `gpt-5.6-sol`, `claude-opus-4.8`, `claude-sonnet-5`,
+  `claude-haiku-4.5`, `spacexai/grok-4.5`, `deepseek/deepseek-v4-pro`,
+  `moonshotai/kimi-k3`, `zai/glm-5.3-flash` (the platform's own cheap
+  default). Treat this list as examples, not the catalog; the URL above is
+  the catalog.
 - **Make the key a business operation, not an invocation.** AI operation keys
   are **app-global** across function names, principals, manual/scheduled paths,
   and retries. Include the callsite/entity/revision when work may intentionally
@@ -65,19 +69,22 @@ export default async function (args, ctx) {
   billing or provider contact.
 - **Billing is pinned at admission.** The operation stores its exact model price
   row and pricing-table timestamp before reserving an upper bound. Success
-  settles exact reported usage plus the documented 5% and releases the rest;
-  cache reads cost 0.1× input, five-minute cache writes 1.25×, and one-hour cache
-  writes 2×. A pricing rollover during the call cannot change its settlement.
+  settles the gateway's own reported cost for that request plus the documented
+  5% and releases the rest; only a response that carries no cost falls back to
+  the reported token counts at the pinned rates, with cache reads and writes at
+  the model's own published rates. A pricing rollover during the call cannot
+  change its settlement.
   Missing/unpriceable usage or an ambiguous provider-started outcome becomes a
   durable `503 ai_operation_attention_required`; it is never guessed, refunded,
   or rerun as fresh provider work. Confirmed pre-provider/provider failures are
   refunded and replay their terminal error.
-- **Model ids:** both provider-prefixed ids (`anthropic/claude-sonnet-5`,
-  `openai/...`) and Workers-AI ids (`@cf/zai-org/glm-5.2`) route through the
-  gateway. If a provider-prefixed id returns *"provider models not enabled for
-  this gateway"*, that deployment's provider allowlist is off — fall back to an
-  `@cf/*` model and report it. Avoid dated `@cf` model ids from memory; Workers
-  AI deprecates them (a 5028 "deprecated" error means pick a current one).
+- **Provider errors are branchable.** `ai_provider_not_configured` (503, the
+  deployment has no gateway key), `provider_budget_exhausted` (502, the
+  platform's own gateway budget refused the call), `provider_inference_failed`
+  (the gateway's status passed through, with `providerStatus` and, on a 429,
+  `retryAfter` in `e.details`), `provider_transport_failed` (502, timeout or
+  unreachable). Each refunds the reservation and replays as that terminal error
+  on the same key. Catch `e.code`, don't regex messages.
 - **Cap it in policy.** The account's credit pool is the platform ceiling. For a
   *per-user* / *per-app* AI budget the runtime enforces, write an append-only spend event
   under a `rollingSum` in the same flow (the

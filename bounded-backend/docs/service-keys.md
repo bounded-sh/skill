@@ -149,7 +149,7 @@ export default async function npcBrain(args, ctx) {
   // tick loop, so the same call can be re-emitted across ticks/checkpoints.
   // A stable per-effect key replays one billed inference instead of paying for
   // each retry; a genuinely new ask carries a new effectId and bills fresh.
-  const reply = await ctx.ai.run("@cf/meta/llama-3.1-8b-instruct", {
+  const reply = await ctx.ai.run("zai/glm-5.3-flash", {
     messages: [{ role: "user", content: args.prompt }],
   }, { idempotencyKey: `npc:arena:${args.effectId}:reply:v1` });
   return { ok: true, text: reply.response };
