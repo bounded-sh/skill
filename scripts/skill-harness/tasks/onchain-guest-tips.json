@@ -30,12 +30,6 @@
       "expect": "passed"
     },
     {
-      "id": "diag-ran-verify",
-      "kind": "shim",
-      "expr": "log.some(e=>e.sub==='verify')",
-      "weight": 0
-    },
-    {
       "id": "diag-declares-functions",
       "kind": "policy-expr",
       "expr": "Object.keys(p.functions||{}).length>0",

@@ -546,9 +546,10 @@ coordinator.
 > Mitigate with a scheduled hook or one-shot expiry that removes old entries.
 > Treat the room's own live view as ground truth.
 
-Two rule gotchas: pin **both** `host` and `createdAt` immutable on `update`
-(`@newData.x == @data.x`) — otherwise the host can rewrite ownership or backdate
-the entry. The public `read: "true"` is fine for an open lobby.
+Two rule gotchas: pin **both** `host` and `createdAt` - declare them `!` so
+the runtime rejects a later change, or keep the `@newData.x == @data.x` clauses
+the example uses - otherwise the host can rewrite ownership or backdate the
+entry. The public `read: "true"` is fine for an open lobby.
 
 ## Reconnection & presence (drops, rejoins, leaves)
 

@@ -13,8 +13,9 @@
 //
 //   PROOF (runs when the bounded-monorepo schema verifier dist is reachable;
 //   skipped-with-notice otherwise, because this repo releases separately): runs
-//   each corrected admin example through the real Z3-backed deploy gate
-//   (`verifyForDeploy`, which also discharges the `authorityClosure`
+//   each corrected admin example through the Z3-backed prover
+//   (`verifyForDeploy`, the engine behind `bounded verify --experimental`;
+//   deploy does not run it, and it also discharges the `authorityClosure`
 //   attestation) to prove branch B keeps the closure proof clean, and uses
 //   `checkImplication` to prove the `.active == true` gate is LOAD-BEARING
 //   (an existence gate is NOT - it is disproved against an inactive admin).
@@ -301,7 +302,7 @@ if (!existsSync(verifierPath)) {
   // 1) The triage's BLOCKING concern for branch B: does the `authorityClosure`
   //    attestation still prove clean once every add-path gates on
   //    `.active == true` instead of mere existence? Prove it directly with the
-  //    same Z3 engine the deploy gate uses. (verifyForDeploy also runs this, but
+  //    same Z3 engine `bounded verify --experimental` uses. (verifyForDeploy also runs this, but
   //    it layers on orthogonal ownership-immutability advisories that these
   //    transfer/moderation examples trip identically before and after #392, so
   //    those are reported below as notes, not hard failures.)

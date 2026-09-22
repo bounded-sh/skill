@@ -4,7 +4,7 @@
 // real CLI is logged in as the maintainer. Anything that mutates the account
 // (init opens a browser login, deploy --create creates apps, share, site,
 // secret, apps delete, ...) must be impossible, not merely discouraged. The
-// shim allows the read-only surface the skill teaches (verify, plugins,
+// shim allows the read-only surface a subject may reach for (verify, plugins,
 // whoami, version, tests run) and refuses the rest with a neutral error.
 //
 // It also records every invocation (with the sha256 of a verified policy) so a
@@ -54,7 +54,7 @@ const allowed = (ALLOW.has(sub) || (sub === 'tests' && args[1] === 'run')) && !a
 if (!allowed) {
   entry.blocked = true
   appendFileSync(LOG, JSON.stringify(entry) + '\\n')
-  process.stderr.write(JSON.stringify({ error: 'command_unavailable', message: 'bounded ' + sub + ' is not available in this environment. Read-only commands (verify, plugins, whoami, version) are available.' }) + '\\n')
+  process.stderr.write(JSON.stringify({ error: 'command_unavailable', message: 'bounded ' + sub + ' is not available in this environment. Read-only commands (verify, plugins, whoami, version, tests run) are available.' }) + '\\n')
   process.exit(1)
 }
 appendFileSync(LOG, JSON.stringify(entry) + '\\n')
