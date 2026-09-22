@@ -80,11 +80,13 @@ export default async function (args, ctx) {
   refunded and replay their terminal error.
 - **Provider errors are branchable.** `ai_provider_not_configured` (503, the
   deployment has no gateway key), `provider_budget_exhausted` (502, the
-  platform's own gateway budget refused the call), `provider_inference_failed`
-  (the gateway's status passed through, with `providerStatus` and, on a 429,
-  `retryAfter` in `e.details`), `provider_transport_failed` (502, timeout or
-  unreachable). Each refunds the reservation and replays as that terminal error
-  on the same key. Catch `e.code`, don't regex messages.
+  platform's own gateway budget refused the call), `provider_auth_failed` (502,
+  the gateway refused the platform's own credential; never your app's),
+  `provider_inference_failed` (the gateway's status passed through, with
+  `providerStatus` and, on a 429, `retryAfter` in `e.details`),
+  `provider_transport_failed` (502, timeout or unreachable). Each refunds the
+  reservation and replays as that terminal error on the same key. Catch
+  `e.code`, don't regex messages.
 - **Cap it in policy.** The account's credit pool is the platform ceiling. For a
   *per-user* / *per-app* AI budget the runtime enforces, write an append-only spend event
   under a `rollingSum` in the same flow (the
