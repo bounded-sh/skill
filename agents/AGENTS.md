@@ -54,10 +54,9 @@ afterward, ask the user to run it in their own terminal, then continue.
    verify advisory), `conserve` (balances and supply that must not change),
    `bound` (hard field ceilings and floors), and `tenantTag`/`tenantEdge`
    (tenant isolation). `windowSum` is a separate runtime-maintained aggregate.
-2. `bounded verify` runs the prover and returns a proof report with
-   counterexamples. Read the counterexample, fix the policy, verify again.
-3. `bounded deploy --create --name <name>` compiles and pushes. The server
-   re-runs the proof gate and fails closed on any regression.
+2. Optionally run `bounded verify` for a proof report with counterexamples.
+   Correct blocking verification failures; review intentional nonblocking advisories and continue rather than rerunning unchanged policy.
+3. `bounded deploy --create --name <name>` validates, compiles, and pushes the policy without requiring solver proof evidence by default.
    If it returns `deploy_in_progress` with an `operationId`, the verified app
    owner runs the exact emitted `recoveryCommand` with unchanged policy inputs.
    A `409` naming `onchain_creation_pending` (or `onchain_creation_unreadable`

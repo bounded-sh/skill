@@ -117,8 +117,8 @@ account profile, or recovery of an existing key-owned app.
 
 - Read `bounded.json` first in an existing app.
 - Regenerate a generated `policy.json` before both verify and deploy.
-- `bounded verify` is the fast proof loop; `bounded deploy` still fails closed
-  if the exact deployed policy does not pass its release gate.
+- `bounded verify` is an optional proof check; review nonblocking advisories instead of repeatedly verifying unchanged policy.
+- `bounded deploy` validates and compiles the policy; it does not require solver proof evidence by default.
 - After a release-critical deploy, use
   `bounded apps inspect --app-id <id> --json` to confirm the active policy and
   runtime publication before measuring behavior.
