@@ -25,6 +25,10 @@ Social login still uses its existing popup or redirect.
 
 ## Unified widget
 
+This quickstart targets the currently published client 0.0.104.
+SDK source after that version makes completion automatic, but an existing npm install or deployed bundle does not acquire that change until it is released and the app is upgraded.
+See [automatic completion](automatic-login-completion.md) for the new contract and release boundary.
+
 ```ts
 import { init, completeLoginFromRedirect, openBoundedWidget, getCurrentUser } from '@bounded-sh/client'
 
