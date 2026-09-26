@@ -338,6 +338,12 @@ That model is development evidence only.
 It does not prove external devnet program availability, replacement configuration, real-network funding, or a live transaction.
 A policy that verifies on Poofnet still needs every called function checked against the [devnet capability catalog](solana-capability-status.md).
 
+- **Writes are signed as on a real chain.** An `onchain: true` write returns
+  `202` and is stored only once the required wallet signs; the SDK and server
+  SDK handle this. Exception: email/Turnkey sign-ins commit directly. A
+  function's `ctx.bounded.set` cannot sign, so its onchain writes never land.
+  Mixed onchain/offchain batches (`422`) and offchain hooks writing onchain rows
+  are refused, as on mainnet.
 - **Auto-faucet.** The first mutating action by a wallet grants it a one-time
   **10 SOL + 1,000 USDC** (simulated). No funding step; the USDC is the on-ramp
   into perps collateral (`emberDeposit`) and stable-quoted pools.
