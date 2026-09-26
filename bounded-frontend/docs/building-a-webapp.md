@@ -142,6 +142,12 @@ await setMany([
 A denied rule throws (403); a violated invariant throws (409 with the
 invariant's name). Branch your UI on those — see
 [../docs/data-plane.md](../../bounded-backend/docs/data-plane.md).
+Never show its text to a person.
+Each write has a fixed message in your words for what it requires, no values, shown on a 403.
+Before writing, check what the client already knows (`@user`, `@newData`, literals, documents loaded for the control) and say which part fails.
+Never fetch a document just to check a rule.
+A control shown where the rule would refuse is a UI bug: fix the control.
+A refusal you cannot explain: `bounded decisions --app-id <appId> --denied-only --json` names the failed condition and its values, other people's data: never quote them.
 
 ## Subscribe (live UI)
 
