@@ -25,15 +25,14 @@ Social login still uses its existing popup or redirect.
 
 ## Unified widget
 
-This quickstart targets the currently published client 0.0.104.
-SDK source after that version makes completion automatic, but an existing npm install or deployed bundle does not acquire that change until it is released and the app is upgraded.
-See [automatic completion](automatic-login-completion.md) for the new contract and release boundary.
+Use `@bounded-sh/client` 0.0.105 or later.
+Await initialization on page startup; it completes OAuth returns before the app reads authentication state.
+See [automatic completion](automatic-login-completion.md) for errors, popup behavior, and upgrading older apps.
 
 ```ts
-import { init, completeLoginFromRedirect, openBoundedWidget, getCurrentUser } from '@bounded-sh/client'
+import { init, openBoundedWidget, getCurrentUser } from '@bounded-sh/client'
 
 await init({ appId: '<appId>' })
-await completeLoginFromRedirect() // Run on page startup, before rendering the app.
 
 // Call from the sign-in button, not automatically on page startup.
 async function signIn() {
@@ -42,10 +41,9 @@ async function signIn() {
 }
 ```
 
-On web, the widget's social login returns to the app in a popup.
-Call `completeLoginFromRedirect()` on that page's startup even when using the widget: it returns the authorization result to the opener and closes the popup, or completes a full-page redirect.
-Without this step, the popup renders the signed-out app and the original window keeps waiting.
-The call is a no-op when no callback is present.
+The widget uses a popup on desktop and a full-page redirect on mobile.
+Initialization completes either return; no manual completion call or popup message handler is needed.
+Read `getLoginReturnError()` after initialization to display a failed or cancelled return.
 
 The widget is the normal in-app login UI. `wallet: true` adds bring-your-own
 wallet as another lane; it does not enable embedded wallets, which are already

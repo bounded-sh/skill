@@ -92,15 +92,9 @@ for registered origins, so register your localhost origin once first — see
 registration; only login checks the origin.
 
 ```tsx
-import { useAuth, loginWithRedirect, loginWithPopup, completeLoginFromRedirect } from "@bounded-sh/client";
-import { useEffect } from "react";
-
-// Once, on app load — finishes a redirect OR popup login; no-op otherwise.
-// No separate callback route needed: on web redirectUri defaults to the current page.
-function App() {
-  useEffect(() => { completeLoginFromRedirect(); }, []);
-  // ...your routes...
-}
+import { useAuth, loginWithRedirect, loginWithPopup } from "@bounded-sh/client";
+// Await init() before rendering the app. Client 0.0.105+ completes OAuth returns.
+// No separate callback route is needed: redirectUri defaults to the current page.
 
 function SignIn() {
   const { user, logout, loading } = useAuth();

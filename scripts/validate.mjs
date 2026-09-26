@@ -513,7 +513,10 @@ if (!/two-login handoff/i.test(anonymousAccounts) || !/restoredGuest\.id !== pen
   fail('anonymous account guide: missing the old-owner guest migration protocol')
 }
 for (const expected of [
-  'const real = await completeLoginFromRedirect()',
+  'Call once on web app load after awaiting init().',
+  'const loginError = getLoginReturnError()',
+  'if (loginError) throw loginError',
+  'const real = getCurrentUser()',
   'const raw = sessionStorage.getItem(HANDOFF_KEY)',
   'if (!raw) return real',
   'Guest handoff state was invalid and was cleared.',
@@ -525,8 +528,8 @@ for (const expected of [
 if (/JSON\.parse\(sessionStorage\.getItem\([^)]*\)!\)/.test(anonymousAccounts)) {
   fail('anonymous account guide: dereferences handoff storage without a missing-state guard')
 }
-if (anonymousAccounts.indexOf('const real = await completeLoginFromRedirect()') > anonymousAccounts.indexOf('const raw = sessionStorage.getItem(HANDOFF_KEY)')) {
-  fail('anonymous account guide: must complete ordinary hosted login before reading optional handoff state')
+if (anonymousAccounts.indexOf('const real = getCurrentUser()') > anonymousAccounts.indexOf('const raw = sessionStorage.getItem(HANDOFF_KEY)')) {
+  fail('anonymous account guide: must read the initialized session before optional handoff state')
 }
 
 const functionsGuide = readFileSync(path.join(root, 'bounded-backend/docs/functions.md'), 'utf8')

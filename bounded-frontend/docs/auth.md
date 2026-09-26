@@ -342,15 +342,13 @@ delivered to your own origin.
 > self-chosen name is spoofable (an app could call itself "Google"), the
 > registered domain is not. So make your app reachable on a clear domain.
 
-**Minimal web login (copy this).** As of `@bounded-sh/client` 0.0.30 web needs no
-`redirectUri`, and one `completeLoginFromRedirect()` finishes **both** redirect and
-popup:
+**Minimal web login (client 0.0.105 and later).**
+Await `init()` on app startup; it completes both redirect and popup returns automatically.
 
 ```ts
-import { init, loginWithRedirect, loginWithPopup, completeLoginFromRedirect, onAuthStateChanged } from "@bounded-sh/client";
+import { init, loginWithRedirect, loginWithPopup, onAuthStateChanged } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
-await completeLoginFromRedirect();          // finishes a redirect OR popup login; no-op otherwise
 onAuthStateChanged((user) => { /* render signed-in UI */ });
 
 // a button → hosted chooser (shows the methods enabled for the app):
@@ -385,14 +383,12 @@ lists keep deliberate silent SSO.
 Pass an explicit `prompt` to override, or `prompt: ""` to opt a social jump
 back into silent SSO.
 
-**One completion call covers both UXes.** Call `completeLoginFromRedirect()` once on
-app load (or page mount): it finishes a full-page redirect *or* a popup login (it
-auto-detects the popup internally) and is a no-op when there's nothing to finish.
-There is **no** separate popup callback to wire. `loginWithPopup({ methods })` is the
-popup variant for when the host UI must stay open; prefer full-page redirect for
-production reliability, since browsers can block or close popups. **Register the
-app's origins** first (https; localhost for dev) — an unregistered origin/redirect
-is rejected by design.
+**Initialization completes both login modes.**
+There is no separate popup callback to wire.
+Use the [standard widget](app-auth.md#unified-widget) for mobile redirect, desktop popup, and blocked-popup fallback.
+`loginWithPopup({ methods })` remains available for a custom popup UI.
+Register the app's origins first (HTTPS, or localhost for development); an unregistered origin is rejected.
+Older clients require `completeLoginFromRedirect()` on startup; upgrade and rebuild to remove that requirement.
 
 The hosted redirect flow is the **most secure** human-login UX: the bare chooser, a
 `provider`-specific button, and a `methods` subset are all the same
@@ -442,13 +438,12 @@ Use `loginWithRedirect` or `loginWithPopup`; you own the button and method
 selection, but the credential is entered on `auth.bounded.sh`:
 
 ```ts
-import { init, loginWithRedirect, completeLoginFromRedirect } from "@bounded-sh/client";
+import { init, loginWithRedirect, getCurrentUser } from "@bounded-sh/client";
 
 await init({ appId: "<appId>" });
+const user = getCurrentUser();
 // Your own button → hosted chooser (or pass provider / methods to scope it):
 await loginWithRedirect({ methods: ["email", "google"] });   // web: no redirectUri (defaults to current page)
-// On app load: finishes the redirect (or a popup) and signs in; no-op otherwise.
-const user = await completeLoginFromRedirect();   // exchanges the code (PKCE) → signs in
 ```
 
 On **React Native** `loginWithRedirect` opens the system/in-app browser to the
@@ -461,13 +456,16 @@ accounts side by side (opt-in: set `"auth": { "anonymous": true }` in policy; se
 [anonymous-accounts.md](anonymous-accounts.md)):
 
 ```ts
-import { signInAnonymously, loginWithRedirect, getCurrentUser } from "@bounded-sh/client";
+import { signInAnonymously, loginWithRedirect, getCurrentUser, getLoginReturnError } from "@bounded-sh/client";
 
 const guest = await signInAnonymously();    // guest.isAnonymous === true
 // ...later, when the guest wants a durable real account, send them through the
 // SAME hosted redirect flow as any login — they come back as their real account:
 await loginWithRedirect({ methods: ["email", "google"] });   // web: no redirectUri needed
-// (on app load) const user = await completeLoginFromRedirect();
+// On app load, after awaiting init():
+const loginError = getLoginReturnError();
+if (loginError) throw loginError;
+const user = getCurrentUser();
 ```
 
 > A guest who logs in via `loginWithRedirect` comes back as a **distinct** real

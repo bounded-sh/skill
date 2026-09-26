@@ -189,7 +189,7 @@ const user = await loginWithRedirect({
   // provider: "google",
 });
 // `user` is the signed-in { id, address, email, isAnonymous }. On web this returns void and you
-// finish via completeLoginFromRedirect() on the redirect page; on RN it's inline.
+// finish by awaiting init() on the redirect page; on RN it's inline.
 getCurrentUser();
 ```
 

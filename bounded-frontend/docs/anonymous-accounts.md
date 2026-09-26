@@ -142,15 +142,22 @@ Send the guest through hosted login. `loginWithRedirect` signs them in as a
 **new** real account:
 
 ```ts
-import { completeLoginFromRedirect, get, getCurrentUser, loginWithRedirect, set, signInAnonymously } from '@bounded-sh/client'
+import { init, get, getCurrentUser, getLoginReturnError, loginWithRedirect, set, signInAnonymously } from '@bounded-sh/client'
 
 await signInAnonymously()                 // user.isAnonymous === true
 // ...user does stuff, owns data keyed by @user.id...
 
 // Show the "create a real account" prompt with getCurrentUser()?.isAnonymous, then:
 await loginWithRedirect({ methods: ['email', 'google'] })   // web: no redirectUri needed
-// (once on app load)
-const user = await completeLoginFromRedirect()
+```
+
+On app startup after the redirect, initialize the SDK before reading the session:
+
+```ts
+await init({ appId: '<appId>' })
+const loginError = getLoginReturnError()
+if (loginError) throw loginError
+const user = getCurrentUser()
 if (!user || user.isAnonymous || !user.id) throw new Error('expected a real account')
 user.isAnonymous   // false — a real account
 user.id            // their REAL account id — DISTINCT from the guest's id
@@ -158,7 +165,7 @@ user.id            // their REAL account id — DISTINCT from the guest's id
 
 Here the real account has its **own** `@user.id` — the guest id is **not** adopted,
 so any data the guest created is still owned by the *guest* id. Do **not** try to
-transfer it immediately after `completeLoginFromRedirect()`: at that point the
+transfer it immediately after login completes: at that point the
 real account is acting, while the transfer rule below authorizes only the old
 guest owner.
 
@@ -193,10 +200,12 @@ sessionStorage.setItem(HANDOFF_KEY, JSON.stringify({
 } satisfies PendingGuestHandoff))
 await loginWithRedirect({ methods: ['email', 'google'] })
 
-// Call once on web app load. A normal hosted login has no handoff record and
-// returns immediately after completing the login.
+// Call once on web app load after awaiting init().
+// A normal hosted login has no handoff record and returns the current session.
 export async function completeHostedLoginAndGuestHandoff() {
-  const real = await completeLoginFromRedirect()
+  const loginError = getLoginReturnError()
+  if (loginError) throw loginError
+  const real = getCurrentUser()
   const raw = sessionStorage.getItem(HANDOFF_KEY)
   if (!raw) return real
 

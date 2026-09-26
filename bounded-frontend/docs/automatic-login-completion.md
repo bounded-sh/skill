@@ -1,8 +1,7 @@
 # Automatic login completion
 
-This describes SDK source after published client 0.0.104.
-Use it after upgrading to a release containing automatic OAuth completion; it is not a claim that 0.0.104 already supports this behavior.
-Until that package release, use the [published quickstart](app-auth.md), including its explicit completion call.
+Automatic OAuth completion is available in `@bounded-sh/client` 0.0.105 and later.
+Upgrade and rebuild an existing app to receive it; client 0.0.104 and earlier still require an explicit completion call.
 
 With the new SDK, initialization owns the entire return from hosted login:
 

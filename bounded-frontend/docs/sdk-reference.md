@@ -31,11 +31,11 @@ npm i @bounded-sh/server      # Node / server (keypair client)
 
 ```ts
 // client (browser / RN)
-import { init, loginWithRedirect, completeLoginFromRedirect, get, set, subscribe } from "@bounded-sh/client";
+import { init, loginWithRedirect, get, set, subscribe } from "@bounded-sh/client";
 await init({ appId: "<appId>" });
 // Human login uses the hosted issuer (web redirect shown here):
 await loginWithRedirect({ methods: ["email", "google"] });   // redirectUri optional on web (defaults to current page)
-// …once on app load, finish a redirect OR popup login:  const user = await completeLoginFromRedirect();
+// With client 0.0.105+, init() automatically finishes a redirect or popup return.
 
 // server
 import { createWalletClient } from "@bounded-sh/server";
@@ -546,8 +546,7 @@ it from `bounded collaborators` before removing an email-invited collaborator.
 
 ```ts
 import { logout, getCurrentUser, useAuth, signInAnonymously,
-         loginWithRedirect, loginWithPopup,
-         completeLoginFromRedirect } from "@bounded-sh/client";
+         loginWithRedirect, loginWithPopup } from "@bounded-sh/client";
 
 const user = getCurrentUser();       // { id, address, email, isAnonymous } | null
 
@@ -555,12 +554,11 @@ const user = getCurrentUser();       // { id, address, email, isAnonymous } | nu
 const { user, logout, loading } = useAuth();
 
 // Human login - pick a UX. HOSTED (most secure; web AND React Native), app-owned
-// button + callback page:
+// button; await init() on the return page before reading auth state:
 await loginWithRedirect({
   methods: ["email", "google"],      // or provider: "apple"/"github" to jump to one;
                                      // omit both to show the full hosted chooser.
 });                                  // web: redirectUri optional (defaults to current page); RN: required (https universal link)
-await completeLoginFromRedirect();   // once on app load → finishes a redirect OR popup login; no-op otherwise
 
 // Or keep the host page open while the hosted issuer handles the credential:
 const popupUser = await loginWithPopup({ methods: ["email", "google"] });
@@ -570,7 +568,7 @@ await signInAnonymously();
 ```
 
 > **Hosted credentials only.** Use `loginWithRedirect` or `loginWithPopup`, with
-> `completeLoginFromRedirect()` on web app load. The published client no
+> `init()` on web app load to complete the return (client 0.0.105+). The client no
 > longer exports app-origin email or text OTP helpers. See [auth.md](auth.md).
 
 ### The unified login widget - `openBoundedWidget`
