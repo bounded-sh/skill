@@ -391,14 +391,13 @@ A policy that verifies on Poofnet still needs every called function checked agai
   `hooks.offchain` runs both on poofnet - onchain first (as the chain program
   would, inside the tx), then offchain (post-commit) - matching real-network
   semantics.
-- **Offchain-only plugin reads have no working chain-query placement today.**
-  Source examples include `@PhoenixPerpsPlugin.getPositionSize` and `@DeFiPlugin.getMeteoraSwapQuote`, which deploy validation rejects inside `onchain: true` collections.
-  The current named-query executor does not activate standalone chain execution for an `onchain: false` path.
-  Do not recommend an offchain view collection as a workaround until the runtime is fixed.
+- **Offchain-only plugin reads go on `onchain: false` collections.**
+  Deploy validation rejects offchain-only functions (for example `@PhoenixPerpsPlugin.getPositionSize` and `@DeFiPlugin.getMeteoraSwapQuote`) inside `onchain: true` collections.
+  On an `onchain: false` path the runtime evaluates the query and resolves each chain read in the program, so an offchain quote collection works on Solana apps.
 - **Query errors are explicit.** A failed or undeclared named query returns a
   per-row `error` alongside `result: null` - `runQuery` (client ≥0.0.42) throws
   it; the CLI (≥0.0.56) prints it verbatim.
-- **Current chain-backed named queries must be declared on an `onchain: true` path.**
+- **Where chain-backed named queries run.** On an `onchain: true` path the program runs the query against the collection's uploaded rules; on an `onchain: false` path it runs whole in the program when it calls only chain-capable plugins, and otherwise in the runtime.
   They never sign or submit. Anonymous execution IS admitted for identity-independent queries whose owning path's read rule authorizes the caller, and on this route that read rule must itself be document-independent.
   A query whose bytecode reads `@user.address`/`@user.evmAddress` requires that chain identity; a query may read its OWN document, while other-document and cross-app reads are refused.
   The anonymous surface is the browser SDK - the CLI always needs a keypair session.

@@ -490,13 +490,14 @@ The runtime stages those fields into `@newData` while evaluating the named query
 A query expression may therefore read `@newData.amount`, `@newData.symbol`, or another supplied argument field.
 The arguments do not write or persist a document.
 
-Current Solana named-query behavior has two important limits.
-A chain-backed named query must be declared on an `onchain: true` path because the current executor does not activate standalone chain execution for an `onchain: false` path.
+On a Solana app, where a named query runs depends on its collection.
+A query on an `onchain: true` path runs in the program against that collection's uploaded rules.
+A query on an `onchain: false` path runs whole in the program when it only calls chain-capable plugins and reads no offchain documents; otherwise the runtime evaluates it and resolves each chain read in the program.
+Offchain-only plugins such as `@DeFiPlugin.getSwapQuote` therefore belong on an `onchain: false` path; deploy validation rejects them on an `onchain: true` one.
 Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller.
 A query whose bytecode reads `@user.address` or `@user.evmAddress` still requires that chain identity, and on the onchain route the read rule must itself be document-independent.
 A query may read its OWN document; other-document reads and cross-app `@App.get` are refused.
 The anonymous surface is the browser SDK - the CLI always needs a keypair session.
-Offchain-only plugin reads have no working chain-query placement until the runtime is fixed.
 Check the [Solana devnet capability catalog](../../bounded-onchain/docs/solana-capability-status.md) before calling a plugin query.
 
 `@PriceFeedPlugin.getPriceFeed` returns a decimal `String` from the deployed Solana runtime.
