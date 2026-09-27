@@ -15,6 +15,7 @@ Use this skill for the app's capability constraints and, when requested, its pub
 - **Agent running on an OpenApps app computer:** the app already exists.
   Apply the capability constraints below and use the installed runtime-specific instructions for previews, releases, and proposals (`openapps-internal` when provided).
   Do not repeat creator initialization, Open, or Commence to update it.
+  When `BOUNDED_SECRETS` is set, the computer is brokered: it stores no credentials, `bounded login` must not be run, and the [agent computer](docs/agent-computer.md) reference applies.
   If those runtime instructions are unavailable, continue inspection and local work that the environment supports, and identify the missing instructions before attempting a governed release.
 
 ## Capability constraints
@@ -40,5 +41,6 @@ Read the reference needed for the current task.
 | `bounded oapp preflight`, rehearsal, bootstrap from zero data | [Preflight and rehearsal](docs/rehearse.md) |
 | Preparing to Open or Commence | [Publication checklist](docs/checklist.md) |
 | Sealed launch economics, treasury fees, pending claims and operating reserves | [Launch economics](docs/launch-economics.md) |
+| Brokered app computer: placeholder credentials, no `bounded login`, `bounded computer secret` and `{{secret:NAME}}` | [Agent computer](docs/agent-computer.md) |
 
 For implementation mechanics, use [bounded-backend](../bounded-backend/SKILL.md), [bounded-frontend](../bounded-frontend/SKILL.md), or [bounded-onchain](../bounded-onchain/SKILL.md) as needed.

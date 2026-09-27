@@ -74,3 +74,6 @@ A platform-managed agent session uses the same app-token exchange as a human CLI
 The target app's data rules still apply; developer access to deploy code does not grant unrestricted data access.
 If the CLI reports `agent credential rejected` with `invalid_token`, authentication failed before app data access.
 The platform must check session issuance or renewal; do not replace the agent's identity with `bounded login` or repeatedly retry the same rejected credential.
+
+On a brokered OpenApps app computer (`BOUNDED_SECRETS` is set), `~/.bounded/web-session.json` holds a platform-held placeholder session, and the network adds the real credential to each request during a run.
+Never run `bounded login` there; see [agent computers](../../openapps/docs/agent-computer.md).

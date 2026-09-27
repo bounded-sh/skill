@@ -176,6 +176,13 @@ argv values can appear in shell history and process listings.
   `secret put` supplies or rotates the value but never declares exposure by itself;
   the `secrets` block is what grants a function the right to read a name.
 
+## App secrets vs agent computer secrets
+
+Everything above is an app runtime secret: `bounded secret put` stores it per app for the app's deployed backend code.
+An OpenApps agent on a brokered app computer can also save its own keys with `bounded computer secret set`.
+Those are stored per computer, reach only their bound hostnames from requests that computer sends, and are never readable by the deployed app.
+See [agent computers](../../openapps/docs/agent-computer.md).
+
 ## Related
 - [backend-runtime.md](backend-runtime.md) — the `ctx` your code runs with (store/ai/schedule/fetch/secrets)
 - [cli-reference.md](../../bounded-deploy/docs/cli-reference.md) — all CLI commands
