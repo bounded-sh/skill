@@ -25,9 +25,7 @@ The authority then holds nothing and can only move withheld tax, and the treasur
 Use the treasury's own named account id as `source` only when it is itself the withdrawal authority; the self-paying variant sends the fees to whoever signs.
 
 `@TokenPlugin.withdrawWithheldTokens(mint, authority, receiverOwner, sourceOwner)` withdraws one account's withheld fees to any owner's associated token account, and with `sourceOwner == receiverOwner` it converts an account's own withheld fees back into its spendable balance.
-From runtime v7 a source that holds no token account, or no withheld fees, is a successful no-op that needs no receiver account, so a hook can sweep a receiver before the transfer that creates it.
 That is how a fee-neutral payout works: sweep the receiver's older fees to the treasury, transfer exactly the amount, convert the fee that transfer withheld back in place, and refuse unless the receiver landed exactly at its prior balance plus the amount.
-On a runtime older than v7 the sweep of a never-created account fails closed, so such a policy must wait for the program release.
 These are mutating onchain hook calls; confirm their exact signatures and target-environment availability in the [plugin catalog](plugins.md).
 A harvest by another caller does not change the withdrawal authority.
 An already-empty source, or one that closed between discovery and execution, must not invalidate an otherwise valid harvest.
