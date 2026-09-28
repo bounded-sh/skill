@@ -439,7 +439,7 @@ A compiler tag, a same-app substitute, target deployment alone, or one immediate
 Parity is a release gate, not a best-effort convenience:
 
 1. Pure functions produce the same value and error shape in both runtimes.
-2. On a Solana app, an `onchain: true` path's named query runs in the program against the collection's uploaded rules; an `onchain: false` path's query runs whole in the program when it calls only chain-capable plugins and reads no offchain documents, and otherwise in the runtime, which resolves each chain read in the program.
+2. On a Solana app, a named query that calls no plugin runs in the runtime on any path. A plugin-calling query on an `onchain: true` path runs in the program against the collection's uploaded rules. On an `onchain: false` path it runs whole in the program only when it calls only chain-capable plugins, reads no offchain documents, and its path's read rule is document-independent; otherwise it runs in the runtime, which resolves each chain read in the program.
    Offchain-only plugin reads therefore belong on an `onchain: false` path.
    Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller; a query reading `@user.address`/`@user.evmAddress` requires that identity. The anonymous surface is the browser SDK, not the CLI.
    On Solana mainnet a signed-out chain query currently fails, so require a signed-in wallet there until the platform's query payer fix ships.
