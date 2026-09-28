@@ -495,8 +495,9 @@ A query on an `onchain: true` path runs in the program against that collection's
 A query on an `onchain: false` path runs whole in the program when it only calls chain-capable plugins and reads no offchain documents; otherwise the runtime evaluates it and resolves each chain read in the program.
 Offchain-only plugins such as `@DeFiPlugin.getSwapQuote` therefore belong on an `onchain: false` path; deploy validation rejects them on an `onchain: true` one.
 Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller.
+On Solana mainnet a signed-out chain query currently fails, so require a signed-in wallet there until the platform's query payer fix ships.
 A query whose bytecode reads `@user.address` or `@user.evmAddress` still requires that chain identity, and on the onchain route the read rule must itself be document-independent.
-A query may read its OWN document; other-document reads and cross-app `@App.get` are refused.
+In the program a query may read its OWN document; other-document reads and cross-app `@App.get` are refused there. A runtime-evaluated query may read other documents, each checked against its own read rule.
 The anonymous surface is the browser SDK - the CLI always needs a keypair session.
 Check the [Solana devnet capability catalog](../../bounded-onchain/docs/solana-capability-status.md) before calling a plugin query.
 

@@ -86,6 +86,7 @@ const roll = await client.runQuery(`draws/${id}`, 'roll', {});
 `getRandomNumber(id, min, max)` returns a uniform value in `[min, max)`. The
 range is yours to choose at request time - see §3 for why you may want it large.
 Anonymous live chain named-query execution is admitted when the reveal path's read rule authorizes the caller and the query is identity-independent; a query reading `@user.address` requires that identity.
+On Solana mainnet a signed-out chain query currently fails, so require a signed-in wallet there until the platform's query payer fix ships.
 The anonymous surface is the browser SDK - the CLI always needs a keypair session.
 
 Fulfilment is asynchronous and an immediate read is not acceptance evidence.

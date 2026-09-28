@@ -237,9 +237,9 @@ Devnet token acceptance must create and use an app-owned classic SPL or Token-20
 Do not declare it as `Float` or document it as a JavaScript number.
 It remains unverified on devnet until a retained Pyth read proves the string value and freshness behavior.
 Named-query `queryArgs` populate staged `@newData` for the query expression.
-Current chain-backed named queries must be declared on an `onchain: true` path.
-The current executor does not activate standalone chain execution for an `onchain: false` path.
+On a Solana app, an `onchain: true` path's named query runs in the program against the collection's uploaded rules; an `onchain: false` path's query runs whole in the program when it calls only chain-capable plugins and reads no offchain documents, and otherwise in the runtime, which resolves each chain read in the program.
 Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller; a query reading `@user.address`/`@user.evmAddress` requires that identity, and the anonymous surface is the browser SDK rather than the CLI.
+On Solana mainnet a signed-out chain query currently fails, so require a signed-in wallet there until the platform's query payer fix ships.
 
 ## Acceptance contract
 
