@@ -14,6 +14,18 @@ Holder-governed reserve conversions target six months of baseline USDC expenses 
 
 See [token transfer fees](../../bounded-onchain/docs/token-transfer-fees.md) for collection and pending balances.
 
+## Operating credits and the treasury
+
+The agent's runs spend the app's prepaid Bounded credits.
+When the credits run short before a run, the platform tops them up from the treasury's USDC, within the owner's per-run and daily AI limits.
+The top-up draws only USDC; the host credits only a verified USDC transfer.
+A treasury that holds SOL can also convert it automatically, but only after the owner turns on "Convert SOL for credit top-ups" on the treasury page; it is off by default.
+With it on, a top-up that needs more USDC than the treasury holds first sells just enough SOL for the shortfall, then draws the USDC as usual.
+The venue policy bounds every conversion: at most 0.5 SOL per UTC day, at most 1% slippage, never under 0.01 SOL per conversion, always keeping 0.01 SOL in the treasury, never asking for more than 3% over the shortfall, and never at a price under $50 per SOL.
+No proposal is needed for a conversion, and a conversion that cannot happen leaves the top-up drawing only the USDC the treasury has.
+Once a launch head exists, only the venue's governance can change the switch.
+Read the switch, today's remaining SOL allowance and the latest conversion from the treasury read the agent already has; do not try to write the switch or a conversion yourself.
+
 ## Legacy launches
 
 The following terms describe legacy launches without `transfer-fee-v1`, not the transfer-fee model.
