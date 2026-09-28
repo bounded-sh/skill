@@ -451,10 +451,12 @@ for (const expected of [
   'The runtime stages those fields into `@newData`',
   'Anonymous chain-query execution is admitted for identity-independent queries',
   'returns a decimal `String`',
-  'does not activate standalone chain execution for an `onchain: false` path',
+  'Offchain-only plugins such as `@DeFiPlugin.getSwapQuote` therefore belong on an `onchain: false` path',
+  'otherwise the runtime evaluates it and resolves each chain read in the program',
 ]) {
   if (!sdkReference.includes(expected)) fail(`SDK reference: missing Solana query boundary ${expected}`)
 }
+if (sdkReference.includes('until the runtime is fixed')) fail('SDK reference: still says offchain plugin queries wait for a runtime fix')
 
 const dataPlane = readFileSync(path.join(root, 'bounded-backend/docs/data-plane.md'), 'utf8')
 for (const expected of [

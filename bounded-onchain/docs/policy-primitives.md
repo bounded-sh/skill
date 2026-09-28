@@ -440,10 +440,10 @@ A compiler tag, a same-app substitute, target deployment alone, or one immediate
 Parity is a release gate, not a best-effort convenience:
 
 1. Pure functions produce the same value and error shape in both runtimes.
-2. Current chain-backed named queries must be declared on an `onchain: true` path.
-   The executor does not currently activate standalone chain execution for an `onchain: false` path.
-   Offchain-only plugin reads therefore have no working chain-query placement until the runtime is fixed.
+2. On a Solana app, a named query that calls no plugin runs in the runtime on any path. A plugin-calling query on an `onchain: true` path runs in the program against the collection's uploaded rules. On an `onchain: false` path it runs whole in the program only when it calls only chain-capable plugins, reads no offchain documents, and its path's read rule is document-independent; otherwise it runs in the runtime, which resolves each chain read in the program.
+   Offchain-only plugin reads therefore belong on an `onchain: false` path.
    Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller; a query reading `@user.address`/`@user.evmAddress` requires that identity. The anonymous surface is the browser SDK, not the CLI.
+   On Solana mainnet a signed-out chain query currently fails, so require a signed-in wallet there until the platform's query payer fix ships.
 3. Onchain Documents are readable through the offchain mirror/read-through path.
 4. A mutating primitive succeeds on Poofnet only after a deterministic model,
    target-aware host handler, or explicit policy-test mock applies its effect.

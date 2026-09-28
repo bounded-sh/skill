@@ -44,7 +44,8 @@ test('high-value pre-reorganization guidance remains at full fidelity', () => {
   assert.ok(trading.includes("only when that function's existing manifest description lists"))
 
   const onchainSkill = read('bounded-onchain/SKILL.md')
-  assert.ok(onchainSkill.includes('Do not recommend an `onchain: false` view for an offchain-only plugin read'))
+  assert.ok(onchainSkill.includes('`onchain: false` for anything calling an offchain-only plugin'))
+  assert.ok(!onchainSkill.includes('until standalone chain-query execution is fixed'))
   assert.ok(onchainSkill.includes('discovery, deployed-runtime support, and live-network verification as three independent states'))
 
   const custody = read('bounded-onchain/docs/custody-and-pdas.md')

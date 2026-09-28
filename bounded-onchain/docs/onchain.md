@@ -391,16 +391,16 @@ A policy that verifies on Poofnet still needs every called function checked agai
   `hooks.offchain` runs both on poofnet - onchain first (as the chain program
   would, inside the tx), then offchain (post-commit) - matching real-network
   semantics.
-- **Offchain-only plugin reads have no working chain-query placement today.**
-  Source examples include `@PhoenixPerpsPlugin.getPositionSize` and `@DeFiPlugin.getMeteoraSwapQuote`, which deploy validation rejects inside `onchain: true` collections.
-  The current named-query executor does not activate standalone chain execution for an `onchain: false` path.
-  Do not recommend an offchain view collection as a workaround until the runtime is fixed.
+- **Offchain-only plugin reads go on `onchain: false` collections.**
+  Deploy validation rejects offchain-only functions (for example `@PhoenixPerpsPlugin.getPositionSize` and `@DeFiPlugin.getMeteoraSwapQuote`) inside `onchain: true` collections.
+  On an `onchain: false` path the runtime evaluates the query and resolves each chain read in the program, so an offchain quote collection works on Solana apps.
 - **Query errors are explicit.** A failed or undeclared named query returns a
   per-row `error` alongside `result: null` - `runQuery` (client ≥0.0.42) throws
   it; the CLI (≥0.0.56) prints it verbatim.
-- **Current chain-backed named queries must be declared on an `onchain: true` path.**
-  They never sign or submit. Anonymous execution IS admitted for identity-independent queries whose owning path's read rule authorizes the caller, and on this route that read rule must itself be document-independent.
-  A query whose bytecode reads `@user.address`/`@user.evmAddress` requires that chain identity; a query may read its OWN document, while other-document and cross-app reads are refused.
+- **Where chain-backed named queries run.** A query that calls no plugin runs in the runtime on any path. A plugin-calling query on an `onchain: true` path runs in the program against the collection's uploaded rules; on an `onchain: false` path it runs whole in the program only when it calls only chain-capable plugins, reads no offchain documents, and its path's read rule is document-independent, and otherwise in the runtime.
+  They never sign or submit. Anonymous execution IS admitted for identity-independent queries whose owning path's read rule authorizes the caller, and in the program that read rule must itself be document-independent.
+  On Solana mainnet a signed-out chain query currently fails, so require a signed-in wallet there until the platform's query payer fix ships.
+  A query whose bytecode reads `@user.address`/`@user.evmAddress` requires that chain identity; in the program a query may read its OWN document, while other-document and cross-app reads are refused; a runtime-evaluated query may read other documents, each checked against its own read rule.
   The anonymous surface is the browser SDK - the CLI always needs a keypair session.
   `queryArgs` are staged into `@newData` for the query expression.
   Preserve the same result/error shape on Poofnet and Solana, subject to mirror finality.
