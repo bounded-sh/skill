@@ -287,7 +287,8 @@ Poofnet proves logic, not real-network funding or transaction fit:
 - Use `isPassthrough: true` for an action that needs an onchain hook/CPI but no
   durable Document. It avoids Document storage, not transaction/CPI fees.
 - Keep the logical PDA name when Bounded must sign; use the derived address for
-  display and readonly lookup. Never hardcode a Poofnet-derived address.
+  display and readonly lookup. Poofnet derives the same program addresses a real
+  cluster does, but each belongs to one app id, so never hardcode one.
 - Batch against transaction bytes, account metas, compute, stack, and heap. The
   builder fails before signing above 1,232 serialized bytes or 64 account locks
   (the current mainnet/devnet limit). It simulates compute, adds a 20% margin up
