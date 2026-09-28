@@ -14,6 +14,23 @@ Holder-governed reserve conversions target six months of baseline USDC expenses 
 
 See [token transfer fees](../../bounded-onchain/docs/token-transfer-fees.md) for collection and pending balances.
 
+## Operating credits and the treasury
+
+The agent's runs spend the app's prepaid Bounded credits.
+When the credits run short before a run, the platform tops them up from the treasury's USDC, within the owner's per-run and daily AI limits.
+The top-up draws only USDC; the host credits only a verified USDC transfer.
+A treasury that holds SOL can also convert it automatically, but only after the owner turns on "Convert SOL for credit top-ups" on the treasury page; it is off by default.
+The conversion exists only to fund that credit top-up: it cannot pay for anything else, and it does not change treasury swap proposals, withdrawals or payouts.
+With it on, a top-up that needs more USDC than the treasury holds first sells SOL for the shortfall as a separate step, and the top-up draws only after that sale has landed.
+While the sale is still landing the run starts on the credits it already has, and the next run draws the converted USDC.
+Each sale is at least $5 of SOL (a smaller shortfall still sells $5, and the surplus stays in the treasury as USDC), unless all the SOL above the floor is worth less, in which case it sells all of it.
+The venue policy bounds every conversion: at most 0.5 SOL per UTC day, at most 1% slippage, never under 0.01 SOL, always keeping 0.01 SOL in the treasury, never asking for more than 3% over the larger of the shortfall and $5, and never at a price under $50 per SOL.
+No proposal is needed for a conversion.
+A conversion that fails leaves the top-up drawing the USDC the treasury has, and no conversion is tried for that app for the next hour.
+App tokens are never sold for a credit top-up; the holder-governed reserve conversion stays a separate policy.
+Once a launch head exists, only the venue's governance can change the switch.
+Read the switch, today's remaining SOL allowance and the latest conversion from the treasury read the agent already has; no agent tool, proposal or data script can start a conversion or write the switch.
+
 ## Legacy launches
 
 The following terms describe legacy launches without `transfer-fee-v1`, not the transfer-fee model.

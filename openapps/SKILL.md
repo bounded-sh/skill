@@ -39,6 +39,6 @@ Read the reference needed for the current task.
 | Publication refusals, required boundaries and egress, reproducible dist, `gov-frozen`, `bounded propose` | [Launch gate](docs/launch-gate.md) |
 | `bounded oapp preflight`, rehearsal, bootstrap from zero data | [Preflight and rehearsal](docs/rehearse.md) |
 | Preparing to Open or Commence | [Publication checklist](docs/checklist.md) |
-| Sealed launch economics, treasury fees, pending claims and operating reserves | [Launch economics](docs/launch-economics.md) |
+| Sealed launch economics, treasury fees, pending claims, operating reserves, and how credits are topped up (including automatic SOL conversion) | [Launch economics](docs/launch-economics.md) |
 
 For implementation mechanics, use [bounded-backend](../bounded-backend/SKILL.md), [bounded-frontend](../bounded-frontend/SKILL.md), or [bounded-onchain](../bounded-onchain/SKILL.md) as needed.
