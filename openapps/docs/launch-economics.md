@@ -25,7 +25,9 @@ With it on, a top-up that needs more USDC than the treasury holds first sells SO
 While the sale is still landing the run starts on the credits it already has, and the next run draws the converted USDC.
 Each sale is at least $5 of SOL (a smaller shortfall still sells $5, and the surplus stays in the treasury as USDC), unless all the SOL above the floor is worth less, in which case it sells all of it.
 The venue policy bounds every conversion: at most 0.5 SOL per UTC day, at most 1% slippage, never under 0.01 SOL, always keeping 0.01 SOL in the treasury, never asking for more than 3% over the larger of the shortfall and $5, and never at a price under $50 per SOL.
-No proposal is needed for a conversion, and one that is never attempted leaves the top-up drawing only the USDC the treasury has.
+No proposal is needed for a conversion.
+A conversion that fails leaves the top-up drawing the USDC the treasury has, and no conversion is tried for that app for the next hour.
+App tokens are never sold for a credit top-up; the holder-governed reserve conversion stays a separate policy.
 Once a launch head exists, only the venue's governance can change the switch.
 Read the switch, today's remaining SOL allowance and the latest conversion from the treasury read the agent already has; no agent tool, proposal or data script can start a conversion or write the switch.
 
