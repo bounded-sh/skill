@@ -16,7 +16,7 @@ If no valid Bounded web session exists, the CLI opens hosted browser login and
 returns to the terminal after sign-in. `init` then creates:
 
 - `policy.json`, the governed backend policy
-- `bounded.json`, public project configuration safe to commit
+- `bounded.json`, public project configuration safe to commit, with `"sourcePush": true` so every deploy also syncs the project source (see [source-sync.md](source-sync.md))
 - `.gitignore` entries for local Bounded credentials
 
 No separate authentication command is required before `bounded init`.

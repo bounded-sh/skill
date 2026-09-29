@@ -86,7 +86,7 @@ Spell these implications out before starting Open:
 Source sync is load-bearing because completed Open publishes the synchronized tree rather than an unsynchronized checkout.
 No synced source means Open cannot complete.
 Source rides the deploy; there is no separate register or sync machinery.
-Enable it once in `bounded.json`:
+`bounded init` turns it on for every new project; an older project enables it once in `bounded.json`:
 
 ```json
 { "sourcePush": true }

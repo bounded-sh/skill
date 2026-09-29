@@ -7,13 +7,14 @@ An ordinary `bounded site deploy ./dist` uploads only the built static artifact 
 
 ## Enable it
 
-In `bounded.json`:
+`bounded init` writes it into every new project's `bounded.json`:
 
 ```json
 { "sourcePush": true }
 ```
 
-With that set, every `bounded deploy` and `bounded site deploy` also pushes
+A project created before that default, or one whose config lacks the field, adds the same line; a project that must not sync sets it to `false`.
+With it set, every `bounded deploy` and `bounded site deploy` also pushes
 the project tree to the app's cloud source repository and prints:
 
 ```text
@@ -28,8 +29,8 @@ bounded site deploy ./dist --no-source     # skip it this once
 ```
 
 The flag beats the config. With no config and no flag, deploys do not push
-source. A failed source push after a successful deploy warns loudly but does
-not fail the deploy — re-run with `--with-source` once the issue is fixed.
+source. A failed source push after a successful deploy does not fail the deploy: the site and rules are live, but the warning says that Bounded then holds no current source for the app, so it cannot be handed to an OpenApps agent and Open has nothing to publish until a deploy with source lands.
+Fix the cause it names and deploy again (`--with-source` forces one sync).
 
 ## Canonical sites also establish the widget editing base
 
@@ -96,6 +97,7 @@ editing base.
 
 ## What requires synced source
 
+- **Handing an existing app to its OpenApps agent** (Launch, "Use an existing app"). The agent's computer works from a clone of the synced source, so the venue refuses the handover with `user_app_source_not_synced` until a deploy with source lands, and a run on an app whose source is missing ends with `hermes_source_not_synced`.
 - **oApp Open.** Open reads the synced source and publishes that exact tree at `https://<workloadAppId>.bounded.page/__bounded/source` when the opening completes.
   No synced source means Open cannot complete.
   Commence later adds the oApps slug, listing, token, and Gauntlet without changing that source publication or the `/a/<rootAppId>` venue page.

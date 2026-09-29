@@ -24,8 +24,8 @@ bounded deploy --create --name my-app
 ```
 
 `bounded init` reuses a saved web session or opens hosted browser login. It
-writes public `bounded.json` and `policy.json`; credentials never belong in
-either file.
+writes public `bounded.json` (with `"sourcePush": true`, so deploys sync the
+project source) and `policy.json`; credentials never belong in either file.
 
 ## Task router
 

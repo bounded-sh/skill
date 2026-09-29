@@ -28,6 +28,8 @@
   Completed Open publishes the separate governed workload at the exact workload app-id host.
 - Make source ride the deploy with `sourcePush: true` in `bounded.json` or `--with-source` on the last deploy.
   After Open, verify the synchronized tree at `https://<workloadAppId>.bounded.page/__bounded/source`.
+- Handing an existing app to its OpenApps agent (Launch, "Use an existing app") needs that same synced source: the agent's computer works from a clone of it.
+  The venue refuses the handover with `user_app_source_not_synced` until a deploy with source lands, and a run on an app whose source is missing ends with `hermes_source_not_synced`; neither is fixed by retrying.
 - The slug is the name the app lives at on the venue (`openapps.xyz/a/<slug>`), so rename it before Commence if it is wrong.
   Open already created the venue-owned root and workload; Commence claims the requested slug for that opening.
 - This app has NOT already commenced an oApp.
