@@ -134,11 +134,12 @@ Bounded tracks function discovery, deployed-runtime support, and retained live v
 Run `bounded plugins list --json` for the CLI's offline callable projection, then `bounded plugins describe <plugin.function> --json` for the exact arguments, proof sorts, signer roles, return contract, and network-scoped support evidence.
 These commands need no account or network connection and their capability state is advisory, not a deploy verdict.
 An invalid `--protocol` is rejected locally before any network request.
-The deployed program is recorded as runtime v7 on both devnet and mainnet-beta (2026-09-15), but the runtime version does not prove that an external protocol is deployed or configured.
-Consult the [157-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
+The deployed program is recorded as runtime v8 on devnet and mainnet-beta (2026-09-29), but the runtime version does not prove that an external protocol is deployed or configured.
+The scaled-price API's hosted services and app rollout remain pending after the program upgrades.
+Consult the [165-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
 Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
-SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4 as a minimum; both clusters now run v6, which includes it, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
+SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4 as a minimum; both clusters meet that requirement, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
 Meteora is **not** blocked.
 The replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so nothing about the Meteora flows is externally blocked; they stay unverified until retained live proof exists, like the rest.
 Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.

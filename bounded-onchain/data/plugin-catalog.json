@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "544790357e01a71e5bc4418c2fbd83d41e6b1f2a",
+  "monorepoCommit": "11ff6e987797124ac5d38e8e455e65577a5c1b31",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -6744,7 +6744,7 @@
      ],
      "status": {
       "lane": "extended runtime",
-      "support": "unsupported",
+      "support": "unverified",
       "verification": "source parity only",
       "markers": "NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF"
      }

@@ -18,7 +18,9 @@ Use `String` as the named-query return type.
 Do not pass this result into integer rule arithmetic or compare it directly to an integer: a numeric-looking string is not an integer price.
 
 `getPriceFeedScaled(feedId, decimals)` is a separate USD-only integer API requiring runtime v8 when executed in the Solana program.
-The recorded devnet and mainnet-beta deployments remain v7; this source function cannot execute in either cluster's program until its runtime requirement is met.
+The devnet and mainnet-beta programs run runtime v8 as of 2026-09-29 (slots 505377312 and 451516304 respectively).
+Only the programs have been upgraded for this API; the matching hosted worker, query, and compiler services, venue policy, and frontend rollout remain pending.
+The devnet catalog remains `unverified` until hosted app acceptance is established.
 Pass a `@PriceFeedPlugin.<SYMBOL>` constant or a 64-character Pyth feed ID, then an integer precision from 0 through 18.
 It returns `floor(USD price * 10^decimals)` as a positive `UInt` using exact checked arithmetic.
 At precision 6, the example price becomes `119809589` micro-USD per SOL.
@@ -64,7 +66,7 @@ The frontend must use the same scale and rounding when deciding how much SOL is 
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `uint`
-- Status: **unsupported** (source parity only); markers: NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF.
+- Status: **unverified** (source parity only); markers: NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

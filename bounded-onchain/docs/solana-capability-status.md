@@ -1,10 +1,9 @@
 # Solana devnet capability status
 
-**Scope: devnet only.** The Bounded Solana program is live on mainnet-beta as well, with
-bytes identical to devnet, but this table classifies devnet alone. Mainnet capability is
-**not** established here: an external protocol being
-usable on devnet says nothing about its mainnet deployment or configuration, and vice
-versa. Do not read a devnet row as a mainnet guarantee.
+**Scope: devnet only.**
+The Bounded Solana program is live on mainnet-beta as well, with runtime versions recorded separately for each cluster, but this table classifies devnet alone.
+Mainnet capability is **not** established here: an external protocol being usable on devnet says nothing about its mainnet deployment or configuration, and vice versa.
+Do not read a devnet row as a mainnet guarantee.
 
 This is the canonical public classification of Bounded Solana functions for devnet.
 It is a source-derived snapshot, not a claim that every discovered function works on a live cluster.
@@ -18,13 +17,14 @@ The catalog contains 165 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The current Bounded Solana program is recorded as **runtime v7**, live on both devnet and mainnet-beta since 2026-09-15.
+The Bounded Solana program is recorded as **runtime v8** on devnet and mainnet-beta, live since 2026-09-29 (slots 505377312 and 451516304 respectively).
 Legacy rows were classified against the runtime-v4 minimum; both clusters also meet the `NEEDS-RUNTIME-V6` and `NEEDS-RUNTIME-V7` requirements.
-The new `NEEDS-RUNTIME-V8` scaled-price function exists in source but cannot execute in the recorded v7 Solana programs.
-Runtime v7 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
+Both programs meet the `NEEDS-RUNTIME-V8` scaled-price requirement.
+Only the programs have been upgraded for this API; the matching hosted worker, query, and compiler services, venue policy, and frontend rollout remain pending.
+A program runtime version establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or that a hosted app can use it.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 132 `unverified`, 33 `unsupported`, and 0 `blocked`.
+The current totals are 133 `unverified`, 32 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -34,7 +34,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-PENDING` | Source is present, but a retained devnet acceptance run is still required. |
 | `LIVE-ORAO-PROOF` | ORAO request, fulfillment, reveal, and query still require retained live proof. |
 | `LIVE-PYTH-PROOF` | The Pyth read still requires retained live proof with freshness enforcement. |
-| `NEEDS-RUNTIME-V8` | The scaled integer USD price function needs runtime v8 to execute in the Solana program. The recorded devnet and mainnet-beta deployments remain v7, so source availability does not make this function callable in those programs. |
+| `NEEDS-RUNTIME-V8` | The scaled integer USD price function needs runtime v8 to execute in the Solana program. Devnet and mainnet-beta meet this requirement as of 2026-09-29 (slots 505377312 and 451516304 respectively). Program readiness alone does not establish hosted service availability or app acceptance. |
 | `LIVE-SAFE-CPI-PROOF` | A descriptor-backed safe CPI still requires retained live proof. |
 | `SAFE-TARGET-ONLY` | Generic invoke may be claimed only for an explicitly modeled safe program and account flow. |
 | `LIVE-PUMP-PROOF` | Pump.fun or PumpSwap stays unverified until live proof exists. |
@@ -48,7 +48,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
 | `CPAMM-SCENARIO` | A devnet acceptance run of this function is straightforward to construct, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
-| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4 as a minimum. Both devnet and mainnet-beta have met it since 2026-08-05 and now run v7 (2026-09-15), so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
+| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4 as a minimum. Both devnet and mainnet-beta have met it since 2026-08-05, so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
 | `NEEDS-RUNTIME-V6` | The function needs Bounded Solana runtime v6 as a minimum, because it is new on-chain interpreter code rather than a call into an external program. Both devnet (slot 492776210) and mainnet-beta (slot 444129016) have met it since 2026-09-04, so the runtime-version deploy-time refusal no longer applies. A cluster still on v5 refuses a policy using it at deploy time. |
 | `NEEDS-RUNTIME-V7` | The function or call shape needs Bounded Solana runtime v7 as a minimum. Both devnet (slot 498804425) and mainnet-beta (slot 447272765) have met it since 2026-09-15, so the runtime-version deploy-time refusal no longer applies. v7 adds `@PhoenixPerpsPlugin.withdrawFunds` with the amount omitted (a same-transaction Hawkeye margin view; the explicit-amount form runs on every runtime), makes `@TokenPlugin.withdrawWithheldTokens` a successful no-op when the source holds no Token-2022 account or no withheld fees (v6 refused it), and is the runtime the fee-neutral staking and bidder-claim policies that sweep a receiver before creating it were verified against. A cluster still on v6 refuses the omitted-amount shape at deploy time and fails those sweeps closed at write time. |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
@@ -180,7 +180,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@PredictionMarketPlugin.getYesTokenOutAmm` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@PredictionMarketPlugin.getYesTokensOutLsmr` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@PriceFeedPlugin.getPriceFeed` | legacy runtime | unverified | source parity only | LIVE-PYTH-PROOF |
-| `@PriceFeedPlugin.getPriceFeedScaled` | extended runtime | unsupported | source parity only | NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF |
+| `@PriceFeedPlugin.getPriceFeedScaled` | extended runtime | unverified | source parity only | NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF |
 | `@PumpFunPlugin.buyExactSolInWithMinimumOutput` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.getPumpBuyQuote` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.buyExactSolIn` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
@@ -244,7 +244,8 @@ It returns a positive `UInt` equal to `floor(USD price * 10^decimals)`; `decimal
 Use 6 for micro-USD, declare the named-query return type as `UInt`, and keep every arithmetic operand in compatible units.
 The source implementation rejects invalid precision, non-positive oracle prices, zero after rounding, and results above u64; it preserves the oracle's account verification and freshness checks.
 It accepts no quote feed and leaves the legacy decimal-string and base/quote-ratio API unchanged.
-The recorded devnet and mainnet-beta runtimes are still v7, so execution of the scaled call in those programs is refused until runtime v8 is available.
+Both the devnet and mainnet-beta programs meet the runtime-v8 requirement; an older v7 program still refuses the scaled call.
+The hosted services and app rollout remain pending; the program upgrade alone does not enable this API for hosted apps.
 Named-query `queryArgs` populate staged `@newData` for the query expression.
 On a Solana app, a named query that calls no plugin runs in the worker runtime on any path.
 A plugin-calling query on an `onchain: true` path runs in the program against the collection's uploaded rules.

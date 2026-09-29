@@ -22,10 +22,10 @@ test('price discovery preserves decimal strings and explicitly gates scaled USD 
   const scaled = allFunctions.find(fn => fn.callName === '@PriceFeedPlugin.getPriceFeedScaled')
   assert.equal(scaled.returnType, 'uint')
   assert.deepEqual(scaled.args.map(arg => [arg.name, arg.optional]), [['feedId', false], ['decimals', false]])
-  assert.equal(scaled.status.support, 'unsupported')
+  assert.equal(scaled.status.support, 'unverified')
   assert.match(scaled.status.markers, /NEEDS-RUNTIME-V8/)
   const page = readFileSync(path.join(root, 'bounded-onchain/docs/plugins/PriceFeedPlugin.md'), 'utf8')
-  for (const boundary of ['exactly two arguments', 'precision from 0 through 18', '119809589', 'deployments remain v7', 'rounding to zero', 'u64 overflow', "cannot execute in either cluster's program", 'independent of its deployed runtime version', 'even when its collection declares `onchain: false`']) {
+  for (const boundary of ['exactly two arguments', 'precision from 0 through 18', '119809589', 'devnet and mainnet-beta programs run runtime v8', '505377312 and 451516304', 'rollout remain pending', 'rounding to zero', 'u64 overflow', 'independent of its deployed runtime version', 'even when its collection declares `onchain: false`']) {
     assert.ok(page.includes(boundary), `missing price boundary: ${boundary}`)
   }
 })

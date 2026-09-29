@@ -266,7 +266,7 @@ if (!solanaInventory) {
     counts[row.support] = (counts[row.support] ?? 0) + 1
     return counts
   }, {})
-  for (const [state, count] of Object.entries({ unverified: 132, unsupported: 33, blocked: 0 })) {
+  for (const [state, count] of Object.entries({ unverified: 133, unsupported: 32, blocked: 0 })) {
     // `supportCounts` is reduced from {} and only gains keys for states that occur,
     // so a legitimately-zero state is `undefined` here and a strict !== 0 would fire.
     if ((supportCounts[state] ?? 0) !== count) {
@@ -323,7 +323,7 @@ for (const expected of [
   '| `@Solana.invokeAttested` | extended disabled | unsupported | not applicable | DISABLED |',
   '`@TokenPlugin.USDC` is mainnet-only',
   '`@PriceFeedPlugin.getPriceFeed` returns a decimal `String`',
-  '| `@PriceFeedPlugin.getPriceFeedScaled` | extended runtime | unsupported | source parity only | NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF |',
+  '| `@PriceFeedPlugin.getPriceFeedScaled` | extended runtime | unverified | source parity only | NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF |',
   'Anonymous chain-query execution is admitted for identity-independent queries',
 ]) {
   if (!solanaCapabilityStatus.includes(expected)) {
