@@ -108,12 +108,11 @@ editing base.
 
 ## Removed legacy surface (do not suggest these)
 
-The remote-edit era CLI surface is gone: `bounded edit`, `bounded dev`, the
+The remote-edit era CLI surface is gone: `bounded dev`, `bounded dashboard`, the
 localhost dashboard daemon and its `/apps/:appId/propose|validate|deploy` API,
 and the `bounded live-edit` command group (`register`/`validate`/`deploy`, the
-`liveEdit.artifacts`/`artifactPush` knobs). The current `bounded dashboard`
-command is only a hosted-dashboard browser launcher; it does not start a local
-daemon. A `liveEdit` block in an old `bounded.json` is ignored with a
+`liveEdit.artifacts`/`artifactPush` knobs). `bounded edit "<prompt>"` is the live
+prompt-build command. A `liveEdit` block in an old `bounded.json` is ignored with a
 deprecation notice; `liveEdit.artifactPush: true` is honored as `sourcePush:
 true`. Editing happens in your working tree with your own tools; deploying and
 source sync are the only cloud writes.

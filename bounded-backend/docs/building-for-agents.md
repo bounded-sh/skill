@@ -124,7 +124,7 @@ write). One atomic batch is not a TOCTOU race; a sequence of `set`s is.
   Its optional stable `conflictKind` is `document_epoch`, `rule_clock`, or `rule_read_authority`; every value means that nothing committed.
   Reload exact state and retry the idempotent operation, never classify it as a cap hit.
   `403` means the rule denies the current actor, action, or state: inspect the rule or trace and wait only when the rule is intentionally time-dependent.
-  Denied reads return `200` with empty data; verify read-denial cases with an identity you know is permitted instead of waiting for a read `403`.
+  Denied reads return `200` with empty data. Prove a denied read with a second real session: `get()` inside a policy-test `expect` reads sandbox state with read rules skipped ([policy tests](policy-tests.md)).
   See [data-plane.md](data-plane.md) for the complete retry contract.
 - **`rollingSum` collections are window-live append-only; `windowSum` event
   collections are fully append-only.** Write each event with a fresh id and

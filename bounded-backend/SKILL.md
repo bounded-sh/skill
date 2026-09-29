@@ -91,7 +91,7 @@ term.
 ## Rules Of Thumb
 
 - Use `@user.id` for normal ownership and membership checks; `@user.address` only for wallet/onchain semantics.
-- Denied reads return empty `200` responses. Test read denial with a different permitted identity, not by waiting for a read `403`.
+- Denied reads return empty `200` responses. `get()` inside a policy-test `expect` reads sandbox state with read rules skipped, so prove a denied read with a second real session. Write and delete denials stay on `shouldFail`.
 - Use `conserve` for fixed totals, `rollingSum` for caps over time, and `flowBound` for cumulative per-partition outflow ≤ inflow; use one atomic `set-many` when correctness spans multiple writes.
 - When one write is invalid without companion writes, declare `requiresInBatch` so a hostile client cannot submit only the individually valid subset.
 - Put provider API keys in Bounded secrets, not frontend code.
