@@ -16,6 +16,20 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const catalog = JSON.parse(readFileSync(path.join(root, 'bounded-onchain/data/plugin-catalog.json'), 'utf8'))
 const allFunctions = catalog.namespaces.flatMap((ns) => ns.functions)
 
+test('price discovery preserves decimal strings and explicitly gates scaled USD UInt on runtime v8', () => {
+  const legacy = allFunctions.find(fn => fn.callName === '@PriceFeedPlugin.getPriceFeed')
+  assert.equal(legacy.returnType, 'string')
+  const scaled = allFunctions.find(fn => fn.callName === '@PriceFeedPlugin.getPriceFeedScaled')
+  assert.equal(scaled.returnType, 'uint')
+  assert.deepEqual(scaled.args.map(arg => [arg.name, arg.optional]), [['feedId', false], ['decimals', false]])
+  assert.equal(scaled.status.support, 'unsupported')
+  assert.match(scaled.status.markers, /NEEDS-RUNTIME-V8/)
+  const page = readFileSync(path.join(root, 'bounded-onchain/docs/plugins/PriceFeedPlugin.md'), 'utf8')
+  for (const boundary of ['exactly two arguments', 'precision from 0 through 18', '119809589', 'deployments remain v7', 'rounding to zero', 'u64 overflow', "cannot execute in either cluster's program", 'independent of its deployed runtime version', 'even when its collection declares `onchain: false`']) {
+    assert.ok(page.includes(boundary), `missing price boundary: ${boundary}`)
+  }
+})
+
 test('generated pages match the snapshot byte for byte', () => {
   const result = spawnSync(process.execPath, [path.join(root, 'scripts/generate-plugin-catalog.mjs'), '--check'], { encoding: 'utf8' })
   assert.equal(result.status, 0, `generator --check failed:\n${result.stdout}${result.stderr}`)

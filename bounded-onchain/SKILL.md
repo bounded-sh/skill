@@ -50,6 +50,7 @@ Read only the row matching the current task or term.
 | Trading, Phoenix perps, DEX swaps, server-signed execution | [onchain trading](docs/onchain-trading.md) |
 | Escrow custody, `source` argument, per-entity funds, named PDA accounts, `@AccountPlugin.createAccount` | [named escrow accounts](docs/onchain-trading.md#named-escrow-accounts---the-third-custody-model-read-this-before-pooling-funds) |
 | Rule arithmetic overflow, int64, division-first pins, large-magnitude comparisons | [rule arithmetic](docs/policy-primitives.md#rule-arithmetic-is-bounded-on-chain---write-pins-division-first) |
+| Pyth USD prices, decimal price strings, `getPriceFeedScaled`, micro-USD, integer price arithmetic | [price-feed units and runtime availability](docs/plugins/PriceFeedPlugin.md#price-units-and-integer-rules) |
 | Randomness, VRF, raffle/gacha/shuffle, `@OraclePlugin`, `requestRandomness`, `getRandomNumber`, `isRevealPath` | [randomness](docs/randomness.md) |
 | Meteora token launch, DBC, anti-snipe fee decay, DAMM v2, `createMeteoraConfig`, `createMeteoraVirtualPool`, `claimDammV2PoolFees`, `withdrawLeftover` | [Meteora launch](docs/meteora-token-launch.md) |
 | Pump.fun, PumpSwap, `@PumpFunPlugin`, `createToken`/`createTokenV2`, `buyExactSolIn`, creator fees, fee sharing, `updateShareholders`, `distributeCreatorFees`, `pumpswapDeposit`/`pumpswapWithdraw`, argument names/units | [Pump.fun reference](docs/pump-fun.md) |

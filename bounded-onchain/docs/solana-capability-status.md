@@ -8,7 +8,7 @@ versa. Do not read a devnet row as a mainnet guarantee.
 
 This is the canonical public classification of Bounded Solana functions for devnet.
 It is a source-derived snapshot, not a claim that every discovered function works on a live cluster.
-The catalog contains 157 individually classified functions.
+The catalog contains 165 individually classified functions.
 
 ## Read the three states independently
 
@@ -19,11 +19,12 @@ The catalog contains 157 individually classified functions.
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
 The current Bounded Solana program is recorded as **runtime v7**, live on both devnet and mainnet-beta since 2026-09-15.
-The rows below were classified against the runtime-v4 minimum and have not been reclassified, which is safe because v7 is a superset: nothing in this catalog is gated above v4 except the rows tagged `NEEDS-RUNTIME-V6` or `NEEDS-RUNTIME-V7`, and both clusters meet those, so no row's support state changed.
+Legacy rows were classified against the runtime-v4 minimum; both clusters also meet the `NEEDS-RUNTIME-V6` and `NEEDS-RUNTIME-V7` requirements.
+The new `NEEDS-RUNTIME-V8` scaled-price function exists in source but cannot execute in the recorded v7 Solana programs.
 Runtime v7 establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or usable.
 
 No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 125 `unverified`, 32 `unsupported`, and 0 `blocked`.
+The current totals are 132 `unverified`, 33 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -33,6 +34,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-PENDING` | Source is present, but a retained devnet acceptance run is still required. |
 | `LIVE-ORAO-PROOF` | ORAO request, fulfillment, reveal, and query still require retained live proof. |
 | `LIVE-PYTH-PROOF` | The Pyth read still requires retained live proof with freshness enforcement. |
+| `NEEDS-RUNTIME-V8` | The scaled integer USD price function needs runtime v8 to execute in the Solana program. The recorded devnet and mainnet-beta deployments remain v7, so source availability does not make this function callable in those programs. |
 | `LIVE-SAFE-CPI-PROOF` | A descriptor-backed safe CPI still requires retained live proof. |
 | `SAFE-TARGET-ONLY` | Generic invoke may be claimed only for an explicitly modeled safe program and account flow. |
 | `LIVE-PUMP-PROOF` | Pump.fun or PumpSwap stays unverified until live proof exists. |
@@ -178,6 +180,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@PredictionMarketPlugin.getYesTokenOutAmm` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@PredictionMarketPlugin.getYesTokensOutLsmr` | legacy runtime | unverified | source parity only | LIVE-PENDING |
 | `@PriceFeedPlugin.getPriceFeed` | legacy runtime | unverified | source parity only | LIVE-PYTH-PROOF |
+| `@PriceFeedPlugin.getPriceFeedScaled` | extended runtime | unsupported | source parity only | NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF |
 | `@PumpFunPlugin.buyExactSolInWithMinimumOutput` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.getPumpBuyQuote` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
 | `@PumpFunPlugin.buyExactSolIn` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |
@@ -236,8 +239,19 @@ Devnet token acceptance must create and use an app-owned classic SPL or Token-20
 `@PriceFeedPlugin.getPriceFeed` returns a decimal `String` from the deployed runtime.
 Do not declare it as `Float` or document it as a JavaScript number.
 It remains unverified on devnet until a retained Pyth read proves the string value and freshness behavior.
+`@PriceFeedPlugin.getPriceFeedScaled(feedId, decimals)` is the separate integer USD-price API for runtime v8 and later.
+It returns a positive `UInt` equal to `floor(USD price * 10^decimals)`; `decimals` must be an integer from 0 through 18.
+Use 6 for micro-USD, declare the named-query return type as `UInt`, and keep every arithmetic operand in compatible units.
+The source implementation rejects invalid precision, non-positive oracle prices, zero after rounding, and results above u64; it preserves the oracle's account verification and freshness checks.
+It accepts no quote feed and leaves the legacy decimal-string and base/quote-ratio API unchanged.
+The recorded devnet and mainnet-beta runtimes are still v7, so execution of the scaled call in those programs is refused until runtime v8 is available.
 Named-query `queryArgs` populate staged `@newData` for the query expression.
-On a Solana app, a named query that calls no plugin runs in the runtime on any path. A plugin-calling query on an `onchain: true` path runs in the program against the collection's uploaded rules. On an `onchain: false` path it runs whole in the program only when it calls only chain-capable plugins, reads no offchain documents, and its path's read rule is document-independent; otherwise it runs in the runtime, which resolves each chain read in the program.
+On a Solana app, a named query that calls no plugin runs in the worker runtime on any path.
+A plugin-calling query on an `onchain: true` path runs in the program against the collection's uploaded rules.
+On an `onchain: false` path it runs whole in the program only when it calls only chain-capable plugins, reads no offchain documents, and its path's read rule is document-independent; otherwise it runs in the worker runtime.
+A whole query routed to the program requires the runtime version of every function it calls, including v8 for the scaled price, even on an `onchain: false` path.
+Worker evaluation normally resolves chain reads in the program, but both `PriceFeedPlugin` price APIs instead read verified sponsored oracle account bytes directly through the platform RPC.
+That direct price read retains account validation and freshness checks and is independent of the deployed program version.
 Anonymous chain-query execution is admitted for identity-independent queries whose owning path's read rule authorizes the caller; a query reading `@user.address`/`@user.evmAddress` requires that identity, and the anonymous surface is the browser SDK rather than the CLI.
 On Solana mainnet a signed-out chain query currently fails, so require a signed-in wallet there until the platform's query payer fix ships.
 

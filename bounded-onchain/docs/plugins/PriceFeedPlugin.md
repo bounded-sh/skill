@@ -11,6 +11,34 @@ Check every function's row in [solana-capability-status.md](../solana-capability
 
 Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
 
+## Price units and integer rules
+
+`getPriceFeed` returns a decimal `String` in dollars, such as `"119.80958948"`, or a decimal base/quote ratio when a second feed is supplied.
+Use `String` as the named-query return type.
+Do not pass this result into integer rule arithmetic or compare it directly to an integer: a numeric-looking string is not an integer price.
+
+`getPriceFeedScaled(feedId, decimals)` is a separate USD-only integer API requiring runtime v8 when executed in the Solana program.
+The recorded devnet and mainnet-beta deployments remain v7; this source function cannot execute in either cluster's program until its runtime requirement is met.
+Pass a `@PriceFeedPlugin.<SYMBOL>` constant or a 64-character Pyth feed ID, then an integer precision from 0 through 18.
+It returns `floor(USD price * 10^decimals)` as a positive `UInt` using exact checked arithmetic.
+At precision 6, the example price becomes `119809589` micro-USD per SOL.
+Invalid precision, non-positive prices, rounding to zero, u64 overflow, and invalid or stale oracle accounts fail closed.
+This call has exactly two arguments and does not accept a quote feed.
+
+When evaluated directly in the worker, both price APIs read verified sponsored oracle account bytes through the platform RPC.
+That price read does not execute the Bounded program and is independent of its deployed runtime version.
+A whole query routed to the Solana program still requires runtime v8 for the scaled call, even when its collection declares `onchain: false`.
+
+For a runtime-v8 policy that retains a $5 SOL cushion, use compatible micro-USD and lamport units:
+
+```text
+@MathPlugin.mulDivCeil(5000000, 1000000000, @PriceFeedPlugin.getPriceFeedScaled(@PriceFeedPlugin.SOL, 6))
+```
+
+The result is the required lamport balance after the deposit.
+Flooring the price and rounding the required lamports up keeps the cushion conservative.
+The frontend must use the same scale and rounding when deciding how much SOL is available to deposit.
+
 ## Read-only
 
 ### `PriceFeedPlugin.getPriceFeed`
@@ -27,6 +55,21 @@ Argument descriptions and signer markers below are copied from the existing mono
 |---|---|---|---|---|
 | `baseFeedId` | string | yes | - | The base asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.SOL) or a 64-character hex Pyth feed id. A plain symbol string like 'SOL' is not a valid feed id. |
 | `quoteFeedId` | string | no | - | Optional quote asset feed id: a @PriceFeedPlugin.<SYMBOL> variable (e.g., @PriceFeedPlugin.BTC) or a 64-character hex Pyth feed id. Defaults to USD if not provided. |
+
+### `PriceFeedPlugin.getPriceFeedScaled`
+
+```
+@PriceFeedPlugin.getPriceFeedScaled(feedId, decimals) - returns the USD price as a positive UInt, floor(price * 10^decimals), using exact checked integer arithmetic. decimals must be 0..18; use 6 for micro-USD. Pass a @PriceFeedPlugin.<SYMBOL> variable or a 64-character Pyth feed id. Reads the same fully verified, fresh sponsored Pyth account as getPriceFeed; rejects non-positive prices, precision underflow to zero, and u64 overflow. USD only; use the unchanged getPriceFeed for decimal-string prices and base/quote ratios. Requires onchain runtime v8, which must be deployed on the target cluster first.
+```
+
+- Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
+- Returns: `uint`
+- Status: **unsupported** (source parity only); markers: NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `feedId` | string | yes | - | The USD feed id: a @PriceFeedPlugin.<SYMBOL> variable or a 64-character hex Pyth feed id, optionally prefixed with 0x. |
+| `decimals` | uint | yes | - | Integer precision from 0 to 18. The positive USD price is multiplied by 10^decimals and rounded down. 6 returns integer micro-USD. |
 
 ## Built-in values
 

@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "d5d6af724e29531ac34dd347d35f08839d9236a4",
+  "monorepoCommit": "544790357e01a71e5bc4418c2fbd83d41e6b1f2a",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -6703,6 +6703,50 @@
       "support": "unverified",
       "verification": "source parity only",
       "markers": "LIVE-PYTH-PROOF"
+     }
+    },
+    {
+     "name": "getPriceFeedScaled",
+     "callName": "@PriceFeedPlugin.getPriceFeedScaled",
+     "category": "readOnly",
+     "signature": "getPriceFeedScaled(string, uint)",
+     "usage": "@PriceFeedPlugin.getPriceFeedScaled(feedId, decimals) - returns the USD price as a positive UInt, floor(price * 10^decimals), using exact checked integer arithmetic. decimals must be 0..18; use 6 for micro-USD. Pass a @PriceFeedPlugin.<SYMBOL> variable or a 64-character Pyth feed id. Reads the same fully verified, fresh sponsored Pyth account as getPriceFeed; rejects non-positive prices, precision underflow to zero, and u64 overflow. USD only; use the unchanged getPriceFeed for decimal-string prices and base/quote ratios. Requires onchain runtime v8, which must be deployed on the target cluster first.",
+     "returnType": "uint",
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "feedId",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "The USD feed id: a @PriceFeedPlugin.<SYMBOL> variable or a 64-character hex Pyth feed id, optionally prefixed with 0x.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "decimals",
+       "type": "uint",
+       "optional": false,
+       "signer": null,
+       "description": "Integer precision from 0 to 18. The positive USD price is multiplied by 10^decimals and rounded down. 6 returns integer micro-USD.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.rules",
+      "onchain.queries",
+      "onchain.hooks",
+      "offchain.rules",
+      "offchain.queries"
+     ],
+     "status": {
+      "lane": "extended runtime",
+      "support": "unsupported",
+      "verification": "source parity only",
+      "markers": "NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF"
      }
     }
    ]
