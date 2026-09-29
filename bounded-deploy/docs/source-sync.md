@@ -29,7 +29,7 @@ bounded site deploy ./dist --no-source     # skip it this once
 ```
 
 The flag beats the config. With no config and no flag, deploys do not push
-source. A failed source push after a successful deploy does not fail the deploy: the site and rules are live, but the warning says that Bounded then holds no current source for the app, so it cannot be handed to an OpenApps agent and Open has nothing to publish until a deploy with source lands.
+source. A failed source push after a successful deploy does not fail the deploy: the site and rules are live, but the cloud copy of the source is not this deploy's. The warning says so: an OpenApps agent would work from the last synced snapshot, Open would publish it, and an app that has never synced cannot be handed to an agent at all.
 Fix the cause it names and deploy again (`--with-source` forces one sync).
 
 ## Canonical sites also establish the widget editing base
