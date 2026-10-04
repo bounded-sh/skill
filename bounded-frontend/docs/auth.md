@@ -245,17 +245,15 @@ On a capable Android browser (https required) the wallet lane also registers Sol
 It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
 
 **Install the adapter to use it (0.0.72+).**
-`@solana-mobile/wallet-standard-mobile` is an OPTIONAL PEER dependency of `@bounded-sh/client`, so it is not installed for you:
+`@solana-mobile/wallet-standard-mobile` is an optional peer of `@bounded-sh/client`: install it yourself, with `legacy-peer-deps=true` in the app's `.npmrc` first (its protocol package names `react-native` as a required peer; without that line npm installs React Native into a web app and `npm ci` refuses a lockfile that leaves it out).
 
 ```sh
 npm install @solana-mobile/wallet-standard-mobile
 ```
 
-It is not a hard dependency because that one edge pulls React Native and the metro toolchain into every install, including web-only apps that will never see a phone wallet.
-The SDK loads it lazily, on the one path that registers the phone's wallet, so an app that never offers a mobile wallet never pays for it.
-This applies to a plain web app too, not just React Native: the mobile lane runs in the Android browser.
-Without it the phone wallet simply does not register, and a wallet flow that would have used it throws `WalletConfigError` naming the package.
-Every other wallet, and the whole rest of the wallet lane, is unaffected.
+Keep it installed.
+A phone browser never injects wallet apps (Phantom, Solflare, Backpack): without the adapter no wallet appears on Android, a wallet-only app shows a card with nothing to tap, and the console says why (`[Bounded] Solana Mobile wallet registration failed`).
+Do not pre-check `window.solana` or Wallet Standard yourself before opening the widget: the mobile wallet registers when the widget prepares the lane, so such a check refuses phones that would have worked.
 
 **Building your own wallet button?** Await `ensureWalletLoginReady()` before you enable it (after `init()`).
 It resolves config, loads the wallet-login chunk and registers the mobile wallet; doing that work after the tap puts a network fetch between the gesture and the wallet handoff, which is exactly what costs the activation.
