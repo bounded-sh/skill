@@ -4,9 +4,9 @@
 [functions.md](functions.md) so a function that does not use it never loads it.
 Declaring, writing, invoking and deploying a function are in [functions.md](functions.md).
 
-`ctx.build` lets a function **originate AI app builds** — create a new app, edit
-this app, or fork an app it can read — through the unified Build control plane
-(the successor to `ctx.oapps`). Every build is funded, rate-limited, and governed
+`ctx.build` lets a function **originate AI app builds** - create a new app, edit
+this app, or fork an app it can read - through the unified Build control plane.
+Every build is funded, rate-limited, and governed
 by a named **build profile** in policy; the platform runs the AI build pipeline
 (execute → preview → gate → promote) and the function just submits and, if it
 wants, polls or cancels the runs it started.
