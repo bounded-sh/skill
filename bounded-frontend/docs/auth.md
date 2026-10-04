@@ -669,24 +669,22 @@ keeps advertising a wallet the server no longer accepts.
 > `false` for a caller with no session at all. Always lead with `@user.id != null`
 > (or `@user.address != null` inside an `onchain: true` collection).
 
-## Troubleshooting sign-in
+## Diagnosing a sign-in failure
 
-When someone reports that sign-in fails, get the exact message: each one has one cause.
-Check the SDK version first.
-Sign-in fixes ship in `@bounded-sh/client`, so compare `npm ls @bounded-sh/client` with `npm view @bounded-sh/client version`, and when the app is behind, update (`npm install @bounded-sh/client@latest`, `@bounded-sh/core` moves with it) and release.
-A wallet sign-in is one approval in the wallet; a "Connect" sheet followed by a failure means an SDK older than 0.0.113.
+Work from evidence to the code that produced it; do not guess from the symptom.
 
-| Message | Cause | Fix |
-|---|---|---|
-| `Sign in failed, no sign in result returned by wallet` (on a phone, after the wallet approved) | An SDK older than 0.0.113 connected before signing in, and the Solana Mobile adapter answered the sign-in from that cached connect. | Update the SDK and release. |
-| `This wallet cannot sign in to Bounded apps` | The wallet lacks `solana:signIn`. | Nothing in the app: the user needs a wallet that has it (Phantom, Solflare, Backpack, the Solana Mobile wallet). Never fall back to `signMessage`. |
-| `Invalid auth message: relying party not allowed for app` | The page's origin is not the app's: a preview built with the main app id, or a custom or preview host that is not registered. | Build with the preview's id; register a host with `bounded domains origins add https://<host> --app-id <id> --env <env>`. |
-| `Wallet login is not enabled for this app` | The policy lacks `"auth": { "wallets": true }`. | Add it and redeploy. |
-| `Invalid auth message: expired` or `issued in the future` | The device clock is off by more than a minute (a request is valid for five minutes). | Fix the clock; nothing in the app. |
-| `Invalid auth message: domain not allowed: <host>` | Something set the sign-in `domain` to another host (a custom provider, a proxy). | Leave `domain` unset; the wallet stamps the page host. |
-| `[Bounded] Solana Mobile wallet registration failed` (console) | `@solana-mobile/wallet-standard-mobile` is missing, or was installed without `legacy-peer-deps=true`. | Install it and keep the `.npmrc` line. |
-| `[Bounded] openBoundedWidget has no sign-in lane to show` (console) | No email or social method, and no wallet reachable (Android without the adapter). | Add a method, or install the adapter. |
-| `The connected Solana wallet account changed after login` | The wallet switched accounts after sign-in. | Sign in again; no code change. |
+1. Get the exact message and which layer raised it.
+   An `Invalid auth message: ...` or `... not enabled for this app` text is the issuer's HTTP response to `/session` (the network tab shows the body); anything else was thrown in the page by the SDK, the wallet, or the mobile adapter.
+   Read the console too: a `[Bounded]` warning names a configuration the SDK could not use.
+2. Find where that text comes from and read the path that reaches it.
+   The installed SDK is readable: `node_modules/@bounded-sh/client/dist/*.map` carry the sources in `sourcesContent`, and `@solana-mobile/*` ship plain ESM.
+   Search for the string, then read the function that throws it and the caller order above it.
+   The run card's "never `node_modules`" is about learning the API; for a defect, the installed code is the evidence.
+3. Decide whose defect it is before changing anything.
+   The app's (wrong app id in the build, a policy knob, a missing package, a configuration the SDK warned about): fix it in the app.
+   The SDK's or the wallet's: check whether the latest `@bounded-sh/client` already changed that path (`npm pack @bounded-sh/client@latest` and compare the sources), update and release when it did; when it did not, report the defect to the owner with the path you read, and never route around a sign-in or signing check.
+4. Say what you could not reproduce.
+   The sandbox browser has no wallet app, so a phone wallet handoff is reasoned from the code and the report, not replayed.
 
 ## Related
 
