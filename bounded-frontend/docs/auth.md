@@ -138,8 +138,9 @@ and sign in with it. Their **real wallet address becomes `@user.address`** (and
 renders the standard sign-in text for the page that asked (the SDK leaves the domain
 unset, so the wallet stamps the requesting origin's host, and the issuer refuses any
 other domain for that origin), signs it locally, and the session is
-minted by `wallet-auth.bounded.sh`. It rides the injected wallet provider — **no heavy
-wallet SDK, no React dependency, no popup**.
+minted by `wallet-auth.bounded.sh`. Connect and sign-in are one wallet step: the SDK
+never connects first, so the wallet shows a single sign-in approval. It rides the
+injected wallet provider — **no heavy wallet SDK, no React dependency, no popup**.
 
 **The wallet must implement the Wallet Standard `solana:signIn` feature.** That is
 what binds the signature to the page, so a phishing page cannot obtain a login
