@@ -40,7 +40,7 @@ Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain onl
 | `@user.id` | ownership, membership (universal principal) | offchain only |
 | `@user.address` | wallet semantics; the only principal in onchain rules | - |
 | `@user.email` / `@user.isAnonymous` | verified email; guest gate (`== false`, no unary `!`) | offchain only |
-| `@origin.kind` / `@origin.module` ... | platform-set call provenance (`'live'`, `'user'`) | offchain only |
+| `@origin.kind` / `@origin.module` ... | platform-set call provenance (`'live'`, `'function'`, `'sponsorship'`, `'user'`) | offchain only |
 | `@data.f` / `@newData.f` | stored vs incoming field | not in create / not in delete |
 | `@time.now` | server rule clock (seconds); pair with `serverTimestamp()` | - |
 | `$pathVar` | path template variable | - |

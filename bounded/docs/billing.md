@@ -94,6 +94,15 @@ A refused run is not a failed run: it is reported separately in analytics (`func
 A run's own datastore reads and writes are covered by that run's reservation, so a running function is never cut off mid-flight by a balance that reached zero while it was executing.
 The exact caller-facing codes are listed in [public functions](../../bounded-backend/docs/public-functions.md#refusals---nothing-ran-nothing-was-charged).
 
+## Sponsored on-chain writes
+
+An app on a Solana network can have Bounded's sponsor pay the network fee and rent of its users' writes.
+The app's credits are charged the sponsor's actual on-chain debit at cost plus 5%, held at the quote before the sponsor signs and settled when the transaction lands; a transaction that never lands is released.
+The setting is per app, owner-only: `PUT /app/<appId>/gas-sponsorship` with `{ "mode": "never" | "always" | "function", "function"?: "<name>", "receipt"?: "<name>" }`.
+In `function` mode the app's own function decides per write, and an optional receipt function receives every settled write; both contracts are in [functions.md](../../bounded-backend/docs/functions.md#gas-sponsorship-functions).
+Writes the sponsor cannot fund are refused with `402 sponsorship_refused` (nothing is signed, nothing is charged) or `503 sponsorship_unavailable` (retry).
+The hosted dashboard's Billing tab lists each settled sponsored write with its signature, fee and rent.
+
 ## Credit alerts
 
 The account's email receives three kinds of notice, each derived from the pool's real readings:

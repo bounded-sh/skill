@@ -115,7 +115,11 @@ or spoof it.
   **`'function'`** = a write made from inside a directly invoked Bounded function
   (`@origin.module` is the function name, `@origin.path` is `functions/<name>`),
   and **`'user'`** = a direct end-user/SDK write (the sentinel when neither claim
-  is present). `'scheduled'` and `'webhook'` are **reserved for future dispatch
+  is present), and **`'sponsorship'`** = the platform asking the app's gas
+  sponsorship decision function about one pending write, or delivering a settled
+  sponsorship receipt to the app's receipt function (`@origin.path` is the
+  written document's path; see [functions.md](functions.md#gas-sponsorship-functions)).
+  `'scheduled'` and `'webhook'` are **reserved for future dispatch
   paths** (not stamped yet - don't gate on them today; such a rule verifies but
   never matches at runtime).
 - **For a privileged action, allow-list the exact origin you mean.** Use the
