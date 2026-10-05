@@ -621,8 +621,10 @@ Answer exactly `{ sponsor: true, attribution: '<id>' }` to sponsor it, or
 `attribution` is a free string the app chooses (for example a tenant or
 sub-app id) and comes back on the receipt; the charge itself always lands on
 this app's credits.
-Gate the function with `"auth": "@origin.kind == 'sponsorship'"`; it has no
-caller, so `@user.*` is null.
+Give both functions `"auth": "false"`: the setting that names them is their
+authorization (the lane runs them as the system principal and never consults
+the rule, like a `queueCallable` job), so no caller can invoke them. Inside,
+`ctx.user` is null and `ctx.origin` is `{ kind: 'sponsorship', path }`.
 The decision costs no function run credits.
 
 When `receipt` names a second function, every settled sponsored write is
