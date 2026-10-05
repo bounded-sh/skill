@@ -17,8 +17,9 @@ skip to a workaround. The catalog tells you which rung you are on: every
    then author the code that calls `ctx.services.invoke("<slug>", args,
    { idempotencyKey })` under the app's `service:cap` grant. Route to
    **bounded-backend**, **bounded-frontend**, **bounded-onchain** for the
-   mechanics. An oApp runs on mainnet; see "oApps run on mainnet" in
-   [lifecycle.md](lifecycle.md#oapps-run-on-mainnet).
+   mechanics. An oApp runs on mainnet, `onchain: true` collections included;
+   see "oApps run on mainnet" in [lifecycle.md](lifecycle.md#oapps-run-on-mainnet)
+   for what moves real money there.
 2. **Callable through x402 second.** No native integration, but the
    counterparty prices itself with [x402](https://www.x402.org) (HTTP 402
    payment-required, machine-to-machine)? The catalog marks it `callable`, and

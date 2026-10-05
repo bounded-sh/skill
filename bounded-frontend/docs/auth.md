@@ -145,11 +145,11 @@ injected wallet provider — **no heavy wallet SDK, no React dependency, no popu
 **The wallet must implement the Wallet Standard `solana:signIn` feature.** That is
 what binds the signature to the page, so a phishing page cannot obtain a login
 signature for another site. Phantom, Solflare, Backpack, and the Solana Mobile
-wallet (Mobile Wallet Adapter 2.0 and later) do; a wallet that offers only plain
-message signing is refused with the message "This wallet cannot sign in to Bounded
-apps" instead of being downgraded. Browser guest accounts sign the same text with
-their device key; the CLI, the server SDK, and React Native keep the legacy challenge
-because they send no browser Origin.
+wallet (Mobile Wallet Adapter 2.0 and later) do; a wallet that offers only plain message signing is refused with the message "This wallet cannot sign in to Bounded apps" instead of being downgraded.
+The Bounded login widget offers only wallets with callable sign-in support, including its legacy injected-wallet fallback.
+When only unsupported wallets are detected, a wallet-only widget explains that those wallets cannot sign in; it does not claim no wallet was found.
+Support is determined by capabilities exposed to the page, not a wallet's display name.
+Browser guest accounts sign the same text with their device key; the CLI, the server SDK, and React Native keep the legacy challenge because they send no browser Origin.
 
 **Two knobs, not one.** `walletLogin` is the CLIENT opt-in; the issuer additionally refuses to mint an external-wallet session unless the app's policy allows it, so a deployed `"auth": { "wallets": true }` is a prerequisite (without it login fails with "wallet login is not enabled for this app").
 The browser origin matters too: SIWS binds to it, so a non-first-party host (a tunnel, a preview domain) must be registered with `bounded domains origins add https://<host> --app-id <id> --env <env>`.
@@ -235,9 +235,17 @@ if (wallet.publicKey?.toString() !== user.address) throw new Error("wallet switc
 const { signature } = await wallet.signAndSendTransaction(tx);
 ```
 
-Advanced: pass an object instead of `true` to point at a specific wallet or bridge a
-custom provider — `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
+Advanced: pass an object instead of `true` to point at a specific wallet or bridge a custom provider - `walletLogin: { getProvider: () => myWalletStandardProvider, network: "solana_mainnet" }`.
 `authMethod: "wallet"` is an alias for `"phantom"`, and so is `"mobile-wallet-adapter"`.
+
+For a custom wallet picker, import `supportsWalletSignIn` from `@bounded-sh/client` and offer a provider only when `supportsWalletSignIn(provider)` returns `true`.
+This synchronous check requires callable `connect` and `signIn` methods; it never connects, prompts, or signs, and it does not guarantee the wallet's chosen account can complete sign-in.
+A Wallet Standard adapter must expose `signIn` only when the underlying `solana:signIn.signIn` method is callable, and enforce the chosen account's capabilities when signing.
+Resolve the user's chosen provider once and pass that exact object through `loginWithWallet({ getProvider: () => selectedProvider })`.
+If an explicit `getProvider` returns `null` or `undefined`, login fails with "The selected Solana wallet is unavailable"; omit the getter when you want default discovery.
+Default discovery prefers the injected wallet, then uses the Wallet Standard registry when nothing is injected.
+An unsupported injected default is refused; the SDK never silently substitutes a different registry wallet, which would also change the identity signing later transactions.
+Use `openBoundedWidget({ wallet: true })` to let the user explicitly choose a compatible wallet.
 
 ### Solana Mobile (Seeker / Saga)
 

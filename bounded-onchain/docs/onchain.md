@@ -64,9 +64,9 @@ update.
 
 (One exception: an **OpenApps** app also runs on mainnet, but owned on-chain
 by an OpenApps custody key, so the platform can publish its policy updates
-without a person holding that key. An app its agent builds from scratch moves
-to mainnet under that key when its setup finishes, and an existing off-chain app
-you give to an agent moves with the agent's first release request; a mainnet
+without a person holding that key. An app its agent builds from scratch is
+created on mainnet under that key, and an existing off-chain app you give to an
+agent moves there with the agent's first release request; a mainnet
 app you give to an agent moves to it once, in one transaction your own wallet
 signs. See the **openapps** skill. Everything below is about the mainnet apps
 *you* create and keep.)

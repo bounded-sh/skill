@@ -91,7 +91,7 @@ Once the sale has started, `GET /public/oapps/<rootAppId>/opening` reports it: `
 ## oApps run on mainnet
 
 An oApp's app runs on Solana **mainnet** (`realtime_mainnet`), even when its policy has no onchain collections.
-You do not choose this and you do not pass `--protocol`: an app its agent builds from scratch moves to mainnet when its setup finishes, an existing off-chain app moves with the agent's first release request, and every release publishes there.
+You do not choose this and you do not pass `--protocol`: an app its agent builds from scratch is created on mainnet, an existing off-chain app moves there with the agent's first release request, and every release publishes there.
 
 - **The on-chain owner is an OpenApps custody key**, not your wallet and not the platform admin.
   That is what lets the platform publish the app's policy updates with no person holding the key that owns it.

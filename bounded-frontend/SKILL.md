@@ -29,7 +29,7 @@ Read only the row matching the current task or term.
 | Refresh timer, `setInterval`, polling, "keep it fresh", countdown, stale UI | [SDK reference](docs/sdk-reference.md#never-poll-a-collection) |
 | Build for React Native / mobile | [React Native guide](docs/building-for-react-native.md) |
 | App-user email OTP, OAuth, `openBoundedWidget`, unified login widget, default Turnkey auth | [app auth](docs/app-auth.md) |
-| Bring-your-own wallet login; `walletLogin`, `authMethod:'phantom'`, Phantom / Wallet-Standard | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) |
+| Bring-your-own wallet login; `walletLogin`, `authMethod:'phantom'`, `supportsWalletSignIn`, unsupported wallet / Wallet Standard | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) |
 | Wallet login lost on refresh, `getCurrentUser()` null after reload, `bounded_last_auth_method`, session restore method | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) - "Wallet sessions survive reloads" |
 | Guests, anonymous users, invite links, account upgrade | [anonymous accounts](docs/anonymous-accounts.md) |
 | Hosted frontend and app URLs | [frontend hosting](docs/frontend-hosting.md) |
