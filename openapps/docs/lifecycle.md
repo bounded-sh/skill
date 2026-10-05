@@ -56,13 +56,11 @@ the platform sets it.
 - Open can refuse with `mainnet_not_entitled`. That is checked against the oApp's own fuel account
   (`oapp:<rootAppId>`), not your personal plan, so "upgrade my account to Pro" is not the fix.
 
-**`onchain: true` collections are not Openable yet.** An oApp's mainnet app would execute them
-against real mainnet rather than the simulator, but the Open rail does not yet register those
-collections on the app's program account - so Open refuses the policy outright with
-`oapp_opening_onchain_policy_unsupported` rather than publishing an app the chain cannot serve.
-Everything else onchain still works: embedded wallets, payments, DEX/token plugin calls, and reads.
-If the request requires onchain state collections, explain that publication is blocked and offer a compliant alternative using the [capability ladder](capability-ladder.md#what-calling-it-out-looks-like).
-Continue independent work within the requested scope; do not bypass the Open restriction or silently replace the required feature.
+**`onchain: true` collections open.**
+Open registers them on the workload's program account before it publishes, so the opened app serves them on real mainnet rather than the simulator.
+The workload is a new app with its own id, so its onchain collections start empty: records your creator app holds stay under the creator app, and nothing migrates.
+The platform pays the app account, path accounts and policy transaction fees, while each document an end user writes to an onchain collection is paid by that user's wallet.
+Test onchain flows on poofnet first, because writes on the opened workload move real money.
 
 
 ## What Open publishes (read before you let go)

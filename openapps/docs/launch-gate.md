@@ -115,7 +115,6 @@ What the ritual still refuses:
 | every script the page runs ships inside the release: no `<script src="https://…">`, no `import("https://…")`, SRI or not | yes — install it as a dependency and let the build bundle it | `remote_script_forbidden` (preview) / `oapp_opening_remote_script_forbidden` (Open) |
 | every worker is a file in the release: no `?worker&inline`, no `new Worker(URL.createObjectURL(…))`, no `blob:`/`data:` worker | yes — `new Worker(new URL("./worker.ts", import.meta.url))`, Vite's default | `inline_worker_forbidden` (preview) / `oapp_opening_inline_worker_forbidden` (Open) |
 | a recorded site deployment must actually be found at Open | platform-checked | `clone_site_missing_expected` |
-| no `onchain: true` collection in the deployed policy | see "oApps are mainnet apps" in [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps) | `oapp_opening_onchain_policy_unsupported` |
 
 The refusal body carries the specific `rejections`, so read them rather than
 guessing.

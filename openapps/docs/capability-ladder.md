@@ -17,10 +17,9 @@ skip to a workaround. The catalog tells you which rung you are on: every
    then author the code that calls `ctx.services.invoke("<slug>", args,
    { idempotencyKey })` under the app's `service:cap` grant. Route to
    **bounded-backend**, **bounded-frontend**, **bounded-onchain** for the
-   mechanics. One exception for oApps: an `onchain: true` COLLECTION is not
-   Openable yet (`oapp_opening_onchain_policy_unsupported`) — see "oApps are
-   mainnet apps" in [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps).
-   Embedded wallets, payments, and plugin calls are unaffected.
+   mechanics. `onchain: true` collections open too; see "oApps are mainnet
+   apps" in [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps) for what
+   moves real money once the app is open.
 2. **Callable through x402 second.** No native integration, but the
    counterparty prices itself with [x402](https://www.x402.org) (HTTP 402
    payment-required, machine-to-machine)? The catalog marks it `callable`, and
