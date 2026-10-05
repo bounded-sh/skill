@@ -31,7 +31,7 @@ Details: [embedded wallets](../../bounded-onchain/docs/embedded-wallets.md).
 
 ## Field types
 
-Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain only), `Address`; suffixes `?` optional, `!` readonly-after-create, `!?` both. No arrays or objects - use sub-collections. No `Timestamp` - use `UInt` seconds. The runtime rejects any later write that changes a `!` field, so no update-rule clause is needed. Leading `_` names are reserved system fields. `fields` may be omitted, but then each field's type is inferred from the rules, so declare a field's type whenever rules compare it as more than one type - a fieldless collection whose rules compare one field to both a string and a number is refused at deploy and named.
+Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain only), `Address`; suffixes `?` optional, `!` readonly-after-create, `!?` both. No arrays or objects - use sub-collections. No `Timestamp` - use `UInt` seconds. The runtime rejects any later write that changes a `!` field, so no update-rule clause is needed. Reserved field names, refused at deploy: `id`, `pathId`, `absolutePath`, `relativePath` and every leading-`_` name (`_id`, `_createdAt`, ...). The document's own id is its path key (`$articleId`), never a field; name your own identifiers something else (`articleId`, `slug`, `number`). `fields` may be omitted, but then each field's type is inferred from the rules, so declare a field's type whenever rules compare it as more than one type - a fieldless collection whose rules compare one field to both a string and a number is refused at deploy and named.
 
 ## Rule variables
 
@@ -70,10 +70,11 @@ Exactly `String`, `Int`, `UInt`, `Bool` (never `Boolean`), `Float` (offchain onl
 
 `"onchain": true` requires `"read": "true"`; rules use `@user.address` only; no `Float`; cannot `get()` offchain collections; updates are patches - omit `!` fields from update payloads or the program rejects with `FieldReadOnly`. Real-network budgets and failure lookup: [onchain troubleshooting](../../bounded-onchain/docs/onchain-troubleshooting.md).
 
-## Five most common rejections
+## Most common rejections
 
 1. `Boolean` as a type (use `Bool`); `Number`/`Timestamp` (use `UInt`).
 2. A later write that changes a `!` field (the runtime rejects it; no update-rule clause helps or is needed).
 3. Mutating plugin call in `rules` or in `hooks.offchain` (belongs in `hooks.onchain`).
 4. Client-computed "now" compared against `@time.now` (use `serverTimestamp()`).
 5. `@user.id`, `@origin.*`, or `Float` inside an `onchain: true` collection.
+6. A field named `id` (or another reserved name above): rename it, the path key already identifies the document.
