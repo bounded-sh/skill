@@ -172,12 +172,11 @@ There is no `baseBuildRunId` API.
 After inspecting the candidate, read its `attestation.sourceSha256` with `ctx.build.get(runId)` and call `ctx.build.propose(runId, sourceSha256)`.
 This requires `edit` plus `view: "originated"` and can propose only a run originated by that function under its current authority.
 It starts the profile's existing review on the same frozen candidate; it does not rebuild, approve, or bypass publication checks.
-OpenApps uses `policy-review`: its unified governance proposal authorizes publication without a second Build approval gate.
 Repeated calls for that digest keep the original review clock.
 A moved production base, changed authority/protocol, changed digest, or expired preview refuses proposal.
 Integrate onto the current shipped source if the production base moved.
 Preview hosting must cover the review before publication can proceed.
-Build renews hosting for its gates; OpenApps Owned governance retains the preview through the proposal's captured review and execution deadline before acknowledging it.
+Build renews hosting for its gates.
 Renewing hosting for longer does not extend the proposal's approval window.
 Read `previewOnly`, `previewProposedAtMs`, `parkReason`, `previewExpiresAtMs`, and `targetProtocol` to distinguish candidate state and destination.
 
@@ -191,7 +190,7 @@ Controlled active Poofnet previews allow fabricated records through `ctx.apps.se
 For a small edit, use `ctx.build.edit` with `effort: "low"` within the profile's limits.
 Effort adjusts the budget within the selected Bind mode; it does not select `quick-edit`.
 A policy profile can explicitly select an edit mode with `bindMode.edit`.
-OpenApps steward and reusable preview edits use `repair-maintenance`; `quick-edit` is a separate lighter workflow for small changes when selected by policy.
+`quick-edit` is a separate lighter workflow for small changes when selected by policy.
 You can keep editing version B on the preview while exact version A is under live release review; approval of A never publishes B.
 
 `ctx.apps.create` defaults to a managed child under the calling app's control; `ownership: "invoking-user"` instead creates a project the invoking user owns.

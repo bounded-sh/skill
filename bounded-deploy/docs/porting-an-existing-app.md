@@ -128,5 +128,5 @@ rules refuse was never admissible under the new policy.
 - `bounded deploy` accepted the policy and `bounded tests run` passes.
 - `bounded site deploy` served the site; a denied write returns `403`, a
   denied read returns an empty `200`.
-- For an oApp: `bounded oapp preflight` is READY and `bounded oapp rehearse`
-  runs the app from zero data.
+- For an oApp: `bounded oapp preflight` is READY on the deployed app, and the
+  source is synced so its agent can work from it.

@@ -58,15 +58,18 @@ cannot be undone.
 
 A devnet app is owned on-chain by the Bounded platform admin, which is why the
 platform can sign its policy updates for you. A **mainnet** app you create is
-not: it is owned on-chain by the wallet that created it, that owner is written
-once and can never be reassigned, and only that wallet can authorize a policy
+not: it is owned on-chain by the wallet that created it, that owner can never
+be reassigned to another person, and only that wallet can authorize a policy
 update.
 
-(One exception, and you never create these yourself: an **oApp** root and
-workload are also mainnet apps, but the platform mints them owned by a
-Bounded-custodied key so it can co-sign their policy updates without a person
-holding that key. See the **openapps** skill. Everything below is about the
-mainnet apps *you* create.)
+(One exception: an **OpenApps** app also runs on mainnet, but owned on-chain
+by an OpenApps custody key, so the platform can publish its policy updates
+without a person holding that key. An app its agent builds from scratch moves
+to mainnet under that key when its setup finishes, and an existing off-chain app
+you give to an agent moves with the agent's first release request; a mainnet
+app you give to an agent moves to it once, in one transaction your own wallet
+signs. See the **openapps** skill. Everything below is about the mainnet apps
+*you* create and keep.)
 
 What follows from that:
 

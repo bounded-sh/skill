@@ -47,10 +47,15 @@ Rebuilding and signing a second transaction after an uncertain response can coll
 
 ## Managed OpenApps usage
 
-OpenApps supplies its sealed mint and fixed treasury policy binding to the generic Bounded collector.
-Its brain's `collect_token_fees` tool supplies a maximum Bounded credit spend.
+The OpenApps venue policy fixes the sealed mint, the fee-authority PDA that signs the withdrawal, and the app's treasury as the only destination.
+Collection opens once the app is Open (its token sale graduated) and its trading pool exists, for a token whose sealed launch selects `transfer-fee-v1`.
+From then on any signed-in wallet can create a collection batch, and the caller chooses no recipient, amount or credit payer.
 Collection needs no holder proposal because it only consolidates funds already owed to the fixed treasury.
-The credit payer still requires authenticated authorization; a permissionless onchain trigger does not authorize spending someone else's Bounded credits.
+
+The app's own agent collects with its `collect_token_fees` action, and names only a credit ceiling: the most the collection may charge the app's own Bounded credits, from 1 to 100,000,000 microUSD ($100).
+Bounded's collector finds the accounts holding the fees, sends the transactions, and charges what they cost to the app's credits, never more than that ceiling; a collection that would cost more collects and charges nothing (`token_fee_credit_ceiling_exceeded`).
+The action is refused with `token_fees_open_only` while the app is Owned or on sale.
+A collection through the generic Bounded collector always has an authenticated credit payer; a permissionless onchain trigger does not authorize spending someone else's Bounded credits.
 
 Bounded quotes measured transaction batches and applies a separately adjustable collection markup to raw gas plus declared provider and infrastructure work allowances.
 It does not charge a percentage of token value.

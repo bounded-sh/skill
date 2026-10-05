@@ -115,7 +115,7 @@ With an onchain `create` rule of `@newData.author == @user.address`, that write 
 denied** and its denial is recorded — the run only fails if a write that
 should have been denied unexpectedly succeeds.
 
-**The setup-twice gate** (oApp setup-function contract): show a `setup`
+**The setup-twice gate**: show a `setup`
 function is safe to re-run by invoking it twice around snapshots —
 
 ```json

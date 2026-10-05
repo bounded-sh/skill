@@ -66,7 +66,7 @@ bounded site deploy ./dist --app-id <id>
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it
   from the in-app Bounded widget's always-visible privacy toggle (cloud-backed;
   no local daemon required).
-  Completed-Open oApp workloads are the exception: Open publishes the exact workload app-id host, so re-privatizing is refused and the widget's privacy toggle does not exist on that governed face.
+  An OpenApps app on sale or Open is the exception: the platform holds it, so a privacy change is refused (`managed_app_mutation_forbidden`).
   The setting applies to every mapped static host that resolves to the app: vanity slug and active custom domains.
   API hosts are not gated.
   The private-site gate page itself tells owners and visitors how to make the app public.
@@ -148,18 +148,16 @@ visible: a `visibility: "hidden"` frozen into the pre-launch policy neither
 hides the widget nor suppresses the declined-write card there. The explicit
 `declineCard: false` opt-out stays honored on every face.
 
-## Public source page after completed Open
+## Public source page
 
-`/__bounded/source` is the public browser for an oApp's synchronized source
+`/__bounded/source` is the public browser for an app's synchronized source
 tree and change history. It serves the source revision the platform has synced (source rides the
 deploy). It does not reconstruct source from the hosted `dist` directory or
 read an unsynchronized local checkout.
 
-The oApp publication gate applies before any source is returned.
-A creator development app gets `404` on every public source route before Open completes.
-Completed Open publishes the governed workload site and source together at `https://<workloadAppId>.bounded.page`, even though the app has no oApps slug, listing, token, or running Gauntlet yet.
-Commence later adds those surfaces without changing the direct workload host's public source visibility.
-The venue page is `/a/<rootAppId>` before and after Commence (older `/l/` links redirect).
+A visibility gate applies before any source is returned, and a source that is not public gets `404` on every public source route.
+An ordinary app's owner publishes its source.
+An OpenApps app's source is public exactly when the app is public (its Public setting), and every app that opens is public.
 
 On a launched oApp the in-app widget also switches to a dedicated launched face instead of the owner console.
 That face is a compact mirror of the venue's own app overview: the app's identity (name, `Open` or `Owned`, fuel), the sale banner while the public sale is live, the Treasury and Operating burn tiles, the agent's status card, Raise funds, a review strip while a decision is in flight, recent agent activity, the venue's workspace links, the app's Boundaries, and its published source.
@@ -171,8 +169,8 @@ The launched face renders only in the venue's light Paper register: `openApps.wi
 Venue links are composed server-side from the launch record's venue, never guessed from the serving hostname, and a surface the venue does not publish gets no link.
 Writes are widget-initiated and venue-completed: a deposit, bid, vote, or veto opens the venue's own page as a top-level document, and the widget never performs a venue write from the app's origin.
 Owner-console actions are refused on launched apps with `launched_locked` /
-`oapp_launched` errors - changes ship only through the app's governed build
-lane on its venue.
+`oapp_launched` errors, and on an OpenApps app whose sale has started with
+`managed_app_mutation_forbidden` - changes ship only through its agent's releases.
 The refusal covers app settings, both slug routes (claiming a new label and
 releasing the current one), custom domains, `allowedOrigins`, collaborators,
 access requests, the proof-page toggle, widget-report status and deletion,
@@ -187,20 +185,19 @@ A launched oApp belongs to its venue, so a single-app transfer returns
 (`bounded transfer-apps`) skips launched apps and reports them back to you
 under `skippedLaunched` rather than moving them.
 An interactive deploy is refused even when the uploaded bytes are identical to
-what the app already serves: the deploy claims a canonical operation that ends
-the governed build lane, and identical bytes end it just as thoroughly.
+what the app already serves.
 That applies to the site lane and to `bounded/runtime/deploy` and
 `bounded/live/deploy` alike, and it does not depend on the size of the
 changeset - the manifest a deploy carries (entry, dependencies, allowed hosts,
 sandbox) is not part of that diff at all.
-A launched app's declared boundaries are frozen for the same reason: they are
+A launched app's declared boundaries are frozen too: they are
 what the app's public trust surface reports as its enforced rules.
 
-If the page says "Source is being prepared," the Open publication gate passed but the platform has no source manifest to show.
+If the page says "Source is being prepared," the source is public but the platform has no source manifest to show.
 Inspect the manifest response first:
 
 ```bash
-curl -i https://<workloadAppId>.bounded.page/__bounded/source/manifest.json
+curl -i https://<your app host>/__bounded/source/manifest.json
 ```
 
 Its status and error body distinguish a missing synchronized repository from a
@@ -224,8 +221,8 @@ rolled the site back. See
 [Cloud Source Sync](../../bounded-deploy/docs/source-sync.md#canonical-sites-also-establish-the-widget-editing-base).
 
 Download the published tree at `/__bounded/source.zip`.
-The archive also contains the published constitution and deployed policy at its root.
-It uses the same Open publication gate and fails instead of returning a partial archive.
+The archive also contains the deployed policy at its root.
+It uses the same visibility gate and fails instead of returning a partial archive.
 
 Frontend variants are optional preview branches:
 

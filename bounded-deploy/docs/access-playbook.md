@@ -188,8 +188,8 @@ What to do instead:
      the site with the three-step dance: ① deploy a policy with the boundary loosened
      (e.g. posture `"open"`, `ui: []`) via `bounded deploy` → ② `bounded site deploy
      <dist>` → ③ re-apply the locked boundaries block with another `bounded deploy`.
-   - **`amend: "none"`** — a one-way renouncement you may ENCOUNTER (the launch flow
-     sets it for apps whose rules were deliberately renounced). Gate G2 refuses any
+   - **`amend: "none"`** - a one-way renouncement you may ENCOUNTER (on apps whose
+     rules were deliberately renounced). Gate G2 refuses any
      change to the `boundaries`/`openApps` sections from anyone, owner included, and
      there is no unlock — treat it as operationally permanent. The recourse is a NEW
      app + repointing the slug/custom domain.

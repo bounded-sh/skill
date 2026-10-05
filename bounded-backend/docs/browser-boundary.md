@@ -13,8 +13,8 @@ Declare it and the platform compiles a Content-Security-Policy header and serves
 
 A host your functions call server-side has no business in the browser list, and a CDN your page loads fonts from has no business in the egress list.
 
-One exception to "the header is compiled from the declaration": on a **launched oApp host** (after Commence) the `script` list is not honored.
-Every launched page serves under `script-src 'self'; object-src 'none'; base-uri 'none'; worker-src 'self'` whatever the app declared, so scripts and workers must ship as files inside the frozen release; the other lists (`connect`, `img`, `font`, `style`, `embeddedBy`) compile exactly as declared.
+One exception to "the header is compiled from the declaration": on an **oApp's address once its token sale has started** the `script` list is not honored.
+Every page there serves under `script-src 'self'; object-src 'none'; base-uri 'none'; worker-src 'self'` whatever the app declared, so scripts and workers must ship as files inside the release; the other lists (`connect`, `img`, `font`, `style`, `embeddedBy`) compile exactly as declared.
 
 ## Shape
 
@@ -74,4 +74,4 @@ The deploy-time validator catches this first: a declaration whose compiled lengt
 An oApp's promise is that it can only do what it publicly declared, so both planes should be declared, not just the server one.
 `boundaries.egress` is where that promise is load-bearing and fail-closed; `boundaries.browser` is what stops a page from quietly beaconing somewhere the declaration never mentioned.
 
-See the [oApp launch-gate table](../../openapps/SKILL.md) for the server plane and the static checks applied before graduation.
+See the [oApp launch gate](../../openapps/docs/launch-gate.md) for the server plane and the checks applied before an app opens.

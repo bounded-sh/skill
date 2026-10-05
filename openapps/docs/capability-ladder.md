@@ -10,17 +10,15 @@ skip to a workaround. The catalog tells you which rung you are on: every
 `requestable`.
 
 1. **Native or live first.** Does the runtime provide it? `ctx.ai` (LLMs,
-   images, video — no keys), `ctx.email`, files, auth, collections, direct
+   images, video - no keys), `ctx.email`, files, auth, collections, direct
    crypto and provider payment rails, embedded wallets and DEX/token plugins,
    data/auth/realtime/files/functions. Or is it a **live** catalog action?
    `bounded services search "<need>"`, then `bounded services describe <slug>`,
    then author the code that calls `ctx.services.invoke("<slug>", args,
    { idempotencyKey })` under the app's `service:cap` grant. Route to
    **bounded-backend**, **bounded-frontend**, **bounded-onchain** for the
-   mechanics. One exception for oApps: an `onchain: true` COLLECTION is not
-   Openable yet (`oapp_opening_onchain_policy_unsupported`) — see "oApps are
-   mainnet apps" in [lifecycle.md](lifecycle.md#oapps-are-mainnet-apps).
-   Embedded wallets, payments, and plugin calls are unaffected.
+   mechanics. An oApp runs on mainnet; see "oApps run on mainnet" in
+   [lifecycle.md](lifecycle.md#oapps-run-on-mainnet).
 2. **Callable through x402 second.** No native integration, but the
    counterparty prices itself with [x402](https://www.x402.org) (HTTP 402
    payment-required, machine-to-machine)? The catalog marks it `callable`, and
@@ -32,16 +30,14 @@ skip to a workaround. The catalog tells you which rung you are on: every
    reviews it, and the Hub emails you when it is live; follow it with
    `bounded services status`. Then say so, plainly, BEFORE building around
    it, and continue the independent work within the requested scope. Do not quietly wire a
-   dependency that a person controls. A brain running an opened app climbs
-   the same ladder on its own (`search_capabilities`, `describe_capability`,
-   `request_capability`, `capability_request_status`), and a request that
-   later goes live reaches its next run through the observation lane.
+   dependency that a person controls. The app's own agent follows the same
+   ladder.
 
-Two grants make the ladder real for an opened app, and Open requires both in
-the creator policy's `boundaries.egress` allow list: `service:cap` (live
-catalog actions) and `service:x402` (the relay). `bounded oapp preflight`
-reports them as missing before Open refuses on them; the constitution's tools
-section says the same thing in prose.
+Two grants make the ladder real for an oApp, and the request to open requires
+both in a locked `boundaries.egress` entry of the app's policy: `service:cap`
+(live catalog actions) and `service:x402` (the relay). `bounded oapp preflight`
+reports them as missing before the request to open refuses on them
+(`oapp_opening_capability_grants_missing`).
 
 ### What "calling it out" looks like
 
@@ -50,8 +46,8 @@ When a requested capability fails the ladder, tell the user:
 - **What** can't be done and **which** dependency it would require
   (e.g. "live shipping rates need a carrier API we don't provide natively and
   that doesn't support x402").
-- **Why** the rule exists: as steward, Bounded must ensure no individual —
-  including you, the creator — holds a lever that can rug the app once the
+- **Why** the rule exists: as steward, Bounded must ensure no individual -
+  including you, the creator - holds a lever that can rug the app once the
   community owns it. A key in your name is exactly such a lever.
 - **The nearest compliant alternative** (a native service, an x402-priced
   competitor, a reduced feature, or a manual/off-app step).
@@ -63,16 +59,16 @@ Never "temporarily" add a user-held secret to an oApp.
 ### What counts as a forbidden dependency
 
 - API keys or tokens the creator obtained from a vendor (even via
-  `bounded secret set` — secrets are fine for private apps, not for oApps
+  `bounded secret set` - secrets are fine for private apps, not for oApps
   whose pitch is that no person is a dependency).
 - External databases, servers, cron boxes, webhooks, or oracles the creator
   (or any individual) operates.
 - Vendor accounts billed to a person (Stripe keys, RPC providers, mail
-  providers, etc.) — the Bounded-managed equivalents exist for a reason.
+  providers, etc.) - the Bounded-managed equivalents exist for a reason.
 - "Deploy hooks" or admin backdoors reachable only by the creator.
 
 Credential-free public endpoints are not a rug vector, but they still need to
-be declared egress and they are an availability risk — prefer native services,
+be declared egress and they are an availability risk - prefer native services,
 and mention the risk when you use one.
 
 ## The x402 relay (the escape hatch that keeps the rule honest)
@@ -92,7 +88,7 @@ reintroducing personal keys:
   wallet empty → all relay calls stop until admins top up (balance alerts +
   an admin-console panel watch it). Nothing overdrafts; apps freeze, they
   don't die.
-- **Trust surface unchanged:** the relay is steward infrastructure — the same
+- **Trust surface unchanged:** the relay is steward infrastructure - the same
   single trusted (and replaceable) party as the rest of the runtime. No third
   party gets a key to the app.
 
@@ -102,7 +98,7 @@ The relay is a standard services tool. From any hosted function:
 
 ```ts
 const res = await ctx.services.invoke("X402_FETCH", {
-  url: "https://api.vendor.com/v1/thing", // https only; auth headers are rejected — that's the point
+  url: "https://api.vendor.com/v1/thing", // https only; auth headers are rejected - that's the point
   method: "GET",                           // or POST + body (≤64KB)
   maxUsd: 0.25,                            // refuse to pay more than this per call (platform hard-cap applies)
 });
@@ -114,8 +110,8 @@ const res = await ctx.services.invoke("X402_FETCH", {
 ```
 
 Semantics to design around: the endpoint is probed unpaid first (non-402
-responses pass through for a flat routing fee); a 402 quoting Solana USDC —
-either the standard x402 `X-PAYMENT` dialect or Bounded's own intake dialect —
+responses pass through for a flat routing fee); a 402 quoting Solana USDC -
+either the standard x402 `X-PAYMENT` dialect or Bounded's own intake dialect -
 is authorized from the relay wallet and retried with proof; anything else is a
 call-out. A failure before signing, submission, or provider disclosure may
 return the reserved app charge immediately. After a transaction is submitted

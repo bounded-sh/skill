@@ -41,7 +41,7 @@ Read only the reference needed for the current task.
 | Source sync, `--with-source`, clone, pull | [docs/source-sync.md](docs/source-sync.md) |
 | Port an existing app (Supabase, Firebase, Express, Next, a key-holding backend) onto Bounded; decide what becomes rules, functions, schedules, or a capability | [docs/porting-an-existing-app.md](docs/porting-an-existing-app.md) |
 | Third-party API discovery, readiness, and requests: `bounded services search/describe/request/status` | [docs/cli-reference.md](docs/cli-reference.md) (Capabilities) |
-| Open dry run and rehearsal for an oApp: `bounded oapp preflight`, `bounded oapp rehearse` | [docs/cli-reference.md](docs/cli-reference.md) (Open Apps) |
+| The dry run of the checks an oApp must pass to open: `bounded oapp preflight` | [docs/cli-reference.md](docs/cli-reference.md) (Open Apps) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
 | Share, access, owner mismatch, `401`/`403` | [docs/access-playbook.md](docs/access-playbook.md) |
 | Delete an app permanently (browser-confirmed, owner only) | [docs/cli-reference.md](docs/cli-reference.md) (`apps delete`) |

@@ -107,7 +107,7 @@ and never re-runs the provider: a lost poll re-reads the same job.
 
 - **Contract:** `ctx.services.search(query, { limit? })`,
   `ctx.services.describe(toolkitOrToolSlug, { limit? })`, and
-  `ctx.services.invoke(toolSlug, args, { idempotencyKey: string; billingSlug?: string })`.
+  `ctx.services.invoke(toolSlug, args, { idempotencyKey: string })`.
   The required key is a 1–256-byte UTF-8 string. `args` must be an immutable
   plain finite JSON object when provided (the whole argument may be omitted): no
   `undefined` inside it, non-finite numbers, `BigInt`, sparse
@@ -122,8 +122,6 @@ and never re-runs the provider: a lost poll re-reads the same job.
   becomes permanent `503 service_invoke_outcome_unknown` and never calls the
   provider again.
   The provider billing entity is resolved server-side from the paying account and cannot be selected through an `entityId` option.
-  Optional `billingSlug` asserts a per-call payer backed by the app's `billingConsents/<slug>` record; the runtime validates consent and refuses an unsupported assertion.
-  Omit it for normal app-owner billing.
   Give each logical operation its own key - `weather:${args.id}:now:v1`, not
   `weather` - so one unit of work is one charge.
 - **A funding refusal is RETRYABLE with the same key.** A refusal that moved no
@@ -146,7 +144,7 @@ and never re-runs the provider: a lost poll re-reads the same job.
   `ctx.services.invoke` as one of its tools.
 - **Billing:** search/describe are catalog reads. Invoke is cost-bearing and
   bills the app owner's credit pool at the underlying service call cost plus
-  5%; for an oApp workload the payer is the app's own project pool. The same
+  5%; for an oApp the payer is the app's own project pool. The same
   fail-closed pool/cap rules as `ctx.ai` apply.
 - **Refunds:** tool/auth/admission failures happen before charge. After charge,
   confirmed non-OK transport/provider failures refund through their own

@@ -53,7 +53,6 @@ Rules:
 - The three `BOUNDED_*_PRINCIPAL_*` namespaces are platform-managed: two public-surface functions whose names differ only by case (`getUser` and `GETUSER`) would share one constant and are refused at deploy; a declared name in those namespaces that no function produces is a stale value from a withdrawn surface (dropped, and a rule still naming it then fails with `@const.X is not defined`) unless it is not even a well-formed principal, in which case it is refused. Author constants outside those namespaces may still start with `BOUNDED_`.
 - Local apps get the same treatment automatically: the local control plane derives from the local app id, so a local policy's `BOUNDED_TREASURY_PDA` is the local app's own treasury PDA.
   Policy-test fixtures may declare any `BOUNDED_*` value (the sandbox is the mock lane); real deploys recompute and reject a mismatch.
-- On graduation the treasury constant is frozen (`constants.BOUNDED_TREASURY_PDA` joins the lock), so a graduated app's revenue destination cannot be repointed by a later policy edit.
 
 ## defs — reusable rule fragments
 

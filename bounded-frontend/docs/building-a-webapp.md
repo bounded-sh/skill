@@ -209,8 +209,9 @@ bounded domains origins add http://localhost:5173 --app-id <id>
   GitHub OAuth. This is safe: only the owner can add origins, and plaintext
   `http` never authorizes a non-loopback host. Remove one any time with
   `bounded domains origins remove <origin> --app-id <id>`.
-- If the app has been **launched as an oApp**, its origin list is frozen
-  (`409 oapp_launched`) — register dev origins before launching.
+- Once an OpenApps app's token sale has started, its origin list is frozen
+  (`403 managed_app_mutation_forbidden`), so register dev origins before asking
+  to open.
 
 ## Shipping to mobile
 

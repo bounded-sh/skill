@@ -29,7 +29,7 @@ bounded site deploy ./dist --no-source     # skip it this once
 ```
 
 The flag beats the config. With no config and no flag, deploys do not push
-source. A failed source push after a successful deploy does not fail the deploy: the site and rules are live, but the cloud copy of the source is not this deploy's. The warning says so: an OpenApps agent would work from the last synced snapshot, Open would publish it, and an app that has never synced cannot be handed to an agent at all.
+source. A failed source push after a successful deploy does not fail the deploy: the site and rules are live, but the cloud copy of the source is not this deploy's. The warning says so: an OpenApps agent would work from the last synced snapshot, and an app that has never synced cannot be handed to an agent at all.
 Fix the cause it names and deploy again (`--with-source` forces one sync).
 
 ## Canonical sites also establish the widget editing base
@@ -98,9 +98,8 @@ editing base.
 ## What requires synced source
 
 - **Handing an existing app to its OpenApps agent** (Launch, "Use an existing app"). The agent's computer works from a clone of the synced source, so the venue refuses the handover with `user_app_source_not_synced` until a deploy with source lands, and a run on an app whose source is missing ends with `hermes_source_not_synced`.
-- **oApp Open.** Open reads the synced source and publishes that exact tree at `https://<workloadAppId>.bounded.page/__bounded/source` when the opening completes.
-  No synced source means Open cannot complete.
-  Commence later adds the oApps slug, listing, token, and Gauntlet without changing that source publication or the `/a/<rootAppId>` venue page.
+- **Asking to open an oApp.** The request to open reads the release the app serves, including its synced source revision, and is refused without one (`oapp_app_release_source_not_synced`).
+  An OpenApps app's source is public whenever the app is public, and every app that opens is public.
 - **`bounded clone` / `bounded pull`** - read the same repo (read-only
   tokens, `code:read` authority). Browser login is the default identity, and a
   cloned checkout keeps `account.keySource: web`; `--link` exists only for an

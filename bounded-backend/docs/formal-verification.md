@@ -85,7 +85,7 @@ Name a collection here when a conditional read is intentionally public for a sub
 
 Use exact declared collection paths, each once; do not list a literal `true` or `false` read.
 The runtime read rule still decides what is visible.
-The oApps Open step also reads this list as declared intent when it classifies a conditional read surface it cannot classify from the rule alone.
+An oApp's request to open also reads this list as declared intent when its privacy classification meets a conditional read surface it cannot classify from the rule alone.
 
 ### `proofs.attestations`
 

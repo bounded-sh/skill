@@ -1,62 +1,37 @@
-# Checklist before Open and Commence
+# Checklist before asking to open
 
-**What's in here:** the full pre-Open and pre-Commence checklist. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** the full checklist before the owner asks to open an app. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
-## Practical checklist before Open and Commence
+## Practical checklist before asking to open
 
-- The app uses the human owner's normal Bounded web account (`bounded init` opens login when needed; confirm with `bounded whoami`).
-  Open is owner-only and needs an email-backed account.
-  If this is an intentionally legacy key-owned app, use the advanced deploy account-recovery reference before Open rather than inventing a new owner.
-- Boundaries were written early and cover the app's money and state rules as
-  declared invariants, not ad-hoc checks. They are the trust artifact buyers
-  read alongside your source.
-- `bounded oapp preflight` is READY on the deployed app; every blocking finding
-  it names is fixed at the source, not worked around.
-- The creator policy's `boundaries.egress` allow list carries `service:cap` and
-  `service:x402`; Open refuses without both (`oapp_opening_capability_grants_missing`).
-- Every capability the app needs is native, a live catalog action, or callable
-  through x402; anything else was filed with `bounded services request` and the
-  app was built without it.
-- `policy.json` contains **no** rule, function, or egress that depends on a
-  user-held credential, and `bounded deploy` accepts it.
-- Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only — no fetches to
-  key-authenticated endpoints.
-- Every external egress is declared and either credential-free, native, or
-  relay-eligible.
-- Keep the creator site private (`sitePrivate`) while you build.
-  Do not flip it public yourself.
-  Completed Open publishes the separate governed workload at the exact workload app-id host.
-- Make source ride the deploy with `sourcePush: true` in `bounded.json` or `--with-source` on the last deploy.
-  After Open, verify the synchronized tree at `https://<workloadAppId>.bounded.page/__bounded/source`.
-- Handing an existing app to its OpenApps agent (Launch, "Use an existing app") needs that same synced source: the agent's computer works from a clone of it.
-  The venue refuses the handover with `user_app_source_not_synced` until a deploy with source lands, and a run on an app whose source is missing ends with `hermes_source_not_synced`; neither is fixed by retrying.
-- The slug is the name the app lives at on the venue (`openapps.xyz/a/<slug>`), so rename it before Commence if it is wrong.
-  Open already created the venue-owned root and workload; Commence claims the requested slug for that opening.
-- This app has NOT already commenced an oApp.
-  A creator app launches exactly once, so a second Open is refused with `oapp_creator_already_launched`; start a different app instead.
-- Save `/a/<rootAppId>` as the venue page (older `/l/` links redirect there).
-  Do not replace it with a slug-derived venue route after Commence.
-- The synced tree is the real, complete project and every `init({ appId })`
-  literal names this app (see "What shape the app can take").
-  If the app has a frontend, the deployed site was built from THIS tree.
-  A stale dist that no longer embeds the app id refuses at Open (`clone_app_id_not_rewritten`).
-- Every script the page runs ships inside the tree: dependencies come from npm and
-  the build bundles them.
-  A `<script src="https://…">` or a URL import refuses at Open (`remote_script_forbidden`),
-  and the launched host's `script-src 'self'` floor would refuse to load it anyway.
-- Every worker is a file: `new Worker(new URL("./worker.ts", import.meta.url))`, never
-  `?worker&inline` or a Blob or `data:` worker, which refuse at Open (`inline_worker_forbidden`)
-  and cannot start under the launched host's `worker-src 'self'`.
-- If the app has NO web frontend, the user knows its home page will be the
-  public repo view at the direct workload host, not a web app.
-- Running costs (AI spend, service calls, relayed calls + surcharge) are
-  sane against the app's expected build-fund inflow — out of budget means
-  frozen, and you should be able to say at what usage level that happens.
-- **No refresh timers in the frontend.** Collections are live, so poll loops buy
-  nothing and bill the app's own buckets for every open tab, forever. An oApp
-  has no creator standing by to tune an interval later, so a `setInterval` that
-  re-reads data is a permanent, unbounded drain on the build fund. Use
-  `useQuery`/`subscribe`; see
-  [never poll a collection](../../bounded-frontend/docs/sdk-reference.md#never-poll-a-collection).
-- Anything you had to rule out is in your handoff to the user, with the
-  reasoning, not silently dropped.
+- The app has its own agent and runs on mainnet under the OpenApps custody key: from the end of its setup when its agent built it, from the agent's first release when it already existed (`oapp_opening_mainnet_custody_required`).
+  An existing app handed to an agent needs synced source first (`user_app_source_not_synced`).
+- The person asking is the app's owner; nobody else can ask (`owner_required`).
+- The app is public: its page, its site, and its source (`oapp_opening_public_app_required`).
+- The split of sale proceeds is final: none, or sealed (`oapp_opening_proceeds_split_unsealed`).
+- The agent is on Automatic with its AI on (`oapp_opening_automatic_required`): once the sale starts nobody is left to start it.
+- The app never had a sale: an app has one, and a request after a failed sale is refused too (`oapp_opening_sale_exists`).
+- Boundaries were written early and cover the app's money and state rules as declared invariants, not ad-hoc checks.
+  They are the trust artifact buyers read alongside your source.
+- `bounded oapp preflight` is READY on the deployed app; every blocking finding it names is fixed at the source, not worked around.
+- The policy is marked `"oapp": true`, and its `boundaries.egress` carries `service:cap` and `service:x402` in a locked entry; the request to open refuses without both (`oapp_opening_capability_grants_missing`).
+- Every capability the app needs is native, a live catalog action, or callable through x402; anything else was filed with `bounded services request` and the app was built without it.
+- `policy.json` contains **no** rule, function, or egress that depends on a user-held credential, and `bounded deploy` accepts it.
+- Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only, with no fetches to key-authenticated endpoints.
+- Every external egress is declared and either credential-free, native, or relay-eligible.
+- Source rides the deploy (`sourcePush: true` in `bounded.json`), and the synced tree is the real, complete project, including the policy file its `bounded.json` names.
+- The app serves a site (`oapp_app_release_site_missing` otherwise), built from THIS tree and reproducible from it: byte-identical source files, or a build the source declares (`oapp_opening_dist_not_reproducible` otherwise).
+  Every `init({ appId })` literal names this app.
+- Every script the page runs ships inside the tree: dependencies come from npm and the build bundles them.
+  A `<script src="https://…">` or a URL import fails the Gauntlet's dependency audit during the sale (`dependency_remote_script`, `dependency_remote_module_import`), and the app's `script-src 'self'` floor refuses to load it anyway.
+- Every worker is a file: `new Worker(new URL("./worker.ts", import.meta.url))`, never `?worker&inline` or a Blob or `data:` worker, which fail the same audit (`dependency_inline_worker`) and cannot start under `worker-src 'self'`.
+- The request names the slug the app already serves (`oapp_opening_slug_mismatch`): the app keeps its address when it opens.
+- The constitution's seven sections say what the agent works toward and how, because once the app is Open only its holders can change them.
+- The owner knows what the sale changes: from the moment an operator starts it, the platform holds the app, nobody but its agent can change it, and only a repair the Gauntlet asked for can ship until the sale ends.
+  A graduated sale makes the app Open for good; a failed one hands it back.
+- Leave the app as it is while the request waits: a change to the app or to the agent's AI settings means the owner asks again before the sale can start.
+- Running costs (AI spend, service calls, relayed calls + surcharge) are sane against the app's expected inflow: out of budget means frozen, and you should be able to say at what usage level that happens.
+- **No refresh timers in the frontend.** Collections are live, so poll loops buy nothing and bill the app's own buckets for every open tab, forever.
+  An Open app has no owner standing by to tune an interval later, so a `setInterval` that re-reads data is a permanent, unbounded drain.
+  Use `useQuery`/`subscribe`; see [never poll a collection](../../bounded-frontend/docs/sdk-reference.md#never-poll-a-collection).
+- Anything you had to rule out is in your handoff to the user, with the reasoning, not silently dropped.

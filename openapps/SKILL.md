@@ -5,16 +5,16 @@ description: Build or update apps for OpenApps (openapps.xyz, formerly oapps.fun
 
 # OpenApps
 
-An oApp is a Bounded app governed by its community so it can outlive its creator.
-Use this skill for the app's capability constraints and, when requested, its publication lifecycle.
+An oApp is a Bounded app with its own agent that can open to its community, so it can outlive its creator.
+Use this skill for the app's capability constraints and, when requested, its lifecycle: Owned, on sale, and Open.
 
 ## Choose the workflow
 
-- **Creator building or publishing an app:** use the lifecycle, launch-gate, and preflight references for the current phase.
-  A build or edit request does not by itself request Open or Commence; continue work already authorized by the user.
-- **Agent running on an OpenApps app computer:** the app already exists.
-  Apply the capability constraints below and use the installed runtime-specific instructions for previews, releases, and proposals (`openapps-internal` when provided).
-  Do not repeat creator initialization, Open, or Commence to update it.
+- **Owner building an app or asking to open it:** use the lifecycle, launch-gate, and preflight references for the current phase.
+  A build or edit request does not by itself request opening; continue work already authorized by the user.
+- **Agent running on an OpenApps app computer:** the app already exists and you are its agent.
+  Apply the capability constraints below and use the installed runtime-specific instructions for previews, releases, proposals, and the app's mode (`openapps-internal` when provided).
+  Do not repeat creator initialization or ask to open the app to update it.
   If those runtime instructions are unavailable, continue inspection and local work that the environment supports, and identify the missing instructions before attempting a governed release.
 
 ## Capability constraints
@@ -34,11 +34,11 @@ Read the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| Creator development, Open vs Commence, public URLs, source sync, one launch per creator app | [Lifecycle](docs/lifecycle.md) |
+| The agent an app has from creation, Owned / on sale / Open, asking to open, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
 | App capability availability, unsupported dependencies, catalog requests, x402 payment and recovery semantics | [Capability ladder](docs/capability-ladder.md) |
-| Publication refusals, required boundaries and egress, reproducible dist, `gov-frozen`, `bounded propose` | [Launch gate](docs/launch-gate.md) |
-| `bounded oapp preflight`, rehearsal, bootstrap from zero data | [Preflight and rehearsal](docs/rehearse.md) |
-| Preparing to Open or Commence | [Publication checklist](docs/checklist.md) |
+| What opening checks: oApp mode, required boundaries and egress grants, secrets, the served site and reproducible dist, `bounded propose` | [Launch gate](docs/launch-gate.md) |
+| `bounded oapp preflight` and its report | [Preflight](docs/preflight.md) |
+| Preparing to ask to open | [Opening checklist](docs/checklist.md) |
 | Sealed launch economics, treasury fees, pending claims, operating reserves, and how credits are topped up (including automatic SOL conversion) | [Launch economics](docs/launch-economics.md) |
 
 For implementation mechanics, use [bounded-backend](../bounded-backend/SKILL.md), [bounded-frontend](../bounded-frontend/SKILL.md), or [bounded-onchain](../bounded-onchain/SKILL.md) as needed.

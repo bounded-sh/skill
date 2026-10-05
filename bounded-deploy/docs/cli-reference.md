@@ -24,7 +24,7 @@ A timeout exits nonzero; server-side work already accepted may continue, so insp
 
 Authentication requests default to 30 seconds, file-lock contention to 5 seconds, and interactive prompts to 2 minutes.
 Piped secret input has a 30-second limit and is rejected above 1 MiB.
-Git source subprocesses have a 2-minute limit, skill-install subprocesses 2 minutes, proof runtimes 10 minutes, and rehearsal subprocesses 30 minutes.
+Git source subprocesses have a 2-minute limit, skill-install subprocesses 2 minutes, and proof runtimes 10 minutes.
 Cancellation also bounds inherited output pipes and terminates subprocess groups on Unix or attempts tree termination on Windows.
 
 `bounded subscribe` allows at most five reconnections with exponential backoff and stops on explicit server refusals or session failures.
@@ -142,7 +142,7 @@ themselves - the browser step exists to put a human in the loop.
 
 Refusals worth recognizing (409 with a `code`):
 
-- `oapp_launched` - an open/launched oApp belongs to its venue and holders;
+- `oapp_launched` - an oApp on sale or Open belongs to its venue and holders;
   it cannot be deleted.
 - `app_delete_blocked_deploy_in_flight` - retry after the active policy
   deploy settles.
@@ -921,7 +921,7 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 `pi`, or `other`) with each prompt. Browser widget actions use a short-lived
 `X-Bounded-Live-Edit-Token`; no-Origin local agent/curl calls do not.
 
-### `propose` / `proposals` - launched oApp contributions
+### `propose` / `proposals` - Open oApp contributions
 
 `bounded propose` is currently an inspection command, not a submission command.
 Exact code-patch execution is not wired end to end, so live submission fails before Git inspection, identity setup, venue access, or any write.
@@ -990,8 +990,7 @@ Reads never bill; `invoke` from a function does (see the bounded-backend
 
 | Command | Does | Example |
 |---|---|---|
-| `oapp preflight` | Dry-run the openapps.xyz Open gate on the deployed app: source, dist, the `service:cap` / `service:x402` grants, and every finding Open would refuse on with its capability-ladder verdict (`native`, `live`, `callable`, `request`). Exits nonzero when Open would refuse. `--app-id` | `bounded oapp preflight --json` |
-| `oapp rehearse` | An ephemeral, budget-sealed rehearsal of the app from zero data; runs the preflight first and never blocks on it. `--status`, `--fresh`, `--down`, `--budget-credits`, `--ttl-hours`, `--skip-deploy`, `--skip-bootstrap`; `--json` is one document (`rehearsal` + `preflight`) | `bounded oapp rehearse` |
+| `oapp preflight` | Dry-run, as the owner, what the request to open the app on openapps.xyz reads off the deployed app: the synced source, the dist (`static` or `built`; `unreproducible` and `none`, a backend-only app, are refused by the request with `oapp_opening_dist_not_reproducible` and `oapp_app_release_site_missing`), the `service:cap` / `service:x402` grants, and every finding the request would be refused on, with its capability-ladder verdict (`native`, `live`, `callable`, `request`). READY means none of these would refuse the request. Exits nonzero when the report is not READY. `--app-id` | `bounded oapp preflight --json` |
 
 ### `--constants`
 
