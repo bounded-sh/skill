@@ -43,7 +43,8 @@ That is deliberate: confirmation and simulation results are only as trustworthy 
 The check runs before signing, so an unset variable fails the write with `validate pre-built transaction: ...` and never reaches the network.
 
 Set it in whatever shell runs `bounded`; it applies per shell, so add it to your shell profile if you want it to persist.
-A public endpoint such as `https://api.devnet.solana.com` is enough to get a development write through, but it is rate-limited and is not a trusted source for the evidence described in [Confirmation behavior](#confirmation-behavior); use a dedicated provider endpoint for anything you intend to rely on.
+Use a dedicated Helius endpoint for devnet instead of Solana's rate-limited public RPC.
+See [Confirmation behavior](#confirmation-behavior) for the evidence required from the configured provider.
 Never echo, log, commit, or retain a secret RPC URL.
 
 ## Browser/SDK RPC defaults and overrides
