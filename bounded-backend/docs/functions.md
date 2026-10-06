@@ -634,12 +634,14 @@ delivered to it once (same origin kind and path) with:
 { signature, attribution, path, signer, feeLamports, rentLamports, microUsd, solPriceMicroUsd, at }
 ```
 
-`microUsd` is what the app's credits were charged. The delivery is not retried:
-if your function fails, the charge is still on your credits ledger and the
-receipt stays listed as unacknowledged there. An app that must act on every
-receipt (OpenApps passes the cost on to the root it belonged to) reconciles on
-its own schedule by listing the unacknowledged receipts and acknowledging each
-one it has handled; keep that handling idempotent on `signature`.
+`microUsd` is what the app's credits were charged. Treat the delivery as a
+best-effort notification: it happens once and is not retried, so if your
+function fails or times out, that receipt never reaches it. The charge itself
+does not depend on the receipt; it is settled on your credits ledger either way,
+and that ledger is the record. Do not build money-moving bookkeeping on the
+receipt alone. (An app-facing way to list and acknowledge receipts, so a
+function can reconcile what it missed, is a planned follow-up; it is not
+available yet.) Keep whatever handling you do idempotent on `signature`.
 
 A write the sponsor could not fund is refused before anything is signed:
 `402 sponsorship_refused` (the function said no, or the app's credits could not
