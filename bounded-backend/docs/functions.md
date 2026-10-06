@@ -591,6 +591,64 @@ forbidden in `onchain:true` rules, like `@user.id`. Inside the function body the
 same data is available as `ctx.origin` (`{ kind, path, module, room, tick }` or
 null).
 
+## Gas sponsorship functions
+
+An app on a Solana network decides who pays the network fee and rent of each
+user write through its **gas sponsorship setting** (owner-only,
+`PUT /app/<appId>/gas-sponsorship` on the platform API with the CLI session's
+bearer; the body is exactly `{ mode, function?, receipt? }`):
+
+| `mode` | Who pays |
+|---|---|
+| `never` | the signer, from their own wallet (the default) |
+| `always` | Bounded's sponsor, charged to the app's credits at cost plus 5% |
+| `function` | the app decides per write: the platform asks the function named in `function` |
+
+In `function` mode the platform invokes that function **after the write's trial
+simulation and before the sponsor signs**, with `@origin.kind == 'sponsorship'`,
+`@origin.path` set to the written path, and these `args`:
+
+```ts
+{
+  writes: [{ path: string, op: 'set' | 'delete' }],   // the whole batch
+  signer: string,                                      // the signing wallet
+  quote: { feeLamportsMax, rentLamportsMax, microUsdMax, solPriceMicroUsd }
+}
+```
+
+Answer exactly `{ sponsor: true, attribution: '<id>' }` to sponsor it, or
+`{ sponsor: false }` (or anything else, or throw) to let the signer pay.
+`attribution` is a free string the app chooses (for example a tenant or
+sub-app id) and comes back on the receipt; the charge itself always lands on
+this app's credits.
+Give both functions `"auth": "false"`: the setting that names them is their
+authorization (the lane runs them as the system principal and never consults
+the rule, like a `queueCallable` job), so no caller can invoke them. Inside,
+`ctx.user` is null and `ctx.origin` is `{ kind: 'sponsorship', path }`.
+The decision costs no function run credits.
+
+When `receipt` names a second function, every settled sponsored write is
+delivered to it once (same origin kind and path) with:
+
+```ts
+{ signature, attribution, path, signer, feeLamports, rentLamports, microUsd, solPriceMicroUsd, at }
+```
+
+`microUsd` is what the app's credits were charged. Treat the delivery as a
+best-effort notification: it happens once and is not retried, so if your
+function fails or times out, that receipt never reaches it. The charge itself
+does not depend on the receipt; it is settled on your credits ledger either way,
+and that ledger is the record. Do not build money-moving bookkeeping on the
+receipt alone. (An app-facing way to list and acknowledge receipts, so a
+function can reconcile what it missed, is a planned follow-up; it is not
+available yet.) Keep whatever handling you do idempotent on `signature`.
+
+A write the sponsor could not fund is refused before anything is signed:
+`402 sponsorship_refused` (the function said no, or the app's credits could not
+cover the quote) or `503 sponsorship_unavailable` (the billing or the function
+could not be reached; retry). A refused write is not signed by the sponsor, so
+the client may still submit it unsponsored only if the signer pays.
+
 The function's `auth` rule uses the same policy expression language as data
 rules and is **enforced before the function body runs**; `@origin` is a
 first-class special variable in it. An auth expression is not a guarantee of
