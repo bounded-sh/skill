@@ -80,7 +80,9 @@ Bundle scripts, and ship workers as files:
 | every script the page runs ships inside the release: no `<script src="https://…">`, no `import("https://…")`, SRI or not | install it as a dependency and let the build bundle it | `dependency_remote_script`, `dependency_remote_script_pinned`, `dependency_remote_module_import` |
 | every worker is a file in the release: no `?worker&inline`, no `new Worker(URL.createObjectURL(…))`, no `blob:`/`data:` worker | `new Worker(new URL("./worker.ts", import.meta.url))`, Vite's default | `dependency_inline_worker` |
 
-The Gauntlet's dependency audit reads the source for both, and either one fails it, so the sale cannot graduate until a repair release removes it.
+The Gauntlet's dependency audit reads the source for both, and either one fails it.
+Normally the agent must ship a repair before graduation; an admin may explicitly waive the sale's Gauntlet requirement for testing.
+That waiver does not remove the browser's script restrictions.
 Fix them before asking to open: neither the request nor the preflight reports them.
 
 From the start of the sale the app's public origins are also pinned to the app itself.

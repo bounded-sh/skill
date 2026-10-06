@@ -29,6 +29,9 @@
 - The constitution's seven sections say what the agent works toward and how, because once the app is Open only its holders can change them.
 - The owner knows what the sale changes: from the moment an operator starts it, the platform holds the app, nobody but its agent can change it, and only a repair the Gauntlet asked for can ship until the sale ends.
   A graduated sale makes the app Open for good; a failed one hands it back.
+- Read the venue's actual sale minimum, order minimum, opening countdown and bidding duration.
+  The default countdown is one minute and bidding lasts 30 minutes; the Gauntlet has a separate grace deadline.
+  If the owner wants the backer-only first interval, enable it before the sale is scheduled; it lasts 1/24 of the bidding window.
 - Leave the app as it is while the request waits: a change to the app or to the agent's AI settings means the owner asks again before the sale can start.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are sane against the app's expected inflow: out of budget means frozen, and you should be able to say at what usage level that happens.
 - **No refresh timers in the frontend.** Collections are live, so poll loops buy nothing and bill the app's own buckets for every open tab, forever.

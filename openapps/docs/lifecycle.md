@@ -37,23 +37,38 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
    A release publishes the app to Solana mainnet (see [oApps run on mainnet](#oapps-run-on-mainnet)).
 2. **Ask to open.** The owner submits the storefront (name, ticker, description, images), the constitution, the privacy statement, and accepts the terms: see [what asking to open requires](#what-asking-to-open-requires).
    Asking changes nothing about the app: the owner keeps it, can withdraw the request, and can ask again, which replaces the earlier request.
-3. **The sale starts.** An OpenApps operator starts the token sale from the request; the owner cannot start it.
+3. **An admin starts the sale.** An OpenApps admin starts the token sale from the request; the owner and public visitors cannot start it.
    The operator cannot start it either while a release is still publishing, after the app changed since the request, or after the agent's AI settings changed: the owner asks again, and the new request is reviewed against the app as it is then.
+   Existing backings are converted to auction orders before the opening countdown begins.
+   If a conversion fails, the sale stays in preparation and accepts no public orders; an admin must retry or return the app.
    From the start of the sale the platform holds the app: it has no owner, and nobody but its agent can change it (owner and collaborator changes are refused with `managed_app_mutation_forbidden`).
    The app keeps the address it already serves, and the sale, its listing, and the constitution appear on openapps.xyz.
-4. **During the sale.** The Gauntlet runs 15 checks on what the app serves, and the sale cannot graduate without a pass.
+4. **During the sale.** The Gauntlet runs 15 checks on what the app serves; graduation requires a pass or an explicit admin waiver for this sale.
    An attempt starts when the sale starts and again after each release during it, and the agent's periodic check asks for one whenever the app is owed one.
    Its public record is `GET /public/oapps/<rootAppId>/gauntlet/attempts`, newest first (`limit` 1 to 20, default 10; page on with the answer's `nextCursor` as `cursor`).
+   The bidding deadline and the Gauntlet deadline are separate: the current bidding window is 30 minutes, followed by up to 48 hours for the remaining launch requirements.
+   Read the sale's actual opening, closing, and grace timestamps; the venue can configure the bidding duration and opening countdown.
+   A waiver only skips the Gauntlet requirement; it does not bypass the minimum raise or create a pool before bidding closes.
    Nothing changes on the app except a repair the Gauntlet asked for, which the agent releases and the platform approves.
    No proposal can be filed while the sale runs.
 5. **The sale ends.**
    A graduated sale makes the app Open for good: its holders approve its releases and governed actions, and its constitution and the agent's AI settings change only through them.
    A failed or expired sale hands the app back to its owner exactly as it was, and it is Owned again.
-   The agent's periodic check settles either ending on its own once the sale has ended.
+   The platform advances settlement automatically, including token creation, pool creation, and the creator and venue payouts, even when nobody has the page open.
+   A launch recovery control resumes outstanding steps; it never reopens bidding or creates a second pool.
    An operator can also do both: hand an app back while no sale can still succeed (for a request whose sale never started, that declines it), and make a graduated app's hold permanent.
 
 **An app has one sale.**
 A request to open an app that already had a sale is refused with `oapp_opening_sale_exists`, including after a failed sale.
+
+## Backing before the sale
+
+People can back an Owned app before its owner asks to open it.
+A backing is escrowed USDC with a market-cap limit, not a purchase of an already launched token, and it remains withdrawable until converted into a sale order.
+Before the sale is scheduled, the owner can opt into a backer-only first interval; it is off by default.
+That interval is the first 1/24 of the bidding window, or 75 seconds for a 30-minute sale.
+Only the converted backing orders participate during it; ordinary orders become available after that interval clears.
+The countdown before bidding and this first bidding interval are separate.
 
 ## What asking to open requires
 
@@ -98,6 +113,10 @@ You do not choose this and you do not pass `--protocol`: an app its agent builds
   An ordinary `--create --protocol realtime_mainnet` app is different: that one is owned by *your* wallet, and its only possible move is the one-time hand-over to OpenApps custody when you give it to an agent (see **bounded-onchain**).
 - **Records do not move to mainnet.** When an off-chain app moves, its policy is deployed for mainnet, and anything its `onchain: true` collections held on the simulator stays behind: those collections start empty on mainnet.
 - **Previews stay on Poofnet** (simulated money), by design, so prove money paths there.
+
+The venue's sale network is separate from the app's workload network.
+A test venue may run its auction, token and pool on Solana Devnet while the app itself still follows the mainnet release rules above.
+Use that venue's Devnet USDC and explorer links; a Devnet balance cannot pay for real operating credits.
 
 ## Source sync
 
