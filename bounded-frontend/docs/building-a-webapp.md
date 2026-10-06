@@ -42,24 +42,20 @@ await init({
 });
 ```
 
-**Onchain apps (`realtime_devnet` / `realtime_mainnet`) must also pass `chain`
-and a TOP-LEVEL `rpcUrl`** - the SDK refreshes the transaction's blockhash from
-that endpoint just before the wallet approves and then submits the pre-built
-onchain transaction itself, and without it the first onchain `set()` fails with
-`Pre-built Solana transaction submission requires init({ rpcUrl })`:
+**Onchain apps (`realtime_devnet` / `realtime_mainnet`) must also pass `chain`.**
+The SDK selects Bounded's keyless Helius RPC for that network, refreshes the transaction's blockhash before wallet approval, and submits the signed transaction through that endpoint.
 
 ```ts
 await init({
   appId: "<appId>",
   chain: "solana_devnet",                        // the app's onchain network
-  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
   walletLogin: true,                             // if the app offers wallet login
 });
 ```
 
-A nested `walletLogin.rpcUrl` configures wallet login only and does not enable
-submission. Full detail:
-[Browser/SDK submission needs an explicit RPC endpoint](../../bounded-onchain/docs/onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint).
+An optional top-level `rpcUrl` overrides the default for all onchain paths; use a browser-safe endpoint because frontend configuration is public.
+A nested `walletLogin.rpcUrl` configures wallet login only.
+See [Browser/SDK RPC defaults and overrides](../../bounded-onchain/docs/onchain-troubleshooting.md#browsersdk-rpc-defaults-and-overrides).
 
 Mount your UI first and `init()` asynchronously — don't block first paint on it.
 

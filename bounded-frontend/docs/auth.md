@@ -183,18 +183,13 @@ first signing call reconnects (that is `confirmWalletAction`'s `"connect"`).
 import { init, login, signMessage, signTransaction, signAndSubmitTransaction } from "@bounded-sh/client";
 
 // Add bring-your-own wallet login alongside the canonical email/social login.
-// `chain` + a TOP-LEVEL `rpcUrl` are what keep the transaction's blockhash alive
-// up to the moment of approval and let the signed transaction actually be
-// submitted below; a nested walletLogin.rpcUrl is not a substitute, and without
-// them signAndSubmitTransaction / an onchain set() throws
-// "Pre-built Solana transaction submission requires init({ rpcUrl })" BEFORE
-// the user is asked to sign.
+// `chain` selects Bounded's keyless Helius RPC for blockhash reads and submission.
+// An optional top-level `rpcUrl` overrides that endpoint for every onchain path.
 await init({
   appId: "<appId>",
   authMethod: "phantom",
   walletLogin: true,
   chain: "solana_devnet",
-  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
 });
 
 // Right next to the login call — connects the injected wallet, signs the SIWS

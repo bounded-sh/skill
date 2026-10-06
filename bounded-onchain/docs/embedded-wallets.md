@@ -54,17 +54,10 @@ import { init, openBoundedWidget } from "@bounded-sh/client";
 
 await init({
   appId: "<APP_ID>",
-  // An ONCHAIN app must also declare the network it writes on and the endpoint
-  // the SDK uses: the platform builds the transaction, the SDK refreshes its
-  // blockhash from that endpoint so the user gets the full ~60s to approve, the
-  // wallet signs, and the SDK broadcasts it from the browser. Without a
-  // TOP-LEVEL rpcUrl the first onchain set() fails BEFORE the user is asked to
-  // sign, with "Pre-built Solana transaction submission requires init({ rpcUrl })",
-  // so a misconfigured app never spends a signature.
-  // A nested walletLogin.rpcUrl configures wallet login only - it is not a
-  // substitute. See onchain-troubleshooting.md#browsersdk-submission-needs-an-explicit-rpc-endpoint
+  // Declare the onchain network; the SDK uses Bounded's keyless Helius RPC.
+  // An optional top-level `rpcUrl` overrides it for blockhash reads and submission.
+  // A nested walletLogin.rpcUrl configures wallet login only.
   chain: "solana_devnet",
-  rpcUrl: import.meta.env.VITE_SOLANA_RPC_URL,   // e.g. "https://api.devnet.solana.com"
   walletLogin: true,                             // offering the wallet lane below
 });
 
