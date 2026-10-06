@@ -17,7 +17,7 @@ The catalog contains 165 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The Bounded Solana program is recorded as **runtime v8** on devnet and mainnet-beta, live since 2026-09-29 (slots 505377312 and 451516304 respectively).
+The Bounded Solana program is recorded as **runtime v9 on devnet** (2026-10-06, slot 508118456) and **runtime v8 on mainnet-beta** (2026-09-29, slot 451516304).
 Legacy rows were classified against the runtime-v4 minimum; both clusters also meet the `NEEDS-RUNTIME-V6` and `NEEDS-RUNTIME-V7` requirements.
 Both programs meet the `NEEDS-RUNTIME-V8` scaled-price requirement.
 Only the programs have been upgraded for this API; the matching hosted worker, query, and compiler services, venue policy, and frontend rollout remain pending.
