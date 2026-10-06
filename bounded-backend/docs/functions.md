@@ -628,14 +628,18 @@ the rule, like a `queueCallable` job), so no caller can invoke them. Inside,
 The decision costs no function run credits.
 
 When `receipt` names a second function, every settled sponsored write is
-delivered to it at least once (same origin kind and path) with:
+delivered to it once (same origin kind and path) with:
 
 ```ts
 { signature, attribution, path, signer, feeLamports, rentLamports, microUsd, solPriceMicroUsd, at }
 ```
 
-`microUsd` is what the app's credits were charged. Deliveries can repeat after
-a failure, so key any bookkeeping on `signature`.
+`microUsd` is what the app's credits were charged. The delivery is not retried:
+if your function fails, the charge is still on your credits ledger and the
+receipt stays listed as unacknowledged there. An app that must act on every
+receipt (OpenApps passes the cost on to the root it belonged to) reconciles on
+its own schedule by listing the unacknowledged receipts and acknowledging each
+one it has handled; keep that handling idempotent on `signature`.
 
 A write the sponsor could not fund is refused before anything is signed:
 `402 sponsorship_refused` (the function said no, or the app's credits could not
