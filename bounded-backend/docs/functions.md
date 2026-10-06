@@ -605,7 +605,7 @@ bearer; the body is exactly `{ mode, function?, receipt? }`):
 | `function` | the app decides per write: the platform asks the function named in `function` |
 
 In `function` mode the platform invokes that function **after the write's trial
-simulation and before the sponsor signs**, with `@origin.kind == 'sponsorship'`,
+simulation and before transaction bytes are released**, with `@origin.kind == 'sponsorship'`,
 `@origin.path` set to the written path, and these `args`:
 
 ```ts
@@ -616,8 +616,8 @@ simulation and before the sponsor signs**, with `@origin.kind == 'sponsorship'`,
 }
 ```
 
-Answer exactly `{ sponsor: true, attribution: '<id>' }` to sponsor it, or
-`{ sponsor: false }` (or anything else, or throw) to let the signer pay.
+Answer exactly `{ sponsor: true, attribution: '<id>' }` to sponsor it, or `{ sponsor: false }` to let the signer pay.
+A thrown error, timeout, missing or malformed answer, or invalid attribution instead refuses the write with `503 sponsorship_unavailable`; retry after the sponsorship function is available.
 `attribution` is a free string the app chooses (for example a tenant or
 sub-app id) and comes back on the receipt; the charge itself always lands on
 this app's credits.
@@ -643,11 +643,9 @@ receipt alone. (An app-facing way to list and acknowledge receipts, so a
 function can reconcile what it missed, is a planned follow-up; it is not
 available yet.) Keep whatever handling you do idempotent on `signature`.
 
-A write the sponsor could not fund is refused before anything is signed:
-`402 sponsorship_refused` (the function said no, or the app's credits could not
-cover the quote) or `503 sponsorship_unavailable` (the billing or the function
-could not be reached; retry). A refused write is not signed by the sponsor, so
-the client may still submit it unsponsored only if the signer pays.
+A write the sponsor could not fund is refused before transaction bytes are released to the client: `402 sponsorship_refused` when its credit reservation is refused, or `503 sponsorship_unavailable` when sponsorship is unavailable or its function cannot provide a valid decision.
+No transaction is returned for the client to sign or submit on those refusals.
+Only the function's explicit `{ sponsor: false }` decision selects a transaction funded by the signing wallet.
 
 The function's `auth` rule uses the same policy expression language as data
 rules and is **enforced before the function body runs**; `@origin` is a
