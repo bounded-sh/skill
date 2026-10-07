@@ -1295,8 +1295,8 @@ bounded decisions --app-id <id> --json           # one JSON object per line (age
 
 Each entry: `ts`, `collection`, `path`, `action` (create/update/delete/read),
 `actor` (wallet address or `(anon)`), `decision` (allow/deny/error), `reason`,
-and `roomId` (for session/partition writes). Owner/collaborator gated (same auth
-as `bounded share`/collaborators). The buffer is **in-memory and bounded** (~200
+and `roomId` (for session/partition writes). Needs `analytics:view`: the owner,
+an admin, a developer or a viewer (not `billing`). The buffer is **in-memory and bounded** (~200
 entries per app, denies retained over allows) — make a write, then re-run.
 
 `decision: "error"` is not a verdict: the rule was reached and could not be

@@ -94,6 +94,7 @@ is a strict superset of `developer`** (and of `viewer`/`billing`). It already in
 | Capability | owner | admin | developer | viewer | billing |
 |---|:--:|:--:|:--:|:--:|:--:|
 | `app:view` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `analytics:view` (raw analytics, `bounded decisions`, per-user lists) | ✓ | ✓ | ✓ | ✓ | — |
 | `code:read` (read source) | ✓ | ✓ | ✓ | — | — |
 | `policy:deploy` | ✓ | ✓ | ✓ | — | — |
 | `functions:deploy` | ✓ | ✓ | ✓ | — | — |
@@ -129,7 +130,7 @@ bounded access --app-id <id> --json   # per-member capability arrays — the sou
 ## Custom roles + capabilities (the flexible layer)
 
 Roles are *bundles of capabilities*. The atomic capabilities (`surface:action`):
-`app:view` · `app:settings` · `app:delete` · `app:transfer` · `access:manage` ·
+`app:view` · `analytics:view` · `app:settings` · `app:delete` · `app:transfer` · `access:manage` ·
 `billing:manage` · `policy:deploy` · `functions:deploy` · `ui:deploy` · `ui:fork` ·
 `code:read` · `cloud:prompt` · `cloud:apply` · `data:act`.
 
