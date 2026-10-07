@@ -29,6 +29,30 @@ document the caller can't read (the read rule is compiled into the query).
 | `$type` | match by type: `"string"`, `"number"`, `"bool"`, `"array"`, `"object"`, `"null"` |
 | `$and` `$or` `$nor` | combine sub-filters |
 
+### Missing fields versus null
+
+For an optional scalar field, `{ withdrawnAt: null }` matches an explicit stored `null`, not a missing field.
+`{ withdrawnAt: { $exists: false } }` matches a missing field; `$exists: true` includes fields whose value is `null`.
+Do not assume every document stores its unset optional fields as `null`.
+To include both representations, use `$or`:
+
+```ts
+const activePledges = await get("pledges", {
+  filter: {
+    $or: [
+      { withdrawnAt: null },
+      { withdrawnAt: { $exists: false } }
+    ]
+  },
+  limit: 100
+});
+```
+
+This includes both `{ withdrawnAt: null }` and a document without `withdrawnAt`, but excludes a document with a withdrawal timestamp.
+Likewise, `$ne: null` includes missing fields; combine it with `$exists: true` when the field must be present and non-null.
+
+### Array-valued fields
+
 **Array-valued fields** behave like MongoDB: a field that holds an array matches
 when it *contains* the value. So with `tags: ["red","blue"]`, both `{ tags: "red" }`
 (membership) and `{ tags: { $in: ["blue","green"] } }` (intersection) match. Array-only

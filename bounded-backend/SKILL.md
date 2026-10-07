@@ -61,7 +61,7 @@ term.
 | Recurring fleet sweeps without full scans | [scheduled sweeps](docs/scheduled-sweeps.md) |
 | Anti-cheat proof limits | [hooks and anti-cheat](docs/hooks-and-anti-cheat.md) |
 | Atomic writes, subset attacks, `requiresInBatch`, `incomplete_batch` | [data plane](docs/data-plane.md) |
-| Queries, pagination, `queryAggregate`, `count`, filters, sort, cursor | [queries](docs/queries.md) |
+| Queries, pagination, `queryAggregate`, `count`, filters, missing versus `null`, `$exists`, sort, cursor | [queries](docs/queries.md) |
 | Files, `setFile`, storage, full-text search | [files and search](docs/files-and-search.md) |
 | Realtime rooms; `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [realtime and games](docs/realtime-and-games.md) |
 | Native live modules; `session.live`, `tick`, `views`, `@effect`, `live.intent` | [live runtime](docs/live-runtime.md) |
