@@ -612,9 +612,15 @@ simulation and before transaction bytes are released**, with `@origin.kind == 's
 {
   writes: [{ path: string, op: 'set' | 'delete' }],   // the whole batch
   signer: string,                                      // the signing wallet
-  quote: { feeLamportsMax, rentLamportsMax, microUsdMax, solPriceMicroUsd }
+  quote: { feeLamportsMax, rentLamportsMax, microUsdMax, solPriceMicroUsd },
+  recent: {                                            // this app's own sponsorship journal
+    signer: { day: number, outstanding: number },      // this signer: held or settled in 24h, held now
+    prefix: { key: string, day: number, signerDay: number } // the write's first two path segments
+  }
 }
 ```
+
+`recent` counts a sponsored write from the moment it is prepared, so it bounds sponsorship where the app's own data cannot: a write that fails onchain leaves no record, and prepares requested in parallel land none before the first is asked about.
 
 Answer exactly `{ sponsor: true, attribution: '<id>' }` to sponsor it, or `{ sponsor: false }` to let the signer pay.
 A thrown error, timeout, missing or malformed answer, or invalid attribution instead refuses the write with `503 sponsorship_unavailable`; retry after the sponsorship function is available.

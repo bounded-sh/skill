@@ -20,6 +20,8 @@ Use this skill for the app's capability constraints and, when requested, its lif
 ## Capability constraints
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
+- To hold USDC between two people for a deal, use the venue escrow in the SDK (`fundVenueEscrow`, `disputeVenueEscrow`, `getVenueEscrow`), called from the app's own client: [SDK reference](../bounded-frontend/docs/sdk-reference.md#venue-escrows---fundvenueescrow--disputevenueescrow--getvenueescrow).
+  Do not build an escrow, a backend, or a wallet to hold or move that money.
 - An oApp cannot depend on a creator-held API key, vendor account, server, or admin backdoor.
   The runtime refuses `secrets` on oApp functions.
 - Prefer native capabilities or live catalog actions, then the steward's x402 relay for supported paid APIs.
