@@ -204,6 +204,13 @@ await setMany([                                            // atomic transfer
 ]);
 ```
 
+In SDK prerelease `0.0.117-sync.0`, on a Bounded environment upgraded for confirmed-signature synchronization, normal Solana `set` and `setMany` writes automatically synchronize the confirmed transaction signature into Bounded's mirror, including documents changed by hooks outside the requested batch.
+Stable SDK `0.0.116` does not include this behavior.
+The returned `status: "confirmed"` receipt still means the chain write succeeded if this synchronization is unavailable; `mirrorSync.observed: false` reports the separate observation problem.
+Do not repeat the write to refresh the mirror.
+For a `status: "submitted"` receipt, use `reconcileSetResult` or `waitForSetResult` to check the same signature without rebuilding or resubmitting it; confirmation also attempts synchronization.
+See [mirror synchronization and confirmed receipts](../../bounded-onchain/docs/onchain.md#mirror-synchronization-and-confirmed-receipts) for direct submissions, absent or unreadable documents, and path-only refreshes.
+
 A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
 composition, and failure codes: [data-plane.md](../../bounded-backend/docs/data-plane.md).
@@ -414,7 +421,7 @@ third-party surface Bounded does not host - poll deliberately, never in a bare
 - **Subscribe to the settled result where one exists.** An onchain write settles
   into the Bounded mirror, which is live: confirm the signature, then `useQuery`
   the mirror path instead of re-reading it on a timer. See
-  [onchain.md](../../bounded-onchain/docs/onchain.md#the-mirror-is-eventually-consistent--dont-read-after-write).
+  [onchain.md](../../bounded-onchain/docs/onchain.md#mirror-synchronization-and-confirmed-receipts).
 - **Bound it.** A finite attempt budget with a visible give-up state, never an
   unbounded retry loop. A `429` ends the schedule; it never feeds it.
 
