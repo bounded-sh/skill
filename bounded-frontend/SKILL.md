@@ -36,6 +36,7 @@ Read only the row matching the current task or term.
 | CLI developer login or `bounded login` | [developer accounts](../bounded-deploy/docs/accounts.md) |
 | Embedded wallet, `auth.wallets`, `@user.address` after email/social login | [embedded wallets](../bounded-onchain/docs/embedded-wallets.md) |
 | `onramp()`, buy SOL/USDC by card, Coinbase Onramp, wallet top-up | [onramp](../bounded-onchain/docs/onramp.md) |
+| OpenApps escrow in the app: `fundVenueEscrow`, `disputeVenueEscrow`, `getVenueEscrow`, lock USDC for a deal | [SDK reference](docs/sdk-reference.md#venue-escrows---fundvenueescrow--disputevenueescrow--getvenueescrow) |
 
 ## Rules Of Thumb
 
