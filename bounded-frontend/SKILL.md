@@ -32,6 +32,7 @@ Read only the row matching the current task or term.
 | Bring-your-own wallet login; `walletLogin`, `authMethod:'phantom'`, `supportsWalletSignIn`, unsupported wallet / Wallet Standard | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) |
 | Wallet login lost on refresh, `getCurrentUser()` null after reload, `bounded_last_auth_method`, session restore method | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) - "Wallet sessions survive reloads" |
 | Guests, anonymous users, invite links, account upgrade | [anonymous accounts](docs/anonymous-accounts.md) |
+| Link a user's X account, `connect('x')`, `completeConnection`, `getConnections`, verified X handle, `__connections__` | [connected accounts](docs/connected-accounts.md) |
 | Hosted frontend and app URLs | [frontend hosting](docs/frontend-hosting.md) |
 | CLI developer login or `bounded login` | [developer accounts](../bounded-deploy/docs/accounts.md) |
 | Embedded wallet, `auth.wallets`, `@user.address` after email/social login | [embedded wallets](../bounded-onchain/docs/embedded-wallets.md) |
