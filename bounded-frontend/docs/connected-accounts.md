@@ -6,6 +6,8 @@ Only the platform writes that record, after X's own consent screen; the X token 
 
 ## In the app
 
+Use `@bounded-sh/client` 0.0.117 or later.
+
 ```ts
 import { connect, completeConnection, getConnections, disconnect } from '@bounded-sh/client';
 
@@ -16,7 +18,8 @@ await disconnect('x');
 ```
 
 - Call `completeConnection()` once the user is signed in; it throws `ConnectionError` (`.code`, e.g. `cancelled`) when the user backed out.
-- The return page must be on an origin that serves the app (its bounded.page or custom domain, or an origin you registered such as localhost).
+- The return page must be on an origin that serves the app: its bounded.page or custom domain work as is; for localhost or a host outside Bounded, register it with `bounded domains origins add <origin> --app-id <id>`.
+- Web only for now (`connect` redirects the page); React Native is not supported yet.
 - Guests cannot link; the link belongs to this app's account only.
 
 ## In policy
