@@ -91,18 +91,18 @@ The app's `bounded.page` slug host and its custom domains are not pinned.
 
 The app itself is held by the platform from then on: owner and collaborator changes are refused with `managed_app_mutation_forbidden`, and only the agent's releases change it ([lifecycle](lifecycle.md)).
 
-## Community code contributions while exact patches are closed
+## Community code contributions
 
-Do not tell a contributor that `bounded propose` submitted code or created a voteable proposal.
-The venue cannot yet carry the exact reviewed diff through approval, build application, and promotion, so code-patch submission remains fail-closed.
-
-The only supported code-draft mode is local inspection:
+Anyone who may post in an app's Discussion can send it a code change from a bounded clone:
 
 ```bash
-bounded propose --title "Show the streak counter" --slug <oapp-slug> --dry-run
+bounded propose --title "Show the streak counter" --slug <app-slug> --dry-run   # look at it, send nothing
+bounded propose --title "Show the streak counter" --slug <app-slug> --submit    # post it on the app's page
 ```
 
-That command reads the local Git tree, prints the exact diff and deterministic `draftHash`, and never opens a venue session or writes a proposal.
-The hash is local comparison evidence, not an onchain content commitment or proposal id.
-Use the oApp's Ideas tab to submit the intended outcome as a normal idea holders can vote on today.
-`bounded proposals <slug>` is only the read-only viewer for proposal history and backlog.
+`--submit` posts the change in the app's Discussion under Ideas, with the diff attached as a public `code-change.diff` file.
+It is an idea with its implementation attached, not access and not a vote: the app's agent reads it, decides whether to build it, and ships what it builds through the app's normal release decision, where the owner or the holders approve or veto the preview.
+Do not tell a contributor their diff was merged or will ship as sent; the agent may adapt it to the current code or decline it.
+While the app's token sale runs, a release ships only to fix the sale's failed checks, so other code changes wait until the sale ends.
+The command refuses binary files and env or key files before anything is sent.
+`bounded proposals <slug>` is only the read-only viewer for the venue's older proposal backlog.
