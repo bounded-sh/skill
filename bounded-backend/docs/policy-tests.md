@@ -128,7 +128,7 @@ function is safe to re-run by invoking it twice around snapshots —
 **Limits:** ≤64KB per file, ≤200 steps per file, ≤50 files per run, ≤25
 function sources ≤512KB each, 120s wall clock per server request.
 Each file gets its own fresh sandbox, which costs about 15-20s, so one request finishes only a handful of files.
-`bounded tests run` re-sends the files a request did not reach (two requests at a time) and retries rate limits a bounded number of times, so a whole suite finishes in one command.
+`bounded tests run` re-sends the files a request did not reach, one request at a time, and retries rate limits a few times, so a whole suite finishes in one command.
 
 **`invoke` caveats:** the function's own `Date.now()` is NOT overridden (its
 writes evaluate `@time.now` on the test's logical clock, so avoid `setTime`
