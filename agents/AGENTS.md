@@ -118,5 +118,5 @@ npm i @bounded-sh/client   # or @bounded-sh/server
 Install the full skill family instead of this block:
 
 ```bash
-npx skills add bounded-sh/skill -y
+npx skills add bounded-sh/skill -g -y --agent claude-code codex cursor
 ```

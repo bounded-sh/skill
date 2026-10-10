@@ -56,15 +56,27 @@ installs a global `bounded` plus the skill family on macOS and Linux:
 curl -fsSL https://get.bounded.sh/install.sh | sh
 ```
 
-To refresh only the skill family in Claude Code, Cursor, and other agents that
-read `SKILL.md`:
+To refresh only the skill family in Claude Code, Codex, Cursor, and other agents
+that read `SKILL.md`, name the agents you use:
 
 ```bash
-npx skills add bounded-sh/skill -y
+npx skills add bounded-sh/skill -g -y --agent claude-code codex cursor
 ```
 
-The public `oapps-fun` skill is now named `openapps`.
-After refreshing, replace any explicit `oapps-fun` skill selection and remove its old installed copy to avoid duplicate guidance.
+`-g` refreshes the user-level copy that `bounded init` and the shell installer write; without it the family lands in the current project instead.
+Name your agents with `--agent`: without it, `skills` also targets PromptScript, which has no user-level skills directory, so `-g` prints one "does not support global skill installation" failure per skill.
+Those lines are harmless, and every other agent still installs.
+An unknown agent name makes `skills` print the valid ones.
+
+`skills add` never removes a skill this repository stopped shipping.
+The public `oapps-fun` skill is now named `openapps`, and `bounded-teams` was removed.
+If you installed either from this repository, uninstall the old copies once so they stop adding stale guidance:
+
+```bash
+npx skills remove -g -y oapps-fun bounded-teams
+```
+
+Replace any explicit `oapps-fun` skill selection with `openapps`.
 Managed app-computer bundles remain on their pinned commit; updating that pin also requires renaming their local runtime skill to avoid colliding with the public `openapps` skill.
 
 Using Codex, Cursor, or Windsurf instead of Claude? Grab the drop-in blocks in
@@ -99,7 +111,7 @@ npm i @bounded-sh/client   # or @bounded-sh/server
 
 ## Consuming this repo
 
-- Claude Code and other `SKILL.md`-aware agents: `npx skills add bounded-sh/skill -y`.
+- Claude Code and other `SKILL.md`-aware agents: `npx skills add bounded-sh/skill -g -y --agent claude-code codex cursor` (name the agents you use).
 - Everything else: the paste-ready blocks in [`agents/`](agents/) (Codex/`AGENTS.md`, Cursor rules, Windsurf rules).
 
 ## Validate before release
