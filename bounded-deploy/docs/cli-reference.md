@@ -350,7 +350,6 @@ folder maps to:
   "name": "my-app",
   "env": "production",
   "protocol": "realtime_offchain",
-  "sitePrivate": true,
   "owner": "GFdiGThC8DJ5oMdDYj1xgyQJjWkje6EbzH2jdUMcuWBt",
   "ownerKeySource": "global (~/.bounded/credentials)",
   "linkedAccount": "you@example.com",
@@ -366,7 +365,8 @@ folder maps to:
   `env (BOUNDED_PRIVATE_KEY)`, or `web (Bounded Auth)`. Answers "which account
   source does this app use?"
 - `sitePrivate` — true when the hosted static site was created behind the
-  private site gate. Older/public apps may omit it.
+  private site gate (the onchain default, or `--private`); omitted for a public
+  site, as in this offchain example.
 - `linkedAccount` - the linked or logged-in account hint when known, blank if
   none. An email for an email-approved link or web login; the approving
   **wallet address** for a wallet-approved link, which records no email. Do not
