@@ -921,34 +921,39 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 `pi`, or `other`) with each prompt. Browser widget actions use a short-lived
 `X-Bounded-Live-Edit-Token`; no-Origin local agent/curl calls do not.
 
-### `propose` / `proposals` - Open oApp contributions
+### `propose` / `proposals` - OpenApps code changes
 
-`bounded propose` is currently an inspection command, not a submission command.
-Exact code-patch execution is not wired end to end, so live submission fails before Git inspection, identity setup, venue access, or any write.
-Use the explicit dry-run mode to inspect a local draft:
+`bounded propose` posts the changes in a bounded clone to an OpenApps app's page as a code change, or shows them without sending anything.
+Nobody gets write access to the app: a code change is an idea with its implementation attached, and the app's agent decides whether to build it.
+What the agent builds ships the way every change does, on a preview through the app's release decision, where the owner or the holders approve or veto it.
+Choose one mode; with neither, the command exits without touching anything.
 
 ```bash
 bounded propose --title "Show the streak counter" --dry-run
-bounded propose --title "Show the streak counter" --slug streaks --dry-run --json
+bounded propose --title "Show the streak counter" --description "It was hidden in the menu" --slug night-walk-1oqr --submit
 ```
 
-The dry-run reads only the local project configuration and Git checkout.
-It never opens a venue session, signs in, creates a keypair, or writes a proposal.
-The patch is measured against the published remote-tracking head by default, or against `--base <revision>` when supplied.
-If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
-The reported and fingerprinted base is always the resolved exact commit object ID, never a moving symbolic ref such as `HEAD`.
-Top-level `bounded.json` and `.gitignore` clone plumbing are excluded.
-Untracked files are refused instead of silently omitted, and one draft is capped at 512 KiB.
-The canonical patch includes reconstructable binary deltas, ignores ambient global and system Git configuration, and fixes the diff algorithm, context, prefixes, rename behavior, and presentation.
-
-Human output prints the exact diff and its `draft hash`.
+`--dry-run` reads only the local project configuration and Git checkout, prints the exact diff and its `draft hash`, and never opens a venue session or writes anything.
 JSON output returns the exact `diff`, `draftHash`, target labels, title, description, intent, base, changed file names, file count, and byte count.
-The versioned fingerprint binds those local draft fields with unambiguous JSON field boundaries.
-It is not an onchain content commitment, does not reserve a proposal id, and does not create something holders can vote on.
+The fingerprint is local comparison evidence, not a content commitment or a proposal id.
 
-Until the exact-patch lane is available, submit the intended outcome as a normal idea in the oApp's Ideas tab.
-`bounded proposals [slug]` remains a read-only venue command for listing existing proposals newest-first.
-It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `propose --dry-run`, it opens a venue data-plane session to read the backlog.
+`--submit` signs in, uploads the diff as the caller's own public Discussion text file named `code-change.diff`, and calls the venue function `submitCodeChange`, which posts it in the app's Discussion under Ideas as the caller.
+The app's Discussion rules decide who may post (some apps ask posters to hold the app's token), and posts share the Discussion's hourly rate limit.
+The change is public.
+Before anything is sent, the command refuses binary files and env or key files (`.env`, `.env.*`, `*.pem`, `*.key`).
+Keep `--title` to one line of at most 200 characters and `--description` to at most 1500; the venue refuses longer.
+`--slug` is required with `--submit`: the name in the app page's address.
+`--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
+JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
+
+Both modes take the diff against the published remote-tracking head by default, or against `--base <revision>` when supplied.
+If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
+The reported base is always the resolved exact commit object ID, never a moving symbolic ref such as `HEAD`.
+Top-level `bounded.json` and `.gitignore` clone plumbing are excluded.
+Untracked files are refused instead of silently omitted, and one diff is capped at 512 KiB.
+
+`bounded proposals [slug]` is a read-only venue command for listing the venue's older `governance/<slug>/proposals` backlog newest-first.
+It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`.
 
 ## Billing
 
