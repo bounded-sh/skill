@@ -930,8 +930,7 @@ Choose one mode; with neither, the command exits without touching anything.
 
 ```bash
 bounded propose --title "Show the streak counter" --dry-run
-bounded propose --title "Show the streak counter" --description "It was hidden in the menu" --submit
-bounded propose --title "Fix the typo on the home page" --slug night-walk-1oqr --submit --json
+bounded propose --title "Show the streak counter" --description "It was hidden in the menu" --slug night-walk-1oqr --submit
 ```
 
 `--dry-run` reads only the local project configuration and Git checkout, prints the exact diff and its `draft hash`, and never opens a venue session or writes anything.
@@ -941,11 +940,11 @@ The fingerprint is local comparison evidence, not a content commitment or a prop
 `--submit` signs in, uploads the diff as the caller's own public Discussion text file named `code-change.diff`, and calls the venue function `submitCodeChange`, which posts it in the app's Discussion under Ideas as the caller.
 The app's Discussion rules decide who may post (some apps ask posters to hold the app's token), and posts share the Discussion's hourly rate limit.
 The change is public.
-Before anything is sent, the command refuses binary files, env and key files (`.env`, `.env.*` other than `.env.example`/`.env.sample`, `*.pem`, `*.key`, `.npmrc`, and similar), and added lines shaped like secret keys.
-`--title` is one line of at most 200 characters and `--description` at most 1500, so the whole post fits what the app's agent is handed.
-The app is found from `--slug` (the name in the app page's address) or from the clone's app id (the app's own id or its root id); several matches are refused rather than guessed.
+Before anything is sent, the command refuses binary files and env or key files (`.env`, `.env.*`, `*.pem`, `*.key`).
+Keep `--title` to one line of at most 200 characters and `--description` to at most 1500; the venue refuses longer.
+`--slug` is required with `--submit`: the name in the app page's address.
 `--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
-JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, `files`, `diffBytes`, and `replay`.
+JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
 
 Both modes take the diff against the published remote-tracking head by default, or against `--base <revision>` when supplied.
 If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.

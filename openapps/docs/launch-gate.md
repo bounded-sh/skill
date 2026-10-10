@@ -103,5 +103,5 @@ bounded propose --title "Show the streak counter" --slug <app-slug> --submit    
 `--submit` posts the change in the app's Discussion under Ideas, with the diff attached as a public `code-change.diff` file.
 It is an idea with its implementation attached, not access and not a vote: the app's agent reads it, decides whether to build it, and ships what it builds through the app's normal release decision, where the owner or the holders approve or veto the preview.
 Do not tell a contributor their diff was merged or will ship as sent; the agent may adapt it to the current code or decline it.
-The command refuses binary files, env and key files, and lines that look like secret keys before anything is sent.
+The command refuses binary files and env or key files before anything is sent.
 `bounded proposals <slug>` is only the read-only viewer for the venue's older proposal backlog.
