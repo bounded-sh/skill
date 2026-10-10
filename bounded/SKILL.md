@@ -93,5 +93,6 @@ Load these only when the task calls for them:
   allowlists for control-plane access.
 - Never put provider secrets in frontend code or commit credentials.
 
-Install the public family with `npx skills add bounded-sh/skill -y`. Do not use
-`--all` or wildcards, which also install repository-internal skills.
+Install the public family with `npx skills add bounded-sh/skill -g -y --agent claude-code codex cursor`, naming the agents in use; without `--agent`, `-g` also prints a harmless PromptScript failure per skill.
+Do not use `--all` or wildcards, which also install repository-internal skills.
+The retired `oapps-fun` (now `openapps`) and `bounded-teams` skills stay installed until removed with `npx skills remove -g -y oapps-fun bounded-teams` (and, for a project install, `npx skills remove -y oapps-fun bounded-teams` in that project).
