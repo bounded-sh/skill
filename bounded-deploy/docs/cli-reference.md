@@ -389,7 +389,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy, or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
+| `deploy [policy.json]` | Validate, compile, and push the policy, or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public` / `--private` (hosted-site visibility of the new app), `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
 | `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `deploy preflight` | Read-only: whether a deploy will land - your credit balance (deploys are metered against credits, no per-tier cap), the deploy rate-limit, and the structural size caps. Advice, never a promise; never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
@@ -397,13 +397,16 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json
-bounded deploy --create --name my-app                   # create app + record appId; hosted site gate defaults private
-bounded deploy --create --name my-app --public          # opt out; hosted site is public from the start
+bounded deploy --create --name my-app                   # create app + record appId; offchain apps get a public hosted site
+bounded deploy --create --name my-app --private         # hosted site behind the private gate from the start
 bounded tests run                                       # policy-tests/*.json against LOCAL policy.json
 bounded deploy                                          # redeploy using bounded.json
 ```
 
 `deploy --create` rejects an unknown `--protocol` locally before any network call and lists the valid app protocols.
+The new app's hosted site is public by default on an offchain protocol (`realtime_offchain`, the Poofnet simulator) and private by default on an onchain one (devnet, mainnet).
+An interactive terminal is asked, with that default preselected; `--public` or `--private` skips the question, and non-interactive runs (including `--json`) take the default.
+The output names the chosen visibility and the `bounded site privacy public|private --app-id <id>` command that flips it; the JSON result carries `sitePrivate`.
 `bounded verify` is experimental and opt-in (`--experimental`); its report format lives in [formal verification](../../bounded-backend/docs/formal-verification.md).
 
 Use the offline plugin reference before authoring an onchain hook:
