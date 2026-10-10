@@ -48,23 +48,11 @@ Offchain rules only: an onchain rule cannot read `__connections__`.
 
 ## Testing linked-X rules
 
-`bounded tests run` has no linked accounts today: for every actor, `get(/__connections__/@user.id).xId` is `null`.
-A test cannot add one either, because only the platform writes `__connections__`.
-So a policy test can show the deny side of a linked-X rule, but no actor can pass it.
-To test the rest of such a rule, put the X check behind a constant that is on in `policy.json`:
-
-```json
-"constants": { "REQUIRE_LINKED_X": true },
-"posts/$postId": {
-  "rules": {
-    "create": "@newData.author == @user.id && (@const.REQUIRE_LINKED_X == false || get(/__connections__/@user.id).xId != null)"
-  }
-}
-```
-
-Set `"constants": { "REQUIRE_LINKED_X": false }` only in the test files that need a passing actor, and keep at least one test without the override that expects the write to fail.
-A test with the switch off proves everything except the X check, so try the linked path once by hand with a real linked account.
-Never set the constant to `false` in an `environments` block or a deployed policy.
+Give a policy-test actor an `x` field to give it a linked X account: `"Xavi": { "id": "xavi", "x": { "id": "1234567890", "handle": "xavi" } }`.
+`bounded tests run` stores it at `__connections__/xavi` the same way a completed link does, so `get(/__connections__/@user.id).xHandle` is `xavi` for that actor.
+An actor without `x` has no linked account (`xId` is `null`), so keep one test with such an actor that expects the write to fail.
+See [policy tests](../../bounded-backend/docs/policy-tests.md) for the field rules.
+A policy test does not run X's consent screen, so try `connect('x')` once by hand.
 
 ## Handles typed before linking
 
