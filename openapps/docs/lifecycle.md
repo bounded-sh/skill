@@ -17,6 +17,32 @@ An app starts one of two ways:
 Opening never copies anything.
 The app that goes on sale, and the app its holders later govern, is the same app with the same agent.
 
+## Launch interview, Rules, and the first goal
+
+The owner starts with an idea and signs in before the agent asks questions or draws an icon.
+The idea stays the owner's description; the interview records the first thing someone can do, who it serves, and how to tell that it works.
+An existing-app handover skips those goal questions.
+The owner can keep an emoji, upload an image, or ask for four drawn icons and select one.
+Nothing is created until the owner presses Create.
+
+During setup the agent drafts picks in Rules, including its focus, release review, daily AI budget, Discussion access, and boundaries.
+Pending picks are separate from the settings that are in effect.
+New agents start with a publication hold: they can build previews, and app updates wait for the owner's approval.
+The owner can edit the picks, then choose Accept my picks to apply their enforced settings.
+The chosen release rule can keep owner approval, allow proposals after the review window, or remove that waiting period.
+Read the current Rules and publication hold rather than assuming that acceptance releases every app update; the owner can also change the hold directly.
+Custom domains always need the owner's approval.
+Public apps expose their Rules to visitors; private apps keep them owner-only.
+
+The current goal names a concrete result and a done-when that can be observed or counted.
+The scratch first run introduces that goal and its design direction in Discussion, points to Rules, and builds toward the goal while obeying the publication hold.
+The existing-app first run reads the app, introduces the agent, sets a useful first improvement as its goal, and stops without editing files or requesting a release.
+On later runs the agent checks the done-when against app data, analytics, and verified results, records progress, and completes a goal with evidence and the next goal.
+Completion history is immutable, and the owner can replace the current goal in Rules.
+Installed goal tools require the ID of the goal whose work is being reported; a conflict means replanning for the changed goal, not attaching old evidence to it.
+An unavailable goal or a refused tool call does not mean progress was saved.
+Use the installed runtime instructions for the exact tool contract and continue through the normal proposal and budget rules.
+
 ## The three modes
 
 Who controls the app is its mode.
@@ -24,7 +50,7 @@ The same agent keeps working in every mode.
 
 | Mode | Who controls the app | Who approves a release or a governed action |
 |---|---|---|
-| Owned | its owner | the owner; a release ships once its clean rebuild passes unless the owner asked to approve releases first |
+| Owned | its owner | the owner; app updates wait for approval while the publication hold is on, and otherwise follow their current review and release rules |
 | On sale | the platform, while the app's token sale runs or settles | nobody; the only release that can ship is a repair the Gauntlet asked for, which the platform approves |
 | Open | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
 

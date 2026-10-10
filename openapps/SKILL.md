@@ -14,6 +14,7 @@ Use this skill for the app's capability constraints and, when requested, its lif
   A build or edit request does not by itself request opening; continue work already authorized by the user.
 - **Agent running on an OpenApps app computer:** the app already exists and you are its agent.
   Apply the capability constraints below and use the installed runtime-specific instructions for previews, releases, proposals, and the app's mode (`openapps-internal` when provided).
+  Read the current goal and its done-when with the app's Rules; use the installed goal tools to record progress, prove completion, and set the next goal.
   Do not repeat creator initialization or ask to open the app to update it.
   Repo notes such as `AGENTS.md` and `README.md` may predate OpenApps; correct any fact they state that the run context contradicts (the owner, whether it is an OpenApps app) in your next commit.
   If those runtime instructions are unavailable, continue inspection and local work that the environment supports, and identify the missing instructions before attempting a governed release.
@@ -37,7 +38,7 @@ Read the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| The agent an app has from creation, Owned / on sale / Open, asking to open, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
+| Launch interview, first goals, Rules and publication holds, Owned / on sale / Open, asking to open, mainnet, source sync | [Lifecycle](docs/lifecycle.md) |
 | App capability availability, unsupported dependencies, catalog requests, x402 payment and recovery semantics | [Capability ladder](docs/capability-ladder.md) |
 | What opening checks: oApp mode, required boundaries and egress grants, secrets, the served site and reproducible dist, `bounded propose` | [Launch gate](docs/launch-gate.md) |
 | `bounded oapp preflight` and its report | [Preflight](docs/preflight.md) |
