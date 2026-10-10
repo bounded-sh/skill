@@ -41,7 +41,7 @@ The record is flat: `xId`, `xHandle`, `xImageUrl`, `xLinkedAt` (rules read one f
 
 Copy the handle into your own collections with a rule like the first one, so readers and agents see a verified handle without a lookup per user.
 By default the same X account can be linked by several accounts of your app.
-To allow one account per X account, declare it in `policy.json`: `"auth": { "connections": { "x": { "unique": true } } }`.
+To link each X account to at most one user of your app, declare it in `policy.json`: `"auth": { "connections": { "x": { "unique": true } } }`.
 `completeConnection()` then throws `ConnectionError` with code `x_account_linked_elsewhere` while another user of the app holds that X account; the same user can relink, and `disconnect('x')` frees it.
-Links made before you turned it on are kept.
+Links made before you turned it on are kept, but while two users share one, neither can relink it until the other disconnects.
 Offchain rules only: an onchain rule cannot read `__connections__`.
