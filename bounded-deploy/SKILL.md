@@ -105,7 +105,8 @@ account profile, or recovery of an existing key-owned app.
 ## Release rules
 
 - Read `bounded.json` first in an existing app.
-- Regenerate a generated `policy.json` before deploying.
+- The `policy.json` that `bounded.json` names is what deploys.
+  Before running a script that generates it, diff its output against the committed file; if it drops or changes anything, the generator is stale: update it or delete it, never deploy its output.
 - `bounded deploy` validates and compiles the policy and refuses an invalid one before anything changes; there is no separate proof step.
 - After a release-critical deploy, use
   `bounded apps inspect --app-id <id> --json` to confirm the active policy and
