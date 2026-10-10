@@ -55,7 +55,7 @@ bounded site deploy ./dist --app-id <id>
   `https://<slug>.bounded.page`.
 - `bounded deploy --create` gives an offchain (Poofnet) app a **public** hosted
   site and an onchain (devnet, mainnet) app a **private hosted-site gate**;
-  `--public` / `--private` overrides it, and an interactive terminal is asked.
+  `--public` / `--private` overrides it.
   An app created implicitly by `bounded site deploy` starts private unless
   `--public` is passed. The
   gate is deliberately simple and **web-login only**: a public app is reachable

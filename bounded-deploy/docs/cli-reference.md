@@ -405,8 +405,7 @@ bounded deploy                                          # redeploy using bounded
 
 `deploy --create` rejects an unknown `--protocol` locally before any network call and lists the valid app protocols.
 The new app's hosted site is public by default on an offchain protocol (`realtime_offchain`, the Poofnet simulator) and private by default on an onchain one (devnet, mainnet).
-An interactive terminal is asked, with that default preselected; `--public` or `--private` skips the question, and non-interactive runs (including `--json`) take the default.
-The output names the chosen visibility and the `bounded site privacy public|private --app-id <id>` command that flips it; the JSON result carries `sitePrivate`.
+`--public` or `--private` overrides it, and the created-app line names the visibility and the `bounded site privacy public|private --app-id <id>` command that flips it.
 `bounded verify` is experimental and opt-in (`--experimental`); its report format lives in [formal verification](../../bounded-backend/docs/formal-verification.md).
 
 Use the offline plugin reference before authoring an onchain hook:
