@@ -45,7 +45,7 @@ Devnet test tokens cannot buy Bounded credits, and Devnet venues do not offer ma
 
 On an Open app the platform also keeps the app itself funded, every 15 minutes, with the same ladder.
 It tops the credits up to a buffer sized from the app's measured daily spending (today's rate when it runs higher, or a floor before any day was measured) and keeps seven days of that spending as USDC in the treasury, drawing USDC first, then selling about $10 of SOL, then about $10 of the app's own token while the holders' reserve is on, under their daily token cap and slippage cap, never tokens owed to sale bidders, and never two token sales within an hour.
-Automatic draws in a UTC day never exceed half of what the treasury was worth at the start of it (its USDC plus the other assets the venue prices).
+In a UTC day the platform's automatic draws never exceed half of the treasury's value counted before those draws (its USDC plus the other assets the venue prices, plus what the day already drew), so a payout lowers that limit and a deposit raises it.
 Past that guard, when the treasury refuses a draw, or once nothing the platform may sell is left, the agent is woken to decide: a holder-governed swap proposal, less spending, or a word to the holders.
 The venue policy bounds every conversion: at most 1% slippage on SOL and the holders' cap on tokens, never under 0.01 SOL, always keeping 0.01 SOL in the treasury, never asking for more than 3% over the $10 chunk, and never at a SOL price under $50.
 A conversion that fails leaves the draw taking the USDC the treasury has, and no conversion on that lane is tried for that app for the next hour.
