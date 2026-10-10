@@ -15,7 +15,7 @@ Existing launches retain their sealed model.
 Accrued transfer fees appear as pending token claims; they are not spendable USDC or prepaid Bounded credits.
 The treasury policy fixes the withdrawal authority and destination; Bounded supplies collection infrastructure, transaction signing and credit billing.
 On an Open app the agent collects them into the treasury with its `collect_token_fees` action, without a holder proposal, and chooses only the most the collection may charge the app's credits.
-Holder-governed reserve conversions target six months of baseline USDC expenses and start below three months by default.
+On an Open app the platform may also sell the app's own token automatically for USDC, under the holders' daily token cap and slippage cap, only to keep the app's credits funded (see Operating credits and the treasury below).
 
 See [token transfer fees](../../bounded-onchain/docs/token-transfer-fees.md) for collection and pending balances.
 
@@ -37,18 +37,16 @@ The platform progresses these steps automatically, and a recovery control can re
 
 ## Operating credits and the treasury
 
-The agent's runs spend the app's prepaid Bounded credits.
-When the credits run short before a run, the platform tops them up from the treasury's USDC, within the agent's per-run and daily AI limits.
-The top-up draws only USDC; the host credits only a verified USDC transfer.
-Devnet test tokens cannot buy Bounded credits, and Devnet venues do not offer mainnet swaps, perps, or real-money top-ups.
-A treasury that holds SOL can also convert it automatically, but only after the owner turns on "Convert SOL for credit top-ups" on the treasury page; it is off by default.
-The conversion exists only to fund that credit top-up: it cannot pay for anything else, and it does not change treasury swap proposals, withdrawals or payouts.
-With it on, a top-up that needs more USDC than the treasury holds first sells SOL for the shortfall as a separate step, and the top-up draws only after that sale has landed.
-While the sale is still landing the run starts on the credits it already has, and the next run draws the converted USDC.
-Each sale is at least $5 of SOL (a smaller shortfall still sells $5, and the surplus stays in the treasury as USDC), unless all the SOL above the floor is worth less, in which case it sells all of it.
-The venue policy bounds every conversion: at most 0.5 SOL per UTC day, at most 1% slippage, never under 0.01 SOL, always keeping 0.01 SOL in the treasury, never asking for more than 3% over the larger of the shortfall and $5, and never at a price under $50 per SOL.
-No proposal is needed for a conversion.
-A conversion that fails leaves the top-up drawing the USDC the treasury has, and no conversion is tried for that app for the next hour.
-App tokens are never sold for a credit top-up; the holder-governed reserve conversion stays a separate policy.
-Once a launch head exists, only the venue's governance can change the switch.
-Read the switch, today's remaining SOL allowance and the latest conversion from the treasury read the agent already has; no agent tool, proposal or data script can start a conversion or write the switch.
+The agent's runs and the app's own infra (functions, hosting, the app's AI calls) spend the app's prepaid Bounded credits, one pool.
+When the credits run short before a run, the platform tops them up from the treasury's USDC, within the agent's per-run and daily AI limits; the top-up draws only USDC, and the host credits only a verified USDC transfer.
+A treasury short of USDC sells about $10 of SOL first, as a separate step, and the top-up draws only after that sale has landed; while the sale is still landing the run starts on the credits it already has, and the next run draws the converted USDC.
+This is always on: no owner switch and no proposal is needed, and it works the same on Owned and Open apps.
+Devnet test tokens cannot buy Bounded credits, and Devnet venues do not offer mainnet swaps, perps, or automatic SOL or token sales.
+
+On an Open app the platform also keeps the app itself funded, every 15 minutes, with the same ladder.
+It tops the credits up to a buffer sized from the app's measured daily spending (today's rate when it runs higher, or a floor before any day was measured) and keeps seven days of that spending as USDC in the treasury, drawing USDC first, then selling about $10 of SOL, then about $10 of the app's own token while the holders' reserve is on, under their daily token cap and slippage cap, never tokens owed to sale bidders, and never two token sales within an hour.
+In a UTC day the platform's automatic draws never exceed half of the treasury's value counted before those draws (its USDC plus the other assets the venue prices, plus what the day already drew), so a payout lowers that limit and a deposit raises it.
+Past that guard, when the treasury refuses a draw, or once nothing the platform may sell is left, the agent is woken to decide: a holder-governed swap proposal, less spending, or a word to the holders.
+The venue policy bounds every conversion: at most 1% slippage on SOL and the holders' cap on tokens, never under 0.01 SOL, always keeping 0.01 SOL in the treasury, never asking for more than 3% over the $10 chunk, and never at a SOL price under $50.
+A conversion that fails leaves the draw taking the USDC the treasury has, and no conversion on that lane is tried for that app for the next hour.
+Every draw and conversion is recorded on the venue with its reason and no onchain receipt account; the agent reads them with `read_treasury_history`, and no agent tool, proposal or data script can start a conversion.
