@@ -81,7 +81,17 @@ Put the X requirement where an offchain rule can read it:
 - Keep the gated path offchain.
   If the X requirement guards money, keep that money path in offchain collections, where the rule reads the link directly and invariants still apply.
 - Gate an offchain intent and execute it from a server function.
-  The user writes an offchain record (for example `intents/$id`) whose create rule requires the link; a function holding the app's service keypair reads the intent, submits the onchain write, and marks the intent used; the onchain rule admits only that service wallet (for example `@user.address == @const.SERVICE_WALLET`).
+  The user writes an offchain record (for example `intents/$intentId`) whose create rule requires the link; a function holding the app's service keypair reads the intent and submits the onchain write.
+  Enforce one use per intent onchain, not with an offchain "used" flag that two concurrent runs can both read as unused: key the onchain record by the intent id and let only the service wallet create it, never update it.
+
+  ```json
+  "settlements/$intentId": {
+    "onchain": true,
+    "rules": { "read": "true", "create": "@user.address == @const.SERVICE_WALLET", "update": "false", "delete": "false" }
+  }
+  ```
+
+  Put the money movement on that record's create (its onchain hook), so a second run for the same intent is refused.
   See [service keys](../../bounded-backend/docs/service-keys.md) and [server-signed settlement](../../bounded-onchain/docs/onchain.md#1-server-signed---composable-today).
   The link is checked when the intent is written, so a later `disconnect('x')` does not undo an intent already written.
 

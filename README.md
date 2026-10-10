@@ -76,6 +76,12 @@ If you installed either from this repository, uninstall the old copies once so t
 npx skills remove -g -y oapps-fun bounded-teams
 ```
 
+If you once installed the family into a project (without `-g`), also run this from that project directory:
+
+```bash
+npx skills remove -y oapps-fun bounded-teams
+```
+
 Replace any explicit `oapps-fun` skill selection with `openapps`.
 Managed app-computer bundles remain on their pinned commit; updating that pin also requires renaming their local runtime skill to avoid colliding with the public `openapps` skill.
 
