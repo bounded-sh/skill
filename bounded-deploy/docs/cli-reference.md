@@ -350,7 +350,6 @@ folder maps to:
   "name": "my-app",
   "env": "production",
   "protocol": "realtime_offchain",
-  "sitePrivate": true,
   "owner": "GFdiGThC8DJ5oMdDYj1xgyQJjWkje6EbzH2jdUMcuWBt",
   "ownerKeySource": "global (~/.bounded/credentials)",
   "linkedAccount": "you@example.com",
@@ -366,7 +365,8 @@ folder maps to:
   `env (BOUNDED_PRIVATE_KEY)`, or `web (Bounded Auth)`. Answers "which account
   source does this app use?"
 - `sitePrivate` — true when the hosted static site was created behind the
-  private site gate. Older/public apps may omit it.
+  private site gate (the onchain default, or `--private`); omitted for a public
+  site, as in this offchain example.
 - `linkedAccount` - the linked or logged-in account hint when known, blank if
   none. An email for an email-approved link or web login; the approving
   **wallet address** for a wallet-approved link, which records no email. Do not
@@ -389,7 +389,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy, or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
+| `deploy [policy.json]` | Validate, compile, and push the policy, or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public` / `--private` (hosted-site visibility of the new app), `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
 | `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `deploy preflight` | Read-only: whether a deploy will land - your credit balance (deploys are metered against credits, no per-tier cap), the deploy rate-limit, and the structural size caps. Advice, never a promise; never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
@@ -397,13 +397,15 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json
-bounded deploy --create --name my-app                   # create app + record appId; hosted site gate defaults private
-bounded deploy --create --name my-app --public          # opt out; hosted site is public from the start
+bounded deploy --create --name my-app                   # create app + record appId; offchain apps get a public hosted site
+bounded deploy --create --name my-app --private         # hosted site behind the private gate from the start
 bounded tests run                                       # policy-tests/*.json against LOCAL policy.json
 bounded deploy                                          # redeploy using bounded.json
 ```
 
 `deploy --create` rejects an unknown `--protocol` locally before any network call and lists the valid app protocols.
+The new app's hosted site is public by default on an offchain protocol (`realtime_offchain`, the Poofnet simulator) and private by default on an onchain one (devnet, mainnet).
+`--public` or `--private` overrides it, and the created-app line names the visibility and the `bounded site privacy public|private --app-id <id>` command that flips it.
 `bounded verify` is experimental and opt-in (`--experimental`); its report format lives in [formal verification](../../bounded-backend/docs/formal-verification.md).
 
 Use the offline plugin reference before authoring an onchain hook:

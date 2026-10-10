@@ -53,15 +53,18 @@ bounded site deploy ./dist --app-id <id>
   5000 files, path-safety.
 - Live in seconds at the app's mapped slug or custom-domain host, e.g.
   `https://<slug>.bounded.page`.
-- New apps created by the CLI default to a **private hosted-site gate**. The
+- `bounded deploy --create` gives an offchain (Poofnet) app a **public** hosted
+  site and an onchain (devnet, mainnet) app a **private hosted-site gate**;
+  `--public` / `--private` overrides it.
+  An app created implicitly by `bounded site deploy` starts private unless
+  `--public` is passed. The
   gate is deliberately simple and **web-login only**: a public app is reachable
   by anyone; a private app is reachable only after signing in with a Bounded
   web account that is the owner, a collaborator, or invited (identities linked
   to that account — e.g. a linked CLI key's apps — resolve server-side), plus
   Bounded platform staff, who can open any private site read-only for support
   and never gain owner or collaborator powers on it. There is no
-  local-key/daemon auto-pass through the gate. Use `--public` during app
-  creation when the site should be public from the start. Existing apps stay as
+  local-key/daemon auto-pass through the gate. Existing apps stay as
   they were. After creation, flip or inspect the gate with
   `bounded site privacy private|public|status --app-id <id>`, **or** flip it
   from the in-app Bounded widget's always-visible privacy toggle (cloud-backed;
