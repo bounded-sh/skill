@@ -42,7 +42,8 @@ One file per logical concern, `policy-tests/*.json`:
   "name": "creator can flip private_test to countdown, nobody else",
   "actors": {
     "Alice": "alice-wallet-or-id",
-    "Bridge": { "id": "4k5g...", "address": "4k5g..." }
+    "Bridge": { "id": "4k5g...", "address": "4k5g..." },
+    "Xavi": { "id": "xavi", "x": { "id": "1234567890", "handle": "xavi" } }
   },
   "constants": { "MAX_LEN": 14 },
   "steps": [
@@ -56,13 +57,20 @@ One file per logical concern, `policy-tests/*.json`:
 ```
 
 - **`actors`** — string sets both `@user.id` and `@user.address` to that value
-  (matches wallet login). Object form `{id?, address?, email?}` splits
-  identity for email/onchain scenarios; an object giving only `address` gets
+  (matches wallet login). Object form `{id?, address?, email?, x?}` splits
+  identity for email/onchain scenarios (add `x` for a linked X account, below); an object giving only `address` gets
   the same value as its `id`. Steps before any `as` run
   **unauthenticated** (`@user.id == null`) — use that to assert anonymous
   denial.
+- **`x`** on an object actor gives that actor a linked X account: `{ "id", "handle", "imageUrl"? }`.
+  The sandbox stores it at `__connections__/<actor id>` exactly as a completed X link does in production, so `get(/__connections__/@user.id).xHandle` returns the handle (lowercased, without `@`) and `xId`, `xImageUrl`, and `xLinkedAt` are set too.
+  An actor without `x` has no linked account, so `get(/__connections__/@user.id).xId` is `null` and you can test the deny side.
+  The actor needs an `id` of letters, digits, `_`, or `-`.
+  Use this instead of a constant that switches the linked-account rule off in tests.
+  See [connected accounts](../../bounded-frontend/docs/connected-accounts.md).
 - **`constants`** — merged over the policy's own `constants` block before
   compile. Shrink a cap here to make a limit testable without 21 real writes.
+  `expect` and `ensure` expressions read `@const.NAME` and `@def.name` from the policy under test, with these overrides applied, the same way its rules do: `{ "op": "expect", "expr": "@const.MAX_LEN == 14" }`.
 - **`$Actor` substitution** is recursive over string values of the parsed JSON and is applied before execution.
   **`$Name` always interpolates that actor's `id`**, never its `address`.
   For a string actor the two are the same value, so the choice is invisible; for an object actor whose `id` and `address` differ, `$Name` yields the `id` while the caller `as` switched to still reports the other value as `@user.address` - so an onchain-style expectation such as `$author == @user.address` fails on a mismatch you did not write.
