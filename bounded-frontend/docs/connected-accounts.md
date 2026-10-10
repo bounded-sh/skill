@@ -42,3 +42,4 @@ The record is flat: `xId`, `xHandle`, `xImageUrl`, `xLinkedAt` (rules read one f
 Copy the handle into your own collections with a rule like the first one, so readers and agents see a verified handle without a lookup per user.
 The same X account can be linked by several accounts; add your own uniqueness rule if you need one per person.
 Offchain rules only: an onchain rule cannot read `__connections__`.
+To test these rules, give a policy-test actor an `x` field; see [policy tests](../../bounded-backend/docs/policy-tests.md).
