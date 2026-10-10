@@ -940,10 +940,10 @@ JSON output returns the exact `diff`, `draftHash`, target labels, title, descrip
 The fingerprint is local comparison evidence, not a content commitment or a proposal id.
 
 `--submit` signs in, uploads the diff as the caller's own public Discussion text file named `code-change.diff`, and calls the venue function `submitCodeChange`, which posts it in the app's Discussion under Ideas as the caller.
-The app's Discussion rules decide who may post (some apps ask posters to hold the app's token), and posts share the Discussion's hourly rate limit.
+The app's Discussion rules decide who may post (some apps ask posters to hold the app's token), and each post counts toward the Discussion's anti-spam limit (20 messages, replies, and reactions per account every 5 minutes).
 The change is public.
 Before anything is sent, the command refuses binary files and env or key files (`.env`, `.env.*`, `*.pem`, `*.key`).
-Keep `--title` to one line of at most 200 characters and `--description` to at most 1500; the venue refuses longer.
+Keep `--title` to one line of at most 200 characters and `--description` to at most 1500, and the whole post must fit 2000 bytes, so non-English text can hit that limit sooner; the command checks these before uploading anything, and the venue refuses longer.
 `--slug` is required with `--submit`: the name in the app page's address.
 `--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
 JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
