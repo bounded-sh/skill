@@ -7,6 +7,8 @@ description: Build or update apps for OpenApps (openapps.xyz, formerly oapps.fun
 
 An oApp is a Bounded app with its own agent that can open to its community, so it can outlive its creator.
 Use this skill for the app's capability constraints and, when requested, its lifecycle: Owned, on sale, and Open.
+Read [multiplayer](docs/multiplayer.md) for participation presets, owner trust and private members, and [lifecycle](docs/lifecycle.md#the-three-modes) for release review and holder vote timing.
+Trust is an owner direction for the agent to weigh; it grants no access, deploy rights or authority to set owner directions.
 
 ## Choose the workflow
 

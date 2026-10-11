@@ -523,6 +523,16 @@ Protocol mismatches are retained in `warnings[]` with code `onchain_collections_
 App-recording failures such as `app_marker_not_written`, `gitignore_not_updated`, or `project_config_not_updated` also remain in `warnings[]` and make the otherwise committed result partial.
 The `unlinked_wallet_owner` warning is anti-loss guidance and does not by itself make a deploy partial.
 
+### Held OpenApps deploys
+
+When an Owned OpenApps app holds publication, a collaborator's deploy receives HTTP 409 `publication_hold_candidate_required` and an app-root-bound capture endpoint.
+With `--with-source` or `"sourcePush": true`, the CLI submits the filtered source snapshot and exact Git base to the authenticated configured developer API; it accepts only the expected root-relative endpoint and refuses redirects.
+Once the owner-review decision is filed, `bounded deploy` or `bounded site deploy` prints `Held for owner's approval: <decision link>` and exits with code 0.
+JSON mode returns `held: true`, `status: "held"`, and `decisionUrl`, with `sourceSync.attempted: false`.
+This receipt means a candidate is waiting for approval; the live app remains on its prior release and no follow-up source sync runs.
+A pending build or failed capture does not produce that successful held receipt.
+See [held OpenApps deployments](source-sync.md#held-openapps-deployments) for source requirements, stale-base refusals and retained rollback, pin or promote candidates.
+
 ### Recover an in-progress policy deploy
 
 HTTP `409` with stable code `deploy_in_progress` means an earlier policy operation still owns the app's deploy slot.

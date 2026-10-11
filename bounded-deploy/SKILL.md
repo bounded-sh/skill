@@ -56,6 +56,8 @@ account profile, or recovery of an existing key-owned app.
 
 - `publication_hold_candidate_required` (`409`): use `--with-source` with the existing source checkout to file an owner-review candidate.
   A receipt with `held: true` means **Held for owner's approval**, and must not be reported as deployed.
+  A filed candidate exits with code 0 and carries `held: true` and `decisionUrl` in JSON mode; publication still requires the owner's approval.
+  Capture uses the authenticated configured developer API with an exact root-relative endpoint and no redirects; never upload source to an arbitrary capture URL.
   See [held OpenApps deployments](docs/source-sync.md#held-openapps-deployments).
 - `deploy_in_progress`, `operationId`, or `recoveryCommand`: use only the exact
   owner-visible recovery command with unchanged inputs, then let the CLI poll.

@@ -32,6 +32,18 @@ On sale and on an Open app there is no owner: no owner's chat, no owner's approv
 The agent runs on its own schedule and talks to people in the app's Discussion.
 Discussion admission, owner trust and private-member access are described in [multiplayer](multiplayer.md).
 
+Owned review covers releases, data scripts, constitution and AI changes, app identity, and custom domains.
+The publication hold requires explicit owner approval for each of these proposals and for collaborator deploy candidates; turning it on also holds proposals still in review.
+With the hold off, a release that delivers a non-owner Discussion request still uses the captured owner-review window, even when the owner later says to build it; the owner may approve early or veto.
+Owner-only work requested in private chat may publish at once with the hold off.
+Other owner-origin work may publish at once only when it changes files under `docs/`, no competing release is open, and the host-built output exactly matches the last promoted release.
+Where host-built review is enabled, the runtime builds community review and collaborator candidates from source on the host; owner-only private-chat work retains the computer build.
+A build or captured preview is evidence of those files, not a judgement of the idea's merit or proof that the platform tested the app.
+
+An Open proposal captures its review and vote settings when filed.
+When a veto escalates, the chain clock starts its vote window; participating stake stays locked through the required close so it cannot be reused to multiply votes.
+Only the Owned owner or eligible Open stakers can cast a binding veto; another person's request for changes is advice in Discussion.
+
 ## From Owned to Open
 
 1. **Owned: build with the agent.** The owner directs the agent, the agent builds on previews and requests releases, and each release is the owner's review.
@@ -43,6 +55,8 @@ Discussion admission, owner trust and private-member access are described in [mu
    Existing backings are converted to auction orders before the opening countdown begins.
    If a conversion fails, the sale stays in preparation and accepts no public orders; an admin must retry or return the app.
    From the start of the sale the platform holds the app: it has no owner, and nobody but its agent can change it (owner and collaborator changes are refused with `managed_app_mutation_forbidden`).
+   Sale start retires the Owned proposal authority epoch and resets governance to the venue defaults, so outstanding owner proposals cannot execute after the handover.
+   The sealed Open participation preset starts at anyone signed in; later changes require holder governance.
    The app keeps the address it already serves, and the sale, its listing, and the constitution appear on openapps.xyz.
 4. **During the sale.** The Gauntlet runs 15 checks on what the app serves; graduation requires a pass or an explicit admin waiver for this sale.
    An attempt starts when the sale starts and again after each release during it, and the agent's periodic check asks for one whenever the app is owed one.
@@ -54,7 +68,8 @@ Discussion admission, owner trust and private-member access are described in [mu
    No proposal can be filed while the sale runs.
 5. **The sale ends.**
    A graduated sale makes the app Open for good: its holders approve its releases and governed actions, and its constitution and the agent's AI settings change only through them.
-   A failed or expired sale hands the app back to its owner exactly as it was, and it is Owned again.
+   A failed or expired sale hands the app back to its owner, and it is Owned again.
+   Return waits for the sale authority reset to finish and keeps the newer proposal epoch; it never revives earlier owner proposals.
    The platform advances settlement automatically, including token creation, pool creation, and the creator and venue payouts, even when nobody has the page open.
    A launch recovery control resumes outstanding steps; it never reopens bidding or creates a second pool.
    An operator can also do both: hand an app back while no sale can still succeed (for a request whose sale never started, that declines it), and make a graduated app's hold permanent.
