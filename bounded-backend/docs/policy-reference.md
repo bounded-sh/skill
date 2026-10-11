@@ -230,8 +230,9 @@ For the current Devnet program, bind `openTv7fbpYSseNHYmCZFZ1CZgj4r8D9fKNgEz1qo6
   to require a non-empty `String` on any platform version, use bare truthiness
   (`@newData.body`) or `@StringUtils.length(@newData.body) > 0`, both of which
   work offchain and onchain.
-- **No ternary, no switch, no string concatenation.** Branch with
-  `(cond && A) || (!cond && B)` chained. Build paths by embedding variables
+- **No ternary, no switch, and `+` is arithmetic only.** Branch with
+  `(cond && A) || (!cond && B)` chained. Join strings with
+  `@StringUtils.concat(a, b, ...)`. Build paths by embedding variables
   directly: `get(/teams/@newData.teamId/members/@user.address)`.
 
 ### Plugin functions in rules

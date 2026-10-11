@@ -350,7 +350,6 @@ folder maps to:
   "name": "my-app",
   "env": "production",
   "protocol": "realtime_offchain",
-  "sitePrivate": true,
   "owner": "GFdiGThC8DJ5oMdDYj1xgyQJjWkje6EbzH2jdUMcuWBt",
   "ownerKeySource": "global (~/.bounded/credentials)",
   "linkedAccount": "you@example.com",
@@ -366,7 +365,8 @@ folder maps to:
   `env (BOUNDED_PRIVATE_KEY)`, or `web (Bounded Auth)`. Answers "which account
   source does this app use?"
 - `sitePrivate` — true when the hosted static site was created behind the
-  private site gate. Older/public apps may omit it.
+  private site gate (the onchain default, or `--private`); omitted for a public
+  site, as in this offchain example.
 - `linkedAccount` - the linked or logged-in account hint when known, blank if
   none. An email for an email-approved link or web login; the approving
   **wallet address** for a wallet-approved link, which records no email. Do not
@@ -389,7 +389,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
 | `tests pull [--dir]` | Fetch attached test files to disk | `--app-id`, `--dir`, `--force` |
-| `deploy [policy.json]` | Validate, compile, and push the policy, or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public`, `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
+| `deploy [policy.json]` | Validate, compile, and push the policy, or reconcile one exact retained operation without submitting another policy mutation | `--app-id` (defaults to `bounded.json`) or `--create --name`, `--protocol`, `--public` / `--private` (hosted-site visibility of the new app), `--constants`, `--environment`, `--recover-operation`, `--owner-wallet` (confirm a mainnet app's permanent on-chain owner when the interactive prompt cannot run) |
 | `deploy status` | Read-only: what holds the app's deploy slot, and whether a fresh deploy is safe. Never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `deploy preflight` | Read-only: whether a deploy will land - your credit balance (deploys are metered against credits, no per-tier cap), the deploy rate-limit, and the structural size caps. Advice, never a promise; never mutates. | `--app-id` (defaults to `bounded.json`), `--json` |
 | `clone <appId> [dir]` | Clone the app's cloud source repository with the active control-plane identity (browser session by default), then preserve that identity in the checkout. `--link` is only for an explicitly selected wallet key whose source access is denied. | `--branch`, `--link` |
@@ -397,13 +397,15 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 
 ```bash
 bounded init                                            # scaffold policy.json + bounded.json
-bounded deploy --create --name my-app                   # create app + record appId; hosted site gate defaults private
-bounded deploy --create --name my-app --public          # opt out; hosted site is public from the start
+bounded deploy --create --name my-app                   # create app + record appId; offchain apps get a public hosted site
+bounded deploy --create --name my-app --private         # hosted site behind the private gate from the start
 bounded tests run                                       # policy-tests/*.json against LOCAL policy.json
 bounded deploy                                          # redeploy using bounded.json
 ```
 
 `deploy --create` rejects an unknown `--protocol` locally before any network call and lists the valid app protocols.
+The new app's hosted site is public by default on an offchain protocol (`realtime_offchain`, the Poofnet simulator) and private by default on an onchain one (devnet, mainnet).
+`--public` or `--private` overrides it, and the created-app line names the visibility and the `bounded site privacy public|private --app-id <id>` command that flips it.
 `bounded verify` is experimental and opt-in (`--experimental`); its report format lives in [formal verification](../../bounded-backend/docs/formal-verification.md).
 
 Use the offline plugin reference before authoring an onchain hook:
@@ -921,34 +923,39 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 `pi`, or `other`) with each prompt. Browser widget actions use a short-lived
 `X-Bounded-Live-Edit-Token`; no-Origin local agent/curl calls do not.
 
-### `propose` / `proposals` - Open oApp contributions
+### `propose` / `proposals` - OpenApps code changes
 
-`bounded propose` is currently an inspection command, not a submission command.
-Exact code-patch execution is not wired end to end, so live submission fails before Git inspection, identity setup, venue access, or any write.
-Use the explicit dry-run mode to inspect a local draft:
+`bounded propose` posts the changes in a bounded clone to an OpenApps app's page as a code change, or shows them without sending anything.
+Nobody gets write access to the app: a code change is an idea with its implementation attached, and the app's agent decides whether to build it.
+What the agent builds ships the way every change does, on a preview through the app's release decision, where the owner or the holders approve or veto it.
+Choose one mode; with neither, the command exits without touching anything.
 
 ```bash
 bounded propose --title "Show the streak counter" --dry-run
-bounded propose --title "Show the streak counter" --slug streaks --dry-run --json
+bounded propose --title "Show the streak counter" --description "It was hidden in the menu" --slug night-walk-1oqr --submit
 ```
 
-The dry-run reads only the local project configuration and Git checkout.
-It never opens a venue session, signs in, creates a keypair, or writes a proposal.
-The patch is measured against the published remote-tracking head by default, or against `--base <revision>` when supplied.
-If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
-The reported and fingerprinted base is always the resolved exact commit object ID, never a moving symbolic ref such as `HEAD`.
-Top-level `bounded.json` and `.gitignore` clone plumbing are excluded.
-Untracked files are refused instead of silently omitted, and one draft is capped at 512 KiB.
-The canonical patch includes reconstructable binary deltas, ignores ambient global and system Git configuration, and fixes the diff algorithm, context, prefixes, rename behavior, and presentation.
-
-Human output prints the exact diff and its `draft hash`.
+`--dry-run` reads only the local project configuration and Git checkout, prints the exact diff and its `draft hash`, and never opens a venue session or writes anything.
 JSON output returns the exact `diff`, `draftHash`, target labels, title, description, intent, base, changed file names, file count, and byte count.
-The versioned fingerprint binds those local draft fields with unambiguous JSON field boundaries.
-It is not an onchain content commitment, does not reserve a proposal id, and does not create something holders can vote on.
+The fingerprint is local comparison evidence, not a content commitment or a proposal id.
 
-Until the exact-patch lane is available, submit the intended outcome as a normal idea in the oApp's Ideas tab.
-`bounded proposals [slug]` remains a read-only venue command for listing existing proposals newest-first.
-It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`; unlike local `propose --dry-run`, it opens a venue data-plane session to read the backlog.
+`--submit` signs in, uploads the diff as the caller's own public Discussion text file named `code-change.diff`, and calls the venue function `submitCodeChange`, which posts it in the app's Discussion under Ideas as the caller.
+The app's Discussion rules decide who may post (some apps ask posters to hold the app's token), and each post counts toward the Discussion's anti-spam limit (20 messages, replies, and reactions per account every 5 minutes).
+The change is public.
+Before anything is sent, the command refuses binary files and env or key files (`.env`, `.env.*`, `*.pem`, `*.key`).
+Keep `--title` to one line of at most 200 characters and `--description` to at most 1500, and the whole post must fit 2000 bytes, so non-English text can hit that limit sooner; the command checks these before uploading anything, and the venue refuses longer.
+`--slug` is required with `--submit`: the name in the app page's address.
+`--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
+JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
+
+Both modes take the diff against the published remote-tracking head by default, or against `--base <revision>` when supplied.
+If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
+The reported base is always the resolved exact commit object ID, never a moving symbolic ref such as `HEAD`.
+Top-level `bounded.json` and `.gitignore` clone plumbing are excluded.
+Untracked files are refused instead of silently omitted, and one diff is capped at 512 KiB.
+
+`bounded proposals [slug]` is a read-only venue command for listing the venue's older `governance/<slug>/proposals` backlog newest-first.
+It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`.
 
 ## Billing
 
@@ -1295,8 +1302,8 @@ bounded decisions --app-id <id> --json           # one JSON object per line (age
 
 Each entry: `ts`, `collection`, `path`, `action` (create/update/delete/read),
 `actor` (wallet address or `(anon)`), `decision` (allow/deny/error), `reason`,
-and `roomId` (for session/partition writes). Owner/collaborator gated (same auth
-as `bounded share`/collaborators). The buffer is **in-memory and bounded** (~200
+and `roomId` (for session/partition writes). Needs `analytics:view`: the owner,
+an admin, a developer or a viewer (not `billing`). The buffer is **in-memory and bounded** (~200
 entries per app, denies retained over allows) — make a write, then re-run.
 
 `decision: "error"` is not a verdict: the rule was reached and could not be

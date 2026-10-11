@@ -58,6 +58,9 @@ Returns a JSON bundle:
 - `timeSeries` — bucketed counts (events, views, errors, visitors, sessions) over the range.
 - `topPages` — most-visited bucketed paths with visitors + error counts.
 - `errors` — grouped by event + failure class + diagnostic + path, with last-seen.
+  An `api_error` row has no diagnostic text. It names `requestTarget`, the failing
+  request most of its requests went to as `host/bucketed-path` (`path` stays the page
+  they came from), and `sameOrigin`, whether most of them went to the page's own origin.
 - `devices` / `countries` / `referrers` — top dimension breakdowns.
 
 When the analytics dataset hasn't received data yet (or isn't provisioned), the API

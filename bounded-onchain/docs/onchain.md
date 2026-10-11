@@ -2,8 +2,8 @@
 
 **What's in here / when to read this:** putting a collection on Solana, what
 changes when a write is a real chain transaction your wallet signs, the
-`--protocol` choices, the rules that are legal onchain, the eventual-consistency
-mirror (don't read-after-write), the `0xbc4` deploy gotcha + `--skip-preflight`,
+`--protocol` choices, the rules that are legal onchain, confirmed-transaction
+mirror synchronization, the `0xbc4` deploy gotcha + `--skip-preflight`,
 policy upgrade governance, and game settlement with server-signed
 transactions. Client-signed game handoff is not currently supported.
 
@@ -19,7 +19,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Onchain update patches](#onchain-updates-are-patches)
 - [Mixing onchain and offchain collections](#onchain-and-offchain-collections-coexist-and-the-0xbc4-gotcha)
 - [Identity rules](#onchain-rules-useraddress-only)
-- [Mirror consistency and recovery](#the-mirror-is-eventually-consistent--dont-read-after-write)
+- [Mirror synchronization and confirmed receipts](#mirror-synchronization-and-confirmed-receipts)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
@@ -272,16 +272,38 @@ Gate that UI on `user.isAnonymous` so the prompt appears before the write, not a
 > off-platform. Tell guests not to fund the guest wallet - see the guest-mode warning in
 > [anonymous-accounts.md](../../bounded-frontend/docs/anonymous-accounts.md).
 
-## The mirror is eventually-consistent / don't read-after-write
+<a id="the-mirror-is-eventually-consistent--dont-read-after-write"></a>
 
-The read path is a **mirror** of on-chain state that runs a few seconds behind
-the chain. A `get` **immediately** after an onchain `set`/`delete` can still
-return the prior value until the indexer catches up. This is **not** a stale
-cache - it self-corrects.
+## Mirror synchronization and confirmed receipts
+
+**Availability:** Automatic signature synchronization is introduced in the `0.0.117-sync.0` SDK prerelease and requires a Bounded environment upgraded to support confirmed-signature synchronization.
+Stable SDK `0.0.116` does not include it, and upgrading the SDK alone does not upgrade the environment.
+With an older SDK or environment, keep using transaction confirmation followed by bounded polling or subscriptions for the expected mirror state.
+
+The read path is a **mirror** of onchain state.
+For a normal Solana SDK write, `set` and `setMany` confirm the transaction, then automatically synchronize its exact signature into that mirror before returning.
+This synchronization indexes the transaction's native document changes, including documents changed by hooks that were not listed in the original batch.
+Reconciling a `submitted` receipt with `reconcileSetResult` or `waitForSetResult` performs the same synchronization when that signature confirms.
+There is no fixed delay to wait for a webhook.
+
+A `status: "confirmed"` receipt remains authoritative if synchronization is temporarily unavailable.
+The SDK returns that receipt with `mirrorSync.observed: false` and a reason; it does not turn a confirmed transaction into a failed write or submit it again.
+Bounded makes up to two short retries for transient synchronization transport errors only.
+Do not call `set` again to repair a stale mirror, because that would create another transaction.
+Poll or subscribe for the expected state instead.
+An unobserved mirror result can also mean a requested document was deleted, remains absent, or is not readable by the caller; it does not imply that the chain write failed.
+
+At the HTTP layer, `PUT /items/sync` with `{ paths, transactionSignature }` indexes that confirmed transaction and returns policy-filtered reads for the requested paths.
+A successful signature synchronization includes `synchronized: true` and the same `transactionSignature` in the response.
+The path-only form, `{ paths }`, refreshes native Bounded document accounts from the chain; it skips passthrough collections backed by external protocols.
+For onchain collections with offchain app hooks, synchronization requires `transactionSignature`; a path-only request returns `409 onchain_sync_signature_required` before reading chain state.
+Neither form submits a new onchain transaction or reruns onchain write hooks.
+Confirmed ingestion shares the webhook receipt used to deduplicate offchain hook dispatch.
+Background indexing and writes from other clients can still lag, so an arbitrary immediate `get` is not proof of confirmation.
 
 - **Do not read immediately after a write and call that confirmation.**
   First confirm the returned transaction signature at the required commitment.
-  Then poll or subscribe until the exact expected Bounded mirror, query, reveal, account, or denied state appears.
+  The SDK handles its normal confirmation and synchronization path; for direct submissions or an unobserved mirror result, poll or subscribe until the exact expected Bounded mirror, query, reveal, account, or denied state appears.
 - A returned signature proves submission, not indexing or reveal completion.
   A toast proves neither.
   A stale first mirror read is not evidence that the transaction failed.

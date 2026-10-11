@@ -42,6 +42,7 @@ term.
 | Complete policy examples by intent (marketplace, escrow, vaults, staking, tokens, ...) | [examples index](docs/examples.md) |
 | Worked multi-collection policies (team SaaS, marketplace, realtime game) | [examples](docs/policy-examples.md) |
 | Rule recipes: owner-only, admin-or-owner, membership, time windows, validation, immutable fields, atomic batches | [access patterns](docs/access-patterns.md) |
+| Require or copy a user's verified X account in a rule, `get(/__connections__/@user.id).xHandle`, testing linked-X rules, handles typed before linking, onchain apps | [connected accounts](../bounded-frontend/docs/connected-accounts.md) |
 | Rules, fields, expressions, `@user`, `@data`, `@newData`, `@time`, `get()`, `getAfter()`, ownership fields | [policy reference](docs/policy-reference.md) |
 | Caps, balances, supply, tenant isolation, hard bounds; `rollingSum`, `windowSum`, `flowBound`, `conserve`, `tenantTag`, `tenantEdge`, `bound` | [invariants](docs/invariants.md) |
 | Trending feeds, leaderboards, ranked `windowSum` reads | [trending feeds](docs/trending-feeds.md) |
@@ -61,7 +62,7 @@ term.
 | Recurring fleet sweeps without full scans | [scheduled sweeps](docs/scheduled-sweeps.md) |
 | Anti-cheat proof limits | [hooks and anti-cheat](docs/hooks-and-anti-cheat.md) |
 | Atomic writes, subset attacks, `requiresInBatch`, `incomplete_batch` | [data plane](docs/data-plane.md) |
-| Queries, pagination, `queryAggregate`, `count`, filters, sort, cursor | [queries](docs/queries.md) |
+| Queries, pagination, `queryAggregate`, `count`, filters, missing versus `null`, `$exists`, sort, cursor | [queries](docs/queries.md) |
 | Files, `setFile`, storage, full-text search | [files and search](docs/files-and-search.md) |
 | Realtime rooms; `session.tick`, `settleTo`, `settleFrom`, fog-of-war views | [realtime and games](docs/realtime-and-games.md) |
 | Native live modules; `session.live`, `tick`, `views`, `@effect`, `live.intent` | [live runtime](docs/live-runtime.md) |

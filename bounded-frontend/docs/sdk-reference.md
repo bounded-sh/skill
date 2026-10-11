@@ -2,8 +2,9 @@
 
 **What's in here / when to read this:** every SDK method -
 `get`/`setMany`/`subscribe`/`search`/`count`/`aggregate`, auth,
-`createWalletClient`, `verifyWebhook`, and invoking a function. (Collaborators
-are managed by the CLI, not the SDK - see below.)
+`createWalletClient`, `verifyWebhook`, invoking a function, and OpenApps venue
+escrows (`fundVenueEscrow`). (Collaborators are managed by the CLI, not the
+SDK - see below.)
 
 **Two packages, one operation surface.** The SDK ships as two npm packages:
 
@@ -203,6 +204,13 @@ await setMany([                                            // atomic transfer
   { path: "accounts/bob",   document: { balance: 150 } },
 ]);
 ```
+
+In SDK prerelease `0.0.117-sync.0`, on a Bounded environment upgraded for confirmed-signature synchronization, normal Solana `set` and `setMany` writes automatically synchronize the confirmed transaction signature into Bounded's mirror, including documents changed by hooks outside the requested batch.
+Stable SDK `0.0.116` does not include this behavior.
+The returned `status: "confirmed"` receipt still means the chain write succeeded if this synchronization is unavailable; `mirrorSync.observed: false` reports the separate observation problem.
+Do not repeat the write to refresh the mirror.
+For a `status: "submitted"` receipt, use `reconcileSetResult` or `waitForSetResult` to check the same signature without rebuilding or resubmitting it; confirmation also attempts synchronization.
+See [mirror synchronization and confirmed receipts](../../bounded-onchain/docs/onchain.md#mirror-synchronization-and-confirmed-receipts) for direct submissions, absent or unreadable documents, and path-only refreshes.
 
 A violated invariant throws (409 with the invariant name); a denied rule throws
 (403). Nothing partial is applied. Append-only semantics, in-batch `getAfter`
@@ -414,7 +422,7 @@ third-party surface Bounded does not host - poll deliberately, never in a bare
 - **Subscribe to the settled result where one exists.** An onchain write settles
   into the Bounded mirror, which is live: confirm the signature, then `useQuery`
   the mirror path instead of re-reading it on a timer. See
-  [onchain.md](../../bounded-onchain/docs/onchain.md#the-mirror-is-eventually-consistent--dont-read-after-write).
+  [onchain.md](../../bounded-onchain/docs/onchain.md#mirror-synchronization-and-confirmed-receipts).
 - **Bound it.** A finite attempt budget with a visible give-up state, never an
   unbounded retry loop. A `429` ends the schedule; it never feeds it.
 
@@ -849,6 +857,53 @@ export default async function syncStripe(_args, ctx) {
 Full guide (declare in policy, write the `ctx` API, deploy, secrets, limits, what
 policy still enforces): [functions.md](../../bounded-backend/docs/functions.md). See its
 safe sync example for the same server-side resolution in policy.
+
+## Venue escrows - `fundVenueEscrow` / `disputeVenueEscrow` / `getVenueEscrow`
+
+An [OpenApps](../../openapps/SKILL.md) app can let a signed-in person lock USDC for another person in the app's venue escrow, and dispute it, without leaving the app.
+The USDC sits in its own account for that one escrow, separate from the app's treasury, until the app's agent releases or refunds it or it expires.
+These functions work on an OpenApps app's own live site; any other app, and any preview, is refused.
+They need `@bounded-sh/client` 0.0.115 or newer.
+
+```ts
+import { fundVenueEscrow, disputeVenueEscrow, getVenueEscrow } from "@bounded-sh/client";
+
+// Call both write functions straight from a click handler, with nothing awaited before them.
+const { escrowId, rootAppId, venueAppId, transactionId } = await fundVenueEscrow({
+  payee: "<base58 address>",
+  amountUsdc: 20_000_000,                                // 6-decimal base units: 20 USDC
+  challengeSeconds: 0,                                   // the window after an approval in which a dispute can still land
+  expiresAt: Math.floor(Date.now() / 1000) + 7 * 86400,  // unix seconds
+  ref: deal.id,                                          // 1-128 characters: your own id for the deal
+});
+
+const { disputeId } = await disputeVenueEscrow({ escrowId, reason: "Work not delivered" });  // reason: 1-400 bytes
+
+const escrow = await getVenueEscrow({ rootAppId, escrowId });  // the public escrow, or null
+```
+
+- **Call from a user click.** An email wallet approves in a Bounded popup that shows the terms, and a browser opens that popup only from the click. A Phantom user approves in Phantom. Never call these on load, in an effect, or on a timer.
+- **The signer is the wallet the person is signed in with in this app.** An email wallet in a new app belongs to that app alone ([embedded wallets](../../bounded-onchain/docs/embedded-wallets.md#wallets-are-scoped-to-the-app)), so it must hold the USDC itself: fund it with [`onramp()`](../../bounded-onchain/docs/onramp.md).
+- **Only the main app's live site can fund or dispute,** never a preview.
+- **Funding needs durable browser storage and the Web Locks API.** The SDK saves each funding before it sends anything and funds from one tab at a time, so a funding interrupted by a closed page or a lost answer is settled, never repeated.
+- **No `init` change is needed.** The SDK broadcasts on the venue's own network through Bounded's keyless RPC for it, even when the app sets no `chain`. An app that sets a different `chain` is refused with `chain_mismatch` before anything is signed. If the app declares `boundaries.browser`, its `connect` list must name the RPC host (`celestia-cegncv-fast-mainnet.helius-rpc.com` on mainnet), or the browser cannot send the funding.
+- **Approve within about two minutes.** The venue's rules bind the funding's timestamp to the chain clock, so an approval left open longer is refused with `rule_refused` and moves no money; the person can press the button again.
+- **Network fees are sponsored.** The app's credits pay them at cost, within daily caps per person and per app; past a cap the signer pays the fee.
+- **The venue decides whether the terms are acceptable.** Amount, challenge window, expiry and payee are checked by the venue's own rules, and the SDK checks only their shape.
+- **Release and refund are not app code's to do.** The app's agent approves an escrow, and the app's owner decides a disputed one.
+- **Who can dispute.** The venue admits one dispute per escrow, from its funder, its payee or the app's owner, before any approval or inside the approval's challenge window, and a dispute freezes the agent's approval. To let a payee dispute in the app, name the wallet they use in the app as `payee`.
+- **Store `rootAppId` and `escrowId` on your own deal record.** `getVenueEscrow` needs both, and `ref` carries the deal id back to your record.
+
+`fundVenueEscrow` resolves once the funding has landed, and its `transactionId` can be `null`.
+`getVenueEscrow` needs no sign-in.
+It returns the escrow's terms, its `ref`, and a `state`: `funded`, `approved`, `disputed`, `released`, `refunded`, `pending` (funding not confirmed yet) or `failed`.
+It returns `null` when no such escrow exists.
+
+A failure throws a typed `VenueEscrowError`; branch on its `code`, never on the message.
+The exported `VenueEscrowErrorCode` type lists the codes.
+They separate an app or session that cannot use escrows (not an OpenApps app, a preview, a signed-out or guest person), an approval the person cancelled or that could not be shown, terms the venue refused, and a funding whose outcome is not known or that did not land.
+When the outcome is not known yet the code is `pending`: call `fundVenueEscrow` again with the very same terms, kept as they were rather than recomputed, and the SDK settles its own interrupted attempt instead of funding twice.
+Treat a code you do not recognize as a plain failure and show its `message`.
 
 ## Related
 
