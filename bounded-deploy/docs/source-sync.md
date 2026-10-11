@@ -112,6 +112,12 @@ While the host builds, the CLI polls the same captured snapshot and operation id
 An interrupted or uncertain capture can be retried with the same checkout and deploy command; the local operation journal preserves its identity.
 Do not treat a refusal or a pending build as a deployed release.
 
+Canonical `bounded site rollback`, `bounded site pin`, and `bounded site promote` can also require owner approval.
+For a retained OpenApps release, the CLI submits its verified candidate identity and exact current base commit to the separate republish endpoint.
+It uploads no checkout files and executes no build: the host creates a review preview from the retained deposits.
+Legacy deployment ids without a verified `hc_` candidate identity cannot use this path.
+Asset edits and editing-base replacement are refused while publication is held; those refusals do not produce a candidate or a deployment.
+
 ## The data model
 
 - The cloud source repo is a git repository; direct source sync advances `main`, and held OpenApps captures use a server-selected contributor branch.
