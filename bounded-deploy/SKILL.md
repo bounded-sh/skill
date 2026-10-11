@@ -54,6 +54,9 @@ account profile, or recovery of an existing key-owned app.
 
 ## Incident router
 
+- `publication_hold_candidate_required` (`409`): use `--with-source` with the existing source checkout to file an owner-review candidate.
+  A receipt with `held: true` means **Held for owner's approval**, and must not be reported as deployed.
+  See [held OpenApps deployments](docs/source-sync.md#held-openapps-deployments).
 - `deploy_in_progress`, `operationId`, or `recoveryCommand`: use only the exact
   owner-visible recovery command with unchanged inputs, then let the CLI poll.
   See [deploy recovery](docs/cli-reference.md#recover-an-in-progress-policy-deploy).

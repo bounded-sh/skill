@@ -1,4 +1,4 @@
-# Cloud Source Sync — source rides the deploy
+# Cloud Source Sync - source rides the deploy
 
 Bounded keeps an optional cloud copy of an app's source tree in the "Artifacts" repository.
 It powers `bounded clone` / `bounded pull` and the public source page of completed-Open oApps (`/__bounded/source`).
@@ -86,9 +86,35 @@ Frontend variants are previews. `site deploy --variant ... --with-source` may
 sync source, but it does not replace or re-establish the canonical widget
 editing base.
 
+## Held OpenApps deployments
+
+An Owned OpenApps app can hold publication for its owner's approval.
+A collaborator who otherwise has deploy authority then receives HTTP 409 `publication_hold_candidate_required`, with a capture URL bound to that app's agent root.
+On `bounded deploy` or `bounded site deploy`, enable source with `--with-source` or `"sourcePush": true` so the CLI can capture the candidate.
+`--no-source` cannot submit a held candidate.
+
+The CLI sends the filtered UTF-8 source snapshot and its exact Git base commit to the configured developer API.
+Its `bounded.json` must name this app and its declared build output is excluded, along with dependency folders and credential files.
+For a policy deploy, the policy must be the file named by `bounded.json` and match the source snapshot; save temporary policy overlays into that file before submitting a held candidate.
+The server selects the contributor branch, builds the source, serves the review preview and files the owner's decision.
+It refuses a stale base instead of replacing newer work: pull the app's current source and deploy again.
+
+The CLI prints:
+
+```text
+Held for owner's approval: <decision link>
+```
+
+It exits successfully with `held: true` and `decisionUrl` in JSON mode.
+This means a review candidate was filed; the live site and policy were not deployed and no follow-up source sync runs.
+A collaborator capture is built by the host and labelled **Not tested by the platform**, because it has no agent run for platform QA.
+While the host builds, the CLI polls the same captured snapshot and operation id.
+An interrupted or uncertain capture can be retried with the same checkout and deploy command; the local operation journal preserves its identity.
+Do not treat a refusal or a pending build as a deployed release.
+
 ## The data model
 
-- The cloud source repo is a git repository; every push is a commit on `main`.
+- The cloud source repo is a git repository; direct source sync advances `main`, and held OpenApps captures use a server-selected contributor branch.
 - Some deploys carry source, some don't — both are honest states. The repo's
   history is the ledger of which trees were synced and when.
 - Authority: pushing source is part of DEPLOY authority. Whoever may
@@ -99,7 +125,7 @@ editing base.
 
 - **Handing an existing app to its OpenApps agent** (Launch, "Use an existing app"). The agent's computer works from a clone of the synced source, so the venue refuses the handover with `user_app_source_not_synced` until a deploy with source lands, and a run on an app whose source is missing ends with `hermes_source_not_synced`.
 - **Asking to open an oApp.** The request to open reads the release the app serves, including its synced source revision, and is refused without one (`oapp_app_release_source_not_synced`).
-  An OpenApps app's source is public whenever the app is public, and every app that opens is public.
+  An OpenApps app exposes the source of its promoted release whenever the app is public, and every app that opens is public.
 - **`bounded clone` / `bounded pull`** - read the same repo (read-only
   tokens, `code:read` authority). Browser login is the default identity, and a
   cloned checkout keeps `account.keySource: web`; `--link` exists only for an

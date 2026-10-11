@@ -24,12 +24,13 @@ The same agent keeps working in every mode.
 
 | Mode | Who controls the app | Who approves a release or a governed action |
 |---|---|---|
-| Owned | its owner | the owner; a release ships once its clean rebuild passes unless the owner asked to approve releases first |
+| Owned | its owner | the owner reviews releases; the publication hold requires explicit owner approval |
 | On sale | the platform, while the app's token sale runs or settles | nobody; the only release that can ship is a repair the Gauntlet asked for, which the platform approves |
 | Open | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
 
 On sale and on an Open app there is no owner: no owner's chat, no owner's approval, and no owner's settings.
 The agent runs on its own schedule and talks to people in the app's Discussion.
+Discussion admission, owner trust and private-member access are described in [multiplayer](multiplayer.md).
 
 ## From Owned to Open
 
@@ -131,3 +132,5 @@ Source rides the deploy; there is no separate register or sync machinery.
 With that set, every `bounded site deploy` (and `bounded deploy`) also pushes the project source tree to the app's cloud source repository and prints `source synced: <sha>`.
 One-off control: `--with-source` / `--no-source` on the deploy commands.
 An app headed to OpenApps must deploy with source ON, and the source that ships must be the tree that produced the deployed site.
+When a collaborator's deploy is held for owner approval, the CLI captures that source as a candidate and reports the decision link instead of a deployed release.
+The public source mirror and private-member downloads follow the last promoted release, rather than unfinished work on the agent's main branch.

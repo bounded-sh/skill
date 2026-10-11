@@ -104,5 +104,10 @@ bounded propose --title "Show the streak counter" --slug <oapp-slug> --dry-run
 
 That command reads the local Git tree, prints the exact diff and deterministic `draftHash`, and never opens a venue session or writes a proposal.
 The hash is local comparison evidence, not an onchain content commitment or proposal id.
-Use the oApp's Ideas tab to submit the intended outcome as a normal idea holders can vote on today.
+Submit the intended outcome or a `.patch` / `.diff` attachment in the oApp's Discussion for its agent to evaluate.
+Attachments remain visible to everyone admitted to that Discussion.
+The agent checks the attachment's verified SHA, file paths, and additions and deletions before applying a patch within the intended scope.
+It explains a refusal in the thread, and may adapt an accepted patch before filing a release with its real diff.
+An attachment alone does not create a proposal or grant its author deploy authority.
+See [Discussion, trust and private access](multiplayer.md).
 `bounded proposals <slug>` is only the read-only viewer for proposal history and backlog.
