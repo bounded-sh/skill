@@ -261,8 +261,9 @@ network.
 `_transaction_hash`, `_hook_completed`, and `_error_message` are written by
 the SIMULATOR. On a real chain the program stores none of them - a failed
 onchain hook reverts the whole write, so document existence is itself the
-completion proof there, and the chain mirror carries different metadata
-(`_txSignature`/`_txSlot`) that arrives asynchronously and is not readable at
+completion proof there. The chain mirror stamps the same `_transaction_hash`,
+`_block_number`, and matching `_hook_completed` once it indexes the landing,
+but that arrives asynchronously, offchain only, and is never readable at
 rule-evaluation time. A policy rule that requires
 `_transaction_hash != null && _hook_completed == _transaction_hash` is
 therefore correct on Poofnet and PERMANENTLY UNSATISFIABLE on a real-chain
