@@ -22,9 +22,9 @@ See [token transfer fees](../../bounded-onchain/docs/token-transfer-fees.md) for
 ## Bidding and completion
 
 The opening countdown starts after existing backings have converted successfully into auction orders.
-The owner can reserve the first 1/24 of the bidding window for those backers, as described in [the lifecycle](lifecycle.md#backing-before-the-sale).
-The policy allows early orders with longer countdowns until one hour before bidding opens, subject to that backer reservation.
-The normal 60-second countdown has no early-order period.
+Every new sale reserves the first 1/24 of the bidding window for those backers, as described in [the lifecycle](lifecycle.md#backing-before-the-sale).
+No order can be placed before bidding opens; backing is the only pre-sale commitment.
+An order's whole escrow is its budget: it buys along the schedule until the clearing valuation passes its limit, and whatever is unspent comes back at settlement.
 
 In **Your funding**, **Add funds** creates another order at the existing order's market-cap limit; it does not rewrite an order that already has fills.
 For example, adding 50 USDC to a 100 USDC order produces two orders at that limit.
