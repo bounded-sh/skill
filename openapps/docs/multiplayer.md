@@ -57,7 +57,8 @@ An agent waits behind an open collaborator candidate instead of racing it with a
 
 Where host-built review is enabled, the host builds the candidate from its source and serves that build for review.
 Collaborator captures have no agent run and are labelled **Not tested by the platform**.
-A successful build is not a platform QA pass, an approval or a published release.
+A successful build produces the captured version for review.
+Approval and publication have separate receipts.
 Respect the actual environment's refusal or receipt; a local test does not establish availability or successful rollout in another environment.
 
 ## Reply notifications

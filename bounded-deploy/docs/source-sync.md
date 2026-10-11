@@ -107,7 +107,8 @@ Held for owner's approval: <decision link>
 
 It exits successfully with `held: true` and `decisionUrl` in JSON mode.
 This means a review candidate was filed; the live site and policy were not deployed and no follow-up source sync runs.
-A collaborator capture is built by the host and labelled **Not tested by the platform**, because it has no agent run for platform QA.
+A collaborator capture is built by the host and labelled **Not tested by the platform**.
+Testing notes describe checks the author chose to run.
 While the host builds, the CLI polls the same captured snapshot and operation id.
 An interrupted or uncertain capture can be retried with the same checkout and deploy command; the local operation journal preserves its identity.
 Do not treat a refusal or a pending build as a deployed release.
