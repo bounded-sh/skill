@@ -861,6 +861,7 @@ safe sync example for the same server-side resolution in policy.
 ## Venue escrows - `fundVenueEscrow` / `disputeVenueEscrow` / `getVenueEscrow`
 
 An [OpenApps](../../openapps/SKILL.md) app can let a signed-in person lock USDC for another person in the app's venue escrow, and dispute it, without leaving the app.
+A new OpenApps app holds this money in an escrow in its own policy instead ([openapps app escrow](../../openapps/docs/app-escrow.md)); the venue escrow serves earlier deals and mainnet apps.
 The USDC sits in its own account for that one escrow, separate from the app's treasury, until the app's agent releases or refunds it or it expires.
 These functions work on an OpenApps app's own live site; any other app, and any preview, is refused.
 They need `@bounded-sh/client` 0.0.115 or newer.
