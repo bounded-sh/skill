@@ -28,6 +28,8 @@ The same agent keeps working in every mode.
 | On sale | the platform, while the app's token sale runs or settles | nobody; the only release that can ship is a repair the Gauntlet asked for, which the platform approves |
 | Open | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
 
+One exception holds in Owned and Open alike: a swap of SOL or the app token into the venue's USDC, or a perp margin, that fits the agent's daily limit is approved by the venue on the spot, with no review and no vote ([the agent's daily limit](launch-economics.md#the-agents-daily-limit)).
+
 On sale and on an Open app there is no owner: no owner's chat, no owner's approval, and no owner's settings.
 The agent runs on its own schedule and talks to people in the app's Discussion.
 Discussion admission, owner trust and private-member access are described in [multiplayer](multiplayer.md).
@@ -67,7 +69,7 @@ Only the Owned owner or eligible Open stakers can cast a binding veto; another p
    Nothing changes on the app except a repair the Gauntlet asked for, which the agent releases and the platform approves.
    No proposal can be filed while the sale runs.
 5. **The sale ends.**
-   A graduated sale makes the app Open for good: its holders approve its releases and governed actions, and its constitution and the agent's AI settings change only through them.
+   A graduated sale makes the app Open for good: its holders approve its releases and governed actions, and its constitution, the agent's AI settings and the agent's daily limit change only through them.
    A failed or expired sale hands the app back to its owner, and it is Owned again.
    Return waits for the sale authority reset to finish and keeps the newer proposal epoch; it never revives earlier owner proposals.
    The platform advances settlement automatically, including token creation, pool creation, and the creator and venue payouts, even when nobody has the page open.
