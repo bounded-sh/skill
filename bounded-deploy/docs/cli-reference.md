@@ -933,6 +933,7 @@ Choose one mode; with neither, the command exits without touching anything.
 ```bash
 bounded propose --title "Show the streak counter" --dry-run
 bounded propose --title "Show the streak counter" --description "It was hidden in the menu" --slug night-walk-1oqr --submit
+bounded propose --title "Show the streak counter" --slug night-walk-1oqr --submit --preview 6a2e0c4f9b1d7e3a5c8f2b64
 ```
 
 `--dry-run` reads only the local project configuration and Git checkout, prints the exact diff and its `draft hash`, and never opens a venue session or writes anything.
@@ -944,9 +945,17 @@ The app's Discussion rules decide who may post (some apps ask posters to hold th
 The change is public.
 Before anything is sent, the command refuses binary files and env or key files (`.env`, `.env.*`, `*.pem`, `*.key`).
 Keep `--title` to one line of at most 200 characters and `--description` to at most 1500, and the whole post must fit 2000 bytes, so non-English text can hit that limit sooner; the command checks these before uploading anything, and the venue refuses longer.
-`--slug` is required with `--submit`: the name in the app page's address.
+`--slug` names the app: the name in the app page's address.
+Without it, `--submit` looks up the app this clone was made from, by the `appId` in `bounded.json`.
 `--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
 JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
+
+`--preview <appId>`, with `--submit`, links a preview of the change: an app you deployed the change to, usually one made with `bounded previews create`.
+It must run on Poofnet with a public site and a `bounded.page` address, and the command checks both before anything is sent.
+The post gains a line `Preview: <address> (app <appId>)`, so people and the app's agent can try the change before anyone builds it.
+Before posting, the command lets the app's agent test it: it names the agent's wallet as someone who may seed the preview, and adds that wallet as a `developer` collaborator, which takes one of your plan's collaborator seats.
+On a plan with no seat the agent can still open and seed the preview, but not deploy to it or fund wallets on it; the command says which grants it could not make.
+JSON output then adds `previewUrl`, `previewAppId`, and `agentAccess` (`developer`, `seeder`, and a `note`).
 
 Both modes take the diff against the published remote-tracking head by default, or against `--base <revision>` when supplied.
 If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
@@ -956,6 +965,46 @@ Untracked files are refused instead of silently omitted, and one diff is capped 
 
 `bounded proposals [slug]` is a read-only venue command for listing the venue's older `governance/<slug>/proposals` backlog newest-first.
 It accepts `--app-id`, `--venue-app-id`, `--slug`, and `--limit`.
+
+### `previews` - disposable, seedable Poofnet previews
+
+`bounded previews create` makes a preview of an app you own or administer: its own app on Poofnet (simulated money) with a public `bounded.page` address.
+The platform deletes it, with its data, when it expires, and its spending can never pass the budget it was made with, which is set aside from your account's credits when it is made.
+An app has at most 4 live previews.
+
+```bash
+bounded previews create --app-id 6a2e0c4f9b1d7e3a5c8f2b64 --name streak-counter
+bounded previews create --name streak-counter --hours 72 --budget-credits 40
+bounded previews add-seeder 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU --app-id <previewAppId>
+```
+
+| Flag | Meaning |
+|---|---|
+| `--app-id` | the app to preview, one you own or administer (defaults to `bounded.json` `appId`) |
+| `--name` | a short label, 1 to 40 lowercase letters, digits or dashes; the same name replays the same preview |
+| `--hours` | how long it lives, 1 to 336 (default 24) |
+| `--budget-credits` | the most it may ever spend, 1 to 2000 credits (default 20) |
+| `--starter` | start on the starter policy instead of the app's current one |
+
+A new preview runs the app's current policy; function code and the site are not copied.
+Deploy them to it with its own app id, and build the site with that id in its client configuration:
+
+```bash
+bounded deploy policy.json --app-id <previewAppId> --no-source
+bounded functions deploy --all --app-id <previewAppId>
+bounded site deploy ./dist --app-id <previewAppId> --no-source
+```
+
+You made it, so you may seed it: `--seed` on `bounded data set`, `set-many`, or `delete` writes rows its rules would refuse you, such as other people's rows, on that preview only.
+Field types, read-only fields and invariants still apply, and without `--seed` the preview follows the same rules as the app.
+A refused seed answers `403 preview_seed_refused` with a `reason`: `not_a_preview`, `preview_expired`, `seed_no_creator`, `seed_not_creator`, or `seed_storage_field` (upload or delete files through the app instead).
+
+```bash
+bounded data set-many --app-id <previewAppId> --seed --from-json seed.json
+```
+
+`bounded previews add-seeder <userId> --app-id <previewAppId>` lets someone else seed a preview you made, named by the user id the app sees for them (for an OpenApps agent, its wallet address); up to 4 people, and only the preview's creator may name them.
+`bounded wallet fund <wallet> --app-id <previewAppId>` funds test wallets on it, for its owner, an admin, or a developer.
 
 ## Billing
 

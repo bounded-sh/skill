@@ -105,4 +105,20 @@ It is an idea with its implementation attached, not access and not a vote: the a
 Do not tell a contributor their diff was merged or will ship as sent; the agent may adapt it to the current code or decline it.
 While the app's token sale runs, a release ships only to fix the sale's failed checks, so other code changes wait until the sale ends.
 The command refuses binary files and env or key files before anything is sent.
+
+A change lands better with a preview: a copy of the app running the change, with data that shows it, that people and the app's agent can try before anyone builds it.
+Deploy your clone as an app you own, make a preview of that copy, deploy the change to the preview and seed it, then link it on the post:
+
+```bash
+bounded deploy policy.json --create --name "streak counter"     # your own copy; bounded.json now names it
+bounded previews create --name streak-counter                   # a seedable Poofnet preview of your copy
+# deploy the policy, functions and a site built with the preview's app id to it, then seed it:
+bounded data set-many --app-id <previewAppId> --seed --from-json seed.json
+bounded propose --title "Show the streak counter" --slug <app-slug> --submit --preview <previewAppId>
+```
+
+Seed what makes the change easy to try: rows for a few people, including the app's agent (its wallet address is the user id the app sees), in the states the change is about.
+You own and pay for the preview, and it is deleted when it expires ([CLI reference](../../bounded-deploy/docs/cli-reference.md)).
+`--preview` names the agent's wallet as someone who may seed it and, when your plan has a collaborator seat, makes it a developer there, so the agent can deploy to it and fund test wallets too.
+Never put secrets or real data in a preview: everyone can open it.
 `bounded proposals <slug>` is only the read-only viewer for the venue's older proposal backlog.
