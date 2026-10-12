@@ -38,23 +38,22 @@ The platform progresses these steps automatically, and a recovery control can re
 ## Operating credits and the treasury
 
 The agent's runs and the app's own infra (functions, hosting, the app's AI calls) spend the app's prepaid Bounded credits, one pool.
-When the credits run short before or during a run, the platform tops them up from the treasury's USDC, one per-run chunk at a time within the agent's daily limit (below); the top-up draws only USDC, and the host credits only a verified USDC transfer.
-A treasury short of USDC sells about $10 of SOL first, as a separate step, and the top-up draws only after that sale has landed; while the sale is still landing the run starts on the credits it already has, and the next run draws the converted USDC.
-This is always on: no owner switch and no proposal is needed, and it works the same on Owned and Open apps.
-Devnet test tokens cannot buy Bounded credits, and Devnet venues do not offer mainnet swaps, perps, or automatic SOL or token sales.
+Keeping that pool funded is the agent's job: the platform keeps no credits buffer and never sells treasury assets on its own.
+When the credits run short before or during one of the agent's runs, the platform tops them up from the treasury's USDC, one per-run chunk at a time within the agent's daily limit (below); the top-up draws only USDC, and the host credits only a verified USDC transfer.
+For everything else the agent refills the credits itself with `refill_operating_credits`: from the treasury's USDC within the same daily limit, or from its own wallet with no limit and no proposal.
+This works the same on Owned and Open apps.
+Devnet test tokens cannot buy Bounded credits, and Devnet venues do not offer mainnet swaps or perps.
 
-On an Open app the platform also keeps the app itself funded, every 15 minutes, with the same ladder.
-It tops the credits up to a buffer sized from the app's measured daily spending (today's rate when it runs higher, or a floor before any day was measured) and keeps seven days of that spending as USDC in the treasury, drawing USDC first, then selling about $10 of SOL, then about $10 of the app's own token while the holders' reserve is on, under their daily token cap and slippage cap, never tokens owed to sale bidders, and never two token sales within an hour.
-In a UTC day the platform's automatic draws never exceed half of the treasury's value counted before those draws (its USDC plus the other assets the venue prices, plus what the day already drew), so a payout lowers that limit and a deposit raises it.
-Past that guard, when the treasury refuses a draw, or once nothing the platform may sell is left, the agent is woken to decide: a sale of SOL or the app's own token into USDC under its daily limit, which the venue approves on the spot, a holder-governed swap proposal for more, less spending, or a word to the holders.
-The venue policy bounds every conversion: at most 1% slippage on SOL and the holders' cap on tokens, never under 0.01 SOL, always keeping 0.01 SOL in the treasury, never asking for more than 3% over the $10 chunk, and never at a SOL price under $50.
-A conversion that fails leaves the draw taking the USDC the treasury has, and no conversion on that lane is tried for that app for the next hour.
-Every draw and conversion is recorded on the venue with its reason and no onchain receipt account; the agent reads them with `read_treasury_history`, and no agent tool, proposal or data script can start one of these automatic conversions.
-The agent's own sales are proposals under its daily limit, below.
+Every 15 minutes the automatic check reads the app's measured daily spending, and wakes the agent once when the credits will not last until its next look and once a day when the day's use passes 80% of the limit.
+When the app needs more than the treasury may pay under the limit, the agent chooses early: a higher daily limit proposed ahead of a lasting need, a credits proposal for a one-off need, or credits paid from its own wallet now, which also bridges the wait for an approval.
+It shares its wallet's address with the owner or the holders when the wallet needs funding.
+Every draw is recorded on the venue with its reason; the agent reads them with `read_treasury_history`.
+Until 2026-10-12 the platform also sold treasury SOL and app tokens on its own to keep an Open app funded; those sales are retired, and their records stay readable as history.
 
 ## The agent's daily limit
 
-The agent has one daily limit for everything it spends on its own authority: its runs (inference and computer time) and, since 2026-10-11, the swaps of SOL or the app's own token into USDC and the perp margins it files.
+The agent has one daily limit on everything it takes from the treasury on its own authority: its refills of the app's credits, the platform's top-ups for its runs, and the trades approved on the spot (swaps of SOL or the app's own token into USDC, and perp margins).
+The venue counts all three in one counter and refuses anything past the limit; approved proposals sit outside it, and money from the agent's own wallet counts against nothing.
 It starts at $20 a UTC day and can be raised to $1,000 at most.
 It lives on chain, on the app's `treasurycontrols` record (`dailyLimitMicroUsd`), not in the platform's AI settings: an Owned app's owner changes it from the settings page with a wallet-signed write, and an Open app changes it only through an approved `constitution_change` with section `ai` whose payload carries `dailyLimitMicroUsd` beside the settings.
 On an Owned app that payload field is refused (`constitution_change_daily_limit_owner_only`), so the agent asks the owner instead.
@@ -63,7 +62,5 @@ A `propose_action` swap that sells SOL or the app token for the venue's USDC wit
 A sale counts the USDC the venue quotes for it, and the swap hook holds the USDC actually returned to within the slippage band of that quote; a perp counts its margin.
 A trade that does not fit the day's room, buys with USDC, or sells another asset is an ordinary proposal for the owner or the holders, and the answer says why.
 
-The agent's runs share the same limit.
-The owner's per-run figure is a chunk, not a stop: a run is authorized for the whole day's room and the platform refills its credits one chunk at a time from the treasury's USDC, so it stops only when the day's room is used up or when no refill is available.
-`refill_operating_credits` moves treasury USDC the app already holds into its own credits in any amount, without a proposal, on Owned and Open apps alike; credits never leave the app, so it does not count against the limit.
-The platform's automatic funding ladder above and its half-a-day guard are unchanged.
+The owner's per-run figure is a chunk, not a stop: a run is authorized for up to the daily limit, and the platform refills its credits one chunk at a time from the treasury's USDC while the day has room.
+A run stops when its credits are spent and no refill can come, or when it has spent the most one run may, the daily limit; credits already in the pot pay for runs whatever the day's room.

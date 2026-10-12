@@ -41,6 +41,6 @@ Read the reference needed for the current task.
 | What opening checks: oApp mode, required boundaries and egress grants, secrets, the served site and reproducible dist, `bounded propose` | [Launch gate](docs/launch-gate.md) |
 | `bounded oapp preflight` and its report | [Preflight](docs/preflight.md) |
 | Preparing to ask to open | [Opening checklist](docs/checklist.md) |
-| Sealed launch economics, treasury fees, pending claims, operating reserves, how credits are topped up (including automatic SOL conversion), and the agent's daily limit | [Launch economics](docs/launch-economics.md) |
+| Sealed launch economics, treasury fees, pending claims, operating reserves, how credits stay funded, and the agent's daily limit | [Launch economics](docs/launch-economics.md) |
 
 For implementation mechanics, use [bounded-backend](../bounded-backend/SKILL.md), [bounded-frontend](../bounded-frontend/SKILL.md), or [bounded-onchain](../bounded-onchain/SKILL.md) as needed.
