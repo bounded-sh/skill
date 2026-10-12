@@ -65,5 +65,7 @@ A trade that does not fit the day's room, buys with USDC, or sells another asset
 
 The agent's runs share the same limit.
 The owner's per-run figure is a chunk, not a stop: a run is authorized for the whole day's room and the platform refills its credits one chunk at a time from the treasury's USDC, so it stops only when the day's room is used up or when no refill is available.
-`refill_operating_credits` moves treasury USDC the app already holds into its own credits in any amount, without a proposal, on Owned and Open apps alike; credits never leave the app, so it does not count against the limit.
-The platform's automatic funding ladder above and its half-a-day guard are unchanged.
+`refill_operating_credits` moves treasury USDC the app already holds into its own credits without a proposal, on Owned and Open apps alike.
+Every credit draw, including an explicit refill and the platform's automatic funding, adds to the chain's UTC-day refill counter and is refused if the day's total draws would exceed the agent's daily limit.
+Funding beyond that allowance requires an approved `credits` proposal.
+The platform's automatic funding ladder also stays within that refill allowance and retains its half-a-day guard.
