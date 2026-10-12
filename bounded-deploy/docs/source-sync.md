@@ -94,7 +94,8 @@ On `bounded deploy` or `bounded site deploy`, enable source with `--with-source`
 `--no-source` cannot submit a held candidate.
 
 The CLI sends the filtered UTF-8 source snapshot and its exact Git base commit to the configured developer API.
-Its `bounded.json` must name this app and its declared build output is excluded, along with dependency folders and credential files.
+Its `bounded.json` must name this app; dependency folders, credential files and generated build output are excluded.
+The selected source policy is retained even when it lives inside the build-output directory, and it still passes the credential and size checks before upload.
 For a policy deploy, the policy must be the file named by `bounded.json` and match the source snapshot; save temporary policy overlays into that file before submitting a held candidate.
 The server selects the contributor branch, builds the source, serves the review preview and files the owner's decision.
 It refuses a stale base instead of replacing newer work: pull the app's current source and deploy again.
