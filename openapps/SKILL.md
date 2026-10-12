@@ -21,9 +21,7 @@ Use this skill for the app's capability constraints and, when requested, its lif
 ## Capability constraints
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
-- To hold USDC between two people for a deal, keep it in an escrow in the app's own policy, which the app's agent releases or refunds through a data script its owner or holders review: [App escrow](docs/app-escrow.md).
-  Do not build a backend or a wallet to hold or move that money.
-  On a mainnet main app the agent cannot settle such an escrow yet; there, use the venue escrow in the SDK (`fundVenueEscrow`, `disputeVenueEscrow`, `getVenueEscrow`): [SDK reference](../bounded-frontend/docs/sdk-reference.md#venue-escrows---fundvenueescrow--disputevenueescrow--getvenueescrow).
+- To hold USDC for a deal, keep it in an escrow in the app's own policy that the app's agent settles: [App escrow](docs/app-escrow.md).
 - An oApp cannot depend on a creator-held API key, vendor account, server, or admin backdoor.
   The runtime refuses `secrets` on oApp functions.
 - Prefer native capabilities or live catalog actions, then the steward's x402 relay for supported paid APIs.
@@ -44,6 +42,5 @@ Read the reference needed for the current task.
 | `bounded oapp preflight` and its report | [Preflight](docs/preflight.md) |
 | Preparing to ask to open | [Opening checklist](docs/checklist.md) |
 | Sealed launch economics, treasury fees, pending claims, operating reserves, how credits are topped up (including automatic SOL conversion), and the agent's daily limit | [Launch economics](docs/launch-economics.md) |
-| Holding a deal's USDC in the app's own escrow: the policy, funding from the app, release or refund by the agent's reviewed data script, tests | [App escrow](docs/app-escrow.md) |
 
 For implementation mechanics, use [bounded-backend](../bounded-backend/SKILL.md), [bounded-frontend](../bounded-frontend/SKILL.md), or [bounded-onchain](../bounded-onchain/SKILL.md) as needed.
