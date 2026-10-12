@@ -952,7 +952,7 @@ JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, an
 
 `--preview <appId>`, with `--submit`, links a preview of the change: an app you deployed the change to, usually one made with `bounded previews create`.
 It must run on Poofnet with a public site and a `bounded.page` address, and the command checks both before anything is sent.
-The post gains a line `Preview: <address> (app <appId>)`, so people and the app's agent can try the change before anyone builds it.
+The post gains a line `Preview of this change: <address> (preview app <appId>)`, so people and the app's agent can try the change before anyone builds it.
 Before posting, the command lets the app's agent test it: it names the agent's wallet as someone who may seed the preview, and adds that wallet as a `developer` collaborator, which takes one of your plan's collaborator seats.
 On a plan with no seat the agent can still open and seed the preview, but not deploy to it or fund wallets on it; the command says which grants it could not make.
 JSON output then adds `previewUrl`, `previewAppId`, and `agentAccess` (`developer`, `seeder`, and a `note`).
