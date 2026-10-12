@@ -36,7 +36,7 @@ Owned review covers releases, data scripts, constitution and AI changes, app ide
 The publication hold requires explicit owner approval for each of these proposals and for collaborator deploy candidates; turning it on also holds proposals still in review.
 With the hold off, a release that delivers a non-owner Discussion request still uses the captured owner-review window, even when the owner later says to build it; the owner may approve early or veto.
 Owner-only work requested in private chat may publish at once with the hold off.
-Other owner-origin work may publish at once only when it changes files under `docs/`, no competing release is open, and the host-built output exactly matches the last promoted release.
+Other owner-origin work may publish at once only when it changes files under `docs/`, no competing release is open, and the candidate's built-output manifest exactly matches the last promoted release's deposited manifest.
 Where host-built review is enabled, the runtime builds community review and collaborator candidates from source on the host; owner-only private-chat work retains the computer build.
 A build or captured preview is evidence of those files, not a judgement of the idea's merit or proof that the platform tested the app.
 
