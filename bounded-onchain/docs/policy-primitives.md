@@ -286,6 +286,8 @@ Poofnet proves logic, not real-network funding or transaction fit:
   transaction to identify the actual payer and leave that signer enough SOL.
 - Use `isPassthrough: true` for an action that needs an onchain hook/CPI but no
   durable Document. It avoids Document storage, not transaction/CPI fees.
+  Later onchain rules and hooks cannot `get()` it; see
+  [passthrough reads](onchain.md#poofnet-onchain-simulation-on-realtime_offchain).
 - Keep the logical PDA name when Bounded must sign; use the derived address for
   display and readonly lookup. Poofnet derives the same program addresses a real
   cluster does, but each belongs to one app id, so never hardcode one.

@@ -417,6 +417,13 @@ A policy that verifies on Poofnet still needs every called function checked agai
   `hooks.offchain` runs both on poofnet - onchain first (as the chain program
   would, inside the tx), then offchain (post-commit) - matching real-network
   semantics.
+- **Passthrough data is invisible to onchain code after its transaction.**
+  An `isPassthrough: true` collection never gets a document account, on poofnet or on a real chain.
+  Onchain rules and hooks see its fields only inside the transaction that writes them: `getAfter(/coll/$id)` sees that write, and `get(/coll/$id)` is always `null`.
+  A later transaction's onchain rule or hook cannot read it at all.
+  Every passthrough write is a create (`@data` is `null` and the create rule runs, even for an id written before).
+  Offchain rules, hooks, queries, and subscriptions read the row Bounded mirrors from the transaction, which each write replaces whole.
+  Keep state that a later onchain rule must check in a non-passthrough onchain collection.
 - **Offchain-only plugin reads go on `onchain: false` collections.**
   Deploy validation rejects offchain-only functions (for example `@PhoenixPerpsPlugin.getPositionSize` and `@DeFiPlugin.getMeteoraSwapQuote`) inside `onchain: true` collections.
   On an `onchain: false` path the runtime evaluates the query and resolves each chain read in the program, so an offchain quote collection works on Solana apps.
