@@ -61,6 +61,7 @@ On an Owned app that payload field is refused (`constitution_change_daily_limit_
 A `propose_action` swap that sells SOL or the app token for the venue's USDC with at most 5% slippage, or a perp whose margin fits what is left of the limit today, is approved by the venue the moment it is filed, with no review and no vote, and executes within minutes.
 A sale counts the USDC the venue quotes for it, and the swap hook holds the USDC actually returned to within the slippage band of that quote; a perp counts its margin.
 A trade that does not fit the day's room, buys with USDC, or sells another asset is an ordinary proposal for the owner or the holders, and the answer says why.
+Liquidity in or out of the app token pool is never under the limit: from the treasury it is a governed `action` proposal (`add_liquidity`, `remove_liquidity`), and from the agent's own browser wallet it needs nothing, like any trade of its own money.
 
 The owner's per-run figure is a chunk, not a stop: a run is authorized for up to the daily limit, and the platform refills its credits one chunk at a time from the treasury's USDC while the day has room.
 A run stops when its credits are spent and no refill can come, or when it has spent the most one run may, the daily limit; credits already in the pot pay for runs whatever the day's room.
