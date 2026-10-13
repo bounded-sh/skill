@@ -50,6 +50,9 @@ entry; use an explicit wallet-provider entry only once your app opts into one.
 > the app owner has registered in the app's **allowedOrigins** — exactly like a web
 > origin. The issuer rejects custom `myapp://` schemes, so a bare deep-link scheme
 > will not work; you must use a verified universal/app link.
+> The one exception is a preview app opened in Expo Go: it returns through
+> `exps://<preview host>/--/auth/callback`, which the issuer accepts only for a live
+> preview app served at that host (simulated money), never for a production app.
 
 #### Hosted email / social login (Google, Apple, email, phone)
 
@@ -64,6 +67,10 @@ npm install base-64
 `react-native-mmkv` v4 is a Nitro module, hence the `react-native-nitro-modules`
 peer, and it requires a native development/production build; it does not
 run in Expo Go.
+For an app that must also run in Expo Go, back the adapter with `expo-secure-store`
+directly (its synchronous `getItem`/`setItem` keep the adapter synchronous): the OS
+keychain holds about 2 KB per entry, so split longer values across numbered keys,
+and keep keys to letters, digits, `.`, `-` and `_`.
 Add `expo-secure-store` as well if you encrypt the store (next section), which you
 should. If your app already supplies an equivalent synchronous storage
 adapter, use that instead.
@@ -371,6 +378,28 @@ useEffect(() => {
 }, [myId]);
 ```
 
+## Hosting the app, previews and Expo Go
+
+One Expo project serves the web and phones from a Bounded hosted site.
+Declare the build in `bounded.json` (`"build": { "command": "npm run build", "output": "dist" }`) with a build script like
+`expo export --platform web --platform ios --platform android --no-bytecode --output-dir dist`, and keep `web.output` `"single"`.
+`dist/index.html` is the web app, deployed and served like any static site.
+
+To let phones open the same deployment in Expo Go, write one Expo Updates manifest per platform at
+`dist/_expo/native/ios.json` and `dist/_expo/native/android.json` from the export's `metadata.json`:
+`runtimeVersion` `exposdk:<sdkVersion>`, `launchAsset` and `assets` (each with `hash` = base64url SHA-256,
+`key`, `contentType` and a site-relative `url` such as `/_expo/static/js/ios/index-....js`), and
+`extra.expoClient` = the public Expo config.
+Leave out `id`, `createdAt` and absolute URLs: when Expo Go asks the site root (`exps://<site host>`),
+the host adds them for the address and publication it serves, so one build works on any host.
+Bundles stay plain JavaScript (`--no-bytecode`), and an app id the build should vary per environment belongs in
+the Expo config's `extra` (read with `expo-constants`), not in source: the phone bundles then never change between hosts.
+
+Expo Go runs only the native modules the Expo SDK ships, and only the SDK version its store release supports;
+use `npx expo install` for packages and upgrade the SDK when Expo Go moves.
+A store build (EAS or Xcode/Gradle) has no such limit; its sign-in returns through the https universal link above,
+so list its iOS app id and Android package/certificate in the site's `apple-app-site-association` and `assetlinks.json`.
+
 ## Gotchas
 
 - **Metro entry**: ensure your bundler honors the `react-native` condition so the
@@ -384,7 +413,9 @@ useEffect(() => {
   universal-link** `redirectUri` registered in `allowedOrigins` (see above). It
   resolves inline with the user — do **not** call `completeLoginFromRedirect()` on
   RN (that's the web redirect-page step; it's a harmless no-op on native). Custom
-  `myapp://` schemes are rejected by the issuer — use a verified universal link.
+  `myapp://` schemes are rejected by the issuer — use a verified universal link
+  (a preview app in Expo Go is the one exception, through `exps://`; see above).
+  On iOS the system sign-in sheet hands an https callback back to the app on iOS 17.4+.
   The current client does not export app-origin OTP primitives; keep the
   credential step on the hosted issuer.
 - **Optional peer deps for hosted login**: `expo-web-browser` (system auth session)
@@ -396,7 +427,9 @@ useEffect(() => {
   naming the package. See
   [../docs/auth.md](../docs/auth.md#solana-mobile-seeker--saga).
 - **Polyfills**: RN needs the same Buffer/crypto shims the Solana libs require;
-  add them in your Metro/babel config.
+  import them at the app entry before the SDK. Supply `sha256` and `getRandomBytes`
+  through `setPlatform` (for example from `expo-crypto`); the client needs no Metro
+  `crypto` alias.
 
 ## Related
 
