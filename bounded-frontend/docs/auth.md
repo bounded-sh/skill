@@ -126,9 +126,11 @@ automatically — a local dev server's origin must be registered too, port-exact
 > gives those users a Turnkey wallet by default; wallet login is for
 > users who **already have** a Solana wallet and want to sign in *with it*. Add it
 > alongside the canonical login by turning it on at `init()` with
-> **`walletLogin: true`** (it's off until you pass the knob — an app that doesn't
-> pass it sees no wallet-login button, and calling wallet login without the knob
-> throws a clear error naming `walletLogin`). The two coexist: a bring-your-own
+> **`walletLogin: true`**. Without the knob the login widget shows its wallet
+> button only when the browser already exposes a wallet (a desktop extension or a
+> wallet's in-app browser), so an ordinary phone browser never offers one, and selecting
+> `authMethod: "phantom"` at `init()` throws a clear error naming `walletLogin`.
+> The two coexist: a bring-your-own
 > user keeps their real wallet as `@user.address`, and embedded provisioning never
 > overwrites it.
 
@@ -245,7 +247,7 @@ Use `openBoundedWidget({ wallet: true })` to let the user explicitly choose a co
 ### Solana Mobile (Seeker / Saga)
 
 On a capable Android browser (https required) the wallet lane also registers Solana Mobile's Mobile Wallet Adapter as a Wallet-Standard wallet, so the phone's own wallet appears in the connect-wallet list alongside Phantom, with the same SIWS login and the same signing surface.
-It stays inside the opt-in lane: an app that never passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`) shows no wallet button, on a phone or anywhere else.
+It stays inside the opt-in lane: it is registered only for an app that passes `walletLogin` (or a per-call `openBoundedWidget({ wallet: true })`), so without either a phone browser shows no wallet button.
 
 **Install the adapter to use it (0.0.72+).**
 `@solana-mobile/wallet-standard-mobile` is an optional peer of `@bounded-sh/client`: install it yourself, with `legacy-peer-deps=true` in the app's `.npmrc` first (its protocol package names `react-native` as a required peer; without that line npm installs React Native into a web app and `npm ci` refuses a lockfile that leaves it out).
