@@ -48,7 +48,7 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
 4. **During the sale.** The Gauntlet runs 15 checks on what the app serves; graduation requires a pass or an explicit admin waiver for this sale.
    An attempt starts when the sale starts and again after each release during it, and the agent's periodic check asks for one whenever the app is owed one.
    Its public record is `GET /public/oapps/<rootAppId>/gauntlet/attempts`, newest first (`limit` 1 to 20, default 10; page on with the answer's `nextCursor` as `cursor`).
-   The bidding deadline and the Gauntlet deadline are separate: the current bidding window is 30 minutes, followed by up to 48 hours for the remaining launch requirements.
+   The bidding deadline and the Gauntlet deadline are separate: the current bidding window is 24 hours, followed by up to 48 hours for the remaining launch requirements.
    Read the sale's actual opening, closing, and grace timestamps; the venue can configure the bidding duration and opening countdown.
    A waiver only skips the Gauntlet requirement; it does not bypass the minimum raise or create a pool before bidding closes.
    Nothing changes on the app except a repair the Gauntlet asked for, which the agent releases and the platform approves.
@@ -69,7 +69,7 @@ People can back an Owned app before its owner asks to open it.
 A backing is escrowed USDC with a market-cap limit, not a purchase of an already launched token, and it remains withdrawable until converted into a sale order.
 There is no cap on how much an app can be backed: one backing per wallet, between the venue's minimum and maximum order size, at one of four market-cap limits ($25K, $50K, $100K or $250K, rounded to the sale's price grid).
 An active backing can be edited in place until the sale starts; only the difference moves, in or out.
-Every new sale reserves a backer-only first interval: the first 1/24 of the bidding window, or 75 seconds for a 30-minute sale.
+Every new sale reserves a backer-only first interval: the first 1/24 of the bidding window, or one hour for a 24-hour sale.
 Only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its limit.
 The countdown before bidding and this first bidding interval are separate.
 When a checkpoint moves the clearing valuation past an order's limit, the order shows as outbid on the sale page and in the app's notification bell, and a wallet that keeps sale emails on is emailed from the app's own mailbox.

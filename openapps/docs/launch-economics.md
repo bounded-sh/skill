@@ -4,7 +4,7 @@ Openings whose sealed head selects `transfer-fee-v1` use a CCA with 65% Treasury
 New mainnet sales have a 10,000 USDC minimum, plus the requirement to retain six months of baseline operating costs after setup costs, assuming no future trading revenue.
 The effective minimum is the larger of the venue's configured minimum and the amount needed for that reserve.
 Sale minimums, minimum order amounts, bidding duration, and the opening countdown are configured per venue and sealed when a sale is scheduled.
-The current mainnet settings are 10,000 USDC minimum raised, 50 USDC minimum per order, 30 minutes of bidding, and a 60-second opening countdown.
+The current mainnet settings are 10,000 USDC minimum raised, 50 USDC minimum per order, 24 hours of bidding, and a 60-second opening countdown.
 A Devnet test venue can use smaller amounts, such as 100 USDC raised and 1 USDC per order, without the real-money operating reserve requirement.
 Always read the actual sale terms rather than assuming the settings of another venue.
 The app token's transfer fee belongs entirely to Treasury in app tokens: 1% unless the owner set another rate, from 0% to 5% (`transferFeeBps`), when asking to open.
