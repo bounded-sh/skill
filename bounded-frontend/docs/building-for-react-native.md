@@ -76,7 +76,7 @@ should. If your app already supplies an equivalent synchronous storage
 adapter, use that instead.
 
 **2. Provide PKCE randomness + the RN session store at startup**, before `init()`.
-`getRandomBytes` powers PKCE; `setPlatform`/`ReactNativeSessionManager.configure`
+`getRandomBytes` and `sha256` power PKCE; `setPlatform`/`ReactNativeSessionManager.configure`
 are the same one-time RN setup you already do for sessions:
 
 ```ts
@@ -97,6 +97,8 @@ ReactNativeSessionManager.configure({ storage, atob });
 setPlatform({
   storage, sessionStorage: storage, atob, btoa, hasDOM: false,
   getRandomBytes: (n) => Crypto.getRandomBytes(n),
+  // React Native has no WebCrypto digest; PKCE needs SHA-256.
+  sha256: (data) => Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, new Uint8Array(data).buffer as ArrayBuffer),
 });
 // Alternatively, `import 'react-native-get-random-values'` once at app entry and
 // you can omit getRandomBytes (it polyfills the global crypto.getRandomValues).
