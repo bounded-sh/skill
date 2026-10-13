@@ -313,7 +313,7 @@ Optional tuning goes through `init({ mobileWalletConfig })`: `appIdentity` (name
 The mobile wallet authorizes per cluster and signs on the app's network, so a `cluster` - or a `walletLogin.network` - that contradicts `chain` throws at init rather than failing later as a wallet rejection.
 
 Two limits worth knowing.
-The wallet is reached over loopback (`http://localhost` and a `ws://localhost:<port>` socket to the wallet app), so an app that declares a `boundaries.browser` block cannot use it: that grammar compiles to https hosts only and has no loopback token.
+The wallet is reached over loopback (`http://localhost` and a `ws://localhost:<port>` socket to the wallet app), so an app that declares a `boundaries.browser` block cannot use it: that grammar compiles to https and wss hosts only and has no loopback token.
 And a page can register the mobile wallet for one cluster only - switching the app's Solana network afterwards throws and asks for a reload, because the registration cannot be withdrawn.
 
 > **Wallet login vs the default embedded wallet - don't confuse them.**

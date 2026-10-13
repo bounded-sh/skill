@@ -53,7 +53,8 @@ Every entry is one of:
 - the literal `data:` or `blob:`, valid under any directive
 - the literal `inline`, valid **only** under `style`
 
-A hostname compiles to `https://<host>` and nothing else.
+A hostname compiles to `https://<host>`.
+Under `connect` it also compiles to `wss://<host>`: a browser treats a WebSocket to a host as a different scheme from HTTPS to it, and trusting a host for requests means trusting it for sockets too (the Bounded SDK itself confirms Solana writes over HTTPS, but other libraries subscribe over WebSockets).
 
 **There is no field anywhere in which an app can write CSP syntax.**
 This is deliberate: generated app code must have no path to authoring its own security policy.
