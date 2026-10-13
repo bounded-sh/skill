@@ -61,6 +61,13 @@ pre-push gate. Maintainers changing an example page (or releasing example
 changes) run the suite with `--require`, which turns a missing stack into a
 failure; specs live in `scripts/policy-e2e/specs/`.
 
+## OpenApps skill family
+
+`scripts/openapps/build.mjs` builds the OpenApps-named twin of these skills (`openapps`, `openapps-backend`, ...) for `poofdotnew/openapps-skill`: it folds the `bounded` router into `openapps` and rewrites CLI commands and product names.
+`.github/workflows/openapps-skill.yml` runs `scripts/openapps/publish.mjs` on every push to `main`, so publishing here publishes the twin; it pushes with the `OPENAPPS_SKILL_DEPLOY_KEY` secret.
+`node scripts/validate.mjs` runs the build, so a change that breaks it fails before `main`.
+Never edit the twin repository directly; its README comes from `scripts/openapps/README.md.tmpl`.
+
 ## Content rules
 
 - Behavior documented here is owned by `bounded-monorepo` and `bounded-cli`; changes originate there, and those repos require updating this one in the same task.

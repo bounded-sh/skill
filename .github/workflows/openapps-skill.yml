@@ -1,0 +1,28 @@
+# Publishing this repository publishes the OpenApps skill family too: every
+# push to main rebuilds it (scripts/openapps/build.mjs) and pushes the result to
+# the OpenApps skill repository with a deploy key scoped to that one repository.
+name: Publish OpenApps skill
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openapps-skill-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - run: node scripts/openapps/publish.mjs
+        env:
+          OPENAPPS_SKILL_DEPLOY_KEY: ${{ secrets.OPENAPPS_SKILL_DEPLOY_KEY }}
