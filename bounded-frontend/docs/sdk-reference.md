@@ -619,7 +619,16 @@ expired (or the user is on a hosted/social login, a new device, or cleared
 storage), the card collects a fresh Turnkey-emailed one-time code inline, which
 establishes the session for the next 24 hours, and the same click completes the
 signature. There is no renewal - expiry always costs one code. Wallet creation
-and address reads never prompt. `openTurnkeyKeyExport()` opens the hosted
+and address reads never prompt.
+A Solana blockhash lives about 33 seconds on mainnet (late 2026, and shrinking as
+slots get faster), which is less time than an emailed code takes. Pass
+`{ onchain: true }` to `set` or `setMany` for a write to an onchain collection:
+the code is then collected BEFORE the transaction is built. Without the option
+the SDK still collects it first and builds the write again, at the cost of one
+sponsored build left to expire. A flow that builds and signs outside `set` (a
+permit approval, for example) calls `prepareToSign()` first: it resolves
+`'ready'` when one click already signs, or `'established'` after the code, and
+costs nothing within a live session. `openTurnkeyKeyExport()` opens the hosted
 private-key export page for the session's wallet and works for both login modes
 (it carries its own authorization, so it does not depend on an issuer cookie);
 export always requires its own fresh emailed code - a live signing session never

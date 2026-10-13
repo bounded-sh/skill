@@ -235,6 +235,10 @@ card collects a fresh Turnkey-emailed one-time code inline first, which
 establishes the session for the next 24 hours. Sessions are per device, never
 renew silently, and end on logout; wallet creation and address reads never
 prompt. Never place a server-side credential or signer secret in frontend code.
+Because a mainnet blockhash now lives about 33 seconds, less than an emailed code
+takes, pass `{ onchain: true }` to `set` and `setMany` for onchain collections so
+that code is collected before the transaction is built, and call `prepareToSign()`
+before any flow that builds and signs a transaction outside them.
 
 ## Bring-your-own wallet is a companion path
 

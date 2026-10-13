@@ -64,8 +64,9 @@ An optional top-level `rpcUrl` overrides that default for signing, submission, a
 A nested `walletLogin.rpcUrl` configures wallet login only and does not replace the submission endpoint.
 Use a browser-safe URL for an override because frontend configuration is public.
 Missing both a supported `chain` and an endpoint fails before signing.
-That endpoint is also what keeps the transaction alive: the SDK reads a current blockhash from it and writes that onto the transaction immediately before the wallet is asked to approve, so the whole ~60-second blockhash lifetime belongs to your user rather than to the build that produced the transaction.
-A pre-built transaction the platform already co-signed (a gas-sponsored write, or any plugin write that carries an attestation signature) is left exactly as it arrived, because that signature covers the blockhash too.
+That endpoint is also what keeps the transaction alive: the SDK reads a current blockhash from it and writes that onto the transaction immediately before the wallet is asked to approve, so the whole blockhash lifetime (about 33 seconds on mainnet in late 2026, and shrinking as slots get faster) belongs to your user rather than to the build that produced the transaction.
+A pre-built transaction the platform already co-signed (a gas-sponsored write, or any plugin write that carries an attestation signature) is left exactly as it arrived, because that signature covers the blockhash too; when its send is refused as `Blockhash not found`, `set` and `setMany` ask the platform for a fresh build once and the wallet signs once more, so a long pause on the approve card costs one extra click rather than a failed write.
+An embedded wallet's first signature of the day on a device collects an emailed code; pass `{ onchain: true }` so the SDK collects it before the transaction is built (otherwise it builds the write again after the code).
 Older SDK versions may report `Pre-built Solana transaction submission requires init({ rpcUrl })` even when `chain` is set; update the SDK or provide the top-level override.
 
 ## A wallet returned a different transaction
