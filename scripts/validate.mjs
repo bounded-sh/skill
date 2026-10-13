@@ -626,6 +626,16 @@ if (!process.argv.includes('--no-tests')) {
   contractTestCount = testFiles.length
 }
 
+// Every push to main also publishes the OpenApps skill family built from this
+// tree (.github/workflows/openapps-skill.yml), so a change that breaks that
+// build fails here, before it reaches main.
+{
+  const out = mkdtempSync(path.join(tmpdir(), 'openapps-skill-'))
+  const result = spawnSync(process.execPath, [path.join(root, 'scripts/openapps/build.mjs'), '--out', out], { encoding: 'utf8' })
+  rmSync(out, { recursive: true, force: true })
+  if (result.status !== 0) fail(`OpenApps skill build failed\n${result.stdout || ''}${result.stderr || ''}`)
+}
+
 if (errors.length > 0) {
   console.error(`Skill validation failed (${errors.length}):`)
   for (const error of errors) console.error(`- ${error}`)
