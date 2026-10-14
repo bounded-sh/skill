@@ -49,7 +49,7 @@ Rebuilding and signing a second transaction after an uncertain response can coll
 
 The OpenApps venue policy fixes the sealed mint, the fee-authority PDA that signs the withdrawal, and the app's treasury as the only destination.
 Collection opens once the app is Open (its token sale graduated) and its trading pool exists, for a token whose sealed launch selects `transfer-fee-v1`.
-From then on any signed-in wallet can create a collection batch, and the caller chooses no recipient, amount or credit payer.
+From then on only the app's agent wallet can create a collection batch, and it chooses no recipient, amount or credit payer.
 Collection needs no holder proposal because it only consolidates funds already owed to the fixed treasury.
 
 The app's own agent collects with its `collect_token_fees` action, and names only a credit ceiling: the most the collection may charge the app's own Bounded credits, from 1 to 100,000,000 microUSD ($100).
