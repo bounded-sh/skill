@@ -18,8 +18,8 @@ These are requirements, not advice:
 
 | What | Required | Refusal |
 |---|---|---|
-| oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode refuses function secrets and requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
-| no secrets | no function declares `secrets`, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
+| oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
+| no person-held or leaked keys | the app holds no key a person set, its own values or preview values (a key its OpenApps agent donated is fine), every secret a function declares is one its agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
 | `boundaries.egress` | a list of 1 to 64 boundaries with unique ids, each declaring `"mode": "locked"` | `oapp_opening_egress_not_steward_owned` |
 | capability grants | `service:cap` and `service:x402` in a locked `boundaries.egress` entry, so the app can call live catalog actions and pay x402-priced APIs through the relay | `oapp_opening_capability_grants_missing` |
 | function egress | each function's egress names only entries an app-wide boundary declares and repeats every `service:` entry exactly; no function enables `ctx.sandbox` | `oapp_opening_egress_not_steward_owned` |

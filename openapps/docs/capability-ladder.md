@@ -60,8 +60,11 @@ Never "temporarily" add a user-held secret to an oApp.
 ### What counts as a forbidden dependency
 
 - API keys or tokens the creator obtained from a vendor (even via
-  `bounded secret set` - secrets are fine for private apps, not for oApps
-  whose pitch is that no person is a dependency).
+  `bounded secret put` - secrets are fine for private apps, not for oApps
+  whose pitch is that no person is a dependency). A key the app's own agent
+  obtains itself and donates to the app is not one: no person holds it, and
+  the platform adds it to the app's requests to that key's hosts; a function
+  that declares it reads only a stand-in.
 - External databases, servers, cron boxes, webhooks, or oracles the creator
   (or any individual) operates.
 - Vendor accounts billed to a person (Stripe keys, RPC providers, mail

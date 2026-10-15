@@ -22,8 +22,9 @@ Use this skill for the app's capability constraints and, when requested, its lif
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
 - To hold USDC for a deal, keep it in an escrow in the app's own policy that the app's agent settles: [App escrow](docs/app-escrow.md).
-- An oApp cannot depend on a creator-held API key, vendor account, server, or admin backdoor.
-  The runtime refuses `secrets` on oApp functions.
+- An oApp holds no key a person set and depends on no creator-held vendor account, server, or admin backdoor.
+  A key the app's own agent obtains and donates is fine: no person holds it, the platform adds it to the app's requests to that key's hosts, and it never reaches the app's code.
+  A key a person hands the agent is still that person's, and does not belong in an oApp.
 - Prefer native capabilities or live catalog actions, then the steward's x402 relay for supported paid APIs.
   For a capability whose availability is unknown, use `bounded services search "<need>"` and read the [capability ladder](docs/capability-ladder.md).
   Credential-free public endpoints still require declared egress.

@@ -17,6 +17,7 @@
 - The policy is marked `"oapp": true`, and its `boundaries.egress` carries `service:cap` and `service:x402` in a locked entry; the request to open refuses without both (`oapp_opening_capability_grants_missing`).
 - Every capability the app needs is native, a live catalog action, or callable through x402; anything else was filed with `bounded services request` and the app was built without it.
 - `policy.json` contains **no** rule, function, or egress that depends on a user-held credential, and `bounded deploy` accepts it.
+- `bounded secret list` shows no key a person set, preview values included: only keys the app's agent donated may remain.
 - Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only, with no fetches to key-authenticated endpoints.
 - Every external egress is declared and either credential-free, native, or relay-eligible.
 - Source rides the deploy (`sourcePush: true` in `bounded.json`), and the synced tree is the real, complete project, including the policy file its `bounded.json` names.

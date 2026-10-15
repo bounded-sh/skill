@@ -357,7 +357,8 @@ only literals; the top-level `environments` block and each function's own
 `oapp` accepts only the literal value `true`.
 Use `"oapp": true` for an oApp and omit the key for a regular app; `false`, strings, objects, arrays, and other values are rejected.
 
-The current v1 static checks require every `functions.<name>` definition to omit `secrets` and require at least one `boundaries.egress` entry.
+The current v1 static checks require at least one `boundaries.egress` entry.
+Function `secrets` are allowed; an APO accepts only keys the app's OpenApps agent donated, which a function reads as a stand-in.
 Function `actAs` and live `runAs` signing identities are not secrets and remain allowed.
 A missing egress declaration or an outer `boundaries.egress: []` means unrestricted legacy egress at runtime, so oApp mode rejects both shapes.
 An empty inner `allow` array is valid.
@@ -412,7 +413,7 @@ bookkeeping function and an LLM agent function living in the same app should not
 share one allow-list, and with a single app-wide list they necessarily do.
 
 oApp mode is sticky.
-Once an app's deployed policy carries `"oapp": true`, every later policy deploy inherits the flag automatically when the incoming policy omits the key, and the oApp checks run against the incoming policy (a deploy that declares function secrets or drops the egress boundary is rejected with an `oapp mode:` error).
+Once an app's deployed policy carries `"oapp": true`, every later policy deploy inherits the flag automatically when the incoming policy omits the key, and the oApp checks run against the incoming policy (a deploy that drops the egress boundary is rejected with an `oapp mode:` error).
 There is deliberately no removal path in v1.
 Apps provisioned through the create flow with `oapp: true` start in oApp mode, and commissioned build children (create and fork runs) inherit oApp mode from the commissioning source app's deployed policy.
 
