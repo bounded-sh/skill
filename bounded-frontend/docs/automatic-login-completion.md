@@ -19,7 +19,7 @@ async function signIn() {
 
 Await initialization before rendering authentication-dependent UI.
 A cancelled or failed OAuth return leaves the SDK ready for another sign-in; read `getLoginReturnError()` to display that failure, or open the standard widget, which shows it.
-The optional `completeLoginFromRedirect()` helper still reports the return error to callers that use it.
+Called after `init()`, the optional `completeLoginFromRedirect()` helper answers `null` instead of throwing that failure again; client 0.0.120 and earlier throw it, so read `getLoginReturnError()` instead.
 A fresh sign-in clears the failure.
 Configuration and session-restoration failures still reject initialization and must be displayed.
 No manual `completeLoginFromRedirect()` call or application-owned `postMessage` handler is required.

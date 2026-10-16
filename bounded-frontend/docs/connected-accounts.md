@@ -43,6 +43,7 @@ Copy the handle into your own collections with a rule like the first one, so rea
 By default the same X account can be linked by several accounts of your app.
 To link each X account to at most one user of your app, declare it in `policy.json`: `"auth": { "connections": { "x": { "unique": true } } }`.
 `completeConnection()` then throws `ConnectionError` with code `x_account_linked_elsewhere` while another user of the app holds that X account; the same user can relink, and `disconnect('x')` frees it.
+Show that error's `message` and no retry button, since retrying never succeeds: it tells the person to sign in to the other account (`signInWith` says how it signs in) and unlink X there, and the return leaves the address bar; client 0.0.120 and earlier carry only the code.
 Links made before you turned it on are kept, but while two users share one, neither can relink it until the other disconnects.
 Offchain rules only: an onchain rule cannot read `__connections__`.
 
