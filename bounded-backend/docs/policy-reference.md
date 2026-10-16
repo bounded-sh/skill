@@ -358,7 +358,7 @@ only literals; the top-level `environments` block and each function's own
 Use `"oapp": true` for an oApp and omit the key for a regular app; `false`, strings, objects, arrays, and other values are rejected.
 
 The current v1 static checks require at least one `boundaries.egress` entry.
-Function `secrets` are allowed; an APO accepts only keys the app's OpenApps agent donated, which a function reads as a stand-in.
+Function `secrets` are allowed; an APO accepts only keys the app's OpenApps agent got itself and donated, which a function reads as a stand-in; a donated copy of a key its owner gave it is still the owner's, and an APO refuses it.
 Function `actAs` and live `runAs` signing identities are not secrets and remain allowed.
 A missing egress declaration or an outer `boundaries.egress: []` means unrestricted legacy egress at runtime, so oApp mode rejects both shapes.
 An empty inner `allow` array is valid.
