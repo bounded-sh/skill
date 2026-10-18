@@ -299,6 +299,21 @@ function PrivyBridge() {
               method: "signAndSendTransaction",
               params: { transaction, connection },
             }),
+          // Optional. Add this only if the wallet can sign a Solana transaction v1
+          // (SIMD-0385) wire: 0x81, message first, signature slots trailing. It
+          // receives the full wire and must return the same wire with this wallet's
+          // slot filled. When present, PrivyExpoProvider advertises
+          // clientTransactionVersions ["legacy", 0, 1] and the worker may build v1;
+          // omit it and every write stays v0. The provider refuses a returned wire
+          // that is not v1, whose message changed, or whose signature is not from the
+          // account this session authenticated.
+          // signTransactionV1: async (wire) => {
+          //   const { signedTransaction } = await provider.request({
+          //     method: "signTransaction",
+          //     params: { transaction: wire },
+          //   });
+          //   return { signedTransaction: new Uint8Array(signedTransaction) };
+          // },
         };
       },
     });
