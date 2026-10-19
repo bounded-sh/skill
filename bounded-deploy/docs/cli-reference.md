@@ -948,6 +948,12 @@ Keep `--title` to one line of at most 200 characters and `--description` to at m
 `--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
 JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
 
+On an Owned app, its owner chooses how the agent takes each code change: applied as is, or reviewed and adapted (the default).
+`--apply` with `--submit` asks for applied as is on the owner's own change; anyone else gets `code_change_apply_owner_only`.
+On anyone's code change, the owner can choose on the post itself, which posts their choice as a reply in its thread.
+Applied as is, the agent applies the patch exactly as written, and ships nothing when it does not apply cleanly or its checks fail.
+Either way the release goes through the app's normal release decision, and the agent replies in the thread with what it did.
+
 Both modes take the diff against the published remote-tracking head by default, or against `--base <revision>` when supplied.
 If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
 The reported base is always the resolved exact commit object ID, never a moving symbolic ref such as `HEAD`.
