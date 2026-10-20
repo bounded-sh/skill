@@ -62,6 +62,33 @@ bounded domains slug <unique-slug> --app-id <id>
 Use the nonempty URL in the JSON receipt, or resolve the environment-qualified slug with `bounded domains list --app-id <id> --env <environment> --json`.
 Keep the returned hostname exactly; do not invent an app-id URL or change site privacy to obtain one.
 
+## Publish an Owned OpenApps frontend from local source
+
+An external coding agent acting for the owner can publish a tested frontend directly while the app is still Owned and the platform permits the operation.
+The app having its own agent does not by itself require an AI run or an AI-credit top-up.
+This workflow differs from the app's own agent, which follows its runtime instructions for previews and releases.
+
+Work from the current published source (`bounded clone <app-id> <directory>`, or `bounded pull` in an existing clean clone), review the local diff, and run the app's build and relevant checks.
+Confirm the target and identity with `bounded.json`, `bounded whoami`, and `bounded access --app-id <app-id>`.
+Then publish the built frontend with its matching source:
+
+```bash
+bounded site deploy ./dist --app-id <app-id> --with-source --json
+```
+
+Check both `siteLive` and `sourceSync.status` in the receipt, and verify the requested change at its returned live URL.
+Source sync keeps the app agent's next checkout based on what was actually published.
+This does not start an app-agent run; ordinary hosting and deployment metering still applies.
+This is a frontend publication, not a policy or functions deployment.
+
+Owner access alone does not override sale, Open-app, publication, or boundary restrictions.
+If the platform refuses the operation, diagnose that refusal and use the permitted release workflow; do not remove guards or change ownership to force a deploy.
+In particular, a sale or Open app is platform-held and does not have this owner publishing path.
+
+`bounded propose --submit` posts a code change for the app agent.
+Adding `--apply` asks that agent to apply the patch as written, but still uses an agent run and the normal release decision; it does not avoid AI funding requirements.
+Repository instructions saying "nobody deploys an OpenApp directly" must distinguish this external owner workflow from the app agent's runtime workflow.
+
 ## Develop locally
 
 You do not need to publish to iterate. Run the frontend on a local dev server

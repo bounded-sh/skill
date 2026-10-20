@@ -926,7 +926,8 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 ### `propose` / `proposals` - OpenApps code changes
 
 `bounded propose` posts the changes in a bounded clone to an OpenApps app's page as a code change, or shows them without sending anything.
-Nobody gets write access to the app: a code change is an idea with its implementation attached, and the app's agent decides whether to build it.
+Submitting a code change grants no write access: it is an idea with its implementation attached, and the app's agent decides whether to build it.
+For a no-AI frontend update by an external coding agent acting for the owner of an Owned app, use [owner publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source).
 What the agent builds ships the way every change does, on a preview through the app's release decision, where the owner or the holders approve or veto it.
 Choose one mode; with neither, the command exits without touching anything.
 
@@ -952,7 +953,7 @@ On an Owned app, its owner chooses how the agent takes each code change: applied
 `--apply` with `--submit` asks for applied as is on the owner's own change; anyone else gets `code_change_apply_owner_only`.
 On anyone's code change, the owner can choose on the post itself, which posts their choice as a reply in its thread.
 Applied as is, the agent applies the patch exactly as written, and ships nothing when it does not apply cleanly or its checks fail.
-Either way the release goes through the app's normal release decision, and the agent replies in the thread with what it did.
+Either way this starts an app-agent run, requires its normal funding, and goes through the app's release decision; the agent replies in the thread with what it did.
 
 Both modes take the diff against the published remote-tracking head by default, or against `--base <revision>` when supplied.
 If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.

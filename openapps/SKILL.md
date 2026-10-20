@@ -10,7 +10,10 @@ Use this skill for the app's capability constraints and, when requested, its lif
 
 ## Choose the workflow
 
-- **Owner building an app or asking to open it:** use the lifecycle, launch-gate, and preflight references for the current phase.
+- **External coding agent working for the owner of an Owned app:** use [owner publishing](../bounded-deploy/docs/quickstart.md#publish-an-owned-openapps-frontend-from-local-source) for a tested local frontend change.
+  Having an app agent does not require sending that change through an AI run.
+  `bounded propose --submit --apply` still asks the app agent to apply it; it is not the no-AI publishing path.
+- **Owner asking to open an app:** use the lifecycle, launch-gate, and preflight references for the current phase.
   A build or edit request does not by itself request opening; continue work already authorized by the user.
 - **Agent running on an OpenApps app computer:** the app already exists and you are its agent.
   Apply the capability constraints below and use the installed runtime-specific instructions for previews, releases, proposals, and the app's mode (`openapps-internal` when provided).
