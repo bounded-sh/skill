@@ -17,10 +17,12 @@
 - The policy is marked `"oapp": true`, and its `boundaries.egress` carries `service:cap` and `service:x402` in a locked entry; the request to open refuses without both (`oapp_opening_capability_grants_missing`).
 - Every capability the app needs is native, a live catalog action, or callable through x402; anything else was filed with `bounded services request` and the app was built without it.
 - `policy.json` contains **no** rule, function, or egress that depends on a user-held credential, and `bounded deploy` accepts it.
+- `bounded secret list` shows no key a person set, preview values included, and `bounded secret list --agent` shows no key you put on the agent: only keys the app's agent obtained and donated itself may remain.
 - Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only, with no fetches to key-authenticated endpoints.
 - Every external egress is declared and either credential-free, native, or relay-eligible.
 - Source rides the deploy (`sourcePush: true` in `bounded.json`), and the synced tree is the real, complete project, including the policy file its `bounded.json` names.
-- The app serves a site (`oapp_app_release_site_missing` otherwise), built from THIS tree and reproducible from it: byte-identical source files, or a build the source declares (`oapp_opening_dist_not_reproducible` otherwise).
+- The app serves a site (`oapp_app_release_site_missing` otherwise), built from THIS tree: byte-identical source files, or a build the source declares.
+- The app runs no server (`oapp_opening_app_server_unsupported` otherwise).
   Every `init({ appId })` literal names this app.
 - Every script the page runs ships inside the tree: dependencies come from npm and the build bundles them.
   A `<script src="https://…">` or a URL import fails the Gauntlet's dependency audit during the sale (`dependency_remote_script`, `dependency_remote_module_import`), and the app's `script-src 'self'` floor refuses to load it anyway.

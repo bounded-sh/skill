@@ -139,7 +139,24 @@ bounded secret put STRIPE_KEY --value-env STRIPE_KEY --app-id <id>
 bounded secret put STRIPE_KEY --app-id <id>       # interactive hidden prompt
 bounded secret list --app-id <id>                 # names only — never values
 bounded secret rm STRIPE_KEY --app-id <id>        # remove
+printf '%s' "$STRIPE_TEST_KEY" | bounded secret put STRIPE_KEY --preview --value-stdin --app-id <id>
+bounded secret rm STRIPE_KEY --preview --app-id <id>
+printf '%s' "$EXPO_TOKEN" | bounded secret put EXPO_TOKEN --agent --host api.expo.dev --value-stdin --app-id <id>
+bounded secret list --agent --app-id <id>
 ```
+
+A preview of an app (`bounded previews create`) starts with none of the app's values.
+`--preview` sets a preview value instead, typically a test key: the app's live previews receive it as soon as it is set, and each new preview when it is created.
+The app's own values never reach a preview, and the app itself never reads a preview value.
+Code on a preview can read its preview values, so set test keys there.
+Removing a preview value does not take it out of a preview that already received it.
+A frontend running on a local dev server calls whichever app its app id names, so its functions read that app's keys: give it a preview's app id to use the preview's test keys instead of the live ones.
+`bounded secret list` names the preview values separately, and marks any key the app's OpenApps agent donated; a value you set under that name replaces the agent's.
+`--agent` puts a key on the app's OpenApps agent for its own work, such as submitting the app to a store, instead of on the app: it is sealed on the agent's computer, the agent writes `{{secret:NAME}}`, and the network adds the key only on requests to the `--host` names given (at least one).
+The agent never sees the value, and the key stays labelled as yours, even in a copy the agent gives the app.
+`--agent` and `--preview` cannot be combined.
+A server-rendered app reads its secrets as `process.env.NAME` once its server manifest lists them ([server apps](../../bounded-frontend/docs/server-apps.md)).
+Listing, setting and removing keys takes the same access as deploying the app's functions (`functions:deploy`).
 Values are write-only over the API: there is no command that prints a secret value back.
 The older `bounded secret put NAME VALUE` form still works for compatibility, but it warns because
 argv values can appear in shell history and process listings.

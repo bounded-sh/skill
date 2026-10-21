@@ -107,7 +107,7 @@ A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it 
 | The request names the slug the app already serves | `oapp_opening_slug_mismatch` (`oapp_opening_slug_missing` before the app has one) |
 | The app never had a sale | `oapp_opening_sale_exists` |
 | The app serves a site and has synced source | `oapp_app_release_site_missing`, `oapp_app_release_source_not_synced` |
-| The served site is reproducible from that source | `oapp_opening_dist_not_reproducible` |
+| The app runs no [server](../../bounded-frontend/docs/server-apps.md): an Open app cannot run one yet | `oapp_opening_app_server_unsupported` |
 | The app passes the opening safety checks | see [the launch gate](launch-gate.md) |
 | The privacy statement is about the source the owner reviewed | `oapp_opening_evidence_changed`: read the source status again and ask again |
 
@@ -116,7 +116,7 @@ An app that publishes while the request reads it is refused with `oapp_opening_a
 The declaration has exact keys and nothing else: `requestedSlug`, `storefront`, `constitution`, `openingIntent`, and `acceptedTerms`.
 The constitution has exactly seven text sections (`preamble`, `purpose`, `objectives`, `tools`, `skills`, `workflow`, `safetyRules`), each non-empty and at most 4000 bytes.
 It carries no AI settings: the platform seals the agent's own saved models and limits.
-`GET /app/<mainAppId>/oapp-source-status` gives the `headRev` and privacy digest the `openingIntent` names, and `bounded oapp preflight` is the dry run of what the request reads off the app: the safety checks, the synced source, the served site, and its reproducibility ([preflight](preflight.md)).
+`GET /app/<mainAppId>/oapp-source-status` gives the `headRev` and privacy digest the `openingIntent` names, and `bounded oapp preflight` is the dry run of what the request reads off the app: the safety checks, the synced source, and the served site ([preflight](preflight.md)).
 
 Once the sale has started, `GET /public/oapps/<rootAppId>/opening` reports it: `phase` is `sale`, `open`, or `returned`, and it answers 404 `oapp_opening_not_found` before that.
 

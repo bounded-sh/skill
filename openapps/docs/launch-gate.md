@@ -1,6 +1,6 @@
 # The launch gate: oApp mode, boundaries, secrets, and the served site
 
-**What's in here:** the safety checks a request to open runs on the app as it is deployed, the boundaries and grants every oApp declares, the shape an app needs to open and the reproducible-dist rule, what holds once the sale starts, and the current state of community code contributions. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** the safety checks a request to open runs on the app as it is deployed, the boundaries and grants every oApp declares, the shape an app needs to open and how its served site is classified, what holds once the sale starts, and the current state of community code contributions. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## Boundaries come first
 
@@ -18,13 +18,15 @@ These are requirements, not advice:
 
 | What | Required | Refusal |
 |---|---|---|
-| oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode refuses function secrets and requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
-| no secrets | no function declares `secrets`, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
+| oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
+| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the owner put on its agent with `bounded secret put --agent`), every secret a function declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
 | `boundaries.egress` | a list of 1 to 64 boundaries with unique ids, each declaring `"mode": "locked"` | `oapp_opening_egress_not_steward_owned` |
 | capability grants | `service:cap` and `service:x402` in a locked `boundaries.egress` entry, so the app can call live catalog actions and pay x402-priced APIs through the relay | `oapp_opening_capability_grants_missing` |
 | function egress | each function's egress names only entries an app-wide boundary declares and repeats every `service:` entry exactly; no function enables `ctx.sandbox` | `oapp_opening_egress_not_steward_owned` |
 | the deployed runtime | the committed runtime config carries this exact policy and allows exactly the hosts the boundaries declare; redeploy the policy when they differ | `oapp_opening_safety_unavailable`, `oapp_opening_egress_not_steward_owned` |
 | the policy in source | the synced source carries the policy file its `bounded.json` names (`"policy"`, `bounded/policy.json` when unset) | `oapp_creator_policy_missing_from_source` |
+
+The request to open also refuses an app that runs a [server](../../bounded-frontend/docs/server-apps.md) (`_bounded_server/server.json` in its served site) with `oapp_opening_app_server_unsupported`, because an Open app cannot run one yet; the preflight does not report it.
 
 The other conditions of a request to open (the owner asking, an app on mainnet under OpenApps custody, a public app, a final proceeds split, Automatic, one sale) are in [the lifecycle](lifecycle.md#what-asking-to-open-requires).
 
@@ -51,7 +53,7 @@ The synced source must be the real, complete project.
 If the deployed frontend is compiled output, the source that compiles into it rides along in the same tree.
 Never add a framework, a bundler, or an unused `init()` call merely to change shape, because opening does not ask for them.
 
-**The dist must be reproducible.**
+**The served site and the source stay together.**
 The request to open, `bounded oapp preflight`, and a source-synced `bounded site deploy` classify the served site against the synced source:
 
 - **static**: every file you deploy is byte-identical to a text file in your source tree.
@@ -59,8 +61,6 @@ The request to open, `bounded oapp preflight`, and a source-synced `bounded site
   Hand-written pages deployed as-is land here automatically.
 - **built**: your source declares how the frontend is produced: a `"build"` object in `bounded.json` (`{"command": "npm run build", "output": "dist"}`) or a `package.json` `build` script.
   The served bytes then differ from the source files, and the declared build is what reproduces them.
-- A dist that matches nothing in source and has no declared build is `dist_not_reproducible`: nobody could rebuild it from the public source, so the request to open refuses it (`oapp_opening_dist_not_reproducible`) and the preflight is not READY.
-  Fix it by declaring a real build, or by deploying your source files directly.
 
 The source must also be synced (`--with-source` / `sourcePush: true`), and the preflight is not READY while the synced source is older than the served site (`source_not_synced`, `source_stale`).
 Read the codes and messages in the report rather than guessing.

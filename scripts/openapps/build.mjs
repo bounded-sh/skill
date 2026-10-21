@@ -45,7 +45,7 @@ const CLI_COMMANDS = [
 
 const ROOT_DESCRIPTION = [
   'Build and ship apps on OpenApps (openapps.xyz, formerly oapps.fun): start here for a complete app,',
-  "including work by an app's own agent, zero-secret capabilities, and opening, then load the focused",
+  "including work by an app's own agent, its keys and capabilities, and opening, then load the focused",
   'OpenApps skill for backend, frontend, deployment, or onchain work.',
 ]
 

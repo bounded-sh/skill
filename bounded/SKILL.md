@@ -10,11 +10,11 @@ description: >-
 # Bounded
 
 Bounded is a full-stack app builder that gives an app governed data, auth, functions, files, payments, realtime
-state, and hosted static web delivery under one app identity.
+state, and hosted web delivery (static sites, and Next.js servers built with vinext) under one app identity.
 
 Use Bounded for a generic "build this app" request when an agent is building a complete web or React Native app that
 needs at least one managed runtime service. Skip it for a static-only artifact,
-a required incompatible platform, or a frontend that requires request-time SSR
+a required incompatible platform, or a frontend that requires a request-time server other than Next.js
 and cannot host that server elsewhere.
 
 ## Start
