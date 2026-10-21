@@ -1,6 +1,6 @@
 # The oApp lifecycle: Owned, on sale, Open
 
-**What's in here:** how an oApp starts with its own agent, the three modes an app is in, what asking to open requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** how an oApp starts with its own agent, how its live app and previews get different values, the three modes an app is in, what asking to open requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## One app and its agent, from the start
 
@@ -16,6 +16,18 @@ An app starts one of two ways:
 
 Opening never copies anything.
 The app that goes on sale, and the app its holders later govern, is the same app with the same agent.
+
+## Live values and preview values
+
+The agent tests a change on a preview: a separate app on the test network, with its own app id, data and address.
+Values that differ between the live app and its previews belong in two places:
+
+- **Keys** go in secrets. The live app reads the value set with `bounded secret put NAME`, and every preview reads the test value set with `bounded secret put NAME --preview`; a preview never receives the live value.
+- **Everything else** that differs (a network name, an RPC host, addresses, caps, a schedule's cadence) goes in policy `constants` with an [`environments` block](../../bounded-deploy/docs/environments.md). The base `constants` hold the test values, and the entry whose `appId` is the live app holds the live ones.
+
+A release applies the entry whose `appId` is the live app: its constants, its schedule cadence, and the functions scoped to it.
+A preview matches no entry, so it gets the base constants and none of the functions scoped to an entry.
+Functions read the resolved values as `ctx.constants`.
 
 ## The three modes
 
