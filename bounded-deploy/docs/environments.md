@@ -214,25 +214,23 @@ key itself is stripped from the functions that are kept, so a NORMAL policy
 reaches the API in every case.
 
 The guarantee this buys is that a test-venue function cannot reach a real app,
-so each way of losing it refuses instead:
+so every case either drops the function or refuses:
 
 - a name in the allowlist that is **not** a key of the top-level `environments`
   block refuses, so a typo fails the deploy rather than quietly excluding the
   function from every environment;
-- a `schedule.run` naming a function that this environment stripped refuses,
+- a `schedule.run` naming a function that this deploy left out (because the
+  environment's name is not in its list, or because no entry names the app) refuses,
   naming both the collection and the function, rather than shipping a dangling
   reference for the server to reject;
 - a **new** environment excludes the function until it is added to the list —
   the allowlist is the whole grant, there is no inherited default;
-- and `deploy` or `functions deploy --all` run **without**
-  `--environment` refuses outright as soon as any function carries an
-  `environments` key, naming the scoped functions. An env-blind deploy has no
-  environment to filter against, so rather than guess it makes you pick.
-
-That last rule is the one to remember when a previously-fine bare
-`bounded deploy ./policy.json` starts refusing: adding the first
-`environments` allowlist anywhere in the policy makes `--environment`
-mandatory for the whole file.
+- a deploy to an app **no** entry names (an OpenApps preview, for example) gets
+  the base constants and cadence and drops every function that carries an
+  `environments` list, the same way the platform resolves an agent release;
+- and `deploy` or `functions deploy --all` with **no** target app at all (no
+  `--environment`, no `--app-id`, no linked app) refuses as soon as any function
+  carries an `environments` key, naming the scoped functions.
 
 ## Notes
 
@@ -240,10 +238,9 @@ mandatory for the whole file.
   constants, schedule cadence, and function set). Deploys target the normal
   Bounded API by default; you don't need any other flag to pick an endpoint.
 - The `environments` block is a CLI authoring convenience and never reaches the
-  API. Deploying without `--environment` strips it too — but see
-  [§ Environment-scoped functions](#environment-scoped-functions): a policy that
-  scopes any function refuses an env-blind deploy rather than stripping its way
-  past the question.
+  API. Deploying without `--environment` strips it too; see
+  [§ Environment-scoped functions](#environment-scoped-functions) for what happens
+  to scoped functions then.
 - Combine with `--constants NAME=value` for one-off CI overrides on top of the
   selected environment.
 
