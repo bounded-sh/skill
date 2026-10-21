@@ -53,9 +53,11 @@ Is it request-time SSR that must run a server?
    Read [functions](../../bounded-backend/docs/functions.md); reach for
    [ctx.services](../../bounded-backend/docs/functions-ctx-services.md) before
    `fetch` with a key.
+   `bounded deploy` (with or without `--create`) registers the functions the policy declares but does not upload their code; `bounded functions deploy --all --policy policy.json` does.
+   Until then an invoke answers `Function "<name>" is not deployed with a pinned code version`.
 3. **Move auth last.** Existing user ids do not carry over as identities;
    re-key ownership on `@user.id` and migrate data with a one-time function or
-   `bounded data set-many` from the old export.
+   `bounded data import` from the old export.
 4. **Deploy with source**, verify the site serves, test the happy path and a
    denied boundary, and only then cut traffic over.
 
@@ -87,28 +89,64 @@ Never put a key in frontend code or a repo.
 | Stripe and card processing | Crypto acceptance and Bounded's provider payment rails; for an oApp a card processor billed to a person is a call-out, not a key | [accept crypto](../../bounded-onchain/docs/accept-crypto.md), [capability ladder](../../openapps/docs/capability-ladder.md) |
 | Any other third-party API | The capability ladder: `live`, `callable` through `X402_FETCH`, or `bounded services request` | [ctx.services](../../bounded-backend/docs/functions-ctx-services.md) |
 
-Data migrations are out of scope for this guide: Bounded moves the app's
-shape and rules, not its history. Export the old data and load what the new
-rules admit with `bounded data set-many` or a one-time function; what the
-rules refuse was never admissible under the new policy.
+Export the old data and load what the new rules admit with `bounded data import <path template> --from <file.jsonl|file.csv>`.
+The template names each record's document: `'agents/$slug'` writes the record whose `slug` is `a1` to `agents/a1`, and a bare `agents` means `agents/$id`.
+Records go through the app's rules, field types and invariants like any write, and a rerun resumes where the last one stopped.
+A value is written as it is, so an array or object in the export is refused until it is turned into a declared type (see the field facts below).
+What the rules refuse was never admissible under the new policy.
+
+## Keep your backend
+
+Porting is optional for an Owned app.
+An app may keep Supabase, Firebase or another backend it already uses and host only its frontend here.
+Client config such as a Supabase URL and anon key or a Firebase web config is public, not a secret: the build inlines `VITE_*` and `NEXT_PUBLIC_*` values, and no build sees a value set with `bounded secret put`.
+Server-side keys (a service-role key, a Stripe secret) are set by the owner with `bounded secret put` and read at run time by functions and by a [server app](../../bounded-frontend/docs/server-apps.md).
+A database reached over HTTP works from both (Supabase JS, Neon serverless HTTP, PlanetScale, Turso).
+A driver that opens a TCP socket, such as `pg` for Postgres, does not: functions refuse raw sockets in the bundle, and server apps do not support TCP database drivers.
+An app headed to an APO is held to the key rules in the ladder section above.
 
 ## Recipes by source stack
+
+### Facts that every data port runs into
+
+- Collection names are letters and digits, starting with a letter: `copy_results` is refused, so name it `copyResults`.
+  Field names may contain `_`.
+- Every field the app writes is declared with a type: `String`, `Int`, `UInt`, `Bool`, `Float` or `Address`, with `?` for optional.
+  A field without `?` is required, so a create that leaves it out is refused.
+- There are no array, object, JSON or date types.
+  Store a JSON, `jsonb` or array column as JSON text in a `String` field and encode and decode it in the client, or model it as a sub-collection when rules must see its items.
+  Timestamps are `UInt` Unix seconds; the system fields `_createdAt` and `_updatedAt` are readable without declaring them.
+- Document ids are chosen by the writer; a client-generated id such as `crypto.randomUUID()` replaces an auto id (`addDoc`, a serial or uuid default).
+- A document is deleted with `set(path, null)` (or a null entry in `setMany`), checked by the collection's `delete` rule ([SDK](../../bounded-frontend/docs/sdk-reference.md)).
+  Deleting a document does not delete documents that reference it; delete children in the same `setMany` when they must go together.
+- Give every row the id it is authorized by.
+  A read rule that builds a `get()` path from a field of the row being read, such as `get(/companies/@data.companyId).ownerId == @user.id`, admits a single-document read, but a list read can return an empty `200`.
+  Store `ownerId` (or the tenant id) on each row and compare it directly: `@data.ownerId == @user.id`.
+  A `get()` built from path variables or `@user.id` (`get(/teams/$teamId/members/@user.id)`) is not affected.
 
 ### Supabase or Firebase
 
 - Tables/documents become collections; row-level security or security rules
   become `rules` on each collection (same intent, enforced here).
+  `auth.uid()` and `request.auth.uid` become `@user.id`.
+- A new-user trigger (`handle_new_user` that inserts a profile) becomes a profile the client creates at first sign-in, at a path keyed by `@user.id`, with a `create` rule that pins every starting value (`@newData.credits == 20`).
+- A guard trigger or column `REVOKE` that stops users changing a field becomes an `update` rule that requires it unchanged (`@newData.credits == @data.credits`), or a `!` field when it is set once at create.
 - Realtime channels become subscriptions; there is nothing to deploy for them.
 - Edge functions / cloud functions become Bounded functions only when they call
   out or batch; a "check then write" function becomes a rule.
+  A function may import npm packages listed in a `package-lock.json` ([functions](../../bounded-backend/docs/functions.md)).
 - Storage buckets become files under the same rules.
 - Auth: replace the client SDK with Bounded's; re-key ownership on `@user.id`.
+  There is no password sign-in: app users sign in with an email or phone code, a social account, a wallet or as a guest ([auth](../../bounded-frontend/docs/auth.md)).
+  Password, reset-password and verify-email screens have no counterpart, and existing users sign in again and get a new `@user.id`.
 
 ### Express, Fastify, Next API routes, Rails, Django
 
 - Route handlers that validate and write become rules; the client writes with
   the SDK. Handlers that call other services or run computation become
   functions.
+  A client that calls `/api/...` can keep its pages if one adapter maps each route to an SDK read, write or `functions.invoke`.
+- SQL tables become collections; a foreign key the rules authorize through is copied onto the row (see `ownerId` above).
 - Middleware auth becomes the `auth` rule on a function or a read/create rule
   on a collection.
 - Background workers and cron become schedules.

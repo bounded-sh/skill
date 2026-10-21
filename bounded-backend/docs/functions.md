@@ -346,9 +346,18 @@ functions/
 Keep a function's modules inside the entry's own directory: that directory is
 what gets uploaded, so an import reaching outside it will not resolve. Only
 source extensions travel (`.ts`, `.tsx`, `.js`, `.mjs`, `.json`, …) - a README or
-a fixture in that folder is ignored - and `node_modules` is never uploaded, so
-npm dependencies still cannot be imported. Limits are 100 files, 512 KB per file
+a fixture in that folder is ignored - and `node_modules` is never uploaded.
+Limits are 100 files, 512 KB per file
 and 2 MB total; an oversize tree is refused locally with those same numbers.
+
+**A function may import npm packages** listed in the `package-lock.json` (npm 7
+or newer) nearest the entry, at or above its folder within the project. The
+platform installs the exact locked versions from the public npm registry,
+checked against the lockfile's integrity hashes and without install scripts,
+and bundles them. Private registry, git, file and workspace packages are
+refused, as are packages that open raw sockets (`net`, `tls`,
+`cloudflare:sockets`) or load a module chosen at runtime. Run `npm install
+<pkg>` and deploy; a package the lockfile does not list is refused by name.
 Older CLI versions upload only the entry and refuse a relative import at deploy
 time with `Relative import ... cannot be resolved`, so if you see that, update.
 

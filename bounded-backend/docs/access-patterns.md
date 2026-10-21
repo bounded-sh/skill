@@ -72,6 +72,10 @@ Authorize through a document that encodes the relationship, bound by path variab
 
 Path nesting binds `$teamId` for every rule on the template, so a write to team A structurally cannot pass team B's membership check.
 
+Build a read rule's `get()` path from path variables and `@user`, as above.
+A read rule whose `get()` path comes from a field of the row being read, such as `get(/companies/@data.companyId).ownerId == @user.id`, admits a single-document read, but a list read can return an empty `200`.
+For a flat collection, store the owner or tenant id on each row and compare it directly (`@data.ownerId == @user.id`).
+
 ## Time-windowed
 
 ```json
