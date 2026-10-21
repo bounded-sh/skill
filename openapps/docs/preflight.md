@@ -6,7 +6,7 @@
 
 An app opens in place: the app that goes on sale is the app as it is deployed, with its data, so the checks read that app and nothing else.
 The request to open runs one safety pass on it and refuses on the first finding.
-It also refuses an app with no synced source, an app that serves no site, and a served site that cannot be rebuilt from its source.
+It also refuses an app with no synced source, an app that serves no site, an app that runs a server (`oapp_opening_app_server_unsupported`), and an app whose agent holds a key its owner put there (`agent_secret_person_held`); the preflight reports neither of the last two.
 `bounded oapp preflight` (`GET /app/<mainAppId>/oapp-preflight`) runs the same reads as a dry run, as the app's owner, and changes nothing:
 
 ```
@@ -20,14 +20,13 @@ A deployed function whose code cannot be read at its pin fails the preflight wit
 ## What the report says
 
 - **Source:** whether the source is synced and current with the served site, its head revision, and the fix when it is not (`source_not_synced`, `source_stale`).
-- **Dist:** whether the served site can be rebuilt from the synced source.
+- **Dist:** how the served site relates to the synced source.
   - `static`: every served file is byte-identical to a text file in the source; only inert assets (images, fonts, audio, video, `.pdf`) are exempt.
-  - `built`: the source declares the build that produces the site.
-  - `unreproducible` (`dist_not_reproducible`): neither, and the request refuses it with `oapp_opening_dist_not_reproducible`.
+  - `built`: the served site is a build's output.
   - `none` (`backend_only`): the app serves no site, and the request refuses it with `oapp_app_release_site_missing`.
   - `unknown` (`source_not_synced`): there is no synced source to judge the site against.
 - **Grants:** the two `service:` grants every oApp declares in a locked `boundaries.egress` entry, `service:cap` and `service:x402`, and which are missing.
-- **Findings:** every safety finding the request refuses on: a synced source that does not carry the policy file its `bounded.json` names (`oapp_creator_policy_missing_from_source`), a declared function secret, a credential-shaped string anywhere in the policy, runtime config, source, served site, function code or backend manifest, a policy with functions or boundaries that is not marked `"oapp": true`, a missing grant, an egress boundary that is missing or not locked, a function egress or sandbox the boundaries do not cover, and a deployed runtime that does not match the policy.
+- **Findings:** every safety finding the request refuses on: a synced source that does not carry the policy file its `bounded.json` names (`oapp_creator_policy_missing_from_source`), a declared function secret its agent did not donate, a key a person set that the app still holds (`secret_person_held`, or `secret_preview_value` for a preview value), a credential-shaped string anywhere in the policy, runtime config, source, served site, function code or backend manifest, a policy with functions or boundaries that is not marked `"oapp": true`, a missing grant, an egress boundary that is missing or not locked, a function egress or sandbox the boundaries do not cover, and a deployed runtime that does not match the policy.
   For each declared secret, it answers the ladder:
 
 - `native` - the runtime already provides it (`ctx.ai`, `ctx.email`, files, auth, ...)

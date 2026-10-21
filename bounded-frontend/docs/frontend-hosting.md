@@ -15,8 +15,8 @@ subdomains on the same SSL:
 
 ## What it CAN and CANNOT host
 
-Bounded serves your static files **exactly as uploaded — it never executes them**.
-There is no Node/SSR server for your frontend. So:
+Bounded serves your static files **exactly as uploaded**.
+A Next.js app can also run its server here: see [server-apps.md](server-apps.md).
 
 **✅ Can host** — anything that builds to a static, client-rendered bundle:
 - Vite (React/Vue/Svelte/Solid/vanilla), Create-React-App, plain HTML/CSS/JS.
@@ -26,19 +26,22 @@ There is no Node/SSR server for your frontend. So:
 - Anything where `npm run build` yields a folder of `.html/.js/.css` that runs in
   the browser.
 
-**❌ Cannot host** — anything that needs a server **at request time**:
-- A normal Next.js app (`next start`): SSR, ISR, React Server Components, API
-  routes, `middleware`, image optimization. Same for Remix, Nuxt/SvelteKit in SSR
-  mode, Express/Fastify, PHP, etc.
-- Server-side secrets or request-time rendering baked into the frontend framework.
+**✅ Can run its server:** a Next.js app (SSR, ISR rendered per request, React
+Server Components, server actions, route handlers, middleware) built with vinext,
+billed per request like a function: [server-apps.md](server-apps.md).
+An OpenApps app that runs a server cannot open (APO) yet.
+
+**❌ Cannot host:** a long-running process (Express/Fastify on Node), PHP, Python,
+native Node addons, or TCP database drivers. Other framework servers (Remix,
+Nuxt/SvelteKit in SSR mode) are not documented here: deploy them static, or host
+them elsewhere.
 
 **The Bounded way to get "server" behavior:** ship the UI as a static bundle here,
 and move every server concern to Bounded — data + rules to your **policy**, secrets
 + server logic + external API calls to a **function** or **backend runtime** at
 `<slug>-api.bounded.page` ([functions.md](../../bounded-backend/docs/functions.md), [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)).
-If you truly need framework SSR, host that app elsewhere and still use Bounded as
-its backend. Rule of thumb: **if serving a page would require running your code,
-`bounded site deploy` won't do it — prerender it, or move that code into Bounded.**
+For a server other than Next.js, host it elsewhere and still use Bounded as its
+backend.
 
 ## Deploy
 

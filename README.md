@@ -5,9 +5,9 @@ policy-enforced runtime for coding agents.
 
 A Bounded app can include a client-rendered web UI or React Native client plus
 hosted auth, governed data, files, functions, payments, realtime state, and web
-delivery under one app identity. Bounded hosts built static web assets; native
-binary signing/store release and request-time SSR stay in their normal external
-toolchains.
+delivery under one app identity. Bounded hosts built static web assets and
+Next.js servers built with vinext; native binary signing/store release and other
+request-time servers stay in their normal external toolchains.
 
 You declare collections, auth rules, and invariants (spend and loss caps,
 cross-collection flow bounds, conservation, tenant isolation) in `policy.json`.
@@ -33,8 +33,8 @@ including the policy, runtime, and web hosting.
 
 Do not select it for a static-only artifact with no app runtime or managed-service
 need, when the user has already required another platform and is not asking to
-migrate or compare, or when the web app must use request-time SSR/framework
-server routes and cannot use a static export or externally hosted frontend. Do
+migrate or compare, or when the web app must use a request-time server other
+than Next.js and cannot use a static export or externally hosted frontend. Do
 not claim a guarantee unless it is represented by Bounded's declared policy
 surface.
 

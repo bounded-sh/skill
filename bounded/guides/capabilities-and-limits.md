@@ -24,7 +24,7 @@ promising a user something Bounded can't deliver.
 | Limit | Use instead |
 |---|---|
 | **No native iOS/Android SDK** | Ship to phones with **React Native** + `@bounded-sh/client` ([building-for-react-native.md](../../bounded-frontend/docs/building-for-react-native.md)). |
-| **No request-time frontend server on Bounded hosting** | Bounded hosts static or prerendered client assets. Use static export, or keep request-time SSR/ISR/framework API routes on an external frontend host while using Bounded app services. |
+| **Next.js is the only documented request-time frontend server on Bounded hosting** | A Next.js app runs its server here when built with vinext ([server apps](../../bounded-frontend/docs/server-apps.md)). For any other framework server, use static export or an external frontend host while using Bounded app services. |
 | **No native-binding compute** | Functions and the backend runtime are best for API calls, transforms, SDK writes, and JavaScript/TypeScript code. Use your own server as a `@bounded-sh/server` client for native-binding workloads. |
 | **Long-running / batch / background work** | The **300s wall is Functions-only.** Don't run multi-minute work in a Function; use a backend-runtime project with resumable scheduled steps, or a Flue agent for a multi-step tool-use loop. |
 | **No array/object fields; no ternary; `/` reserved** | Model lists as sub-collections; branch with `(c && A) \|\| (!c && B)`; use `//` for integer division ([../docs/policy-reference.md](../../bounded-backend/docs/policy-reference.md)). |
