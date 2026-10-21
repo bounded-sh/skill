@@ -27,7 +27,7 @@ Bounded's guarantees no matter where the compute runs**.
 - You want the caller's identity + auth rule enforced for you (`ctx.user`,
   `ctx.auth`), with every write checked against authorization rules and your
   declared invariants.
-- No npm deps you can't inline; the result is a single JSON body.
+- Your npm deps are public registry packages in a `package-lock.json` that open no raw sockets; the result is a single JSON body.
 
 Canonical fit: charge Stripe then mark an order paid; enrich/summarize with an LLM;
 authenticated server actions; `actAs` service writes (payout bot); scheduled rollups.
