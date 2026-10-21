@@ -39,7 +39,7 @@ Read the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| The agent an app has from creation, Owned / on sale / Open, asking to open, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
+| The agent an app has from creation, live values and preview values, Owned / on sale / Open, asking to open, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
 | App capability availability, unsupported dependencies, catalog requests, x402 payment and recovery semantics | [Capability ladder](docs/capability-ladder.md) |
 | What opening checks: oApp mode, required boundaries and egress grants, secrets, the served site and reproducible dist, `bounded propose` | [Launch gate](docs/launch-gate.md) |
 | `bounded oapp preflight` and its report | [Preflight](docs/preflight.md) |
