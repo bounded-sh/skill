@@ -34,7 +34,7 @@ Read only the row matching the current task or term.
 | Guests, anonymous users, invite links, account upgrade | [anonymous accounts](docs/anonymous-accounts.md) |
 | Link a user's X account, `connect('x')`, `completeConnection`, `getConnections`, verified X handle, `__connections__` | [connected accounts](docs/connected-accounts.md) |
 | Hosted frontend and app URLs | [frontend hosting](docs/frontend-hosting.md) |
-| A Next.js app that runs its server (vinext), its secrets and limits | [server apps](docs/server-apps.md) |
+| A Next.js (vinext) or Express app that runs its server, its secrets and limits | [server apps](docs/server-apps.md) |
 | CLI developer login or `bounded login` | [developer accounts](../bounded-deploy/docs/accounts.md) |
 | Embedded wallet, `auth.wallets`, `@user.address` after email/social login | [embedded wallets](../bounded-onchain/docs/embedded-wallets.md) |
 | `onramp()`, buy SOL/USDC by card, Coinbase Onramp, wallet top-up | [onramp](../bounded-onchain/docs/onramp.md) |

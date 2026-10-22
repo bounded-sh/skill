@@ -151,9 +151,9 @@ An app headed to an APO is held to the key rules in the ladder section above.
   on a collection.
 - Background workers and cron become schedules.
 - The frontend stays where it is if it is static; deploy it with
-  `bounded site deploy dist --with-source`. A Next.js app runs its server here
-  ([server apps](../../bounded-frontend/docs/server-apps.md)); any other request-time
-  server stays elsewhere and points at Bounded.
+  `bounded site deploy dist --with-source`. A Next.js or Express app can run its
+  server here as it is ([server apps](../../bounded-frontend/docs/server-apps.md)); any
+  other request-time server stays elsewhere and points at Bounded.
 
 ### A backend that exists mainly to hold API keys
 
