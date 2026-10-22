@@ -49,6 +49,7 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
 
 1. **Owned: build locally or with the agent.** An external coding agent acting for the owner can use [direct frontend publishing](../../bounded-deploy/docs/quickstart.md#publish-an-owned-openapps-frontend-from-local-source) without an app-agent run, subject to the platform's checks.
    When the owner directs the app's own agent, it builds on previews and requests releases through the owner's review.
+   The owner can instead let the agent decide what to build ("The AI decides", which needs Automatic mode): the owner's posts then count like anyone's in Discussion, and the owner and co-creators still approve or veto each release.
    A release publishes the app to Solana mainnet (see [oApps run on mainnet](#oapps-run-on-mainnet)).
 2. **Ask to open.** The owner submits the storefront (name, ticker, description, images), the constitution, the privacy statement, and accepts the terms: see [what asking to open requires](#what-asking-to-open-requires).
    Asking changes nothing about the app: the owner keeps it, can withdraw the request, and can ask again, which replaces the earlier request.
