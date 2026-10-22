@@ -51,7 +51,7 @@ Server code reads the names `server.json` lists as `process.env.NAME`; a name it
 `bounded.json` declares the same list as `"server": { "secrets": ["STRIPE_SECRET_KEY"] }`; an OpenApps agent's release refuses a built server that reads a name the commit's `bounded.json` does not list.
 Names are upper case: `^[A-Z][A-Z0-9_]{0,63}$`.
 Names starting `NEXT_PUBLIC_`, `NUXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `EXPO_PUBLIC_` or `REACT_APP_` are refused, because frameworks put those in browser bundles.
-Public values are not secrets: commit them in source or config, because source sync leaves out every `.env` file, so a build the app's agent runs never sees them.
+Public values are not secrets: put them in `bounded.json` `build.env` (`bounded site env set NAME VALUE`), because source sync leaves out every `.env` file; `bounded site build` and an OpenApps agent's release build add them to the build.
 The owner sets each value with `bounded secret put NAME` ([secrets](../../bounded-backend/docs/secrets.md)); a new value reaches the server within 30 seconds, with no deploy.
 Deploying a server that lists secrets needs the same permission as deploying functions.
 A listed secret that is not set makes every server request answer 503 with `This app's server needs secrets that are not set: NAME.`
