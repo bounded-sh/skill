@@ -59,3 +59,4 @@ No build sees a secret.
 A secret of 8 or more characters is replaced with `[redacted]` wherever a response carries it as is, JSON-escaped or URL-encoded, and a header holding one is replaced whole; shorter secrets, other encodings and partial copies pass through.
 A site variant's server runs with no secrets, no cookies and none of the app's connected-account credentials.
 Server code reads the app id from `process.env.BOUNDED_APP_ID`; every page also carries `<meta name="bounded-app-id">`.
+`process.env.BOUNDED_AI_BASE_URL` is an OpenAI-compatible AI endpoint billed to the app, streaming included, for any AI SDK that takes a base URL ([the endpoint](../../bounded-backend/docs/functions-ctx-ai.md#any-ai-sdk-and-streaming-the-openai-compatible-endpoint)).

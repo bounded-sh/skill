@@ -93,6 +93,35 @@ export default async function (args, ctx) {
   [spend-cap recipe](invariants.md#rollingsum--caps-over-time-windows)) — so "this
   desk spends ≤ $X/day on reasoning" is an invariant, not a hope.
 
+### Any AI SDK, and streaming: the OpenAI-compatible endpoint
+
+`https://ai.bounded.internal/v1` is an OpenAI-compatible endpoint billed to the app exactly like `ctx.ai.run`: same model catalog, admission, caps, settlement, and error codes.
+Function code reads it as `ctx.ai.baseURL`; server-app code reads it as `process.env.BOUNDED_AI_BASE_URL`.
+Requests to it never leave the platform, so any API key string works and no provider key is needed.
+
+- Served: `POST /chat/completions`, including `stream: true`. A streamed call settles from the stream's final usage block.
+- Forwarded fields: `messages`, `max_tokens` or `max_completion_tokens` (default 1024), `tools`, `tool_choice`, `response_format`, `reasoning_effort`, `temperature`, `top_p`, `stop`, `seed`, `frequency_penalty`, `presence_penalty`, `parallel_tool_calls`. Other fields are dropped.
+- Each request is its own operation with no idempotency key: a retried request is a new provider call, billed for what it used. Use `ctx.ai.run` where a retried invocation must not call the model again.
+- Errors use OpenAI's envelope, `{ error: { message, type, code } }`, with the codes listed above.
+- A site variant's server cannot use it (`403 ai_billing_unavailable`).
+- A function's result is buffered, so streamed text reaches a user only from a [server app](../../bounded-frontend/docs/server-apps.md).
+
+```ts
+// A Next.js route in a server app, with the Vercel AI SDK.
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { streamText } from "ai";
+
+const bounded = createOpenAICompatible({ name: "bounded", baseURL: process.env.BOUNDED_AI_BASE_URL! });
+
+export async function POST(req: Request) {
+  const { prompt } = await req.json();
+  const result = streamText({ model: bounded("anthropic/claude-haiku-4.5"), prompt, maxOutputTokens: 2000 });
+  return result.toTextStreamResponse();
+}
+```
+
+The OpenAI SDK works the same way: `new OpenAI({ baseURL: ctx.ai.baseURL, apiKey: "bounded" })`.
+
 ### How your user pays for it — route through Bounded, don't hand-roll
 
 Credits are **per-account** (the app owner's payer pool). Two things to wire and to tell the user:
