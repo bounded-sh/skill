@@ -119,10 +119,8 @@ An app headed to an APO is held to the key rules in the ladder section above.
 - Document ids are chosen by the writer; a client-generated id such as `crypto.randomUUID()` replaces an auto id (`addDoc`, a serial or uuid default).
 - A document is deleted with `set(path, null)` (or a null entry in `setMany`), checked by the collection's `delete` rule ([SDK](../../bounded-frontend/docs/sdk-reference.md)).
   Deleting a document does not delete documents that reference it; delete children in the same `setMany` when they must go together.
-- Give every row the id it is authorized by.
-  A read rule that builds a `get()` path from a field of the row being read, such as `get(/companies/@data.companyId).ownerId == @user.id`, admits a single-document read, but a list read can return an empty `200`.
-  Store `ownerId` (or the tenant id) on each row and compare it directly: `@data.ownerId == @user.id`.
-  A `get()` built from path variables or `@user.id` (`get(/teams/$teamId/members/@user.id)`) is not affected.
+- A row can be authorized through the row it references, as a foreign key would be: `@user.id != null && get(/companies/@data.companyId).ownerId == @user.id`.
+  Storing the owner or tenant id on each row and comparing it directly (`@data.ownerId == @user.id`) also works and skips the lookup.
 
 ### Supabase or Firebase
 
