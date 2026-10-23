@@ -1,31 +1,44 @@
-# Server apps: Next.js on Bounded hosting
+# Server apps: Next.js and Express on Bounded hosting
 
-A Next.js app built with [vinext](https://github.com/cloudflare/vinext) can run its server on Bounded hosting.
+A Next.js app built with [vinext](https://github.com/cloudflare/vinext), or an Express app, can run its server on Bounded hosting.
 Bounded serves exact static files itself and runs the server for every other request and every non-GET request.
 Each server request is billed to the app's credits like a function call, for at most 30 seconds; static files cost nothing per request.
 An OpenApps app that runs a server cannot open yet: its APO refuses it (`oapp_opening_app_server_unsupported`), and an Open app runs no server.
 
-## Build and deploy
+## Build and deploy Next.js
 
 1. `npx vinext check` lists what vinext cannot run.
 2. A pnpm repo builds only with `node-linker=hoisted` in `.npmrc` and `node_modules` reinstalled after setting it; the build stalls on pnpm's linked `node_modules`.
 3. `npx vinext init --platform=cloudflare --legacy-wrangler-cloudflare-init --skip-check --cdn-cache=none --data-cache=none --image-optimization=none`
 4. `vite build` writes the server to `dist/server` (with a `wrangler.json` naming its entry, compatibility date and flags) and the browser files to `dist/client`.
-5. A pack step puts the server into the deployed folder (the layout is below), and `bounded site deploy ./dist/client --with-source` publishes both.
+5. `bounded site pack`, run in the project root, puts the server into `dist/client/_bounded_server/` with its `server.json` (the layout is below).
+6. `bounded site deploy ./dist/client --with-source` publishes both.
 
 `bounded site deploy` accepts a folder with `_bounded_server/server.json` in place of `index.html`.
 Nothing under `_bounded_server/` is served to a browser.
 A `"build"` object in `bounded.json` (`{ "command": "npm run build", "output": "dist/client" }`) declares how the deployed folder is produced, and an OpenApps app's agent builds its releases with it.
 
+## Build and deploy Express
+
+1. `npm install`, then `bounded site pack` in the project root.
+2. `bounded site deploy ./dist/client --with-source`.
+
+`bounded site pack` bundles the file `npm start` runs (`node <file>`), else `package.json` `main`, else `server.js`, `index.js` or `app.js`, with its dependencies into one module.
+It runs esbuild 0.28.2 through `npx`, so it needs Node and the app's `node_modules`.
+The app must call `app.listen(process.env.PORT)` (`process.env.PORT || 3000` works); the server answers on the port pack sets in `PORT`.
+`public/` is copied beside the server as static files, which Bounded serves itself; `express.static` cannot read files at request time.
+The server runs on the same Worker runtime as a Next.js server, with the limits below.
+`--out <dir>` writes somewhere other than `dist/client`.
+
 ## The `_bounded_server/` layout
 
 - Every server module is a `.js` or `.mjs` file under `_bounded_server/`, at the same relative path it had in `dist/server`: at most 2,000 modules and 16 MiB together.
 - `_bounded_server/server.json` is `{ "version": 1, "main": "<entry module, relative to _bounded_server/>", "compatibilityDate": "YYYY-MM-DD", "compatibilityFlags": [...], "secrets": [...] }`.
-- `main`, `compatibilityDate` and `compatibilityFlags` come from `dist/server/wrangler.json` (`main`, `compatibility_date`, `compatibility_flags`).
+- For vinext, `main`, `compatibilityDate` and `compatibilityFlags` come from `dist/server/wrangler.json` (`main`, `compatibility_date`, `compatibility_flags`); `bounded site pack` writes them.
 - The accepted flags are `nodejs_compat`, `nodejs_compat_v2`, `no_nodejs_compat_v2`, `nodejs_als` and `global_fetch_strictly_public`; any other flag refuses the deploy.
-- `secrets` lists at most 100 secret names the server reads; keep it equal to `server.secrets` in `bounded.json` (see [Secrets](#secrets)).
+- `secrets` lists at most 100 secret names the server reads; `bounded site pack` copies `server.secrets` from `bounded.json` (see [Secrets](#secrets)).
 
-A deploy with an invalid bundle is refused with `invalid_app_server` and a reason.
+`bounded site deploy` checks a bundle against these rules before uploading and stops with a sentence naming what to change; the platform refuses an invalid bundle with `invalid_app_server` and a reason.
 
 ## What runs
 
