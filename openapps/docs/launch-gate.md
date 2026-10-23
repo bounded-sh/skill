@@ -68,10 +68,7 @@ The agent's releases build with that same declaration.
 
 ## Once the sale starts
 
-From the start of the sale the app's address serves under a script floor, whatever the source declared.
-Every page gets `script-src 'self'`, `object-src 'none'`, `base-uri 'none'`, and `worker-src 'self'` in its Content-Security-Policy, even if `boundaries.browser.script` names a CDN.
-A script hosted outside the release could be swapped with no release and no vote, so the browser refuses it on every load; a worker built from a Blob or a `data:` URL would run bytes fetched at runtime, so workers must be files too.
-Bundle scripts, and ship workers as files:
+The Gauntlet requires every script and worker the app runs to ship inside the release:
 
 | What | Required | Gauntlet finding |
 |---|---|---|
@@ -80,7 +77,6 @@ Bundle scripts, and ship workers as files:
 
 The Gauntlet's dependency audit reads the source for both, and either one fails it.
 Normally the agent must ship a repair before graduation; an admin may explicitly waive the sale's Gauntlet requirement for testing.
-That waiver does not remove the browser's script restrictions.
 Fix them before asking to open: neither the request nor the preflight reports them.
 
 From the start of the sale the app's public origins are also pinned to the app itself.
