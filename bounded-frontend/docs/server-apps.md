@@ -1,7 +1,7 @@
 # Server apps: Next.js on Bounded hosting
 
 A Next.js app built with [vinext](https://github.com/cloudflare/vinext) can run its server on Bounded hosting.
-Bounded serves exact static files itself and runs the server for every other request and every non-GET request.
+Bounded serves exact static files itself and runs the server for every other request, every non-GET request and every client navigation (`RSC` header or `_rsc` query).
 Each server request is billed to the app's credits like a function call, for at most 30 seconds; static files cost nothing per request.
 An OpenApps app that runs a server cannot open yet: its APO refuses it (`oapp_opening_app_server_unsupported`), and an Open app runs no server.
 
@@ -9,9 +9,12 @@ An OpenApps app that runs a server cannot open yet: its APO refuses it (`oapp_op
 
 1. `npx vinext check` lists what vinext cannot run.
 2. A pnpm repo builds only with `node-linker=hoisted` in `.npmrc` and `node_modules` reinstalled after setting it; the build stalls on pnpm's linked `node_modules`.
-3. `npx vinext init --platform=cloudflare --legacy-wrangler-cloudflare-init --skip-check --cdn-cache=none --data-cache=none --image-optimization=none`
+3. `npx vinext init --platform=cloudflare --legacy-wrangler-cloudflare-init --skip-check --cdn-cache=none --data-cache=none --image-optimization=none`, then `vinext({ prerender: true })` in `vite.config.ts`.
 4. `vite build` writes the server to `dist/server` (with a `wrangler.json` naming its entry, compatibility date and flags) and the browser files to `dist/client`.
 5. A pack step puts the server into the deployed folder (the layout is below), and `bounded site deploy ./dist/client --with-source` publishes both.
+
+Pages vinext prerenders with no `revalidate` (`○` in its build report) are written to `dist/server/prerendered-routes/` and listed in `dist/server/vinext-prerender.json`.
+Copying each one into `dist/client` (`/` as `index.html`, `/about` as `about.html`) makes it a static file: Bounded serves it without running the server, and client navigations to it still reach the server.
 
 `bounded site deploy` accepts a folder with `_bounded_server/server.json` in place of `index.html`.
 Nothing under `_bounded_server/` is served to a browser.
@@ -31,6 +34,7 @@ A deploy with an invalid bundle is refused with `invalid_app_server` and a reaso
 
 - App Router and Pages Router, server components, server actions, route handlers, middleware, redirects and cookies.
 - ISR pages, rendered on every request rather than cached.
+- Static pages, served as files when the pack step copies them out.
 - `fetch` from server code, within the app's declared egress.
 - `ctx.waitUntil` work, which finishes before the response ends and is billed with it.
 
