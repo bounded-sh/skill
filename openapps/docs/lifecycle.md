@@ -108,7 +108,6 @@ A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it 
 | The request names the slug the app already serves | `oapp_opening_slug_mismatch` (`oapp_opening_slug_missing` before the app has one) |
 | The app never had a sale | `oapp_opening_sale_exists` |
 | The app serves a site and has synced source | `oapp_app_release_site_missing`, `oapp_app_release_source_not_synced` |
-| The app runs no [server](../../bounded-frontend/docs/server-apps.md): an Open app cannot run one yet | `oapp_opening_app_server_unsupported` |
 | The app passes the opening safety checks | see [the launch gate](launch-gate.md) |
 | The privacy statement is about the source the owner reviewed | `oapp_opening_evidence_changed`: read the source status again and ask again |
 

@@ -3,7 +3,7 @@
 A Next.js app built with [vinext](https://github.com/cloudflare/vinext) can run its server on Bounded hosting.
 Bounded serves exact static files itself and runs the server for every other request, every non-GET request and every client navigation (`RSC` header or `_rsc` query).
 Each server request is billed to the app's credits like a function call, for at most 30 seconds; static files cost nothing per request.
-An OpenApps app that runs a server cannot open yet: its APO refuses it (`oapp_opening_app_server_unsupported`), and an Open app runs no server.
+An OpenApps app that runs a server can go through an APO, and its Open app keeps running the server its release froze.
 
 ## Build and deploy
 
@@ -57,6 +57,7 @@ Names are upper case: `^[A-Z][A-Z0-9_]{0,63}$`.
 Names starting `NEXT_PUBLIC_`, `NUXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `EXPO_PUBLIC_` or `REACT_APP_` are refused, because frameworks put those in browser bundles.
 Public values are not secrets: put them in `bounded.json` `build.env` (`bounded site env set NAME VALUE`), because source sync leaves out every `.env` file; `bounded site build` and an OpenApps agent's release build add them to the build.
 The owner sets each value with `bounded secret put NAME` ([secrets](../../bounded-backend/docs/secrets.md)); a new value reaches the server within 30 seconds, with no deploy.
+In an APO every listed name must be a key the app's OpenApps agent donated: the server reads a stand-in, and the real key is added only to requests to the hosts it was donated for.
 Deploying a server that lists secrets needs the same permission as deploying functions.
 A listed secret that is not set makes every server request answer 503 with `This app's server needs secrets that are not set: NAME.`
 No build sees a secret.

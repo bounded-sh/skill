@@ -6,7 +6,7 @@
 
 An app opens in place: the app that goes on sale is the app as it is deployed, with its data, so the checks read that app and nothing else.
 The request to open runs one safety pass on it and refuses on the first finding.
-It also refuses an app with no synced source, an app that serves no site, an app that runs a server (`oapp_opening_app_server_unsupported`), and an app whose agent holds a key its owner put there (`agent_secret_person_held`); the preflight reports neither of the last two.
+It also refuses an app with no synced source, an app that serves no site, and an app whose agent holds a key its owner put there (`agent_secret_person_held`); the preflight does not report the last one.
 `bounded oapp preflight` (`GET /app/<mainAppId>/oapp-preflight`) runs the same reads as a dry run, as the app's owner, and changes nothing:
 
 ```

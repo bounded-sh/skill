@@ -19,14 +19,12 @@ These are requirements, not advice:
 | What | Required | Refusal |
 |---|---|---|
 | oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
-| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the owner put on its agent with `bounded secret put --agent`), every secret a function declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
+| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the owner put on its agent with `bounded secret put --agent`), every secret a function or the app's [server](../../bounded-frontend/docs/server-apps.md) declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
 | `boundaries.egress` | a list of 1 to 64 boundaries with unique ids, each declaring `"mode": "locked"` | `oapp_opening_egress_not_steward_owned` |
 | capability grants | `service:cap` and `service:x402` in a locked `boundaries.egress` entry, so the app can call live catalog actions and pay x402-priced APIs through the relay | `oapp_opening_capability_grants_missing` |
 | function egress | each function's egress names only entries an app-wide boundary declares and repeats every `service:` entry exactly; no function enables `ctx.sandbox` | `oapp_opening_egress_not_steward_owned` |
 | the deployed runtime | the committed runtime config carries this exact policy and allows exactly the hosts the boundaries declare; redeploy the policy when they differ | `oapp_opening_safety_unavailable`, `oapp_opening_egress_not_steward_owned` |
 | the policy in source | the synced source carries the policy file its `bounded.json` names (`"policy"`, `bounded/policy.json` when unset) | `oapp_creator_policy_missing_from_source` |
-
-The request to open also refuses an app that runs a [server](../../bounded-frontend/docs/server-apps.md) (`_bounded_server/server.json` in its served site) with `oapp_opening_app_server_unsupported`, because an Open app cannot run one yet; the preflight does not report it.
 
 The other conditions of a request to open (the owner asking, an app on mainnet under OpenApps custody, a public app, a final proceeds split, Automatic, one sale) are in [the lifecycle](lifecycle.md#what-asking-to-open-requires).
 
