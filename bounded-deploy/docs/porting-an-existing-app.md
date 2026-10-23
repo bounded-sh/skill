@@ -100,9 +100,11 @@ What the rules refuse was never admissible under the new policy.
 Porting is optional for an Owned app.
 An app may keep Supabase, Firebase or another backend it already uses and host only its frontend here.
 Client config such as a Supabase URL and anon key or a Firebase web config is public, not a secret: the build inlines `VITE_*` and `NEXT_PUBLIC_*` values, and no build sees a value set with `bounded secret put`.
+Put those values in `bounded.json` `build.env` with `bounded site env set NAME VALUE` (public names only): source sync leaves out every `.env` file, and `bounded site build` and an OpenApps agent's release build both add `build.env` to the build. Previews and the live app build with the same values.
 Server-side keys (a service-role key, a Stripe secret) are set by the owner with `bounded secret put` and read at run time by functions and by a [server app](../../bounded-frontend/docs/server-apps.md).
 A database reached over HTTP works from both (Supabase JS, Neon serverless HTTP, PlanetScale, Turso).
 A driver that opens a TCP socket, such as `pg` for Postgres, does not: functions refuse raw sockets in the bundle, and server apps do not support TCP database drivers.
+Supabase sign-in sends people back only to addresses its Redirect URLs allow (Supabase dashboard, Authentication, URL Configuration): add the app's live address and each preview address people sign in on, or a magic link lands on the app's old address.
 An app headed to an APO is held to the key rules in the ladder section above.
 
 ## Recipes by source stack
