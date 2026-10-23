@@ -349,7 +349,7 @@ extra command is needed.
   matching path; non-matching paths like `/` or assets do zero extra work). Any miss,
   denied read, or error serves your original `index.html` unchanged — never a broken card.
 - **Private sites never unfurl per resource.** A link-preview crawler is never a member, so
-  it gets the sign-in page and that page's own card. Members' pages skip the read and are
+  it gets the sign-in page, which carries no card. Members' pages skip the read and are
   served as built, so set a per-route `document.title` in your app if you want one in the tab.
 - **`og:image`** can point at any public URL — e.g. a Bounded public file
   (`/storage/object?...`) or a static asset you shipped in `dist/`.
