@@ -22,7 +22,6 @@
 - Every external egress is declared and either credential-free, native, or relay-eligible.
 - Source rides the deploy (`sourcePush: true` in `bounded.json`), and the synced tree is the real, complete project, including the policy file its `bounded.json` names.
 - The app serves a site (`oapp_app_release_site_missing` otherwise), built from THIS tree: byte-identical source files, or a build the source declares.
-- The app runs no server (`oapp_opening_app_server_unsupported` otherwise).
   Every `init({ appId })` literal names this app.
 - Every script the page runs ships inside the tree: dependencies come from npm and the build bundles them.
   A `<script src="https://…">` or a URL import fails the Gauntlet's dependency audit during the sale (`dependency_remote_script`, `dependency_remote_module_import`), and the app's `script-src 'self'` floor refuses to load it anyway.
