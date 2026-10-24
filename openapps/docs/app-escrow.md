@@ -31,7 +31,7 @@ An OpenApps app holds a deal's USDC in its own policy, and the app's agent settl
 }
 ```
 
-- The agent writes a settlement only through a data script its owner reviews (its holders, once the app is Open).
+- The agent writes a settlement only through a data script its creator reviews (its holders, once the app is Open).
   When the script is approved, or its review window lapses, the platform signs the script's onchain writes with the agent's wallet: exactly the writes that were reviewed.
 - On a mainnet app, the app must pay the network fee for the agent's transactions (gas sponsorship, an owner setting).
 - The escrow holds everything its rules check (payee, amount, expiry), because an onchain rule cannot read the offchain deal; keep the deal offchain with the escrow's id.

@@ -927,8 +927,8 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 
 `bounded propose` posts the changes in a bounded clone to an OpenApps app's page as a code change, or shows them without sending anything.
 Submitting a code change grants no write access: it is an idea with its implementation attached, and the app's agent decides whether to build it.
-For a no-AI frontend update by an external coding agent acting for the owner of an Owned app, use [owner publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source).
-What the agent builds ships the way every change does, on a preview through the app's release decision, where the owner or the holders approve or veto it.
+For a no-AI frontend update by an external coding agent acting for the creator of an Owned app, use [creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source).
+What the agent builds ships the way every change does, on a preview through the app's release decision, where the creator or the holders approve or veto it.
 Choose one mode; with neither, the command exits without touching anything.
 
 ```bash
@@ -949,9 +949,9 @@ Keep `--title` to one line of at most 200 characters and `--description` to at m
 `--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
 JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
 
-On an Owned app, its owner chooses how the agent takes each code change: applied as is, or reviewed and adapted (the default).
-`--apply` with `--submit` asks for applied as is on the owner's own change; anyone else gets `code_change_apply_owner_only`.
-On anyone's code change, the owner can choose on the post itself, which posts their choice as a reply in its thread.
+On an Owned app, its creator chooses how the agent takes each code change: applied as is, or reviewed and adapted (the default).
+`--apply` with `--submit` asks for applied as is on the creator's own change; anyone else gets `code_change_apply_owner_only`.
+On anyone's code change, the creator can choose on the post itself, which posts their choice as a reply in its thread.
 Applied as is, the agent applies the patch exactly as written, and ships nothing when it does not apply cleanly or its checks fail.
 Either way this starts an app-agent run, requires its normal funding, and goes through the app's release decision; the agent replies in the thread with what it did.
 

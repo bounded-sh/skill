@@ -7,7 +7,7 @@ Sale minimums, minimum order amounts, bidding duration, and the opening countdow
 The current mainnet settings are 10,000 USDC minimum raised, 50 USDC minimum per order, 24 hours of bidding, and a 60-second opening countdown.
 A Devnet test venue can use smaller amounts, such as 100 USDC raised and 1 USDC per order, without the real-money operating reserve requirement.
 Always read the actual sale terms rather than assuming the settings of another venue.
-The app token's transfer fee belongs entirely to Treasury in app tokens: 1% unless the owner set another rate, from 0% to 5% (`transferFeeBps`), when asking to open.
+The app token's transfer fee belongs entirely to Treasury in app tokens: 1% unless the creator set another rate, from 0% to 5% (`transferFeeBps`), when asking to open.
 The canonical DAMM v2 pool has a separate fixed 0.5% USDC fee with OnlyB and dynamic fees disabled.
 After Meteora's 20% protocol share, actual net receipts of the designated launch position split 50% creator / 50% OpenApps.
 Additional app positions earn for the app, and product revenue belongs entirely to the app.
@@ -46,7 +46,7 @@ Devnet test tokens cannot buy Bounded credits, and Devnet venues do not offer ma
 
 Every 15 minutes the automatic check reads the app's measured daily spending, and wakes the agent once when the credits will not last until its next look and once a day when the day's use passes 80% of the limit.
 When the app needs more than the treasury may pay under the limit, the agent chooses early: a higher daily limit proposed ahead of a lasting need, a credits proposal for a one-off need, or credits paid from its own wallet now, which also bridges the wait for an approval.
-It shares its wallet's address with the owner or the holders when the wallet needs funding.
+It shares its wallet's address with the creator or the holders when the wallet needs funding.
 Every draw is recorded on the venue with its reason; the agent reads them with `read_treasury_history`.
 Until 2026-10-12 the platform also sold treasury SOL and app tokens on its own to keep an Open app funded; those sales are retired, and their records stay readable as history.
 
@@ -55,13 +55,13 @@ Until 2026-10-12 the platform also sold treasury SOL and app tokens on its own t
 The agent has one daily limit on everything it takes from the treasury on its own authority: its refills of the app's credits, the platform's top-ups for its runs, and the trades approved on the spot (swaps of SOL or the app's own token into USDC, and perp margins).
 The venue counts all three in one counter and refuses anything past the limit; approved proposals sit outside it, and money from the agent's own wallet counts against nothing.
 It starts at $20 a UTC day and can be raised to $1,000 at most.
-It lives on chain, on the app's `treasurycontrols` record (`dailyLimitMicroUsd`), not in the platform's AI settings: an Owned app's owner changes it from the settings page with a wallet-signed write, and an Open app changes it only through an approved `constitution_change` with section `ai` whose payload carries `dailyLimitMicroUsd` beside the settings.
-On an Owned app that payload field is refused (`constitution_change_daily_limit_owner_only`), so the agent asks the owner instead.
+It lives on chain, on the app's `treasurycontrols` record (`dailyLimitMicroUsd`), not in the platform's AI settings: an Owned app's creator changes it from the settings page with a wallet-signed write, and an Open app changes it only through an approved `constitution_change` with section `ai` whose payload carries `dailyLimitMicroUsd` beside the settings.
+On an Owned app that payload field is refused (`constitution_change_daily_limit_owner_only`), so the agent asks the creator instead.
 
 A `propose_action` swap that sells SOL or the app token for the venue's USDC with at most 5% slippage, or a perp whose margin fits what is left of the limit today, is approved by the venue the moment it is filed, with no review and no vote, and executes within minutes.
 A sale counts the USDC the venue quotes for it, and the swap hook holds the USDC actually returned to within the slippage band of that quote; a perp counts its margin.
-A trade that does not fit the day's room, buys with USDC, or sells another asset is an ordinary proposal for the owner or the holders, and the answer says why.
+A trade that does not fit the day's room, buys with USDC, or sells another asset is an ordinary proposal for the creator or the holders, and the answer says why.
 Liquidity in or out of the app token pool is never under the limit: from the treasury it is a governed `action` proposal (`add_liquidity`, `remove_liquidity`), and from the agent's own browser wallet it needs nothing, like any trade of its own money.
 
-The owner's per-run figure is a chunk, not a stop: a run is authorized for up to the daily limit, and the platform refills its credits one chunk at a time from the treasury's USDC while the day has room.
+The creator's per-run figure is a chunk, not a stop: a run is authorized for up to the daily limit, and the platform refills its credits one chunk at a time from the treasury's USDC while the day has room.
 A run stops when its credits are spent and no refill can come, or when it has spent the most one run may, the daily limit; credits already in the pot pay for runs whatever the day's room.

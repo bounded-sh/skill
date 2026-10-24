@@ -64,7 +64,7 @@ Keep the returned hostname exactly; do not invent an app-id URL or change site p
 
 ## Publish an Owned OpenApps frontend from local source
 
-An external coding agent acting for the owner can publish a tested frontend directly while the app is still Owned and the platform permits the operation.
+An external coding agent acting for the creator can publish a tested frontend directly while the app is still Owned and the platform permits the operation.
 The app having its own agent does not by itself require an AI run or an AI-credit top-up.
 This workflow differs from the app's own agent, which follows its runtime instructions for previews and releases.
 
@@ -83,11 +83,11 @@ This is a frontend publication, not a policy or functions deployment.
 
 Owner access alone does not override sale, Open-app, publication, or boundary restrictions.
 If the platform refuses the operation, diagnose that refusal and use the permitted release workflow; do not remove guards or change ownership to force a deploy.
-In particular, a sale or Open app is platform-held and does not have this owner publishing path.
+In particular, a sale or Open app is platform-held and does not have this creator publishing path.
 
 `bounded propose --submit` posts a code change for the app agent.
 Adding `--apply` asks that agent to apply the patch as written, but still uses an agent run and the normal release decision; it does not avoid AI funding requirements.
-Repository instructions saying "nobody deploys an OpenApp directly" must distinguish this external owner workflow from the app agent's runtime workflow.
+Repository instructions saying "nobody deploys an OpenApp directly" must distinguish this external creator workflow from the app agent's runtime workflow.
 
 ## Develop locally
 

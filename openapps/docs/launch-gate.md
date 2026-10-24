@@ -19,7 +19,7 @@ These are requirements, not advice:
 | What | Required | Refusal |
 |---|---|---|
 | oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
-| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the owner put on its agent with `bounded secret put --agent`), every secret a function or the app's [server](../../bounded-frontend/docs/server-apps.md) declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
+| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the creator put on its agent with `bounded secret put --agent`), every secret a function or the app's [server](../../bounded-frontend/docs/server-apps.md) declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
 | `boundaries.egress` | a list of 1 to 64 boundaries with unique ids, each declaring `"mode": "locked"` | `oapp_opening_egress_not_steward_owned` |
 | capability grants | `service:cap` and `service:x402` in a locked `boundaries.egress` entry, so the app can call live catalog actions and pay x402-priced APIs through the relay | `oapp_opening_capability_grants_missing` |
 | function egress | each function's egress names only entries an app-wide boundary declares and repeats every `service:` entry exactly; no function enables `ctx.sandbox` | `oapp_opening_egress_not_steward_owned` |
@@ -95,8 +95,8 @@ bounded propose --title "Show the streak counter" --slug <app-slug> --submit    
 ```
 
 `--submit` posts the change in the app's Discussion under Ideas, with the diff attached as a public `code-change.diff` file.
-It is an idea with its implementation attached, not access and not a vote: the app's agent reads it, decides whether to build it, and ships what it builds through the app's normal release decision, where the owner or the holders approve or veto the preview.
-Do not tell a contributor their diff was merged or will ship as sent; the agent may adapt it to the current code or decline it, unless the owner of an Owned app chose on the post to have it applied as is.
+It is an idea with its implementation attached, not access and not a vote: the app's agent reads it, decides whether to build it, and ships what it builds through the app's normal release decision, where the creator or the holders approve or veto the preview.
+Do not tell a contributor their diff was merged or will ship as sent; the agent may adapt it to the current code or decline it, unless the creator of an Owned app chose on the post to have it applied as is.
 The agent replies in the change's thread with what it did.
 While the app's token sale runs, a release ships only to fix the sale's failed checks, so other code changes wait until the sale ends.
 The command refuses binary files and env or key files before anything is sent.
