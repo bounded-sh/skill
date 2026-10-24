@@ -69,7 +69,6 @@ term.
 | Input cadence, interpolation, prediction | [realtime netcode](docs/realtime-netcode.md) |
 | AI NPCs / AI players | [AI NPCs](docs/ai-npcs.md) |
 | Long-running backend runtime or managed services | [backend runtime](docs/backend-runtime.md) |
-| Multi-step Flue agents | [Flue agents](docs/agents-flue.md) |
 | Owners, collaborators, scoped admins | [admin and ownership](docs/admin-and-ownership.md) |
 | Top-level `roles`, `members`, `read:"*"`, read/write scopes | [roles](docs/roles.md) |
 | `access`, custom/external roles, `__owners__`, `__admins__`, `__developers__`, `__viewers__` | [access control](docs/access-control.md) · [identity and logs](docs/identity-and-logs.md) |

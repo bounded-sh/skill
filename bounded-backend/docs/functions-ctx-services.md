@@ -140,7 +140,7 @@ and never re-runs the provider: a lost poll re-reads the same job.
   managed catalog before writing function or agent code; both print each
   item's readiness, and `bounded services request` files what is missing.
 - **Two use cases:** search/describe are for build-time and agent planning;
-  invoke is the runtime tool call. A Flue agent can expose a small wrapper around
+  invoke is the runtime tool call. An agent loop can expose a small wrapper around
   `ctx.services.invoke` as one of its tools.
 - **Billing:** search/describe are catalog reads. Invoke is cost-bearing and
   bills the app owner's credit pool at the underlying service call cost plus

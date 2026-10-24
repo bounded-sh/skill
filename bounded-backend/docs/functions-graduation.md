@@ -41,7 +41,6 @@ a sealed, metered, spend-capped `ctx`:
   `/agents/<name>/<session>` on the app's API host. (A public HTTP route at
   `<slug>-api.bounded.page/<name>` is a [public function](public-functions.md),
   not a runtime.)
-- You want a **multi-step agentic loop** (LLM drives tool calls toward a goal) → the **Flue agent runtime** (`bounded-flue@2026.07`), [agents-flue.md](agents-flue.md).
 - You need **long-running / batch / background** work — use resumable scheduled steps instead of one long function call.
 
 You keep Bounded auth identity, the credit pool, versioning, and billing
@@ -53,7 +52,7 @@ from a Bounded function.
 > `auth` rule, so authorizing WHO may invoke a secret-bearing handler is still yours. A
 > graduated agent that omits the check lets any signed-in user drive its secrets, services
 > and queues. Gate on `ctx.identity.user` / `env.identity.user` before touching them -
-> see [agents-flue.md](agents-flue.md) and [backend-runtime.md](backend-runtime.md).
+> see [backend-runtime.md](backend-runtime.md).
 
 ### Tier 3 — eject to your own server (the final off-ramp; only if you must)
 Reach for this only when you want full control of hosting/billing or something

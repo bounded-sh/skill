@@ -25,14 +25,6 @@ test('H008: the onInvoke agent example gates on the verified caller before touch
   assert.match(block, /signed in.*not|not.*allowed|authorize WHO may run/i, 'the example must say being signed in is not being allowed')
 })
 
-test('H008: the Flue invoke docs add an authorization step over the sealed capabilities', () => {
-  const md = read('bounded-backend/docs/agents-flue.md')
-  const invoke = md.slice(md.indexOf('## Invoke'))
-  assert.match(invoke, /env\.identity\.user/, 'the invoke section must show gating on env.identity.user')
-  assert.match(invoke, /Authorize the caller|not.*the runtime|does \*\*not\*\* decide WHO/i, 'the invoke section must state authorization is the app author\'s job')
-  assert.match(invoke, /env\.secrets.*env\.services.*env\.queue|not.*gated by policy/is, 'must note the sealed capabilities are not policy-gated')
-})
-
 test('H008: graduation docs correct "keep auth identity" reading as "auth handled"', () => {
   const md = read('bounded-backend/docs/functions-graduation.md')
   assert.match(md, /not "auth is handled"|authorizing WHO may invoke/i, 'must clarify that keeping auth identity is not per-caller authorization')

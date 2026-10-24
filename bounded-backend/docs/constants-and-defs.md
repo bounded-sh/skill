@@ -136,7 +136,7 @@ export default async function settleMatch(args, ctx) {
   across room eviction).
 - `{}` when the policy has no `constants` block. Values are the exact scalars
   `@const.NAME` resolves to in rules — one source of truth for rules AND code.
-- **Not yet available in agent (flue) runtimes** — agents get their config at
+- **Not yet available in backend-runtime agents** - agents get their config at
   artifact-deploy time today; pass needed values via agent env/args until the
   policy channel is wired.
 
