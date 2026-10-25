@@ -730,7 +730,6 @@ boundary.
 - [functions-when-to-use.md](functions-when-to-use.md) — **when to use a function (and when NOT)** — read first
 - [principals-and-origins.md](principals-and-origins.md) — **who `@user` is** across user / system / live-call invocation (the canonical principal explainer)
 - [ai-npcs.md](ai-npcs.md) — a live tick `call`s a function = an NPC; the `actAs`-funded LLM pattern
-- [agents-flue.md](agents-flue.md) — a **multi-step agent** (tool-use loop) when one `ctx.ai.run` isn't enough
 - [backend-runtime.md](backend-runtime.md) — long-running / batch work
 - [public-functions.md](public-functions.md) - HTTP routes without a Bounded session: `public`, `methods`, `cors`, public JWKS, machine callers
 - [live-runtime.md](live-runtime.md) — the deterministic tick and the `call` primitive that reaches functions
