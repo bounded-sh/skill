@@ -340,6 +340,22 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `source` | address | yes | **yes** | Current transfer-fee configuration authority: wallet, app escrow, or named account. |
 | `mint` | address | yes | - | Token-2022 mint carrying TransferFeeConfig. |
 
+### `CPI.token2022SetTransferFee`
+
+```
+@CPI.token2022SetTransferFee(source, mint, feeBasisPoints, maxFee) - sets a new Token-2022 transfer fee (basis points, 0-10000) and its per-transfer cap in base units. Source must be the current transfer-fee configuration authority (wallet, @contract.address, or named account) and signs. On Solana the new rate takes effect at the start of the epoch after next (2-4 days on mainnet); transfers until then keep the current rate. Poofnet applies it at once. Fails once the authority is revoked.
+```
+
+- Callable from: `hooks.onchain`
+- Status: **unverified** (source parity only); markers: LIVE-PENDING.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Current transfer-fee configuration authority: wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint carrying TransferFeeConfig. |
+| `feeBasisPoints` | number | yes | - | New transfer fee in basis points, 0-10000. |
+| `maxFee` | number | yes | - | Largest fee withheld from one transfer, in the mint's base units. |
+
 ### `CPI.token2022WithdrawMintFees`
 
 ```

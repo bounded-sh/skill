@@ -4,7 +4,10 @@ A YES-only prediction market: collateral sits in a per-market named PDA, prices 
 
 Status: every function used here (`@PredictionMarketPlugin.*`, `@TokenPlugin.transfer`/`getBalance`, `@AccountPlugin.createAccount`, `@DocumentPlugin.updateField`, `get`) is currently **unverified (LIVE-PENDING)** in [solana-capability-status.md](../solana-capability-status.md) - source parity only, not live-proven.
 
-Collateral is `@TokenPlugin.SOL`; `@TokenPlugin.USDC` is mainnet-only and must not be used in a devnet flow. Quotes are floored exactly as documented: `getYesTokenOutAmm(in, x, y) = floor(in*y/(x+in))`, `getCollateralOutAmm(yesIn, x, y) = floor(x*yesIn/(y+yesIn))`. This example charges no fee; a fee variant applies `@PredictionMarketPlugin.applyFee` to the quoted integer.
+Collateral in this example is `@TokenPlugin.SOL`.
+For other assets, follow the [network-specific mint guidance](../solana-capability-status.md#built-in-values-and-devnet-mint-rule).
+Quotes are floored exactly as documented: `getYesTokenOutAmm(in, x, y) = floor(in*y/(x+in))`, `getCollateralOutAmm(yesIn, x, y) = floor(x*yesIn/(y+yesIn))`.
+This example charges no fee; a fee variant applies `@PredictionMarketPlugin.applyFee` to the quoted integer.
 
 ## Policy
 

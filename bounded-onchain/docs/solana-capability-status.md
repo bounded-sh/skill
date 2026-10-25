@@ -7,7 +7,7 @@ Do not read a devnet row as a mainnet guarantee.
 
 This is the canonical public classification of Bounded Solana functions for devnet.
 It is a source-derived snapshot, not a claim that every discovered function works on a live cluster.
-The catalog contains 165 individually classified functions.
+The catalog contains 166 individually classified functions.
 
 ## Read the three states independently
 
@@ -17,14 +17,18 @@ The catalog contains 165 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The Bounded Solana program is recorded as **runtime v9 on devnet** (2026-10-06, slot 508118456) and **runtime v8 on mainnet-beta** (2026-09-29, slot 451516304).
+The Bounded Solana program is recorded as **runtime v10 on devnet** (2026-10-13, slot 510718296) and **runtime v9 on mainnet-beta** (2026-10-06, slot 453954979).
 Legacy rows were classified against the runtime-v4 minimum; both clusters also meet the `NEEDS-RUNTIME-V6` and `NEEDS-RUNTIME-V7` requirements.
 Both programs meet the `NEEDS-RUNTIME-V8` scaled-price requirement.
-Only the programs have been upgraded for this API; the matching hosted worker, query, and compiler services, venue policy, and frontend rollout remain pending.
+Program readiness does not establish hosted app acceptance for the scaled-price API.
 A program runtime version establishes the deployed bytecode and invariant/governance grammar level, but it does not prove that an external plugin is configured or that a hosted app can use it.
+`DeFiPlugin.swap` and `getSwapQuote` use direct Meteora DAMM v2 pools on devnet; executing the direct swap requires runtime v10.
+A 2026-10-09 staging rollout recorded the matching hosted services and venue, successful live quotes in both directions, and unsigned swap simulations in both directions.
+Those historical results do not establish current public production availability or a completed submitted swap acceptance run.
+Both functions remain `unverified` in this snapshot; mainnet Jupiter routing is unchanged.
 
-No function in this snapshot has a published live acceptance receipt yet.
-The current totals are 133 `unverified`, 32 `unsupported`, and 0 `blocked`.
+No function in this snapshot is classified as fully live-supported.
+The current totals are 136 `unverified`, 30 `unsupported`, and 0 `blocked`.
 A function moves to `supported` only after a retained live run confirms both its chain outcome and its expected Bounded mirror, query, reveal, account, or denied state.
 
 ## Constraint codes
@@ -41,7 +45,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-TENSOR-PROOF` | Tensor stays unverified until live proof exists. |
 | `LIVE-CROSS-APP-PROOF` | A cross-app claim needs a distinct target app plus a source scenario, and the finalized source transaction, both mirrors, exact target-field match, and `@App.get` existence query still require retained live proof. |
 | `DEVNET-ESCROW-SENTINEL` | `@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime; bind the current Devnet program ID as a string argument when resolving the escrow. |
-| `NO-DEVNET-JUPITER` | Jupiter is unavailable on devnet. |
+| `DEVNET-METEORA-ACCEPTANCE` | Direct DAMM v2 swaps require runtime v10 and exact-pair liquidity. The 2026-10-09 staging rollout recorded live quotes and unsigned swap simulations; current public production availability and submitted swap acceptance are not established by that evidence. |
 | `NO-DEVNET-PHOENIX` | Phoenix is unavailable on devnet. |
 | `NO-DEVNET-DFLOW` | DFlow is unavailable on devnet. |
 | `NO-USABLE-DEVNET-KAMINO-MARKET` | The KLend program IS deployed and executable on devnet at the same address as mainnet (verified on chain 2026-08-05); what has not been established is a usable market and reserve set there. Treat Kamino as untestable on devnet for that reason, not because the program is missing. |
@@ -99,6 +103,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@CPI.kaminoRepay` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
 | `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
 | `@CPI.token2022RevokeFeeAuthority` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
+| `@CPI.token2022SetTransferFee` | descriptor CPI | unverified | source parity only | LIVE-PENDING |
 | `@CPI.token2022HarvestFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING, NEEDS-RUNTIME-V4 |
 | `@CPI.token2022WithdrawMintFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
 | `@CPI.token2022WithdrawMintFeesTo` | descriptor CPI | unverified | source parity only | LIVE-PENDING |
@@ -129,10 +134,10 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@DeFiPlugin.getDammV2PoolAddress` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.getMeteoraSwapQuote` | legacy offchain-only | unverified | not run | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.getMeteoraVirtualPoolAddress` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
-| `@DeFiPlugin.getSwapQuote` | legacy offchain-only | unsupported | not run | NO-DEVNET-JUPITER |
+| `@DeFiPlugin.getSwapQuote` | legacy offchain-only | unverified | staging live quotes passed; public acceptance not established | DEVNET-METEORA-ACCEPTANCE |
 | `@DeFiPlugin.lockCpAmmPosition` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.removeCpAmmLiquidity` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
-| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |
+| `@DeFiPlugin.swap` | legacy runtime | unverified | staging unsigned simulations passed; submitted acceptance not established | DEVNET-METEORA-ACCEPTANCE |
 | `@DeFiPlugin.swapInMeteoraVirtualPool` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.withdrawLeftover` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DflowPlugin.getKycStatus` | legacy offchain-only | unsupported | not run | NO-DEVNET-DFLOW |
@@ -229,9 +234,9 @@ A function moves to `supported` only after a retained live run confirms both its
 ## Built-in values and devnet mint rule
 
 `@TokenPlugin.SOL` is a source-defined native token alias, but its complete flow remains unverified in this snapshot.
-`@TokenPlugin.USDC` is mainnet-only and is unsupported for TokenPlugin operations on devnet.
-Do not confuse that constant with the platform-configured staging test-stablecoin payment rail.
-Devnet token acceptance must create and use an app-owned classic SPL or Token-2022 mint.
+`@TokenPlugin.USDC` resolves to the devnet USDC mint for `solana_devnet` and `realtime_devnet`, and to mainnet USDC for mainnet.
+This compiler mapping does not establish payment-rail eligibility, token balances, or pool liquidity.
+Devnet scenarios can use that network's USDC mint or an app-owned classic SPL or Token-2022 mint, with the required balances and liquidity.
 `@TokenPlugin.EURC` has no published devnet acceptance receipt and must remain unverified.
 
 ## Read-query contracts
@@ -245,7 +250,7 @@ Use 6 for micro-USD, declare the named-query return type as `UInt`, and keep eve
 The source implementation rejects invalid precision, non-positive oracle prices, zero after rounding, and results above u64; it preserves the oracle's account verification and freshness checks.
 It accepts no quote feed and leaves the legacy decimal-string and base/quote-ratio API unchanged.
 Both the devnet and mainnet-beta programs meet the runtime-v8 requirement; an older v7 program still refuses the scaled call.
-The hosted services and app rollout remain pending; the program upgrade alone does not enable this API for hosted apps.
+The program upgrade alone does not establish hosted app acceptance for this API.
 Named-query `queryArgs` populate staged `@newData` for the query expression.
 On a Solana app, a named query that calls no plugin runs in the worker runtime on any path.
 A plugin-calling query on an `onchain: true` path runs in the program against the collection's uploaded rules.

@@ -155,7 +155,7 @@ A mutating receipt deliberately contains only `{"transactionId": "<signature>", 
 | Environment | What runs | Watch out |
 |---|---|---|
 | Poofnet / local platform | Offchain simulation of the same policy bytecode; onchain hooks simulate, no validator | Poofnet success proves logic, not funding, rent, transaction fit, or external programs. |
-| Devnet | Real Solana; the deployed Bounded program (runtime version per [capability table](solana-capability-status.md)) | `@TokenPlugin.USDC` is mainnet-only - create an app-owned devnet mint. Jupiter (`@DeFiPlugin.swap`), Phoenix, and DFlow are absent on devnet (`NO-DEVNET-*` markers). The program-ID string literal used to resolve the escrow is deployment-specific. |
+| Devnet | Real Solana; the deployed Bounded program (runtime version per [capability table](solana-capability-status.md)) | `@TokenPlugin.USDC` resolves to devnet USDC. `@DeFiPlugin.swap` uses direct Meteora DAMM v2 pools for the exact pair and requires runtime v10; staging quotes and unsigned simulations do not establish submitted swap acceptance. Jupiter, Phoenix, and DFlow remain unavailable. The program-ID string literal used to resolve the escrow is deployment-specific. |
 | Mainnet | Real value; mainnet permits are required and policy changes may need onchain authority permits | Never deploy or upgrade mainnet as an incidental step; rehearse on a local validator, then devnet. |
 
 Graduation between them changes no policy source - the same collections compile per target - but every real-network budget above starts applying the moment a protocol is `realtime_devnet` or `realtime_mainnet`.

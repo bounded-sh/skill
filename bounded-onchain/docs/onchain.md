@@ -137,10 +137,11 @@ Bounded tracks function discovery, deployed-runtime support, and retained live v
 Run `bounded plugins list --json` for the CLI's offline callable projection, then `bounded plugins describe <plugin.function> --json` for the exact arguments, proof sorts, signer roles, return contract, and network-scoped support evidence.
 These commands need no account or network connection and their capability state is advisory, not a deploy verdict.
 An invalid `--protocol` is rejected locally before any network request.
-The deployed program is recorded as runtime v9 on devnet (2026-10-06, slot 508118456) and runtime v8 on mainnet-beta (2026-09-29, slot 451516304), but the runtime version does not prove that an external protocol is deployed or configured.
-The scaled-price API's hosted services and app rollout remain pending after the program upgrades.
-Consult the [165-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
+The deployed program is recorded as runtime v10 on devnet (2026-10-13, slot 510718296) and runtime v9 on mainnet-beta (2026-10-06, slot 453954979), but the runtime version does not prove that an external protocol is deployed or configured.
+Program readiness does not establish hosted app acceptance for the scaled-price API.
+Consult the [devnet capability catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
+`DeFiPlugin.swap` and `getSwapQuote` instead use direct Meteora DAMM v2 pools on devnet; see the catalog for the recorded staging quotes and unsigned simulations and their acceptance limits.
 Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
 SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4 as a minimum; both clusters meet that requirement, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
 Meteora is **not** blocked.

@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "11ff6e987797124ac5d38e8e455e65577a5c1b31",
+  "monorepoCommit": "7c9487865f4a25c736bb5d146de440c2b6e55a43",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -2815,6 +2815,64 @@
      }
     },
     {
+     "name": "token2022SetTransferFee",
+     "callName": "@CPI.token2022SetTransferFee",
+     "category": "transactional",
+     "signature": "token2022SetTransferFee(string, string, number, number)",
+     "usage": "@CPI.token2022SetTransferFee(source, mint, feeBasisPoints, maxFee) - sets a new Token-2022 transfer fee (basis points, 0-10000) and its per-transfer cap in base units. Source must be the current transfer-fee configuration authority (wallet, @contract.address, or named account) and signs. On Solana the new rate takes effect at the start of the epoch after next (2-4 days on mainnet); transfers until then keep the current rate. Poofnet applies it at once. Fails once the authority is revoked.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Current transfer-fee configuration authority: wallet, app escrow, or named account.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "Token-2022 mint carrying TransferFeeConfig.",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "feeBasisPoints",
+       "type": "number",
+       "optional": false,
+       "signer": null,
+       "description": "New transfer fee in basis points, 0-10000.",
+       "fields": null
+      },
+      {
+       "index": 3,
+       "name": "maxFee",
+       "type": "number",
+       "optional": false,
+       "signer": null,
+       "description": "Largest fee withheld from one transfer, in the mint's base units.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ],
+     "status": {
+      "lane": "descriptor CPI",
+      "support": "unverified",
+      "verification": "source parity only",
+      "markers": "LIVE-PENDING"
+     }
+    },
+    {
      "name": "token2022WithdrawMintFees",
      "callName": "@CPI.token2022WithdrawMintFees",
      "category": "transactional",
@@ -3832,7 +3890,7 @@
      "callName": "@DeFiPlugin.swap",
      "category": "transactional",
      "signature": "swap(string, string, string, string, number?)",
-     "usage": "@DeFiPlugin.swap(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, slippageBps?)",
+     "usage": "@DeFiPlugin.swap(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, slippageBps?) - exact-input swap; mainnet uses Jupiter, while devnet uses direct Meteora DAMM v2 pools and requires runtime v10 plus the matching builder deployment. Devnet requires an executable pool for the exact mint pair; output protection includes Token-2022 transfer fees.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3889,9 +3947,9 @@
      ],
      "status": {
       "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-JUPITER"
+      "support": "unverified",
+      "verification": "staging unsigned simulations passed; submitted acceptance not established",
+      "markers": "DEVNET-METEORA-ACCEPTANCE"
      }
     },
     {
@@ -4347,7 +4405,7 @@
      "callName": "@DeFiPlugin.getSwapQuote",
      "category": "readOnly",
      "signature": "getSwapQuote(string, string, string)",
-     "usage": "@DeFiPlugin.getSwapQuote(inputMint, outputMint, amount)",
+     "usage": "@DeFiPlugin.getSwapQuote(inputMint, outputMint, amount) - offchain-only exact-input quote in output-token smallest units. Mainnet uses Jupiter; devnet uses direct Meteora DAMM v2 pools after the matching query service deployment and returns net output after Token-2022 transfer fees. Devnet requires an executable pool for the exact mint pair.",
      "returnType": "string",
      "isOnlyOffchain": true,
      "validArgCounts": null,
@@ -4387,9 +4445,9 @@
      ],
      "status": {
       "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-JUPITER"
+      "support": "unverified",
+      "verification": "staging live quotes passed; public acceptance not established",
+      "markers": "DEVNET-METEORA-ACCEPTANCE"
      }
     }
    ]

@@ -32,8 +32,8 @@ keys or funds** at any point.
 
 The `payments.acceptCrypto` token registry is separate from TokenPlugin constants.
 Its staging `"usdc"` value means the platform-configured devnet test stablecoin.
-`@TokenPlugin.USDC` is mainnet-only and is unsupported for TokenPlugin operations on devnet.
-Use an app-created devnet mint for TokenPlugin labs, but do not substitute that mint into the v1 payment rail.
+`@TokenPlugin.USDC` resolves to devnet USDC for `solana_devnet` and `realtime_devnet`, and to mainnet USDC for mainnet.
+TokenPlugin labs can also use an app-created devnet mint, but do not substitute an arbitrary mint into the v1 payment rail.
 
 > **What ships today:** the **direct-transfer rail** - a buyer pays your `settleTo`
 > address directly with USDC, then your app submits the transaction to Bounded,

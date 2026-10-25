@@ -227,11 +227,11 @@ Fields of `config`:
 ### `DeFiPlugin.swap`
 
 ```
-@DeFiPlugin.swap(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, slippageBps?)
+@DeFiPlugin.swap(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, slippageBps?) - exact-input swap; mainnet uses Jupiter, while devnet uses direct Meteora DAMM v2 pools and requires runtime v10 plus the matching builder deployment. Devnet requires an executable pool for the exact mint pair; output protection includes Token-2022 transfer fees.
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-DEVNET-JUPITER.
+- Status: **unverified** (staging unsigned simulations passed; submitted acceptance not established); markers: DEVNET-METEORA-ACCEPTANCE.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -384,12 +384,12 @@ Fields of `config`:
 ### `DeFiPlugin.getSwapQuote`
 
 ```
-@DeFiPlugin.getSwapQuote(inputMint, outputMint, amount)
+@DeFiPlugin.getSwapQuote(inputMint, outputMint, amount) - offchain-only exact-input quote in output-token smallest units. Mainnet uses Jupiter; devnet uses direct Meteora DAMM v2 pools after the matching query service deployment and returns net output after Token-2022 transfer fees. Devnet requires an executable pool for the exact mint pair.
 ```
 
 - Callable from: offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unsupported** (not run); markers: NO-DEVNET-JUPITER.
+- Status: **unverified** (staging live quotes passed; public acceptance not established); markers: DEVNET-METEORA-ACCEPTANCE.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

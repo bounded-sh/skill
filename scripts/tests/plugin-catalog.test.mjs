@@ -25,7 +25,7 @@ test('price discovery preserves decimal strings and explicitly gates scaled USD 
   assert.equal(scaled.status.support, 'unverified')
   assert.match(scaled.status.markers, /NEEDS-RUNTIME-V8/)
   const page = readFileSync(path.join(root, 'bounded-onchain/docs/plugins/PriceFeedPlugin.md'), 'utf8')
-  for (const boundary of ['exactly two arguments', 'precision from 0 through 18', '119809589', 'devnet program runs runtime v9 as of 2026-10-06 (slot 508118456)', 'mainnet-beta remains on runtime v8 as of 2026-09-29 (slot 451516304)', 'rollout remain pending', 'rounding to zero', 'u64 overflow', 'independent of its deployed runtime version', 'even when its collection declares `onchain: false`']) {
+  for (const boundary of ['exactly two arguments', 'precision from 0 through 18', '119809589', 'devnet program runs runtime v10 as of 2026-10-13 (slot 510718296)', 'mainnet-beta runs runtime v9 as of 2026-10-06 (slot 453954979)', 'Program readiness does not establish hosted app acceptance for this price API.', 'rounding to zero', 'u64 overflow', 'independent of its deployed runtime version', 'even when its collection declares `onchain: false`']) {
     assert.ok(page.includes(boundary), `missing price boundary: ${boundary}`)
   }
 })

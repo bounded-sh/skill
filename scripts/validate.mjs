@@ -259,14 +259,14 @@ if (!solanaInventory) {
     support: match[3],
   }))
   const ids = rows.map((row) => row.id)
-  if (rows.length !== 165) fail(`Solana capability status: expected 165 function rows, received ${rows.length}`)
+  if (rows.length !== 166) fail(`Solana capability status: expected 166 function rows, received ${rows.length}`)
   if (new Set(ids).size !== rows.length) fail('Solana capability status: duplicate function row')
 
   const supportCounts = rows.reduce((counts, row) => {
     counts[row.support] = (counts[row.support] ?? 0) + 1
     return counts
   }, {})
-  for (const [state, count] of Object.entries({ unverified: 133, unsupported: 32, blocked: 0 })) {
+  for (const [state, count] of Object.entries({ unverified: 136, unsupported: 30, blocked: 0 })) {
     // `supportCounts` is reduced from {} and only gains keys for states that occur,
     // so a legitimately-zero state is `undefined` here and a strict !== 0 would fire.
     if ((supportCounts[state] ?? 0) !== count) {
@@ -286,7 +286,7 @@ if (!solanaInventory) {
     App: 2,
     BondingCurvePlugin: 6,
     Bytes: 22,
-    CPI: 20,
+    CPI: 21,
     DeFiPlugin: 21,
     DflowPlugin: 2,
     DocumentPlugin: 2,
@@ -314,14 +314,16 @@ for (const expected of [
   '| `@App.set` | extended runtime | unverified | source parity only | LIVE-CROSS-APP-PROOF |',
   '| `@AccountPlugin.getAccountAddress` | legacy runtime | unverified | source parity only | LIVE-PENDING; DEVNET-ESCROW-SENTINEL |',
   '| `DEVNET-ESCROW-SENTINEL` | `@AccountPlugin.getAccountAddress(@contract.address)` is unsupported on the current deployed Devnet runtime; bind the current Devnet program ID as a string argument when resolving the escrow. |',
-  '| `@DeFiPlugin.swap` | legacy runtime | unsupported | not run | NO-DEVNET-JUPITER |',
+  '| `@DeFiPlugin.swap` | legacy runtime | unverified | staging unsigned simulations passed; submitted acceptance not established | DEVNET-METEORA-ACCEPTANCE |',
+  '| `@DeFiPlugin.getSwapQuote` | legacy offchain-only | unverified | staging live quotes passed; public acceptance not established | DEVNET-METEORA-ACCEPTANCE |',
   '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |',
   '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
   '| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |',
+  '| `@CPI.token2022SetTransferFee` | descriptor CPI | unverified | source parity only | LIVE-PENDING |',
   '| `@PumpFunPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |',
   '| `@TensorPlugin.buyNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |',
   '| `@Solana.invokeAttested` | extended disabled | unsupported | not applicable | DISABLED |',
-  '`@TokenPlugin.USDC` is mainnet-only',
+  '`@TokenPlugin.USDC` resolves to the devnet USDC mint for `solana_devnet` and `realtime_devnet`, and to mainnet USDC for mainnet.',
   '`@PriceFeedPlugin.getPriceFeed` returns a decimal `String`',
   '| `@PriceFeedPlugin.getPriceFeedScaled` | extended runtime | unverified | source parity only | NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF |',
   'Anonymous chain-query execution is admitted for identity-independent queries',

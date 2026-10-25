@@ -56,6 +56,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@CPI.stakePoolWithdrawSol` | `stakePoolWithdrawSol(source, stakePool, reserveStake, poolMint, managerFeeAccount, poolTokens, minimumLamportsOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022HarvestFees` | `token2022HarvestFees(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022RevokeFeeAuthority` | `token2022RevokeFeeAuthority(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022SetTransferFee` | `token2022SetTransferFee(string, string, number, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022WithdrawMintFees` | `token2022WithdrawMintFees(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022WithdrawMintFeesTo` | `token2022WithdrawMintFeesTo(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.transferLamports` | `transferLamports(string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |

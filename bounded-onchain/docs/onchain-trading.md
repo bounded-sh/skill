@@ -11,6 +11,9 @@ settlement) read [onchain.md](onchain.md) first - this builds on it.
 
 > The compiler and runtime contain these trading functions, but current devnet support is constrained.
 > Jupiter and Phoenix are unavailable on devnet.
+> `DeFiPlugin.swap` and `getSwapQuote` use direct Meteora DAMM v2 pools on devnet.
+> Runtime v10 is recorded deployed, and the 2026-10-09 staging rollout recorded successful live quotes and unsigned swap simulations; submitted swap acceptance remains unverified.
+> These historical staging results do not establish current public production availability.
 > Meteora is not blocked: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so the Meteora rows are unverified pending live proof rather than externally blocked.
 > Source presence, Poofnet behavior, and local cloned-program tests are not live support evidence.
 > Check [solana-capability-status.md](solana-capability-status.md) before using any function in this guide.
@@ -19,11 +22,11 @@ settlement) read [onchain.md](onchain.md) first - this builds on it.
 
 | Integration | Devnet support | Live verification |
 |---|---|---|
-| Jupiter swap and quote | unsupported | not run |
+| `DeFiPlugin.swap` and `getSwapQuote` via direct Meteora DAMM v2 | unverified; runtime v10 and staging services recorded deployed | staging live quotes and unsigned simulations passed; submitted swap acceptance not established |
 | Phoenix perps and reads | unsupported | not run |
 | DFlow prediction order and KYC | unsupported | not run |
 | Kamino descriptor CPI | unsupported | not run |
-| Meteora, DAMM v2, and CP-AMM | unverified | no retained live proof |
+| Other Meteora, DAMM v2, and CP-AMM functions | unverified | no retained live proof |
 | Pump.fun and PumpSwap | unverified | no retained live proof |
 | Tensor | unverified | no retained live proof |
 
@@ -188,13 +191,17 @@ withdrawFunds(@contract.address, <phusd>)
 ## DEX swaps - `@DeFiPlugin`
 
 Spot swaps and liquidity (Meteora / cp-AMM pools), incl. tokenized assets.
-The Jupiter rows are unsupported on devnet.
-The Meteora and CP-AMM rows are unverified pending live proof; nothing about them is externally blocked.
+`swap` and `getSwapQuote` retain their existing API and use Jupiter on mainnet.
+On devnet, the implementation selects an executable direct Meteora DAMM v2 pool for the exact input and output mint pair.
+The direct swap requires runtime v10, which is recorded deployed on devnet.
+The matching staging services and venue were deployed on 2026-10-09, with successful live quotes and unsigned swap simulations.
+Submitted swap acceptance and current public production availability are not established by those results.
+The other Meteora and CP-AMM rows are unverified pending live proof.
 
 | Function | Signature | Does |
 |---|---|---|
-| `swap` | `(source, tokenInMint, tokenOutMint, amountIn)` | Swap spot, in → out. |
-| `getSwapQuote` | `(tokenInMint, tokenOutMint, amountIn)` | Expected out (size before you swap). |
+| `swap` | `(source, tokenInMint, tokenOutMint, amountIn, slippageBps?)` | Exact-input spot swap; default slippage is 500 basis points. |
+| `getSwapQuote` | `(tokenInMint, tokenOutMint, amountIn)` | Offchain-only expected output in the output token's smallest units; devnet quotes include Token-2022 transfer fees. |
 | `getMeteoraSwapQuote` | `(tokenMintAddress, tokenToSwapInMintAddress, tokenAmount)` | Quote against a Meteora pool. **Offchain-only** - the compiler rejects it inside an onchain hook. |
 | `swapInMeteoraVirtualPool` | `(source, poolTokenMint, tokenMint, amount, minimumAmountOut)` | Swap against a Meteora virtual pool. The fifth argument is **required** - it is the minimum-output floor (see below). |
 | `createPool` / `createMeteoraVirtualPool` | [full contracts](plugins/DeFiPlugin.md) | Create liquidity pools; `source` follows the uniform custody rule, so a per-entity account id gives each launch its own pot. |
@@ -202,8 +209,8 @@ The Meteora and CP-AMM rows are unverified pending live proof; nothing about the
 | `getMeteoraVirtualPoolAddress` / `getDammV2PoolAddress` / `getCpAmmPoolAddress` | [full contracts](plugins/DeFiPlugin.md) | Resolve the corresponding pool address. |
 
 `@TokenPlugin.SOL` is the native-token alias.
-`@TokenPlugin.USDC` is mainnet-only and must not be used in a devnet TokenPlugin flow.
-Create an app-owned devnet mint for token scenarios.
+`@TokenPlugin.USDC` resolves to devnet USDC for `solana_devnet` and `realtime_devnet`, and to mainnet USDC for mainnet.
+Use that network's USDC mint or an app-owned devnet mint with liquidity for the exact pair you intend to trade.
 
 ### `swapInMeteoraVirtualPool` takes a required minimum-output floor
 
@@ -226,7 +233,11 @@ Two limits worth knowing before you design around it:
   "@DeFiPlugin.swap(@contract.address, @TokenPlugin.SOL, @const.APP_DEVNET_MINT, @newData.amountIn)" } }
 ```
 
-The snippet shows source syntax only because the Jupiter-backed `swap` function is unsupported on devnet.
+The snippet shows the call shape; it is not evidence of a completed submitted swap for your app or mint pair.
+The direct devnet route requires DAMM v2 liquidity for the exact mint pair; it does not fall back to Jupiter, DBC bonding curves, or DLMM pools.
+The transaction builder derives the minimum output from slippage and Token-2022 transfer fees.
+The runtime preserves source-account authorization and validates the instruction before the DAMM CPI enforces that floor; it does not independently derive an economic price floor.
+Collection rules still decide who may trade and which assets and amounts may be spent.
 
 ## Making it safe (the Bounded part)
 
