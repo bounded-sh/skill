@@ -145,10 +145,21 @@ bounded site proof status --app-id <id>
 ```
 
 Also toggleable from the dashboard (the "Public proof page" card). Takes effect
-within about a minute; no policy redeploy needed. Related presentation knob: the
-declined-write card the widget shows end users can be turned off in policy with
-`openApps.widget.declineCard: false` (widget `visibility: "hidden"` suppresses
-it too).
+within about a minute; no policy redeploy needed.
+
+## Hide the widget
+
+The hosted widget (the launcher served from `/__bounded/widget.js`) is on by
+default. To remove it from every page, set this in `policy.json` and deploy the
+policy:
+
+```json
+"openApps": { "widget": { "visibility": "hidden" } }
+```
+
+`visibility` also takes `everyone`, `signed-in`, or `participants`. To keep the
+widget but drop only the declined-write card it shows end users, set
+`openApps.widget.declineCard: false`.
 On a **launched oApp** the widget is the app's trust surface and is forced
 visible: a `visibility: "hidden"` frozen into the pre-launch policy neither
 hides the widget nor suppresses the declined-write card there. The explicit

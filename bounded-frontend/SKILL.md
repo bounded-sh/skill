@@ -34,6 +34,7 @@ Read only the row matching the current task or term.
 | Guests, anonymous users, invite links, account upgrade | [anonymous accounts](docs/anonymous-accounts.md) |
 | Link a user's X account, `connect('x')`, `completeConnection`, `getConnections`, verified X handle, `__connections__` | [connected accounts](docs/connected-accounts.md) |
 | Hosted frontend and app URLs | [frontend hosting](docs/frontend-hosting.md) |
+| Hide or limit the hosted widget, `/__bounded/widget.js`, `openApps.widget.visibility` | [hide the widget](docs/frontend-hosting.md#hide-the-widget) |
 | A Next.js app that runs its server (vinext), its secrets and limits | [server apps](docs/server-apps.md) |
 | CLI developer login or `bounded login` | [developer accounts](../bounded-deploy/docs/accounts.md) |
 | Embedded wallet, `auth.wallets`, `@user.address` after email/social login | [embedded wallets](../bounded-onchain/docs/embedded-wallets.md) |
