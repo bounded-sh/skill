@@ -50,6 +50,8 @@ Naming the principal is what makes it usable in rules: `@user.id == @const.BOUND
 Rules:
 - A policy MAY declare a `BOUNDED_*` name to self-document, but only with the exact platform value — a divergent value fails deploy closed.
   Never hand-write a different address; that is exactly the smuggle the injection exists to prevent.
+- Never inline the app's own id or these values elsewhere in the policy; use `@const.BOUNDED_APP_ID` etc.
+  Previews copy the policy and swap only the `BOUNDED_*` values, so an inlined id makes the copy fail (`genesis_seed_failed`).
 - The three `BOUNDED_*_PRINCIPAL_*` namespaces are platform-managed: two public-surface functions whose names differ only by case (`getUser` and `GETUSER`) would share one constant and are refused at deploy; a declared name in those namespaces that no function produces is a stale value from a withdrawn surface (dropped, and a rule still naming it then fails with `@const.X is not defined`) unless it is not even a well-formed principal, in which case it is refused. Author constants outside those namespaces may still start with `BOUNDED_`.
 - Local apps get the same treatment automatically: the local control plane derives from the local app id, so a local policy's `BOUNDED_TREASURY_PDA` is the local app's own treasury PDA.
   Policy-test fixtures may declare any `BOUNDED_*` value (the sandbox is the mock lane); real deploys recompute and reject a mismatch.
