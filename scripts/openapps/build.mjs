@@ -101,11 +101,15 @@ export function rewrite(text) {
       'For a global command, `npm install -g openapps` installs `openapps`.')
     .replace(/^# If this old shell-installed build has no `update` command, run the installer once:\ncurl -fsSL https:\/\/get\.bounded\.sh\/install\.sh \| sh\n/gm, '')
     .replace(/ If an older shell-installed\s+CLI does not recognize `update`, run\s+`curl -fsSL https:\/\/get\.bounded\.sh\/install\.sh \| sh` once\./g, '')
+    .replace(/; this skill family writes commands in the\s+bare `bounded <command>` form, which is what a global install answers to\./g,
+      ', as this skill family\nwrites them; npx runs the installed CLI, or fetches it from npm when it is missing.')
     .replace(/\bbounded-sh\/skill\b/g, OPENAPPS_SKILL_REPO)
     .replace(/@bounded-sh\/cli(?![\w-])/g, OPENAPPS_CLI_PACKAGE)
     .replace(new RegExp(`\\bbounded-(${SKILL_SUFFIXES})\\b`, 'g'), 'openapps-$1')
     .replace(/(^|[\s(`'"/])bounded\/(?=[\w.-])/gm, '$1openapps/')
     .replace(/\bnpx bounded\b/g, 'npx openapps')
+    // Commands run through npx so they work without an install; headings keep the bare name and their anchors.
+    .replace(new RegExp(`(?<!^#.*)(^|[^\\w.@/-])bounded(?= (?:${commandAlternation})\\b| --?[a-z]| <)`, 'gm'), '$1npx openapps')
     .replace(new RegExp(`(^|[^\\w.@/-])bounded(?= (?:${commandAlternation})\\b| --?[a-z]| <)`, 'gm'), '$1openapps')
     .replace(new RegExp(`(\\]\\([^)#\\s]*#[\\w-]*?)bounded-(?=(?:${commandAlternation})\\b)`, 'g'), '$1openapps-')
     .replace(/(['"])bounded\1(?=, \[)/g, '$1openapps$1')
