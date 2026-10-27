@@ -29,6 +29,7 @@ Use this skill for the app's capability constraints and, when requested, its lif
   A key never goes in source.
   `bounded secret put NAME --preview` (Previews only, on the app's page) sets the test key every preview of the app receives; the app's own value never reaches a preview.
   `bounded secret put NAME --agent --host <host>` gives the app's agent a key for its own work, sealed on its computer and sent only to those hosts.
+  `bounded secret put NAME --app-id <sub-app>` sets a key on an app the app manages (`ctx.apps`) directly, without the agent donating one; the agent cannot replace it.
   Only the creator sees the Keys panel, and it lists names, never values.
 - An APO requires that no person holds a key the app uses: the app holds no key a person set (its own values, preview values, or a key the creator put on its agent), and no function declares a key its agent did not donate.
   A key the app's own agent obtains and donates is fine: the platform adds it to the app's requests to that key's hosts, and a function that declares it reads only a stand-in.
