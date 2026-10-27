@@ -23,6 +23,10 @@ Use this skill for the app's capability constraints and, when requested, its lif
 
 The project config is `openapps.json`. An older project's `bounded.json` still works; `openapps.json` wins when a directory holds both.
 
+The app's agent never loads `AGENTS.md`, `CLAUDE.md` or other repo agent files into its context.
+What guides it is `OPENAPPS.md` at the repo root (its text is capped at 8192 bytes) and the files that file links with relative Markdown links.
+Both are read at the latest published release, so an edit counts only once a release carrying it publishes.
+
 ## Capability constraints
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
