@@ -39,7 +39,7 @@ Read only the reference needed for the current task.
 | Multi-environment policies: per-env app id, constants, schedule cadence, function scoping | [docs/environments.md](docs/environments.md) |
 | Build an app from a prompt, iterate with `edit`, watch/cancel/gate a run | [docs/cli-reference.md](docs/cli-reference.md) (Prompt-driven builds) |
 | Source sync, `--with-source`, clone, pull | [docs/source-sync.md](docs/source-sync.md) |
-| Port an existing app (Supabase, Firebase, Express, Next, a key-holding backend) onto Bounded; decide what becomes rules, functions, schedules, or a capability | [docs/porting-an-existing-app.md](docs/porting-an-existing-app.md) |
+| Bring or migrate an existing app; preserve its stack where supported and agree on any material migration | [docs/porting-an-existing-app.md](docs/porting-an-existing-app.md) |
 | Third-party API discovery, readiness, and requests: `bounded services search/describe/request/status` | [docs/cli-reference.md](docs/cli-reference.md) (Capabilities) |
 | The dry run of the checks an oApp must pass to open: `bounded oapp preflight` | [docs/cli-reference.md](docs/cli-reference.md) (Open Apps) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |

@@ -53,7 +53,7 @@ family.
 | Policy, rules, invariants, functions, data, realtime, actor model, policy tests | **bounded-backend** |
 | Client SDK, web/mobile UI, subscriptions, hosted frontend, app-user authentication | **bounded-frontend** |
 | CLI, deploy, environments, source sync, domains, project config, collaborators, prompt-driven builds | **bounded-deploy** |
-| "Move my existing app to Bounded", "bring this repo", porting a Supabase/Firebase/Express/Next app, replacing a key-holding backend | **bounded-deploy** ([porting guide](../bounded-deploy/docs/porting-an-existing-app.md)) |
+| Bring or migrate an existing app; first assess preserving its stack and hosting | **bounded-deploy** ([existing app guide](../bounded-deploy/docs/porting-an-existing-app.md)) |
 | A third-party API the app needs: is it on Bounded, callable through x402, or requestable | **bounded-backend** ([ctx.services](../bounded-backend/docs/functions-ctx-services.md)) |
 | Embedded wallets, Solana, tokens, onchain transactions, onramp | **bounded-onchain** |
 | An app destined for openapps.xyz, "make it an oApp", "go open", "outlive its creator" | **openapps** |
