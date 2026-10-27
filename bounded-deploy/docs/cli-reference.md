@@ -223,6 +223,7 @@ An explicit public `message` field may supply human detail, but an absent messag
 ### Project config — `bounded.json`
 
 `bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
+The CLI also reads `openapps.json`, the same file under its OpenApps name, which wins when a directory holds both.
 Init refuses to run from inside another Bounded project's directory tree (upward discovery would anchor the scaffold at that ancestor); run it from the project root it names, or pass `--project-root .` to deliberately make the current directory its own project root.
 Agents should read this file first. It is safe to commit and contains no private
 key material. This example explicitly opts into cloud source sync:

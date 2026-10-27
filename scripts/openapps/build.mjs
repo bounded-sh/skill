@@ -91,9 +91,10 @@ function targetPath(source) {
 const commandAlternation = CLI_COMMANDS.map((command) => command.replace('-', '\\-')).join('|')
 
 // rewrite turns Bounded wording into OpenApps wording. Each rule is narrow on
-// purpose: identifiers the runtime still reads (@bounded-sh/client, bounded.json,
-// BOUNDED_*, ~/.bounded, ctx.bounded, bounded_ seeds, *.bounded.sh hosts) never
-// match, and neither does the English adjective.
+// purpose: identifiers the runtime still reads (@bounded-sh/client, BOUNDED_*,
+// ~/.bounded, ctx.bounded, bounded_ seeds, *.bounded.sh hosts) never match, and
+// neither does the English adjective. bounded.json becomes openapps.json, the
+// name the openapps CLI reads first, except where a line names an older project's file.
 export function rewrite(text) {
   return text
     .replace(/^<!-- GENERATED FILE\.[\s\S]*?-->\n\n?/, '')
@@ -103,6 +104,9 @@ export function rewrite(text) {
     .replace(/ If an older shell-installed\s+CLI does not recognize `update`, run\s+`curl -fsSL https:\/\/get\.bounded\.sh\/install\.sh \| sh` once\./g, '')
     .replace(/; this skill family writes commands in the\s+bare `bounded <command>` form, which is what a global install answers to\./g,
       ', as this skill family\nwrites them; npx runs the installed CLI, or fetches it from npm when it is missing.')
+    .replace(/(^|[^\w.@/-])(?<!older project's `)bounded\.json\b/gm, '$1openapps.json')
+    .replace(/The CLI also reads `openapps\.json`, the same file under its OpenApps name, which wins when a directory holds both\./g,
+      "An older project's `bounded.json` still works; `openapps.json` wins when a directory holds both.")
     .replace(/\bbounded-sh\/skill\b/g, OPENAPPS_SKILL_REPO)
     .replace(/@bounded-sh\/cli(?![\w-])/g, OPENAPPS_CLI_PACKAGE)
     .replace(new RegExp(`\\bbounded-(${SKILL_SUFFIXES})\\b`, 'g'), 'openapps-$1')

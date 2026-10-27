@@ -21,6 +21,8 @@ Use this skill for the app's capability constraints and, when requested, its lif
   Repo notes such as `AGENTS.md` and `README.md` may predate OpenApps; correct any fact they state that the run context contradicts (the creator, whether it is an OpenApps app) in your next commit.
   If those runtime instructions are unavailable, continue inspection and local work that the environment supports, and identify the missing instructions before attempting a governed release.
 
+The project config is `openapps.json`. An older project's `bounded.json` still works; `openapps.json` wins when a directory holds both.
+
 ## Capability constraints
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
