@@ -21,7 +21,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror synchronization and confirmed receipts](#mirror-synchronization-and-confirmed-receipts)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
-- [Shared prices and counters](#shared-prices-and-counters-state-a-limit-let-the-hook-compute)
+- [Shared prices and counters](#shared-prices-and-counters-under-load)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
 - [Invariant coverage](#invariant-coverage-onchain)
@@ -474,7 +474,7 @@ failing txs still land on-chain (useful when simulation is flaky or you want the
 on-chain error rather than a client-side preflight reject). No effect on the
 realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#--skip-preflight).
 
-## Shared prices and counters: state a limit, let the hook compute
+## Shared prices and counters under load
 
 A rule that makes the client state a value every other write changes fails under
 load onchain. Examples: `@newData.price == @def.price` on a bonding curve,
@@ -483,21 +483,17 @@ The client builds the transaction from what it read, a person approves it in
 their wallet (often 5-10 seconds), and the program runs the rule against the
 state at execution. Any other write to that document in between makes the rule
 false and the transaction fails. At a launch most writes lose. Poofnet and test
-wallets that sign instantly hide this completely.
+wallets that sign instantly do not show it.
 
-The fix: the client states only a **limit**, and the hook works out the real amounts.
+A write can instead carry a bound the person accepts: the most they pay, or the
+least they receive. A rule that checks the bound against the current quote with
+`get()` holds for every state the person would accept. A hook can then move the
+funds and record each derived amount and counter with
+`@DocumentPlugin.updateField`, computed from `get()` at execution. Fields the
+hook derives stay null or absent in the create rule, so the client cannot set them.
 
-1. The write carries what the person chose plus a bound they accept: the most
-   they pay, or the least they receive.
-2. The rule checks the bound against the current quote with `get()`. That holds
-   for any state the person would accept.
-3. The hook moves the funds and records every derived amount and counter with
-   `@DocumentPlugin.updateField`, computed from `get()`. Derived fields must be
-   null or absent in the create rule so the client cannot write them, and
-   `update` is `"false"`.
-
-Adapted from the buy in the [prediction market](examples/prediction-market-amm.md),
-with a minimum and the quote in a [def](../../bounded-backend/docs/constants-and-defs.md#defs--reusable-rule-fragments):
+The buy from the [prediction market](examples/prediction-market-amm.md), with a
+minimum added and the quote in a [def](../../bounded-backend/docs/constants-and-defs.md#defs--reusable-rule-fragments):
 
 ```jsonc
 "defs": {
@@ -514,11 +510,9 @@ with a minimum and the quote in a [def](../../bounded-backend/docs/constants-and
 }
 ```
 
-The client quotes `yesOut`, subtracts its slippage, and sends that as
-`minYesOut`. A receipt or ledger that should show the real price gets it from
-the hook with `updateField`, never from the client. Exact-match checks stay
-right for values only this writer changes, such as its own balance or a
-create-once id.
+The client quotes `yesOut` and sends it, less its slippage, as `minYesOut`.
+Values only one writer changes, such as its own balance or a create-once id, do
+not race, so exact matches on them are unaffected.
 
 ## Transaction-size limit: one hook = one Solana transaction
 
