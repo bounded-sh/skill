@@ -77,12 +77,11 @@ The reveal create rule deliberately carries **no `@user` term**, so it carries n
 signed-in-user requirement. Authorisation comes
 from the shape above, which is strictly stronger than "someone was signed in".
 
-**A reveal doc is never a gate.** A value in `[0, 1)` is always 0, so the rule
-only holds once the id is fulfilled, and then anyone can create the doc. Its
-existence proves that `$id` was fulfilled and nothing else: not who asked, not
-which draw or item it belongs to, not that the roll has not been used. A rule
-that admits an outcome because a reveal doc exists lets a caller reroll. Bind
-the outcome to the paid request document and the roll it materialised (§4).
+**What a reveal doc shows.** A value in `[0, 1)` is always 0, so the create
+rule holds for any caller as soon as ORAO has fulfilled the id. A reveal doc's
+existence shows that `$id` was fulfilled. It does not show who requested it,
+which draw or item it belongs to, or whether the roll was already used; those
+facts live on the request document and the roll it materialised (§4).
 
 ## 2. Reading the roll
 

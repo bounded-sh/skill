@@ -80,13 +80,12 @@ Rules:
 
 - A def is a **rule-fragment string**. Reference it as `@def.name`.
 - A def is any expression, not only a true/false check, and it works in every
-  expression position, hooks and named queries included. Put a shared formula
-  (a curve price, a fee) in one def and reference it everywhere:
+  expression position, hooks and named queries included. A shared formula such
+  as a curve price can live in one def,
   `"defs": { "price": "@const.BASE + get(/pool/main).sold * @const.STEP" }`,
-  then `"create": "@newData.paid == @def.price"` and
+  and appear as `"create": "@newData.paid == @def.price"` in a rule and
   `"@TokenPlugin.transfer(@user.address, @const.TREASURY, @TokenPlugin.SOL, @def.price)"` in a hook.
-  Defs cannot appear in data positions (invariant limits, field defaults); use
-  `@const` there.
+  Data positions (invariant limits, field defaults) take `@const`, not `@def`.
 - Defs are inlined **wrapped in parens** so they compose safely inside larger
   boolean expressions: `@def.canEdit` above becomes  `((@user.id == @data.owner) || (@user.id == 'acct_...admin'))`.
 - Defs may reference **other defs and constants** (resolved recursively). A
