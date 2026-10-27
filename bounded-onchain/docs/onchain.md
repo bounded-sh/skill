@@ -21,6 +21,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror synchronization and confirmed receipts](#mirror-synchronization-and-confirmed-receipts)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
+- [Shared prices and counters](#shared-prices-and-counters-state-a-limit-let-the-hook-compute)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
 - [Invariant coverage](#invariant-coverage-onchain)
@@ -472,6 +473,52 @@ On `set` / `set-many`, an **onchain-only** flag: skip RPC preflight simulation s
 failing txs still land on-chain (useful when simulation is flaky or you want the
 on-chain error rather than a client-side preflight reject). No effect on the
 realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#--skip-preflight).
+
+## Shared prices and counters: state a limit, let the hook compute
+
+A rule that makes the client state a value every other write changes fails under
+load onchain. Examples: `@newData.price == @def.price` on a bonding curve,
+`@newData.out == <AMM quote>`, `@newData.seq == get(/pool/main).count + 1`.
+The client builds the transaction from what it read, a person approves it in
+their wallet (often 5-10 seconds), and the program runs the rule against the
+state at execution. Any other write to that document in between makes the rule
+false and the transaction fails. At a launch most writes lose. Poofnet and test
+wallets that sign instantly hide this completely.
+
+The fix: the client states only a **limit**, and the hook works out the real amounts.
+
+1. The write carries what the person chose plus a bound they accept: the most
+   they pay, or the least they receive.
+2. The rule checks the bound against the current quote with `get()`. That holds
+   for any state the person would accept.
+3. The hook moves the funds and records every derived amount and counter with
+   `@DocumentPlugin.updateField`, computed from `get()`. Derived fields must be
+   null or absent in the create rule so the client cannot write them, and
+   `update` is `"false"`.
+
+Adapted from the buy in the [prediction market](examples/prediction-market-amm.md),
+with a minimum and the quote in a [def](../../bounded-backend/docs/constants-and-defs.md#defs--reusable-rule-fragments):
+
+```jsonc
+"defs": {
+  "yesOut": "@PredictionMarketPlugin.getYesTokenOutAmm(@newData.amountIn, get(/pmMarkets/$marketId).collateralReserve, get(/pmMarkets/$marketId).yesSupply)"
+},
+"pmPositions/$marketId/holders/$holderId/buys/$orderId": {
+  "fields": { "amountIn": "UInt!", "minYesOut": "UInt!" },
+  "rules": {
+    "create": "... && @newData.minYesOut > 0 && @def.yesOut >= @newData.minYesOut"
+  },
+  "hooks": { "onchain": {
+    "create": "@TokenPlugin.transfer(@user.address, $marketId, @TokenPlugin.SOL, @newData.amountIn) && @DocumentPlugin.updateField(/pmMarkets/$marketId, 'collateralReserve', get(/pmMarkets/$marketId).collateralReserve + @newData.amountIn) && @DocumentPlugin.updateField(/pmMarkets/$marketId, 'yesSupply', get(/pmMarkets/$marketId).yesSupply - @def.yesOut) && @DocumentPlugin.updateField(/pmPositions/$marketId/holders/$holderId, 'yesBalance', get(/pmPositions/$marketId/holders/$holderId).yesBalance + @def.yesOut)"
+  } }
+}
+```
+
+The client quotes `yesOut`, subtracts its slippage, and sends that as
+`minYesOut`. A receipt or ledger that should show the real price gets it from
+the hook with `updateField`, never from the client. Exact-match checks stay
+right for values only this writer changes, such as its own balance or a
+create-once id.
 
 ## Transaction-size limit: one hook = one Solana transaction
 
