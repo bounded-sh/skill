@@ -79,6 +79,14 @@ Rules:
 ```
 
 - A def is a **rule-fragment string**. Reference it as `@def.name`.
+- A def is any expression, not only a true/false check, and it works in every
+  expression position, hooks and named queries included. Put a shared formula
+  (a curve price, a fee) in one def and reference it everywhere:
+  `"defs": { "price": "@const.BASE + get(/pool/main).sold * @const.STEP" }`,
+  then `"create": "@newData.paid == @def.price"` and
+  `"@TokenPlugin.transfer(@user.address, @const.TREASURY, @TokenPlugin.SOL, @def.price)"` in a hook.
+  Defs cannot appear in data positions (invariant limits, field defaults); use
+  `@const` there.
 - Defs are inlined **wrapped in parens** so they compose safely inside larger
   boolean expressions: `@def.canEdit` above becomes  `((@user.id == @data.owner) || (@user.id == 'acct_...admin'))`.
 - Defs may reference **other defs and constants** (resolved recursively). A
@@ -111,7 +119,10 @@ policy.json ──► (deploy) ──► resolvePolicyMacros ──► validate 
 ```
 
 - Runs **before** validation and bytecode compilation — so runtime
-  enforcement only sees literals. Macros add **no runtime cost**.
+  enforcement only sees literals. Macros add **no runtime cost** of their own,
+  but each `@def` reference is a full copy: a def used five times is stored and
+  evaluated five times, exactly as if pasted in. Total expanded macro output is
+  capped at 1 MiB per policy.
 - The `constants`/`defs` blocks are kept on the stored policy for transparency
   (they are reserved keys; they are never treated as collections).
 - **Errors** (surfaced at `bounded deploy`):
