@@ -355,7 +355,7 @@ only literals; the top-level `environments` block and each function's own
 ### oApp mode and closed egress
 
 `oapp` accepts only the literal value `true`.
-Use `"oapp": true` for an oApp and omit the key for a regular app; `false`, strings, objects, arrays, and other values are rejected.
+Opening an app that declares functions or boundaries requires `"oapp": true` (see the **openapps** skill); omit the key otherwise, including for an Owned app with an agent. `false`, strings, objects, arrays, and other values are rejected.
 
 The current v1 static checks require at least one `boundaries.egress` entry.
 Function `secrets` are allowed; an APO accepts only keys the app's OpenApps agent donated, which a function reads as a stand-in.

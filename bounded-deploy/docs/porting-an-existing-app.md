@@ -179,5 +179,6 @@ An app headed to an APO is held to the key rules in the ladder section above.
 - `bounded deploy` accepted the policy and `bounded tests run` passes.
 - `bounded site deploy` served the site; a denied write returns `403`, a
   denied read returns an empty `200`.
-- For an oApp: `bounded oapp preflight` is READY on the deployed app, and the
-  source is synced so its agent can work from it.
+- For an app brought to OpenApps: the source is synced so its agent can work
+  from it. `bounded oapp preflight` checks opening an app, not bringing one
+  (see the **openapps** skill).
