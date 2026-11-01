@@ -74,10 +74,12 @@ export default async function (args, ctx) {
   the reported token counts at the pinned rates, with cache reads and writes at
   the model's own published rates. A pricing rollover during the call cannot
   change its settlement.
-  Missing/unpriceable usage or an ambiguous provider-started outcome becomes a
-  durable `503 ai_operation_attention_required`; it is never guessed, refunded,
-  or rerun as fresh provider work. Confirmed pre-provider/provider failures are
-  refunded and replay their terminal error.
+  If usage cannot be priced, Bounded briefly retries the original generation's receipt lookup, then waives an unresolved charge and releases the reservation.
+  Successful output still returns; the same operation never regenerates or charges later for a waived call.
+  A lost billing acknowledgement retries the saved settlement without rerunning the model.
+  Other ambiguous operations can return `503 ai_operation_attention_required`; preserve the same key and contact support.
+  Repeated unpriceable calls can pause that payer's model with `503 ai_billing_paused`; contact support instead of generating under new keys.
+  Confirmed provider failures release the reservation and replay their terminal error.
 - **Provider errors are branchable.** `ai_provider_not_configured` (503, the
   deployment has no gateway key), `provider_budget_exhausted` (502, the
   platform's own gateway budget refused the call), `provider_auth_failed` (502,
@@ -204,7 +206,8 @@ The essentials:
 - **Videos complete through a job** with `pending`, `running`, `succeeded`, or `failed` status.
   Declare `aiJobs/$jobId` to subscribe to the status mirror, or call `ctx.ai.getJob(jobId)`.
   Success supplies `filePath` and the settled `costMicroUsd`; `actualCents` is the same amount in cents.
-  Ambiguous provider outcomes or missing cost receipts remain pending for reconciliation.
+  Generation times out after 15 minutes; storing a completed video has its own 15-minute limit.
+  Missing price receipts use the same short retry and waiver policy as text, so they do not keep a completed video pending.
   Terminal job records expire after 90 days; generated files remain app data.
 - **Both APIs require an explicit Vercel AI Gateway model.**
   The examples above are verified choices; other models need supported pricing from Bounded's maintained table or the gateway catalog.
