@@ -183,6 +183,15 @@ write it from a trusted server function instead of the client.
   body. It **closes the document's account** and refunds its rent to whoever
   funded it, and the offchain mirror row disappears once the close is confirmed -
   not when you call `set(path, null)`.)
+- **Rent goes back to whoever funded the document, not to whoever deletes it.**
+  The refund goes to the document's recorded funder (the wallet that paid when
+  it was created), whichever wallet signs the delete; the platform adds the
+  funder's account to the transaction. When Bounded's gas sponsor funded the
+  create, the rent returns to the sponsor, never to the app's credits, and a
+  sponsored delete whose refund covers the network fee charges the app nothing.
+  An `isPassthrough` collection has no account, so there is nothing to reclaim.
+  To keep a closed record readable afterwards, mark the collection
+  `"keepRecordOnDelete": true` ([data plane](../../bounded-backend/docs/data-plane.md#keep-deleted-records-with-keeprecordondelete)).
 - **Field types map to on-chain types** - `UInt`→u64, `Int`→i64, `String`,
   `Bool`, `Address`→a 32-byte pubkey.
 - **Reads, lists, `subscribe`, and `aggregate` work identically.** Bounded

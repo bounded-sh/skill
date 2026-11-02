@@ -153,6 +153,10 @@ const next = await get("orders", { /* same filter/sort */ limit: 20, cursor: ope
 - `getMany(paths)` → batch-read several **paths** at once (not a filter). Each
   result is `{ path, data, error? }`; `data` is the doc-or-null carrying the bare
   `id`.
+- In a `keepRecordOnDelete` collection, a single-document `get` and `getMany`
+  return the newest deleted version, stamped `_deletedAt`, when no live document
+  exists; a live document never carries `_deletedAt`. Lists and `subscribe` show
+  only live documents. See [data plane](../../bounded-backend/docs/data-plane.md#keep-deleted-records-with-keeprecordondelete).
 
 `GetOptions`: `filter` (structured MongoDB-style), `sort` (`{ field: 1 | -1 }`),
 `limit`, `cursor`, `includeSubPaths`, `shape`, `prompt` (natural-language
