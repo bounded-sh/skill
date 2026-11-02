@@ -1,16 +1,14 @@
 # Launch economics
 
-Openings whose sealed head selects `transfer-fee-v1` use a CCA with 65% Treasury / 30% initial liquidity / 2.5% creator / 2.5% OpenApps allocations in USDC.
-New mainnet sales have a 10,000 USDC minimum, plus the requirement to retain six months of baseline operating costs after setup costs, assuming no future trading revenue.
-The effective minimum is the larger of the venue's configured minimum and the amount needed for that reserve.
-Sale minimums, minimum order amounts, bidding duration, and the opening countdown are configured per venue and sealed when a sale is scheduled.
-The current mainnet settings are 10,000 USDC minimum raised, 50 USDC minimum per order, 24 hours of bidding, and a 60-second opening countdown.
-A Devnet test venue can use smaller amounts, such as 100 USDC raised and 1 USDC per order, without the real-money operating reserve requirement.
-Always read the actual sale terms rather than assuming the settings of another venue.
-The app token's transfer fee belongs entirely to Treasury in app tokens: 1% unless the creator set another rate, from 0% to 5% (`transferFeeBps`), when asking to open.
-The canonical DAMM v2 pool has a separate fixed 0.5% USDC fee with OnlyB and dynamic fees disabled.
-After Meteora's 20% protocol share, actual net receipts of the designated launch position split 50% creator / 50% OpenApps.
-Additional app positions earn for the app, and product revenue belongs entirely to the app.
+A successful CCA sale allocates 5% of the net USDC raise according to the app's fee split, which locks when the sale starts.
+Direct Meteora launches deposit 30% into the pool.
+Meteora curve launches buy the tokens bidders won within that same 30% budget.
+On a venue with the v11 Pump launch policy, Pump also buys only the tokens bidders won within 30%, leaving at least 65% in Treasury.
+Pump's opening price follows that purchase, and its minimum raise must cover the purchase as well as the operating reserve.
+Read the minimum, bidding window and other terms from the sale before bidding.
+A direct Meteora token can charge the transfer fee set when opening (0% to 5%, default 1%); Pump and Meteora curve launches have no token transfer fee.
+Collected transfer fees and fees from the designated Meteora launch position follow the app's fee split.
+Additional app positions earn entirely for the app.
 Existing launches retain their sealed model.
 Accrued transfer fees appear as pending token claims; they are not spendable USDC or prepaid Bounded credits.
 The treasury policy fixes the withdrawal authority and destination; Bounded supplies collection infrastructure, transaction signing and credit billing.

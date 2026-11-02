@@ -47,7 +47,7 @@ custody model that every call here inherits, read
 | `name` | `String` | Token name. |
 | `symbol` | `String` | Token symbol. |
 | `uri` | `String` | The Metaplex metadata JSON URL. It must be permanent and public - see [the metadata hosting note](meteora-token-launch.md#the-uri-must-be-a-metaplex-metadata-json-not-an-image), which applies identically here. |
-| `creator` | `Address` | **The address that RECEIVES creator fees - and the account that PAYS the whole `Create`.** A wallet, the `@contract.address` sentinel (the app escrow PDA), or an account id. This is the only place the fee recipient is chosen, and Pump.fun's `Create` bills this same account for mint rent (1,461,600 lamports), metadata rent (~5,616,720), and bonding-curve/ATA setup - about 0.025 SOL total. |
+| `creator` | `Address` | A wallet, the `@contract.address` sentinel (app escrow PDA), or a named account. Pump bills this account for creation and uses it as the initial creator-fee recipient. |
 | `isMayhemMode` | `Bool` | `createTokenV2` only. Enables Pump.fun mayhem mode. Pass `false` for the ordinary launch. |
 | `config?` | object | Optional. `{seedMode: "idOnly"}` derives the mint PDA from `appId + tokenId` alone (no name/symbol), which is what enables vanity addresses. Omit for the legacy derivation. |
 
@@ -55,7 +55,10 @@ custody model that every call here inherits, read
 which is hardwired to the pool-creation signer. Point it at an escrow or a named
 account when the app, not an individual, should collect the fees.
 
-Because `creator` also pays, an app-custody creator (a named account id) must
+On a cluster running v11, a non-Mayhem `createTokenV2` launch with a PDA creator and `{quoteMint: @TokenPlugin.USDC, buyAmount, maxQuoteCost}` buys the specified number of tokens as part of creation.
+The creator needs USDC for that buy. The transaction's rent funder covers creation in SOL and receives its unused advance back in the same transaction.
+
+For an ordinary SOL launch, an app-custody creator (a named account id) must
 already hold the whole `Create` cost when the hook runs - `createAccount` alone
 leaves only its own rent minimum (~0.00089 SOL), and the signing user's wallet
 balance is irrelevant to this transfer.

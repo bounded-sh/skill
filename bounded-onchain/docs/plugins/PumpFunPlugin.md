@@ -54,7 +54,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ### `PumpFunPlugin.collectCreatorFee`
 
 ```
-@PumpFunPlugin.collectCreatorFee(creator) - Collect accumulated creator fees from vault to creator wallet (permissionless)
+@PumpFunPlugin.collectCreatorFee(creator, mint?) - Collect accumulated creator fees from vault to creator wallet (permissionless). With the coin's mint (runtime v11) it first sweeps the creator fee that newer trades keep on the bonding curve, and on the PumpSwap pool once the coin has graduated, then pays it all to the creator in the coin's quote: SOL, or the creator's quote token account (e.g. USDC) for a token-paired coin. Single-creator coins only (no fee sharing config).
 ```
 
 - Callable from: `hooks.onchain`
@@ -63,6 +63,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
 | `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - validated against bonding curve on-chain |
+| `mint` | string | no | - | The coin's mint. Required to collect a token-paired coin's fees (e.g. USDC) and the fees newer trades keep on the curve or pool. |
 
 ### `PumpFunPlugin.createFeeSharingConfig`
 
@@ -105,7 +106,7 @@ Fields of `config`:
 ### `PumpFunPlugin.createTokenV2`
 
 ```
-@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: "idOnly"}) - Creates a Token-2022 (SPL-22) token on pump.fun with optional mayhem mode and optional config.
+@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: "idOnly"}) - Creates a Token-2022 token on pump.fun. On v11, quoteMint, buyAmount and maxQuoteCost support an atomic first buy.
 ```
 
 - Callable from: `hooks.onchain`
@@ -117,15 +118,18 @@ Fields of `config`:
 | `name` | string | yes | - |  |
 | `symbol` | string | yes | - |  |
 | `uri` | string | yes | - |  |
-| `creator` | string | yes | - | Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator). |
+| `creator` | string | yes | - | Receives creator fees. On v11 a non-Mayhem PDA creator making its first buy in a classic SPL quote token such as USDC pays the quote; the transaction rent funder covers approved creation rent. Other launches charge the creator SOL. Reserved platform signers are refused. |
 | `isMayhemMode` | boolean | yes | - | Enable mayhem mode for token (default: false) |
-| `config` | object | no | - | Optional config object. Supports {seedMode: "idOnly"} to derive mint PDA from appId+tokenId only. |
+| `config` | object | no | - | Optional config object: seedMode, quoteMint, and buyAmount with maxQuoteCost. |
 
 Fields of `config`:
 
 | Field | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
 | `seedMode` | string | conditional | - | Seed derivation mode. "idOnly" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation. |
+| `quoteMint` | string | conditional | - | Quote mint the coin trades against, e.g. @TokenPlugin.USDC; it must be one of pump.fun's whitelisted quote mints. Omit (or pass wrapped SOL) for a SOL-paired coin. |
+| `buyAmount` | number | conditional | - | Base tokens (raw units, 6 decimals) the creator buys in the same instruction, paying in quoteMint from its own quote token account. Requires quoteMint and maxQuoteCost; a buy past what the curve holds continues into pump.fun's synthetic migration. |
+| `maxQuoteCost` | number | conditional | - | Most quote (raw units) the creator's buy may cost, fees included; the whole create fails if the buy would cost more. |
 
 ### `PumpFunPlugin.distributeCreatorFees`
 
@@ -221,7 +225,7 @@ Fields of `config`:
 ### `PumpFunPlugin.getCreatorFee`
 
 ```
-@PumpFunPlugin.getCreatorFee(mint) - Get accumulated native SOL creator fees from bonding curve vault. Automatically resolves the correct vault from bonding curve creator (handles pre/post fee-sharing migration).
+@PumpFunPlugin.getCreatorFee(mint) - Get accumulated native SOL creator fees from bonding curve vault. Automatically resolves the correct vault from bonding curve creator (handles pre/post fee-sharing migration). For a token-paired coin (e.g. USDC) on runtime v11 it answers, in quote units, what @PumpFunPlugin.collectCreatorFee(creator, mint) pays: the fee held on the curve and in the creator vault, plus the pool's once the coin has graduated.
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries

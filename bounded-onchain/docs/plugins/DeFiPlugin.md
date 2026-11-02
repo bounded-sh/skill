@@ -126,10 +126,32 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `decayNumberOfPeriod` | number | no | - | Optional: Number of linear reduction periods over which the fee decays from decayStartingFeeBps to decayEndingFeeBps. Default: 0 (flat fee, no decay) |
 | `decayTotalDuration` | number | no | - | Optional: Total duration of the fee decay, in the pool's activation unit (slots). Default: 0 (flat fee, no decay) |
 
+### `DeFiPlugin.createMeteoraLaunchConfig`
+
+```
+@DeFiPlugin.createMeteoraLaunchConfig(configId, quoteMint, clearingPrice, firstBuyTokens, firstBuyQuote, curveTokens, endPrice, feeBps, feeClaimer, leftoverReceiver) - creates a Meteora Dynamic Bonding Curve config whose curve is derived exactly from the arguments, so pinning them pins the curve. Prices are raw quote units per 1e9 raw base units. Segment 1 ends exactly at clearingPrice and holds exactly firstBuyTokens; it starts at the highest price at which buying all of them costs at most firstBuyQuote, fee included (roughly (firstBuyQuote/firstBuyTokens)^2/clearingPrice). Segment 2 holds exactly curveTokens from clearingPrice to endPrice and is omitted when curveTokens is 0. The pool migrates to DAMM v2 when the curve sells out. The token is a fixed supply of 1,000,000,000 SPL tokens with 6 decimals; everything the curve and the migrated pool do not need is leftover for leftoverReceiver (@DeFiPlugin.withdrawLeftover after migration). The flat feeBps (25 to 1000) is charged in the quote token both on the curve, where all of it is the pool creator's (claim with @DeFiPlugin.claimMeteoraPoolFees as the creator), and in the migrated pool. After migration the pool creator holds all LP, 10% of it permanently locked (DBC's minimum). Create pools from it with @DeFiPlugin.createMeteoraVirtualPool. Requires onchain runtime v11.
+```
+
+- Callable from: `hooks.onchain`
+- Status: not listed in the capability table.
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `configId` | string | yes | - | Unique identifier for the config within the app |
+| `quoteMint` | string | yes | - | The quote mint pools of this config trade against, e.g. @TokenPlugin.USDC |
+| `clearingPrice` | uint | yes | - | Price where segment 1 ends and segment 2 starts, in raw quote units per 1e9 raw base units |
+| `firstBuyTokens` | uint | yes | - | Base tokens (raw units) segment 1 holds; buying all of them moves the price to exactly clearingPrice |
+| `firstBuyQuote` | uint | yes | - | Most quote (raw units) buying all of segment 1 may cost, fee included |
+| `curveTokens` | uint | yes | - | Base tokens (raw units) segment 2 holds; 0 ends the curve at clearingPrice |
+| `endPrice` | uint | yes | - | Price where segment 2 ends, above clearingPrice, in raw quote units per 1e9 raw base units; ignored when curveTokens is 0 |
+| `feeBps` | uint | yes | - | Flat trading fee in basis points, 25 to 1000, charged in the quote token before and after migration |
+| `feeClaimer` | string | yes | - | The DBC partner, which DBC requires but which gets no trading fee and no LP: an account ID, @contract.address for escrow, or a wallet address |
+| `leftoverReceiver` | string | yes | - | Account that receives the leftover tokens after migration: an account ID, @contract.address for escrow, or a wallet address |
+
 ### `DeFiPlugin.createMeteoraVirtualPool`
 
 ```
-@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?) - the pool base mint is ALWAYS derived with the LEGACY token seed (appId + tokenId + name + symbol); there is no seedMode option. Derive the mint elsewhere with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form (that derives a different, nonexistent address)
+@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, launch?) - creates a pool paired with the config's quote mint. The launch object { creator, buyAmount, maxQuoteCost } (runtime v11) names the pool creator and makes it buy exactly buyAmount tokens for at most maxQuoteCost quote, fee included, in the same instruction, paying from its quote token account. For a SOL-quoted pool, a lamport amount in place of the launch object makes the user's dev buy instead (initialSolBuyAmount). The pool base mint is ALWAYS derived with the LEGACY token seed (appId + tokenId + name + symbol); there is no seedMode option. Derive the mint elsewhere with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form (that derives a different, nonexistent address)
 ```
 
 - Callable from: `hooks.onchain`
@@ -142,7 +164,15 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `name` | string | yes | - | The name of the token |
 | `symbol` | string | yes | - | The symbol of the token |
 | `uri` | string | yes | - | The URI of the json metadata |
-| `initialSolBuyAmount` | string | no | - | Optional: Initial SOL amount in lamports to buy tokens with (dev buy). If provided and > 0, executes a swap after pool creation. |
+| `launch` | object | no | - | Optional launch object (runtime v11), or for a SOL-quoted pool a lamport amount the user spends on a dev buy (initialSolBuyAmount). |
+
+Fields of `launch`:
+
+| Field | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `creator` | string | conditional | - | Pool creator: an account ID, @contract.address for escrow, or a wallet address. Defaults to the user. |
+| `buyAmount` | number | conditional | - | Base tokens (raw units) the creator buys right after creation, paying in the config's quote mint from its own quote token account. Requires maxQuoteCost. |
+| `maxQuoteCost` | number | conditional | - | Most quote (raw units) the creator's buy may cost, fee included; the whole creation fails if it would cost more. |
 
 ### `DeFiPlugin.createPool`
 
@@ -370,7 +400,7 @@ Fields of `config`:
 ### `DeFiPlugin.getMeteoraVirtualPoolAddress`
 
 ```
-@DeFiPlugin.getMeteoraVirtualPoolAddress(tokenMintAddress, configId)
+@DeFiPlugin.getMeteoraVirtualPoolAddress(tokenMintAddress, configId, quoteMint?) - pass the config's quote mint for a pool not paired with SOL (runtime v11)
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
@@ -380,6 +410,7 @@ Fields of `config`:
 |---|---|---|---|---|
 | `tokenMintAddress` | string | yes | - | The mint address of the token |
 | `configId` | string | yes | - | Unique identifier for the config within the app |
+| `quoteMint` | string | no | - | Optional: the config's quote mint, e.g. @TokenPlugin.USDC. Default: SOL |
 
 ### `DeFiPlugin.getSwapQuote`
 
