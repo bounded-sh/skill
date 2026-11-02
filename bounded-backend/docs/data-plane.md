@@ -505,6 +505,62 @@ timestamps fail closed. Onchain-supported rolling caps remain fully no-delete.
 This lets an intentional retention sweeper bound storage without weakening any
 live window.
 
+## Keep deleted records with `keepRecordOnDelete`
+
+Set `"keepRecordOnDelete": true` on a collection to keep a deleted document readable, for example a receipt or payout record you delete to reclaim onchain rent.
+
+```json
+"settles/$saleId/s/$bidId": {
+  "onchain": true,
+  "keepRecordOnDelete": true,
+  "fields": { "bidder": "Address", "tokensFilled": "UInt" },
+  "rules": { "read": "true", "create": "...", "update": "...", "delete": "..." }
+}
+```
+
+Each delete stores the deleted version, stamped with `_deletedAt` (unix milliseconds).
+Deleting the same path again later stores another version; nothing is overwritten.
+
+**Reads.**
+A single-document read returns the live document when there is one, otherwise the most recently deleted version.
+That covers `get(path)`, `getMany(paths)`, `bounded data get`, and `ctx.bounded.get` in a function.
+Lists, filtered queries, `count`, `aggregate`, and `subscribe` return only live documents.
+The collection's `read` rule applies to a deleted version exactly as it does to a live one.
+
+**Telling a deleted record from a live one.**
+`_deletedAt` is present only on a deleted version; a live document never carries it.
+`null` means there is neither a live document nor a kept version you can read.
+So an existence check on a flagged collection must look at `_deletedAt`, not just at `null`:
+
+```ts
+const doc = await get(`settles/${saleId}/s/${bidId}`);
+if (doc === null) { /* never existed, or not readable */ }
+else if (doc._deletedAt != null) { /* deleted at doc._deletedAt; fields are the last state */ }
+else { /* live */ }
+```
+
+**Every deleted version.**
+`GET /items/<path>?deleted=true` (or `GET /items?path=<path>&deleted=true`) on the realtime HTTP API returns all kept versions, newest first, as `{ data, nextCursor }`.
+A document path returns that path's versions; a collection path returns every kept version directly in that collection.
+Page with `limit` (default 100, max 1000) and pass `nextCursor` back as `cursor`.
+The SDKs have no option for this list yet.
+
+**Rules never see a deleted version.**
+To `get()`, `getAfter()`, rule queries, and invariants, a deleted document is absent, the same as without the option.
+A `get(x) == null` once-only or replay guard therefore opens again after `x` is deleted.
+Deleting a record that a guard depends on re-enables whatever that guard protects, so delete only records whose guarded action can no longer happen, or delete the other record that guard also requires in the same batch.
+A new document can be created at the same id at any time; it starts fresh with its own `_createdAt`.
+
+**Onchain collections.**
+The delete still closes the document's account and refunds its rent (see [onchain.md](../../bounded-onchain/docs/onchain.md#what-changes-when-a-collection-is-onchain)).
+The deleted version is kept from the mirror once the close is confirmed, not when you call `set(path, null)`.
+An `isPassthrough` collection never has an account, so deleting from it reclaims no rent.
+
+**Storage.**
+Kept versions count toward the app's storage usage like live documents.
+They are kept until the app is deleted; there is no API to remove them.
+Removing the option stops keeping new versions and hides stored ones from reads; adding it back shows them again.
+
 ## SDK write path
 
 The same atomic semantics apply through the SDKs. `@bounded-sh/client` writes from a
