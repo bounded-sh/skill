@@ -328,7 +328,7 @@ rejected):
 | `type` | `"llm" \| "api" \| "storage"` | [files-and-search.md](files-and-search.md) |
 | `service` / `model` / `prompt` | strings (for `type:"api"`/`"llm"`) | [files-and-search.md](files-and-search.md) |
 | `isPassthrough` / `isRevealPath` | booleans (onchain). **`isRevealPath` pins the collection's whole shape** — onchain, EMPTY fields, and a create rule that is exactly `@OraclePlugin.getRandomNumber($id, 0, 1) == 0`; `create: "false"` and a declared `randomness` field are both rejected at deploy | [../../bounded-onchain/docs/randomness.md](../../bounded-onchain/docs/randomness.md) |
-| `keepRecordOnDelete` | boolean. A deleted document stays readable: a single-document read returns its newest deleted version stamped `_deletedAt`, while rules, lists and subscriptions see it as absent | [data-plane.md](data-plane.md#keep-deleted-records-with-keeprecordondelete) |
+| `keepRecordOnDelete` | boolean. A deleted document stays readable: a single-document read returns its newest deleted version stamped `_deletedAt`, while rules, lists and subscriptions see it as absent. Not allowed with `tier: "ephemeral"`; removing it discards the kept versions on deploy | [data-plane.md](data-plane.md#keep-deleted-records-with-keeprecordondelete) |
 | `description` / `operationDetails` / `functionDescription` | docstrings | — |
 
 ### Top-level blocks (alongside the collection keys)

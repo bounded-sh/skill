@@ -557,9 +557,10 @@ The deleted version is kept from the mirror once the close is confirmed, not whe
 An `isPassthrough` collection never has an account, so deleting from it reclaims no rent.
 
 **Storage.**
-Kept versions count toward the app's storage usage like live documents.
-They are kept until the app is deleted; there is no API to remove them.
-Removing the option stops keeping new versions and hides stored ones from reads; adding it back shows them again.
+Kept versions count toward the app's storage usage like live documents, so deleting from a flagged collection does not free space.
+To reclaim it, remove `keepRecordOnDelete` from the collection and deploy: that deploy permanently discards the collection's kept versions.
+Adding the option back starts keeping again from empty.
+The option cannot be combined with `"tier": "ephemeral"`, because kept versions are stored durably.
 
 ## SDK write path
 
