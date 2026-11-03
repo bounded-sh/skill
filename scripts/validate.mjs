@@ -259,14 +259,14 @@ if (!solanaInventory) {
     support: match[3],
   }))
   const ids = rows.map((row) => row.id)
-  if (rows.length !== 166) fail(`Solana capability status: expected 166 function rows, received ${rows.length}`)
+  if (rows.length !== 167) fail(`Solana capability status: expected 167 function rows, received ${rows.length}`)
   if (new Set(ids).size !== rows.length) fail('Solana capability status: duplicate function row')
 
   const supportCounts = rows.reduce((counts, row) => {
     counts[row.support] = (counts[row.support] ?? 0) + 1
     return counts
   }, {})
-  for (const [state, count] of Object.entries({ unverified: 136, unsupported: 30, blocked: 0 })) {
+  for (const [state, count] of Object.entries({ unverified: 137, unsupported: 30, blocked: 0 })) {
     // `supportCounts` is reduced from {} and only gains keys for states that occur,
     // so a legitimately-zero state is `undefined` here and a strict !== 0 would fire.
     if ((supportCounts[state] ?? 0) !== count) {
@@ -287,7 +287,7 @@ if (!solanaInventory) {
     BondingCurvePlugin: 6,
     Bytes: 22,
     CPI: 21,
-    DeFiPlugin: 21,
+    DeFiPlugin: 22,
     DflowPlugin: 2,
     DocumentPlugin: 2,
     MathPlugin: 2,

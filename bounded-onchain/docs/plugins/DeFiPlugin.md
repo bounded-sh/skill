@@ -133,7 +133,7 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: not listed in the capability table.
+- Status: **unverified** (source parity only); markers: NEEDS-RUNTIME-V11.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

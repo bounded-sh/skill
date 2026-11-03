@@ -57,6 +57,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `NEEDS-RUNTIME-V7` | The function or call shape needs Bounded Solana runtime v7 as a minimum. Both devnet (slot 498804425) and mainnet-beta (slot 447272765) have met it since 2026-09-15, so the runtime-version deploy-time refusal no longer applies. v7 adds `@PhoenixPerpsPlugin.withdrawFunds` with the amount omitted (a same-transaction Hawkeye margin view; the explicit-amount form runs on every runtime), makes `@TokenPlugin.withdrawWithheldTokens` a successful no-op when the source holds no Token-2022 account or no withheld fees (v6 refused it), and is the runtime the fee-neutral staking and bidder-claim policies that sweep a receiver before creating it were verified against. A cluster still on v6 refuses the omitted-amount shape at deploy time and fails those sweeps closed at write time. |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-RAYDIUM-PROOF` | Raydium CPMM is deployed on devnet (at a different address from mainnet) and stays unverified until retained live proof exists. |
+| `NEEDS-RUNTIME-V11` | Requires the v11 sale runtime on the target cluster. |
 | `LIVE-DLMM-PROOF` | Meteora DLMM is deployed on devnet at the same address as mainnet and stays unverified until retained live proof exists. |
 | `DISABLED` | The registry entry exists but is disabled. |
 
@@ -125,6 +126,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@DeFiPlugin.closeCpAmmPosition` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.createCpAmmPosition` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.createMeteoraConfig` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
+| `@DeFiPlugin.createMeteoraLaunchConfig` | runtime v11 | unverified | source parity only | NEEDS-RUNTIME-V11 |
 | `@DeFiPlugin.createMeteoraVirtualPool` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.createPool` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF; CPAMM-SCENARIO |
 | `@DeFiPlugin.getClaimableCpAmmPositionFee` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |

@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "8fc1c6fe32fd67ce0869fb992e364eeec12ec181",
+  "monorepoCommit": "03b0a641f6348435ca9d63f26cca156c2f2e3afd",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -3553,7 +3553,12 @@
      "contexts": [
       "onchain.hooks"
      ],
-     "status": null
+     "status": {
+      "lane": "runtime v11",
+      "support": "unverified",
+      "verification": "source parity only",
+      "markers": "NEEDS-RUNTIME-V11"
+     }
     },
     {
      "name": "createMeteoraVirtualPool",
@@ -7235,7 +7240,7 @@
      "callName": "@PumpFunPlugin.createTokenV2",
      "category": "transactional",
      "signature": "createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, config?)",
-     "usage": "@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: \"idOnly\"}) - Creates a Token-2022 token on pump.fun. On v11, quoteMint, buyAmount and maxQuoteCost support an atomic first buy.",
+     "usage": "@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: \"idOnly\"}) - Creates a Token-2022 token on pump.fun. On v11, quoteMint, buyAmount and maxQuoteCost support an atomic first buy, and feeReceiver sends creator fees to another account.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -7283,7 +7288,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "Receives creator fees. On v11 a non-Mayhem PDA creator making its first buy in a classic SPL quote token such as USDC pays the quote; the transaction rent funder covers approved creation rent. Other launches charge the creator SOL. Reserved platform signers are refused.",
+       "description": "Pays for the create and receives creator fees unless config.feeReceiver names another receiver. On v11 a non-Mayhem PDA creator making its first buy in a classic SPL quote token such as USDC pays the quote; the transaction rent funder covers approved creation rent. Other launches charge the creator SOL. Reserved platform signers are refused.",
        "fields": null
       },
       {
@@ -7301,7 +7306,7 @@
        "type": "object",
        "optional": true,
        "signer": null,
-       "description": "Optional config object: seedMode, quoteMint, and buyAmount with maxQuoteCost.",
+       "description": "Optional config object: seedMode, quoteMint, buyAmount with maxQuoteCost, and feeReceiver.",
        "fields": {
         "seedMode": {
          "type": "string",
@@ -7326,6 +7331,12 @@
          "optional": null,
          "signer": null,
          "description": "Most quote (raw units) the creator's buy may cost, fees included; the whole create fails if the buy would cost more."
+        },
+        "feeReceiver": {
+         "type": "string",
+         "optional": null,
+         "signer": null,
+         "description": "On v11, the wallet or account id Pump records as the coin's creator and pays creator fees to, instead of the creator that pays for the create."
         }
        }
       }

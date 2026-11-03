@@ -106,7 +106,7 @@ Fields of `config`:
 ### `PumpFunPlugin.createTokenV2`
 
 ```
-@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: "idOnly"}) - Creates a Token-2022 token on pump.fun. On v11, quoteMint, buyAmount and maxQuoteCost support an atomic first buy.
+@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: "idOnly"}) - Creates a Token-2022 token on pump.fun. On v11, quoteMint, buyAmount and maxQuoteCost support an atomic first buy, and feeReceiver sends creator fees to another account.
 ```
 
 - Callable from: `hooks.onchain`
@@ -118,9 +118,9 @@ Fields of `config`:
 | `name` | string | yes | - |  |
 | `symbol` | string | yes | - |  |
 | `uri` | string | yes | - |  |
-| `creator` | string | yes | - | Receives creator fees. On v11 a non-Mayhem PDA creator making its first buy in a classic SPL quote token such as USDC pays the quote; the transaction rent funder covers approved creation rent. Other launches charge the creator SOL. Reserved platform signers are refused. |
+| `creator` | string | yes | - | Pays for the create and receives creator fees unless config.feeReceiver names another receiver. On v11 a non-Mayhem PDA creator making its first buy in a classic SPL quote token such as USDC pays the quote; the transaction rent funder covers approved creation rent. Other launches charge the creator SOL. Reserved platform signers are refused. |
 | `isMayhemMode` | boolean | yes | - | Enable mayhem mode for token (default: false) |
-| `config` | object | no | - | Optional config object: seedMode, quoteMint, and buyAmount with maxQuoteCost. |
+| `config` | object | no | - | Optional config object: seedMode, quoteMint, buyAmount with maxQuoteCost, and feeReceiver. |
 
 Fields of `config`:
 
@@ -130,6 +130,7 @@ Fields of `config`:
 | `quoteMint` | string | conditional | - | Quote mint the coin trades against, e.g. @TokenPlugin.USDC; it must be one of pump.fun's whitelisted quote mints. Omit (or pass wrapped SOL) for a SOL-paired coin. |
 | `buyAmount` | number | conditional | - | Base tokens (raw units, 6 decimals) the creator buys in the same instruction, paying in quoteMint from its own quote token account. Requires quoteMint and maxQuoteCost; a buy past what the curve holds continues into pump.fun's synthetic migration. |
 | `maxQuoteCost` | number | conditional | - | Most quote (raw units) the creator's buy may cost, fees included; the whole create fails if the buy would cost more. |
+| `feeReceiver` | string | conditional | - | On v11, the wallet or account id Pump records as the coin's creator and pays creator fees to, instead of the creator that pays for the create. |
 
 ### `PumpFunPlugin.distributeCreatorFees`
 
