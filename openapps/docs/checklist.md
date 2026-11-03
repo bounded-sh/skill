@@ -9,7 +9,6 @@
 - The person asking is the app's owner; nobody else can ask (`owner_required`).
 - The app is public: its page, its site, and its source (`oapp_opening_public_app_required`).
 - The split of sale proceeds is final: none, or sealed (`oapp_opening_proceeds_split_unsealed`).
-- The agent is on Automatic with its AI on (`oapp_opening_automatic_required`): once the sale starts nobody is left to start it.
 - The app never had a sale: an app has one, and a request after a failed sale is refused too (`oapp_opening_sale_exists`).
 - Boundaries were written early and cover the app's money and state rules as declared invariants, not ad-hoc checks.
   They are the trust artifact buyers read alongside your source.
@@ -21,7 +20,7 @@
 - Functions use `ctx.ai` / `ctx.services` / `ctx.bounded` only, with no fetches to key-authenticated endpoints.
 - Every external egress is declared and either credential-free, native, or relay-eligible.
 - Source rides the deploy (`sourcePush: true` in `bounded.json`), and the synced tree is the real, complete project, including the policy file its `bounded.json` names.
-- The app serves a site (`oapp_app_release_site_missing` otherwise), built from THIS tree: byte-identical source files, or a build the source declares.
+- If the public website is external, propose its visitor address so people can open it from OpenApps.
   Every `init({ appId })` literal names this app.
 - Every script the page runs ships inside the tree: dependencies come from npm and the build bundles them.
   A `<script src="https://…">` or a URL import fails the Gauntlet's dependency audit during the sale (`dependency_remote_script`, `dependency_remote_module_import`), and the app's `script-src 'self'` floor refuses to load it anyway.

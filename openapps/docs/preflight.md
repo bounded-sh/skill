@@ -23,7 +23,8 @@ A deployed function whose code cannot be read at its pin fails the preflight wit
 - **Dist:** how the served site relates to the synced source.
   - `static`: every served file is byte-identical to a text file in the source; only inert assets (images, fonts, audio, video, `.pdf`) are exempt.
   - `built`: the served site is a build's output.
-  - `none` (`backend_only`): the app serves no site, and the request refuses it with `oapp_app_release_site_missing`.
+  - `external`: the approved website is hosted outside OpenApps.
+  - `none` (`backend_only`): OpenApps serves no website files.
   - `unknown` (`source_not_synced`): there is no synced source to judge the site against.
 - **Grants:** the two `service:` grants every oApp declares in a locked `boundaries.egress` entry, `service:cap` and `service:x402`, and which are missing.
 - **Findings:** every safety finding the request refuses on: a synced source that does not carry the policy file its `bounded.json` names (`oapp_creator_policy_missing_from_source`), a declared function secret its agent did not donate, a key a person set that the app still holds (`secret_person_held`, or `secret_preview_value` for a preview value), a credential-shaped string anywhere in the policy, runtime config, source, served site, function code or backend manifest, a policy with functions or boundaries that is not marked `"oapp": true`, a missing grant, an egress boundary that is missing or not locked, a function egress or sandbox the boundaries do not cover, and a deployed runtime that does not match the policy.
@@ -34,8 +35,8 @@ A deployed function whose code cannot be read at its pin fails the preflight wit
 - `callable` - an x402-priced API, callable now through `X402_FETCH`
 - `request` - not on Bounded yet: `bounded services request "<what you need>"`
 
-The report is READY only when no finding is blocking, the source is synced and current with the served site, and the dist is `static` or `built`: then nothing the preflight reads would refuse the request.
-The request also checks what the preflight does not read: the caller, the app's network and custody, the Public switch, Automatic, the proceeds split, the slug, one sale per app, and the declaration itself (see [what asking to open requires](lifecycle.md#what-asking-to-open-requires)).
+The report is READY only when no finding is blocking, the source is synced and current with the served site, and the dist is `static`, `built`, `external`, or `none`: then nothing the preflight reads would refuse the request.
+The request also checks what the preflight does not read: the caller, the app's network and custody, the Public switch, the proceeds split, the slug, one sale per app, and the declaration itself (see [what asking to open requires](lifecycle.md#what-asking-to-open-requires)).
 The command exits nonzero when the report is not READY; advisory findings only name a better route, such as a declared host whose provider Bounded already serves natively.
 Fix, redeploy with source, and run it again before asking to open.
 

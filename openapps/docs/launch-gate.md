@@ -26,7 +26,7 @@ These are requirements, not advice:
 | the deployed runtime | the committed runtime config carries this exact policy and allows exactly the hosts the boundaries declare; redeploy the policy when they differ | `oapp_opening_safety_unavailable`, `oapp_opening_egress_not_steward_owned` |
 | the policy in source | the synced source carries the policy file its `bounded.json` names (`"policy"`, `bounded/policy.json` when unset) | `oapp_creator_policy_missing_from_source` |
 
-The other conditions of a request to open (the owner asking, an app on mainnet under OpenApps custody, a public app, a final proceeds split, Automatic, one sale) are in [the lifecycle](lifecycle.md#what-asking-to-open-requires).
+The other conditions of a request to open (the owner asking, an app on mainnet under OpenApps custody, a public app, a settled proceeds split, one sale) are in [the lifecycle](lifecycle.md#what-asking-to-open-requires).
 
 `boundaries.egress` is REQUIRED, not optional.
 On the functions lane the egress gateway is always constructed and fails closed if it cannot be built, but the host allow-list only BINDS when the app declared one: without a declaration, destinations are unrestricted.
@@ -40,12 +40,9 @@ Grants are not hosts: on an oApp the runtime then fences raw `fetch` and `ctx.br
 oApps are framework-independent: opening does not require Vite, React, a `package.json`, or any particular layout.
 What it requires is honesty between three artifacts: the synced source, the deployed frontend, and the policy.
 
-**An app opens with a served site.**
-The request to open reads the release the app serves, and an app that serves no site is refused (`oapp_app_release_site_missing`).
-Each release the agent ships carries the whole commit, site included, so the source and the site stay together.
-For anything beyond hand-written HTML, build with a real bundler.
-**Vite is the recommended default**, and a real bundler is effectively required when the frontend uses `@bounded-sh/client` because CDN imports break it at runtime; see **bounded-frontend**.
-Plain static HTML with no JavaScript is equally valid: what you deploy is what visitors use.
+**An app can open without OpenApps website files.**
+For a site already live elsewhere, ask the app's agent to propose its visitor address.
+The founder can request an APO independently of the address proposal.
 
 The synced source must be the real, complete project.
 If the deployed frontend is compiled output, the source that compiles into it rides along in the same tree.

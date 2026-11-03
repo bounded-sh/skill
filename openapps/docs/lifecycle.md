@@ -51,13 +51,13 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
    When the creator directs the app's own agent, it builds on previews and requests releases through the creator's review.
    The creator can instead let the agent decide what to build ("The AI decides", which needs Automatic mode): the creator's posts then count like anyone's in Discussion, and the creator and co-creators still approve or veto each release.
    A release publishes the app to Solana mainnet (see [oApps run on mainnet](#oapps-run-on-mainnet)).
-2. **Ask to open.** The creator submits the storefront (name, ticker, description, images), the constitution, the privacy statement, and accepts the terms: see [what asking to open requires](#what-asking-to-open-requires).
-   Asking changes nothing about the app: the creator keeps it, can withdraw the request, and can ask again, which replaces the earlier request.
-3. **An admin starts the sale.** An OpenApps admin starts the token sale from the request; the creator and public visitors cannot start it.
-   The operator cannot start it either while a release is still publishing, after the app changed since the request, or after the agent's AI settings changed: the creator asks again, and the new request is reviewed against the app as it is then.
+2. **Ask to open.** The creator submits the storefront (name, ticker, description, images), the constitution, and accepts the terms: see [what asking to open requires](#what-asking-to-open-requires).
+   The platform checks the saved declaration and holds the app as soon as the request succeeds.
+3. **An admin starts the sale.** An OpenApps admin reviews the request and can start the sale or return the held app to its founder.
+   Ordinary external production releases pause while the app is held.
    Existing backings are converted to auction orders before the opening countdown begins.
    If a conversion fails, the sale stays in preparation and accepts no public orders; an admin must retry or return the app.
-   From the start of the sale the platform holds the app: it has no owner, and nobody but its agent can change it (owner and collaborator changes are refused with `managed_app_mutation_forbidden`).
+   The platform continues to hold the app: it has no owner, and nobody but its agent can change it (owner and collaborator changes are refused with `managed_app_mutation_forbidden`).
    The app keeps the address it already serves, and the sale, its listing, and the constitution appear on openapps.xyz.
 4. **During the sale.** The Gauntlet runs 15 checks on what the app serves; graduation requires a pass or an explicit admin waiver for this sale.
    An attempt starts when the sale starts and again after each release during it, and the agent's periodic check asks for one whenever the app is owed one.
@@ -90,7 +90,7 @@ When a checkpoint moves the clearing valuation past an order's limit, the order 
 
 ## What asking to open requires
 
-The request is `POST /app/<mainAppId>/oapp-opening` on the developer API, from the owner's own account, and `POST /app/<mainAppId>/oapp-opening/withdraw` withdraws it.
+The request is `POST /app/<mainAppId>/oapp-opening` on the developer API, from the owner's own account, after the app has its agent.
 A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it is present, because it is written for the creator.
 
 | Requirement | Refusal |
@@ -104,19 +104,16 @@ A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it 
 | The app runs on mainnet under the OpenApps custody key: from the end of its setup when its agent built it, from the agent's first release when it already existed (see [oApps run on mainnet](#oapps-run-on-mainnet)) | `oapp_opening_mainnet_custody_required` |
 | The app is public: its page, its site, and its source | `oapp_opening_public_app_required` |
 | The split of sale proceeds is final: there is none, or it is sealed | `oapp_opening_proceeds_split_unsealed` |
-| The agent is on Automatic with its AI on, because an app with no owner has nobody to start it | `oapp_opening_automatic_required` |
-| The request names the slug the app already serves | `oapp_opening_slug_mismatch` (`oapp_opening_slug_missing` before the app has one) |
 | The app never had a sale | `oapp_opening_sale_exists` |
-| The app serves a site and has synced source | `oapp_app_release_site_missing`, `oapp_app_release_source_not_synced` |
+| The app has synced source | `oapp_app_release_source_not_synced` |
 | The app passes the opening safety checks | see [the launch gate](launch-gate.md) |
-| The privacy statement is about the source the creator reviewed | `oapp_opening_evidence_changed`: read the source status again and ask again |
 
 An app that publishes while the request reads it is refused with `oapp_opening_app_changing`; ask again once it has settled.
 
-The declaration has exact keys and nothing else: `requestedSlug`, `storefront`, `constitution`, `openingIntent`, and `acceptedTerms`.
-The constitution has exactly seven text sections (`preamble`, `purpose`, `objectives`, `tools`, `skills`, `workflow`, `safetyRules`), each non-empty and at most 4000 bytes.
-It carries no AI settings: the platform seals the agent's own saved models and limits.
-`GET /app/<mainAppId>/oapp-source-status` gives the `headRev` and privacy digest the `openingIntent` names, and `bounded oapp preflight` is the dry run of what the request reads off the app: the safety checks, the synced source, and the served site ([preflight](preflight.md)).
+The founder submits `storefront`, `constitution`, `acceptedTerms`, and optionally `economicModel`.
+The constitution has seven text sections (`preamble`, `purpose`, `objectives`, `tools`, `skills`, `workflow`, `safetyRules`), each up to 4000 bytes, including empty sections.
+The platform reads the current managed source, privacy evidence, models and spending limits.
+The request runs no agent and requires no redeployment of the original external site.
 
 Once the sale has started, `GET /public/oapps/<rootAppId>/opening` reports it: `phase` is `sale`, `open`, or `returned`, and it answers 404 `oapp_opening_not_found` before that.
 
@@ -147,4 +144,4 @@ Source rides the deploy; there is no separate register or sync machinery.
 
 With that set, every `bounded site deploy` (and `bounded deploy`) also pushes the project source tree to the app's cloud source repository and prints `source synced: <sha>`.
 One-off control: `--with-source` / `--no-source` on the deploy commands.
-An app headed to OpenApps must deploy with source ON, and the source that ships must be the tree that produced the deployed site.
+An app headed to OpenApps must deploy with source ON, so the agent can release future changes from the managed source.
