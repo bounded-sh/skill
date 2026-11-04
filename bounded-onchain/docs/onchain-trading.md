@@ -193,7 +193,7 @@ withdrawFunds(@contract.address, <phusd>)
 Spot swaps and liquidity (Meteora / cp-AMM pools), incl. tokenized assets.
 `swap` and `getSwapQuote` retain their existing API and use Jupiter on mainnet.
 On devnet, the implementation selects an executable direct Meteora DAMM v2 pool for the exact input and output mint pair.
-The direct swap requires runtime v10, which is recorded deployed on devnet.
+The direct swap requires runtime v10 or later.
 The matching staging services and venue were deployed on 2026-10-09, with successful live quotes and unsigned swap simulations.
 Submitted swap acceptance and current public production availability are not established by those results.
 The other Meteora and CP-AMM rows are unverified pending live proof.

@@ -18,7 +18,7 @@ Use `String` as the named-query return type.
 Do not pass this result into integer rule arithmetic or compare it directly to an integer: a numeric-looking string is not an integer price.
 
 `getPriceFeedScaled(feedId, decimals)` is a separate USD-only integer API requiring runtime v8 when executed in the Solana program.
-The devnet program runs runtime v10 as of 2026-10-13 (slot 510718296); mainnet-beta runs runtime v9 as of 2026-10-06 (slot 453954979).
+The devnet program runs runtime v11 as of 2026-11-04 UTC (slot 518401017); mainnet-beta runs runtime v9 as of 2026-10-06 (slot 453954979).
 Program readiness does not establish hosted app acceptance for this price API.
 The devnet catalog remains `unverified` until hosted app acceptance is established.
 Pass a `@PriceFeedPlugin.<SYMBOL>` constant or a 64-character Pyth feed ID, then an integer precision from 0 through 18.

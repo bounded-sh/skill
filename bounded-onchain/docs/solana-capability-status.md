@@ -17,7 +17,7 @@ The catalog contains 166 individually classified functions.
 
 Compiler discovery is never support evidence by itself.
 Poofnet behavior, proof contracts, local validators, manifests, lookup-table entries, and source parity are also not live devnet evidence.
-The Bounded Solana program is recorded as **runtime v10 on devnet** (2026-10-13, slot 510718296) and **runtime v9 on mainnet-beta** (2026-10-06, slot 453954979).
+The Bounded Solana program is recorded as **runtime v11 on devnet** (2026-11-04 UTC, slot 518401017) and **runtime v9 on mainnet-beta** (2026-10-06, slot 453954979).
 Legacy rows were classified against the runtime-v4 minimum; both clusters also meet the `NEEDS-RUNTIME-V6` and `NEEDS-RUNTIME-V7` requirements.
 Both programs meet the `NEEDS-RUNTIME-V8` scaled-price requirement.
 Program readiness does not establish hosted app acceptance for the scaled-price API.
@@ -57,7 +57,7 @@ A function moves to `supported` only after a retained live run confirms both its
 | `NEEDS-RUNTIME-V7` | The function or call shape needs Bounded Solana runtime v7 as a minimum. Both devnet (slot 498804425) and mainnet-beta (slot 447272765) have met it since 2026-09-15, so the runtime-version deploy-time refusal no longer applies. v7 adds `@PhoenixPerpsPlugin.withdrawFunds` with the amount omitted (a same-transaction Hawkeye margin view; the explicit-amount form runs on every runtime), makes `@TokenPlugin.withdrawWithheldTokens` a successful no-op when the source holds no Token-2022 account or no withheld fees (v6 refused it), and is the runtime the fee-neutral staking and bidder-claim policies that sweep a receiver before creating it were verified against. A cluster still on v6 refuses the omitted-amount shape at deploy time and fails those sweeps closed at write time. |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
 | `LIVE-RAYDIUM-PROOF` | Raydium CPMM is deployed on devnet (at a different address from mainnet) and stays unverified until retained live proof exists. |
-| `NEEDS-RUNTIME-V11` | Requires the v11 sale runtime on the target cluster. |
+| `NEEDS-RUNTIME-V11` | Devnet meets the v11 sale runtime requirement. Each sale path still needs its external programs and accounts. |
 | `LIVE-DLMM-PROOF` | Meteora DLMM is deployed on devnet at the same address as mainnet and stays unverified until retained live proof exists. |
 | `DISABLED` | The registry entry exists but is disabled. |
 
