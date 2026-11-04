@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "7b79f466f3d3915269eae7e5baa0c4b0b40dd693",
+  "monorepoCommit": "66f0c106df6cf7931e76528e9fde576415e6c19b",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
@@ -1487,7 +1487,7 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "not run",
-      "markers": "LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4"
+      "markers": "LIVE-DLMM-PROOF"
      }
     },
     {
@@ -1599,7 +1599,7 @@
       "lane": "descriptor CPI",
       "support": "unsupported",
       "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
+      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
      }
     },
     {
@@ -1720,7 +1720,7 @@
       "lane": "descriptor CPI",
       "support": "unsupported",
       "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
+      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
      }
     },
     {
@@ -1943,7 +1943,7 @@
       "lane": "descriptor CPI",
       "support": "unsupported",
       "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
+      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
      }
     },
     {
@@ -2046,7 +2046,7 @@
       "lane": "descriptor CPI",
       "support": "unsupported",
       "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
+      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
      }
     },
     {
@@ -2167,7 +2167,7 @@
       "lane": "descriptor CPI",
       "support": "unsupported",
       "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
+      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
      }
     },
     {
@@ -2319,7 +2319,7 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "not run",
-      "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
+      "markers": "LIVE-RAYDIUM-PROOF"
      }
     },
     {
@@ -2431,7 +2431,7 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "not run",
-      "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
+      "markers": "LIVE-RAYDIUM-PROOF"
      }
     },
     {
@@ -2543,7 +2543,7 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "not run",
-      "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
+      "markers": "LIVE-RAYDIUM-PROOF"
      }
     },
     {
@@ -2637,7 +2637,7 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "not run",
-      "markers": "LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4"
+      "markers": "LIVE-STAKEPOOL-PROOF"
      }
     },
     {
@@ -2722,7 +2722,7 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "not run",
-      "markers": "LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4"
+      "markers": "LIVE-STAKEPOOL-PROOF"
      }
     },
     {
@@ -2771,7 +2771,7 @@
       "lane": "descriptor CPI",
       "support": "unverified",
       "verification": "local policy verified; live not run",
-      "markers": "LIVE-PENDING, NEEDS-RUNTIME-V4"
+      "markers": "LIVE-PENDING"
      }
     },
     {
@@ -9113,14 +9113,14 @@
    "lane": "ext primitive",
    "support": "unverified",
    "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
+   "markers": "LIVE-PENDING"
   },
   {
    "callName": "@Bytes.sha256",
    "lane": "ext primitive",
    "support": "unverified",
    "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
+   "markers": "LIVE-PENDING"
   },
   {
    "callName": "@Solana.invokeAttested",
@@ -9134,7 +9134,7 @@
    "lane": "ext primitive",
    "support": "unverified",
    "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
+   "markers": "LIVE-PENDING"
   },
   {
    "callName": "@Solana.slot",
@@ -9148,7 +9148,7 @@
    "lane": "ext primitive",
    "support": "unverified",
    "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
+   "markers": "LIVE-PENDING"
   },
   {
    "callName": "get",

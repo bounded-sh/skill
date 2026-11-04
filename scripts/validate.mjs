@@ -318,7 +318,7 @@ for (const expected of [
   '| `@DeFiPlugin.getSwapQuote` | legacy offchain-only | unverified | staging live quotes passed; public acceptance not established | DEVNET-METEORA-ACCEPTANCE |',
   '| `@DeFiPlugin.createMeteoraConfig` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |',
   '| `@PhoenixPerpsPlugin.placeLong` | legacy runtime | unsupported | not run | NO-DEVNET-PHOENIX |',
-  '| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |',
+  '| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |',
   '| `@CPI.token2022SetTransferFee` | descriptor CPI | unverified | source parity only | LIVE-PENDING |',
   '| `@PumpFunPlugin.createToken` | legacy runtime | unverified | source parity only | LIVE-PUMP-PROOF |',
   '| `@TensorPlugin.buyNft` | legacy runtime | unverified | source parity only | LIVE-TENSOR-PROOF |',
