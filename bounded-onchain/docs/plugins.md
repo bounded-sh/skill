@@ -37,11 +37,11 @@ Rows in the capability table with no callable manifest function today (disabled,
 
 | Entry | Support | Markers |
 |---|---|---|
-| `@Bytes.keccak256` | unverified | NEEDS-RUNTIME-V4 |
-| `@Bytes.sha256` | unverified | NEEDS-RUNTIME-V4 |
+| `@Bytes.keccak256` | unverified | LIVE-PENDING |
+| `@Bytes.sha256` | unverified | LIVE-PENDING |
 | `@Solana.invokeAttested` | unsupported | DISABLED |
-| `@Solana.secp256k1Recover` | unverified | NEEDS-RUNTIME-V4 |
+| `@Solana.secp256k1Recover` | unverified | LIVE-PENDING |
 | `@Solana.slot` | unverified | LIVE-PENDING |
-| `@Solana.verifyEd25519` | unverified | NEEDS-RUNTIME-V4 |
+| `@Solana.verifyEd25519` | unverified | LIVE-PENDING |
 | `get` | unverified | LIVE-PENDING |
 | `getAfter` | unverified | LIVE-PENDING |

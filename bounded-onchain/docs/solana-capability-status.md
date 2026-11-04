@@ -52,7 +52,6 @@ A function moves to `supported` only after a retained live run confirms both its
 | `LIVE-METEORA-PROOF` | The replacement Meteora config is deployed on devnet and the runtime targets it, so nothing here is externally blocked; these stay unverified until retained live proof exists. |
 | `CPAMM-SCENARIO` | A devnet acceptance run of this function is straightforward to construct, so a retained passing receipt can promote it. |
 | `OFFCHAIN-ONLY` | The compiler explicitly rejects this function in an onchain target. |
-| `NEEDS-RUNTIME-V4` | The function needs Bounded Solana runtime v4 as a minimum. Both devnet and mainnet-beta have met it since 2026-08-05, so the runtime-version deploy-time refusal no longer applies; rows still carrying this tag were cataloged before the upgrade and stay unverified until retained live proof exists (support and live verification are separate states). |
 | `NEEDS-RUNTIME-V6` | The function needs Bounded Solana runtime v6 as a minimum, because it is new on-chain interpreter code rather than a call into an external program. Both devnet (slot 492776210) and mainnet-beta (slot 444129016) have met it since 2026-09-04, so the runtime-version deploy-time refusal no longer applies. A cluster still on v5 refuses a policy using it at deploy time. |
 | `NEEDS-RUNTIME-V7` | The function or call shape needs Bounded Solana runtime v7 as a minimum. Both devnet (slot 498804425) and mainnet-beta (slot 447272765) have met it since 2026-09-15, so the runtime-version deploy-time refusal no longer applies. v7 adds `@PhoenixPerpsPlugin.withdrawFunds` with the amount omitted (a same-transaction Hawkeye margin view; the explicit-amount form runs on every runtime), makes `@TokenPlugin.withdrawWithheldTokens` a successful no-op when the source holds no Token-2022 account or no withheld fees (v6 refused it), and is the runtime the fee-neutral staking and bidder-claim policies that sweep a receiver before creating it were verified against. A cluster still on v6 refuses the omitted-amount shape at deploy time and fails those sweeps closed at write time. |
 | `LIVE-STAKEPOOL-PROOF` | SPL stake pool is deployed on devnet (at a DIFFERENT address from mainnet) and stays unverified until retained live proof exists. |
@@ -95,31 +94,31 @@ A function moves to `supported` only after a retained live run confirms both its
 | `@Bytes.u8` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@Bytes.u8At` | extended runtime | unverified | source parity only | LIVE-PENDING |
 | `@Bytes.utf8` | extended runtime | unverified | source parity only | LIVE-PENDING |
-| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
-| `@CPI.kaminoDeposit` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
+| `@CPI.kaminoBorrow` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
+| `@CPI.kaminoDeposit` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
 | `@CPI.kaminoInitObligation` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
 | `@CPI.kaminoInitUserMetadata` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
 | `@CPI.kaminoRefreshObligation` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
-| `@CPI.kaminoRefreshReserve` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
-| `@CPI.kaminoRepay` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
-| `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4 |
+| `@CPI.kaminoRefreshReserve` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
+| `@CPI.kaminoRepay` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
+| `@CPI.kaminoWithdraw` | descriptor CPI | unsupported | not run | NO-USABLE-DEVNET-KAMINO-MARKET |
 | `@CPI.token2022RevokeFeeAuthority` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
 | `@CPI.token2022SetTransferFee` | descriptor CPI | unverified | source parity only | LIVE-PENDING |
-| `@CPI.token2022HarvestFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING, NEEDS-RUNTIME-V4 |
+| `@CPI.token2022HarvestFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
 | `@CPI.token2022WithdrawMintFees` | descriptor CPI | unverified | local policy verified; live not run | LIVE-PENDING |
 | `@CPI.token2022WithdrawMintFeesTo` | descriptor CPI | unverified | source parity only | LIVE-PENDING |
 | `@CPI.memoNote` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
 | `@CPI.transferLamports` | descriptor CPI | unverified | source parity only | LIVE-SAFE-CPI-PROOF |
-| `@CPI.stakePoolDepositSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.stakePoolWithdrawSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.raydiumSwapBaseInput` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.raydiumDeposit` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.raydiumWithdraw` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4 |
-| `@CPI.dlmmSwap` | descriptor CPI | unverified | not run | LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4 |
-| `@Solana.verifyEd25519` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
-| `@Solana.secp256k1Recover` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
-| `@Bytes.sha256` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
-| `@Bytes.keccak256` | ext primitive | unverified | not run | NEEDS-RUNTIME-V4 |
+| `@CPI.stakePoolDepositSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF |
+| `@CPI.stakePoolWithdrawSol` | descriptor CPI | unverified | not run | LIVE-STAKEPOOL-PROOF |
+| `@CPI.raydiumSwapBaseInput` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF |
+| `@CPI.raydiumDeposit` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF |
+| `@CPI.raydiumWithdraw` | descriptor CPI | unverified | not run | LIVE-RAYDIUM-PROOF |
+| `@CPI.dlmmSwap` | descriptor CPI | unverified | not run | LIVE-DLMM-PROOF |
+| `@Solana.verifyEd25519` | ext primitive | unverified | not run | LIVE-PENDING |
+| `@Solana.secp256k1Recover` | ext primitive | unverified | not run | LIVE-PENDING |
+| `@Bytes.sha256` | ext primitive | unverified | not run | LIVE-PENDING |
+| `@Bytes.keccak256` | ext primitive | unverified | not run | LIVE-PENDING |
 | `@DeFiPlugin.addCpAmmLiquidity` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.claimDammV2PoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
 | `@DeFiPlugin.claimMeteoraPoolFees` | legacy runtime | unverified | source parity only | LIVE-METEORA-PROOF |
