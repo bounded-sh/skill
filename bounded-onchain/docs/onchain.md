@@ -138,7 +138,7 @@ Bounded tracks function discovery, deployed-runtime support, and retained live v
 Run `bounded plugins list --json` for the CLI's offline callable projection, then `bounded plugins describe <plugin.function> --json` for the exact arguments, proof sorts, signer roles, return contract, and network-scoped support evidence.
 These commands need no account or network connection and their capability state is advisory, not a deploy verdict.
 An invalid `--protocol` is rejected locally before any network request.
-The deployed program is recorded as runtime v10 on devnet (2026-10-13, slot 510718296) and runtime v9 on mainnet-beta (2026-10-06, slot 453954979), but the runtime version does not prove that an external protocol is deployed or configured.
+The deployed program is recorded as runtime v11 on both clusters as of 2026-11-04 UTC (first active on devnet at slot 518401017 and on mainnet-beta at slot 465441987), but the runtime version does not prove that an external protocol is deployed or configured.
 Program readiness does not establish hosted app acceptance for the scaled-price API.
 Consult the [devnet capability catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
