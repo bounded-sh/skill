@@ -13,7 +13,7 @@ Argument descriptions and signer markers below are copied from the existing mono
 
 ## Descriptor lane
 
-`@CPI.*` calls are descriptor-bound: the deploy binds program id, account schema, and attested instruction bytes, so policy code cannot vary the shape. They require attested transaction data, which exists only in `hooks.onchain` execution. Custody of the `source` argument varies per descriptor - `memoNote`/`transferLamports` follow the uniform three-form rule, while the Kamino family is wallet-only (the obligation owner). Most Kamino, stake-pool, Raydium and DLMM descriptors additionally carry `NEEDS-RUNTIME-V4` and are refused at deploy until that runtime ships; see [policy-primitives.md](../policy-primitives.md#descriptor-cpi-cpi).
+`@CPI.*` calls are descriptor-bound: the deploy binds program id, account schema, and attested instruction bytes, so policy code cannot vary the shape. They require attested transaction data, which exists only in `hooks.onchain` execution. Custody of the `source` argument varies per descriptor - `memoNote`/`transferLamports` follow the uniform three-form rule, while the Kamino family is wallet-only (the obligation owner).
 
 ## Transactional
 
