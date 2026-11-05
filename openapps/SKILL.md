@@ -33,6 +33,8 @@ Both are read at the latest published release, so an edit counts only once a rel
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
 - To hold USDC for a deal, keep it in an escrow in the app's own policy that the app's agent settles: [App escrow](docs/app-escrow.md).
+- OpenApps launches an app's token in its APO (Agent Public Offering), the sale that makes the app Open: the sale creates the token, so it has no mint address until the sale completes, and its name and ticker are set when the app asks to open ([Lifecycle](docs/lifecycle.md)).
+  A token an app's purpose or creator names with no address is likely this one, though it can be one that already exists.
 - An Owned app may keep services it already uses: its creator sets their keys with `bounded secret put` or Keys in the Fine print of the app's page, functions read them as `ctx.secrets`, and a [Next.js server](../bounded-frontend/docs/server-apps.md) reads them as `process.env`.
   A key never goes in source.
   `bounded secret put NAME --preview` (Previews only, on the app's page) sets the test key every preview of the app receives; the app's own value never reaches a preview.
