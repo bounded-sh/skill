@@ -2,8 +2,6 @@
 
 One app-operated pot with open deposits and treasurer-only, balance-gated withdrawals. Uses a single named PDA (`app_treasury`) rather than the shared `@contract.address` escrow so the treasury stays separate from any other pooled funds the app may later hold; the trade-offs are in [custody and PDAs](../custody-and-pdas.md).
 
-Devnet status: `@AccountPlugin.createAccount`/`getAccountAddress`, `@TokenPlugin.transfer`/`getBalance`, and the `@TokenPlugin.SOL` alias are currently unverified (source parity only, LIVE-PENDING); see [solana-capability-status.md](../solana-capability-status.md).
-
 ## Policy
 
 ```json
@@ -64,4 +62,3 @@ Replace the `TREASURER` constant with the real treasurer wallet before deploying
 
 ## Related
 
-[custody and PDAs](../custody-and-pdas.md) - [AccountPlugin](../plugins/AccountPlugin.md) - [access patterns](../../../bounded-backend/docs/access-patterns.md) - [capability status](../solana-capability-status.md) - [onchain troubleshooting](../onchain-troubleshooting.md)

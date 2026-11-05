@@ -1,11 +1,11 @@
 <!-- GENERATED FILE. Do not hand-edit.
-     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
-     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).
+     Prose: bounded-onchain/docs/plugins/_fragments/.
      Regenerate: node scripts/generate-plugin-catalog.mjs -->
 
 # Plugin catalog
 
-Compact O(1) router for policy-callable plugins. Open one namespace page for manifest argument details, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature. Check [solana-capability-status.md](solana-capability-status.md) before treating a function as deployed or live-verified.
+Compact O(1) router for policy-callable plugins. Open one namespace page for manifest argument details, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature.
 
 Argument descriptions and signer markers come directly from existing monorepo manifests. A `-` signer cell means the manifest makes no claim, not that no signature is required. Do not infer custody support from an argument name; follow its description and the [custody and PDAs guide](custody-and-pdas.md).
 
@@ -30,18 +30,3 @@ Argument descriptions and signer markers come directly from existing monorepo ma
 | `@StringUtils` | String helpers usable in rules. | `concat`, `length` | [reference](plugins/StringUtils.md) |
 | `@TensorPlugin` | Tensor NFT marketplace buys and listings. | `buyNft`, `listNft` | [reference](plugins/TensorPlugin.md) |
 | `@TokenPlugin` | SPL and Token-2022 tokens: transfers, mints, burns, balances, supply. | `burn`, `createToken`, `createToken2022`, `mint`, `transfer`, `transferWholeTokens`, `withdrawWithheldTokens`, `getBalance`, `getDecimals`, `getSupply`, `getTokenMintAddress`, `getWithdrawWithheldAuthority` | [reference](plugins/TokenPlugin.md) |
-
-## Capability-only entries
-
-Rows in the capability table with no callable manifest function today (disabled, runtime-gated, or core language forms):
-
-| Entry | Support | Markers |
-|---|---|---|
-| `@Bytes.keccak256` | unverified | LIVE-PENDING |
-| `@Bytes.sha256` | unverified | LIVE-PENDING |
-| `@Solana.invokeAttested` | unsupported | DISABLED |
-| `@Solana.secp256k1Recover` | unverified | LIVE-PENDING |
-| `@Solana.slot` | unverified | LIVE-PENDING |
-| `@Solana.verifyEd25519` | unverified | LIVE-PENDING |
-| `get` | unverified | LIVE-PENDING |
-| `getAfter` | unverified | LIVE-PENDING |

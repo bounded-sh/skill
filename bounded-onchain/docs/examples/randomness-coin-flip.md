@@ -2,8 +2,6 @@
 
 A provably fair double-or-nothing coin flip: the bet requests an ORAO roll, the reveal shape guarantees only the oracle produced it, and a permissionless settle write is forced by the rules to pay exactly what the roll implies.
 
-> Status: ORAO functions (`requestRandomness`, `getRandomNumber`, `getVRFAddress`) are present in compiler and runtime but remain `unverified` on devnet per [solana-capability-status.md](../solana-capability-status.md).
-
 ## Policy
 
 ```json
@@ -108,4 +106,3 @@ A provably fair double-or-nothing coin flip: the bet requests an ORAO roll, the 
 - [../randomness.md](../randomness.md) - the request/reveal pair, the mandated reveal shape, and anti-cheat sequencing
 - [../custody-and-pdas.md](../custody-and-pdas.md) - named PDAs, idempotent createAccount, and why server-driven reveal writes cannot create accounts
 - [../plugins.md](../plugins.md) - `@OraclePlugin`, `@TokenPlugin`, `@AccountPlugin` signatures
-- [../solana-capability-status.md](../solana-capability-status.md) - live support state of the ORAO functions

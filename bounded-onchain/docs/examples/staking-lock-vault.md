@@ -4,8 +4,6 @@ Users deposit SOL into one named app vault PDA; each stake document records an a
 
 Custody in one line: the vault is a named app PDA (a non-pubkey account id the program signs for), not the shared escrow and never an operator wallet - the tradeoffs between wallet, `@contract.address`, and named-pot custody are in [custody-and-pdas.md](../custody-and-pdas.md).
 
-> Status: per [solana-capability-status.md](../solana-capability-status.md), every function used here (`@AccountPlugin.createAccount`, `@TokenPlugin.transfer`, `@TokenPlugin.getBalance`, `@DocumentPlugin.updateField`, and the `@TokenPlugin.SOL` flow) is currently `unverified` on devnet (LIVE-PENDING; no retained live acceptance receipt yet).
-
 ## Policy
 
 ```json
@@ -71,6 +69,5 @@ Custody in one line: the vault is a named app PDA (a non-pubkey account id the p
 
 - [custody-and-pdas.md](../custody-and-pdas.md) - custody models, named-pot idiom, account-id hygiene
 - [plugins.md](../plugins.md) - `@AccountPlugin` / `@TokenPlugin` / `@DocumentPlugin` signatures
-- [solana-capability-status.md](../solana-capability-status.md) - live support state of every function used here
 - [policy-primitives.md](../policy-primitives.md) - hook-stamped fields via `@DocumentPlugin.updateField`
 - [policy-reference.md](../../../bounded-backend/docs/policy-reference.md) - `@time.now` clock semantics and onchain patch updates

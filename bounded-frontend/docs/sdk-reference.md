@@ -508,7 +508,6 @@ On Solana mainnet a signed-out chain query currently fails, so require a signed-
 A query whose bytecode reads `@user.address` or `@user.evmAddress` still requires that chain identity, and on the onchain route the read rule must itself be document-independent.
 In the program a query may read its OWN document; other-document reads and cross-app `@App.get` are refused there. A runtime-evaluated query may read other documents, each checked against its own read rule.
 The anonymous surface is the browser SDK - the CLI always needs a keypair session.
-Check the [Solana devnet capability catalog](../../bounded-onchain/docs/solana-capability-status.md) before calling a plugin query.
 
 `@PriceFeedPlugin.getPriceFeed` returns a decimal `String` from the deployed Solana runtime.
 Declare its named query with `returnType: "String"` and parse the returned text explicitly only where application code needs numeric arithmetic.
@@ -826,7 +825,6 @@ in-memory replay protection is suitable only for a single process. Declaring web
 Do not put Bounded session tokens in the JSON arguments of a public HTTP function.
 Use this authenticated invocation path and the function's declarative `auth` rule; the runtime verifies the session before your code runs.
 Load public page data independently of session restoration so login and private-state latency do not block the first useful screen.
-
 
 In browser/React Native code, use `functions.invoke(name, args)` from `@bounded-sh/client`.
 It attaches the caller's session token automatically, so Bounded verifies the identity and evaluates the function's `auth` rule before it runs.

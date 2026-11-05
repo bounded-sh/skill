@@ -40,7 +40,6 @@ Read only the row matching the current task or term.
 | `onchain account resolution failed (502)`, `onchain query failed (502)`, `Transaction building failed` without a 403 **and without a 422**, named queries and plain `getBalance` failing together, platform resolver outage | [Platform resolver and onchain-query 502s](docs/onchain-troubleshooting.md#platform-resolver-and-onchain-query-502s) |
 | Pump.fun launch fails after signing with `insufficient lamports` (`need 1461600`, `Create Metadata Accounts v3`), app-custody creator funding | [error table](docs/onchain-troubleshooting.md#error-to-cause-to-fix) and the [token-launch example](docs/examples/token-launch.md) |
 | Onchain collections, `onchain:true`, `--protocol`, Solana, mainnet permit, patches, readonly `!`, `FieldReadOnly` | [onchain](docs/onchain.md) |
-| Compiler vs deployed support, devnet status, blocked or unverified integrations (Jupiter, Phoenix, DFlow, Kamino, Pump.fun, PumpSwap, Tensor, SPL stake pool, liquid staking, Raydium CPMM, Meteora DLMM), runtime-v4 gating | [capability status](docs/solana-capability-status.md) |
 | Helius, mirror/indexer, missed transactions, eventual consistency, unmirrored writes; who owns webhooks, ingest queue/DLQ, recovery and reconciliation | [mirror completeness](docs/onchain.md#mirror-completeness) |
 | Bonding curve, AMM, shared price or counter, writes fail under load, race, slippage, max paid / min received | [shared prices and counters](docs/onchain.md#shared-prices-and-counters-under-load) |
 | Transaction too large, 413, 1182/1232-byte packet limit, oversized hook, lookup tables | [transaction-size limit](docs/onchain.md#transaction-size-limit-one-hook--one-solana-transaction) |
@@ -81,7 +80,6 @@ Read only the row matching the current task or term.
   See [policy-primitives.md](docs/policy-primitives.md#contractaddress-is-a-sentinel-not-the-escrow-address).
 - Treat discovery, deployed-runtime support, and live-network verification as three independent states.
 - Use `bounded plugins list --json` and `bounded plugins describe <plugin.function> --json` as the offline callable signature source before authoring a hook.
-- Check the [Solana devnet capability catalog](docs/solana-capability-status.md) before proposing any plugin or primitive.
 - Never infer devnet support from a compiler tag, manifest, proof contract, Poofnet model, lookup-table entry, or local validator test.
 - When live evidence uses a hosted release marker, resolve its environment-qualified site URL from `bounded domains list --app-id <id> --env <environment> --json` `slugUrl` or the exact successful site-deploy receipt `url`.
   Require the JSON field itself for staging evidence instead of copying a human-rendered hostname.

@@ -2,10 +2,8 @@
 
 A YES-only prediction market: collateral sits in a per-market named PDA, prices come from `@PredictionMarketPlugin` constant-product quotes, and all bookkeeping is staged from hooks so clients can never write balances directly.
 
-Status: every function used here (`@PredictionMarketPlugin.*`, `@TokenPlugin.transfer`/`getBalance`, `@AccountPlugin.createAccount`, `@DocumentPlugin.updateField`, `get`) is currently **unverified (LIVE-PENDING)** in [solana-capability-status.md](../solana-capability-status.md) - source parity only, not live-proven.
-
 Collateral in this example is `@TokenPlugin.SOL`.
-For other assets, follow the [network-specific mint guidance](../solana-capability-status.md#built-in-values-and-devnet-mint-rule).
+For other assets, `@TokenPlugin.USDC` resolves to devnet USDC on devnet networks and to mainnet USDC on mainnet.
 Quotes are floored exactly as documented: `getYesTokenOutAmm(in, x, y) = floor(in*y/(x+in))`, `getCollateralOutAmm(yesIn, x, y) = floor(x*yesIn/(y+yesIn))`.
 This example charges no fee; a fee variant applies `@PredictionMarketPlugin.applyFee` to the quoted integer.
 
@@ -153,4 +151,3 @@ This example charges no fee; a fee variant applies `@PredictionMarketPlugin.appl
 - [policy-primitives.md](../policy-primitives.md) - AMM quote rounding, staged `updateField` contract, `get`/`getAfter`
 - [custody-and-pdas.md](../custody-and-pdas.md) - named-PDA custody, account-id hygiene, balance-gated payouts
 - [plugins/PredictionMarketPlugin.md](../plugins/PredictionMarketPlugin.md) - quote function contracts
-- [solana-capability-status.md](../solana-capability-status.md) - live support state of every function used here

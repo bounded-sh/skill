@@ -205,8 +205,7 @@ Dropping `Q` from both inverse formulas can still produce plausible positive
 integers and conserve total value, while selecting the wrong price. This is why
 "tests pass" and "conservation holds" do not establish dimensional correctness.
 
-Use `@MathPlugin.mulDivFloor` and `mulDivCeil` for full-precision products when
-their [capability status](solana-capability-status.md) supports the target. For
+Use `@MathPlugin.mulDivFloor` and `mulDivCeil` for full-precision products. For
 ordinary rule arithmetic, follow the bounded-int guidance in
 [policy primitives](policy-primitives.md#rule-arithmetic-is-bounded-on-chain---write-pins-division-first).
 

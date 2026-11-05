@@ -2,8 +2,6 @@
 
 Create Token-2022 mints with extensions via `@TokenPlugin.createToken2022`: transfer fees (with per-holder fee withdrawal), non-transferable soulbound badges, and interest-bearing tokens.
 
-Status: every `@TokenPlugin` function used here is currently **unverified** (source parity only, LIVE-PENDING) in [solana-capability-status.md](../solana-capability-status.md).
-
 ## Policy
 
 ```json
@@ -145,4 +143,3 @@ The extensions object accepts only the fields listed on the generated TokenPlugi
 - [`@TokenPlugin` reference](../plugins/TokenPlugin.md)
 - [Custody and PDAs](../custody-and-pdas.md)
 - [Plugin catalog](../plugins.md)
-- [Capability status](../solana-capability-status.md)

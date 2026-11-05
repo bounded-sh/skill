@@ -2,8 +2,6 @@
 
 Buyer funds a dedicated named PDA at create; the buyer alone releases the full amount to the seller, exactly once, with the payout gated on the pot's real balance.
 
-Devnet status: `@AccountPlugin.createAccount`, `@AccountPlugin.getAccountAddress`, `@TokenPlugin.transfer`, `@TokenPlugin.getBalance`, and `@DocumentPlugin.updateField` are all unverified (LIVE-PENDING - source-present, no retained live acceptance receipt yet), and the `@TokenPlugin.SOL` alias is likewise unverified; see [solana-capability-status.md](../solana-capability-status.md).
-
 ## Policy
 
 ```json
@@ -70,4 +68,3 @@ For a token-denominated escrow, add a `"mint": "Address!"` field, replace `@Toke
 - [Custody and PDAs](../custody-and-pdas.md) - the custody rule, named-account idiom, and account-id hygiene this page applies.
 - [Plugin catalog](../plugins.md) - signatures for `@AccountPlugin`, `@TokenPlugin`, `@DocumentPlugin`.
 - [Policy primitives: onchain staged document updates](../policy-primitives.md#onchain-staged-document-updates) - the `updateField` contract used to stamp `buyer`.
-- [Solana capability status](../solana-capability-status.md) - live verification state of every function used here.

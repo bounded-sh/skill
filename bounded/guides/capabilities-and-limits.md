@@ -16,7 +16,7 @@ promising a user something Bounded can't deliver.
 | **Multi-tenant isolation** | `tenantTag` / `tenantEdge` keep documents and references inside their tenant on every write - "nothing leaks across orgs". |
 | **Agent backends** | Zero-ceremony wallet/keypair identity; an agent can go from description to deployed without a human auth step ([building-for-agents.md](../../bounded-backend/docs/building-for-agents.md)). |
 | **Realtime games** | Server-authoritative tick loop, fog-of-war views, enforced per-player rate caps, automatic settlement ([../docs/realtime-and-games.md](../../bounded-backend/docs/realtime-and-games.md)). |
-| **Onchain power-ups** | A subset of invariants enforces on Solana too, while each function has a separate network status ([onchain coverage](../../bounded-backend/docs/invariants.md#onchain-coverage), [Solana devnet catalog](../../bounded-onchain/docs/solana-capability-status.md)). |
+| **Onchain power-ups** | A subset of invariants enforces on Solana too, while each function has a separate network status ([onchain coverage](../../bounded-backend/docs/invariants.md#onchain-coverage)). |
 | **Imperative escape hatch (Functions)** | When declarative policy can't express it - *fetch a third-party API, transform, then write* - a **Bounded Function** runs your code. We don't prove its logic, but its writes still go through invariants and only policy-authorized callers can invoke it ([functions.md](../../bounded-backend/docs/functions.md)). |
 
 ## What Bounded does NOT support
@@ -28,7 +28,7 @@ promising a user something Bounded can't deliver.
 | **No native-binding compute** | Functions and the backend runtime are best for API calls, transforms, SDK writes, and JavaScript/TypeScript code. Use your own server as a `@bounded-sh/server` client for native-binding workloads. |
 | **Long-running / batch / background work** | The **300s wall is Functions-only.** Don't run multi-minute work in a Function; use a backend-runtime project with resumable scheduled steps. |
 | **No array/object fields; no ternary; `/` reserved** | Model lists as sub-collections; branch with `(c && A) \|\| (!c && B)`; use `//` for integer division ([../docs/policy-reference.md](../../bounded-backend/docs/policy-reference.md)). |
-| **No blanket Solana-plugin guarantee** | Check the [per-function devnet catalog](../../bounded-onchain/docs/solana-capability-status.md). Compiler discovery, Poofnet simulation, and proof contracts do not establish live network support. |
+| **No blanket Solana-plugin guarantee** | Compiler discovery, Poofnet simulation, and proof contracts do not establish live network support. |
 
 Top-level `constants` and `defs` are supported and compile to literals; reference
 them as `@const.NAME` and `@def.name`. Top-level scoped `roles` are also
@@ -42,7 +42,6 @@ Jupiter, Phoenix, and DFlow are unavailable on current devnet. Kamino's program 
 Meteora is not blocked: the replacement DAMM v2 config was adopted on 2026-07-29 and the deployed runtime targets it, so its rows are unverified pending live proof.
 Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.
 The built-in `@TokenPlugin.USDC` constant is mainnet-only, so devnet TokenPlugin scenarios must use an app-created mint.
-See [solana-capability-status.md](../../bounded-onchain/docs/solana-capability-status.md) for all 157 function rows.
 
 ## Scale Ceilings
 

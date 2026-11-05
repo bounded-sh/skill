@@ -31,7 +31,6 @@ deployed Solana program supports them merely because the local compiler does.
   program id or a cluster with no recorded deployment still fails closed to runtime v1 -
   which silently disables `rollingSum`, `tenantEdge`, and materialized invariants.
   That establishes its runtime grammar level, not external program or account availability.
-- Check every function in [solana-capability-status.md](solana-capability-status.md) before using it.
 - Resolve the deployed program/runtime capability before compiling.
 - Runtime-v1 is the default for known deployed devnet/mainnet program ids unless
   the capability registry explicitly says otherwise.
@@ -475,7 +474,6 @@ For mirror guarantees and the Helius ingestion release gate, see
 
 Before enabling a new primitive or runtime version:
 
-- Add or update its individual row in [solana-capability-status.md](solana-capability-status.md).
 - Pin compiler/offchain/Rust tag parity and legacy wire fixtures.
 - Typecheck sol-layer, data-layer, and realtime packages.
 - Run compiler, account-extractor, offchain differential, realtime detector,
