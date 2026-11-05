@@ -311,7 +311,6 @@ Account resolution must reject descriptor drift. Attested bytes must be nonempty
 the target must be executable, and signer confinement still applies.
 
 On current devnet, `@CPI.memoNote` and `@CPI.transferLamports` are source-present but remain unverified pending retained live proof.
-The eight Kamino descriptors are unsupported, but NOT because Kamino is missing from devnet: the KLend program is deployed and executable there at the same address as mainnet (verified on chain 2026-08-05). What is unestablished is a usable market and reserve set.
 Do not describe the generic CPI tag or descriptor registry as proof that a particular descriptor is usable.
 
 ### String arguments cannot contain `,` `{` `}` `[` `]`
