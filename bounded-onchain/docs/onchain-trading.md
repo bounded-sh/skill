@@ -24,7 +24,6 @@ settlement) read [onchain.md](onchain.md) first - this builds on it.
 | `DeFiPlugin.swap` and `getSwapQuote` via direct Meteora DAMM v2 | unverified; runtime v10 and staging services recorded deployed | staging live quotes and unsigned simulations passed; submitted swap acceptance not established |
 | Phoenix perps and reads | unsupported | not run |
 | DFlow prediction order and KYC | unsupported | not run |
-| Kamino descriptor CPI | unsupported | not run |
 | Other Meteora, DAMM v2, and CP-AMM functions | unverified | no retained live proof |
 | Pump.fun and PumpSwap | unverified | no retained live proof |
 | Tensor | unverified | no retained live proof |
