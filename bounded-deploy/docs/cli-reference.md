@@ -1038,9 +1038,12 @@ Accepted by `deploy`, `tests run`, and `functions deploy --all`, which resolve i
 identically. There is no short form: the global `--env` flag is a different
 axis (it selects the Bounded control plane, not an entry in your policy).
 
-A policy that scopes **any** function with an `environments` allowlist refuses a
-`deploy` or `functions deploy --all` run that omits `--environment`,
-rather than guessing which functions belong on the target app.
+Without `--environment`, the CLI uses the entry whose `appId` is the target app.
+A target app no entry names (an OpenApps preview, say) gets the base constants
+and cadence and leaves out every function that carries its own `environments`
+list; a schedule that runs a left-out function is refused, naming both. With no
+target app id at all, a policy that scopes any function refuses `deploy` and
+`functions deploy --all` rather than guessing which functions belong.
 
 Full treatment: [environments.md](environments.md).
 
@@ -1352,8 +1355,8 @@ and the service skips unchanged pins and publishes the changed set in one
 atomic publication — a no-op pass is a single round-trip, never one
 publication per function. With `--environment`, a function carrying its own
 `environments` allowlist is deployed only to the environments it lists, and the
-key is stripped from the ones that ship; without `--environment`, a policy that
-scopes any function refuses the batch outright. See
+key is stripped from the ones that ship; without it, the batch resolves the
+target app the same way `deploy` does (see [`--environment`](#--environment)). See
 [environments.md](environments.md). `invoke`
 attaches your session token automatically (same token as `data`) so the
 Bounded gates the call on the `auth` rule, then prints the function's JSON (or
