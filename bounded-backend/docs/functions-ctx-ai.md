@@ -97,7 +97,7 @@ export default async function (args, ctx) {
 
 ### Typed answers: `ctx.ai.evaluate`
 
-`ctx.ai.evaluate` asks named questions about a JSON state and returns typed answers rather than text.
+`ctx.ai.evaluate` asks named questions about a JSON state and any images, and returns typed answers rather than text.
 It defaults to the decision model `typesafe-ai/jev`, needs no vendor key, and bills like `ctx.ai.run`.
 
 ```ts
@@ -119,10 +119,16 @@ export default async function (args: { requestId: string; post: unknown }, ctx: 
 }
 ```
 
-- **Contract:** `ctx.ai.evaluate(opts: { state, questions, idempotencyKey, model? })`.
+- **Contract:** `ctx.ai.evaluate(opts: { state, questions, idempotencyKey, images?, model? })`.
   The key has the same rules as `ctx.ai.run`, and a direct invoke needs `--idempotency-key` the same way.
   `model` is a `creator/model` id.
 - **`state`:** any JSON, up to 64 KB.
+- **`images`:** up to 10 `data:image/...;base64,` URLs, 8 MiB together.
+  Jev reads the pixels, and questions can call them `attached_images`.
+  An object `state` keeps its fields beside them; any other `state` moves under a `state` field.
+  Still images only, so send a video as frames.
+  The platform resizes any image that is not PNG or JPEG of 280 to 1024 pixels a side, at $0.0005 each.
+  With images, `model` defaults to `typesafe-ai/jev-1.14.0`.
 - **`questions`:** 1 to 32, keyed by ids of letters, digits and underscores, up to 64 characters, not starting with a digit.
   - `{ type: "boolean", instructions, criteria?: { true, false } }`
   - `{ type: "choice", instructions, criteria }`, where the keys of `criteria` are the options (up to 255).
