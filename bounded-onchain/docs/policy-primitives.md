@@ -394,7 +394,7 @@ The initial counter creation is one separately confirmed transaction.
 Snapshot creation plus both staged `updateField` effects is one later Solana transaction.
 After confirmation, poll the Bounded mirror for every affected document separately.
 Local compilation or a successful immediate read does not establish live devnet support.
-Check the individual `get`, `getAfter`, and `@DocumentPlugin.updateField` rows in the capability status before claiming the flow is live verified.
+Run `bounded plugins describe <plugin.function> --json` for each plugin function involved; its network-scoped support state is advisory, and only a retained live run makes the flow live verified.
 For multi-transaction financial lifecycles, read
 [policy-native financial state machines](policy-native-state-machines.md) before
 turning these primitives into a head/cursor/receipt protocol. In particular,

@@ -41,7 +41,7 @@ Bounded records function discovery, deployed-runtime support, and live-network v
 Jupiter, Phoenix, and DFlow are unavailable on current devnet. Kamino's program IS deployed there, but no usable market has been established, so it is equally untestable in practice.
 Meteora is not blocked: the replacement DAMM v2 config was adopted on 2026-07-29 and the deployed runtime targets it, so its rows are unverified pending live proof.
 Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.
-The built-in `@TokenPlugin.USDC` constant is mainnet-only, so devnet TokenPlugin scenarios must use an app-created mint.
+`@TokenPlugin.USDC` resolves to devnet USDC on devnet networks and to mainnet USDC on mainnet.
 
 ## Scale Ceilings
 
