@@ -95,6 +95,41 @@ export default async function (args, ctx) {
   [spend-cap recipe](invariants.md#rollingsum--caps-over-time-windows)) — so "this
   desk spends ≤ $X/day on reasoning" is an invariant, not a hope.
 
+### Typed answers: `ctx.ai.evaluate`
+
+`ctx.ai.evaluate` asks named questions about a JSON state and returns typed answers rather than text.
+It defaults to the decision model `typesafe-ai/jev`, needs no vendor key, and bills like `ctx.ai.run`.
+
+```ts
+export default async function (args: { requestId: string; post: unknown }, ctx: any) {
+  const out = await ctx.ai.evaluate({
+    idempotencyKey: `triage:${args.requestId}`,
+    state: { post: args.post },
+    questions: {
+      spam: { type: "boolean", instructions: "Is this post spam?" },
+      route: {
+        type: "choice",
+        instructions: "Who should handle it?",
+        criteria: { support: "a support question", sales: "a sales lead", none: "needs no reply" },
+      },
+      urgency: { type: "score", instructions: "How urgent is it?", criteria: ["low", "medium", "high"] },
+    },
+  });
+  return { spam: out.answers.spam.probability, route: out.answers.route.choice };
+}
+```
+
+- **Contract:** `ctx.ai.evaluate(opts: { state, questions, idempotencyKey, model? })`.
+  The key has the same rules as `ctx.ai.run`, and a direct invoke needs `--idempotency-key` the same way.
+  `model` is a `creator/model` id.
+- **`state`:** any JSON, up to 64 KB.
+- **`questions`:** 1 to 32, keyed by ids of letters, digits and underscores, up to 64 characters, not starting with a digit.
+  - `{ type: "boolean", instructions, criteria?: { true, false } }`
+  - `{ type: "choice", instructions, criteria }`, where the keys of `criteria` are the options (up to 255).
+  - `{ type: "score", instructions, criteria }`, where `criteria` is an array of 2 to 10 ordered levels.
+- **Answers:** `answers.<id>` holds `probability` (of yes) for a boolean, `choice`, `probabilities` and `confidence` for a choice, and `score`, `probabilities` (by level index) and `confidence` for a score.
+  The result also carries `model`, `usage`, `costMicroUsd` and `meter`.
+
 ### Any AI SDK, and streaming: the OpenAI-compatible endpoint
 
 `https://ai.bounded.internal/v1` is an OpenAI-compatible endpoint billed to the app exactly like `ctx.ai.run`: same model catalog, admission, caps, settlement, and error codes.
