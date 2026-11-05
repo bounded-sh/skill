@@ -385,7 +385,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
 | `verify [policy.json]` | Experimental, opt-in formal verification; refuses without `--experimental`. Not part of the deploy flow; see [formal verification](../../bounded-backend/docs/formal-verification.md) | `--experimental`, `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--verbose`, `--json` |
 | `plugins list` | List the callable plugin projection offline | `--family`, `--grep`, `--json`, `--quiet` |
-| `plugins describe <plugin.function>` | Print one plugin function's exact argument, return, auth, support, and verification contract offline | `--json`, `--quiet` |
+| `plugins describe <plugin.function>` | Print one plugin function's exact argument, return and auth contract offline, plus any deploy constraint | `--json`, `--quiet` |
 | `tests run [dir\|file]` | Run policy test files against a sandboxed app, print per-file PASS/FAIL | `--app-id`, `--deployed-policy`, `--file` (repeatable), `--json` |
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
@@ -419,8 +419,8 @@ bounded plugins describe buyExactSolIn --json
 ```
 
 These commands need no account, project, or network.
-`list` reports each callable identifier, signature, return type, and network-scoped capability state; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
-Capability state describes onchain reachability for the catalog's named network, not a deploy verdict: `unverified` means no retained live proof exists, while `unsupported` also covers offchain-only functions and functions unavailable on that network.
+`list` reports each callable identifier, signature, and return type; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
+A `support` entry appears only when a function cannot deploy as written: it is disabled in the registry, offchain-only, or needs a newer runtime than the recorded deployment. Its absence is not a claim that the call has been proven.
 An unambiguous bare function name is accepted, but use the returned canonical identifier in policy source.
 Namespaced entries use `@Namespace.function`, while core entries such as `get` and `getAfter` remain bare.
 
