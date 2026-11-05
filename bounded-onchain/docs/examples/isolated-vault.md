@@ -2,8 +2,6 @@
 
 Each vault gets its own program-signed named PDA, so no vault can spend another's funds - isolation is chain-enforced, not bookkeeping. This is the template for escrows, auctions, prize pools, and per-tenant balances; the model is explained in [custody and PDAs](../custody-and-pdas.md).
 
-Devnet status: `@AccountPlugin.createAccount`/`getAccountAddress`, `@TokenPlugin.transfer`/`getBalance`, and the `@TokenPlugin.SOL` alias are currently unverified (source parity only, LIVE-PENDING); see [solana-capability-status.md](../solana-capability-status.md).
-
 Vault ids must not parse as a Solana pubkey (never a wallet address or an `Address` field value) - a pubkey-shaped id silently resolves as a plain wallet instead of a named PDA. Use prefixed ids like `v_...`; the account-id namespace is app-global.
 
 ## Policy
@@ -81,4 +79,3 @@ Vault ids must not parse as a Solana pubkey (never a wallet address or an `Addre
 
 ## Related
 
-[custody and PDAs](../custody-and-pdas.md) - [AccountPlugin](../plugins/AccountPlugin.md) - [TokenPlugin](../plugins/TokenPlugin.md) - [capability status](../solana-capability-status.md) - [onchain troubleshooting](../onchain-troubleshooting.md)

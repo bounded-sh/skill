@@ -81,7 +81,6 @@ const deletedLabIdentifiers = [
 
 // Pages that stated the lab as their source of authority.
 const labAuthorityPages = [
-  'bounded-onchain/docs/solana-capability-status.md',
   'bounded-onchain/docs/policy-primitives.md',
 ]
 

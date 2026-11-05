@@ -45,7 +45,6 @@
     "docs/onramp.md",
     "docs/policy-primitives.md",
     "docs/pump-fun.md",
-    "docs/randomness.md",
-    "docs/solana-capability-status.md"
+    "docs/randomness.md"
   ]
 }

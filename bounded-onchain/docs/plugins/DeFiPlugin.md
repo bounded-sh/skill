@@ -1,13 +1,11 @@
 <!-- GENERATED FILE. Do not hand-edit.
-     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
-     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).
+     Prose: bounded-onchain/docs/plugins/_fragments/.
      Regenerate: node scripts/generate-plugin-catalog.mjs -->
 
 # `@DeFiPlugin`
 
 AMM pools, swaps, Meteora launches/fee claims, and cp-AMM liquidity positions.
-
-Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
 Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
 
@@ -28,7 +26,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -46,7 +43,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -61,7 +57,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -75,7 +70,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -90,7 +84,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -105,7 +98,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -133,7 +125,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: NEEDS-RUNTIME-V11.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -155,7 +146,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -181,7 +171,6 @@ Fields of `launch`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF; CPAMM-SCENARIO.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -223,7 +212,6 @@ Fields of `config`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -243,7 +231,6 @@ Fields of `config`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -261,7 +248,6 @@ Fields of `config`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (staging unsigned simulations passed; submitted acceptance not established); markers: DEVNET-METEORA-ACCEPTANCE.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -278,7 +264,6 @@ Fields of `config`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -296,7 +281,6 @@ Fields of `config`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -312,7 +296,6 @@ Fields of `config`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `uint`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -328,7 +311,6 @@ Fields of `config`:
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -343,7 +325,6 @@ Fields of `config`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -359,7 +340,6 @@ Fields of `config`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -375,7 +355,6 @@ Fields of `config`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -389,7 +368,6 @@ Fields of `config`:
 
 - Callable from: offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unverified** (not run); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -404,7 +382,6 @@ Fields of `config`:
 ```
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
-- Status: **unverified** (source parity only); markers: LIVE-METEORA-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -420,7 +397,6 @@ Fields of `config`:
 
 - Callable from: offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unverified** (staging live quotes passed; public acceptance not established); markers: DEVNET-METEORA-ACCEPTANCE.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

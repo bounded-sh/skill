@@ -9,7 +9,6 @@ transactions. Client-signed game handoff is not currently supported.
 
 This is the home for everything onchain. [data-plane.md](../../bounded-backend/docs/data-plane.md) and
 [invariants.md](../../bounded-backend/docs/invariants.md#onchain-coverage) summarize and point here.
-Read [solana-capability-status.md](solana-capability-status.md) before selecting any Solana plugin or primitive.
 
 ## Contents
 
@@ -140,9 +139,8 @@ These commands need no account or network connection and their capability state 
 An invalid `--protocol` is rejected locally before any network request.
 The deployed program is recorded as runtime v11 on both clusters as of 2026-11-04 UTC (first active on devnet at slot 518401017 and on mainnet-beta at slot 465441987), but the runtime version does not prove that an external protocol is deployed or configured.
 Program readiness does not establish hosted app acceptance for the scaled-price API.
-Consult the [devnet capability catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
-`DeFiPlugin.swap` and `getSwapQuote` instead use direct Meteora DAMM v2 pools on devnet; see the catalog for the recorded staging quotes and unsigned simulations and their acceptance limits.
+`DeFiPlugin.swap` and `getSwapQuote` instead use direct Meteora DAMM v2 pools on devnet.
 Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
 SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4 as a minimum; both clusters meet that requirement, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
 Meteora is **not** blocked.
@@ -373,7 +371,6 @@ in the realtime runtime.
 Poofnet models many source surfaces, including token flows, external trading plugins, and `@OraclePlugin.getRandomNumber`.
 That model is development evidence only.
 It does not prove external devnet program availability, replacement configuration, real-network funding, or a live transaction.
-A policy that verifies on Poofnet still needs every called function checked against the [devnet capability catalog](solana-capability-status.md).
 
 - **Writes are signed as on a real chain.** An `onchain: true` write returns
   `202` and is stored only once the required wallet signs; the SDK and server

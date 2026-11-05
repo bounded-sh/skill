@@ -2,8 +2,6 @@
 
 Let any signed-in user launch a Pump.fun bonding-curve token, let any signed-in user buy on the curve, and choose who custodies the creator fees.
 
-> Status: every `@PumpFunPlugin` function used here is present in the deployed runtime but **unverified** (marker `LIVE-PUMP-PROOF` in [solana-capability-status.md](../solana-capability-status.md)) - confirm each transaction lands and poll the expected postcondition rather than assuming it.
-
 ## Policy
 
 ```json
@@ -118,5 +116,4 @@ Creator-fee custody options (pick one before launch - the `creator` argument of 
 - [Pump.fun plugin reference](../pump-fun.md) - manifest argument details for every call used here
 - [Custody and PDAs](../custody-and-pdas.md) - the wallet / escrow / named-account custody rule
 - [Plugin catalog](../plugins.md) - one-screen signature index
-- [Solana capability status](../solana-capability-status.md) - `LIVE-PUMP-PROOF` markers for this surface
 - [Meteora token launch](../meteora-token-launch.md) - the metadata-hosting note for `uri`, and the alternative launch stack

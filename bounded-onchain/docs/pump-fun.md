@@ -12,8 +12,7 @@ custody model that every call here inherits, read
 > runtime and reachable from an onchain hook, and none has a retained live
 > acceptance receipt. Source parity, proof contracts, and a local validator run are
 > not live evidence. Confirm any transaction you send and poll for the expected
-> Bounded postcondition rather than assuming it. See
-> [solana-capability-status.md](solana-capability-status.md).
+> Bounded postcondition rather than assuming it.
 
 ## Conventions that apply to every call
 

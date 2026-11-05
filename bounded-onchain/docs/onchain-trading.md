@@ -16,7 +16,6 @@ settlement) read [onchain.md](onchain.md) first - this builds on it.
 > These historical staging results do not establish current public production availability.
 > Meteora is not blocked: the replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so the Meteora rows are unverified pending live proof rather than externally blocked.
 > Source presence, Poofnet behavior, and local cloned-program tests are not live support evidence.
-> Check [solana-capability-status.md](solana-capability-status.md) before using any function in this guide.
 
 ## Current devnet status
 

@@ -1,6 +1,6 @@
 <!-- GENERATED FILE. Do not hand-edit.
-     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
-     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).
+     Prose: bounded-onchain/docs/plugins/_fragments/.
      Regenerate: node scripts/generate-plugin-catalog.mjs -->
 
 # Complete plugin signatures

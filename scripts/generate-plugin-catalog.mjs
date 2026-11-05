@@ -24,8 +24,8 @@ const fragmentsDir = path.join(pagesDir, '_fragments')
 
 const GENERATED_HEADER = [
   '<!-- GENERATED FILE. Do not hand-edit.',
-  '     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests',
-  '     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.',
+  '     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).',
+  '     Prose: bounded-onchain/docs/plugins/_fragments/.',
   '     Regenerate: node scripts/generate-plugin-catalog.mjs -->',
 ].join('\n')
 
@@ -74,12 +74,6 @@ function signerCell(value) {
   return '-'
 }
 
-function statusLine(fn) {
-  if (!fn.status) return 'Status: not listed in the capability table.'
-  const { support, verification, markers } = fn.status
-  return `Status: **${support}** (${verification}); markers: ${markers}.`
-}
-
 function esc(text) {
   return String(text ?? '').replaceAll('|', '\\|').replaceAll('\n', ' ')
 }
@@ -96,7 +90,6 @@ function renderFunction(fn) {
   lines.push(`- Callable from: ${contextFor(fn)}`)
   if (fn.returnType) lines.push(`- Returns: \`${fn.returnType}\``)
   if (fn.validArgCounts) lines.push(`- Accepted argument counts: ${fn.validArgCounts.join(', ')}`)
-  lines.push(`- ${statusLine(fn)}`)
   lines.push('')
   if (fn.args.length) {
     lines.push('| Arg | Type | Required | Signer in manifest | Description |')
@@ -127,7 +120,6 @@ function renderPage(ns) {
 
   const lines = [GENERATED_HEADER, '', `# \`@${ns.namespace}\``, '']
   lines.push(ROLES[ns.namespace] ?? '', '')
-  lines.push('Check every function\'s row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.', '')
   lines.push('Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.', '')
   if (fragment) lines.push(fragment, '')
   if (transactional.length) {
@@ -151,21 +143,13 @@ function renderPage(ns) {
 
 function renderIndex() {
   const lines = [GENERATED_HEADER, '', '# Plugin catalog', '']
-  lines.push('Compact O(1) router for policy-callable plugins. Open one namespace page for manifest argument details, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature. Check [solana-capability-status.md](solana-capability-status.md) before treating a function as deployed or live-verified.', '')
+  lines.push('Compact O(1) router for policy-callable plugins. Open one namespace page for manifest argument details, or use the [complete signatures index](plugin-signatures.md) when you need to scan every callable signature.', '')
   lines.push('Argument descriptions and signer markers come directly from existing monorepo manifests. A `-` signer cell means the manifest makes no claim, not that no signature is required. Do not infer custody support from an argument name; follow its description and the [custody and PDAs guide](custody-and-pdas.md).', '')
   lines.push('| Namespace | Role | Function names | Detail |')
   lines.push('|---|---|---|---|')
   for (const ns of catalog.namespaces) {
     const names = ns.functions.map((fn) => `\`${fn.name}\``).join(', ')
     lines.push(`| \`@${ns.namespace}\` | ${esc(ROLES[ns.namespace] ?? '')} | ${names} | [reference](plugins/${ns.namespace}.md) |`)
-  }
-  lines.push('')
-  lines.push('## Capability-only entries', '')
-  lines.push('Rows in the capability table with no callable manifest function today (disabled, runtime-gated, or core language forms):', '')
-  lines.push('| Entry | Support | Markers |')
-  lines.push('|---|---|---|')
-  for (const row of catalog.capabilityOnly) {
-    lines.push(`| \`${row.callName}\` | ${row.support} | ${esc(row.markers)} |`)
   }
   lines.push('')
   return `${lines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`

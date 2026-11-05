@@ -12,7 +12,6 @@ Two separate things, and the difference is the whole point:
   hole big enough to drain the pool.
 
 > ORAO functions are present in compiler and runtime source, but remain `unverified` on devnet until a retained live run confirms request submission, fulfillment, reveal indexing, and the query result.
-> See [solana-capability-status.md](solana-capability-status.md).
 
 ---
 
