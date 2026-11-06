@@ -37,10 +37,8 @@ and [roles.md](../../bounded-backend/docs/roles.md).
 
 ## Solana support is network-specific
 
-Bounded records function discovery, deployed-runtime support, and live-network verification separately.
 Jupiter, Phoenix, and DFlow are unavailable on current devnet. Kamino's program IS deployed there, but no usable market has been established, so it is equally untestable in practice.
-Meteora is not blocked: the replacement DAMM v2 config was adopted on 2026-07-29 and the deployed runtime targets it, so its rows are unverified pending live proof.
-Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.
+Meteora is not blocked: the replacement DAMM v2 config was adopted on 2026-07-29 and the deployed runtime targets it, so nothing about it is blocked.
 `@TokenPlugin.USDC` resolves to devnet USDC on devnet networks and to mainnet USDC on mainnet.
 
 ## Scale Ceilings
