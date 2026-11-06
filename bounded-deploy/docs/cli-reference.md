@@ -523,6 +523,7 @@ When source sync was not requested, the same skipped object uses `requested: fal
 Protocol mismatches are retained in `warnings[]` with code `onchain_collections_with_offchain_protocol` or `onchain_protocol_collections_not_registered` and the affected collections.
 App-recording failures such as `app_marker_not_written`, `gitignore_not_updated`, or `project_config_not_updated` also remain in `warnings[]` and make the otherwise committed result partial.
 The `unlinked_wallet_owner` warning is anti-loss guidance and does not by itself make a deploy partial.
+A committed deploy also lists each schedule whose function can never run as a `scheduled_function_not_runnable` warning with `function`, `every`, `collection`, and `reason` (`no_code`, `browser_only`, or `public_only`); it is advisory and does not make the deploy partial.
 
 ### Recover an in-progress policy deploy
 
