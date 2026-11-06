@@ -156,6 +156,7 @@ A preview app (a disposable testbed copy) is born with a budget that is also its
 When it is spent, its backend refuses writes, functions and new connections with `429 preview_budget_exhausted`, and `bounded cap set` on it answers `409 preview_budget_immutable`.
 Both carry the only way forward: the parent's owner adds 1 to 20 credits with `bounded preview topup <credits> --preview <preview-app-id> --app-id <parent-app-id>`.
 Those credits come from the app's own ledger (for an OpenApps app, the one that pays its agent), so stop and ask the owner before running it on their behalf; the server also refuses a top-up that would leave that ledger below one day of the agent's limit, or push one preview past 100 credits of top-ups.
+A `409 preview_payer_changed` means the app changed hands and the preview still bills its previous owner: it cannot be topped up, so make a new preview instead.
 
 ## Project Creation Limits
 
