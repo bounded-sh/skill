@@ -26,8 +26,8 @@ custody model that every call here inherits, read
   executed, never how much moved. Read balances or the mirror afterwards for
   amounts.
 - **Amounts are integers in base units.** SOL amounts are lamports; token amounts
-  are the mint's smallest units. The buy's `minTokensOut` is an absolute token
-  floor in those same units, not a basis-points slippage.
+  are the mint's smallest units. `buyExactSolInWithMinimumOutput`'s `minTokensOut`
+  is an absolute token floor in those same units, not a basis-points slippage.
 - **Mutating calls require an authenticated caller.** The three read functions
   (`getBondingCurveProgress`, `getCreatorFee`, `getPumpBuyQuote`) are pure and do not.
 
@@ -75,7 +75,7 @@ Accounts v3` - both rows are in the
 ## Buying on the curve
 
 ```
-@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, minTokensOut) -> Bool
+@PumpFunPlugin.buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut) -> Bool
 @PumpFunPlugin.getPumpBuyQuote(mint, solAmount) -> Int            (read)
 ```
 
@@ -88,10 +88,11 @@ Accounts v3` - both rows are in the
 
 `minTokensOut` is required and must be positive.
 It is an absolute floor, not a basis-points slippage.
-Quote it first with `@PumpFunPlugin.getPumpBuyQuote(mint, solAmount)` - which returns the tokens the buy will ACTUALLY yield against the current curve, AFTER the pump fee (the real fill `buyExactSolIn` produces, not the raw pre-fee curve amount) - then subtract your own tolerance, e.g. `quote * 9500 // 10000` for 5%.
+Quote it first with `@PumpFunPlugin.getPumpBuyQuote(mint, solAmount)` - which returns the tokens the buy will ACTUALLY yield against the current curve, AFTER the pump fee (the real fill `buyExactSolInWithMinimumOutput` produces, not the raw pre-fee curve amount) - then subtract your own tolerance, e.g. `quote * 9500 // 10000` for 5%.
 That 5% only has to cover PRICE MOVEMENT between quoting and buying; the pump fee is already baked into the quote, so you do not add it on top.
 The program checks the floor you pass verbatim and never re-derives one, so a curve an attacker moved between quote and buy cannot shrink your fill below the amount you priced.
 There is no matching sell primitive and no "exact tokens out" variant.
+The older `@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps)` stays for deployed policies; its fourth argument is basis points of slippage from 0 to 10000, so a token floor passed there is refused.
 
 ## Creator fees
 
@@ -178,8 +179,8 @@ basis points, not a fraction). It is `100` once the curve is marked complete. Li
 
 ## What this surface cannot do
 
-- No sell primitive and no "exact tokens in/out" buy variant; `buyExactSolIn` is the
-  only trade exposed.
+- No sell primitive and no "exact tokens in/out" buy variant; `buyExactSolInWithMinimumOutput`
+  and the older `buyExactSolIn` are the only trades exposed.
 - No deadline or expiry argument anywhere - bound staleness in policy against
   `@time.now` if it matters.
 - No getter for the configured shareholder set, the config admin, or a per-recipient
