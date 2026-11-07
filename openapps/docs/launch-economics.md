@@ -4,7 +4,9 @@ A successful CCA sale allocates 5% of the net USDC raise according to the app's 
 Direct Meteora launches deposit 30% into the pool.
 Meteora curve launches buy the tokens bidders won within that same 30% budget.
 On a venue with the v11 Pump launch policy, Pump also buys only the tokens bidders won within 30%, leaving at least 65% in Treasury.
-Pump's opening price follows that purchase, and its minimum raise must cover the purchase as well as the operating reserve.
+Pump's opening price follows that purchase, and its minimum raise must cover the advertised bidder-token purchase within the launch budget.
+Both launch choices use the venue's fundraising target unless an operator sets a sale-specific minimum before Start; Pump's purchase requirement still sets a lower bound.
+Starting a sale does not require six months of operating funds or an upfront creator deposit.
 Read the minimum, bidding window and other terms from the sale before bidding.
 A direct Meteora token can charge the transfer fee set when opening (0% to 5%, default 1%); Pump and Meteora curve launches have no token transfer fee.
 Collected transfer fees and fees from the designated Meteora launch position follow the app's fee split.
