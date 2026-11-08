@@ -108,7 +108,7 @@ const res = await ctx.services.invoke("X402_FETCH", {
 });
 // res.paid === "verification_pending" means the provider response arrived,
 // but finalized settlement still belongs to the recovery lane;
-// res.chargedMicroUsd = price × 1.05 markup + the flat tx-fee surcharge.
+// res.chargedMicroUsd = price plus our markup plus the flat tx-fee surcharge.
 // Unsupported or unsafe payment terms return a stable public error without
 // reflecting the provider's raw demand.
 ```
