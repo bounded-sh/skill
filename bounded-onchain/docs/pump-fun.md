@@ -113,6 +113,15 @@ The older `@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps)` s
 > transaction's accounts, the handler returns `0` rather than failing. Do not treat
 > `0` as proof that a launch earned nothing.
 
+Every trade adds to the vault until someone sweeps it, so a rule that pins an
+amount to it with `==` fails whenever anyone trades between your read and the
+transaction landing; bound it with `<=` instead
+([shared prices and counters under load](onchain.md#shared-prices-and-counters-under-load)).
+After graduation, trades on PumpSwap pay creator fees into a separate AMM vault
+that `collectCreatorFee` does not touch: sweep with
+`@PumpFunPlugin.transferCreatorFeesToPump(mint) && @PumpFunPlugin.collectCreatorFee(creator)`
+in one hook, and only once the curve is complete.
+
 ## Fee sharing (splitting creator fees between several parties)
 
 ```
