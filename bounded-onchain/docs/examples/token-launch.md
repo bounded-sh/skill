@@ -59,7 +59,7 @@ Let any signed-in user launch a Pump.fun bonding-curve token, let any signed-in 
     },
     "hooks": {
       "onchain": {
-        "create": "@PumpFunPlugin.buyExactSolIn(@user.address, @TokenPlugin.getTokenMintAddress($tokenId), @newData.solLamports, @newData.minTokensOut)"
+        "create": "@PumpFunPlugin.buyExactSolInWithMinimumOutput(@user.address, @TokenPlugin.getTokenMintAddress($tokenId), @newData.solLamports, @newData.minTokensOut)"
       }
     },
     "operationDetails": {
