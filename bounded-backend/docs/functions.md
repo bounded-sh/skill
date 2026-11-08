@@ -545,7 +545,8 @@ the canonical explainer:
    rule (with `@user` = the live principal and `@origin` populated). Covered next.
 
 Either way every write still goes **through** your rules + invariants via
-`ctx.bounded`. `every` accepts `<n>s|m|h|d` (1s–366d); schedules are offchain-only.
+`ctx.bounded`. `every` accepts `<n>s|m|h|d` (1s–366d); schedules are offchain-only
+and never run on a preview app.
 Hook form + the full `run` unification:
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 
