@@ -16,7 +16,7 @@ subdomains on the same SSL:
 ## What it CAN and CANNOT host
 
 Bounded serves your static files **exactly as uploaded**.
-A Next.js app can also run its server here: see [server-apps.md](server-apps.md).
+A Next.js or Express app can also run its server here: see [server-apps.md](server-apps.md).
 
 **✅ Can host** — anything that builds to a static, client-rendered bundle:
 - Vite (React/Vue/Svelte/Solid/vanilla), Create-React-App, plain HTML/CSS/JS.
@@ -28,10 +28,10 @@ A Next.js app can also run its server here: see [server-apps.md](server-apps.md)
 
 **✅ Can run its server:** a Next.js app (SSR, ISR rendered per request, React
 Server Components, server actions, route handlers, middleware) built with vinext,
-billed per request like a function: [server-apps.md](server-apps.md).
+billed per request like a function, and an Express app: [server-apps.md](server-apps.md).
 An OpenApps app that runs a server cannot open (APO) yet.
 
-**❌ Cannot host:** a long-running process (Express/Fastify on Node), PHP, Python,
+**❌ Cannot host:** a long-running process other than Express, PHP, Python,
 native Node addons, or TCP database drivers. Other framework servers (Remix,
 Nuxt/SvelteKit in SSR mode) are not documented here: deploy them static, or host
 them elsewhere.
@@ -40,7 +40,7 @@ them elsewhere.
 and move every server concern to Bounded — data + rules to your **policy**, secrets
 + server logic + external API calls to a **function** or **backend runtime** at
 `<slug>-api.bounded.page` ([functions.md](../../bounded-backend/docs/functions.md), [backend-runtime.md](../../bounded-backend/docs/backend-runtime.md)).
-For a server other than Next.js, host it elsewhere and still use Bounded as its
+For a server other than Next.js or Express, host it elsewhere and still use Bounded as its
 backend.
 
 ## Deploy
