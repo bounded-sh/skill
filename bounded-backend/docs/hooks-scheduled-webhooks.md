@@ -164,6 +164,10 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
 - **Schedules are offchain-only** — a scheduled mutation needs a server signer,
   which an onchain collection lacks. Declaring `schedule` on `"onchain": true` is
   rejected.
+- **A preview app never runs schedules** (`bounded previews create`): the platform
+  drops its scheduled and heartbeat runs, while direct invocation still works. To
+  exercise a scheduled function on a preview, run it with `bounded functions invoke`
+  (with `--idempotency-key` when it calls `ctx.ai` or `ctx.services`).
 
 > **A schedule runs a HOOK.** `schedule.run` (and `dueRows.run`) names a declared
 > `hooks.scheduled.<run>` bytecode hook, fired on the cadence as a privileged
