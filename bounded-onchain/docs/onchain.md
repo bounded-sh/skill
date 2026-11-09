@@ -483,18 +483,30 @@ realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-refere
 A rule that makes the client state a value every other write changes fails under
 load onchain. Examples: `@newData.price == @def.price` on a bonding curve,
 `@newData.out == <AMM quote>`, `@newData.seq == get(/pool/main).count + 1`.
+Plugin reads of live chain state move the same way: a creator-fee vault
+(`getCreatorFee`), a balance (`getBalance`), a quote (`getPumpBuyQuote`) or curve
+progress changes with every trade, including trades your app never sees.
 The client builds the transaction from what it read, a person approves it in
 their wallet (often 5-10 seconds), and the program runs the rule against the
-state at execution. Any other write to that document in between makes the rule
+state at execution. Any other write or trade in between makes an `==` rule
 false and the transaction fails. At a launch most writes lose. Poofnet and test
 wallets that sign instantly do not show it.
 
 A write can instead carry a bound the person accepts: the most they pay, or the
 least they receive. A rule that checks the bound against the current quote with
-`get()` holds for every state the person would accept. A hook can then move the
+`get()` holds for every state the person would accept. Point each comparison the
+way the value drifts: an amount spent from a fee vault that only grows until
+someone sweeps it is `@newData.lamports <= @PumpFunPlugin.getCreatorFee(mint)`,
+never `==`. A hook can then move the
 funds and record each derived amount and counter with
 `@DocumentPlugin.updateField`, computed from `get()` at execution. Fields the
 hook derives stay null or absent in the create rule, so the client cannot set them.
+
+A floor the rule checks against the quote at execution does not stop a sandwich:
+whoever sends the transaction can put their own buy before it and their sell
+after it, and the rule then sees the price their buy already moved. When anyone
+may trigger a trade that spends a shared pot, restrict who writes it
+(`@user.address == @const.KEEPER`) and let that writer set its own floor.
 
 The buy from the [prediction market](examples/prediction-market-amm.md), with a
 minimum added and the quote in a [def](../../bounded-backend/docs/constants-and-defs.md#defs--reusable-rule-fragments):
