@@ -79,14 +79,12 @@ A request to open an app that already had a sale is refused with `oapp_opening_s
 
 ## Backing before the sale
 
-People can back an Owned app before its creator asks to open it.
-A backing is escrowed USDC with a market-cap limit, not a purchase of an already launched token, and it remains withdrawable until the sale starts.
-There is no cap on how much an app can be backed: one backing per wallet, between the venue's minimum and maximum order size, at one of four market-cap limits ($25K, $50K, $100K or $250K, rounded to the sale's price grid).
-To change a backing's amount or market-cap limit, withdraw it first, then back the app again with the full new amount while backing remains open.
+New backings are no longer offered; people upvote an Owned app instead.
+A backing made before that is escrowed USDC with one of four maximum market caps ($25K, $50K, $100K or $250K, rounded to the sale's price grid), not a purchase of an already launched token.
+It cannot be edited, and it stays withdrawable in full until the sale starts.
 Every new sale reserves a backer-only first interval: the first 1/24 of the bidding window, or one hour for a 24-hour sale.
-Only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its limit.
+Only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its maximum.
 The countdown before bidding and this first bidding interval are separate.
-When a checkpoint moves the clearing valuation past an order's limit, the order shows as outbid on the sale page and in the app's notification bell, and a wallet that keeps sale emails on is emailed from the app's own mailbox.
 
 ## What asking to open requires
 
