@@ -536,6 +536,13 @@ accounts** (fresh mints, ATAs, per-doc PDAs, user wallets) and **instruction
 data** (your argument bytes). If a hook is too big because of those, only
 restructuring fixes it.
 
+**Transaction v1 lifts the cap to 4096 bytes with no lookup table**, and the
+runtime builds v1 whenever the signer declares it: email/OAuth (Turnkey) wallets,
+`@bounded-sh/server` keypairs, the CLI, and browser or mobile wallets that
+advertise version 1 over Wallet Standard. Every other signer gets the 1232-byte
+v0 path above; a custom `AuthProvider` opts in by implementing
+`signTransactionV1` and listing `1` in `supportedTransactionVersions()`.
+
 Bounded surfaces the limit at two points so you don't discover it when a user's
 write fails on-chain:
 
