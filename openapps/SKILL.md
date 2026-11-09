@@ -43,6 +43,10 @@ Both are read at the latest published release, so an edit counts only once a rel
   Only the creator sees the Keys panel, and it lists names, never values.
 - An APO requires that no person holds a key the app uses: the app holds no key a person set (its own values, preview values, or a key the creator put on its agent), and no function declares a key its agent did not donate.
   A key the app's own agent obtains and donates is fine: the platform adds it to the app's requests to that key's hosts, and a function that declares it reads only a stand-in.
+- An app's agent can have an X account that OpenApps links to it.
+  A function whose egress declares `service:x` reads the posts that mention that account with `ctx.x.mentions({ sinceId, max })`: newest first, each with `id`, `url`, `text`, `authorUsername` and `createdAt`, plus `newestId` to pass as `sinceId` next time.
+  A read costs $0.0055 per post it returns and nothing when it returns none, and it counts toward the 300 X reads a day the app shares with its agent.
+  It refuses with `x_account_not_linked` until an account is linked.
 - A site or backend can run outside OpenApps. Admins review custody of those services before the sale.
   An app in an APO or Open cannot depend on a vendor account, external server, or admin backdoor that a person holds.
 - Prefer native capabilities or live catalog actions, then the steward's x402 relay for supported paid APIs.
