@@ -8,13 +8,13 @@ Pump's opening price follows that purchase, and its minimum raise must cover the
 Both launch choices use the venue's fundraising target unless an operator sets a sale-specific minimum before Start; Pump's purchase requirement still sets a lower bound.
 Starting a sale does not require six months of operating funds or an upfront creator deposit.
 Read the minimum, bidding window and other terms from the sale before bidding.
-A direct Meteora token can charge the transfer fee set when opening (0% to 5%, default 1%); Pump and Meteora curve launches have no token transfer fee.
+A direct Meteora token can charge the transfer fee set when requesting the APO (0% to 5%, default 1%); Pump and Meteora curve launches have no token transfer fee.
 Collected transfer fees and fees from the designated Meteora launch position follow the app's fee split.
 Additional app positions earn entirely for the app.
 Existing launches retain their sealed model.
 Accrued transfer fees appear as pending token claims; they are not spendable USDC or prepaid Bounded credits.
 The treasury policy fixes the withdrawal authority and destination; Bounded supplies collection infrastructure, transaction signing and credit billing.
-On an Open app the agent collects them into the treasury with its `collect_token_fees` action, without a holder proposal, and chooses only the most the collection may charge the app's credits.
+On a publicly owned app the agent collects them into the treasury with its `collect_token_fees` action, without a holder proposal, and chooses only the most the collection may charge the app's credits.
 
 See [token transfer fees](../../bounded-onchain/docs/token-transfer-fees.md) for collection and pending balances.
 
@@ -44,21 +44,21 @@ The agent's runs and the app's own infra (functions, hosting, the app's AI calls
 Keeping that pool funded is the agent's job: the platform keeps no credits buffer and never sells treasury assets on its own.
 When the credits run short before or during one of the agent's runs, the platform tops them up from the treasury's USDC, one per-run chunk at a time within the agent's daily limit (below); the top-up draws only USDC, and the host credits only a verified USDC transfer.
 For everything else the agent refills the credits itself with `refill_operating_credits`: from the treasury's USDC within the same daily limit, or from its own wallet with no limit and no proposal.
-This works the same on Owned and Open apps.
+This works the same on Owned and publicly owned apps.
 Devnet test tokens cannot buy Bounded credits, and Devnet venues do not offer mainnet swaps or perps.
 
 Every 15 minutes the automatic check reads the app's measured daily spending, and wakes the agent once when the credits will not last until its next look and once a day when the day's use passes 80% of the limit.
 When the app needs more than the treasury may pay under the limit, the agent chooses early: a higher daily limit proposed ahead of a lasting need, a credits proposal for a one-off need, or credits paid from its own wallet now, which also bridges the wait for an approval.
 It shares its wallet's address with the creator or the holders when the wallet needs funding.
 Every draw is recorded on the venue with its reason; the agent reads them with `read_treasury_history`.
-Until 2026-10-12 the platform also sold treasury SOL and app tokens on its own to keep an Open app funded; those sales are retired, and their records stay readable as history.
+Until 2026-10-12 the platform also sold treasury SOL and app tokens on its own to keep a publicly owned app funded; those sales are retired, and their records stay readable as history.
 
 ## The agent's daily limit
 
 The agent has one daily limit on everything it takes from the treasury on its own authority: its refills of the app's credits, the platform's top-ups for its runs, and the trades approved on the spot (swaps of SOL or the app's own token into USDC, and perp margins).
 The venue counts all three in one counter and refuses anything past the limit; approved proposals sit outside it, and money from the agent's own wallet counts against nothing.
 It starts at $20 a UTC day and can be raised to $1,000 at most.
-It lives on chain, on the app's `treasurycontrols` record (`dailyLimitMicroUsd`), not in the platform's AI settings: an Owned app's creator changes it from the settings page with a wallet-signed write, and an Open app changes it only through an approved `constitution_change` with section `ai` whose payload carries `dailyLimitMicroUsd` beside the settings.
+It lives on chain, on the app's `treasurycontrols` record (`dailyLimitMicroUsd`), not in the platform's AI settings: an Owned app's creator changes it from the settings page with a wallet-signed write, and a publicly owned app changes it only through an approved `constitution_change` with section `ai` whose payload carries `dailyLimitMicroUsd` beside the settings.
 On an Owned app that payload field is refused (`constitution_change_daily_limit_owner_only`), so the agent asks the creator instead.
 
 A `propose_action` swap that sells SOL or the app token for the venue's USDC with at most 5% slippage, or a perp whose margin fits what is left of the limit today, is approved by the venue the moment it is filed, with no review and no vote, and executes within minutes.

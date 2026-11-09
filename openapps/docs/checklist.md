@@ -1,6 +1,6 @@
 # Checklist before asking to open
 
-**What's in here:** the full checklist before the creator asks to open an app. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** the full checklist before the creator requests an app's APO. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## Practical checklist before asking to open
 
@@ -26,15 +26,15 @@
   A `<script src="https://…">` or a URL import fails the Gauntlet's dependency audit during the sale (`dependency_remote_script`, `dependency_remote_module_import`), and the app's `script-src 'self'` floor refuses to load it anyway.
 - Every worker is a file: `new Worker(new URL("./worker.ts", import.meta.url))`, never `?worker&inline` or a Blob or `data:` worker, which fail the same audit (`dependency_inline_worker`) and cannot start under `worker-src 'self'`.
 - The request names the slug the app already serves (`oapp_opening_slug_mismatch`): the app keeps its address when it opens.
-- The constitution's seven sections say what the agent works toward and how, because once the app is Open only its holders can change them.
+- The constitution's seven sections say what the agent works toward and how, because once the app is publicly owned only its holders can change them.
 - The creator knows what the sale changes: from the moment an operator starts it, the platform holds the app, nobody but its agent can change it, and only a repair the Gauntlet asked for can ship until the sale ends.
-  A graduated sale makes the app Open for good; a failed one hands it back.
+  A graduated sale makes the app publicly owned for good; a failed one hands it back.
 - Read the venue's actual sale minimum, order minimum, opening countdown and bidding duration.
   The default countdown is one minute and bidding lasts 24 hours; the Gauntlet has a separate grace deadline.
   If the creator wants the backer-only first interval, enable it before the sale is scheduled; it lasts 1/24 of the bidding window.
 - Leave the app as it is while the request waits: a change to the app or to the agent's AI settings means the creator asks again before the sale can start.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are sane against the app's expected inflow: out of budget means frozen, and you should be able to say at what usage level that happens.
 - **No refresh timers in the frontend.** Collections are live, so poll loops buy nothing and bill the app's own buckets for every open tab, forever.
-  An Open app has no owner standing by to tune an interval later, so a `setInterval` that re-reads data is a permanent, unbounded drain.
+  A publicly owned app has no owner standing by to tune an interval later, so a `setInterval` that re-reads data is a permanent, unbounded drain.
   Use `useQuery`/`subscribe`; see [never poll a collection](../../bounded-frontend/docs/sdk-reference.md#never-poll-a-collection).
 - Anything you had to rule out is in your handoff to the user, with the reasoning, not silently dropped.
