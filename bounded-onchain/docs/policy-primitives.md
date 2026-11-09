@@ -270,7 +270,7 @@ bounded --json --env staging data query \
 
 Require `address.result` to decode as a Solana public key and `exists.result` to equal `true`.
 Keep the equality in policy so a stale or forged client value fails before it can overfund or underfund the shared escrow.
-Use `isPassthrough: true` only when the application deliberately does not need a durable Bounded document or mirror receipt for the action.
+Use `isPassthrough: true` only when no later onchain rule or hook needs to `get()` the record; its offchain mirror row still exists.
 
 `@Solana.invokeAttested` is reserved and disabled until its client instruction
 builder is complete. Use descriptor `@CPI.*` for attested instruction bytes.
