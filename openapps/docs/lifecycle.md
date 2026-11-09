@@ -82,8 +82,9 @@ A request to open an app that already had a sale is refused with `oapp_opening_s
 New backings are no longer offered; people upvote an Owned app instead.
 A backing made before that is escrowed USDC with one of four maximum market caps ($25K, $50K, $100K or $250K, rounded to the sale's price grid), not a purchase of an already launched token.
 It cannot be edited, and it stays withdrawable in full until the sale starts.
-Every new sale reserves a backer-only first interval: the first 1/24 of the bidding window, or one hour for a 24-hour sale.
-Only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its maximum.
+A sale's saved `ccapledgeterms/<rootAppId>.backerInterval` says whether it reserves a backer-only first interval: the first 1/24 of the bidding window, or one hour for a 24-hour sale.
+When disabled before Start by OpenApps, public funding opens at the scheduled start; the agent cannot change this term.
+When enabled, only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its maximum.
 The countdown before bidding and this first bidding interval are separate.
 
 ## What asking to open requires
