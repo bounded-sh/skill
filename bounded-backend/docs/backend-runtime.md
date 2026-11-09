@@ -83,7 +83,7 @@ Use `bounded services search "<query>" --json` and
 the right managed API/tool shape. Runtime code can also use
 `ctx.services.search` and `ctx.services.describe` for agent planning. Use
 `ctx.services.invoke` at runtime when Bounded manages that provider. Invoke is
-cost-bearing, billed at the applicable upstream service cost plus 5%, and fails
+cost-bearing, billed at the applicable upstream service cost plus our markup, and fails
 closed when the app owner's credit pool is exhausted. If a
 provider is not enabled in the managed proxy, integrate it directly with
 `ctx.fetch` and store the provider key in Bounded secrets.
@@ -201,7 +201,7 @@ Use it for "who is calling this backend route", and let policy rules on
 - `ctx.ai` spends against the credit pool and app-level caps. When a cap or
   the pool is exhausted, calls fail closed.
 - `ctx.services.invoke` spends against the same credit pool and
-  uses the applicable upstream service cost plus 5%. Search/describe are catalog
+  uses the applicable upstream service cost plus our markup. Search/describe are catalog
   reads.
 - Both cost-bearing surfaces require a 1–256-byte app-global idempotency key.
   Direct HTTP function callers must also supply an outer `Idempotency-Key`;
@@ -247,4 +247,3 @@ bounded runtime --help
 - [functions.md](functions.md) — short functions
 - [secrets.md](secrets.md) — provider keys
 - [billing.md](../../bounded/docs/billing.md) — buckets and caps
-- [agents-flue.md](agents-flue.md) — multi-step agent loop

@@ -223,6 +223,7 @@ An explicit public `message` field may supply human detail, but an absent messag
 ### Project config — `bounded.json`
 
 `bounded init` writes public `bounded.json`; `deploy --create` fills in `appId`.
+The CLI also reads `openapps.json`, the same file under its OpenApps name, which wins when a directory holds both.
 Init refuses to run from inside another Bounded project's directory tree (upward discovery would anchor the scaffold at that ancestor); run it from the project root it names, or pass `--project-root .` to deliberately make the current directory its own project root.
 Agents should read this file first. It is safe to commit and contains no private
 key material. This example explicitly opts into cloud source sync:
@@ -384,7 +385,7 @@ treatment: [key-and-account-safety.md](key-and-account-safety.md).
 | `init` | Write starter `policy.json` plus public `bounded.json` | `--force` overwrite |
 | `verify [policy.json]` | Experimental, opt-in formal verification; refuses without `--experimental`. Not part of the deploy flow; see [formal verification](../../bounded-backend/docs/formal-verification.md) | `--experimental`, `--app-id` (defaults to `bounded.json`), `--operation`, `--protocol`, `--constants`, `--environment`, `--verbose`, `--json` |
 | `plugins list` | List the callable plugin projection offline | `--family`, `--grep`, `--json`, `--quiet` |
-| `plugins describe <plugin.function>` | Print one plugin function's exact argument, return, auth, support, and verification contract offline | `--json`, `--quiet` |
+| `plugins describe <plugin.function>` | Print one plugin function's exact argument, return and auth contract offline, plus any deploy constraint | `--json`, `--quiet` |
 | `tests run [dir\|file]` | Run policy test files against a sandboxed app, print per-file PASS/FAIL | `--app-id`, `--deployed-policy`, `--file` (repeatable), `--json` |
 | `tests push [dir]` | Attach local test files to the app (merge by fileName) | `--app-id`, `--replace` |
 | `tests list` | List test files attached to the app | `--app-id` |
@@ -418,8 +419,8 @@ bounded plugins describe buyExactSolIn --json
 ```
 
 These commands need no account, project, or network.
-`list` reports each callable identifier, signature, return type, and network-scoped capability state; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
-Capability state describes onchain reachability for the catalog's named network, not a deploy verdict: `unverified` means no retained live proof exists, while `unsupported` also covers offchain-only functions and functions unavailable on that network.
+`list` reports each callable identifier, signature, and return type; `describe` adds each argument's name, manifest type, proof sort, optionality, signer role, units, the return contract, and authenticated-caller requirement.
+A `support` entry appears only when a function cannot deploy as written: it is disabled in the registry, offchain-only, or needs a newer runtime than the recorded deployment. Its absence is not a claim that the call has been proven.
 An unambiguous bare function name is accepted, but use the returned canonical identifier in policy source.
 Namespaced entries use `@Namespace.function`, while core entries such as `get` and `getAfter` remain bare.
 
@@ -522,6 +523,7 @@ When source sync was not requested, the same skipped object uses `requested: fal
 Protocol mismatches are retained in `warnings[]` with code `onchain_collections_with_offchain_protocol` or `onchain_protocol_collections_not_registered` and the affected collections.
 App-recording failures such as `app_marker_not_written`, `gitignore_not_updated`, or `project_config_not_updated` also remain in `warnings[]` and make the otherwise committed result partial.
 The `unlinked_wallet_owner` warning is anti-loss guidance and does not by itself make a deploy partial.
+A committed deploy also lists each schedule whose function can never run as a `scheduled_function_not_runnable` warning with `function`, `every`, `collection`, and `reason` (`no_code`, `browser_only`, or `public_only`); it is advisory and does not make the deploy partial.
 
 ### Recover an in-progress policy deploy
 
@@ -927,8 +929,8 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 
 `bounded propose` posts the changes in a bounded clone to an OpenApps app's page as a code change, or shows them without sending anything.
 Submitting a code change grants no write access: it is an idea with its implementation attached, and the app's agent decides whether to build it.
-For a no-AI frontend update by an external coding agent acting for the owner of an Owned app, use [owner publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source).
-What the agent builds ships the way every change does, on a preview through the app's release decision, where the owner or the holders approve or veto it.
+For a no-AI frontend update by an external coding agent acting for the creator of an Owned app, use [creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source).
+What the agent builds ships the way every change does, on a preview through the app's release decision, where the creator or the holders approve or veto it.
 Choose one mode; with neither, the command exits without touching anything.
 
 ```bash
@@ -949,9 +951,9 @@ Keep `--title` to one line of at most 200 characters and `--description` to at m
 `--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
 JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
 
-On an Owned app, its owner chooses how the agent takes each code change: applied as is, or reviewed and adapted (the default).
-`--apply` with `--submit` asks for applied as is on the owner's own change; anyone else gets `code_change_apply_owner_only`.
-On anyone's code change, the owner can choose on the post itself, which posts their choice as a reply in its thread.
+On an Owned app, its creator chooses how the agent takes each code change: applied as is, or reviewed and adapted (the default).
+`--apply` with `--submit` asks for applied as is on the creator's own change; anyone else gets `code_change_apply_owner_only`.
+On anyone's code change, the creator can choose on the post itself, which posts their choice as a reply in its thread.
 Applied as is, the agent applies the patch exactly as written, and ships nothing when it does not apply cleanly or its checks fail.
 Either way this starts an app-agent run, requires its normal funding, and goes through the app's release decision; the agent replies in the thread with what it did.
 
@@ -1054,10 +1056,12 @@ Full treatment: [environments.md](environments.md).
 | `live deploy <file>` | Upload a native `session.live` module (`init`/`tick`/`views`) to the code registry; the policy still declares the room binding | `bounded live deploy pong.live.ts --app-id <id>` |
 | `live intent <room-path>` | Send one authenticated live intent to a room and arm/cold-start the live loop | `bounded live intent rooms/r1 --app-id <id> --intent '{"type":"join"}'` |
 | `live status <room-path>` | Show live room diagnostics (`available`, `running`, `stopReason`, `etag`, `generation`, tick/alarm times). Passive (never starts the room); the detailed shape requires read access to the room, otherwise a slim `{ available, started, module }` is returned. `--app-id` defaults to `bounded.json`. | `bounded live status rooms/r1` |
-| `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. `--preview` sets the value the app's previews receive instead (typically a test key), its live previews at once and new ones when created; the app's own values never reach a preview. `--agent --host <host>` puts the key on the app's OpenApps agent instead, sent only to those hosts. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
+| `secret put <NAME> [VALUE]` | Set/update a backend secret for an app. Prefer `--value-stdin`, `--value-env`, or the hidden prompt so the value is not placed in argv; legacy `VALUE` still works with a warning. `--preview` sets the value the app's previews receive instead (typically a test key), its live previews at once and new ones when created; the app's own values never reach a preview. `--agent --host <host>` puts the key on the app's OpenApps agent instead, sent only to those hosts. `--app-id` may name an app your app manages (`ctx.apps`) when you own every app above it and none is Open or held. | `printf '%s' "$STRIPE_KEY" \| bounded secret put STRIPE_KEY --value-stdin --app-id <id>` |
 | `secret list` | List secret NAMES for an app (never values), its preview value names, and which names its OpenApps agent donated; `--agent` lists the keys on the agent instead | `bounded secret list --app-id <id>` |
 | `secret rm <NAME>` | Remove a secret; `--preview` removes the preview value and `--agent` the agent's key instead | `bounded secret rm STRIPE_KEY --app-id <id>` |
-| `site deploy [dir]` | Publish a built static frontend (default `./dist`, needs `index.html`, or `_bounded_server/server.json` for a [server app](../../bounded-frontend/docs/server-apps.md)) to the app's mapped slug/custom host as one deterministic gzip-tar artifact. Small artifacts use one upload; larger artifacts use resumable multipart chunks of that archive, never per-file uploads. Project source is not synced unless `sourcePush` or `--with-source` explicitly requests it. If no app is linked, creates a private app unless `--public` is passed. Deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. A `402 deploy_credit_insufficient` means the deploying account has no spendable credit for the deploy's infra cost (the CLI prints the credits needed against the balance): `bounded billing status`, then `bounded billing topup --credits <n>`, then retry; it is never an identity problem. | `bounded site deploy ./dist --app-id <id>` |
+| `site deploy [dir]` | Publish a built static frontend (build it with `site build` so it gets `build.env`; default `./dist`, needs `index.html`, or `_bounded_server/server.json` for a [server app](../../bounded-frontend/docs/server-apps.md)) to the app's mapped slug/custom host as one deterministic gzip-tar artifact. Small artifacts use one upload; larger artifacts use resumable multipart chunks of that archive, never per-file uploads. Project source is not synced unless `sourcePush` or `--with-source` explicitly requests it. If no app is linked, creates a private app unless `--public` is passed. Deploys are versioned for static-host rollback. Add `--variant <var_id>` to upload a preview frontend branch without replacing the canonical site. A `402 deploy_credit_insufficient` means the deploying account has no spendable credit for the deploy's infra cost (the CLI prints the credits needed against the balance): `bounded billing status`, then `bounded billing topup --credits <n>`, then retry; it is never an identity problem. | `bounded site deploy ./dist --app-id <id>` |
+| `site build` | Run the build `bounded.json` declares (`build.command`, else `npm run build` from a package.json build script) in the project root, with `build.env` added to the environment; a value already set in the shell wins. `--preview` builds for a preview: `build.previewEnv` replaces the `build.env` values it names. | `bounded site build` |
+| `site env [set NAME VALUE \| rm NAME]` | Show or change `bounded.json` `build.env`, the public values a build reads (`NEXT_PUBLIC_*`, `VITE_*`, `NUXT_PUBLIC_*`, `PUBLIC_*`, `EXPO_PUBLIC_*`, `REACT_APP_*`). Any other name is refused, because the file is published with the source; a private key belongs in `secret put`. `--preview` sets `build.previewEnv` instead: a preview's own value for a name `build.env` sets, at least 8 characters, which an OpenApps release from the preview swaps back to the `build.env` value. | `bounded site env set NEXT_PUBLIC_SUPABASE_URL https://abc.supabase.co` |
 | `site seed-build-base [dir]` | Prepare the current canonical CLI deployment for hosted-widget editing from the filtered local source and exact local frontend bytes (default `./dist`). `--deploy-id` pins the expected current deployment; any deployment, file-digest, or receipt mismatch exits nonzero. | `bounded site seed-build-base --app-id <id> --deploy-id <deploy-id> -- ./dist` |
 | `site variants` | List current frontend variants for owner/admin review: status, deploy id, preview/switch paths, and affected files. | `bounded site variants --app-id <id>` |
 | `site rollback [deployId]` | Roll back the canonical hosted frontend, or pass `--variant <var_id>` to roll back a frontend variant to its previous accepted deploy. Only RETAINED versions are restorable (the newest 10 plus pins); a version that aged out answers `410 site_deploy_expired` - run `site versions` to see what is restorable. | `bounded site rollback --variant var_amit_refunds --app-id <id>` |
@@ -1068,6 +1072,7 @@ Full treatment: [environments.md](environments.md).
 | `site promote <variantId>` | Promote a frontend variant into the canonical hosted site after owner/admin authorization. Backend rules, data, functions, and policies stay unchanged. | `bounded site promote var_amit_refunds --app-id <id>` |
 | `site privacy [status\|private\|public]` | Show or change the hosted static site's gate; applies to vanity slug and active custom-domain hosts for the app, not API hosts | `bounded site privacy public --app-id <id>` |
 | `site preview` | **Preview a PRIVATE (owner-gated) site in a browser WITHOUT making it public.** As owner/admin you already pass the gate; this mints a short-lived, shareable one-click link (`/__bounded/gate/land?token=…`) that sets the gate cookie and lands on the real site, then expires back to the sign-in page. `--ttl <minutes>` (default 60, max 1440), `--host <host>` (defaults to the app's mapped slug/custom domain), `--open` to launch a browser. Authorized web accounts and wallets are supported: the CLI obtains the required app-bound identity token by exchanging the platform session or signing with the selected wallet. The link is a bearer secret until it expires - don't post it publicly. | `bounded site preview --app-id <id> --open` |
+| `preview topup <credits>` | Add 1 to 20 credits to a live preview's budget (owner-only). The credits come from the app's own ledger, so ask the owner before running it for them; refused when it would leave that ledger below one day of the agent's limit or push one preview past 100 credits of top-ups. A `429 preview_budget_exhausted` from the preview's backend, or `409 preview_budget_immutable` from `cap set`, means this is the only way to continue. `--preview <preview-app-id>`, `--app-id <parent-app-id>` | `bounded preview topup 10 --preview <id> --app-id <parent>` |
 | `site proof [status\|on\|off]` | Opt-in public proof surface: the /__bounded/boundaries page (proof stamp, plain-English invariants, decline count) + the site's Boundaries corner badge. OFF by default | `bounded site proof on --app-id <id>` |
 
 ### Publication history and concurrent deployments
@@ -1391,3 +1396,17 @@ read the invocation's error and console lines. Full guide:
 - [access-control.md](../../bounded-backend/docs/access-control.md) — what each control role can do, the `access` block, external contributors & platform super-admins
 - [formal-verification.md](../../bounded-backend/docs/formal-verification.md) — the experimental, opt-in `verify --experimental` proof report
 - [policy-tests.md](../../bounded-backend/docs/policy-tests.md) — `bounded tests` file format and semantics
+
+### Interrupted site deployments
+
+`bounded site versions --app-id <id> --json` includes deployment `attempts` alongside publication `receipts`.
+Attempts are recorded before a canonical upload claims its publication reservation, with the authenticated account, client-reported source commit and agent label, phase observations, and a terminal result when observed.
+A worker interruption can leave the last observed phase unfinished; that does not prove a process is still running.
+Older deployments may have no attempt attribution.
+Attempt history retains the newest 1,000 attempts plus the last recorded claimant, so repeated refused uploads cannot exhaust the deployment coordinator.
+Use `--attempts-cursor <attemptsCursor>` to retrieve older attempts independently of publication receipt pagination.
+
+A `canonical_apply_pending` or `canonical_apply_in_progress` error identifies the blocking operation and its reservation expiry when available.
+The reservation can remain after the writer fails, so a failed attempt is not proof the reservation has already been released.
+Inspect the operation in deployment history, resume the exact original built artifact, or wait for the reservation to expire normally.
+Do not rebuild repeatedly or manually clear deployment authority to get around the conflict.

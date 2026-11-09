@@ -60,7 +60,7 @@ Never "temporarily" add a user-held secret to an app headed for an APO.
 ### What counts as a forbidden dependency
 
 - API keys or tokens the creator obtained from a vendor (even via
-  `bounded secret put` - a key the owner sets is fine while the app is Owned,
+  `bounded secret put` - a key the creator sets is fine while the app is Owned,
   not in an APO, whose pitch is that no person is a dependency). A key the app's own agent
   obtains itself and donates to the app is not one: no person holds it, and
   the platform adds it to the app's requests to that key's hosts; a function
@@ -108,7 +108,7 @@ const res = await ctx.services.invoke("X402_FETCH", {
 });
 // res.paid === "verification_pending" means the provider response arrived,
 // but finalized settlement still belongs to the recovery lane;
-// res.chargedMicroUsd = price × 1.05 markup + the flat tx-fee surcharge.
+// res.chargedMicroUsd = price plus our markup plus the flat tx-fee surcharge.
 // Unsupported or unsafe payment terms return a stable public error without
 // reflecting the provider's raw demand.
 ```

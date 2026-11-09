@@ -12,7 +12,6 @@ Two separate things, and the difference is the whole point:
   hole big enough to drain the pool.
 
 > ORAO functions are present in compiler and runtime source, but remain `unverified` on devnet until a retained live run confirms request submission, fulfillment, reveal indexing, and the query result.
-> See [solana-capability-status.md](solana-capability-status.md).
 
 ---
 
@@ -64,7 +63,7 @@ guesses are all rejected. **A reveal collection must be:**
 |---|---|
 | `onchain: true` | it is a Solana document |
 | `fields: {}` - **empty** | no attacker-controllable content |
-| `create` rule **exactly** `@OraclePlugin.getRandomNumber($id, 0, 1) == 0` | the only legitimate way a doc appears there |
+| `create` rule **exactly** `@OraclePlugin.getRandomNumber($id, 0, 1) == 0` | the doc can only land once ORAO has fulfilled `$id` |
 | `update`/`delete` literal `false` **or absent** | write-once |
 | exactly one path variable | injective id binding |
 
@@ -76,6 +75,12 @@ it through the `roll` **query** on the request collection, not off the reveal do
 The reveal create rule deliberately carries **no `@user` term**, so it carries no
 signed-in-user requirement. Authorisation comes
 from the shape above, which is strictly stronger than "someone was signed in".
+
+**What a reveal doc shows.** A value in `[0, 1)` is always 0, so the create
+rule holds for any caller as soon as ORAO has fulfilled the id. A reveal doc's
+existence shows that `$id` was fulfilled. It does not show who requested it,
+which draw or item it belongs to, or whether the roll was already used; those
+facts live on the request document and the roll it materialised (§4).
 
 ## 2. Reading the roll
 

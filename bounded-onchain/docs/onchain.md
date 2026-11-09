@@ -9,7 +9,6 @@ transactions. Client-signed game handoff is not currently supported.
 
 This is the home for everything onchain. [data-plane.md](../../bounded-backend/docs/data-plane.md) and
 [invariants.md](../../bounded-backend/docs/invariants.md#onchain-coverage) summarize and point here.
-Read [solana-capability-status.md](solana-capability-status.md) before selecting any Solana plugin or primitive.
 
 ## Contents
 
@@ -21,6 +20,7 @@ Read [solana-capability-status.md](solana-capability-status.md) before selecting
 - [Identity rules](#onchain-rules-useraddress-only)
 - [Mirror synchronization and confirmed receipts](#mirror-synchronization-and-confirmed-receipts)
 - [Poofnet parity](#poofnet-onchain-simulation-on-realtime_offchain)
+- [Shared prices and counters](#shared-prices-and-counters-under-load)
 - [Transaction-size limit](#transaction-size-limit-one-hook--one-solana-transaction)
 - [Policy upgrade governance](#policy-upgrade-governance-runtime-v3)
 - [Invariant coverage](#invariant-coverage-onchain)
@@ -133,19 +133,17 @@ reassign ownership to repair it.
 ## Check capability status before building
 
 Protocol selection does not make every discovered plugin usable on that network.
-Bounded tracks function discovery, deployed-runtime support, and retained live verification separately.
-Run `bounded plugins list --json` for the CLI's offline callable projection, then `bounded plugins describe <plugin.function> --json` for the exact arguments, proof sorts, signer roles, return contract, and network-scoped support evidence.
-These commands need no account or network connection and their capability state is advisory, not a deploy verdict.
+Run `bounded plugins list --json` for the CLI's offline callable projection, then `bounded plugins describe <plugin.function> --json` for the exact arguments, proof sorts, signer roles, and return contract.
+These commands need no account or network connection.
 An invalid `--protocol` is rejected locally before any network request.
-The deployed program is recorded as runtime v9 on devnet (2026-10-06, slot 508118456) and runtime v8 on mainnet-beta (2026-09-29, slot 451516304), but the runtime version does not prove that an external protocol is deployed or configured.
-The scaled-price API's hosted services and app rollout remain pending after the program upgrades.
-Consult the [165-function devnet catalog](solana-capability-status.md) before generating a policy or presenting an operation as supported.
+The deployed program is recorded as runtime v11 on both clusters as of 2026-11-04 UTC (first active on devnet at slot 518401017 and on mainnet-beta at slot 465441987), but the runtime version does not prove that an external protocol is deployed or configured.
+Program readiness does not establish hosted app acceptance for the scaled-price API.
 Jupiter, Phoenix, and DFlow are unavailable on devnet.
+`DeFiPlugin.swap` and `getSwapQuote` instead use direct Meteora DAMM v2 pools on devnet.
 Kamino's KLend program IS deployed and executable on devnet at its mainnet address; what is unestablished there is a usable market and reserve set.
-SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4 as a minimum; both clusters meet that requirement, so they are no longer refused at deploy time for runtime reasons, but they stay unverified until retained live proof exists.
+SPL stake pool, Raydium CPMM, Meteora DLMM, and most Kamino calls additionally need Solana runtime v4 as a minimum; both clusters meet that requirement, so they are no longer refused at deploy time for runtime reasons.
 Meteora is **not** blocked.
-The replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so nothing about the Meteora flows is externally blocked; they stay unverified until retained live proof exists, like the rest.
-Pump.fun, PumpSwap, and Tensor remain unverified until retained live proof exists.
+The replacement DAMM v2 config `BQS7mc9ouPRb29BKMkZj3pA5yP4Yu6AKHL4MaaYG5YTG` was adopted on 2026-07-29 and the deployed runtime targets it, so nothing about the Meteora flows is externally blocked.
 
 ```json
 {
@@ -181,6 +179,15 @@ write it from a trusted server function instead of the client.
   body. It **closes the document's account** and refunds its rent to whoever
   funded it, and the offchain mirror row disappears once the close is confirmed -
   not when you call `set(path, null)`.)
+- **Rent goes back to whoever funded the document, not to whoever deletes it.**
+  The refund goes to the document's recorded funder (the wallet that paid when
+  it was created), whichever wallet signs the delete; the platform adds the
+  funder's account to the transaction. When Bounded's gas sponsor funded the
+  create, the rent returns to the sponsor, never to the app's credits, and a
+  sponsored delete whose refund covers the network fee charges the app nothing.
+  An `isPassthrough` collection has no account, so there is nothing to reclaim.
+  To keep a closed record readable afterwards, mark the collection
+  `"keepRecordOnDelete": true` ([data plane](../../bounded-backend/docs/data-plane.md#keep-deleted-records-with-keeprecordondelete)).
 - **Field types map to on-chain types** - `UInt`→u64, `Int`→i64, `String`,
   `Bool`, `Address`→a 32-byte pubkey.
 - **Reads, lists, `subscribe`, and `aggregate` work identically.** Bounded
@@ -362,7 +369,6 @@ in the realtime runtime.
 Poofnet models many source surfaces, including token flows, external trading plugins, and `@OraclePlugin.getRandomNumber`.
 That model is development evidence only.
 It does not prove external devnet program availability, replacement configuration, real-network funding, or a live transaction.
-A policy that verifies on Poofnet still needs every called function checked against the [devnet capability catalog](solana-capability-status.md).
 
 - **Writes are signed as on a real chain.** An `onchain: true` write returns
   `202` and is stored only once the required wallet signs; the SDK and server
@@ -472,6 +478,58 @@ failing txs still land on-chain (useful when simulation is flaky or you want the
 on-chain error rather than a client-side preflight reject). No effect on the
 realtime data plane. See [cli-reference.md](../../bounded-deploy/docs/cli-reference.md#--skip-preflight).
 
+## Shared prices and counters under load
+
+A rule that makes the client state a value every other write changes fails under
+load onchain. Examples: `@newData.price == @def.price` on a bonding curve,
+`@newData.out == <AMM quote>`, `@newData.seq == get(/pool/main).count + 1`.
+Plugin reads of live chain state move the same way: a creator-fee vault
+(`getCreatorFee`), a balance (`getBalance`), a quote (`getPumpBuyQuote`) or curve
+progress changes with every trade, including trades your app never sees.
+The client builds the transaction from what it read, a person approves it in
+their wallet (often 5-10 seconds), and the program runs the rule against the
+state at execution. Any other write or trade in between makes an `==` rule
+false and the transaction fails. At a launch most writes lose. Poofnet and test
+wallets that sign instantly do not show it.
+
+A write can instead carry a bound the person accepts: the most they pay, or the
+least they receive. A rule that checks the bound against the current quote with
+`get()` holds for every state the person would accept. Point each comparison the
+way the value drifts: an amount spent from a fee vault that only grows until
+someone sweeps it is `@newData.lamports <= @PumpFunPlugin.getCreatorFee(mint)`,
+never `==`. A hook can then move the
+funds and record each derived amount and counter with
+`@DocumentPlugin.updateField`, computed from `get()` at execution. Fields the
+hook derives stay null or absent in the create rule, so the client cannot set them.
+
+A floor the rule checks against the quote at execution does not stop a sandwich:
+whoever sends the transaction can put their own buy before it and their sell
+after it, and the rule then sees the price their buy already moved. When anyone
+may trigger a trade that spends a shared pot, restrict who writes it
+(`@user.address == @const.KEEPER`) and let that writer set its own floor.
+
+The buy from the [prediction market](examples/prediction-market-amm.md), with a
+minimum added and the quote in a [def](../../bounded-backend/docs/constants-and-defs.md#defs--reusable-rule-fragments):
+
+```jsonc
+"defs": {
+  "yesOut": "@PredictionMarketPlugin.getYesTokenOutAmm(@newData.amountIn, get(/pmMarkets/$marketId).collateralReserve, get(/pmMarkets/$marketId).yesSupply)"
+},
+"pmPositions/$marketId/holders/$holderId/buys/$orderId": {
+  "fields": { "amountIn": "UInt!", "minYesOut": "UInt!" },
+  "rules": {
+    "create": "... && @newData.minYesOut > 0 && @def.yesOut >= @newData.minYesOut"
+  },
+  "hooks": { "onchain": {
+    "create": "@TokenPlugin.transfer(@user.address, $marketId, @TokenPlugin.SOL, @newData.amountIn) && @DocumentPlugin.updateField(/pmMarkets/$marketId, 'collateralReserve', get(/pmMarkets/$marketId).collateralReserve + @newData.amountIn) && @DocumentPlugin.updateField(/pmMarkets/$marketId, 'yesSupply', get(/pmMarkets/$marketId).yesSupply - @def.yesOut) && @DocumentPlugin.updateField(/pmPositions/$marketId/holders/$holderId, 'yesBalance', get(/pmPositions/$marketId/holders/$holderId).yesBalance + @def.yesOut)"
+  } }
+}
+```
+
+The client quotes `yesOut` and sends it, less its slippage, as `minYesOut`.
+Values only one writer changes, such as its own balance or a create-once id, do
+not race, so exact matches on them are unaffected.
+
 ## Transaction-size limit: one hook = one Solana transaction
 
 Each onchain hook builds **one Solana transaction per write**, and a Solana
@@ -489,6 +547,13 @@ Meteora `createAccount + createMeteoraConfig` launch-config hook (~1225B raw,
 accounts** (fresh mints, ATAs, per-doc PDAs, user wallets) and **instruction
 data** (your argument bytes). If a hook is too big because of those, only
 restructuring fixes it.
+
+**Transaction v1 lifts the cap to 4096 bytes with no lookup table**, and the
+runtime builds v1 whenever the signer declares it: email/OAuth (Turnkey) wallets,
+`@bounded-sh/server` keypairs, the CLI, and browser or mobile wallets that
+advertise version 1 over Wallet Standard. Every other signer gets the 1232-byte
+v0 path above; a custom `AuthProvider` opts in by implementing
+`signTransactionV1` and listing `1` in `supportedTransactionVersions()`.
 
 Bounded surfaces the limit at two points so you don't discover it when a user's
 write fails on-chain:

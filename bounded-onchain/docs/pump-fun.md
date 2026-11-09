@@ -12,8 +12,7 @@ custody model that every call here inherits, read
 > runtime and reachable from an onchain hook, and none has a retained live
 > acceptance receipt. Source parity, proof contracts, and a local validator run are
 > not live evidence. Confirm any transaction you send and poll for the expected
-> Bounded postcondition rather than assuming it. See
-> [solana-capability-status.md](solana-capability-status.md).
+> Bounded postcondition rather than assuming it.
 
 ## Conventions that apply to every call
 
@@ -27,8 +26,8 @@ custody model that every call here inherits, read
   executed, never how much moved. Read balances or the mirror afterwards for
   amounts.
 - **Amounts are integers in base units.** SOL amounts are lamports; token amounts
-  are the mint's smallest units. The buy's `minTokensOut` is an absolute token
-  floor in those same units, not a basis-points slippage.
+  are the mint's smallest units. `buyExactSolInWithMinimumOutput`'s `minTokensOut`
+  is an absolute token floor in those same units, not a basis-points slippage.
 - **Mutating calls require an authenticated caller.** The three read functions
   (`getBondingCurveProgress`, `getCreatorFee`, `getPumpBuyQuote`) are pure and do not.
 
@@ -47,7 +46,7 @@ custody model that every call here inherits, read
 | `name` | `String` | Token name. |
 | `symbol` | `String` | Token symbol. |
 | `uri` | `String` | The Metaplex metadata JSON URL. It must be permanent and public - see [the metadata hosting note](meteora-token-launch.md#the-uri-must-be-a-metaplex-metadata-json-not-an-image), which applies identically here. |
-| `creator` | `Address` | **The address that RECEIVES creator fees - and the account that PAYS the whole `Create`.** A wallet, the `@contract.address` sentinel (the app escrow PDA), or an account id. This is the only place the fee recipient is chosen, and Pump.fun's `Create` bills this same account for mint rent (1,461,600 lamports), metadata rent (~5,616,720), and bonding-curve/ATA setup - about 0.025 SOL total. |
+| `creator` | `Address` | A wallet, the `@contract.address` sentinel (app escrow PDA), or a named account. Pump bills this account for creation and uses it as the initial creator-fee recipient. |
 | `isMayhemMode` | `Bool` | `createTokenV2` only. Enables Pump.fun mayhem mode. Pass `false` for the ordinary launch. |
 | `config?` | object | Optional. `{seedMode: "idOnly"}` derives the mint PDA from `appId + tokenId` alone (no name/symbol), which is what enables vanity addresses. Omit for the legacy derivation. |
 
@@ -55,7 +54,10 @@ custody model that every call here inherits, read
 which is hardwired to the pool-creation signer. Point it at an escrow or a named
 account when the app, not an individual, should collect the fees.
 
-Because `creator` also pays, an app-custody creator (a named account id) must
+On a cluster running v11, a non-Mayhem `createTokenV2` launch with a PDA creator and `{quoteMint: @TokenPlugin.USDC, buyAmount, maxQuoteCost}` buys the specified number of tokens as part of creation.
+The creator needs USDC for that buy. The transaction's rent funder covers creation in SOL and receives its unused advance back in the same transaction.
+
+For an ordinary SOL launch, an app-custody creator (a named account id) must
 already hold the whole `Create` cost when the hook runs - `createAccount` alone
 leaves only its own rent minimum (~0.00089 SOL), and the signing user's wallet
 balance is irrelevant to this transfer.
@@ -73,7 +75,7 @@ Accounts v3` - both rows are in the
 ## Buying on the curve
 
 ```
-@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, minTokensOut) -> Bool
+@PumpFunPlugin.buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut) -> Bool
 @PumpFunPlugin.getPumpBuyQuote(mint, solAmount) -> Int            (read)
 ```
 
@@ -86,10 +88,11 @@ Accounts v3` - both rows are in the
 
 `minTokensOut` is required and must be positive.
 It is an absolute floor, not a basis-points slippage.
-Quote it first with `@PumpFunPlugin.getPumpBuyQuote(mint, solAmount)` - which returns the tokens the buy will ACTUALLY yield against the current curve, AFTER the pump fee (the real fill `buyExactSolIn` produces, not the raw pre-fee curve amount) - then subtract your own tolerance, e.g. `quote * 9500 // 10000` for 5%.
+Quote it first with `@PumpFunPlugin.getPumpBuyQuote(mint, solAmount)` - which returns the tokens the buy will ACTUALLY yield against the current curve, AFTER the pump fee (the real fill `buyExactSolInWithMinimumOutput` produces, not the raw pre-fee curve amount) - then subtract your own tolerance, e.g. `quote * 9500 // 10000` for 5%.
 That 5% only has to cover PRICE MOVEMENT between quoting and buying; the pump fee is already baked into the quote, so you do not add it on top.
 The program checks the floor you pass verbatim and never re-derives one, so a curve an attacker moved between quote and buy cannot shrink your fill below the amount you priced.
 There is no matching sell primitive and no "exact tokens out" variant.
+The older `@PumpFunPlugin.buyExactSolIn(source, mint, solAmount, slippageBps)` stays for deployed policies; its fourth argument is basis points of slippage from 0 to 10000, so a token floor passed there is refused.
 
 ## Creator fees
 
@@ -109,6 +112,15 @@ There is no matching sell primitive and no "exact tokens out" variant.
 > fees".** When the bonding-curve or vault account is not present in the
 > transaction's accounts, the handler returns `0` rather than failing. Do not treat
 > `0` as proof that a launch earned nothing.
+
+Every trade adds to the vault until someone sweeps it, so a rule that pins an
+amount to it with `==` fails whenever anyone trades between your read and the
+transaction landing; bound it with `<=` instead
+([shared prices and counters under load](onchain.md#shared-prices-and-counters-under-load)).
+After graduation, trades on PumpSwap pay creator fees into a separate AMM vault
+that `collectCreatorFee` does not touch: sweep with
+`@PumpFunPlugin.transferCreatorFeesToPump(mint) && @PumpFunPlugin.collectCreatorFee(creator)`
+in one hook, and only once the curve is complete.
 
 ## Fee sharing (splitting creator fees between several parties)
 
@@ -176,8 +188,8 @@ basis points, not a fraction). It is `100` once the curve is marked complete. Li
 
 ## What this surface cannot do
 
-- No sell primitive and no "exact tokens in/out" buy variant; `buyExactSolIn` is the
-  only trade exposed.
+- No sell primitive and no "exact tokens in/out" buy variant; `buyExactSolInWithMinimumOutput`
+  and the older `buyExactSolIn` are the only trades exposed.
 - No deadline or expiry argument anywhere - bound staleness in policy against
   `@time.now` if it matters.
 - No getter for the configured shareholder set, the config admin, or a per-recipient

@@ -50,6 +50,8 @@ Naming the principal is what makes it usable in rules: `@user.id == @const.BOUND
 Rules:
 - A policy MAY declare a `BOUNDED_*` name to self-document, but only with the exact platform value — a divergent value fails deploy closed.
   Never hand-write a different address; that is exactly the smuggle the injection exists to prevent.
+- Never inline the app's own id or these values elsewhere in the policy; use `@const.BOUNDED_APP_ID` etc.
+  Previews copy the policy and swap only the `BOUNDED_*` values, so an inlined id makes the copy fail (`genesis_seed_failed`).
 - The three `BOUNDED_*_PRINCIPAL_*` namespaces are platform-managed: two public-surface functions whose names differ only by case (`getUser` and `GETUSER`) would share one constant and are refused at deploy; a declared name in those namespaces that no function produces is a stale value from a withdrawn surface (dropped, and a rule still naming it then fails with `@const.X is not defined`) unless it is not even a well-formed principal, in which case it is refused. Author constants outside those namespaces may still start with `BOUNDED_`.
 - Local apps get the same treatment automatically: the local control plane derives from the local app id, so a local policy's `BOUNDED_TREASURY_PDA` is the local app's own treasury PDA.
   Policy-test fixtures may declare any `BOUNDED_*` value (the sandbox is the mock lane); real deploys recompute and reject a mismatch.
@@ -77,6 +79,13 @@ Rules:
 ```
 
 - A def is a **rule-fragment string**. Reference it as `@def.name`.
+- A def is any expression, not only a true/false check, and it works in every
+  expression position, hooks and named queries included. A shared formula such
+  as a curve price can live in one def,
+  `"defs": { "price": "@const.BASE + get(/pool/main).sold * @const.STEP" }`,
+  and appear as `"create": "@newData.paid == @def.price"` in a rule and
+  `"@TokenPlugin.transfer(@user.address, @const.TREASURY, @TokenPlugin.SOL, @def.price)"` in a hook.
+  Data positions (invariant limits, field defaults) take `@const`, not `@def`.
 - Defs are inlined **wrapped in parens** so they compose safely inside larger
   boolean expressions: `@def.canEdit` above becomes  `((@user.id == @data.owner) || (@user.id == 'acct_...admin'))`.
 - Defs may reference **other defs and constants** (resolved recursively). A
@@ -109,7 +118,10 @@ policy.json ──► (deploy) ──► resolvePolicyMacros ──► validate 
 ```
 
 - Runs **before** validation and bytecode compilation — so runtime
-  enforcement only sees literals. Macros add **no runtime cost**.
+  enforcement only sees literals. Macros add **no runtime cost** of their own,
+  but each `@def` reference is a full copy: a def used five times is stored and
+  evaluated five times, exactly as if pasted in. Total expanded macro output is
+  capped at 1 MiB per policy.
 - The `constants`/`defs` blocks are kept on the stored policy for transparency
   (they are reserved keys; they are never treated as collections).
 - **Errors** (surfaced at `bounded deploy`):
@@ -136,7 +148,7 @@ export default async function settleMatch(args, ctx) {
   across room eviction).
 - `{}` when the policy has no `constants` block. Values are the exact scalars
   `@const.NAME` resolves to in rules — one source of truth for rules AND code.
-- **Not yet available in agent (flue) runtimes** — agents get their config at
+- **Not yet available in backend-runtime agents** - agents get their config at
   artifact-deploy time today; pass needed values via agent env/args until the
   policy channel is wired.
 

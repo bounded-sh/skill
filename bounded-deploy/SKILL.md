@@ -33,13 +33,13 @@ Read only the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| First setup, normal deploy, owner publishing an Owned OpenApps frontend without an AI run, multiple app IDs from one project | [docs/quickstart.md](docs/quickstart.md) |
+| First setup, normal deploy, creator publishing an Owned OpenApps frontend without an AI run, multiple app IDs from one project | [docs/quickstart.md](docs/quickstart.md) |
 | Normal web account login, session refresh, headless OTP, account switching | [docs/accounts.md](docs/accounts.md) |
 | Hosted web frontend, preview, private/public access | [frontend-hosting.md](../bounded-frontend/docs/frontend-hosting.md) |
 | Multi-environment policies: per-env app id, constants, schedule cadence, function scoping | [docs/environments.md](docs/environments.md) |
 | Build an app from a prompt, iterate with `edit`, watch/cancel/gate a run | [docs/cli-reference.md](docs/cli-reference.md) (Prompt-driven builds) |
 | Source sync, `--with-source`, clone, pull | [docs/source-sync.md](docs/source-sync.md) |
-| Port an existing app (Supabase, Firebase, Express, Next, a key-holding backend) onto Bounded; decide what becomes rules, functions, schedules, or a capability | [docs/porting-an-existing-app.md](docs/porting-an-existing-app.md) |
+| Bring or migrate an existing app; preserve its stack where supported and agree on any material migration | [docs/porting-an-existing-app.md](docs/porting-an-existing-app.md) |
 | Third-party API discovery, readiness, and requests: `bounded services search/describe/request/status` | [docs/cli-reference.md](docs/cli-reference.md) (Capabilities) |
 | The dry run of the checks an oApp must pass to open: `bounded oapp preflight` | [docs/cli-reference.md](docs/cli-reference.md) (Open Apps) |
 | Custom domains and vanity slugs | [docs/domains.md](docs/domains.md) |
@@ -73,6 +73,8 @@ account profile, or recovery of an existing key-owned app.
 - `onchain_creation_owner_conflict` (`409`): the app's on-chain account is
   finalized under a wallet the creation did not intend. That is an integrity
   fault, not a state to retry; escalate for operator review.
+- A site upload reports `canonical_apply_pending`, `canonical_apply_in_progress`, or a generic `external_apply_unavailable`: use the [interrupted site deployment guide](docs/cli-reference.md#interrupted-site-deployments).
+  Inspect `bounded site versions --app-id <id> --json`; the policy deployment status command does not diagnose a site publication reservation.
 - Unsure which applies, or unsure whether a fresh deploy is safe: run the
   read-only `bounded deploy status --json` first. It reports what holds the
   deploy slot and a `freshDeploySafe` verdict, and it never mutates anything.

@@ -59,7 +59,7 @@ move funds or mutate chain state.
 Standard managed-services metering: each tool has a published provider cost
 (Helius credits, billed at their $5/M overage rate; Alchemy compute units at
 the ~$0.45/M CU on-demand rate) and Bounded charges the app owner's
-credit pool at cost + 5% — charged before the provider call,
+credit pool at cost plus our markup, charged before the provider call,
 refunded automatically if the provider errors. Cheap reads are fractions of a
 cent (a Solana RPC read is ~6 µUSD); the expensive ones are asset search and
 parsed history (~525 µUSD). Fail-closed 402 `services_credit_exhausted` when

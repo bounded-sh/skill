@@ -1,16 +1,25 @@
-# Porting an existing app onto Bounded
+# Bringing an existing app to Bounded
 
-**What's in here / when to read this:** the user has a working app somewhere
-else (Supabase, Firebase, an Express or Next API, a Rails or Django backend, a
-cron box) and wants it on Bounded. This page decides what each piece becomes,
-in what order to move it, and where a third-party dependency lands on the
-capability ladder. Mechanics live in the linked pages; this one only routes.
+Use this guide when the user brings an existing repository or asks to migrate an app to Bounded.
+First determine what can run with its existing architecture; the migration recipes below apply only to changes the user chose.
 Part of the **bounded-deploy** skill.
+
+## Preserve the app first
+
+Importing a repository does not authorize rewriting it or replacing its backend, authentication, data, or features.
+Inspect its source, build and run commands, services, required configuration, tests, and current deployment before choosing a hosting path.
+Preserve its stack and behavior by default; an Owned app can [keep its backend](#keep-your-backend).
+Check the actual [server hosting limits](../../bounded-frontend/docs/server-apps.md): a language, framework, or Dockerfile alone does not establish compatibility.
+
+Make routine build and configuration adaptations within the user's request when the needed information is available.
+For missing configuration, use the repository's documented names and available project settings, distinguish public build values from secrets, and ask only for information or decisions that remain unresolved.
+If a required service or runtime cannot run here, explain the constraint and options before replacing it or dropping a feature.
+Recommend a path and get the user's choice before a material migration or substitute service; an existing instruction choosing that path is sufficient.
+Continue independent setup and inspection while waiting, and describe any incomplete preview accurately.
 
 ## The decision tree
 
-Walk every piece of the existing app through this tree, top to bottom. Stop at
-the first match.
+For the parts the user chose to migrate, walk this tree top to bottom and stop at the first match.
 
 ```text
 Is it data the app reads and writes?
@@ -68,7 +77,7 @@ For every API the old app called with a key, run
 
 - `live` - call it from a function: `ctx.services.invoke("<slug>", args, { idempotencyKey })`.
 - `callable` - an x402-priced API; call it now through `ctx.services.invoke("X402_FETCH", { url, method, body, maxUsd })`. The relay pays per call; the app holds no key.
-- `requestable` (or nothing matched) - file it once: `bounded services request "<what you need>"`, follow it with `bounded services status`, and build without it until the Hub says it is live.
+- `requestable` (or nothing matched) - file it once: `bounded services request "<what you need>"`, follow it with `bounded services status`, and agree with the user on how to handle the unavailable feature while continuing independent work.
 
 An app may keep a provider it already uses, with the key the owner sets in `ctx.secrets`; an app
 headed to an APO on openapps.xyz may not, and `bounded oapp preflight` will refuse on it.
@@ -100,9 +109,12 @@ What the rules refuse was never admissible under the new policy.
 Porting is optional for an Owned app.
 An app may keep Supabase, Firebase or another backend it already uses and host only its frontend here.
 Client config such as a Supabase URL and anon key or a Firebase web config is public, not a secret: the build inlines `VITE_*` and `NEXT_PUBLIC_*` values, and no build sees a value set with `bounded secret put`.
+Put those values in `bounded.json` `build.env` with `bounded site env set NAME VALUE` (public names only): source sync leaves out every `.env` file, and `bounded site build` and an OpenApps agent's release build both add `build.env` to the build.
+An OpenApps preview can use its own values instead, such as a separate Supabase project's: `bounded site env set --preview NAME VALUE` writes `build.previewEnv`, `bounded site build --preview` uses it, and a release from the preview swaps each preview value back to its `build.env` value, so the live app keeps the live values.
 Server-side keys (a service-role key, a Stripe secret) are set by the owner with `bounded secret put` and read at run time by functions and by a [server app](../../bounded-frontend/docs/server-apps.md).
 A database reached over HTTP works from both (Supabase JS, Neon serverless HTTP, PlanetScale, Turso).
 A driver that opens a TCP socket, such as `pg` for Postgres, does not: functions refuse raw sockets in the bundle, and server apps do not support TCP database drivers.
+Supabase sign-in sends people back only to addresses its Redirect URLs allow (Supabase dashboard, Authentication, URL Configuration): add the app's live address and each preview address people sign in on, or a magic link lands on the app's old address.
 An app headed to an APO is held to the key rules in the ladder section above.
 
 ## Recipes by source stack
@@ -157,9 +169,9 @@ An app headed to an APO is held to the key rules in the ladder section above.
 
 ### A backend that exists mainly to hold API keys
 
-- List every key. For each: ladder it (above). What is `live` or `callable`
-  needs no key and no server. What is neither is requested, and the feature is
-  built without it or called out.
+- List every key and apply the ladder above to each.
+  What is `live` or `callable` needs no key and no server.
+  For an unavailable capability, describe the affected feature and use the path the user chose instead of silently dropping it.
 - What is left over is usually small enough to be one function per key.
 
 ## Verify before you say it is ported
@@ -167,5 +179,6 @@ An app headed to an APO is held to the key rules in the ladder section above.
 - `bounded deploy` accepted the policy and `bounded tests run` passes.
 - `bounded site deploy` served the site; a denied write returns `403`, a
   denied read returns an empty `200`.
-- For an oApp: `bounded oapp preflight` is READY on the deployed app, and the
-  source is synced so its agent can work from it.
+- For an app brought to OpenApps: the source is synced so its agent can work
+  from it. `bounded oapp preflight` checks opening an app, not bringing one
+  (see the **openapps** skill).

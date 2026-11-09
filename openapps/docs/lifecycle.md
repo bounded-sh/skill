@@ -1,4 +1,4 @@
-# The oApp lifecycle: Owned, on sale, Open
+# The oApp lifecycle: Owned, on sale, publicly owned
 
 **What's in here:** how an oApp starts with its own agent, how its live app and previews get different values, the three modes an app is in, what asking to open requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
@@ -8,8 +8,8 @@ An OpenApps app is two Bounded apps that stay together for its whole life: the a
 The agent is a Hermes agent with its own computer, and it exists from the moment the app is created on openapps.xyz.
 An app starts one of two ways:
 
-- **From scratch:** the owner creates it on openapps.xyz, and the agent builds the first version.
-- **From an existing Bounded app:** the owner hands an app they already built (with `bounded init`, `bounded deploy`, and `bounded site deploy`) to a new agent.
+- **From scratch:** the creator creates it on openapps.xyz, and the agent builds the first version.
+- **From an existing Bounded app:** the creator hands an app they already built (with `bounded init`, `bounded deploy`, and `bounded site deploy`) to a new agent.
   The agent's computer works from a clone of the app's synced source, so the handover is refused with `user_app_source_not_synced` until a deploy with source lands.
   An app that already belongs to an agent is refused with `user_app_already_attached`, and one whose billing is set to another account or pool with `user_app_billing_bound`.
   An app already on Solana mainnet under the owner's own wallet must first transfer its on-chain owner role to OpenApps custody (`user_app_custody_transfer_required`): one transaction the owner's wallet signs, and the app itself stays the owner's.
@@ -36,27 +36,28 @@ The same agent keeps working in every mode.
 
 | Mode | Who controls the app | Who approves a release or a governed action |
 |---|---|---|
-| Owned | its owner | the owner; a release ships once its clean rebuild passes unless the owner asked to approve releases first |
+| Owned | its creator | the creator; a release ships once its clean rebuild passes unless the creator asked to approve releases first |
 | On sale | the platform, while the app's token sale runs or settles | nobody; the only release that can ship is a repair the Gauntlet asked for, which the platform approves |
-| Open | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
+| Publicly owned | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
 
 One exception holds in Owned and Open alike: a swap of SOL or the app token into the venue's USDC, or a perp margin, that fits the agent's daily limit is approved by the venue on the spot, with no review and no vote ([the agent's daily limit](launch-economics.md#the-agents-daily-limit)).
 
-On sale and on an Open app there is no owner: no owner's chat, no owner's approval, and no owner's settings.
+On sale and on a publicly owned app there is no owner: no creator's chat, no creator's approval, and no creator's settings.
 The agent runs on its own schedule and talks to people in the app's Discussion.
 
-## From Owned to Open
+## From Owned to publicly owned
 
-1. **Owned: build locally or with the agent.** An external coding agent acting for the owner can use [direct frontend publishing](../../bounded-deploy/docs/quickstart.md#publish-an-owned-openapps-frontend-from-local-source) without an app-agent run, subject to the platform's checks.
-   When the owner directs the app's own agent, it builds on previews and requests releases through the owner's review.
+1. **Owned: build locally or with the agent.** An external coding agent acting for the creator can use [direct frontend publishing](../../bounded-deploy/docs/quickstart.md#publish-an-owned-openapps-frontend-from-local-source) without an app-agent run, subject to the platform's checks.
+   When the creator directs the app's own agent, it builds on previews and requests releases through the creator's review.
+   The creator can instead let the agent decide what to build ("The AI decides", which needs Automatic mode): the creator's posts then count like anyone's in Discussion, and the creator and co-creators still approve or veto each release.
    A release publishes the app to Solana mainnet (see [oApps run on mainnet](#oapps-run-on-mainnet)).
-2. **Ask to open.** The owner submits the storefront (name, ticker, description, images), the constitution, the privacy statement, and accepts the terms: see [what asking to open requires](#what-asking-to-open-requires).
-   Asking changes nothing about the app: the owner keeps it, can withdraw the request, and can ask again, which replaces the earlier request.
-3. **An admin starts the sale.** An OpenApps admin starts the token sale from the request; the owner and public visitors cannot start it.
-   The operator cannot start it either while a release is still publishing, after the app changed since the request, or after the agent's AI settings changed: the owner asks again, and the new request is reviewed against the app as it is then.
+2. **Ask to open.** The creator submits the storefront (name, ticker, description, images), the constitution, and accepts the terms: see [what asking to open requires](#what-asking-to-open-requires).
+   The platform checks the saved declaration and holds the app as soon as the request succeeds.
+3. **An admin starts the sale.** An OpenApps admin reviews the request and can start the sale or return the held app to its founder.
+   Ordinary external production releases pause while the app is held.
    Existing backings are converted to auction orders before the opening countdown begins.
    If a conversion fails, the sale stays in preparation and accepts no public orders; an admin must retry or return the app.
-   From the start of the sale the platform holds the app: it has no owner, and nobody but its agent can change it (owner and collaborator changes are refused with `managed_app_mutation_forbidden`).
+   The platform continues to hold the app: it has no owner, and nobody but its agent can change it (owner and collaborator changes are refused with `managed_app_mutation_forbidden`).
    The app keeps the address it already serves, and the sale, its listing, and the constitution appear on openapps.xyz.
 4. **During the sale.** The Gauntlet runs 15 checks on what the app serves; graduation requires a pass or an explicit admin waiver for this sale.
    An attempt starts when the sale starts and again after each release during it, and the agent's periodic check asks for one whenever the app is owed one.
@@ -67,7 +68,7 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
    Nothing changes on the app except a repair the Gauntlet asked for, which the agent releases and the platform approves.
    No proposal can be filed while the sale runs.
 5. **The sale ends.**
-   A graduated sale makes the app Open for good: its holders approve its releases and governed actions, and its constitution, the agent's AI settings and the agent's daily limit change only through them.
+   A graduated sale makes the app publicly owned for good: its holders approve its releases and governed actions, and its constitution, the agent's AI settings and the agent's daily limit change only through them.
    A failed or expired sale hands the app back to its owner exactly as it was, and it is Owned again.
    The platform advances settlement automatically, including token creation, pool creation, and the creator and venue payouts, even when nobody has the page open.
    A launch recovery control resumes outstanding steps; it never reopens bidding or creates a second pool.
@@ -78,45 +79,39 @@ A request to open an app that already had a sale is refused with `oapp_opening_s
 
 ## Backing before the sale
 
-People can back an Owned app before its owner asks to open it.
-A backing is escrowed USDC with a market-cap limit, not a purchase of an already launched token, and it remains withdrawable until the sale starts.
-There is no cap on how much an app can be backed: one backing per wallet, between the venue's minimum and maximum order size, at one of four market-cap limits ($25K, $50K, $100K or $250K, rounded to the sale's price grid).
-To change a backing's amount or market-cap limit, withdraw it first, then back the app again with the full new amount while backing remains open.
+New backings are no longer offered; people upvote an Owned app instead.
+A backing made before that is escrowed USDC with one of four maximum market caps ($25K, $50K, $100K or $250K, rounded to the sale's price grid), not a purchase of an already launched token.
+It cannot be edited, and it stays withdrawable in full until the sale starts.
 Every new sale reserves a backer-only first interval: the first 1/24 of the bidding window, or one hour for a 24-hour sale.
-Only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its limit.
+Only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its maximum.
 The countdown before bidding and this first bidding interval are separate.
-When a checkpoint moves the clearing valuation past an order's limit, the order shows as outbid on the sale page and in the app's notification bell, and a wallet that keeps sale emails on is emailed from the app's own mailbox.
 
 ## What asking to open requires
 
-The request is `POST /app/<mainAppId>/oapp-opening` on the developer API, from the owner's own account, and `POST /app/<mainAppId>/oapp-opening/withdraw` withdraws it.
-A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it is present, because it is written for the owner.
+The request is `POST /app/<mainAppId>/oapp-opening` on the developer API, from the owner's own account, after the app has its agent.
+A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it is present, because it is written for the creator.
 
 | Requirement | Refusal |
 |---|---|
 | The caller owns the app | `owner_required` |
 | The app has its agent attached | `oapp_opening_agent_not_attached` |
-| The app is not already on sale or Open | `oapp_opening_already_started` |
+| The app is not already on sale or publicly owned | `oapp_opening_already_started` |
 | Neither the app nor its agent is being deleted | `oapp_opening_app_being_deleted` |
 | The declaration has exactly the shape below | `invalid_oapp_opening_declaration`, `invalid_oapp_opening_slug`, `invalid_oapp_opening_storefront`, `invalid_oapp_opening_constitution`, `invalid_oapp_opening_intent`, `invalid_oapp_opening_terms` |
-| The venue's record of the agent is complete, and its treasury names the owner's wallet | `oapp_opening_agent_record_unavailable` |
+| The venue's record of the agent is complete, and its treasury names the creator's wallet | `oapp_opening_agent_record_unavailable` |
 | The app runs on mainnet under the OpenApps custody key: from the end of its setup when its agent built it, from the agent's first release when it already existed (see [oApps run on mainnet](#oapps-run-on-mainnet)) | `oapp_opening_mainnet_custody_required` |
 | The app is public: its page, its site, and its source | `oapp_opening_public_app_required` |
 | The split of sale proceeds is final: there is none, or it is sealed | `oapp_opening_proceeds_split_unsealed` |
-| The agent is on Automatic with its AI on, because an app with no owner has nobody to start it | `oapp_opening_automatic_required` |
-| The request names the slug the app already serves | `oapp_opening_slug_mismatch` (`oapp_opening_slug_missing` before the app has one) |
 | The app never had a sale | `oapp_opening_sale_exists` |
-| The app serves a site and has synced source | `oapp_app_release_site_missing`, `oapp_app_release_source_not_synced` |
-| The app runs no [server](../../bounded-frontend/docs/server-apps.md): an Open app cannot run one yet | `oapp_opening_app_server_unsupported` |
-| The app passes the opening safety checks | see [the launch gate](launch-gate.md) |
-| The privacy statement is about the source the owner reviewed | `oapp_opening_evidence_changed`: read the source status again and ask again |
+| The app has synced source | `oapp_app_release_source_not_synced` |
+| The app passes the APO safety checks | see [the launch gate](launch-gate.md) |
 
 An app that publishes while the request reads it is refused with `oapp_opening_app_changing`; ask again once it has settled.
 
-The declaration has exact keys and nothing else: `requestedSlug`, `storefront`, `constitution`, `openingIntent`, and `acceptedTerms`.
-The constitution has exactly seven text sections (`preamble`, `purpose`, `objectives`, `tools`, `skills`, `workflow`, `safetyRules`), each non-empty and at most 4000 bytes.
-It carries no AI settings: the platform seals the agent's own saved models and limits.
-`GET /app/<mainAppId>/oapp-source-status` gives the `headRev` and privacy digest the `openingIntent` names, and `bounded oapp preflight` is the dry run of what the request reads off the app: the safety checks, the synced source, and the served site ([preflight](preflight.md)).
+The founder submits `storefront`, `constitution`, `acceptedTerms`, and optionally `economicModel`.
+The constitution has seven text sections (`preamble`, `purpose`, `objectives`, `tools`, `skills`, `workflow`, `safetyRules`), each up to 4000 bytes, including empty sections.
+The platform reads the current managed source, privacy evidence, models and spending limits.
+The request runs no agent and requires no redeployment of the original external site.
 
 Once the sale has started, `GET /public/oapps/<rootAppId>/opening` reports it: `phase` is `sale`, `open`, or `returned`, and it answers 404 `oapp_opening_not_found` before that.
 
@@ -147,4 +142,4 @@ Source rides the deploy; there is no separate register or sync machinery.
 
 With that set, every `bounded site deploy` (and `bounded deploy`) also pushes the project source tree to the app's cloud source repository and prints `source synced: <sha>`.
 One-off control: `--with-source` / `--no-source` on the deploy commands.
-An app headed to OpenApps must deploy with source ON, and the source that ships must be the tree that produced the deployed site.
+An app headed to OpenApps must deploy with source ON, so the agent can release future changes from the managed source.

@@ -164,6 +164,10 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
 - **Schedules are offchain-only** — a scheduled mutation needs a server signer,
   which an onchain collection lacks. Declaring `schedule` on `"onchain": true` is
   rejected.
+- **A preview app never runs schedules** (`bounded previews create`): the platform
+  drops its scheduled and heartbeat runs, while direct invocation still works. To
+  exercise a scheduled function on a preview, run it with `bounded functions invoke`
+  (with `--idempotency-key` when it calls `ctx.ai` or `ctx.services`).
 
 > **A schedule runs a HOOK.** `schedule.run` (and `dueRows.run`) names a declared
 > `hooks.scheduled.<run>` bytecode hook, fired on the cadence as a privileged
@@ -177,7 +181,11 @@ schedule's `run` must name a declared `hooks.scheduled.<name>`.
 > to the function so it runs as a real identity. **Deploy-ordering:** the function
 > must be deployed for its schedule to register — deploy the function before (or with)
 > the policy that schedules it; a later `functions deploy` re-registers, so the order
-> self-heals. Use a scheduled **hook** when the work is a pure in-boundary write (reset
+> self-heals. A schedule whose function cannot run still deploys, and the deploy warns
+> `scheduled_function_not_runnable` with the function, cadence, collection, and a
+> `reason`: `no_code` until you `functions deploy` it, or `browser_only` /
+> `public_only` for a `browser` or `public` function, which never runs on a schedule.
+> Use a scheduled **hook** when the work is a pure in-boundary write (reset
 > a quota, roll a counter) or when you need the due row's id (functions don't yet
 > receive it — see [functions.md](functions.md)).
 

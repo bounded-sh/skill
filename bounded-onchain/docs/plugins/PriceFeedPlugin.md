@@ -1,13 +1,11 @@
 <!-- GENERATED FILE. Do not hand-edit.
-     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
-     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).
+     Prose: bounded-onchain/docs/plugins/_fragments/.
      Regenerate: node scripts/generate-plugin-catalog.mjs -->
 
 # `@PriceFeedPlugin`
 
 Pyth price reads by 64-hex feed id.
-
-Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
 
 Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
 
@@ -18,8 +16,9 @@ Use `String` as the named-query return type.
 Do not pass this result into integer rule arithmetic or compare it directly to an integer: a numeric-looking string is not an integer price.
 
 `getPriceFeedScaled(feedId, decimals)` is a separate USD-only integer API requiring runtime v8 when executed in the Solana program.
-The devnet program runs runtime v9 as of 2026-10-06 (slot 508118456); mainnet-beta remains on runtime v8 as of 2026-09-29 (slot 451516304).
-Only the programs have been upgraded for this API; the matching hosted worker, query, and compiler services, venue policy, and frontend rollout remain pending.
+The devnet program first reached runtime v11 at slot 518401017 on 2026-11-04 UTC.
+Mainnet-beta reached runtime v11 at slot 465441987 on the same date.
+Program readiness does not establish hosted app acceptance for this price API.
 The devnet catalog remains `unverified` until hosted app acceptance is established.
 Pass a `@PriceFeedPlugin.<SYMBOL>` constant or a 64-character Pyth feed ID, then an integer precision from 0 through 18.
 It returns `floor(USD price * 10^decimals)` as a positive `UInt` using exact checked arithmetic.
@@ -51,7 +50,6 @@ The frontend must use the same scale and rounding when deciding how much SOL is 
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unverified** (source parity only); markers: LIVE-PYTH-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -66,7 +64,6 @@ The frontend must use the same scale and rounding when deciding how much SOL is 
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `uint`
-- Status: **unverified** (source parity only); markers: NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

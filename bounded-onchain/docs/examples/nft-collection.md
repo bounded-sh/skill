@@ -2,8 +2,6 @@
 
 A user creates a Metaplex Core collection onchain, then only that collection's creator can mint NFTs into it, delivered straight to any recipient wallet.
 
-Status: `@NFTPlugin.createCollection`, `@NFTPlugin.mintNFT`, `@NFTPlugin.getCollectionMintAddress`, `@NFTPlugin.getTokenMintAddress`, and policy `get()` are currently **unverified** (LIVE-PENDING) in [solana-capability-status.md](../solana-capability-status.md).
-
 ## Policy
 
 ```json
@@ -85,4 +83,3 @@ Updates and deletes are disabled on both paths, so there are no patch payloads h
 - [NFTPlugin reference](../plugins/NFTPlugin.md)
 - [Custody and PDAs](../custody-and-pdas.md)
 - [Plugin catalog](../plugins.md)
-- [Solana capability status](../solana-capability-status.md)

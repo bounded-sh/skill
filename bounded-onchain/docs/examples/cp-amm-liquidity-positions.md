@@ -2,8 +2,6 @@
 
 Give every Meteora cp-AMM liquidity position its own named-PDA owner, so one document path maps to one position NFT and one physically isolated pot of funds, with the full lifecycle (create, deposit, withdraw, claim fees, close) driven by document writes.
 
-Status note: every `@DeFiPlugin` cp-AMM function used here is currently **unverified** (source parity only, LIVE-METEORA-PROOF marker), and document `get()`, `@AccountPlugin.createAccount`, and `@TokenPlugin.transfer` are **unverified** (LIVE-PENDING) - check [solana-capability-status.md](../solana-capability-status.md) before shipping.
-
 ## Policy
 
 Replace `POOL` with your real cp-AMM pool address (derivable via `@DeFiPlugin.getCpAmmPoolAddress`) and the two mints with your pair. Position ids are the PDA account ids, so prefix them (`pos_...`) client-side: the account-id namespace is app-global and ids must never parse as a pubkey.
@@ -119,4 +117,3 @@ All documents are `"onchain": true` with `"read": "true"` (validator-enforced). 
 - [DeFiPlugin reference](../plugins/DeFiPlugin.md) - manifest argument details for every cp-AMM call used here
 - [Custody and PDAs](../custody-and-pdas.md) - the named-PDA idiom and account-id hygiene
 - [Plugin catalog](../plugins.md)
-- [Capability status](../solana-capability-status.md)

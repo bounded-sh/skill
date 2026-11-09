@@ -1,19 +1,17 @@
 <!-- GENERATED FILE. Do not hand-edit.
-     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
-     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).
+     Prose: bounded-onchain/docs/plugins/_fragments/.
      Regenerate: node scripts/generate-plugin-catalog.mjs -->
 
 # `@CPI`
 
 Descriptor-bound CPI calls (memo, lamports, Kamino, DLMM, Raydium, stake pools).
 
-Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
-
 Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
 
 ## Descriptor lane
 
-`@CPI.*` calls are descriptor-bound: the deploy binds program id, account schema, and attested instruction bytes, so policy code cannot vary the shape. They require attested transaction data, which exists only in `hooks.onchain` execution. Custody of the `source` argument varies per descriptor - `memoNote`/`transferLamports` follow the uniform three-form rule, while the Kamino family is wallet-only (the obligation owner). Most Kamino, stake-pool, Raydium and DLMM descriptors additionally carry `NEEDS-RUNTIME-V4` and are refused at deploy until that runtime ships; see [policy-primitives.md](../policy-primitives.md#descriptor-cpi-cpi).
+`@CPI.*` calls are descriptor-bound: the deploy binds program id, account schema, and attested instruction bytes, so policy code cannot vary the shape. They require attested transaction data, which exists only in `hooks.onchain` execution. Custody of the `source` argument varies per descriptor - `memoNote`/`transferLamports` follow the uniform three-form rule, while the Kamino family is wallet-only (the obligation owner).
 
 ## Transactional
 
@@ -26,7 +24,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (not run); markers: LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -47,7 +44,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -69,7 +65,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -92,7 +87,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -107,7 +101,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -121,7 +114,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -136,7 +128,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -155,7 +146,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -176,7 +166,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unsupported** (not run); markers: NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -199,7 +188,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-SAFE-CPI-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -213,7 +201,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -235,7 +222,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -257,7 +243,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (not run); markers: LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -279,7 +264,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (not run); markers: LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -299,7 +283,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (not run); markers: LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -318,7 +301,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (local policy verified; live not run); markers: LIVE-PENDING, NEEDS-RUNTIME-V4.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -333,12 +315,26 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (local policy verified; live not run); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
 | `source` | address | yes | **yes** | Current transfer-fee configuration authority: wallet, app escrow, or named account. |
 | `mint` | address | yes | - | Token-2022 mint carrying TransferFeeConfig. |
+
+### `CPI.token2022SetTransferFee`
+
+```
+@CPI.token2022SetTransferFee(source, mint, feeBasisPoints, maxFee) - sets a new Token-2022 transfer fee (basis points, 0-10000) and its per-transfer cap in base units. Source must be the current transfer-fee configuration authority (wallet, @contract.address, or named account) and signs. On Solana the new rate takes effect at the start of the epoch after next (2-4 days on mainnet); transfers until then keep the current rate. Poofnet applies it at once. Fails once the authority is revoked.
+```
+
+- Callable from: `hooks.onchain`
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Current transfer-fee configuration authority: wallet, app escrow, or named account. |
+| `mint` | address | yes | - | Token-2022 mint carrying TransferFeeConfig. |
+| `feeBasisPoints` | number | yes | - | New transfer fee in basis points, 0-10000. |
+| `maxFee` | number | yes | - | Largest fee withheld from one transfer, in the mint's base units. |
 
 ### `CPI.token2022WithdrawMintFees`
 
@@ -347,7 +343,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (local policy verified; live not run); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -361,7 +356,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -376,7 +370,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-SAFE-CPI-PROOF.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

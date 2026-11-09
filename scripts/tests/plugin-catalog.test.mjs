@@ -1,7 +1,7 @@
 // Contract tests for the generated plugin reference layer (catalog snapshot + pages).
 //
 // These run without the monorepo: they prove the PUBLISHED artifacts are internally
-// consistent - snapshot <-> generated pages <-> capability table. Cross-repo drift
+// consistent - snapshot <-> generated pages. Cross-repo drift
 // (manifests changing under us) is caught maintainer-side by
 // `node scripts/extract-plugin-catalog.mjs --check` before push.
 
@@ -22,10 +22,8 @@ test('price discovery preserves decimal strings and explicitly gates scaled USD 
   const scaled = allFunctions.find(fn => fn.callName === '@PriceFeedPlugin.getPriceFeedScaled')
   assert.equal(scaled.returnType, 'uint')
   assert.deepEqual(scaled.args.map(arg => [arg.name, arg.optional]), [['feedId', false], ['decimals', false]])
-  assert.equal(scaled.status.support, 'unverified')
-  assert.match(scaled.status.markers, /NEEDS-RUNTIME-V8/)
   const page = readFileSync(path.join(root, 'bounded-onchain/docs/plugins/PriceFeedPlugin.md'), 'utf8')
-  for (const boundary of ['exactly two arguments', 'precision from 0 through 18', '119809589', 'devnet program runs runtime v9 as of 2026-10-06 (slot 508118456)', 'mainnet-beta remains on runtime v8 as of 2026-09-29 (slot 451516304)', 'rollout remain pending', 'rounding to zero', 'u64 overflow', 'independent of its deployed runtime version', 'even when its collection declares `onchain: false`']) {
+  for (const boundary of ['exactly two arguments', 'precision from 0 through 18', '119809589', 'devnet program first reached runtime v11 at slot 518401017 on 2026-11-04 UTC', 'Mainnet-beta reached runtime v11 at slot 465441987 on the same date', 'Program readiness does not establish hosted app acceptance for this price API.', 'rounding to zero', 'u64 overflow', 'independent of its deployed runtime version', 'even when its collection declares `onchain: false`']) {
     assert.ok(page.includes(boundary), `missing price boundary: ${boundary}`)
   }
 })
@@ -33,31 +31,6 @@ test('price discovery preserves decimal strings and explicitly gates scaled USD 
 test('generated pages match the snapshot byte for byte', () => {
   const result = spawnSync(process.execPath, [path.join(root, 'scripts/generate-plugin-catalog.mjs'), '--check'], { encoding: 'utf8' })
   assert.equal(result.status, 0, `generator --check failed:\n${result.stdout}${result.stderr}`)
-})
-
-test('snapshot covers the full capability inventory in both directions', () => {
-  const source = readFileSync(path.join(root, 'bounded-onchain/docs/solana-capability-status.md'), 'utf8')
-  const inventory = source.split('## Function inventory')[1]?.split('## Built-in values')[0] ?? ''
-  const tableIds = [...inventory.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1].trim())
-  const snapshotIds = new Set([
-    ...allFunctions.map((fn) => fn.callName),
-    ...catalog.capabilityOnly.map((row) => row.callName),
-  ])
-  const missingFromSnapshot = tableIds.filter((id) => !snapshotIds.has(id))
-  assert.deepEqual(missingFromSnapshot, [], 'capability rows absent from the catalog snapshot')
-  const missingFromTable = allFunctions.filter((fn) => !fn.status).map((fn) => fn.callName)
-  assert.deepEqual(missingFromTable, [], 'manifest functions with no capability-table row')
-  assert.equal(tableIds.length, snapshotIds.size, 'catalog and capability table must be the same inventory')
-})
-
-test('snapshot status matches the capability table row for row', () => {
-  const source = readFileSync(path.join(root, 'bounded-onchain/docs/solana-capability-status.md'), 'utf8')
-  for (const fn of allFunctions) {
-    const escaped = fn.callName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const row = source.match(new RegExp(`^\\| \`${escaped}\` \\| [^|]+ \\| ([^|]+) \\|`, 'm'))
-    assert.ok(row, `capability row missing for ${fn.callName}`)
-    assert.equal(fn.status.support, row[1].trim(), `stale support state cached for ${fn.callName}`)
-  }
 })
 
 test('snapshot preserves only signer markers declared by existing manifests', () => {
@@ -146,16 +119,13 @@ test('generated pages distinguish declared signers from missing metadata', () =>
   assert.match(token, /`destinationAddress`[^\n]+\| - \|/)
 })
 
-test('the index lists every callable function and every capability-only row', () => {
+test('the index lists every callable function', () => {
   const index = readFileSync(path.join(root, 'bounded-onchain/docs/plugins.md'), 'utf8')
   const signatures = readFileSync(path.join(root, 'bounded-onchain/docs/plugin-signatures.md'), 'utf8')
   for (const fn of allFunctions) {
     assert.ok(index.includes(`\`${fn.name}\``), `plugins.md missing function router entry for ${fn.callName}`)
     assert.ok(signatures.includes(`\`${fn.callName}\``), `plugin-signatures.md missing ${fn.callName}`)
     assert.ok(signatures.includes(`\`${fn.signature}\``), `plugin-signatures.md missing signature for ${fn.callName}`)
-  }
-  for (const row of catalog.capabilityOnly) {
-    assert.ok(index.includes(`\`${row.callName}\``), `plugins.md missing capability-only row ${row.callName}`)
   }
 })
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Maintainer-side extractor: builds bounded-onchain/data/plugin-catalog.json from the
-// bounded-monorepo sol-layer plugin manifests plus this repo's published capability table.
+// bounded-monorepo sol-layer plugin manifests.
 //
 // The snapshot is the single source the generated plugin docs are rendered from, so the
 // public repo never needs the monorepo at validation time. Run this (then the generator)
@@ -22,7 +22,6 @@ const monorepo = process.env.BOUNDED_MONOREPO
   ?? path.resolve(root, '..', 'bounded-monorepo')
 const solLayer = path.join(monorepo, 'packages/cdk/layers/sol-helper/nodejs/sol-layer')
 const snapshotPath = path.join(root, 'bounded-onchain/data/plugin-catalog.json')
-const capabilityPath = path.join(root, 'bounded-onchain/docs/solana-capability-status.md')
 
 if (!existsSync(solLayer)) {
   console.error(`extract-plugin-catalog: monorepo sol-layer not found at ${solLayer}.`)
@@ -49,23 +48,6 @@ function publicText(value) {
 }
 
 // ---------------------------------------------------------------------------
-// Capability table: `| `id` | lane | support | verification | markers |`
-function parseCapabilityRows() {
-  const source = readFileSync(capabilityPath, 'utf8')
-  const inventory = source.split('## Function inventory')[1]?.split('## Built-in values')[0] ?? ''
-  const rows = new Map()
-  for (const match of inventory.matchAll(
-    /^\| `([^`]+)` \| ([^|]+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \|$/gm,
-  )) {
-    rows.set(match[1].trim(), {
-      lane: match[2].trim(),
-      support: match[3].trim(),
-      verification: match[4].trim(),
-      markers: match[5].trim(),
-    })
-  }
-  return rows
-}
 
 // ---------------------------------------------------------------------------
 const require_ = createRequire(path.join(solLayer, 'package.json'))
@@ -93,7 +75,6 @@ const canonicalOffchainCalls = new Set(canonicalOffchainManifests.flatMap((manif
   Object.values(manifest.functions ?? {}).flatMap((functions) =>
     Object.keys(functions).map((name) => `@${manifest.name}.${name}`))))
 
-const capability = parseCapabilityRows()
 const namespaces = new Map() // namespace -> { namespace, sourcePlugins, variables, functions }
 
 for (const { manifest } of manifestEntries) {
@@ -110,7 +91,6 @@ for (const { manifest } of manifestEntries) {
       bucket.sourcePlugins.add(manifest.name)
 
       const callName = `@${namespace}.${fnName}`
-      const status = capability.get(callName) ?? null
       bucket.functions.push({
         name: fnName,
         callName,
@@ -157,7 +137,6 @@ for (const { manifest } of manifestEntries) {
           }
           return [...contexts]
         })(),
-        status,
       })
     }
   }
@@ -180,9 +159,6 @@ for (const { manifest } of manifestEntries) {
 const manifestCallNames = new Set(
   [...namespaces.values()].flatMap((ns) => ns.functions.map((fn) => fn.callName)),
 )
-const capabilityOnly = [...capability.entries()]
-  .filter(([id]) => !manifestCallNames.has(id))
-  .map(([id, row]) => ({ callName: id, ...row }))
 
 let monorepoCommit = 'unknown'
 try {
@@ -195,7 +171,6 @@ const catalog = {
   source: {
     monorepoCommit,
     solLayerPath: 'packages/cdk/layers/sol-helper/nodejs/sol-layer',
-    capabilityTable: 'bounded-onchain/docs/solana-capability-status.md',
     canonicalOffchainPlugins: canonicalOffchainManifests.map((manifest) => manifest.name),
   },
   namespaces: [...namespaces.values()]
@@ -207,7 +182,6 @@ const catalog = {
         a.category === b.category ? a.name.localeCompare(b.name) : (a.category === 'transactional' ? -1 : 1)),
     }))
     .sort((a, b) => a.namespace.localeCompare(b.namespace)),
-  capabilityOnly: capabilityOnly.sort((a, b) => a.callName.localeCompare(b.callName)),
 }
 
 const serialized = `${JSON.stringify(catalog, null, 1)}\n`
@@ -226,4 +200,4 @@ if (process.argv.includes('--check')) {
 
 writeFileSync(snapshotPath, serialized)
 const fnCount = catalog.namespaces.reduce((sum, ns) => sum + ns.functions.length, 0)
-console.log(`wrote ${path.relative(root, snapshotPath)}: ${catalog.namespaces.length} namespaces, ${fnCount} functions, ${catalog.capabilityOnly.length} capability-only rows (monorepo ${monorepoCommit.slice(0, 12)})`)
+console.log(`wrote ${path.relative(root, snapshotPath)}: ${catalog.namespaces.length} namespaces, ${fnCount} functions (monorepo ${monorepoCommit.slice(0, 12)})`)

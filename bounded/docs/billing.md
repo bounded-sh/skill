@@ -44,8 +44,9 @@ Use the public plan, usage snapshot, and checkout flow.
 Use these exact public rules:
 
 - Bounded-managed third-party service proxies are itemized at provider cost plus
-  5%. When the managed platform distinguishes standard and pro tool calls,
-  Bounded uses the applicable upstream tier first, then applies the 5% markup.
+  our markup, which varies by service. When the managed platform distinguishes
+  standard and pro tool calls, Bounded uses the applicable upstream tier first,
+  then applies the markup.
 - Users can opt out of Bounded-managed third-party proxies by integrating the
   provider directly with their own API keys. In that path, they pay the provider
   directly and Bounded's proxy markup does not apply.
@@ -97,7 +98,7 @@ The exact caller-facing codes are listed in [public functions](../../bounded-bac
 ## Sponsored on-chain writes
 
 An app on a Solana network can have Bounded's sponsor pay the network fee and rent of its users' writes.
-The app's credits are charged the sponsor's actual on-chain debit at cost plus 5%, held at the quote before the sponsor signs and settled when the transaction lands; a transaction that never lands is released.
+The app's credits are charged the sponsor's actual on-chain debit at cost plus our markup, held at the quote before the sponsor signs and settled when the transaction lands; a transaction that never lands is released.
 The setting is per app, owner-only: `PUT /app/<appId>/gas-sponsorship` with `{ "mode": "never" | "always" | "function", "function"?: "<name>", "receipt"?: "<name>" }`.
 In `function` mode the app's own function decides per write, and an optional receipt function receives every settled write; both contracts are in [functions.md](../../bounded-backend/docs/functions.md#gas-sponsorship-functions).
 Writes the sponsor cannot fund are refused with `402 sponsorship_refused` (nothing is signed, nothing is charged) or `503 sponsorship_unavailable` (retry).
@@ -149,6 +150,14 @@ Treat alert levels as user-facing severity:
 | `exceeded` | blocked until usage drops or the plan/cap changes |
 
 Do not invent thresholds. Use the values returned in the usage snapshot.
+
+## Preview Budgets
+
+A preview app (a disposable testbed copy) is born with a budget that is also its spend caps, and it sends no usage-alert mail.
+When it is spent, its backend refuses writes, functions and new connections with `429 preview_budget_exhausted`, and `bounded cap set` on it answers `409 preview_budget_immutable`.
+Both carry the only way forward: the parent's owner adds 1 to 20 credits with `bounded preview topup <credits> --preview <preview-app-id> --app-id <parent-app-id>`.
+Those credits come from the app's own ledger (for an OpenApps app, the one that pays its agent), so stop and ask the owner before running it on their behalf; the server also refuses a top-up that would leave that ledger below one day of the agent's limit, or push one preview past 100 credits of top-ups.
+A `409 preview_payer_changed` means the app changed hands and the preview still bills its previous owner: it cannot be topped up, so make a new preview instead.
 
 ## Project Creation Limits
 

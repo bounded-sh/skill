@@ -74,10 +74,12 @@ export default async function (args, ctx) {
   the reported token counts at the pinned rates, with cache reads and writes at
   the model's own published rates. A pricing rollover during the call cannot
   change its settlement.
-  Missing/unpriceable usage or an ambiguous provider-started outcome becomes a
-  durable `503 ai_operation_attention_required`; it is never guessed, refunded,
-  or rerun as fresh provider work. Confirmed pre-provider/provider failures are
-  refunded and replay their terminal error.
+  If usage cannot be priced, Bounded briefly retries the original generation's receipt lookup, then waives an unresolved charge and releases the reservation.
+  Successful output still returns; the same operation never regenerates or charges later for a waived call.
+  A lost billing acknowledgement retries the saved settlement without rerunning the model.
+  Other ambiguous operations can return `503 ai_operation_attention_required`; preserve the same key and contact support.
+  Repeated unpriceable calls can pause that payer's model with `503 ai_billing_paused`; contact support instead of generating under new keys.
+  Confirmed provider failures release the reservation and replay their terminal error.
 - **Provider errors are branchable.** `ai_provider_not_configured` (503, the
   deployment has no gateway key), `provider_budget_exhausted` (502, the
   platform's own gateway budget refused the call), `provider_auth_failed` (502,
@@ -92,6 +94,76 @@ export default async function (args, ctx) {
   under a `rollingSum` in the same flow (the
   [spend-cap recipe](invariants.md#rollingsum--caps-over-time-windows)) — so "this
   desk spends ≤ $X/day on reasoning" is an invariant, not a hope.
+
+### Typed answers: `ctx.ai.evaluate`
+
+`ctx.ai.evaluate` asks named questions about a JSON state and any images, and returns typed answers rather than text.
+It defaults to the decision model `typesafe-ai/jev`, needs no vendor key, and bills like `ctx.ai.run`.
+
+```ts
+export default async function (args: { requestId: string; post: unknown }, ctx: any) {
+  const out = await ctx.ai.evaluate({
+    idempotencyKey: `triage:${args.requestId}`,
+    state: { post: args.post },
+    questions: {
+      spam: { type: "boolean", instructions: "Is this post spam?" },
+      route: {
+        type: "choice",
+        instructions: "Who should handle it?",
+        criteria: { support: "a support question", sales: "a sales lead", none: "needs no reply" },
+      },
+      urgency: { type: "score", instructions: "How urgent is it?", criteria: ["low", "medium", "high"] },
+    },
+  });
+  return { spam: out.answers.spam.probability, route: out.answers.route.choice };
+}
+```
+
+- **Contract:** `ctx.ai.evaluate(opts: { state, questions, idempotencyKey, images?, model? })`.
+  The key has the same rules as `ctx.ai.run`, and a direct invoke needs `--idempotency-key` the same way.
+  `model` is a `creator/model` id.
+- **`state`:** any JSON, up to 64 KB.
+- **`images`:** up to 10 `data:image/...;base64,` URLs, 8 MiB together.
+  Jev reads the pixels, and questions can call them `attached_images`.
+  An object `state` keeps its fields beside them; any other `state` moves under a `state` field.
+  Still images only, so send a video as frames.
+  The platform resizes any image that is not PNG or JPEG of 280 to 1024 pixels a side, at $0.0005 each.
+  With images, `model` defaults to `typesafe-ai/jev-1.14.0`.
+- **`questions`:** 1 to 32, keyed by ids of letters, digits and underscores, up to 64 characters, not starting with a digit.
+  - `{ type: "boolean", instructions, criteria?: { true, false } }`
+  - `{ type: "choice", instructions, criteria }`, where the keys of `criteria` are the options (up to 255).
+  - `{ type: "score", instructions, criteria }`, where `criteria` is an array of 2 to 10 ordered levels.
+- **Answers:** `answers.<id>` holds `probability` (of yes) for a boolean, `choice`, `probabilities` and `confidence` for a choice, and `score`, `probabilities` (by level index) and `confidence` for a score.
+  The result also carries `model`, `usage`, `costMicroUsd` and `meter`.
+
+### Any AI SDK, and streaming: the OpenAI-compatible endpoint
+
+`https://ai.bounded.internal/v1` is an OpenAI-compatible endpoint billed to the app exactly like `ctx.ai.run`: same model catalog, admission, caps, settlement, and error codes.
+Function code reads it as `ctx.ai.baseURL`; server-app code reads it as `process.env.BOUNDED_AI_BASE_URL`.
+Requests to it never leave the platform, so any API key string works and no provider key is needed.
+
+- Served: `POST /chat/completions`, including `stream: true`. A streamed call settles from the stream's final usage block.
+- Forwarded fields: `messages`, `max_tokens` or `max_completion_tokens` (default 1024), `tools`, `tool_choice`, `response_format`, `reasoning_effort`, `temperature`, `top_p`, `stop`, `seed`, `frequency_penalty`, `presence_penalty`, `parallel_tool_calls`. Other fields are dropped.
+- Each request is its own operation with no idempotency key: a retried request is a new provider call, billed for what it used. Use `ctx.ai.run` where a retried invocation must not call the model again.
+- Errors use OpenAI's envelope, `{ error: { message, type, code } }`, with the codes listed above.
+- A site variant's server cannot use it (`403 ai_billing_unavailable`).
+- A function's result is buffered, so streamed text reaches a user only from a [server app](../../bounded-frontend/docs/server-apps.md).
+
+```ts
+// A Next.js route in a server app, with the Vercel AI SDK.
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { streamText } from "ai";
+
+const bounded = createOpenAICompatible({ name: "bounded", baseURL: process.env.BOUNDED_AI_BASE_URL! });
+
+export async function POST(req: Request) {
+  const { prompt } = await req.json();
+  const result = streamText({ model: bounded("anthropic/claude-haiku-4.5"), prompt, maxOutputTokens: 2000 });
+  return result.toTextStreamResponse();
+}
+```
+
+The OpenAI SDK works the same way: `new OpenAI({ baseURL: ctx.ai.baseURL, apiKey: "bounded" })`.
 
 ### How your user pays for it — route through Bounded, don't hand-roll
 
@@ -115,22 +187,22 @@ Credits are **per-account** (the app owner's payer pool). Two things to wire and
 > `session.live.runAs`); that live-tick path is in [ai-npcs.md](ai-npcs.md). The
 > function path above is the **general case for any app**.
 
-### ctx.ai media generation — images (sync) and video (async jobs)
+### ctx.ai media generation - images (sync) and video (async jobs)
 
-`ctx.ai` also generates **images and video natively** — same no-keys posture,
-same fail-closed per-call billing (a per-image / per-second ceiling is reserved
-before generation; the actual is settled and the difference refunded; every
-failure refunds in full). **Never wire an image/video provider with `fetch` +
-your own key — this is built in.**
+`ctx.ai` also generates **images and video natively** - same no-keys posture,
+same payer attribution and billing as text AI: reserve before generation, settle the actual cost plus Bounded's markup, and release unused credits.
+Confirmed failures refund the reservation; ambiguous video outcomes retain it for reconciliation.
+Use these native APIs instead of wiring a provider with `fetch` and your own key.
 
 This is one-off generation inside a running app. When the image or video is an
 asset someone reviews, releases, and later edits, forks or rolls back, use an image
 or video build instead ([ctx.build](functions-ctx-build.md#image-and-video-builds)).
 
 ```ts
-// IMAGE — synchronous (seconds). Default model needs zero config.
+// IMAGE - synchronous (seconds). Choose a model explicitly.
 export default async function makeAvatar(args, ctx) {
   const img = await ctx.ai.generateImage({
+    model: "bfl/flux-kontext-pro",
     prompt: args.prompt,                    // required
     // REQUIRED, and app-global FOREVER: include a per-request discriminator
     // (here args.requestId), or this user's SECOND avatar - a new prompt under
@@ -138,30 +210,30 @@ export default async function makeAvatar(args, ctx) {
     // than generated. Only a genuine RETRY of the same request should reuse it.
     idempotencyKey: `avatar:${ctx.user.id}:${args.requestId}`,
     destinationPath: "avatars",             // a policy-declared type:"storage" collection
-    // model?: "@cf/black-forest-labs/flux-2-klein-4b" (the default, FLUX.2, ~1¢)
-    // size?, steps?, seed?, negativePrompt?, metadata? (declared fields)
-    // returnBase64: true  — skip storage, get raw bytes back (≤8MB)
+    // size?, seed?, metadata? (declared fields)
+    // returnBase64: true  - skip storage, get raw bytes back (≤8MB)
   });
-  // img: { filePath, url?, contentType, model, costCents }
+  // img: { filePath, url?, contentType, model, costMicroUsd, costCents }
   await ctx.bounded.set(`profiles/${ctx.user.id}`, { avatar: img.filePath });
   return { avatar: img.filePath };
 }
 ```
 
 ```ts
-// VIDEO — an async JOB (generation takes minutes). Start it, then let the
+// VIDEO - an async JOB (generation takes minutes). Start it, then let the
 // frontend live-subscribe to the mirror doc; or poll ctx.ai.getJob(jobId).
 export default async function makeClip(args, ctx) {
   const { jobId, jobPath } = await ctx.ai.generateVideo({
-    model: "replicate/wan-video/wan-2.7-t2v",  // always explicit for video
+    model: "alibaba/wan-v2.5-t2v-preview",
     prompt: args.prompt,
     // REQUIRED, app-global forever, and capped at 256 UTF-8 BYTES - never
     // interpolate a raw user prompt (a long one fails
     // ai_idempotency_key_required). Key the business operation instead.
     idempotencyKey: `clip:${ctx.user.id}:${args.clipId}`,
-    durationSeconds: 8,                        // clamped to the model's max
+    durationSeconds: 5,                        // required for the cost reservation
+    resolution: "1280x720",
     destinationPath: "clips",                  // policy-declared storage collection
-    // jobPath?: "aiJobs" — declare aiJobs/$jobId in policy and the job status
+    // jobPath?: "aiJobs" - declare aiJobs/$jobId in policy and the job status
     // mirrors there as a normal live-subscribable document
   });
   return { jobId, jobPath };                   // jobPath null if not declared
@@ -170,30 +242,18 @@ export default async function makeClip(args, ctx) {
 
 The essentials:
 
-- **Images land as normal Bounded files** in the storage collection you name —
-  queryable, read-rule governed. `filePath` is the durable reference; **persist
-  that, not `url`** (a file in an anonymous-readable collection has a tokenless
-  permanent URL; a gated file's url is a ~60-second signed link). Resolve fresh
-  URLs via `getFiles`.
-- **Video completes through a job doc**: `status` walks pending → running →
-  succeeded/failed; on success the mp4 is at `filePath`. Declare
-  `aiJobs/$jobId` (any non-storage collection) in policy and the frontend gets
-  completion via ordinary `subscribe` — no polling loop. Jobs that stall are
-  failed + **fully refunded** after a 15-minute timeout; terminal job records
-  prune after 90 days (the FILE is app data and is never pruned).
-- **Models are config, not code.** Current lineup: images —
-  `@cf/black-forest-labs/flux-2-klein-4b` (default, ~1¢), `flux-2-klein-9b`,
-  Leonardo `lucid-origin`/`phoenix-1.0` (all keyless `@cf`), and
-  `openai/gpt-image-2` (provider-routed); video —
-  `replicate/wan-video/wan-2.7-t2v` (audio, 1080p, 2–15s) and
-  `replicate/minimax/hailuo-02`. Provider-prefixed media models need the
-  deployment's allowlist + media route (like chat's provider models); `@cf/*`
-  image models work everywhere with zero config. An unpriced model is rejected
-  403 (`ai_media_model_unknown`) — fail-closed, never a surprise bill.
-- **Branchable errors:** `ai_content_moderated` (422, provider content policy —
-  refunded), `ai_credit_exhausted` (402), `ai_media_route_missing` (403, the
-  deployment hasn't enabled that provider). Catch `e.code`, don't regex messages.
-- **Note:** media-priced models are rejected on `ctx.ai.run` (400,
-  `ai_media_model_requires_media_api`) — chat's flat per-call billing would
-  massively under-charge a diffusion model. Use `generateImage`/`generateVideo`.
-
+- **Images are normal Bounded files** governed by the storage collection's read rules.
+  Persist `filePath`, then resolve URLs with `getFiles`; private download URLs expire after about 60 seconds.
+- **Videos complete through a job** with `pending`, `running`, `succeeded`, or `failed` status.
+  Declare `aiJobs/$jobId` to subscribe to the status mirror, or call `ctx.ai.getJob(jobId)`.
+  Success supplies `filePath` and the settled `costMicroUsd`; `actualCents` is the same amount in cents.
+  Generation times out after 15 minutes; storing a completed video has its own 15-minute limit.
+  Missing price receipts use the same short retry and waiver policy as text, so they do not keep a completed video pending.
+  Terminal job records expire after 90 days; generated files remain app data.
+- **Both APIs require an explicit Vercel AI Gateway model.**
+  The examples above are verified choices; other models need supported pricing from Bounded's maintained table or the gateway catalog.
+  Video also requires `durationSeconds`; use dimensions and durations supported by the chosen model.
+  Unpriced requests fail before generation with `ai_media_model_unknown` (403).
+- **Branchable errors:** `ai_content_moderated` (422), `ai_credit_exhausted` (402), and `provider_not_configured` (503).
+  Catch `e.code` rather than parsing error messages.
+  Use `generateImage` or `generateVideo` for media models; `ctx.ai.run` is the text interface.

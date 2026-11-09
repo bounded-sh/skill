@@ -2,7 +2,6 @@
   "bounded-backend/SKILL.md": [
     "docs/access-control.md",
     "docs/admin-and-ownership.md",
-    "docs/agents-flue.md",
     "docs/ai-npcs.md",
     "docs/backend-runtime.md",
     "docs/browser-boundary.md",
@@ -46,7 +45,6 @@
     "docs/onramp.md",
     "docs/policy-primitives.md",
     "docs/pump-fun.md",
-    "docs/randomness.md",
-    "docs/solana-capability-status.md"
+    "docs/randomness.md"
   ]
 }

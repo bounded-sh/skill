@@ -37,7 +37,7 @@ ship.
 `bounded-onchain/docs/plugins/*.md` are GENERATED from
 `bounded-onchain/data/plugin-catalog.json`; never hand-edit them.
 Curated prose lives in `bounded-onchain/docs/plugins/_fragments/`. When the
-monorepo changes a plugin manifest (or the capability table changes):
+monorepo changes a plugin manifest:
 
 ```sh
 node scripts/extract-plugin-catalog.mjs    # refresh the snapshot from bounded-monorepo
@@ -46,7 +46,7 @@ node scripts/generate-plugin-catalog.mjs   # re-render the pages
 
 `node scripts/extract-plugin-catalog.mjs --check` fails when the snapshot is
 stale versus the monorepo; the contract tests fail when the pages drift from
-the snapshot or the capability table.
+the snapshot.
 
 ## Example-policy e2e suite (optional, maintainer-only)
 

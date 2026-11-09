@@ -1,18 +1,21 @@
 # Server apps: Next.js and Express on Bounded hosting
 
 A Next.js app built with [vinext](https://github.com/cloudflare/vinext), or an Express app, can run its server on Bounded hosting.
-Bounded serves exact static files itself and runs the server for every other request and every non-GET request.
+Bounded serves exact static files itself and runs the server for every other request, every non-GET request and every client navigation (`RSC` header or `_rsc` query).
 Each server request is billed to the app's credits like a function call, for at most 30 seconds; static files cost nothing per request.
-An OpenApps app that runs a server cannot open yet: its APO refuses it (`oapp_opening_app_server_unsupported`), and an Open app runs no server.
+An OpenApps app that runs a server can go through an APO, and its Open app keeps running the server its release froze.
 
 ## Build and deploy Next.js
 
 1. `npx vinext check` lists what vinext cannot run.
 2. A pnpm repo builds only with `node-linker=hoisted` in `.npmrc` and `node_modules` reinstalled after setting it; the build stalls on pnpm's linked `node_modules`.
-3. `npx vinext init --platform=cloudflare --legacy-wrangler-cloudflare-init --skip-check --cdn-cache=none --data-cache=none --image-optimization=none`
+3. `npx vinext init --platform=cloudflare --legacy-wrangler-cloudflare-init --skip-check --cdn-cache=none --data-cache=none --image-optimization=none`, then `vinext({ prerender: true })` in `vite.config.ts`.
 4. `vite build` writes the server to `dist/server` (with a `wrangler.json` naming its entry, compatibility date and flags) and the browser files to `dist/client`.
 5. `bounded site pack`, run in the project root, puts the server into `dist/client/_bounded_server/` with its `server.json` (the layout is below).
 6. `bounded site deploy ./dist/client --with-source` publishes both.
+
+Pages vinext prerenders with no `revalidate` (`○` in its build report) are written to `dist/server/prerendered-routes/` and listed in `dist/server/vinext-prerender.json`.
+Copying each one into `dist/client` (`/` as `index.html`, `/about` as `about.html`) makes it a static file: Bounded serves it without running the server, and client navigations to it still reach the server.
 
 `bounded site deploy` accepts a folder with `_bounded_server/server.json` in place of `index.html`.
 Nothing under `_bounded_server/` is served to a browser.
@@ -44,6 +47,7 @@ The server runs on the same Worker runtime as a Next.js server, with the limits 
 
 - App Router and Pages Router, server components, server actions, route handlers, middleware, redirects and cookies.
 - ISR pages, rendered on every request rather than cached.
+- Static pages, served as files when the pack step copies them out.
 - `fetch` from server code, within the app's declared egress.
 - `ctx.waitUntil` work, which finishes before the response ends and is billed with it.
 
@@ -64,11 +68,13 @@ Server code reads the names `server.json` lists as `process.env.NAME`; a name it
 `bounded.json` declares the same list as `"server": { "secrets": ["STRIPE_SECRET_KEY"] }`; an OpenApps agent's release refuses a built server that reads a name the commit's `bounded.json` does not list.
 Names are upper case: `^[A-Z][A-Z0-9_]{0,63}$`.
 Names starting `NEXT_PUBLIC_`, `NUXT_PUBLIC_`, `VITE_`, `PUBLIC_`, `EXPO_PUBLIC_` or `REACT_APP_` are refused, because frameworks put those in browser bundles.
-Public values are not secrets: commit them in source or config, because source sync leaves out every `.env` file, so a build the app's agent runs never sees them.
+Public values are not secrets: put them in `bounded.json` `build.env` (`bounded site env set NAME VALUE`), because source sync leaves out every `.env` file; `bounded site build` and an OpenApps agent's release build add them to the build.
 The owner sets each value with `bounded secret put NAME` ([secrets](../../bounded-backend/docs/secrets.md)); a new value reaches the server within 30 seconds, with no deploy.
+In an APO every listed name must be a key the app's OpenApps agent donated: the server reads a stand-in, and the real key is added only to requests to the hosts it was donated for.
 Deploying a server that lists secrets needs the same permission as deploying functions.
 A listed secret that is not set makes every server request answer 503 with `This app's server needs secrets that are not set: NAME.`
 No build sees a secret.
 A secret of 8 or more characters is replaced with `[redacted]` wherever a response carries it as is, JSON-escaped or URL-encoded, and a header holding one is replaced whole; shorter secrets, other encodings and partial copies pass through.
 A site variant's server runs with no secrets, no cookies and none of the app's connected-account credentials.
 Server code reads the app id from `process.env.BOUNDED_APP_ID`; every page also carries `<meta name="bounded-app-id">`.
+`process.env.BOUNDED_AI_BASE_URL` is an OpenAI-compatible AI endpoint billed to the app, streaming included, for any AI SDK that takes a base URL ([the endpoint](../../bounded-backend/docs/functions-ctx-ai.md#any-ai-sdk-and-streaming-the-openai-compatible-endpoint)).

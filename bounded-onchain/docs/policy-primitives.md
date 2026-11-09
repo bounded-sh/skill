@@ -26,12 +26,11 @@ additive to the legacy bytecode and instruction ABI, but no agent may assume a
 deployed Solana program supports them merely because the local compiler does.
 
 - Treat function discovery, deployed-runtime support, and live-network verification as separate states.
-- The current Bounded program is recorded as **runtime v9 on devnet** (2026-10-06, slot 508118456) and **runtime v8 on mainnet-beta** (2026-09-29, slot 451516304).
+- The current Bounded program is recorded as **runtime v11 on devnet** (first activated at slot 518401017) and **runtime v11 on mainnet-beta** (finalized at slot 465441987), both on 2026-11-04 UTC.
   The deployed runtime version is tracked per cluster, not per program id, so an unknown
   program id or a cluster with no recorded deployment still fails closed to runtime v1 -
   which silently disables `rollingSum`, `tenantEdge`, and materialized invariants.
   That establishes its runtime grammar level, not external program or account availability.
-- Check every function in [solana-capability-status.md](solana-capability-status.md) before using it.
 - Resolve the deployed program/runtime capability before compiling.
 - Runtime-v1 is the default for known deployed devnet/mainnet program ids unless
   the capability registry explicitly says otherwise.
@@ -271,7 +270,7 @@ bounded --json --env staging data query \
 
 Require `address.result` to decode as a Solana public key and `exists.result` to equal `true`.
 Keep the equality in policy so a stale or forged client value fails before it can overfund or underfund the shared escrow.
-Use `isPassthrough: true` only when the application deliberately does not need a durable Bounded document or mirror receipt for the action.
+Use `isPassthrough: true` only when no later onchain rule or hook needs to `get()` the record; its offchain mirror row still exists.
 
 `@Solana.invokeAttested` is reserved and disabled until its client instruction
 builder is complete. Use descriptor `@CPI.*` for attested instruction bytes.
@@ -312,8 +311,6 @@ Account resolution must reject descriptor drift. Attested bytes must be nonempty
 the target must be executable, and signer confinement still applies.
 
 On current devnet, `@CPI.memoNote` and `@CPI.transferLamports` are source-present but remain unverified pending retained live proof.
-The eight Kamino descriptors are unsupported, but NOT because Kamino is missing from devnet: the KLend program is deployed and executable there at the same address as mainnet (verified on chain 2026-08-05). What is unestablished is a usable market and reserve set.
-Most Kamino, stake-pool, Raydium and DLMM calls additionally carry `NEEDS-RUNTIME-V4` and are refused at deploy time until that runtime ships.
 Do not describe the generic CPI tag or descriptor registry as proof that a particular descriptor is usable.
 
 ### String arguments cannot contain `,` `{` `}` `[` `]`
@@ -396,7 +393,7 @@ The initial counter creation is one separately confirmed transaction.
 Snapshot creation plus both staged `updateField` effects is one later Solana transaction.
 After confirmation, poll the Bounded mirror for every affected document separately.
 Local compilation or a successful immediate read does not establish live devnet support.
-Check the individual `get`, `getAfter`, and `@DocumentPlugin.updateField` rows in the capability status before claiming the flow is live verified.
+Run `bounded plugins describe <plugin.function> --json` for each plugin function involved; its network-scoped support state is advisory, and only a retained live run makes the flow live verified.
 For multi-transaction financial lifecycles, read
 [policy-native financial state machines](policy-native-state-machines.md) before
 turning these primitives into a head/cursor/receipt protocol. In particular,
@@ -476,7 +473,6 @@ For mirror guarantees and the Helius ingestion release gate, see
 
 Before enabling a new primitive or runtime version:
 
-- Add or update its individual row in [solana-capability-status.md](solana-capability-status.md).
 - Pin compiler/offchain/Rust tag parity and legacy wire fixtures.
 - Typecheck sol-layer, data-layer, and realtime packages.
 - Run compiler, account-extractor, offchain differential, realtime detector,

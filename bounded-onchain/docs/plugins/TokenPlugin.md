@@ -1,20 +1,19 @@
 <!-- GENERATED FILE. Do not hand-edit.
-     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
-     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).
+     Prose: bounded-onchain/docs/plugins/_fragments/.
      Regenerate: node scripts/generate-plugin-catalog.mjs -->
 
 # `@TokenPlugin`
 
 SPL and Token-2022 tokens: transfers, mints, burns, balances, supply.
 
-Check every function's row in [solana-capability-status.md](../solana-capability-status.md) before treating it as live; support states below are a snapshot of that table.
-
 Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
 
 ## Conventions for every call
 
 - **Custody:** `sourceAddress`/`destinationAddress` follow the uniform rule - wallet address (that wallet signs), `@contract.address` (shared app escrow, program-signed), or an account id (named app PDA, program-signed). See [custody and PDAs](../custody-and-pdas.md).
-- **Amounts are integers in base units** (lamports for SOL, the mint's smallest unit for tokens). Use `@TokenPlugin.SOL` for native SOL; `@TokenPlugin.USDC` is mainnet-only.
+- **Amounts are integers in base units** (lamports for SOL, the mint's smallest unit for tokens).
+  Use `@TokenPlugin.SOL` for native SOL; `@TokenPlugin.USDC` resolves to devnet USDC for `solana_devnet` and `realtime_devnet`, and to mainnet USDC for mainnet.
 - A transfer to a recipient with no token account creates the recipient's ATA; the transaction payer funds that rent.
 - `getBalance` accepts the same three source forms, which makes it the natural rule guard for named-PDA pots: `@TokenPlugin.getBalance($marketId, @TokenPlugin.SOL) >= @newData.payout`.
 - Mint identity for `createToken`/`mint` is the app-scoped `tokenId`; `getTokenMintAddress` derives the mint address without a live read.
@@ -34,7 +33,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -49,7 +47,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -66,7 +63,6 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -97,7 +93,6 @@ Fields of `extensions`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -114,7 +109,6 @@ Fields of `extensions`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -130,7 +124,6 @@ Fields of `extensions`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -146,7 +139,6 @@ Fields of `extensions`:
 ```
 
 - Callable from: `hooks.onchain`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -165,7 +157,6 @@ Fields of `extensions`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -180,7 +171,6 @@ Fields of `extensions`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -194,7 +184,6 @@ Fields of `extensions`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `number`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -209,7 +198,6 @@ Fields of `extensions`:
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
 - Accepted argument counts: 1, 3
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|
@@ -225,7 +213,6 @@ Fields of `extensions`:
 
 - Callable from: onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries
 - Returns: `string`
-- Status: **unverified** (source parity only); markers: LIVE-PENDING.
 
 | Arg | Type | Required | Signer in manifest | Description |
 |---|---|---|---|---|

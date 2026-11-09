@@ -4,14 +4,14 @@
 
 ## Boundaries come first
 
-Write `policy.json` boundaries early, while you build, not as an opening chore.
+Write `policy.json` boundaries early, while you build, not as an APO chore.
 They are the single most important trust artifact reviewers and buyers will read alongside your source.
 An app whose money and state rules are declared invariants reads as trustworthy.
 An app with ad-hoc checks in function code reads as a rug risk.
 
-## The opening safety checks
+## The APO safety checks
 
-An app opens in place, so the request to open reads the app as it is deployed: its policy, its committed runtime config, its synced source, every served site file, its deployed function code, and its backend manifest.
+An app goes public in place, so the APO request reads the app as it is deployed: its policy, its committed runtime config, its synced source, every served site file, its deployed function code, and its backend manifest.
 It runs one safety pass (`oapps.opening-safety.v1`) over them and refuses on the first finding.
 `bounded oapp preflight` runs the same pass as a dry run and lists every finding ([preflight](preflight.md)).
 These are requirements, not advice:
@@ -19,16 +19,14 @@ These are requirements, not advice:
 | What | Required | Refusal |
 |---|---|---|
 | oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
-| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the owner put on its agent with `bounded secret put --agent`), every secret a function declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
+| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the creator put on its agent with `bounded secret put --agent`), every secret a function or the app's [server](../../bounded-frontend/docs/server-apps.md) declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
 | `boundaries.egress` | a list of 1 to 64 boundaries with unique ids, each declaring `"mode": "locked"` | `oapp_opening_egress_not_steward_owned` |
 | capability grants | `service:cap` and `service:x402` in a locked `boundaries.egress` entry, so the app can call live catalog actions and pay x402-priced APIs through the relay | `oapp_opening_capability_grants_missing` |
 | function egress | each function's egress names only entries an app-wide boundary declares and repeats every `service:` entry exactly; no function enables `ctx.sandbox` | `oapp_opening_egress_not_steward_owned` |
 | the deployed runtime | the committed runtime config carries this exact policy and allows exactly the hosts the boundaries declare; redeploy the policy when they differ | `oapp_opening_safety_unavailable`, `oapp_opening_egress_not_steward_owned` |
 | the policy in source | the synced source carries the policy file its `bounded.json` names (`"policy"`, `bounded/policy.json` when unset) | `oapp_creator_policy_missing_from_source` |
 
-The request to open also refuses an app that runs a [server](../../bounded-frontend/docs/server-apps.md) (`_bounded_server/server.json` in its served site) with `oapp_opening_app_server_unsupported`, because an Open app cannot run one yet; the preflight does not report it.
-
-The other conditions of a request to open (the owner asking, an app on mainnet under OpenApps custody, a public app, a final proceeds split, Automatic, one sale) are in [the lifecycle](lifecycle.md#what-asking-to-open-requires).
+The other conditions of a request to open (the owner asking, an app on mainnet under OpenApps custody, a public app, a settled proceeds split, one sale) are in [the lifecycle](lifecycle.md#what-asking-to-open-requires).
 
 `boundaries.egress` is REQUIRED, not optional.
 On the functions lane the egress gateway is always constructed and fails closed if it cannot be built, but the host allow-list only BINDS when the app declared one: without a declaration, destinations are unrestricted.
@@ -39,19 +37,16 @@ Grants are not hosts: on an oApp the runtime then fences raw `fetch` and `ctx.br
 
 ## What shape the app takes, and what visitors get
 
-oApps are framework-independent: opening does not require Vite, React, a `package.json`, or any particular layout.
+oApps are framework-independent: an APO does not require Vite, React, a `package.json`, or any particular layout.
 What it requires is honesty between three artifacts: the synced source, the deployed frontend, and the policy.
 
-**An app opens with a served site.**
-The request to open reads the release the app serves, and an app that serves no site is refused (`oapp_app_release_site_missing`).
-Each release the agent ships carries the whole commit, site included, so the source and the site stay together.
-For anything beyond hand-written HTML, build with a real bundler.
-**Vite is the recommended default**, and a real bundler is effectively required when the frontend uses `@bounded-sh/client` because CDN imports break it at runtime; see **bounded-frontend**.
-Plain static HTML with no JavaScript is equally valid: what you deploy is what visitors use.
+**An app can open without OpenApps website files.**
+For a site already live elsewhere, ask the app's agent to propose its visitor address.
+The founder can request an APO independently of the address proposal.
 
 The synced source must be the real, complete project.
 If the deployed frontend is compiled output, the source that compiles into it rides along in the same tree.
-Never add a framework, a bundler, or an unused `init()` call merely to change shape, because opening does not ask for them.
+Never add a framework, a bundler, or an unused `init()` call merely to change shape, because an APO does not ask for them.
 
 **The served site and the source stay together.**
 The request to open, `bounded oapp preflight`, and a source-synced `bounded site deploy` classify the served site against the synced source:
@@ -70,10 +65,7 @@ The agent's releases build with that same declaration.
 
 ## Once the sale starts
 
-From the start of the sale the app's address serves under a script floor, whatever the source declared.
-Every page gets `script-src 'self'`, `object-src 'none'`, `base-uri 'none'`, and `worker-src 'self'` in its Content-Security-Policy, even if `boundaries.browser.script` names a CDN.
-A script hosted outside the release could be swapped with no release and no vote, so the browser refuses it on every load; a worker built from a Blob or a `data:` URL would run bytes fetched at runtime, so workers must be files too.
-Bundle scripts, and ship workers as files:
+The Gauntlet requires every script and worker the app runs to ship inside the release:
 
 | What | Required | Gauntlet finding |
 |---|---|---|
@@ -82,7 +74,6 @@ Bundle scripts, and ship workers as files:
 
 The Gauntlet's dependency audit reads the source for both, and either one fails it.
 Normally the agent must ship a repair before graduation; an admin may explicitly waive the sale's Gauntlet requirement for testing.
-That waiver does not remove the browser's script restrictions.
 Fix them before asking to open: neither the request nor the preflight reports them.
 
 From the start of the sale the app's public origins are also pinned to the app itself.
@@ -101,8 +92,8 @@ bounded propose --title "Show the streak counter" --slug <app-slug> --submit    
 ```
 
 `--submit` posts the change in the app's Discussion under Ideas, with the diff attached as a public `code-change.diff` file.
-It is an idea with its implementation attached, not access and not a vote: the app's agent reads it, decides whether to build it, and ships what it builds through the app's normal release decision, where the owner or the holders approve or veto the preview.
-Do not tell a contributor their diff was merged or will ship as sent; the agent may adapt it to the current code or decline it, unless the owner of an Owned app chose on the post to have it applied as is.
+It is an idea with its implementation attached, not access and not a vote: the app's agent reads it, decides whether to build it, and ships what it builds through the app's normal release decision, where the creator or the holders approve or veto the preview.
+Do not tell a contributor their diff was merged or will ship as sent; the agent may adapt it to the current code or decline it, unless the creator of an Owned app chose on the post to have it applied as is.
 The agent replies in the change's thread with what it did.
 While the app's token sale runs, a release ships only to fix the sale's failed checks, so other code changes wait until the sale ends.
 The command refuses binary files and env or key files before anything is sent.

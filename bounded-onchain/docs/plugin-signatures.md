@@ -1,6 +1,6 @@
 <!-- GENERATED FILE. Do not hand-edit.
-     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests
-     plus the published capability table). Prose: bounded-onchain/docs/plugins/_fragments/.
+     Source: bounded-onchain/data/plugin-catalog.json (extracted from bounded-monorepo manifests).
+     Prose: bounded-onchain/docs/plugins/_fragments/.
      Regenerate: node scripts/generate-plugin-catalog.mjs -->
 
 # Complete plugin signatures
@@ -56,6 +56,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@CPI.stakePoolWithdrawSol` | `stakePoolWithdrawSol(source, stakePool, reserveStake, poolMint, managerFeeAccount, poolTokens, minimumLamportsOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022HarvestFees` | `token2022HarvestFees(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022RevokeFeeAuthority` | `token2022RevokeFeeAuthority(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.token2022SetTransferFee` | `token2022SetTransferFee(string, string, number, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022WithdrawMintFees` | `token2022WithdrawMintFees(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.token2022WithdrawMintFeesTo` | `token2022WithdrawMintFeesTo(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.transferLamports` | `transferLamports(string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
@@ -65,7 +66,8 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@DeFiPlugin.closeCpAmmPosition` | `closeCpAmmPosition(string, string, string)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.createCpAmmPosition` | `createCpAmmPosition(string, string, string)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.createMeteoraConfig` | `createMeteoraConfig(string, string, number, number, number, number, number?, number?, number?, number?, number?, string?, number?, number?, number?, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
-| `@DeFiPlugin.createMeteoraVirtualPool` | `createMeteoraVirtualPool(string, string, string, string, string, string?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
+| `@DeFiPlugin.createMeteoraLaunchConfig` | `createMeteoraLaunchConfig(string, string, uint, uint, uint, uint, uint, uint, string, string)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
+| `@DeFiPlugin.createMeteoraVirtualPool` | `createMeteoraVirtualPool(string, string, string, string, string, object?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.createPool` | `createPool(string, string, string, string, string, object?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.lockCpAmmPosition` | `lockCpAmmPosition(string, string, string, number, string, string, number, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.removeCpAmmLiquidity` | `removeCpAmmLiquidity(string, string, string, string?, string?, number?)` | `hooks.onchain` | [reference](plugins/DeFiPlugin.md) |
@@ -78,7 +80,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@DeFiPlugin.getCpAmmPositionNftMintAddress` | `getCpAmmPositionNftMintAddress(string, string, string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.getDammV2PoolAddress` | `getDammV2PoolAddress(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.getMeteoraSwapQuote` | `getMeteoraSwapQuote(string, string, string)` | offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
-| `@DeFiPlugin.getMeteoraVirtualPoolAddress` | `getMeteoraVirtualPoolAddress(string, string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
+| `@DeFiPlugin.getMeteoraVirtualPoolAddress` | `getMeteoraVirtualPoolAddress(string, string, string?)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
 | `@DeFiPlugin.getSwapQuote` | `getSwapQuote(string, string, string)` | offchain rules, offchain named queries | [reference](plugins/DeFiPlugin.md) |
 | `@DflowPlugin.openPredictionMarketOrder` | `openPredictionMarketOrder(string, string, string, number, number?)` | `hooks.onchain` | [reference](plugins/DflowPlugin.md) |
 | `@DflowPlugin.getKycStatus` | `getKycStatus(string)` | offchain rules, offchain named queries | [reference](plugins/DflowPlugin.md) |
@@ -128,7 +130,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@PriceFeedPlugin.getPriceFeedScaled` | `getPriceFeedScaled(string, uint)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/PriceFeedPlugin.md) |
 | `@PumpFunPlugin.buyExactSolIn` | `buyExactSolIn(source, mint, solAmount, slippageBps)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.buyExactSolInWithMinimumOutput` | `buyExactSolInWithMinimumOutput(source, mint, solAmount, minTokensOut)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
-| `@PumpFunPlugin.collectCreatorFee` | `collectCreatorFee(creator)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
+| `@PumpFunPlugin.collectCreatorFee` | `collectCreatorFee(creator, mint?)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.createFeeSharingConfig` | `createFeeSharingConfig(source, mint)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.createToken` | `createToken(tokenId, name, symbol, uri, creator, config?)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |
 | `@PumpFunPlugin.createTokenV2` | `createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, config?)` | `hooks.onchain` | [reference](plugins/PumpFunPlugin.md) |

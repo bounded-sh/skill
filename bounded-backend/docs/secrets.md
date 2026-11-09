@@ -152,6 +152,8 @@ Code on a preview can read its preview values, so set test keys there.
 Removing a preview value does not take it out of a preview that already received it.
 A frontend running on a local dev server calls whichever app its app id names, so its functions read that app's keys: give it a preview's app id to use the preview's test keys instead of the live ones.
 `bounded secret list` names the preview values separately, and marks any key the app's OpenApps agent donated; a value you set under that name replaces the agent's.
+`--app-id` can also name an app your app manages (`ctx.apps`), so you set its keys yourself instead of the agent donating one, as long as you own every app above it and none is Open or held for its APO.
+The agent cannot donate over a key you set.
 `--agent` puts a key on the app's OpenApps agent for its own work, such as submitting the app to a store, instead of on the app: it is sealed on the agent's computer, the agent writes `{{secret:NAME}}`, and the network adds the key only on requests to the `--host` names given (at least one).
 The agent never sees the value, and the key stays labelled as yours, even in a copy the agent gives the app.
 `--agent` and `--preview` cannot be combined.

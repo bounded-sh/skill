@@ -327,7 +327,8 @@ rejected):
 | `relationships` | `{ name: { type, collection, ... } }` | [queries.md](queries.md) |
 | `type` | `"llm" \| "api" \| "storage"` | [files-and-search.md](files-and-search.md) |
 | `service` / `model` / `prompt` | strings (for `type:"api"`/`"llm"`) | [files-and-search.md](files-and-search.md) |
-| `isPassthrough` / `isRevealPath` | booleans (onchain). **`isRevealPath` pins the collection's whole shape** — onchain, EMPTY fields, and a create rule that is exactly `@OraclePlugin.getRandomNumber($id, 0, 1) == 0`; `create: "false"` and a declared `randomness` field are both rejected at deploy | [../../bounded-onchain/docs/randomness.md](../../bounded-onchain/docs/randomness.md) |
+| `isPassthrough` / `isRevealPath` | booleans (onchain). **`isPassthrough` stores no document account on chain**: rules and hooks still run and the row is mirrored offchain, but later onchain code cannot `get()` it ([onchain.md](../../bounded-onchain/docs/onchain.md#poofnet-onchain-simulation-on-realtime_offchain)). **`isRevealPath` pins the collection's whole shape** — onchain, EMPTY fields, and a create rule that is exactly `@OraclePlugin.getRandomNumber($id, 0, 1) == 0`; `create: "false"` and a declared `randomness` field are both rejected at deploy | [../../bounded-onchain/docs/randomness.md](../../bounded-onchain/docs/randomness.md) |
+| `keepRecordOnDelete` | boolean. A deleted document stays readable: a single-document read returns its newest deleted version stamped `_deletedAt`, while rules, lists and subscriptions see it as absent. Not allowed with `tier: "ephemeral"`; removing it discards the kept versions on deploy | [data-plane.md](data-plane.md#keep-deleted-records-with-keeprecordondelete) |
 | `description` / `operationDetails` / `functionDescription` | docstrings | — |
 
 ### Top-level blocks (alongside the collection keys)
@@ -355,7 +356,7 @@ only literals; the top-level `environments` block and each function's own
 ### oApp mode and closed egress
 
 `oapp` accepts only the literal value `true`.
-Use `"oapp": true` for an oApp and omit the key for a regular app; `false`, strings, objects, arrays, and other values are rejected.
+Opening an app that declares functions or boundaries requires `"oapp": true` (see the **openapps** skill); omit the key otherwise, including for an Owned app with an agent. `false`, strings, objects, arrays, and other values are rejected.
 
 The current v1 static checks require at least one `boundaries.egress` entry.
 Function `secrets` are allowed; an APO accepts only keys the app's OpenApps agent donated, which a function reads as a stand-in.

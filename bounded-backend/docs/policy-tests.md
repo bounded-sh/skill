@@ -133,6 +133,10 @@ function is safe to re-run by invoking it twice around snapshots —
 **Limits:** ≤64KB per file, ≤200 steps per file, ≤50 files per run, ≤25
 function sources ≤512KB each, 120s wall clock per run.
 
+**Run budget:** each `bounded tests run` is one run, however many files it sends.
+An app gets 50 runs up front, refilled at 4 per minute, with at most 2 running at once, shared by everyone running that app's tests.
+Past it the server answers 429 and the CLI waits and retries a few times, so a suite sent one file per call spends one run per file and slows down, while the whole directory in one call costs one run.
+
 **`invoke` caveats:** the function's own `Date.now()` is NOT overridden (its
 writes evaluate `@time.now` on the test's logical clock, so avoid `setTime`
 far from real time in files that invoke functions stamping wall-clock into

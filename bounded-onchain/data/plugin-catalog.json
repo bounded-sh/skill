@@ -2,9 +2,8 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "11ff6e987797124ac5d38e8e455e65577a5c1b31",
+  "monorepoCommit": "46bae0389b7a09e3149335169b6195c98f7188ab",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
-  "capabilityTable": "bounded-onchain/docs/solana-capability-status.md",
   "canonicalOffchainPlugins": [
    "DocumentPlugin",
    "StringUtils"
@@ -41,13 +40,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getAccountAddress",
@@ -76,13 +69,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING; DEVNET-ESCROW-SENTINEL"
-     }
+     ]
     }
    ]
   },
@@ -134,13 +121,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-CROSS-APP-PROOF"
-     }
+     ]
     },
     {
      "name": "get",
@@ -178,13 +159,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-CROSS-APP-PROOF"
-     }
+     ]
     }
    ]
   },
@@ -240,13 +215,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getMaxSolInProduct",
@@ -293,13 +262,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getMaxTokensInProduct",
@@ -346,13 +309,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getSolOutProduct",
@@ -408,13 +365,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getTokensInProduct",
@@ -470,13 +421,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getTokensOutProduct",
@@ -532,13 +477,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -585,13 +524,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "bool",
@@ -620,13 +553,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "concat",
@@ -718,13 +645,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "i64",
@@ -753,13 +674,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "i64At",
@@ -797,13 +712,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "len",
@@ -832,13 +741,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "pubkey",
@@ -867,13 +770,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "pubkeyAt",
@@ -911,13 +808,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "raw",
@@ -946,13 +837,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "str",
@@ -981,13 +866,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u128",
@@ -1016,13 +895,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u16",
@@ -1051,13 +924,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u16At",
@@ -1095,13 +962,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u32",
@@ -1130,13 +991,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u32At",
@@ -1174,13 +1029,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u64",
@@ -1209,13 +1058,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u64At",
@@ -1253,13 +1096,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u8",
@@ -1288,13 +1125,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "u8At",
@@ -1332,13 +1163,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "utf8",
@@ -1367,13 +1192,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -1482,13 +1301,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "not run",
-      "markers": "LIVE-DLMM-PROOF, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "kaminoBorrow",
@@ -1594,13 +1407,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "kaminoDeposit",
@@ -1715,13 +1522,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "kaminoInitObligation",
@@ -1764,13 +1565,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
-     }
+     ]
     },
     {
      "name": "kaminoInitUserMetadata",
@@ -1804,13 +1599,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
-     }
+     ]
     },
     {
      "name": "kaminoRefreshObligation",
@@ -1853,13 +1642,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET"
-     }
+     ]
     },
     {
      "name": "kaminoRefreshReserve",
@@ -1938,13 +1721,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "kaminoRepay",
@@ -2041,13 +1818,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "kaminoWithdraw",
@@ -2162,13 +1933,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-USABLE-DEVNET-KAMINO-MARKET, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "memoNote",
@@ -2202,13 +1967,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-SAFE-CPI-PROOF"
-     }
+     ]
     },
     {
      "name": "raydiumDeposit",
@@ -2314,13 +2073,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "not run",
-      "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "raydiumSwapBaseInput",
@@ -2426,13 +2179,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "not run",
-      "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "raydiumWithdraw",
@@ -2538,13 +2285,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "not run",
-      "markers": "LIVE-RAYDIUM-PROOF, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "stakePoolDepositSol",
@@ -2632,13 +2373,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "not run",
-      "markers": "LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "stakePoolWithdrawSol",
@@ -2717,13 +2452,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "not run",
-      "markers": "LIVE-STAKEPOOL-PROOF, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "token2022HarvestFees",
@@ -2766,13 +2495,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "local policy verified; live not run",
-      "markers": "LIVE-PENDING, NEEDS-RUNTIME-V4"
-     }
+     ]
     },
     {
      "name": "token2022RevokeFeeAuthority",
@@ -2806,13 +2529,59 @@
      ],
      "contexts": [
       "onchain.hooks"
+     ]
+    },
+    {
+     "name": "token2022SetTransferFee",
+     "callName": "@CPI.token2022SetTransferFee",
+     "category": "transactional",
+     "signature": "token2022SetTransferFee(string, string, number, number)",
+     "usage": "@CPI.token2022SetTransferFee(source, mint, feeBasisPoints, maxFee) - sets a new Token-2022 transfer fee (basis points, 0-10000) and its per-transfer cap in base units. Source must be the current transfer-fee configuration authority (wallet, @contract.address, or named account) and signs. On Solana the new rate takes effect at the start of the epoch after next (2-4 days on mainnet); transfers until then keep the current rate. Poofnet applies it at once. Fails once the authority is revoked.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Current transfer-fee configuration authority: wallet, app escrow, or named account.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "Token-2022 mint carrying TransferFeeConfig.",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "feeBasisPoints",
+       "type": "number",
+       "optional": false,
+       "signer": null,
+       "description": "New transfer fee in basis points, 0-10000.",
+       "fields": null
+      },
+      {
+       "index": 3,
+       "name": "maxFee",
+       "type": "number",
+       "optional": false,
+       "signer": null,
+       "description": "Largest fee withheld from one transfer, in the mint's base units.",
+       "fields": null
+      }
      ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "local policy verified; live not run",
-      "markers": "LIVE-PENDING"
-     }
+     "contexts": [
+      "onchain.hooks"
+     ]
     },
     {
      "name": "token2022WithdrawMintFees",
@@ -2846,13 +2615,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "local policy verified; live not run",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "token2022WithdrawMintFeesTo",
@@ -2895,13 +2658,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "transferLamports",
@@ -2944,13 +2701,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "descriptor CPI",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-SAFE-CPI-PROOF"
-     }
+     ]
     }
    ]
   },
@@ -3029,13 +2780,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "claimDammV2PoolFees",
@@ -3078,13 +2823,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "claimMeteoraPoolFees",
@@ -3118,13 +2857,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "closeCpAmmPosition",
@@ -3167,13 +2900,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "createCpAmmPosition",
@@ -3216,13 +2943,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "createMeteoraConfig",
@@ -3382,20 +3103,120 @@
      ],
      "contexts": [
       "onchain.hooks"
+     ]
+    },
+    {
+     "name": "createMeteoraLaunchConfig",
+     "callName": "@DeFiPlugin.createMeteoraLaunchConfig",
+     "category": "transactional",
+     "signature": "createMeteoraLaunchConfig(string, string, uint, uint, uint, uint, uint, uint, string, string)",
+     "usage": "@DeFiPlugin.createMeteoraLaunchConfig(configId, quoteMint, clearingPrice, firstBuyTokens, firstBuyQuote, curveTokens, endPrice, feeBps, feeClaimer, leftoverReceiver) - creates a Meteora Dynamic Bonding Curve config whose curve is derived exactly from the arguments, so pinning them pins the curve. Prices are raw quote units per 1e9 raw base units. Segment 1 ends exactly at clearingPrice and holds exactly firstBuyTokens; it starts at the highest price at which buying all of them costs at most firstBuyQuote, fee included (roughly (firstBuyQuote/firstBuyTokens)^2/clearingPrice). Segment 2 holds exactly curveTokens from clearingPrice to endPrice and is omitted when curveTokens is 0. The pool migrates to DAMM v2 when the curve sells out. The token is a fixed supply of 1,000,000,000 SPL tokens with 6 decimals; everything the curve and the migrated pool do not need is leftover for leftoverReceiver (@DeFiPlugin.withdrawLeftover after migration). The flat feeBps (25 to 1000) is charged in the quote token both on the curve, where all of it is the pool creator's (claim with @DeFiPlugin.claimMeteoraPoolFees as the creator), and in the migrated pool. After migration the pool creator holds all LP, 10% of it permanently locked (DBC's minimum). Create pools from it with @DeFiPlugin.createMeteoraVirtualPool. Requires onchain runtime v11.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "configId",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "Unique identifier for the config within the app",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "quoteMint",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "The quote mint pools of this config trade against, e.g. @TokenPlugin.USDC",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "clearingPrice",
+       "type": "uint",
+       "optional": false,
+       "signer": null,
+       "description": "Price where segment 1 ends and segment 2 starts, in raw quote units per 1e9 raw base units",
+       "fields": null
+      },
+      {
+       "index": 3,
+       "name": "firstBuyTokens",
+       "type": "uint",
+       "optional": false,
+       "signer": null,
+       "description": "Base tokens (raw units) segment 1 holds; buying all of them moves the price to exactly clearingPrice",
+       "fields": null
+      },
+      {
+       "index": 4,
+       "name": "firstBuyQuote",
+       "type": "uint",
+       "optional": false,
+       "signer": null,
+       "description": "Most quote (raw units) buying all of segment 1 may cost, fee included",
+       "fields": null
+      },
+      {
+       "index": 5,
+       "name": "curveTokens",
+       "type": "uint",
+       "optional": false,
+       "signer": null,
+       "description": "Base tokens (raw units) segment 2 holds; 0 ends the curve at clearingPrice",
+       "fields": null
+      },
+      {
+       "index": 6,
+       "name": "endPrice",
+       "type": "uint",
+       "optional": false,
+       "signer": null,
+       "description": "Price where segment 2 ends, above clearingPrice, in raw quote units per 1e9 raw base units; ignored when curveTokens is 0",
+       "fields": null
+      },
+      {
+       "index": 7,
+       "name": "feeBps",
+       "type": "uint",
+       "optional": false,
+       "signer": null,
+       "description": "Flat trading fee in basis points, 25 to 1000, charged in the quote token before and after migration",
+       "fields": null
+      },
+      {
+       "index": 8,
+       "name": "feeClaimer",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "The DBC partner, which DBC requires but which gets no trading fee and no LP: an account ID, @contract.address for escrow, or a wallet address",
+       "fields": null
+      },
+      {
+       "index": 9,
+       "name": "leftoverReceiver",
+       "type": "string",
+       "optional": false,
+       "signer": null,
+       "description": "Account that receives the leftover tokens after migration: an account ID, @contract.address for escrow, or a wallet address",
+       "fields": null
+      }
      ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     "contexts": [
+      "onchain.hooks"
+     ]
     },
     {
      "name": "createMeteoraVirtualPool",
      "callName": "@DeFiPlugin.createMeteoraVirtualPool",
      "category": "transactional",
-     "signature": "createMeteoraVirtualPool(string, string, string, string, string, string?)",
-     "usage": "@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, initialSolBuyAmount?) - the pool base mint is ALWAYS derived with the LEGACY token seed (appId + tokenId + name + symbol); there is no seedMode option. Derive the mint elsewhere with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form (that derives a different, nonexistent address)",
+     "signature": "createMeteoraVirtualPool(string, string, string, string, string, object?)",
+     "usage": "@DeFiPlugin.createMeteoraVirtualPool(configId, tokenId, name, symbol, uri, launch?) - creates a pool paired with the config's quote mint. The launch object { creator, buyAmount, maxQuoteCost } (runtime v11) names the pool creator and makes it buy exactly buyAmount tokens for at most maxQuoteCost quote, fee included, in the same instruction, paying from its quote token account. For a SOL-quoted pool, a lamport amount in place of the launch object makes the user's dev buy instead (initialSolBuyAmount). The pool base mint is ALWAYS derived with the LEGACY token seed (appId + tokenId + name + symbol); there is no seedMode option. Derive the mint elsewhere with the 3-arg @TokenPlugin.getTokenMintAddress(tokenId, name, symbol), never the 1-arg id-only form (that derives a different, nonexistent address)",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3448,23 +3269,36 @@
       },
       {
        "index": 5,
-       "name": "initialSolBuyAmount",
-       "type": "string",
+       "name": "launch",
+       "type": "object",
        "optional": true,
        "signer": null,
-       "description": "Optional: Initial SOL amount in lamports to buy tokens with (dev buy). If provided and > 0, executes a swap after pool creation.",
-       "fields": null
+       "description": "Optional launch object (runtime v11), or for a SOL-quoted pool a lamport amount the user spends on a dev buy (initialSolBuyAmount).",
+       "fields": {
+        "creator": {
+         "type": "string",
+         "optional": null,
+         "signer": null,
+         "description": "Pool creator: an account ID, @contract.address for escrow, or a wallet address. Defaults to the user."
+        },
+        "buyAmount": {
+         "type": "number",
+         "optional": null,
+         "signer": null,
+         "description": "Base tokens (raw units) the creator buys right after creation, paying in the config's quote mint from its own quote token account. Requires maxQuoteCost."
+        },
+        "maxQuoteCost": {
+         "type": "number",
+         "optional": null,
+         "signer": null,
+         "description": "Most quote (raw units) the creator's buy may cost, fee included; the whole creation fails if it would cost more."
+        }
+       }
       }
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "createPool",
@@ -3649,13 +3483,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF; CPAMM-SCENARIO"
-     }
+     ]
     },
     {
      "name": "lockCpAmmPosition",
@@ -3743,13 +3571,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "removeCpAmmLiquidity",
@@ -3819,20 +3641,14 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "swap",
      "callName": "@DeFiPlugin.swap",
      "category": "transactional",
      "signature": "swap(string, string, string, string, number?)",
-     "usage": "@DeFiPlugin.swap(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, slippageBps?)",
+     "usage": "@DeFiPlugin.swap(sourceAddress, tokenMintAAddress, tokenMintBAddress, tokenAAmount, slippageBps?) - exact-input swap; mainnet uses Jupiter, while devnet uses direct Meteora DAMM v2 pools and requires runtime v10 plus the matching builder deployment. Devnet requires an executable pool for the exact mint pair; output protection includes Token-2022 transfer fees.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -3886,13 +3702,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-JUPITER"
-     }
+     ]
     },
     {
      "name": "swapInMeteoraVirtualPool",
@@ -3962,13 +3772,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "withdrawLeftover",
@@ -3993,13 +3797,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getClaimableCpAmmPositionFee",
@@ -4055,13 +3853,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getClaimableMeteoraPoolFees",
@@ -4099,13 +3891,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getCpAmmPoolAddress",
@@ -4152,13 +3938,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getCpAmmPositionNftMintAddress",
@@ -4205,13 +3985,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getDammV2PoolAddress",
@@ -4240,13 +4014,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getMeteoraSwapQuote",
@@ -4290,20 +4058,14 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unverified",
-      "verification": "not run",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getMeteoraVirtualPoolAddress",
      "callName": "@DeFiPlugin.getMeteoraVirtualPoolAddress",
      "category": "readOnly",
-     "signature": "getMeteoraVirtualPoolAddress(string, string)",
-     "usage": "@DeFiPlugin.getMeteoraVirtualPoolAddress(tokenMintAddress, configId)",
+     "signature": "getMeteoraVirtualPoolAddress(string, string, string?)",
+     "usage": "@DeFiPlugin.getMeteoraVirtualPoolAddress(tokenMintAddress, configId, quoteMint?) - pass the config's quote mint for a pool not paired with SOL (runtime v11)",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -4326,6 +4088,15 @@
        "signer": null,
        "description": "Unique identifier for the config within the app",
        "fields": null
+      },
+      {
+       "index": 2,
+       "name": "quoteMint",
+       "type": "string",
+       "optional": true,
+       "signer": null,
+       "description": "Optional: the config's quote mint, e.g. @TokenPlugin.USDC. Default: SOL",
+       "fields": null
       }
      ],
      "contexts": [
@@ -4334,20 +4105,14 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-METEORA-PROOF"
-     }
+     ]
     },
     {
      "name": "getSwapQuote",
      "callName": "@DeFiPlugin.getSwapQuote",
      "category": "readOnly",
      "signature": "getSwapQuote(string, string, string)",
-     "usage": "@DeFiPlugin.getSwapQuote(inputMint, outputMint, amount)",
+     "usage": "@DeFiPlugin.getSwapQuote(inputMint, outputMint, amount) - offchain-only exact-input quote in output-token smallest units. Mainnet uses Jupiter; devnet uses direct Meteora DAMM v2 pools after the matching query service deployment and returns net output after Token-2022 transfer fees. Devnet requires an executable pool for the exact mint pair.",
      "returnType": "string",
      "isOnlyOffchain": true,
      "validArgCounts": null,
@@ -4384,13 +4149,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-JUPITER"
-     }
+     ]
     }
    ]
   },
@@ -4460,13 +4219,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-DFLOW"
-     }
+     ]
     },
     {
      "name": "getKycStatus",
@@ -4492,13 +4245,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-DFLOW"
-     }
+     ]
     }
    ]
   },
@@ -4541,13 +4288,7 @@
      ],
      "contexts": [
       "offchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not applicable",
-      "markers": "OFFCHAIN-ONLY"
-     }
+     ]
     },
     {
      "name": "updateField",
@@ -4591,13 +4332,7 @@
      "contexts": [
       "onchain.hooks",
       "offchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -4653,13 +4388,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "mulDivFloor",
@@ -4706,13 +4435,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -4764,13 +4487,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "createCollection",
@@ -4813,13 +4530,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "mintNFT",
@@ -4880,13 +4591,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "transfer",
@@ -4938,13 +4643,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "updateCollectionRoyalties",
@@ -4996,13 +4695,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "updateRoyalties",
@@ -5063,13 +4756,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getCollectionMintAddress",
@@ -5107,13 +4794,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getOwner",
@@ -5142,13 +4823,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getTokenMintAddress",
@@ -5186,13 +4861,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getUpdateAuthority",
@@ -5221,13 +4890,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -5270,13 +4933,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-ORAO-PROOF"
-     }
+     ]
     },
     {
      "name": "getRandomNumber",
@@ -5323,13 +4980,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-ORAO-PROOF"
-     }
+     ]
     },
     {
      "name": "getVRFAddress",
@@ -5358,13 +5009,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-ORAO-PROOF"
-     }
+     ]
     }
    ]
   },
@@ -5443,13 +5088,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "depositFunds",
@@ -5492,13 +5131,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "emberDeposit",
@@ -5532,13 +5165,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "emberWithdraw",
@@ -5572,13 +5199,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "placeLong",
@@ -5639,13 +5260,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "placeShort",
@@ -5706,13 +5321,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "registerTrader",
@@ -5746,13 +5355,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "syncParentToChild",
@@ -5786,13 +5389,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "transferToCross",
@@ -5826,13 +5423,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "transferToIsolated",
@@ -5875,13 +5466,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "withdrawFunds",
@@ -5924,13 +5509,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "getCollateralBalance",
@@ -5965,13 +5544,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "getMarkPrice",
@@ -5997,13 +5570,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "getPortfolioValue",
@@ -6038,13 +5605,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "getPositionSize",
@@ -6088,13 +5649,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "getUnrealizedPnl",
@@ -6129,13 +5684,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "hasPosition",
@@ -6179,13 +5728,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     },
     {
      "name": "isRegistered",
@@ -6220,13 +5763,7 @@
      "contexts": [
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy offchain-only",
-      "support": "unsupported",
-      "verification": "not run",
-      "markers": "NO-DEVNET-PHOENIX"
-     }
+     ]
     }
    ]
   },
@@ -6273,13 +5810,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getCollateralOutAmm",
@@ -6326,13 +5857,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getNoCollateralOutLsmr",
@@ -6388,13 +5913,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getNoTokensOutLsmr",
@@ -6450,13 +5969,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getYesCollateralOutLsmr",
@@ -6512,13 +6025,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getYesTokenOutAmm",
@@ -6565,13 +6072,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getYesTokensOutLsmr",
@@ -6627,13 +6128,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -6697,13 +6192,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PYTH-PROOF"
-     }
+     ]
     },
     {
      "name": "getPriceFeedScaled",
@@ -6741,13 +6230,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "NEEDS-RUNTIME-V8; LIVE-PYTH-PROOF"
-     }
+     ]
     }
    ]
   },
@@ -6808,13 +6291,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "buyExactSolInWithMinimumOutput",
@@ -6866,20 +6343,14 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "collectCreatorFee",
      "callName": "@PumpFunPlugin.collectCreatorFee",
      "category": "transactional",
-     "signature": "collectCreatorFee(creator)",
-     "usage": "@PumpFunPlugin.collectCreatorFee(creator) - Collect accumulated creator fees from vault to creator wallet (permissionless)",
+     "signature": "collectCreatorFee(creator, mint?)",
+     "usage": "@PumpFunPlugin.collectCreatorFee(creator, mint?) - Collect accumulated creator fees from vault to creator wallet (permissionless). With the coin's mint (runtime v11) it first sweeps the creator fee that newer trades keep on the bonding curve, and on the PumpSwap pool once the coin has graduated, then pays it all to the creator in the coin's quote: SOL, or the creator's quote token account (e.g. USDC) for a token-paired coin. Single-creator coins only (no fee sharing config).",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -6893,17 +6364,20 @@
        "signer": null,
        "description": "Creator address (wallet, @contract.address for escrow, or account ID) - validated against bonding curve on-chain",
        "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "string",
+       "optional": true,
+       "signer": null,
+       "description": "The coin's mint. Required to collect a token-paired coin's fees (e.g. USDC) and the fees newer trades keep on the curve or pool.",
+       "fields": null
       }
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "createFeeSharingConfig",
@@ -6937,13 +6411,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "createToken",
@@ -7020,20 +6488,14 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "createTokenV2",
      "callName": "@PumpFunPlugin.createTokenV2",
      "category": "transactional",
      "signature": "createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, config?)",
-     "usage": "@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: \"idOnly\"}) - Creates a Token-2022 (SPL-22) token on pump.fun with optional mayhem mode and optional config.",
+     "usage": "@PumpFunPlugin.createTokenV2(tokenId, name, symbol, uri, creator, isMayhemMode, {seedMode: \"idOnly\"}) - Creates a Token-2022 token on pump.fun. On v11, quoteMint, buyAmount and maxQuoteCost support an atomic first buy, and feeReceiver sends creator fees to another account.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -7081,7 +6543,7 @@
        "type": "string",
        "optional": false,
        "signer": null,
-       "description": "Creator address (wallet, @contract.address for escrow, or account ID) - receives creator fees and pays the Pump create (mint, bonding curve, and metadata rent). The platform sponsor and attestation keys are refused (pump_create_reserved_creator).",
+       "description": "Pays for the create and receives creator fees unless config.feeReceiver names another receiver. On v11 a non-Mayhem PDA creator making its first buy in a classic SPL quote token such as USDC pays the quote; the transaction rent funder covers approved creation rent. Other launches charge the creator SOL. Reserved platform signers are refused.",
        "fields": null
       },
       {
@@ -7099,26 +6561,44 @@
        "type": "object",
        "optional": true,
        "signer": null,
-       "description": "Optional config object. Supports {seedMode: \"idOnly\"} to derive mint PDA from appId+tokenId only.",
+       "description": "Optional config object: seedMode, quoteMint, buyAmount with maxQuoteCost, and feeReceiver.",
        "fields": {
         "seedMode": {
          "type": "string",
          "optional": null,
          "signer": null,
          "description": "Seed derivation mode. \"idOnly\" derives mint PDA from appId+tokenId (no name/symbol). Omit for legacy derivation."
+        },
+        "quoteMint": {
+         "type": "string",
+         "optional": null,
+         "signer": null,
+         "description": "Quote mint the coin trades against, e.g. @TokenPlugin.USDC; it must be one of pump.fun's whitelisted quote mints. Omit (or pass wrapped SOL) for a SOL-paired coin."
+        },
+        "buyAmount": {
+         "type": "number",
+         "optional": null,
+         "signer": null,
+         "description": "Base tokens (raw units, 6 decimals) the creator buys in the same instruction, paying in quoteMint from its own quote token account. Requires quoteMint and maxQuoteCost; a buy past what the curve holds continues into pump.fun's synthetic migration."
+        },
+        "maxQuoteCost": {
+         "type": "number",
+         "optional": null,
+         "signer": null,
+         "description": "Most quote (raw units) the creator's buy may cost, fees included; the whole create fails if the buy would cost more."
+        },
+        "feeReceiver": {
+         "type": "string",
+         "optional": null,
+         "signer": null,
+         "description": "On v11, the wallet or account id Pump records as the coin's creator and pays creator fees to, instead of the creator that pays for the create."
         }
        }
       }
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "distributeCreatorFees",
@@ -7143,13 +6623,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "pumpswapDeposit",
@@ -7210,13 +6684,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "pumpswapWithdraw",
@@ -7277,13 +6745,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "transferCreatorFeesToPump",
@@ -7308,13 +6770,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "updateShareholders",
@@ -7357,13 +6813,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "getBondingCurveProgress",
@@ -7392,20 +6842,14 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "getCreatorFee",
      "callName": "@PumpFunPlugin.getCreatorFee",
      "category": "readOnly",
      "signature": "getCreatorFee(mint)",
-     "usage": "@PumpFunPlugin.getCreatorFee(mint) - Get accumulated native SOL creator fees from bonding curve vault. Automatically resolves the correct vault from bonding curve creator (handles pre/post fee-sharing migration).",
+     "usage": "@PumpFunPlugin.getCreatorFee(mint) - Get accumulated native SOL creator fees from bonding curve vault. Automatically resolves the correct vault from bonding curve creator (handles pre/post fee-sharing migration). For a token-paired coin (e.g. USDC) on runtime v11 it answers, in quote units, what @PumpFunPlugin.collectCreatorFee(creator, mint) pays: the fee held on the curve and in the creator vault, plus the pool's once the coin has graduated.",
      "returnType": "number",
      "isOnlyOffchain": false,
      "validArgCounts": null,
@@ -7427,13 +6871,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     },
     {
      "name": "getPumpBuyQuote",
@@ -7471,13 +6909,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PUMP-PROOF"
-     }
+     ]
     }
    ]
   },
@@ -7558,13 +6990,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "invoke",
@@ -7607,13 +7033,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "SAFE-TARGET-ONLY"
-     }
+     ]
     },
     {
      "name": "account",
@@ -7642,13 +7062,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "ata",
@@ -7686,13 +7100,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "data",
@@ -7739,13 +7147,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "lamports",
@@ -7774,13 +7176,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "pda",
@@ -7818,13 +7214,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "pdaBump",
@@ -7862,13 +7252,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "rentExemption",
@@ -7897,13 +7281,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "signerAccount",
@@ -7932,13 +7310,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -7995,13 +7367,7 @@
       "offchain.rules",
       "offchain.queries",
       "offchain.hooks"
-     ],
-     "status": {
-      "lane": "extended runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "NEEDS-RUNTIME-V6"
-     }
+     ]
     },
     {
      "name": "length",
@@ -8031,13 +7397,7 @@
       "offchain.rules",
       "offchain.queries",
       "offchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
   },
@@ -8080,13 +7440,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-TENSOR-PROOF"
-     }
+     ]
     },
     {
      "name": "listNft",
@@ -8156,13 +7510,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-TENSOR-PROOF"
-     }
+     ]
     }
    ]
   },
@@ -8227,13 +7575,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "createToken",
@@ -8294,13 +7636,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "createToken2022",
@@ -8419,13 +7755,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "mint",
@@ -8486,13 +7816,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "transfer",
@@ -8544,13 +7868,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "transferWholeTokens",
@@ -8602,13 +7920,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "withdrawWithheldTokens",
@@ -8660,13 +7972,7 @@
      ],
      "contexts": [
       "onchain.hooks"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getBalance",
@@ -8704,13 +8010,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getDecimals",
@@ -8739,13 +8039,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getSupply",
@@ -8774,13 +8068,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getTokenMintAddress",
@@ -8830,13 +8118,7 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     },
     {
      "name": "getWithdrawWithheldAuthority",
@@ -8865,73 +8147,9 @@
       "onchain.hooks",
       "offchain.rules",
       "offchain.queries"
-     ],
-     "status": {
-      "lane": "legacy runtime",
-      "support": "unverified",
-      "verification": "source parity only",
-      "markers": "LIVE-PENDING"
-     }
+     ]
     }
    ]
-  }
- ],
- "capabilityOnly": [
-  {
-   "callName": "@Bytes.keccak256",
-   "lane": "ext primitive",
-   "support": "unverified",
-   "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
-  },
-  {
-   "callName": "@Bytes.sha256",
-   "lane": "ext primitive",
-   "support": "unverified",
-   "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
-  },
-  {
-   "callName": "@Solana.invokeAttested",
-   "lane": "extended disabled",
-   "support": "unsupported",
-   "verification": "not applicable",
-   "markers": "DISABLED"
-  },
-  {
-   "callName": "@Solana.secp256k1Recover",
-   "lane": "ext primitive",
-   "support": "unverified",
-   "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
-  },
-  {
-   "callName": "@Solana.slot",
-   "lane": "extended runtime",
-   "support": "unverified",
-   "verification": "source parity only",
-   "markers": "LIVE-PENDING"
-  },
-  {
-   "callName": "@Solana.verifyEd25519",
-   "lane": "ext primitive",
-   "support": "unverified",
-   "verification": "not run",
-   "markers": "NEEDS-RUNTIME-V4"
-  },
-  {
-   "callName": "get",
-   "lane": "core legacy",
-   "support": "unverified",
-   "verification": "source parity only",
-   "markers": "LIVE-PENDING"
-  },
-  {
-   "callName": "getAfter",
-   "lane": "core legacy",
-   "support": "unverified",
-   "verification": "source parity only",
-   "markers": "LIVE-PENDING"
   }
  ]
 }

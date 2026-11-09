@@ -187,8 +187,8 @@ export default async function (args, ctx) {
 | `ctx.bounded` | A pre-authed data client: `ctx.bounded.get(path)`, `.set(path, doc)`, `.setMany([{ path, document }, ...])`, `.delete(path)`, and `ctx.bounded.runQuery(path, queryName, args?)`. **Writes are re-checked by enforced rules and invariants** — a `409` throws. `setMany` is one atomic batch, so use it for transfers/settlement. `runQuery` runs one of your policy-declared, deploy-validated queries under the acting identity's read authority, so you **reuse policy logic for authz/data instead of re-implementing it** (e.g. an `isTeamMember` query). |
 | `ctx.env` | The resolved secrets, narrowed to the names in `functions.<name>.secrets`. Values come from the app secret store (`bounded secret put`); bare `--secret NAME` declares exposure on a standalone deploy, while legacy `--secret NAME=VALUE` overrides the store for that function version. Nothing undeclared leaks in. |
 | `ctx.secrets` | The documented secret accessor: `await ctx.secrets.get("NAME")` returns the value (or null). Reads the **same** resolved map as `ctx.env`, so `bounded secret put OPENAI_KEY …` → `ctx.secrets.get("OPENAI_KEY")` works. See [secrets.md](secrets.md). |
-| `ctx.ai` | **The built-in AI router — chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's credit pool, capped fail-closed. This is how you add an LLM — or native image/video generation — to your app; see [§ctx.ai](functions-ctx-ai.md) and [§media](functions-ctx-ai.md#ctxai-media-generation--images-sync-and-video-async-jobs) below. |
-| `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's credit pool at the applicable upstream service cost plus 5%, capped fail-closed. See [§ctx.services](functions-ctx-services.md). |
+| `ctx.ai` | **The built-in AI router - chat (`run`), images (`generateImage`), video (`generateVideo`/`getJob`). No API key.** Routes any model through the Bounded AI Gateway, billed to the app owner's credit pool, capped fail-closed. This is how you add an LLM - or native image/video generation - to your app; see [§ctx.ai](functions-ctx-ai.md) and [§media](functions-ctx-ai.md#ctxai-media-generation---images-sync-and-video-async-jobs) below. |
+| `ctx.services` | **Managed third-party API discovery and proxy invoke — `search`, `describe`, `invoke`.** Search/describe help agents find the right API shape. Invoke runs through Bounded's managed provider proxy, billed to the app owner's credit pool at the applicable upstream service cost plus our markup, capped fail-closed. See [§ctx.services](functions-ctx-services.md). |
 | `ctx.enqueue` | **Background jobs — `ctx.enqueue(functionName, payload?, opts?)` → `{ jobId }`.** Schedule another deployed function (or this one) to run *later*, server-side, without blocking. The queued run is never deputized as the enqueuer: a job from a trusted caller executes as the **null system principal** (`ctx.user.id == null`, `ctx.user.system == true`) and the target must opt in with `queueCallable: true`, while a job that descends from a public route replays as **that route's reserved principal** and the target must opt in with `publicQueueCallable: true` instead. Either way it receives `payload` as its `args` and meters compute usage exactly like an HTTP invocation. See [§ctx.enqueue](functions-ctx-enqueue.md). |
 | `ctx.build` | **Governed app builds — `create` / `edit` / `fork` / `get` / `cancel`.** Present only when the function's policy declares a `build` capability; otherwise every method returns `{ ok: false, reason: "build_capability_missing" }` with no network call. Originates AI app builds through the unified Build control plane, funded and governed by the named build profile. See [§ctx.build](functions-ctx-build.md). |
 | `fetch` | The standard global — call any third-party API (a broker, a data feed, Stripe…). **For LLM/AI inference use `ctx.ai`, not `fetch` + your own key.** For Bounded-managed service proxies use `ctx.services`; for providers you integrate directly, keep keys in `ctx.secrets`. |
@@ -545,7 +545,8 @@ the canonical explainer:
    rule (with `@user` = the live principal and `@origin` populated). Covered next.
 
 Either way every write still goes **through** your rules + invariants via
-`ctx.bounded`. `every` accepts `<n>s|m|h|d` (1s–366d); schedules are offchain-only.
+`ctx.bounded`. `every` accepts `<n>s|m|h|d` (1s–366d); schedules are offchain-only
+and never run on a preview app.
 Hook form + the full `run` unification:
 [hooks-scheduled-webhooks.md](hooks-scheduled-webhooks.md).
 
@@ -610,7 +611,7 @@ bearer; the body is exactly `{ mode, function?, receipt? }`):
 | `mode` | Who pays |
 |---|---|
 | `never` | the signer, from their own wallet (the default) |
-| `always` | Bounded's sponsor, charged to the app's credits at cost plus 5% |
+| `always` | Bounded's sponsor, charged to the app's credits at cost plus our markup |
 | `function` | the app decides per write: the platform asks the function named in `function` |
 
 In `function` mode the platform invokes that function **after the write's trial
@@ -730,7 +731,6 @@ boundary.
 - [functions-when-to-use.md](functions-when-to-use.md) — **when to use a function (and when NOT)** — read first
 - [principals-and-origins.md](principals-and-origins.md) — **who `@user` is** across user / system / live-call invocation (the canonical principal explainer)
 - [ai-npcs.md](ai-npcs.md) — a live tick `call`s a function = an NPC; the `actAs`-funded LLM pattern
-- [agents-flue.md](agents-flue.md) — a **multi-step agent** (tool-use loop) when one `ctx.ai.run` isn't enough
 - [backend-runtime.md](backend-runtime.md) — long-running / batch work
 - [public-functions.md](public-functions.md) - HTTP routes without a Bounded session: `public`, `methods`, `cors`, public JWKS, machine callers
 - [live-runtime.md](live-runtime.md) — the deterministic tick and the `call` primitive that reaches functions

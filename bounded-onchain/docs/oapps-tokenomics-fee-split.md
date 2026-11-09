@@ -1,17 +1,9 @@
 # HISTORICAL worked example: the oApps 55/25/20 fee split
 
-> **New openings: transfer-fee model v1.**
-> The CCA allocates net USDC proceeds 65% to Treasury, 30% to initial liquidity, 2.5% to creator proceeds and 2.5% to OpenApps.
-> A launch needs at least $5,000 and six months of its baseline operating costs after setup costs, without relying on future trading income.
-> The app token has a fixed 1% transfer fee, entirely for Treasury in app tokens.
-> The canonical Meteora DAMM v2 pool uses a separate fixed 0.5% fee in USDC with OnlyB and dynamic fees disabled.
-> Meteora's protocol share is 20%; the designated launch position's actual net LP receipts split equally between creator and OpenApps.
-> Additional app-owned LP positions earn entirely for the app; principal remains subject to treasury policy.
-> Product revenue belongs entirely to the app.
-> Treasury shows accrued token fees separately as pending to claim, with an estimated USD value when priced.
-> Tokens become spendable only after collection and require conversion before they can fund USDC expenses.
-> Reserve conversions follow holder-governed limits, with a six-month target and three-month trigger by default.
-> Existing launches keep their sealed economics.
+> **Current OpenApps venues.**
+> Use the sealed sale terms and the app's fee split for the 5% launch cut and designated position fees.
+> Additional treasury positions earn for the app.
+> See [launch economics](../../openapps/docs/launch-economics.md) for how each venue funds trading.
 >
 > **Historical example below.**
 > The DBC policy below retains its retired 55% Treasury / 25% creator / 20% platform split.

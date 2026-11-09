@@ -145,10 +145,21 @@ bounded site proof status --app-id <id>
 ```
 
 Also toggleable from the dashboard (the "Public proof page" card). Takes effect
-within about a minute; no policy redeploy needed. Related presentation knob: the
-declined-write card the widget shows end users can be turned off in policy with
-`openApps.widget.declineCard: false` (widget `visibility: "hidden"` suppresses
-it too).
+within about a minute; no policy redeploy needed.
+
+## Hide the widget
+
+The hosted widget (the launcher served from `/__bounded/widget.js`) is on by
+default. To remove it from every page, set this in `policy.json` and deploy the
+policy:
+
+```json
+"openApps": { "widget": { "visibility": "hidden" } }
+```
+
+`visibility` also takes `everyone`, `signed-in`, or `participants`. To keep the
+widget but drop only the declined-write card it shows end users, set
+`openApps.widget.declineCard: false`.
 On a **launched oApp** the widget is the app's trust surface and is forced
 visible: a `visibility: "hidden"` frozen into the pre-launch policy neither
 hides the widget nor suppresses the declined-write card there. The explicit
@@ -345,9 +356,12 @@ extra command is needed.
   (`/#/s/:id`) — the server never sees the `#fragment`, so hash routes can't be unfurled.
   If you're on hash routing and want per-link cards, switch the shared route to a path.
   (Your SPA still works: an extensionless path falls back to `index.html` as before.)
-- **Always-on, fail-open.** Injection runs for crawlers AND humans (one cached read on a
+- **Always-on, fail-open.** On a public site, injection runs for crawlers AND humans (one cached read on a
   matching path; non-matching paths like `/` or assets do zero extra work). Any miss,
   denied read, or error serves your original `index.html` unchanged — never a broken card.
+- **Private sites never unfurl per resource.** A link-preview crawler is never a member, so
+  it gets the sign-in page, which carries no card. Members' pages skip the read and are
+  served as built, so set a per-route `document.title` in your app if you want one in the tab.
 - **`og:image`** can point at any public URL — e.g. a Bounded public file
   (`/storage/object?...`) or a static asset you shipped in `dist/`.
 
@@ -356,3 +370,8 @@ extra command is needed.
 curl -A "Twitterbot/1.0" https://<slug>.bounded.page/s/<id> | grep -iE 'og:|twitter:|<title>'
 # → expect per-resource og:title / og:description / og:image + a per-resource <title>
 ```
+
+## Interrupted publication
+
+For `canonical_apply_pending`, `canonical_apply_in_progress`, or `external_apply_unavailable` during a site upload, see [deployment attempts and reservation recovery](../../bounded-deploy/docs/cli-reference.md#interrupted-site-deployments).
+Inspect `bounded site versions --app-id <id> --json` before retrying.
