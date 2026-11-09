@@ -1,4 +1,4 @@
-# The oApp lifecycle: Owned, on sale, Open
+# The oApp lifecycle: Owned, on sale, publicly owned
 
 **What's in here:** how an oApp starts with its own agent, how its live app and previews get different values, the three modes an app is in, what asking to open requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
@@ -38,14 +38,14 @@ The same agent keeps working in every mode.
 |---|---|---|
 | Owned | its creator | the creator; a release ships once its clean rebuild passes unless the creator asked to approve releases first |
 | On sale | the platform, while the app's token sale runs or settles | nobody; the only release that can ship is a repair the Gauntlet asked for, which the platform approves |
-| Open | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
+| Publicly owned | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
 
 One exception holds in Owned and Open alike: a swap of SOL or the app token into the venue's USDC, or a perp margin, that fits the agent's daily limit is approved by the venue on the spot, with no review and no vote ([the agent's daily limit](launch-economics.md#the-agents-daily-limit)).
 
-On sale and on an Open app there is no owner: no creator's chat, no creator's approval, and no creator's settings.
+On sale and on a publicly owned app there is no owner: no creator's chat, no creator's approval, and no creator's settings.
 The agent runs on its own schedule and talks to people in the app's Discussion.
 
-## From Owned to Open
+## From Owned to publicly owned
 
 1. **Owned: build locally or with the agent.** An external coding agent acting for the creator can use [direct frontend publishing](../../bounded-deploy/docs/quickstart.md#publish-an-owned-openapps-frontend-from-local-source) without an app-agent run, subject to the platform's checks.
    When the creator directs the app's own agent, it builds on previews and requests releases through the creator's review.
@@ -68,7 +68,7 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
    Nothing changes on the app except a repair the Gauntlet asked for, which the agent releases and the platform approves.
    No proposal can be filed while the sale runs.
 5. **The sale ends.**
-   A graduated sale makes the app Open for good: its holders approve its releases and governed actions, and its constitution, the agent's AI settings and the agent's daily limit change only through them.
+   A graduated sale makes the app publicly owned for good: its holders approve its releases and governed actions, and its constitution, the agent's AI settings and the agent's daily limit change only through them.
    A failed or expired sale hands the app back to its owner exactly as it was, and it is Owned again.
    The platform advances settlement automatically, including token creation, pool creation, and the creator and venue payouts, even when nobody has the page open.
    A launch recovery control resumes outstanding steps; it never reopens bidding or creates a second pool.
@@ -95,7 +95,7 @@ A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it 
 |---|---|
 | The caller owns the app | `owner_required` |
 | The app has its agent attached | `oapp_opening_agent_not_attached` |
-| The app is not already on sale or Open | `oapp_opening_already_started` |
+| The app is not already on sale or publicly owned | `oapp_opening_already_started` |
 | Neither the app nor its agent is being deleted | `oapp_opening_app_being_deleted` |
 | The declaration has exactly the shape below | `invalid_oapp_opening_declaration`, `invalid_oapp_opening_slug`, `invalid_oapp_opening_storefront`, `invalid_oapp_opening_constitution`, `invalid_oapp_opening_intent`, `invalid_oapp_opening_terms` |
 | The venue's record of the agent is complete, and its treasury names the creator's wallet | `oapp_opening_agent_record_unavailable` |
@@ -104,7 +104,7 @@ A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it 
 | The split of sale proceeds is final: there is none, or it is sealed | `oapp_opening_proceeds_split_unsealed` |
 | The app never had a sale | `oapp_opening_sale_exists` |
 | The app has synced source | `oapp_app_release_source_not_synced` |
-| The app passes the opening safety checks | see [the launch gate](launch-gate.md) |
+| The app passes the APO safety checks | see [the launch gate](launch-gate.md) |
 
 An app that publishes while the request reads it is refused with `oapp_opening_app_changing`; ask again once it has settled.
 

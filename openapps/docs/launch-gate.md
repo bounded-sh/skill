@@ -4,14 +4,14 @@
 
 ## Boundaries come first
 
-Write `policy.json` boundaries early, while you build, not as an opening chore.
+Write `policy.json` boundaries early, while you build, not as an APO chore.
 They are the single most important trust artifact reviewers and buyers will read alongside your source.
 An app whose money and state rules are declared invariants reads as trustworthy.
 An app with ad-hoc checks in function code reads as a rug risk.
 
-## The opening safety checks
+## The APO safety checks
 
-An app opens in place, so the request to open reads the app as it is deployed: its policy, its committed runtime config, its synced source, every served site file, its deployed function code, and its backend manifest.
+An app goes public in place, so the APO request reads the app as it is deployed: its policy, its committed runtime config, its synced source, every served site file, its deployed function code, and its backend manifest.
 It runs one safety pass (`oapps.opening-safety.v1`) over them and refuses on the first finding.
 `bounded oapp preflight` runs the same pass as a dry run and lists every finding ([preflight](preflight.md)).
 These are requirements, not advice:
@@ -37,7 +37,7 @@ Grants are not hosts: on an oApp the runtime then fences raw `fetch` and `ctx.br
 
 ## What shape the app takes, and what visitors get
 
-oApps are framework-independent: opening does not require Vite, React, a `package.json`, or any particular layout.
+oApps are framework-independent: an APO does not require Vite, React, a `package.json`, or any particular layout.
 What it requires is honesty between three artifacts: the synced source, the deployed frontend, and the policy.
 
 **An app can open without OpenApps website files.**
@@ -46,7 +46,7 @@ The founder can request an APO independently of the address proposal.
 
 The synced source must be the real, complete project.
 If the deployed frontend is compiled output, the source that compiles into it rides along in the same tree.
-Never add a framework, a bundler, or an unused `init()` call merely to change shape, because opening does not ask for them.
+Never add a framework, a bundler, or an unused `init()` call merely to change shape, because an APO does not ask for them.
 
 **The served site and the source stay together.**
 The request to open, `bounded oapp preflight`, and a source-synced `bounded site deploy` classify the served site against the synced source:

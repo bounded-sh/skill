@@ -6,7 +6,7 @@ description: Build or update apps for OpenApps (openapps.xyz, formerly oapps.fun
 # OpenApps
 
 An oApp is a Bounded app with its own agent that can open to its community, so it can outlive its creator.
-Use this skill for the app's capability constraints and, when requested, its lifecycle: Owned, on sale, and Open.
+Use this skill for the app's capability constraints and, when requested, its lifecycle: Owned, on sale, and publicly owned.
 
 ## Choose the workflow
 
@@ -14,12 +14,12 @@ Use this skill for the app's capability constraints and, when requested, its lif
   Having an app agent does not require sending that change through an AI run.
   `bounded propose --submit --apply` still asks the app agent to apply it; it is not the no-AI publishing path.
 - **External coding agent bringing an app the creator already has:** deploy it with source under the creator's account ([porting](../bounded-deploy/docs/porting-an-existing-app.md)); the creator brings it in from the OpenApps launch page, and it stays Owned.
-  Bringing an app needs no `"oapp": true`, egress boundary, or `bounded oapp preflight`; those belong to opening it (an APO).
+  Bringing an app needs no `"oapp": true`, egress boundary, or `bounded oapp preflight`; those belong to its Agent Public Offering (APO).
 - **Creator asking to open an app:** use the lifecycle, launch-gate, and preflight references for the current phase.
-  A build or edit request does not by itself request opening; continue work already authorized by the user.
+  A build or edit request does not by itself request an APO; continue work already authorized by the user.
 - **Agent running on an OpenApps app computer:** the app already exists and you are its agent.
   Apply the capability constraints below and use the installed runtime-specific instructions for previews, releases, proposals, and the app's mode (`openapps-internal` when provided).
-  Do not repeat creator initialization or ask to open the app to update it.
+  Do not repeat creator initialization or request an APO to update it.
   Repo notes such as `AGENTS.md` and `README.md` may predate OpenApps; correct any fact they state that the run context contradicts (the creator, whether it is an OpenApps app) in your next commit.
   If those runtime instructions are unavailable, continue inspection and local work that the environment supports, and identify the missing instructions before attempting a governed release.
 
@@ -44,7 +44,7 @@ Both are read at the latest published release, so an edit counts only once a rel
 - An APO requires that no person holds a key the app uses: the app holds no key a person set (its own values, preview values, or a key the creator put on its agent), and no function declares a key its agent did not donate.
   A key the app's own agent obtains and donates is fine: the platform adds it to the app's requests to that key's hosts, and a function that declares it reads only a stand-in.
 - A site or backend can run outside OpenApps. Admins review custody of those services before the sale.
-  An app in an APO or Open cannot depend on a vendor account, external server, or admin backdoor that a person holds.
+  An app in or after its APO cannot depend on a vendor account, external server, or admin backdoor that a person holds.
 - Prefer native capabilities or live catalog actions, then the steward's x402 relay for supported paid APIs.
   For a capability whose availability is unknown, use `bounded services search "<need>"` and read the [capability ladder](docs/capability-ladder.md).
   Credential-free public endpoints still require declared egress.
@@ -57,12 +57,12 @@ Read the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| The agent an app has from creation, live values and preview values, Owned / on sale / Open, asking to open, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
+| The agent an app has from creation, live values and preview values, Owned / on sale / publicly owned, requesting an APO, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
 | App capability availability, unsupported dependencies, catalog requests, x402 payment and recovery semantics | [Capability ladder](docs/capability-ladder.md) |
-| What opening checks: oApp mode, required boundaries and egress grants, secrets, the served site, `bounded propose` | [Launch gate](docs/launch-gate.md) |
+| What the APO request checks: oApp mode, required boundaries and egress grants, secrets, the served site, `bounded propose` | [Launch gate](docs/launch-gate.md) |
 | `bounded oapp preflight` and its report | [Preflight](docs/preflight.md) |
-| Hide the platform widget on an Owned app (an Open app always shows it) | [Hide the widget](../bounded-frontend/docs/frontend-hosting.md#hide-the-widget) |
-| Preparing to ask to open | [Opening checklist](docs/checklist.md) |
+| Hide the platform widget on an Owned app (a publicly owned app always shows it) | [Hide the widget](../bounded-frontend/docs/frontend-hosting.md#hide-the-widget) |
+| Preparing to request an APO | [APO checklist](docs/checklist.md) |
 | Sealed launch economics, treasury fees, pending claims, operating reserves, how credits stay funded, and the agent's daily limit | [Launch economics](docs/launch-economics.md) |
 
 For implementation mechanics, use [bounded-backend](../bounded-backend/SKILL.md), [bounded-frontend](../bounded-frontend/SKILL.md), or [bounded-onchain](../bounded-onchain/SKILL.md) as needed.
