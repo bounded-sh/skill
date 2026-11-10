@@ -156,7 +156,7 @@ await ctx.build.edit({
 
 Use an image or video build for an asset someone reviews and releases, then edits,
 forks or rolls back. For one-off media generated inside a running app, use
-`ctx.ai.generateImage` / `ctx.ai.generateVideo` ([functions-ctx-ai.md](functions-ctx-ai.md)).
+`ctx.ai.generateImage` / `ctx.ai.generateSpeech` / `ctx.ai.generateVideo` ([functions-ctx-ai.md](functions-ctx-ai.md)).
 
 ### Preview iteration
 
