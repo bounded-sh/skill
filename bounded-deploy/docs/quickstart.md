@@ -83,6 +83,7 @@ This is a frontend publication, not a policy or functions deployment.
 
 Owner access alone does not override sale, Open-app, publication, or boundary restrictions.
 If the platform refuses the operation, diagnose that refusal and use the permitted release workflow; do not remove guards or change ownership to force a deploy.
+A `release_publishing` refusal means a release from the app's own agent is publishing right now: once it has published or failed, start again from the current published source as above, so this deploy does not undo it.
 In particular, a sale or Open app is platform-held and does not have this creator publishing path.
 
 `bounded propose --submit` from the clone does the same for whoever may publish the app: it runs the declared build and deploys the output with its source, with no app-agent run and no release decision.
