@@ -942,7 +942,9 @@ bounded propose --title "Show the streak counter" --description "It was hidden i
 JSON output returns the exact `diff`, `draftHash`, target labels, title, description, intent, base, changed file names, file count, and byte count.
 The fingerprint is local comparison evidence, not a content commitment or a proposal id.
 
-`--submit` publishes when the caller may deploy the clone's app frontend (`bounded access` reports the owner or `ui:deploy`): it runs the declared build and deploys the output with its source, as `bounded site build` and `bounded site deploy --with-source` do ([creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source)).
+`--submit` publishes when the caller may deploy the clone's app frontend: its owner or a holder of `ui:deploy` (`bounded access` reports both), or a person who is a co-creator of an Owned OpenApps app.
+It runs the declared build and deploys the output with its source, as `bounded site build` and `bounded site deploy --with-source` do ([creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source)).
+A co-creator's publish cannot carry a server bundle that reads the app's secrets, and another app's agent that is a co-creator posts instead.
 That starts no app-agent run and asks for no release decision, and JSON output is the site deploy's receipt.
 A site publish deploys no policy and no function: when the diff, or the tree after the build, changes the policy file or a file in the folder of a function entry the policy names, nothing is published and the change is posted with `--apply`.
 `--review` posts the change for the agent to review instead of publishing it, and a `--preview` change is always posted.
