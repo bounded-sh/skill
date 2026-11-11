@@ -12,7 +12,7 @@ Use this skill for the app's capability constraints and, when requested, its lif
 
 - **External coding agent working for the creator of an Owned app:** use [creator publishing](../bounded-deploy/docs/quickstart.md#publish-an-owned-openapps-frontend-from-local-source) for a tested local frontend change.
   Having an app agent does not require sending that change through an AI run.
-  `bounded propose --submit --apply` still asks the app agent to apply it; it is not the no-AI publishing path.
+  `bounded propose --submit` from the clone publishes it the same way for whoever may publish the app, a person who is its co-creator included; `--review` posts it for the app agent instead.
 - **External coding agent bringing an app the creator already has:** deploy it with source under the creator's account ([porting](../bounded-deploy/docs/porting-an-existing-app.md)); the creator brings it in from the OpenApps launch page, and it stays Owned.
   Bringing an app needs no `"oapp": true`, egress boundary, or `bounded oapp preflight`; those belong to its Agent Public Offering (APO).
 - **Creator asking to open an app:** use the lifecycle, launch-gate, and preflight references for the current phase.

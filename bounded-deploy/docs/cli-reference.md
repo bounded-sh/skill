@@ -927,9 +927,9 @@ state, and sends the selected local runner (`codex`, `claude`, `opencode`,
 
 ### `propose` / `proposals` - OpenApps code changes
 
-`bounded propose` posts the changes in a bounded clone to an OpenApps app's page as a code change, or shows them without sending anything.
-Submitting a code change grants no write access: it is an idea with its implementation attached, and the app's agent decides whether to build it.
-For a no-AI frontend update by an external coding agent acting for the creator of an Owned app, use [creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source).
+`bounded propose` sends the changes in a bounded clone to its OpenApps app, or shows them without sending anything.
+From a caller who may publish the app it publishes them; from anyone else it posts them to the app's page as a code change.
+A posted code change grants no write access: it is an idea with its implementation attached, and the app's agent decides whether to build it.
 What the agent builds ships the way every change does, on a preview through the app's release decision, where the creator or the holders approve or veto it.
 Choose one mode; with neither, the command exits without touching anything.
 
@@ -942,20 +942,28 @@ bounded propose --title "Show the streak counter" --description "It was hidden i
 JSON output returns the exact `diff`, `draftHash`, target labels, title, description, intent, base, changed file names, file count, and byte count.
 The fingerprint is local comparison evidence, not a content commitment or a proposal id.
 
-`--submit` signs in, uploads the diff as the caller's own public Discussion text file named `code-change.diff`, and calls the venue function `submitCodeChange`, which posts it in the app's Discussion under Ideas as the caller.
+`--submit` publishes when the caller may deploy the clone's app frontend: its owner or a holder of `ui:deploy` (`bounded access` reports both), or a person who is a co-creator of an Owned OpenApps app.
+It runs the declared build and deploys the output with its source, as `bounded site build` and `bounded site deploy --with-source` do ([creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source)).
+A co-creator's publish cannot carry a server bundle that reads the app's secrets, and another app's agent that is a co-creator posts instead.
+That starts no app-agent run and asks for no release decision, and JSON output is the site deploy's receipt.
+A site publish deploys no policy and no function: when the diff, or the tree after the build, changes the policy file or a file in the folder of a function entry the policy names, nothing is published and the change is posted with `--apply`.
+`--review` posts the change for the agent to review instead of publishing it, and a `--preview` change is always posted.
+The platform still refuses a publish on a sale or Open app.
+
+Otherwise `--submit` signs in, uploads the diff as the caller's own public Discussion text file named `code-change.diff`, and calls the venue function `submitCodeChange`, which posts it in the app's Discussion under Ideas as the caller.
 The app's Discussion rules decide who may post (some apps ask posters to hold the app's token), and each post counts toward the Discussion's anti-spam limit (20 messages, replies, and reactions per account every 5 minutes).
 The change is public.
-Before anything is sent, the command refuses binary files and env or key files (`.env`, `.env.*`, `*.pem`, `*.key`).
+Before anything is posted, the command refuses binary files and env or key files (`.env`, `.env.*`, `*.pem`, `*.key`).
 Keep `--title` to one line of at most 200 characters and `--description` to at most 1500, and the whole post must fit 2000 bytes, so non-English text can hit that limit sooner; the command checks these before uploading anything, and the venue refuses longer.
 `--slug` is required with `--submit`: the name in the app page's address.
 `--venue-app-id` overrides the environment's venue (production `beta.openapps.xyz`, staging `staging.openapps.xyz`).
-JSON output returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
+JSON output for a posted change returns `venueAppId`, `rootAppId`, `messageId`, `fileId`, `base`, and `files`.
 
-On an Owned app, its creator chooses how the agent takes each code change: applied as is, or reviewed and adapted (the default).
-`--apply` with `--submit` asks for applied as is on the creator's own change; anyone else gets `code_change_apply_owner_only`.
+On an Owned app, its creator chooses how the agent takes each posted code change: applied as is, or reviewed and adapted (the default).
+`--apply` with `--submit` asks for applied as is on the creator's or a co-creator's own change; anyone else gets `code_change_apply_owner_only`.
 On anyone's code change, the creator can choose on the post itself, which posts their choice as a reply in its thread.
 Applied as is, the agent applies the patch exactly as written, and ships nothing when it does not apply cleanly or its checks fail.
-Either way this starts an app-agent run, requires its normal funding, and goes through the app's release decision; the agent replies in the thread with what it did.
+Either way a posted change starts an app-agent run, requires its normal funding, and goes through the app's release decision; the agent replies in the thread with what it did.
 
 Both modes take the diff against the published remote-tracking head by default, or against `--base <revision>` when supplied.
 If the checkout has no `origin/<current-branch>` tracking ref, the command warns and falls back to the exact local `HEAD`; run `bounded pull` or pass `--base` when that is not the intended baseline.
