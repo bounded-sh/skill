@@ -14,7 +14,9 @@ Declare it and the platform compiles a Content-Security-Policy header and serves
 A host your functions call server-side has no business in the browser list, and a CDN your page loads fonts from has no business in the egress list.
 
 One exception to "the header is compiled from the declaration": on an **oApp's address once its token sale has started** the `script` list is not honored.
-Every page there serves under `script-src 'self'; object-src 'none'; base-uri 'none'; worker-src 'self'` whatever the app declared, so scripts and workers must ship as files inside the release; the other lists (`connect`, `img`, `font`, `style`, `embeddedBy`) compile exactly as declared.
+Every page there serves under `script-src 'self'; object-src 'none'; base-uri 'none'; worker-src 'self'` whatever the app declared, so scripts and workers must ship as files inside the release; the fetch lists (`connect`, `img`, `font`, `style`, `frame`, `form`, `media`) compile exactly as declared.
+
+`embeddedBy` is the other exception, everywhere: it can only narrow who may frame your pages, never widen it (see "Who may frame your pages" below).
 
 ## Shape
 
@@ -43,6 +45,17 @@ Every page there serves under `script-src 'self'; object-src 'none'; base-uri 'n
 `id` and `mode: "locked"` are required; `title` and `description` are optional.
 The nine directive keys are exactly `connect`, `font`, `form`, `embeddedBy`, `frame`, `img`, `media`, `script`, `style` — an unknown key is rejected by name, not ignored.
 Each list is capped at 32 entries.
+
+## Who may frame your pages
+
+`embeddedBy` names which of the platform's own pages may show your app inside a frame: `openapps.xyz`, `*.openapps.xyz`, `bounded.page`, `*.bounded.page`, or a registered venue's apex.
+Any other entry compiles to nothing, so writing an outside site there changes no header.
+That is deliberate: any page in those zones can be anyone's app, so a free-form list would let one app frame another and clickjack its signed-in owner.
+An outside site that should show your app inside its own pages, such as a messenger listing mini apps or a wallet's app tab, is the creator's decision on OpenApps, not the app's.
+The app's agent files an `embedders` proposal with the exact https origins (at most five, no wildcards), the creator approves it, and the platform then serves exactly those origins beside the platform ones.
+Ask the agent for it in plain words: "let cherry.fun show this app inside its pages".
+Inside such a frame the OpenApps widget shows no creator controls.
+Outside OpenApps there is no way to admit one today.
 
 ## Values are destinations, never policy
 
