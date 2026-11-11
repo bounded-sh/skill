@@ -85,8 +85,10 @@ Owner access alone does not override sale, Open-app, publication, or boundary re
 If the platform refuses the operation, diagnose that refusal and use the permitted release workflow; do not remove guards or change ownership to force a deploy.
 In particular, a sale or Open app is platform-held and does not have this creator publishing path.
 
-`bounded propose --submit` posts a code change for the app agent.
-Adding `--apply` asks that agent to apply the patch as written, but still uses an agent run and the normal release decision; it does not avoid AI funding requirements.
+`bounded propose --submit` from the clone does the same for whoever may publish the app: it runs the declared build and deploys the output with its source, with no app-agent run and no release decision.
+When the change touches the policy file or the folder of a function the policy names, in the diff or after the build, it publishes nothing and posts the change for the app agent to apply as is, which uses an agent run and the normal release decision.
+`--review` posts the change for the app agent to review and adapt instead of publishing it.
+From anyone else, `bounded propose --submit` posts a code change for the app agent.
 Repository instructions saying "nobody deploys an OpenApp directly" must distinguish this external creator workflow from the app agent's runtime workflow.
 
 ## Develop locally
