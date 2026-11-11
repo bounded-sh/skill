@@ -238,8 +238,12 @@ implementation, not two independent checks. A useful differential oracle:
 An operation id is not idempotency if a failed external effect permanently
 occupies it.
 
-On real Solana, a failed transaction does not commit its Document write. On
-Poofnet, the primary onchain-flagged row commits before its simulated hook:
+On real Solana, a failed transaction does not commit its Document write.
+Poofnet simulates each onchain hook before it commits and refuses the whole
+write (`422 onchain_transaction_rejected`) when one fails, so the usual failure
+leaves no row there either and the same operation id can be sent again.
+The primary onchain-flagged row still commits before its hook's real run, and
+in rare cases the hook fails only then:
 
 - `_transaction_hash` identifies the current simulated attempt;
 - success is `_hook_completed == _transaction_hash`;

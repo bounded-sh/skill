@@ -394,8 +394,14 @@ It does not prove external devnet program availability, replacement configuratio
   (`SetResult.transactionId`) and in `getTransactionHistory` - never on the
   returned document, which is the pre-delete value and still carries the
   *earlier* write's `_transaction_hash`.
-  A **failed** onchain hook still **persists the doc** and stamps `_error_message`
-  with the failure reason - read it back or subscribe to surface trade errors in UI.
+  A write whose onchain hook **fails is refused**: the call answers
+  `422 onchain_transaction_rejected` with the hook's reason and nothing is
+  written, for every document of the batch, as a real cluster rejects the whole
+  transaction. Handle it where you handle a rejected transaction.
+  The hook's real run still follows the commit, so in rare cases it fails only
+  then (two writes racing for the same balance, or a document the hook writes
+  being refused). The doc then **persists** and is stamped `_error_message`
+  with the failure reason - read it back or subscribe to surface it in UI.
   **A record existing is NOT proof the onchain action succeeded.**
   `_error_message` being present means the action **FAILED**; it is a failure signal
   to gate on, not merely UI text. The exact positive success condition is
