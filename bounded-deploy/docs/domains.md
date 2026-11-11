@@ -2,7 +2,11 @@
 
 Bounded hosted frontends are served through mapped hosts, not raw app-id labels.
 Use a vanity slug or a custom domain for the public URL you give users.
-The examples below show production `*.bounded.page` hosts.
+Vanity claims through the OpenApps CLI request `https://<slug>.openapps.xyz`, or `https://<slug>-staging.openapps.xyz` in staging, including an explicit `--from` transfer.
+Other CLI invocations keep the `*.bounded.page` hosts shown below.
+Both use the same slug registry; using OpenApps does not require attaching an app agent or opening the app.
+OpenApps staging slugs are at most 55 characters so the `-staging` suffix fits in one DNS label.
+Existing sites keep their address until an explicit slug claim or transfer requests the OpenApps address.
 Resolve the vanity host with `bounded domains list --app-id <id> --env <environment> --json` and use its nonempty `slugUrl`.
 For staging provenance, require the JSON field itself instead of copying a human-rendered hostname.
 A successful `bounded site deploy ... --env <environment> --json` receipt is the other URL-bearing source; retain its nonempty `url`.
@@ -18,12 +22,12 @@ Never replace a returned staging host with a synthesized production hostname.
 > reversible (`--release`), reserves the name, and wires `allowedOrigins` so auth/CORS work.
 > No need to ask first.
 
-## 1. Vanity subdomain — `<slug>.bounded.page` (free)
+## 1. Vanity subdomain (free)
 
 Claim one canonical vanity subdomain for your app:
 
 ```bash
-bounded domains slug myapp --app-id <id>     # → https://myapp.bounded.page
+bounded domains slug myapp --app-id <id>
 bounded domains slug --release --app-id <id> # free it
 ```
 
