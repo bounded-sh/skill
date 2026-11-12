@@ -35,7 +35,7 @@ const ROLES = {
   App: 'Cross-app Document reads and writes from onchain policy.',
   BondingCurvePlugin: 'Pure constant-product bonding-curve math (quotes only, no mutation).',
   Bytes: 'Borsh-style byte building and reading for raw instruction data.',
-  CPI: 'Descriptor-bound CPI calls (memo, lamports, Kamino, DLMM, Raydium, stake pools).',
+  CPI: 'Descriptor-bound CPI calls (memo, lamports, Kamino, DLMM, Raydium, PumpSwap, stake pools).',
   DeFiPlugin: 'AMM pools, swaps, Meteora launches/fee claims, and cp-AMM liquidity positions.',
   DflowPlugin: 'DFlow prediction-market orders and KYC status.',
   DocumentPlugin: 'Staged document writes from hooks; check each function for its supported hook plane.',

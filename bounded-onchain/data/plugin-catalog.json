@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "46bae0389b7a09e3149335169b6195c98f7188ab",
+  "monorepoCommit": "f97df69c2ff7f0acf39032f897b2899befc95e81",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "canonicalOffchainPlugins": [
    "DocumentPlugin",
@@ -1962,6 +1962,94 @@
        "optional": false,
        "signer": null,
        "description": "UTF-8 memo text recorded on-chain",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ]
+    },
+    {
+     "name": "pumpSwapDeposit",
+     "callName": "@CPI.pumpSwapDeposit",
+     "category": "transactional",
+     "signature": "pumpSwapDeposit(string, string, string, string, string, number, number, number)",
+     "usage": "@CPI.pumpSwapDeposit(source, pool, baseMint, quoteMint, lpMint, lpTokenAmountOut, maxBaseAmountIn, maxQuoteAmountIn) - adds liquidity to a PumpSwap pool of any quote token (SOL-paired pools also have @PumpFunPlugin.pumpswapDeposit). Mints exactly lpTokenAmountOut LP tokens to the source and takes the matching share of both sides, failing above either maximum. Derive pool and lpMint with @Solana.pda when a writer must not choose them.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Liquidity provider: wallet, app escrow, or named account.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "pool",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The PumpSwap pool account.",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "baseMint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The pool's base token mint (the coin).",
+       "fields": null
+      },
+      {
+       "index": 3,
+       "name": "quoteMint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The pool's quote token mint, for example USDC.",
+       "fields": null
+      },
+      {
+       "index": 4,
+       "name": "lpMint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The pool's LP token mint.",
+       "fields": null
+      },
+      {
+       "index": 5,
+       "name": "lpTokenAmountOut",
+       "type": "number",
+       "optional": false,
+       "signer": null,
+       "description": "LP tokens to mint, in the units of the pool's lp_supply.",
+       "fields": null
+      },
+      {
+       "index": 6,
+       "name": "maxBaseAmountIn",
+       "type": "number",
+       "optional": false,
+       "signer": null,
+       "description": "Most base tokens to spend; the deposit fails above this.",
+       "fields": null
+      },
+      {
+       "index": 7,
+       "name": "maxQuoteAmountIn",
+       "type": "number",
+       "optional": false,
+       "signer": null,
+       "description": "Most quote tokens to spend; the deposit fails above this.",
        "fields": null
       }
      ],

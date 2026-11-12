@@ -49,6 +49,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@CPI.kaminoRepay` | `kaminoRepay(string, number, string, string, string, string, string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.kaminoWithdraw` | `kaminoWithdraw(string, number, string, string, string, string, string, string, string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.memoNote` | `memoNote(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.pumpSwapDeposit` | `pumpSwapDeposit(string, string, string, string, string, number, number, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.raydiumDeposit` | `raydiumDeposit(source, poolState, token0Vault, token1Vault, vault0Mint, vault1Mint, lpMint, lpTokenAmount, maximumToken0Amount, maximumToken1Amount)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.raydiumSwapBaseInput` | `raydiumSwapBaseInput(source, ammConfig, poolState, inputVault, outputVault, inputMint, outputMint, observationState, amountIn, minimumAmountOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.raydiumWithdraw` | `raydiumWithdraw(source, poolState, token0Vault, token1Vault, vault0Mint, vault1Mint, lpMint, lpTokenAmount, minimumToken0Amount, minimumToken1Amount)` | `hooks.onchain` | [reference](plugins/CPI.md) |
