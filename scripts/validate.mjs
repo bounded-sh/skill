@@ -178,6 +178,10 @@ const forbidden = [
   [/this rule both runs and\s+proves/i, 'runtime-enforced origin rule described as automatically proved'],
   [/already proved (?:this call came|the origin)/i, 'runtime auth evaluation described as proof'],
   [/proven `auth` rule/i, 'function auth rule described as blanket proof'],
+  // An OpenApps sale's backer-only interval lasts until its schedule releases its first 1/24; a final batch
+  // sold at the close spreads the rest more slowly, so the interval is not a fixed share of the window.
+  [/\b(?:lasts|first) 1\/24 of the bidding window/i, 'backer-only interval given as a fixed 1/24 of the bidding window'],
+  [/one hour for a 24-hour sale/i, 'backer-only interval given as a fixed hour of a 24-hour sale'],
 ]
 for (const [pattern, label] of forbidden) {
   if (pattern.test(publicText)) fail(`forbidden public guidance: ${label}`)

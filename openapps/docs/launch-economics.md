@@ -21,7 +21,7 @@ See [token transfer fees](../../bounded-onchain/docs/token-transfer-fees.md) for
 ## Bidding and completion
 
 The opening countdown starts after existing backings have converted successfully into auction orders.
-Every new sale reserves the first 1/24 of the bidding window for those backers, as described in [the lifecycle](lifecycle.md#backing-before-the-sale).
+A sale reserves a first interval for those backers unless OpenApps turned it off before Start, as described in [the lifecycle](lifecycle.md#backing-before-the-sale).
 No order can be placed before bidding opens, and an order cannot be cancelled.
 An order is an amount of USDC with an optional maximum market cap, and its whole escrow buys along the schedule.
 Without a maximum it buys until bidding closes; with one, it stops buying once the clearing market cap passes it.

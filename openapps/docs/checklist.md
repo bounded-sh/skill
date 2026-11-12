@@ -31,7 +31,7 @@
   A graduated sale makes the app publicly owned for good; a failed one hands it back.
 - Read the venue's actual sale minimum, order minimum, opening countdown and bidding duration.
   The default countdown is one minute and bidding lasts 24 hours; the Gauntlet has a separate grace deadline.
-  If the creator wants the backer-only first interval, enable it before the sale is scheduled; it lasts 1/24 of the bidding window.
+  OpenApps, not the creator or the agent, sets the backer-only first interval before Start; [the lifecycle](lifecycle.md#backing-before-the-sale) says how long it lasts.
 - Leave the app as it is while the request waits: a change to the app or to the agent's AI settings means the creator asks again before the sale can start.
 - Running costs (AI spend, service calls, relayed calls + surcharge) are sane against the app's expected inflow: out of budget means frozen, and you should be able to say at what usage level that happens.
 - **No refresh timers in the frontend.** Collections are live, so poll loops buy nothing and bill the app's own buckets for every open tab, forever.
