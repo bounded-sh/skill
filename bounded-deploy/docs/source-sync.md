@@ -1,7 +1,7 @@
 # Cloud Source Sync — source rides the deploy
 
 Bounded keeps an optional cloud copy of an app's source tree in the "Artifacts" repository.
-It powers `bounded clone` / `bounded pull` and the public source page of completed-Open oApps (`/__bounded/source`).
+It powers `bounded clone` / `bounded pull` and the public source page of publicly owned oApps (`/__bounded/source`).
 There is no separate register/sync machinery: **a deploy either carries its source or it does not.**
 An ordinary `bounded site deploy ./dist` uploads only the built static artifact and does not sync source.
 
@@ -98,7 +98,7 @@ editing base.
 ## What requires synced source
 
 - **Handing an existing app to its OpenApps agent** (Launch, "Use an existing app"). The agent's computer works from a clone of the synced source, so the venue refuses the handover with `user_app_source_not_synced` until a deploy with source lands, and a run on an app whose source is missing ends with `hermes_source_not_synced`.
-- **Asking to open an oApp.** The request to open reads the release the app serves, including its synced source revision, and is refused without one (`oapp_app_release_source_not_synced`).
+- **Requesting an oApp's Autonomous Public Offering (APO).** The APO request reads the release the app serves, including its synced source revision, and is refused without one (`oapp_app_release_source_not_synced`).
   An OpenApps app's source is public whenever the app is public, and every app that opens is public.
 - **`bounded clone` / `bounded pull`** - read the same repo (read-only
   tokens, `code:read` authority). Browser login is the default identity, and a

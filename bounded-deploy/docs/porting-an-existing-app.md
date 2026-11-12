@@ -115,7 +115,7 @@ Server-side keys (a service-role key, a Stripe secret) are set by the owner with
 A database reached over HTTP works from both (Supabase JS, Neon serverless HTTP, PlanetScale, Turso).
 A driver that opens a TCP socket, such as `pg` for Postgres, does not: functions refuse raw sockets in the bundle, and server apps do not support TCP database drivers.
 Supabase sign-in sends people back only to addresses its Redirect URLs allow (Supabase dashboard, Authentication, URL Configuration): add the app's live address and each preview address people sign in on, or a magic link lands on the app's old address.
-An app headed to an APO is held to the key rules in the ladder section above.
+An app headed to an Autonomous Public Offering (APO) is held to the key rules in the ladder section above.
 
 ## Recipes by source stack
 
@@ -180,5 +180,5 @@ An app headed to an APO is held to the key rules in the ladder section above.
 - `bounded site deploy` served the site; a denied write returns `403`, a
   denied read returns an empty `200`.
 - For an app brought to OpenApps: the source is synced so its agent can work
-  from it. `bounded oapp preflight` checks opening an app, not bringing one
+  from it. `bounded oapp preflight` checks an app before its APO, not when bringing one
   (see the **openapps** skill).

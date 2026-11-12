@@ -142,7 +142,7 @@ themselves - the browser step exists to put a human in the loop.
 
 Refusals worth recognizing (409 with a `code`):
 
-- `oapp_launched` - an oApp on sale or Open belongs to its venue and holders;
+- `oapp_launched` - an oApp in its Autonomous Public Offering (APO) or publicly owned belongs to its venue and holders;
   it cannot be deleted.
 - `app_delete_blocked_deploy_in_flight` - retry after the active policy
   deploy settles.
@@ -948,7 +948,7 @@ A co-creator's publish cannot carry a server bundle that reads the app's secrets
 That starts no app-agent run and asks for no release decision, and JSON output is the site deploy's receipt.
 A site publish deploys no policy and no function: when the diff, or the tree after the build, changes the policy file or a file in the folder of a function entry the policy names, nothing is published and the change is posted with `--apply`.
 `--review` posts the change for the agent to review instead of publishing it, and a `--preview` change is always posted.
-The platform still refuses a publish on a sale or Open app.
+The platform still refuses a publish on an app in its APO or publicly owned.
 
 Otherwise `--submit` signs in, uploads the diff as the caller's own public Discussion text file named `code-change.diff`, and calls the venue function `submitCodeChange`, which posts it in the app's Discussion under Ideas as the caller.
 The app's Discussion rules decide who may post (some apps ask posters to hold the app's token), and each post counts toward the Discussion's anti-spam limit (20 messages, replies, and reactions per account every 5 minutes).
@@ -1014,7 +1014,7 @@ Reads never bill; `invoke` from a function does (see the bounded-backend
 
 | Command | Does | Example |
 |---|---|---|
-| `oapp preflight` | Dry-run, as the owner, what the request to open the app on openapps.xyz reads off the deployed app: the synced source, the dist (`static` or `built`; `unreproducible` and `none`, a backend-only app, are refused by the request with `oapp_opening_dist_not_reproducible` and `oapp_app_release_site_missing`), the `service:cap` / `service:x402` grants, and every finding the request would be refused on, with its capability-ladder verdict (`native`, `live`, `callable`, `request`). READY means none of these would refuse the request. Exits nonzero when the report is not READY. `--app-id` | `bounded oapp preflight --json` |
+| `oapp preflight` | Dry-run, as the owner, what the APO request for the app on openapps.xyz reads off the deployed app: the synced source, the dist (`static` or `built`; `unreproducible` and `none`, a backend-only app, are refused by the request with `oapp_opening_dist_not_reproducible` and `oapp_app_release_site_missing`), the `service:cap` / `service:x402` grants, and every finding the request would be refused on, with its capability-ladder verdict (`native`, `live`, `callable`, `request`). READY means none of these would refuse the request. Exits nonzero when the report is not READY. `--app-id` | `bounded oapp preflight --json` |
 
 ### `--constants`
 

@@ -1,8 +1,8 @@
-# Checklist before asking to open
+# Checklist before requesting an Autonomous Public Offering (APO)
 
 **What's in here:** the full checklist before the creator requests an app's APO. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
-## Practical checklist before asking to open
+## Practical checklist before requesting the APO
 
 - The app has its own agent and runs on mainnet under the OpenApps custody key: from the end of its setup when its agent built it, from the agent's first release when it already existed (`oapp_opening_mainnet_custody_required`).
   An existing app handed to an agent needs synced source first (`user_app_source_not_synced`).
@@ -13,7 +13,7 @@
 - Boundaries were written early and cover the app's money and state rules as declared invariants, not ad-hoc checks.
   They are the trust artifact buyers read alongside your source.
 - `bounded oapp preflight` is READY on the deployed app; every blocking finding it names is fixed at the source, not worked around.
-- The policy is marked `"oapp": true`, and its `boundaries.egress` carries `service:cap` and `service:x402` in a locked entry; the request to open refuses without both (`oapp_opening_capability_grants_missing`).
+- The policy is marked `"oapp": true`, and its `boundaries.egress` carries `service:cap` and `service:x402` in a locked entry; the APO request refuses without both (`oapp_opening_capability_grants_missing`).
 - Every capability the app needs is native, a live catalog action, or callable through x402; anything else was filed with `bounded services request` and the app was built without it.
 - `policy.json` contains **no** rule, function, or egress that depends on a user-held credential, and `bounded deploy` accepts it.
 - `bounded secret list` shows no key a person set, preview values included, and `bounded secret list --agent` shows no key you put on the agent: only keys the app's agent obtained and donated itself may remain.
@@ -25,7 +25,7 @@
 - Every script the page runs ships inside the tree: dependencies come from npm and the build bundles them.
   A `<script src="https://…">` or a URL import fails the Gauntlet's dependency audit during the sale (`dependency_remote_script`, `dependency_remote_module_import`), and the app's `script-src 'self'` floor refuses to load it anyway.
 - Every worker is a file: `new Worker(new URL("./worker.ts", import.meta.url))`, never `?worker&inline` or a Blob or `data:` worker, which fail the same audit (`dependency_inline_worker`) and cannot start under `worker-src 'self'`.
-- The request names the slug the app already serves (`oapp_opening_slug_mismatch`): the app keeps its address when it opens.
+- The request names the slug the app already serves (`oapp_opening_slug_mismatch`): the app keeps its address when it goes public.
 - The constitution's seven sections say what the agent works toward and how, because once the app is publicly owned only its holders can change them.
 - The creator knows what the sale changes: from the moment an operator starts it, the platform holds the app, nobody but its agent can change it, and only a repair the Gauntlet asked for can ship until the sale ends.
   A graduated sale makes the app publicly owned for good; a failed one hands it back.

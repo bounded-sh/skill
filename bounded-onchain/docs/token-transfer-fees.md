@@ -48,7 +48,7 @@ Rebuilding and signing a second transaction after an uncertain response can coll
 ## Managed OpenApps usage
 
 The OpenApps venue policy fixes the sealed mint, the fee-authority PDA that signs the withdrawal, and the app's treasury as the only destination.
-Collection opens once the app is Open (its token sale graduated) and its trading pool exists, for a token whose sealed launch selects `transfer-fee-v1`.
+Collection opens once the app is publicly owned (its token sale graduated) and its trading pool exists, for a token whose sealed launch selects `transfer-fee-v1`.
 From then on only the app's agent wallet can create a collection batch, and it chooses no recipient, amount or credit payer.
 Collection needs no holder proposal because it only consolidates funds already owed to the fixed treasury.
 

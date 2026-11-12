@@ -8,7 +8,7 @@ Pump's opening price follows that purchase, and its minimum raise must cover the
 Both launch choices use the venue's fundraising target unless an operator sets a sale-specific minimum before Start; Pump's purchase requirement still sets a lower bound.
 Starting a sale does not require six months of operating funds or an upfront creator deposit.
 Read the minimum, bidding window and other terms from the sale before bidding.
-A direct Meteora token can charge the transfer fee set when requesting the APO (0% to 5%, default 1%); Pump and Meteora curve launches have no token transfer fee.
+A direct Meteora token can charge the transfer fee set when requesting the Autonomous Public Offering (APO) (0% to 5%, default 1%); Pump and Meteora curve launches have no token transfer fee.
 Collected transfer fees and fees from the designated Meteora launch position follow the app's fee split.
 Additional app positions earn entirely for the app.
 Existing launches retain their sealed model.

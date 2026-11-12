@@ -1,6 +1,6 @@
 # The oApp lifecycle: Owned, on sale, publicly owned
 
-**What's in here:** how an oApp starts with its own agent, how its live app and previews get different values, the three modes an app is in, what asking to open requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** how an oApp starts with its own agent, how its live app and previews get different values, the three modes an app is in, what requesting its Autonomous Public Offering (APO) requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## One app and its agent, from the start
 
@@ -14,7 +14,7 @@ An app starts one of two ways:
   An app that already belongs to an agent is refused with `user_app_already_attached`, and one whose billing is set to another account or pool with `user_app_billing_bound`.
   An app already on Solana mainnet under the owner's own wallet must first transfer its on-chain owner role to OpenApps custody (`user_app_custody_transfer_required`): one transaction the owner's wallet signs, and the app itself stays the owner's.
 
-Opening never copies anything.
+An APO never copies anything.
 The app that goes on sale, and the app its holders later govern, is the same app with the same agent.
 
 ## Live values and preview values
@@ -40,7 +40,7 @@ The same agent keeps working in every mode.
 | On sale | the platform, while the app's token sale runs or settles | nobody; the only release that can ship is a repair the Gauntlet asked for, which the platform approves |
 | Publicly owned | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
 
-One exception holds in Owned and Open alike: a swap of SOL or the app token into the venue's USDC, or a perp margin, that fits the agent's daily limit is approved by the venue on the spot, with no review and no vote ([the agent's daily limit](launch-economics.md#the-agents-daily-limit)).
+One exception holds in Owned and publicly owned apps alike: a swap of SOL or the app token into the venue's USDC, or a perp margin, that fits the agent's daily limit is approved by the venue on the spot, with no review and no vote ([the agent's daily limit](launch-economics.md#the-agents-daily-limit)).
 
 On sale and on a publicly owned app there is no owner: no creator's chat, no creator's approval, and no creator's settings.
 The agent runs on its own schedule and talks to people in the app's Discussion.
@@ -51,7 +51,7 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
    When the creator directs the app's own agent, it builds on previews and requests releases through the creator's review.
    The creator can instead let the agent decide what to build ("The AI decides", which needs Automatic mode): the creator's posts then count like anyone's in Discussion, and the creator and co-creators still approve or veto each release.
    A release publishes the app to Solana mainnet (see [oApps run on mainnet](#oapps-run-on-mainnet)).
-2. **Ask to open.** The creator submits the storefront (name, ticker, description, images), the constitution, and accepts the terms: see [what asking to open requires](#what-asking-to-open-requires).
+2. **Request the APO.** The creator submits the storefront (name, ticker, description, images), the constitution, and accepts the terms: see [what requesting an APO requires](#what-requesting-an-apo-requires).
    The platform checks the saved declaration and holds the app as soon as the request succeeds.
 3. **An admin starts the sale.** An OpenApps admin reviews the request and can start the sale or return the held app to its founder.
    Ordinary external production releases pause while the app is held.
@@ -75,7 +75,7 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
    An operator can also do both: hand an app back while no sale can still succeed (for a request whose sale never started, that declines it), and make a graduated app's hold permanent.
 
 **An app has one sale.**
-A request to open an app that already had a sale is refused with `oapp_opening_sale_exists`, including after a failed sale.
+An APO request for an app that already had a sale is refused with `oapp_opening_sale_exists`, including after a failed sale.
 
 ## Backing before the sale
 
@@ -87,7 +87,7 @@ When disabled before Start by OpenApps, public funding opens at the scheduled st
 When enabled, only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its maximum.
 The countdown before bidding and this first bidding interval are separate.
 
-## What asking to open requires
+## What requesting an APO requires
 
 The request is `POST /app/<mainAppId>/oapp-opening` on the developer API, from the owner's own account, after the app has its agent.
 A refusal is `{ ok: false, error: "<code>", message? }`; show `message` when it is present, because it is written for the creator.
@@ -133,7 +133,7 @@ Use that venue's Devnet USDC and explorer links; a Devnet balance cannot pay for
 
 ## Source sync
 
-The agent works from the app's synced source, and so does the request to open: the app must serve a release whose source is synced.
+The agent works from the app's synced source, and so does the APO request: the app must serve a release whose source is synced.
 Source rides the deploy; there is no separate register or sync machinery.
 `bounded init` turns it on for every new project; an older project enables it once in `bounded.json`:
 
