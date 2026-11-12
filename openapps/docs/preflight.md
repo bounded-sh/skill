@@ -1,16 +1,16 @@
-# Preflight before you request an APO
+# Preflight before you request an Autonomous Public Offering (APO)
 
-**What's in here:** `bounded oapp preflight`, the dry run of what the request to open reads off the app, with the capability ladder for every dependency it names. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** `bounded oapp preflight`, the dry run of what the APO request reads off the app, with the capability ladder for every dependency it names. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## What preflight runs (`bounded oapp preflight`)
 
 An app goes public in place: the app that goes on sale is the app as it is deployed, with its data, so the checks read that app and nothing else.
-The request to open runs one safety pass on it and refuses on the first finding.
+The APO request runs one safety pass on it and refuses on the first finding.
 It also refuses an app with no synced source, an app that serves no site, and an app whose agent holds a key its creator put there (`agent_secret_person_held`); the preflight does not report the last one.
 `bounded oapp preflight` (`GET /app/<mainAppId>/oapp-preflight`) runs the same reads as a dry run, as the app's owner, and changes nothing:
 
 ```
-bounded oapp preflight            # READY, or every finding the request to open would be refused on
+bounded oapp preflight            # READY, or every finding the APO request would be refused on
 bounded oapp preflight --json     # the report as one document (exit 1 when it is not READY)
 ```
 
@@ -36,8 +36,8 @@ A deployed function whose code cannot be read at its pin fails the preflight wit
 - `request` - not on Bounded yet: `bounded services request "<what you need>"`
 
 The report is READY only when no finding is blocking, the source is synced and current with the served site, and the dist is `static`, `built`, `external`, or `none`: then nothing the preflight reads would refuse the request.
-The request also checks what the preflight does not read: the caller, the app's network and custody, the Public switch, the proceeds split, the slug, one sale per app, and the declaration itself (see [what asking to open requires](lifecycle.md#what-asking-to-open-requires)).
+The request also checks what the preflight does not read: the caller, the app's network and custody, the Public switch, the proceeds split, the slug, one sale per app, and the declaration itself (see [what requesting an APO requires](lifecycle.md#what-requesting-an-apo-requires)).
 The command exits nonzero when the report is not READY; advisory findings only name a better route, such as a declared host whose provider Bounded already serves natively.
-Fix, redeploy with source, and run it again before asking to open.
+Fix, redeploy with source, and run it again before requesting the APO.
 
 The rules behind each finding are in [the launch gate](launch-gate.md).

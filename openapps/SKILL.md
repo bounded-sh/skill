@@ -5,7 +5,7 @@ description: Build or update apps for OpenApps (openapps.xyz, formerly oapps.fun
 
 # OpenApps
 
-An oApp is a Bounded app with its own agent that can open to its community, so it can outlive its creator.
+An oApp is a Bounded app with its own agent that can become publicly owned by its community, so it can outlive its creator.
 Use this skill for the app's capability constraints and, when requested, its lifecycle: Owned, on sale, and publicly owned.
 
 ## Choose the workflow
@@ -14,8 +14,8 @@ Use this skill for the app's capability constraints and, when requested, its lif
   Having an app agent does not require sending that change through an AI run.
   `bounded propose --submit` from the clone publishes it the same way for whoever may publish the app, a person who is its co-creator included; `--review` posts it for the app agent instead.
 - **External coding agent bringing an app the creator already has:** deploy it with source under the creator's account ([porting](../bounded-deploy/docs/porting-an-existing-app.md)); the creator brings it in from the OpenApps launch page, and it stays Owned.
-  Bringing an app needs no `"oapp": true`, egress boundary, or `bounded oapp preflight`; those belong to its Agent Public Offering (APO).
-- **Creator asking to open an app:** use the lifecycle, launch-gate, and preflight references for the current phase.
+  Bringing an app needs no `"oapp": true`, egress boundary, or `bounded oapp preflight`; those belong to its Autonomous Public Offering (APO).
+- **Creator requesting an app's APO:** use the lifecycle, launch-gate, and preflight references for the current phase.
   A build or edit request does not by itself request an APO; continue work already authorized by the user.
 - **Agent running on an OpenApps app computer:** the app already exists and you are its agent.
   Apply the capability constraints below and use the installed runtime-specific instructions for previews, releases, proposals, and the app's mode (`openapps-internal` when provided).
@@ -33,7 +33,7 @@ Both are read at the latest published release, so an edit counts only once a rel
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
 - To hold USDC for a deal, keep it in an escrow in the app's own policy that the app's agent settles: [App escrow](docs/app-escrow.md).
-- OpenApps launches an app's token in its APO (Agent Public Offering), the sale that makes the app Open: the sale creates the token, so it has no mint address until the sale completes, and its name and ticker are set when the app asks to open ([Lifecycle](docs/lifecycle.md)).
+- OpenApps launches an app's token in its APO, which makes the app publicly owned: the APO's token sale creates the token, so it has no mint address until the sale completes, and its name and ticker are set when the app requests its APO ([Lifecycle](docs/lifecycle.md)).
   A token an app's purpose or creator names with no address is likely this one, though it can be one that already exists.
 - An Owned app may keep services it already uses: its creator sets their keys with `bounded secret put` or Keys in the Fine print of the app's page, functions read them as `ctx.secrets`, and a [Next.js server](../bounded-frontend/docs/server-apps.md) reads them as `process.env`.
   A key never goes in source.

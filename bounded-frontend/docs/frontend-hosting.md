@@ -29,7 +29,7 @@ A Next.js or Express app can also run its server here: see [server-apps.md](serv
 **✅ Can run its server:** a Next.js app (SSR, ISR rendered per request, React
 Server Components, server actions, route handlers, middleware) built with vinext,
 billed per request like a function, and an Express app: [server-apps.md](server-apps.md).
-An OpenApps app that runs a server cannot open (APO) yet.
+An OpenApps app that runs a server cannot go through an APO yet.
 
 **❌ Cannot host:** a long-running process other than Express, PHP, Python,
 native Node addons, or TCP database drivers. Other framework servers (Remix,
@@ -174,10 +174,10 @@ read an unsynchronized local checkout.
 
 A visibility gate applies before any source is returned, and a source that is not public gets `404` on every public source route.
 An ordinary app's owner publishes its source.
-An OpenApps app's source is public exactly when the app is public (its Public setting), and every app that opens is public.
+An OpenApps app's source is public exactly when the app is public (its Public setting), and every app that goes through an Autonomous Public Offering (APO) is public.
 
 On a launched oApp the in-app widget also switches to a dedicated launched face instead of the owner console.
-That face is a compact mirror of the venue's own app overview: the app's identity (name, `Open` or `Owned`, fuel), the sale banner while the public sale is live, the Treasury and Operating burn tiles, the agent's status card, Raise funds, a review strip while a decision is in flight, recent agent activity, the venue's workspace links, the app's Boundaries, and its published source.
+That face is a compact mirror of the venue's own app overview: the app's identity (name, `Publicly owned` or `Owned`, fuel), the sale banner while the public sale is live, the Treasury and Operating burn tiles, the agent's status card, Raise funds, a review strip while a decision is in flight, recent agent activity, the venue's workspace links, the app's Boundaries, and its published source.
 The agent chat is one tap from the status card, and a signed-out visitor's conversation stays on that device.
 Every word and every state comes from the venue's own copy modules and the same anonymous public reads the venue's app page makes, so the widget and the venue cannot disagree about an app.
 A read the platform refuses or cannot serve renders the venue's "Unavailable" wording, never a zero, an empty list, or an invented state.

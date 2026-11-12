@@ -2,7 +2,7 @@
 
 `bounded verify --experimental` runs an SMT solver (Z3) over `policy.json` and reports which generated proof obligations it could discharge.
 It is not part of any Bounded workflow.
-`bounded deploy` validates and compiles the policy and never runs the prover; previews, releases, and Open all accept a policy that was never proved.
+`bounded deploy` validates and compiles the policy and never runs the prover; previews, releases, and an Autonomous Public Offering (APO) all accept a policy that was never proved.
 Every rule and invariant is enforced by the runtime before commit whether or not it was proved, so a proof adds design-time evidence, never runtime behavior.
 Run it only when a person explicitly asks for a proof report.
 Without `--experimental` the command refuses and points back to `bounded tests run` and deploy.
@@ -85,7 +85,7 @@ Name a collection here when a conditional read is intentionally public for a sub
 
 Use exact declared collection paths, each once; do not list a literal `true` or `false` read.
 The runtime read rule still decides what is visible.
-An oApp's request to open also reads this list as declared intent when its privacy classification meets a conditional read surface it cannot classify from the rule alone.
+An oApp's APO request also reads this list as declared intent when its privacy classification meets a conditional read surface it cannot classify from the rule alone.
 
 ### `proofs.attestations`
 

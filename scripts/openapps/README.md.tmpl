@@ -33,7 +33,7 @@ Load the root skill first. It routes to the sibling for your task.
 
 | Skill | For |
 |---|---|
-| [`openapps`](openapps/SKILL.md) | Start here: building an app, its own agent, zero-secret capabilities, the lifecycle, and opening. |
+| [`openapps`](openapps/SKILL.md) | Start here: building an app, its own agent, zero-secret capabilities, the lifecycle, and its Autonomous Public Offering (APO). |
 | [`openapps-backend`](openapps-backend/SKILL.md) | `policy.json` rules and invariants, functions, the actor and identity model, data and queries, realtime rooms, and policy tests. |
 | [`openapps-frontend`](openapps-frontend/SKILL.md) | The client SDK (reads, writes, subscriptions, queries), hosted static frontends, and end-user sign-in. |
 | [`openapps-deploy`](openapps-deploy/SKILL.md) | The CLI, environments, source sync, domains, and project config. |

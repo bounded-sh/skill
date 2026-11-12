@@ -3,7 +3,7 @@
 A Next.js app built with [vinext](https://github.com/cloudflare/vinext), or an Express app, can run its server on Bounded hosting.
 Bounded serves exact static files itself and runs the server for every other request, every non-GET request and every client navigation (`RSC` header or `_rsc` query).
 Each server request is billed to the app's credits like a function call, for at most 30 seconds; static files cost nothing per request.
-An OpenApps app that runs a server can go through an APO, and its Open app keeps running the server its release froze.
+An OpenApps app that runs a server can go through an Autonomous Public Offering (APO), and once publicly owned it keeps running the server its release froze.
 
 ## Build and deploy Next.js
 

@@ -1,6 +1,6 @@
 # The launch gate: oApp mode, boundaries, secrets, and the served site
 
-**What's in here:** the safety checks a request to open runs on the app as it is deployed, the boundaries and grants every oApp declares, the shape an app needs to open and how its served site is classified, what holds once the sale starts, and the current state of community code contributions. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** the safety checks an Autonomous Public Offering (APO) request runs on the app as it is deployed, the boundaries and grants every oApp declares, the shape an app needs for its APO and how its served site is classified, what holds once the sale starts, and the current state of community code contributions. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## Boundaries come first
 
@@ -19,14 +19,14 @@ These are requirements, not advice:
 | What | Required | Refusal |
 |---|---|---|
 | oApp mode | `"oapp": true` at the top of the policy when it declares functions or boundaries; oApp mode requires a declared egress boundary | `oapp_opening_egress_not_steward_owned` |
-| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the creator put on its agent with `bounded secret put --agent`), every secret a function or the app's [server](../../bounded-frontend/docs/server-apps.md) declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app opens | `oapp_opening_secret_surface_invalid` |
+| no person-held or leaked keys | the app holds no key a person set (its own values, its preview values, or a key the creator put on its agent with `bounded secret put --agent`), every secret a function or the app's [server](../../bounded-frontend/docs/server-apps.md) declares is one the app's OpenApps agent donated, and no credential-shaped string sits in the policy, the runtime config, the synced source, the served site, the deployed function code, or the backend manifest: every served byte is public once the app goes public | `oapp_opening_secret_surface_invalid` |
 | `boundaries.egress` | a list of 1 to 64 boundaries with unique ids, each declaring `"mode": "locked"` | `oapp_opening_egress_not_steward_owned` |
 | capability grants | `service:cap` and `service:x402` in a locked `boundaries.egress` entry, so the app can call live catalog actions and pay x402-priced APIs through the relay | `oapp_opening_capability_grants_missing` |
 | function egress | each function's egress names only entries an app-wide boundary declares and repeats every `service:` entry exactly; no function enables `ctx.sandbox` | `oapp_opening_egress_not_steward_owned` |
 | the deployed runtime | the committed runtime config carries this exact policy and allows exactly the hosts the boundaries declare; redeploy the policy when they differ | `oapp_opening_safety_unavailable`, `oapp_opening_egress_not_steward_owned` |
 | the policy in source | the synced source carries the policy file its `bounded.json` names (`"policy"`, `bounded/policy.json` when unset) | `oapp_creator_policy_missing_from_source` |
 
-The other conditions of a request to open (the owner asking, an app on mainnet under OpenApps custody, a public app, a settled proceeds split, one sale) are in [the lifecycle](lifecycle.md#what-asking-to-open-requires).
+The other conditions of an APO request (the owner asking, an app on mainnet under OpenApps custody, a public app, a settled proceeds split, one sale) are in [the lifecycle](lifecycle.md#what-requesting-an-apo-requires).
 
 `boundaries.egress` is REQUIRED, not optional.
 On the functions lane the egress gateway is always constructed and fails closed if it cannot be built, but the host allow-list only BINDS when the app declared one: without a declaration, destinations are unrestricted.
@@ -40,7 +40,7 @@ Grants are not hosts: on an oApp the runtime then fences raw `fetch` and `ctx.br
 oApps are framework-independent: an APO does not require Vite, React, a `package.json`, or any particular layout.
 What it requires is honesty between three artifacts: the synced source, the deployed frontend, and the policy.
 
-**An app can open without OpenApps website files.**
+**An app can go public without OpenApps website files.**
 For a site already live elsewhere, ask the app's agent to propose its visitor address.
 The founder can request an APO independently of the address proposal.
 
@@ -49,7 +49,7 @@ If the deployed frontend is compiled output, the source that compiles into it ri
 Never add a framework, a bundler, or an unused `init()` call merely to change shape, because an APO does not ask for them.
 
 **The served site and the source stay together.**
-The request to open, `bounded oapp preflight`, and a source-synced `bounded site deploy` classify the served site against the synced source:
+The APO request, `bounded oapp preflight`, and a source-synced `bounded site deploy` classify the served site against the synced source:
 
 - **static**: every file you deploy is byte-identical to a text file in your source tree.
   Only inert assets (images, fonts, audio, video, `.pdf`) are exempt from the match; anything served as code or markup (`.js`, `.html`, `.css`, `.svg`, `.wasm`) must be in your source verbatim, whatever its encoding.
@@ -74,7 +74,7 @@ The Gauntlet requires every script and worker the app runs to ship inside the re
 
 The Gauntlet's dependency audit reads the source for both, and either one fails it.
 Normally the agent must ship a repair before graduation; an admin may explicitly waive the sale's Gauntlet requirement for testing.
-Fix them before asking to open: neither the request nor the preflight reports them.
+Fix them before requesting the APO: neither the request nor the preflight reports them.
 
 From the start of the sale the app's public origins are also pinned to the app itself.
 A request from its openapps.xyz address (or its address on a partner venue's domain), or from its own `https://<appId>.bounded.page` host, may only name this app: realtime, its WebSocket handshake, and function invokes answer `403` with `origin_app_mismatch` when the page names any other app id, however that id was produced.

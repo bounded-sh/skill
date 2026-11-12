@@ -34,10 +34,10 @@ skip to a workaround. The catalog tells you which rung you are on: every
    dependency that a person controls. The app's own agent follows the same
    ladder.
 
-Two grants make the ladder real for an oApp, and the request to open requires
+Two grants make the ladder real for an oApp, and the Autonomous Public Offering (APO) request requires
 both in a locked `boundaries.egress` entry of the app's policy: `service:cap`
 (live catalog actions) and `service:x402` (the relay). `bounded oapp preflight`
-reports them as missing before the request to open refuses on them
+reports them as missing before the APO request refuses on them
 (`oapp_opening_capability_grants_missing`).
 
 ### What "calling it out" looks like
