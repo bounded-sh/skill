@@ -5,7 +5,7 @@
 
 # `@CPI`
 
-Descriptor-bound CPI calls (memo, lamports, Kamino, DLMM, Raydium, stake pools).
+Descriptor-bound CPI calls (memo, lamports, Kamino, DLMM, Raydium, PumpSwap, stake pools).
 
 Argument descriptions and signer markers below are copied from the existing monorepo manifest. `-` under `Signer in manifest` means undeclared, not confirmed non-signing.
 
@@ -193,6 +193,25 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 |---|---|---|---|---|
 | `source` | string | yes | **yes** | The address attesting the memo: a wallet, @contract.address for the app escrow, or an account id (a named app PDA; see the custody guide) |
 | `note` | string | yes | - | UTF-8 memo text recorded on-chain |
+
+### `CPI.pumpSwapDeposit`
+
+```
+@CPI.pumpSwapDeposit(source, pool, baseMint, quoteMint, lpMint, lpTokenAmountOut, maxBaseAmountIn, maxQuoteAmountIn) - adds liquidity to a PumpSwap pool of any quote token (SOL-paired pools also have @PumpFunPlugin.pumpswapDeposit). Mints exactly lpTokenAmountOut LP tokens to the source and takes the matching share of both sides, failing above either maximum. Derive pool and lpMint with @Solana.pda when a writer must not choose them.
+```
+
+- Callable from: `hooks.onchain`
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Liquidity provider: wallet, app escrow, or named account. |
+| `pool` | address | yes | - | The PumpSwap pool account. |
+| `baseMint` | address | yes | - | The pool's base token mint (the coin). |
+| `quoteMint` | address | yes | - | The pool's quote token mint, for example USDC. |
+| `lpMint` | address | yes | - | The pool's LP token mint. |
+| `lpTokenAmountOut` | number | yes | - | LP tokens to mint, in the units of the pool's lp_supply. |
+| `maxBaseAmountIn` | number | yes | - | Most base tokens to spend; the deposit fails above this. |
+| `maxQuoteAmountIn` | number | yes | - | Most quote tokens to spend; the deposit fails above this. |
 
 ### `CPI.raydiumDeposit`
 
