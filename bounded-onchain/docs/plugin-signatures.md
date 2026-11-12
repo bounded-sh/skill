@@ -39,6 +39,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@Bytes.u8` | `u8(number)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Bytes.md) |
 | `@Bytes.u8At` | `u8At(bytes, number)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Bytes.md) |
 | `@Bytes.utf8` | `utf8(string)` | onchain rules, onchain named queries, `hooks.onchain`, offchain rules, offchain named queries | [reference](plugins/Bytes.md) |
+| `@CPI.createAssociatedTokenAccount` | `createAssociatedTokenAccount(string, string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.dlmmSwap` | `dlmmSwap(source, lbPair, reserveX, reserveY, inputMint, outputMint, oracle, amountIn, minAmountOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.kaminoBorrow` | `kaminoBorrow(string, number, string, string, string, string, string, string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.kaminoDeposit` | `kaminoDeposit(string, number, string, string, string, string, string, string, string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
@@ -49,6 +50,7 @@ Every callable signature in one optional scan. Use the linked namespace page for
 | `@CPI.kaminoRepay` | `kaminoRepay(string, number, string, string, string, string, string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.kaminoWithdraw` | `kaminoWithdraw(string, number, string, string, string, string, string, string, string, string, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.memoNote` | `memoNote(string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
+| `@CPI.pumpMigrateV2` | `pumpMigrateV2(string, string, string)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.pumpSwapDeposit` | `pumpSwapDeposit(string, string, string, string, string, number, number, number)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.raydiumDeposit` | `raydiumDeposit(source, poolState, token0Vault, token1Vault, vault0Mint, vault1Mint, lpMint, lpTokenAmount, maximumToken0Amount, maximumToken1Amount)` | `hooks.onchain` | [reference](plugins/CPI.md) |
 | `@CPI.raydiumSwapBaseInput` | `raydiumSwapBaseInput(source, ammConfig, poolState, inputVault, outputVault, inputMint, outputMint, observationState, amountIn, minimumAmountOut)` | `hooks.onchain` | [reference](plugins/CPI.md) |

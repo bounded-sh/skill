@@ -2,7 +2,7 @@
  "schemaVersion": 2,
  "generatedBy": "scripts/extract-plugin-catalog.mjs",
  "source": {
-  "monorepoCommit": "f97df69c2ff7f0acf39032f897b2899befc95e81",
+  "monorepoCommit": "9f8c3e14c50bb79bca29b05f1967292a7b9d9f3d",
   "solLayerPath": "packages/cdk/layers/sol-helper/nodejs/sol-layer",
   "canonicalOffchainPlugins": [
    "DocumentPlugin",
@@ -1207,6 +1207,58 @@
    "variables": [],
    "functions": [
     {
+     "name": "createAssociatedTokenAccount",
+     "callName": "@CPI.createAssociatedTokenAccount",
+     "category": "transactional",
+     "signature": "createAssociatedTokenAccount(string, string, string, string)",
+     "usage": "@CPI.createAssociatedTokenAccount(source, owner, mint, tokenProgram) - creates owner's associated token account for mint when it does not exist yet (idempotent). The source signs and pays its rent. Use it for a mint created earlier in the same hook, such as the LP mint of a pool that @CPI.pumpMigrateV2 just opened; tokenProgram is the program that owns the mint.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Funded wallet that pays the account's rent; it must sign the transaction.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "owner",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The account's owner: a wallet, @contract.address, or a named account.",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The token mint.",
+       "fields": null
+      },
+      {
+       "index": 3,
+       "name": "tokenProgram",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The token program that owns the mint (classic SPL Token or Token-2022).",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ]
+    },
+    {
      "name": "dlmmSwap",
      "callName": "@CPI.dlmmSwap",
      "category": "transactional",
@@ -1970,11 +2022,54 @@
      ]
     },
     {
+     "name": "pumpMigrateV2",
+     "callName": "@CPI.pumpMigrateV2",
+     "category": "transactional",
+     "signature": "pumpMigrateV2(string, string, string)",
+     "usage": "@CPI.pumpMigrateV2(source, mint, quoteMint) - opens the PumpSwap pool of a pump coin whose token-paired bonding curve is complete (pump's permissionless migrate_v2). The source signs and pays the new pool's rent, so it must be a funded wallet. A coin whose pool is already open is left as it is; an incomplete curve fails.",
+     "returnType": null,
+     "isOnlyOffchain": false,
+     "validArgCounts": null,
+     "description": null,
+     "args": [
+      {
+       "index": 0,
+       "name": "source",
+       "type": "address",
+       "optional": false,
+       "signer": true,
+       "description": "Funded wallet that pays the pool's rent; it must sign the transaction.",
+       "fields": null
+      },
+      {
+       "index": 1,
+       "name": "mint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The pump coin's mint.",
+       "fields": null
+      },
+      {
+       "index": 2,
+       "name": "quoteMint",
+       "type": "address",
+       "optional": false,
+       "signer": null,
+       "description": "The curve's quote mint, for example USDC.",
+       "fields": null
+      }
+     ],
+     "contexts": [
+      "onchain.hooks"
+     ]
+    },
+    {
      "name": "pumpSwapDeposit",
      "callName": "@CPI.pumpSwapDeposit",
      "category": "transactional",
      "signature": "pumpSwapDeposit(string, string, string, string, string, number, number, number)",
-     "usage": "@CPI.pumpSwapDeposit(source, pool, baseMint, quoteMint, lpMint, lpTokenAmountOut, maxBaseAmountIn, maxQuoteAmountIn) - adds liquidity to a PumpSwap pool of any quote token (SOL-paired pools also have @PumpFunPlugin.pumpswapDeposit). Mints exactly lpTokenAmountOut LP tokens to the source and takes the matching share of both sides, failing above either maximum. Derive pool and lpMint with @Solana.pda when a writer must not choose them.",
+     "usage": "@CPI.pumpSwapDeposit(source, pool, baseMint, quoteMint, lpMint, lpTokenAmountOut, maxBaseAmountIn, maxQuoteAmountIn) - adds liquidity to a PumpSwap pool of any quote token (SOL-paired pools also have @PumpFunPlugin.pumpswapDeposit). Mints exactly lpTokenAmountOut LP tokens to the source and takes the matching share of both sides, failing above either maximum. Derive pool and lpMint with @Solana.pda when a writer must not choose them. The source's LP token account (Token-2022) must exist: create it first with @CPI.createAssociatedTokenAccount, in the same hook when the pool opens in the same transaction.",
      "returnType": null,
      "isOnlyOffchain": false,
      "validArgCounts": null,

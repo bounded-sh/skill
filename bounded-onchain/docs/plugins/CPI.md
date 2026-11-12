@@ -17,6 +17,21 @@ Argument descriptions and signer markers below are copied from the existing mono
 
 Use the per-function `Callable from` line below. A `false` return or thrown error in a hook aborts the entire write.
 
+### `CPI.createAssociatedTokenAccount`
+
+```
+@CPI.createAssociatedTokenAccount(source, owner, mint, tokenProgram) - creates owner's associated token account for mint when it does not exist yet (idempotent). The source signs and pays its rent. Use it for a mint created earlier in the same hook, such as the LP mint of a pool that @CPI.pumpMigrateV2 just opened; tokenProgram is the program that owns the mint.
+```
+
+- Callable from: `hooks.onchain`
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Funded wallet that pays the account's rent; it must sign the transaction. |
+| `owner` | address | yes | - | The account's owner: a wallet, @contract.address, or a named account. |
+| `mint` | address | yes | - | The token mint. |
+| `tokenProgram` | address | yes | - | The token program that owns the mint (classic SPL Token or Token-2022). |
+
 ### `CPI.dlmmSwap`
 
 ```
@@ -194,10 +209,24 @@ Use the per-function `Callable from` line below. A `false` return or thrown erro
 | `source` | string | yes | **yes** | The address attesting the memo: a wallet, @contract.address for the app escrow, or an account id (a named app PDA; see the custody guide) |
 | `note` | string | yes | - | UTF-8 memo text recorded on-chain |
 
+### `CPI.pumpMigrateV2`
+
+```
+@CPI.pumpMigrateV2(source, mint, quoteMint) - opens the PumpSwap pool of a pump coin whose token-paired bonding curve is complete (pump's permissionless migrate_v2). The source signs and pays the new pool's rent, so it must be a funded wallet. A coin whose pool is already open is left as it is; an incomplete curve fails.
+```
+
+- Callable from: `hooks.onchain`
+
+| Arg | Type | Required | Signer in manifest | Description |
+|---|---|---|---|---|
+| `source` | address | yes | **yes** | Funded wallet that pays the pool's rent; it must sign the transaction. |
+| `mint` | address | yes | - | The pump coin's mint. |
+| `quoteMint` | address | yes | - | The curve's quote mint, for example USDC. |
+
 ### `CPI.pumpSwapDeposit`
 
 ```
-@CPI.pumpSwapDeposit(source, pool, baseMint, quoteMint, lpMint, lpTokenAmountOut, maxBaseAmountIn, maxQuoteAmountIn) - adds liquidity to a PumpSwap pool of any quote token (SOL-paired pools also have @PumpFunPlugin.pumpswapDeposit). Mints exactly lpTokenAmountOut LP tokens to the source and takes the matching share of both sides, failing above either maximum. Derive pool and lpMint with @Solana.pda when a writer must not choose them.
+@CPI.pumpSwapDeposit(source, pool, baseMint, quoteMint, lpMint, lpTokenAmountOut, maxBaseAmountIn, maxQuoteAmountIn) - adds liquidity to a PumpSwap pool of any quote token (SOL-paired pools also have @PumpFunPlugin.pumpswapDeposit). Mints exactly lpTokenAmountOut LP tokens to the source and takes the matching share of both sides, failing above either maximum. Derive pool and lpMint with @Solana.pda when a writer must not choose them. The source's LP token account (Token-2022) must exist: create it first with @CPI.createAssociatedTokenAccount, in the same hook when the pool opens in the same transaction.
 ```
 
 - Callable from: `hooks.onchain`
