@@ -19,6 +19,14 @@ Your policy is the only check on what the app's own agent does inside the app.
 ## Money from the treasury to the app
 
 - The treasury and the app are separate: the agent moves treasury money only through approved proposals, its daily limit, or a standing approval ([launch economics](launch-economics.md)).
-- A standing approval, approved once by the creator (the holders on a publicly owned app), lets the agent move USDC from the treasury into one named account of the app, up to a cap per move and with a floor kept in the treasury.
+- A standing approval, approved once by the creator (the holders on a publicly owned app), lets the agent repeat one kind of move without review: USDC from the treasury into one named account of the app, up to a cap per move and with a floor kept in the treasury (kind `app`), or swaps that sell one named asset, up to a cap per swap with a floor kept, or any asset, for one of up to four named assets inside a slippage limit (kind `swap`).
 - That account is one your policy creates with `@AccountPlugin.createAccount("<id>")` ([custody and PDAs](../../bounded-onchain/docs/custody-and-pdas.md)).
   Your rules decide everything about the USDC once it is there, and it returns to the treasury only through a rule of your app.
+
+## The agent's wallets
+
+- The treasury holds the app's money and moves only in the ways above.
+- The agent's own wallet ("My wallet" on the owner's card, `@const.AGENT_ADDRESS`) signs it in and writes on OpenApps.
+- Its browser wallet, which websites see as "OpenApps Agent", works on the sites in the constitution's `walletSites` (the platform default list when unset), with no proposal and no daily limit: only its balance is enforced.
+  When the owner wants trading caps enforced, a swap standing approval on the treasury enforces them.
+- A treasury transfer pays only the agent's own wallets or a verified user, so a site's own wallet (pump.fun's, for example) is funded treasury, then browser wallet, then the site; the browser wallet can send its balance back to the treasury address.
