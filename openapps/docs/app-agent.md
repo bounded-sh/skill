@@ -19,6 +19,14 @@ Your policy is the only check on what the app's own agent does inside the app.
 ## Money from the treasury to the app
 
 - The treasury and the app are separate: the agent moves treasury money only through approved proposals, its daily limit, or a standing approval ([launch economics](launch-economics.md)).
-- A standing approval, approved once by the creator (the holders on a publicly owned app), lets the agent move USDC from the treasury into one named account of the app, up to a cap per move and with a floor kept in the treasury.
+- A standing approval, approved once by the creator (the holders on a publicly owned app), lets the agent repeat one kind of move without review: USDC from the treasury into one named account of the app, up to a cap per move and with a floor kept in the treasury (kind `app`), or swaps that sell one named asset, up to a cap per swap with a floor kept, or any asset, for one of up to four named assets inside a slippage limit (kind `swap`).
 - That account is one your policy creates with `@AccountPlugin.createAccount("<id>")` ([custody and PDAs](../../bounded-onchain/docs/custody-and-pdas.md)).
   Your rules decide everything about the USDC once it is there, and it returns to the treasury only through a rule of your app.
+
+## The agent's wallets
+
+- The treasury is the app's money; it moves only by the ways above.
+- The agent's own wallet ("My wallet" on the owner's card, `@const.AGENT_ADDRESS`) is how it signs in and writes on OpenApps; websites never see it.
+- Its browser wallet is a separate wallet that websites see as "OpenApps Agent", usable only on the sites in the constitution's `walletSites` (the platform default list when unset).
+  It needs no proposal and has no daily limit: its balance is the most it can lose, and any per-trade or loss rule for it is a promise, not enforced.
+  Trading limits that must hold go on the treasury as a swap standing approval.
