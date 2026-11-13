@@ -62,7 +62,7 @@ Read the reference needed for the current task.
 
 | Task | Read |
 |---|---|
-| The agent an app has from creation, live values and preview values, Owned / on sale / publicly owned, requesting an APO, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
+| The agent an app has from creation, live values and preview values, running an Owned app's agent on your own computer (`bounded agent connect`), Owned / on sale / publicly owned, requesting an APO, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
 | What the app's agent may do in the app without review, rules that bound it, and money from the treasury to the app | [The app's agent in your app](docs/app-agent.md) |
 | App capability availability, unsupported dependencies, catalog requests, x402 payment and recovery semantics | [Capability ladder](docs/capability-ladder.md) |
 | What the APO request checks: oApp mode, required boundaries and egress grants, secrets, the served site, `bounded propose` | [Launch gate](docs/launch-gate.md) |
