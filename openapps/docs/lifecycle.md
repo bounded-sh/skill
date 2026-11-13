@@ -1,6 +1,6 @@
 # The oApp lifecycle: Owned, on sale, publicly owned
 
-**What's in here:** how an oApp starts with its own agent, how its live app and previews get different values, the three modes an app is in, what requesting its Autonomous Public Offering (APO) requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
+**What's in here:** how an oApp starts with its own agent, how its live app and previews get different values, the three modes an app is in, running an Owned app's agent on your own computer, what requesting its Autonomous Public Offering (APO) requires, what happens during and after the token sale, why every oApp runs on mainnet, and source sync. Part of the **openapps** skill; the compact rules and the router are in [../SKILL.md](../SKILL.md).
 
 ## One app and its agent, from the start
 
@@ -45,6 +45,21 @@ One exception holds in Owned and publicly owned apps alike: a swap of SOL or the
 
 On sale and on a publicly owned app there is no owner: no creator's chat, no creator's approval, and no creator's settings.
 The agent runs on its own schedule and talks to people in the app's Discussion.
+
+## Running an Owned app's agent on your own computer
+
+While an app is Owned, its creator or a co-creator can run its agent on their own computer: `bounded agent connect <app>` (an app link, name or id, or no argument inside the app's clone).
+The agent then runs in that person's own installed Claude Code, signed in with its own login, so the app pays nothing for the agent's thinking or for a cloud computer; the app still pays for its hosting, its data and paid tools.
+
+- One computer per app at a time. Ctrl-C disconnects and stops the run in progress.
+- While connected, the creator's and co-creators' chat messages, the 15-minute check and full runs run there. The command waits to be sent a run; it does not poll.
+- Each run works in its own folder under `~/.bounded/agents/<app>/`, signed in as the app's agent, never as the person. Claude Code's sandbox confines the agent's commands to that folder and to the OpenApps, source and npm hosts and the app's own site.
+- The agent commits and pushes a `work/<runId>` branch. The folder starts again from `main` at every run, so work not pushed when a run ends is gone.
+- Filing a release, signing in to a website as the app's account, wallet signing, card checkout and human help run on the app's own cloud computer, which the app pays for. The agent hands that work over itself.
+- The app's page offers three places for the agent to think: In the cloud, On my computer when it's on, and Only on my computer.
+  - On my computer when it's on: when the computer is off or does not answer within 15 seconds, the same run starts in the cloud.
+  - Only on my computer: when the computer is off the agent waits and starts no paid run by itself; messages are answered when the computer connects, and work that needs the cloud computer waits for the creator's Start run.
+- An app in its APO or publicly owned cannot connect: its agent runs only in the cloud.
 
 ## From Owned to publicly owned
 
