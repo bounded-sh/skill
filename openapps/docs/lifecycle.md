@@ -40,6 +40,7 @@ The same agent keeps working in every mode.
 | On sale | the platform, while the app's token sale runs or settles | nobody; the only release that can ship is a repair the Gauntlet asked for, which the platform approves |
 | Publicly owned | its token holders | the holders; a release or proposal passes when their review ends with no veto, and a veto puts it to their vote |
 
+The app's own agent acting in the app is not a governed action: wherever a rule admits its wallet it acts with no review, in every mode but on sale ([the app's agent in your app](app-agent.md)).
 One exception holds in Owned and publicly owned apps alike: a swap of SOL or the app token into the venue's USDC, or a perp margin, that fits the agent's daily limit is approved by the venue on the spot, with no review and no vote ([the agent's daily limit](launch-economics.md#the-agents-daily-limit)).
 
 On sale and on a publicly owned app there is no owner: no creator's chat, no creator's approval, and no creator's settings.
