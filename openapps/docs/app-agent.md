@@ -25,8 +25,8 @@ Your policy is the only check on what the app's own agent does inside the app.
 
 ## The agent's wallets
 
-- The treasury is the app's money; it moves only by the ways above.
-- The agent's own wallet ("My wallet" on the owner's card, `@const.AGENT_ADDRESS`) is how it signs in and writes on OpenApps; websites never see it.
-- Its browser wallet is a separate wallet that websites see as "OpenApps Agent", usable only on the sites in the constitution's `walletSites` (the platform default list when unset).
-  It needs no proposal and has no daily limit: its balance is the most it can lose, and any per-trade or loss rule for it is a promise, not enforced.
-  Trading limits that must hold go on the treasury as a swap standing approval.
+- The treasury holds the app's money and moves only in the ways above.
+- The agent's own wallet ("My wallet" on the owner's card, `@const.AGENT_ADDRESS`) signs it in and writes on OpenApps.
+- Its browser wallet, which websites see as "OpenApps Agent", works on the sites in the constitution's `walletSites` (the platform default list when unset), with no proposal and no daily limit: only its balance is enforced.
+  When the owner wants trading caps enforced, a swap standing approval on the treasury enforces them.
+- A treasury transfer pays only the agent's own wallets or a verified user, so a site's own wallet (pump.fun's, for example) is funded treasury, then browser wallet, then the site; the browser wallet can send its balance back to the treasury address.
