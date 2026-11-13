@@ -540,10 +540,11 @@ else { /* live */ }
 ```
 
 **Every deleted version.**
-`GET /items/<path>?deleted=true` (or `GET /items?path=<path>&deleted=true`) on the realtime HTTP API returns all kept versions, newest first, as `{ data, nextCursor }`.
+`get(path, { deleted: true })` returns the kept versions instead of live documents, newest first, as `{ data, nextCursor }`.
 A document path returns that path's versions; a collection path returns every kept version directly in that collection.
-Page with `limit` (default 100, max 1000) and pass `nextCursor` back as `cursor`.
-The SDKs have no option for this list yet.
+Page with `limit` (default 100, max 1000) and pass `nextCursor` back as `cursor`; `filter`, `sort` and `shape` do not apply.
+`bounded data get --path <path> --deleted` is the same read from the CLI, and `GET /items?path=<path>&deleted=true` on the realtime HTTP API.
+A list that shows live and deleted records together reads both and merges them by id.
 
 **Rules never see a deleted version.**
 To `get()`, `getAfter()`, rule queries, and invariants, a deleted document is absent, the same as without the option.
