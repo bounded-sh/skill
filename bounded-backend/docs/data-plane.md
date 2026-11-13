@@ -555,6 +555,8 @@ A new document can be created at the same id at any time; it starts fresh with i
 **Onchain collections.**
 The delete still closes the document's account and refunds its rent (see [onchain.md](../../bounded-onchain/docs/onchain.md#what-changes-when-a-collection-is-onchain)).
 The deleted version is kept from the mirror once the close is confirmed, not when you call `set(path, null)`.
+An onchain hook's `updateField` to the document, made in the same transaction that deletes it, is part of the kept version.
+Where that update cannot be reproduced with certainty (it depends on a chain value such as a balance, on `@time`, or on `@user`), the kept version holds the fields from before the transaction and carries `_hookUpdatesMissing`.
 An `isPassthrough` collection never has an account, so deleting from it reclaims no rent.
 
 **Storage.**
