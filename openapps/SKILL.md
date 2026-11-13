@@ -32,6 +32,7 @@ Both are read at the latest published release, so an edit counts only once a rel
 ## Capability constraints
 
 - Use Bounded-managed hosting, data, auth, payments, wallets, onchain access, and AI, billed to the app's own credit pool and governed by its policy.
+- The app's agent acts in the app wherever a rule admits its wallet, with no review, on Owned and publicly owned apps: the app's rules are its only check there ([the app's agent in your app](docs/app-agent.md)).
 - To hold USDC for a deal, keep it in an escrow in the app's own policy that the app's agent settles: [App escrow](docs/app-escrow.md).
 - OpenApps launches an app's token in its APO, which makes the app publicly owned: the APO's token sale creates the token, so it has no mint address until the sale completes, and its name and ticker are set when the app requests its APO ([Lifecycle](docs/lifecycle.md)).
   A token an app's purpose or creator names with no address is likely this one, though it can be one that already exists.
@@ -62,6 +63,7 @@ Read the reference needed for the current task.
 | Task | Read |
 |---|---|
 | The agent an app has from creation, live values and preview values, Owned / on sale / publicly owned, requesting an APO, the token sale, mainnet, source sync, one sale per app | [Lifecycle](docs/lifecycle.md) |
+| What the app's agent may do in the app without review, rules that bound it, and money from the treasury to the app | [The app's agent in your app](docs/app-agent.md) |
 | App capability availability, unsupported dependencies, catalog requests, x402 payment and recovery semantics | [Capability ladder](docs/capability-ladder.md) |
 | What the APO request checks: oApp mode, required boundaries and egress grants, secrets, the served site, `bounded propose` | [Launch gate](docs/launch-gate.md) |
 | `bounded oapp preflight` and its report | [Preflight](docs/preflight.md) |

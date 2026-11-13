@@ -5,6 +5,7 @@ An OpenApps app holds a deal's USDC in its own policy, and the app's agent settl
 - Each escrow is its own account, funded by the funder's wallet in the hook that creates it ([escrow example](../../bounded-onchain/docs/examples/escrow.md)).
 - A settlement pays the payee or refunds the funder, and marks the escrow settled in the same transaction, so a failed transfer leaves it open to settle again under a new settlement id.
 - Only the agent (`@const.AGENT_ADDRESS`) settles, except that anyone may refund the funder once the escrow expires.
+  Nobody reviews the agent's settlement: these rules are its only check ([the app's agent in your app](app-agent.md)).
 
 ```json
 "escrows/$escrowId": {
@@ -31,7 +32,7 @@ An OpenApps app holds a deal's USDC in its own policy, and the app's agent settl
 }
 ```
 
-- The agent writes a settlement only through a data script its creator reviews (its holders, once the app is publicly owned).
-  When the script is approved, or its review window lapses, the platform signs the script's onchain writes with the agent's wallet: exactly the writes that were reviewed.
+- The agent writes a settlement through a script the platform signs with the agent's wallet, with no review, and the app's history records it; it does not run while the app is paused.
+  So the rules above are what protect the funder: the payee and amount come from the escrow itself, and the expiry lets anyone refund.
 - On a mainnet app, the app must pay the network fee for the agent's transactions (gas sponsorship, a creator setting).
 - The escrow holds everything its rules check (payee, amount, expiry), because an onchain rule cannot read the offchain deal; keep the deal offchain with the escrow's id.
