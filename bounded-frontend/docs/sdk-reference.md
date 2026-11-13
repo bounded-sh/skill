@@ -156,7 +156,7 @@ const next = await get("orders", { /* same filter/sort */ limit: 20, cursor: ope
 - In a `keepRecordOnDelete` collection, a single-document `get` and `getMany`
   return the newest deleted version, stamped `_deletedAt`, when no live document
   exists; a live document never carries `_deletedAt`. Lists and `subscribe` show
-  only live documents. See [data plane](../../bounded-backend/docs/data-plane.md#keep-deleted-records-with-keeprecordondelete).
+  only live documents; `get(path, { deleted: true })` lists the kept versions. See [data plane](../../bounded-backend/docs/data-plane.md#keep-deleted-records-with-keeprecordondelete).
 
 `GetOptions`: `filter` (structured MongoDB-style), `sort` (`{ field: 1 | -1 }`),
 `limit`, `cursor`, `includeSubPaths`, `shape`, `prompt` (natural-language

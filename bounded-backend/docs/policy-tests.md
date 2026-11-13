@@ -107,7 +107,7 @@ With an onchain `create` rule of `@newData.author == @user.address`, that write 
 | `setTime` | `epoch` | Set the logical clock to a unix-seconds value. Default: real time at run start. |
 | `advanceTime` | `seconds` | Move the logical clock forward — crosses `rollingSum` windows. |
 | `set` | `path`, `data`, `shouldFail?` | Write one document through the real rules and invariants. |
-| `setMany` | `writes: [{path,data}]`, `shouldFail?` | Atomic batch write. |
+| `setMany` | `writes: [{path,data}]`, `shouldFail?` | Atomic batch write. A write with `data: null` deletes that path in the same batch. |
 | `delete` | `path`, `shouldFail?` | Delete one document. |
 | `deleteMany` | `paths`, `shouldFail?` | Delete many documents. |
 | `mock` | `function`, `returns` | Stub a plugin function call for all later steps (args ignored). Write the name exactly as a policy hook does - `@AccountPlugin.createAccount`. The `@`, the dots, and case are normalized away, so `accountplugin_createaccount` is equivalent. A name that is not plugin-function shaped fails the file at validation. |
