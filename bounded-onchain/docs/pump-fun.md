@@ -57,6 +57,23 @@ account when the app, not an individual, should collect the fees.
 On a cluster running v11, a non-Mayhem `createTokenV2` launch with a PDA creator and `{quoteMint: @TokenPlugin.USDC, buyAmount, maxQuoteCost}` buys the specified number of tokens as part of creation.
 The creator needs USDC for that buy. The transaction's rent funder covers creation in SOL and receives its unused advance back in the same transaction.
 
+### Pairs and the creator fee (runtime v12)
+
+`createTokenV2`'s config chooses what the coin trades against and, on a custom pair, its own creator fee:
+
+| Config key | Meaning |
+|---|---|
+| `quoteMint` | SOL when omitted (or wrapped SOL), `@TokenPlugin.USDC`, a custom-pair quote pump lists (such as PUMP, `pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn`), or another pump coin. Pump limits how deep a chain of coins paired with coins may go (depth 2 in November 2026) and refuses a mayhem-mode coin as a quote, or mayhem mode on a custom pair. |
+| `creatorFeeBps` | The coin's own creator fee, in basis points of every trade. It applies only to a custom pair (a quote other than SOL or USDC), where pump accepts its standard rate (30) up to its configured maximum (100 in November 2026) and refuses the create otherwise; `0` or omitted keeps the standard rate. SOL- and USDC-paired coins ignore it and use pump's standard fee schedule. |
+| `feeReceiver` | Where the creator fee goes, instead of `creator`: a wallet, `@contract.address` (the app escrow), or an account id - any string that is not an address names one of the app's own accounts, such as `'treasury'` below, whose funds the policy then moves. |
+| `buyAmount`, `maxQuoteCost` | The creator's first buy in the same instruction, paid in the quote. |
+
+```
+"create": "@PumpFunPlugin.createTokenV2($tokenId, @newData.name, @newData.symbol, @newData.uri, 'treasury', false, {quoteMint: 'pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn', creatorFeeBps: 100, feeReceiver: 'treasury'})"
+```
+
+Every other call follows the coin's pair, read from its bonding curve: its amounts are in the quote's base units, and the buyer spends from its own token account of the quote.
+
 For an ordinary SOL launch, an app-custody creator (a named account id) must
 already hold the whole `Create` cost when the hook runs - `createAccount` alone
 leaves only its own rent minimum (~0.00089 SOL), and the signing user's wallet
@@ -81,9 +98,9 @@ Accounts v3` - both rows are in the
 
 | Arg | Type | Meaning |
 |---|---|---|
-| `source` | `Address` | Who spends the SOL and receives the tokens. |
+| `source` | `Address` | Who spends the coin's quote and receives the tokens. |
 | `mint` | `Address` | The token mint. |
-| `solAmount` | `Int` | SOL to spend, **in lamports** (`1 SOL` = `1000000000`). |
+| `solAmount` | `Int` | The coin's quote to spend: **lamports** for a SOL-paired coin (`1 SOL` = `1000000000`); on runtime v12, the quote's base units, fees included, for a token-paired coin (USDC, a custom pair, another pump coin). |
 | `minTokensOut` | `Int` | Absolute minimum tokens the buy must yield, in the mint's smallest units. The buy reverts if it would return less. |
 
 `minTokensOut` is required and must be positive.
@@ -152,6 +169,8 @@ in one hook, and only once the curve is complete.
 }
 ```
 
+On runtime v12 a token-paired coin's shareholders are paid in its quote: `distributeCreatorFees` and `updateShareholders` first sweep the creator fee newer trades keep on the curve, and a missing shareholder token account is created, paid by the transaction's funder for `distributeCreatorFees` and by the admin `source` for `updateShareholders`.
+
 Because the split lives in the on-chain config rather than in your policy, changing
 it is an `updateShareholders` transaction by the admin, not a policy redeploy - so
 if you want the split to be fixed, constrain the *rule* that decides who may
@@ -170,7 +189,7 @@ call `updateShareholders` and with what literals.
 | `mint` | `Address` | The **base** token mint - the graduated Pump.fun token. |
 | `lpTokenAmountOut` / `lpTokenAmountIn` | `Int` | Exact LP tokens to mint, or to burn, in smallest units. |
 | `maxBaseAmountIn` / `minBaseAmountOut` | `Int` | Base-token slippage bound, in the token's smallest units. |
-| `maxQuoteAmountIn` / `minQuoteAmountOut` | `Int` | Quote-side slippage bound, **in lamports** (the quote is SOL). |
+| `maxQuoteAmountIn` / `minQuoteAmountOut` | `Int` | Quote-side slippage bound, in the coin's quote: **lamports** for a SOL-paired coin, the quote's base units for a token-paired coin (runtime v12, which uses the coin's own pool). |
 
 Both calls are exact-LP-amount operations with bounded token legs: you name the LP
 quantity and cap (deposit) or floor (withdraw) what the two token legs may be.
