@@ -202,7 +202,7 @@ Declared per function with `"email": { "read": true, "send": true, "outreach": t
 
 | Method | Needs | Does |
 |---|---|---|
-| `address()` | read or send | The mailbox address. |
+| `address()` | read | The mailbox address. |
 | `status()` | read | `{ inboundCount, unreadCount, sentCount, outreach: { sentLast24h, dailyLimit, paused, pauseReason } }`. |
 | `list({ limit, cursor, unreadOnly })` / `get(id)` | read | Message summaries (newest first, `nextCursor`) / one message with body. |
 | `markRead(id)` / `markAllRead()` | read | Mark inbound mail read. |
