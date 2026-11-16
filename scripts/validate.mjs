@@ -235,6 +235,25 @@ for (const expected of [
   if (!paidOperationsGuide.includes(expected)) fail(`functions guide: missing paid-operation boundary ${expected}`)
 }
 
+const transcriptionGuide = paidOperationsGuide
+  .split('### Speech to text with `ctx.ai.transcribe`')[1]?.split('\n### ')[0] ?? ''
+for (const expected of [
+  'raw base64 of a mono 16-bit PCM WAV',
+  '44-byte header',
+  '8-48 kHz and 0.1-15 seconds',
+  'lowercase ISO 639-1 or ISO 639-3',
+  'by input duration',
+  '`durationSeconds`',
+  '`costMicroUsd`',
+  '`Idempotency-Key`',
+  'ai_transcription_invalid_audio',
+  "Transcription is available on Bounded staging.",
+  "bounded services describe CTX_AI_TRANSCRIBE --env <environment>",
+  "That response means execution was suppressed.",
+]) {
+  if (!transcriptionGuide.includes(expected)) fail(`transcription guide: missing contract detail ${expected}`)
+}
+
 for (const file of ['README.md', 'bounded/SKILL.md', 'agents/AGENTS.md', 'agents/cursor-bounded.mdc', 'agents/windsurfrules.md']) {
   const source = readFileSync(path.join(root, file), 'utf8')
   if (!/full-stack app builder/i.test(source)) fail(`${file}: missing full-stack app-builder framing`)

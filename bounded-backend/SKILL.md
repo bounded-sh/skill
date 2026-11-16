@@ -52,6 +52,7 @@ term.
 | Functions; declare, `auth`, `entry`, `secrets`, `actAs`, `ctx.user`, `ctx.bounded`, `ctx.env`, `ctx.secrets`, invoke, deploy | [functions](docs/functions.md) |
 | Public functions: HTTP routes without a Bounded session at `<slug>-api.bounded.page`, `public`, `methods`, `cors`, public JWKS, machine callers, webhook and browser-public modes | [public functions](docs/public-functions.md) |
 | `ctx.ai.run`, `ctx.ai.evaluate`, `ctx.ai.generateImage`, `ctx.ai.generateSpeech`, `ctx.ai.generateVideo`, `getJob`, AI without API keys | [ctx.ai](docs/functions-ctx-ai.md) |
+| `ctx.ai.transcribe`, short audio transcription on staging | [Transcription](docs/functions-ctx-ai.md#speech-to-text-with-ctxaitranscribe) |
 | `ctx.services`, managed third-party APIs, `bounded services` | [ctx.services](docs/functions-ctx-services.md) |
 | `ctx.browser`, headless browser from a function, driving your own app signed in, `@const.AGENT`, agent identity | [ctx.browser](docs/functions-ctx-browser.md) |
 | `ctx.enqueue`, background jobs, queues, replay identity | [ctx.enqueue](docs/functions-ctx-enqueue.md) |
