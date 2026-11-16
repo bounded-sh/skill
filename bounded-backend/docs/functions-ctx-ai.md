@@ -136,6 +136,44 @@ export default async function (args: { requestId: string; post: unknown }, ctx: 
 - **Answers:** `answers.<id>` holds `probability` (of yes) for a boolean, `choice`, `probabilities` and `confidence` for a choice, and `score`, `probabilities` (by level index) and `confidence` for a score.
   The result also carries `model`, `usage`, `costMicroUsd` and `meter`.
 
+### Speech to text with `ctx.ai.transcribe`
+
+Use this synchronous function capability to get the recognized words from a short recording.
+Bounded sends the recording to its AI Gateway and bills the app owner's credits by input duration.
+Bounded selects the transcription model.
+Set the function's [`auth` rule](functions.md) to control who can submit recordings.
+
+```ts
+export default async function transcribeClip(args: {
+  recordingId: string;
+  audio: string;
+  language?: string;
+}, ctx) {
+  const transcript = await ctx.ai.transcribe({
+    audio: args.audio,
+    language: args.language,
+    idempotencyKey: `transcribe:${ctx.user.id}:${args.recordingId}:v1`,
+  });
+  return { text: transcript.text, language: transcript.language };
+}
+```
+
+- **Audio** is raw base64 of a mono 16-bit PCM WAV recording, with a standard 44-byte header and the samples immediately after it.
+  Send 8-48 kHz and 0.1-15 seconds of audio.
+  Encode browser recordings to that format before invoking and leave the data URL prefix off the base64.
+- **Language** is optional.
+  Pass a lowercase ISO 639-1 or ISO 639-3 code such as `es` or `fil`.
+  Omit it to let the model detect the language.
+- **Result** includes `text`, optional detected `language`, verified input `durationSeconds`, `model`, and the settled `costMicroUsd` and `costCents`.
+  `costMicroUsd` is an exact integer, and `costCents` may be fractional.
+  An empty `text` is a successful response when the model recognizes no words.
+- **Retries** use the same app-global `idempotencyKey` of 1-256 UTF-8 bytes for the same recording, language, and caller.
+  Direct function invokes also need the outer HTTP `Idempotency-Key` described above.
+  A completed operation replays without another gateway call or charge.
+  Changing the audio, language, or caller under the same key returns `409 ai_operation_idempotency_conflict`.
+- **Errors** include `400 ai_transcription_invalid_audio` for unsupported or malformed recordings and HTTP `402` for insufficient credits.
+  The platform validates audio and reserves credits before sending the clip.
+
 ### Any AI SDK, and streaming: the OpenAI-compatible endpoint
 
 `https://ai.bounded.internal/v1` is an OpenAI-compatible endpoint billed to the app exactly like `ctx.ai.run`: same model catalog, admission, caps, settlement, and error codes.
