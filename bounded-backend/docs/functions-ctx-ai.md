@@ -138,6 +138,9 @@ export default async function (args: { requestId: string; post: unknown }, ctx: 
 
 ### Speech to text with `ctx.ai.transcribe`
 
+**Availability:** Transcription is available on Bounded staging.
+Use `--env staging` when deploying and invoking a function that uses it.
+Before using transcription in any environment, run `bounded services describe CTX_AI_TRANSCRIBE --env <environment>` and require `live` readiness.
 Use this synchronous function capability to get the recognized words from a short recording.
 Bounded sends the recording to its AI Gateway and bills the app owner's credits by input duration.
 Bounded selects the transcription model.
@@ -169,7 +172,10 @@ export default async function transcribeClip(args: {
   An empty `text` is a successful response when the model recognizes no words.
 - **Retries** use the same app-global `idempotencyKey` of 1-256 UTF-8 bytes for the same recording, language, and caller.
   Direct function invokes also need the outer HTTP `Idempotency-Key` described above.
-  A completed operation replays without another gateway call or charge.
+  A repeated transcription operation can return the stored result without another gateway call or charge.
+  The dispatcher can return HTTP `409` for a repeated Function invocation whose outer key already completed.
+  That response means execution was suppressed.
+  Reuse the original transcript if available, and keep the same inner key if the application needs to recover the result in a new invocation.
   Changing the audio, language, or caller under the same key returns `409 ai_operation_idempotency_conflict`.
 - **Errors** include `400 ai_transcription_invalid_audio` for unsupported or malformed recordings and HTTP `402` for insufficient credits.
   The platform validates audio and reserves credits before sending the clip.

@@ -247,6 +247,9 @@ for (const expected of [
   '`costMicroUsd`',
   '`Idempotency-Key`',
   'ai_transcription_invalid_audio',
+  "Transcription is available on Bounded staging.",
+  "bounded services describe CTX_AI_TRANSCRIBE --env <environment>",
+  "That response means execution was suppressed.",
 ]) {
   if (!transcriptionGuide.includes(expected)) fail(`transcription guide: missing contract detail ${expected}`)
 }
