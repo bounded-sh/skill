@@ -187,9 +187,9 @@ Credits are **per-account** (the app owner's payer pool). Two things to wire and
 > `session.live.runAs`); that live-tick path is in [ai-npcs.md](ai-npcs.md). The
 > function path above is the **general case for any app**.
 
-### ctx.ai media generation - images (sync) and video (async jobs)
+### ctx.ai media generation - images and speech (sync), video (async jobs)
 
-`ctx.ai` also generates **images and video natively** - same no-keys posture,
+`ctx.ai` also generates **images, speech and video natively** - same no-keys posture,
 same payer attribution and billing as text AI: reserve before generation, settle the actual cost plus Bounded's markup, and release unused credits.
 Confirmed failures refund the reservation; ambiguous video outcomes retain it for reconciliation.
 Use these native APIs instead of wiring a provider with `fetch` and your own key.
@@ -220,6 +220,27 @@ export default async function makeAvatar(args, ctx) {
 ```
 
 ```ts
+// SPEECH - synchronous text to speech (seconds). Choose a model explicitly.
+export default async function sayWord(args, ctx) {
+  const clip = await ctx.ai.generateSpeech({
+    model: "elevenlabs/eleven-v3",          // a gateway speech model priced per character
+    text: args.text,                         // required: up to 2500 characters, 1000 for wav or flac
+    language: "gu",                          // optional language hint
+    // voice?: a provider voice id; speed?: 0.5 to 2
+    // outputFormat?: "mp3" | "opus" | "aac" | "flac" | "wav", or a provider
+    // variant such as "mp3_44100_128" (raw pcm/ulaw/alaw are refused)
+    // REQUIRED and app-global forever: key the phrase, so a retry replays it.
+    idempotencyKey: `word:${args.course}:${args.wordId}`,
+    destinationPath: "audio",                // a policy-declared type:"storage" collection
+    // metadata? (declared fields); returnBase64: true - skip storage (≤8MB)
+  });
+  // clip: { filePath, url?, contentType, model, characters, costMicroUsd, costCents }
+  await ctx.bounded.set(`words/${args.wordId}`, { audio: clip.filePath });
+  return { audio: clip.filePath };
+}
+```
+
+```ts
 // VIDEO - an async JOB (generation takes minutes). Start it, then let the
 // frontend live-subscribe to the mirror doc; or poll ctx.ai.getJob(jobId).
 export default async function makeClip(args, ctx) {
@@ -244,16 +265,21 @@ The essentials:
 
 - **Images are normal Bounded files** governed by the storage collection's read rules.
   Persist `filePath`, then resolve URLs with `getFiles`; private download URLs expire after about 60 seconds.
+- **Speech is billed per character** (Unicode code points), reserved exactly before the call and settled from the gateway's reported cost plus Bounded's markup.
+  Only speech models with a per-character price are accepted; token-priced speech models fail before generation with `ai_media_model_unknown` (403).
+  Languages differ by model: check that the model speaks your language; an unsupported language, or text longer than the provider takes, fails with `ai_media_failed` and is refunded.
+- **Generate each phrase once and store it.** Play the stored file's URL in an `<audio>` element; never call `generateSpeech` on every play.
+  A storage collection anyone may read gives permanent tokenless URLs.
 - **Videos complete through a job** with `pending`, `running`, `succeeded`, or `failed` status.
   Declare `aiJobs/$jobId` to subscribe to the status mirror, or call `ctx.ai.getJob(jobId)`.
   Success supplies `filePath` and the settled `costMicroUsd`; `actualCents` is the same amount in cents.
   Generation times out after 15 minutes; storing a completed video has its own 15-minute limit.
   Missing price receipts use the same short retry and waiver policy as text, so they do not keep a completed video pending.
   Terminal job records expire after 90 days; generated files remain app data.
-- **Both APIs require an explicit Vercel AI Gateway model.**
+- **All three APIs require an explicit Vercel AI Gateway model.**
   The examples above are verified choices; other models need supported pricing from Bounded's maintained table or the gateway catalog.
   Video also requires `durationSeconds`; use dimensions and durations supported by the chosen model.
   Unpriced requests fail before generation with `ai_media_model_unknown` (403).
 - **Branchable errors:** `ai_content_moderated` (422), `ai_credit_exhausted` (402), and `provider_not_configured` (503).
   Catch `e.code` rather than parsing error messages.
-  Use `generateImage` or `generateVideo` for media models; `ctx.ai.run` is the text interface.
+  Use `generateImage`, `generateSpeech` or `generateVideo` for media models; `ctx.ai.run` is the text interface.
