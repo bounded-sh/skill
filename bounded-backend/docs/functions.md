@@ -207,12 +207,12 @@ Declared per function with `"email": { "read": true, "send": true, "outreach": t
 | `list({ limit, cursor, unreadOnly })` / `get(id)` | read | Message summaries (newest first, `nextCursor`) / one message with body. |
 | `markRead(id)` / `markAllRead()` | read | Mark inbound mail read. |
 | `send({ idempotencyKey, to, cc?, bcc?, subject, text?, html?, outreach? })` | send | Send mail (up to 50 addresses, a small per-message charge). The same `idempotencyKey` never sends twice. |
-| `suppress(address)` | send | Never send to this address again. |
+| `suppress(address)` | send | Never send outreach to this address again. |
 | `suppressions({ limit, after })` | read or send | The suppression list, paged by address: `{ suppressions: [{ address, reason, createdAtMs }], next }`. |
 
 **Outreach** (`send({ ..., outreach: true })`, needs the `outreach` grant) is for individually addressed business email to people who have not written to you; the Acceptable Use Policy governs who may be mailed. The platform enforces: exactly one `to` and no `cc`/`bcc`; plain `text` only (no `html`); an added footer with the app name, postal address and unsubscribe link; RFC 8058 `List-Unsubscribe` headers; a per-app suppression list that unsubscribes and bounces feed; at most 30 sends per rolling 24 hours; and an automatic pause when complaints or hard bounces run high (it lifts as they age out). Ordinary mail gets none of these.
 
-Outreach errors: `email_outreach_not_granted`, `email_outreach_unavailable`, `email_outreach_text_only`, `mailbox_outreach_single_recipient`, `email_recipient_suppressed`, `email_outreach_daily_limit`, `email_outreach_paused`. A send the provider definitely rejects is refunded and answers `email_provider_rejected`; use a new `idempotencyKey` to retry.
+Outreach errors: `email_outreach_not_granted`, `email_outreach_unavailable`, `email_outreach_text_only`, `mailbox_outreach_single_recipient`, `email_recipient_suppressed`, `email_outreach_daily_limit`, `email_outreach_paused`. An outreach send the provider definitely rejects is refunded and answers `email_provider_rejected`; use a new `idempotencyKey` to retry. Ordinary mail answers an uncertain provider failure with `email_delivery_unconfirmed` and keeps its charge: do not resend it under a new key, because it may have been delivered.
 
 ```ts
 export default async function (args, ctx) {
