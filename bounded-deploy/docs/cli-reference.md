@@ -943,10 +943,17 @@ JSON output returns the exact `diff`, `draftHash`, target labels, title, descrip
 The fingerprint is local comparison evidence, not a content commitment or a proposal id.
 
 `--submit` publishes when the caller may deploy the clone's app frontend: its owner or a holder of `ui:deploy` (`bounded access` reports both), or a person who is a co-creator of an Owned OpenApps app.
-It runs the declared build and deploys the output with its source, as `bounded site build` and `bounded site deploy --with-source` do ([creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source)).
-A co-creator's publish cannot carry a server bundle that reads the app's secrets, and another app's agent that is a co-creator posts instead.
-That starts no app-agent run and asks for no release decision, and JSON output is the site deploy's receipt.
-A site publish deploys no policy and no function: when the diff, or the tree after the build, changes the policy file or a file in the folder of a function entry the policy names, nothing is published and the change is posted with `--apply`.
+It publishes the whole change, with no app-agent run and no release decision: the policy when the policy file changed (as `bounded deploy` does, without its source sync), then only the functions the change reaches (as `bounded functions deploy` does), then the site, built with the declared build and deployed with its source as `bounded site build` and `bounded site deploy --with-source` do ([creator publishing](quickstart.md#publish-an-owned-openapps-frontend-from-local-source)).
+A function counts as changed when a file its entry imports changes, when its entry in the policy changes, or when the `package-lock.json` it installs from pins other versions of the packages it imports.
+The backend steps need the rights the change uses: `policy:deploy`, `functions:deploy`, and `access:manage` for the policy's `access` block; the owner holds all of them.
+A person who is a co-creator publishes the app's data rules and ordinary functions too: collections (but not their `webhooks`, `session` or `controllerTriggers`) and the `constants` (but not `AGENT_*`, `OAPP_*` or `TREASURY_*` ones), `defs`, `roles`, `links`, `ogRoutes`, `errorDisclosure` and `functions` sections, while every other section stays as deployed.
+On an app that sponsors gas or runs a function past its own rules (one with `secrets`, `actAs`, `apps`, `build`, `buildHook`, `controllerTrigger` or `email`, or one a Build profile hook, an OpenApps hook, a live session or the gas sponsorship setting names), a co-creator publishes no policy or function at all.
+A co-creator's site publish cannot carry a server bundle that reads the app's secrets, and another app's agent that is a co-creator posts instead.
+A change the caller may not deploy publishes nothing and is posted with `--apply`, and so is one the platform refuses at its first step.
+It publishes only from a clone that holds the app's published source: when the app moved on since the last `bounded pull`, it publishes nothing and asks you to pull first.
+When a later step fails, the command says what is already live; run it again to publish the rest.
+A policy that drops its `functions` block while the app has functions is refused before anything runs, because the platform would keep them; leave `"functions": {}` to remove them all.
+JSON output is the site deploy's receipt, with the `policy` and `functions` receipts beside it when those steps ran.
 `--review` posts the change for the agent to review instead of publishing it, and a `--preview` change is always posted.
 The platform still refuses a publish on an app in its APO or publicly owned.
 
