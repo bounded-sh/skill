@@ -88,7 +88,8 @@ In particular, an app in its APO or publicly owned is platform-held and does not
 
 `bounded propose --submit` from the clone does the same for whoever may publish the app: it runs the declared build and deploys the output with its source, with no app-agent run and no release decision.
 That is the app's creator, a collaborator holding `ui:deploy`, or a person who is a co-creator of the Owned app; another app's agent that is a co-creator posts instead.
-When the change touches the policy file or the folder of a function the policy names, in the diff or after the build, it publishes nothing and posts the change for the app agent to apply as is, which uses an agent run and the normal release decision.
+It publishes a backend change too: the policy, then the functions the change reaches, when the caller may deploy them (`bounded propose` in the [CLI reference](cli-reference.md)).
+A co-creator publishes only the app's data rules and ordinary functions this way; a change to another policy section, or any backend change on an app that keeps data onchain, holds secrets, sponsors gas or runs a function past its own rules (secrets, another identity, other apps or builds, the mailbox, or a Build, OpenApps, live session or gas sponsorship role), publishes nothing and is posted for the app agent to apply as is, which uses an agent run and the normal release decision.
 `--review` posts the change for the app agent to review and adapt instead of publishing it.
 From anyone else, `bounded propose --submit` posts a code change for the app agent.
 Repository instructions saying "nobody deploys an OpenApp directly" must distinguish this external creator workflow from the app agent's runtime workflow.
