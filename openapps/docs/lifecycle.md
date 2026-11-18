@@ -162,3 +162,17 @@ Source rides the deploy; there is no separate register or sync machinery.
 With that set, every `bounded site deploy` (and `bounded deploy`) also pushes the project source tree to the app's cloud source repository and prints `source synced: <sha>`.
 One-off control: `--with-source` / `--no-source` on the deploy commands.
 An app headed to OpenApps must deploy with source ON, so the agent can release future changes from the managed source.
+
+Right after a canonical `site deploy --with-source`, attach the exact source that produced the live site to its deployment:
+
+```bash
+out=$(bounded site deploy ./dist --app-id <app-id> --with-source --json)
+bounded site publish-source --app-id <app-id> \
+  --deploy-id "$(jq -r .deployId <<<"$out")" \
+  --rev "$(jq -r .sourceSync.sha <<<"$out")"
+```
+
+`publish-source` attests that this source revision produced the live deployment, so the platform can show and edit that exact source.
+Only the account that published the live site can run it.
+The deployment must still be the live one and the revision the app's current source head, and the deploy must keep its editing base (no `--no-editing-base`).
+On `direct_source_head_changed`, `direct_source_site_changed`, or `direct_source_base_unavailable`, redeploy with `--with-source` and attach the new revision.
