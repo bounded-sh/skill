@@ -176,3 +176,11 @@ bounded site publish-source --app-id <app-id> \
 Only the account that published the live site can run it.
 The deployment must still be the live one and the revision the app's current source head, and the deploy must keep its editing base (no `--no-editing-base`).
 On `direct_source_head_changed`, `direct_source_site_changed`, or `direct_source_base_unavailable`, redeploy with `--with-source` and attach the new revision.
+
+A draft whose site you published this way can be handed to one person as their own copy (a claim-only personal version) only if its attached source is exactly the source the app was installed with plus one new top-level folder, say `site/`, that holds exactly the served files at the same paths:
+- No other file is added, removed or changed: not `policy.json`, `package.json`, `OPENAPPS.md`, `README.md`, `src/` or `.gitignore`, and no file mode (no symlinks or executables).
+- The one other allowed change is `build` in `openapps.json`, set exactly to `{"command":"rm -rf dist && cp -R site dist","output":"dist"}`; or leave it as installed.
+- The folder name is plain (letters, digits, `.`, `_`, `-`, starting with a letter or digit; not `dist`, `node_modules` or an installed folder), every file in it is served, and none names the app's id or its root app id.
+- Images, fonts, media and PDFs are served from the deploy only and stay out of the source; any other binary or oversized file refuses.
+
+Start from `bounded clone <app-id> draft`, run `git -C draft checkout -- .` to undo the clone's own edits to the project config and `.gitignore`, add `draft/site/`, check that `git -C draft status --porcelain` lists only `site/` (and `openapps.json` for the copy build), then deploy `site` with `--with-source` from `draft` and run `publish-source`. A broken rule refuses the offer with `personal_versions_direct_site_<rule>`.
