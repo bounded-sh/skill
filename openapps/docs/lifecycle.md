@@ -86,7 +86,7 @@ The agent then runs in that person's own installed Claude Code, signed in with i
 5. **The sale ends.**
    A graduated sale makes the app publicly owned for good: its holders approve its releases and governed actions, and its constitution, the agent's AI settings and the agent's daily limit change only through them.
    A failed or expired sale hands the app back to its owner exactly as it was, and it is Owned again.
-   The platform advances settlement automatically, including token creation, pool creation, and the creator and venue payouts, even when nobody has the page open.
+   Once bidding has closed with the raise and Gauntlet requirements met, the sale waits for an OpenApps admin to launch its coin, for every launch type; after that click the platform completes the launch on its own, including token creation, pool creation, and the creator and venue payouts, even when nobody has the page open.
    A launch recovery control resumes outstanding steps; it never reopens bidding or creates a second pool.
    An operator can also do both: hand an app back while no sale can still succeed (for a request whose sale never started, that declines it), and make a graduated app's hold permanent.
 
@@ -102,7 +102,7 @@ A sale's saved `ccapledgeterms/<rootAppId>.backerInterval` says whether it reser
 When the schedule runs evenly to the close, that is 1/24 of the bidding window, one hour of a 24-hour sale.
 A sale that sells a final batch together at the close spreads only the rest across the window, so its interval runs longer: about 1.4 hours of a 24-hour sale whose final batch is 30% of the sale.
 When disabled before Start by OpenApps, public funding opens at the scheduled start; the agent cannot change this term.
-When enabled, only the converted backing orders participate during it; ordinary orders become available after that interval clears, while a converted backing may already change its maximum.
+When enabled, only the converted backing orders participate during it; ordinary orders become available after that interval clears.
 The countdown before bidding and this first bidding interval are separate.
 
 ## What requesting an APO requires
