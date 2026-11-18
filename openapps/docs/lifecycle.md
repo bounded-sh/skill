@@ -162,3 +162,28 @@ Source rides the deploy; there is no separate register or sync machinery.
 With that set, every `bounded site deploy` (and `bounded deploy`) also pushes the project source tree to the app's cloud source repository and prints `source synced: <sha>`.
 One-off control: `--with-source` / `--no-source` on the deploy commands.
 An app headed to OpenApps must deploy with source ON, so the agent can release future changes from the managed source.
+
+Right after a canonical `site deploy --with-source`, attach the exact source that produced the live site to its deployment:
+
+```bash
+out=$(bounded site deploy ./dist --app-id <app-id> --with-source --json)
+bounded site publish-source --app-id <app-id> \
+  --deploy-id "$(jq -r .deployId <<<"$out")" \
+  --rev "$(jq -r .sourceSync.sha <<<"$out")"
+```
+
+`publish-source` attests that this source revision produced the live deployment, so the platform can show and edit that exact source.
+Only the account that published the live site can run it.
+The deployment must still be the live one and the revision the app's current source head, and the deploy must keep its editing base (no `--no-editing-base`).
+On `direct_source_head_changed`, `direct_source_site_changed`, or `direct_source_base_unavailable`, redeploy with `--with-source` and attach the new revision.
+
+A draft whose site you published this way can be handed to one person as their own copy (a claim-only personal version) only if its attached source is exactly the source the app was installed with plus one new top-level folder, say `site/`, that holds exactly the served files at the same paths:
+- No other file is added, removed or changed: not `policy.json`, `package.json`, `OPENAPPS.md`, `README.md`, `src/` or `.gitignore`, and no file mode (no symlinks or executables).
+- The one other allowed change is `build` in `openapps.json`, set exactly to `{"command":"rm -rf dist && cp -R site dist","output":"dist"}`; or leave it as installed.
+- The folder name is plain (letters, digits, `.`, `_`, `-`, starting with a letter or digit, not ending in `.`; not `dist`, `node_modules`, a Windows device name like `CON` or `LPT1`, or any installed top-level name in any letter case), and nothing in it has a `.git*` name.
+- Every file in it is a regular file served byte for byte at the same path, and no text file in it names the app's id or its root app id.
+- Images, fonts, media and PDFs may sit in the folder (for example `site/img/`) so a rebuild keeps them.
+- Any other binary refuses, and so does any file over the 5 MB source cap anywhere in the source, installed or not; an SVG is text and matches like any source file.
+
+Start from `bounded clone <app-id> draft`, run `git -C draft checkout -- .` to undo the clone's own edits to the project config and `.gitignore`, add `draft/site/`, check that `git -C draft status --porcelain` lists only `site/` (and `openapps.json` for the copy build), then deploy `site` with `--with-source` from `draft` and run `publish-source`.
+A broken rule refuses the offer with `personal_versions_direct_site_<rule>`.
