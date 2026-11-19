@@ -227,7 +227,9 @@ declaration cannot ask for them.
 
 ## Limits and fences
 
-- 120 requests per minute per app+function per Cloudflare location, before any config or body read; exhausted returns `429` with `Retry-After: 60`.
+- Two limits per Cloudflare location, both checked before any config or body read: 600 requests per minute from one caller network address per app (IPv6 addresses count by their /64), then 3,000 per minute per app+function shared by every caller.
+  Either one exhausted returns `429` with `Retry-After: 60`.
+  A crowd on one shared network (venue Wi-Fi, a school, an office) counts as one caller, so keep a busy route's work per request small.
 - 128 KiB body, UTF-8 only, no `Content-Encoding`. Function timeout as declared (`timeout`, default 30s).
 - Single-surface: a public function is invisible to `/invoke` (`404`), cannot be a schedule, `dueRows`, live-call, queue, or Open Apps target (neither `queueCallable` nor `publicQueueCallable`), and the validator refuses those references.
 - Removing `public: true` closes the route on the next request. Deploying `public: true` on a function whose code predates this contract answers `503 public_function_runtime_stale` before anything runs, until you redeploy it.
@@ -246,6 +248,9 @@ Each requires the literal `auth: "true"`, refuses `actAs`/`build`/`apps`/`email`
 runs under its own reserved principal (`__bounded_webhook_v1__:`,
 `__bounded_browser_v1__:`), and is single-surface. Declare exactly one of
 `webhook`, `browser`, or `public` per function. New work should use `public`.
+
+Browser-public functions share the two `public` limits above.
+Webhook receivers keep one limit: 120 requests per minute per app+function per Cloudflare location, then `429` with `Retry-After: 60`.
 
 ## Related
 
