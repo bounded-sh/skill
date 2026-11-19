@@ -22,21 +22,22 @@ See [token transfer fees](../../bounded-onchain/docs/token-transfer-fees.md) for
 
 The opening countdown starts after existing backings have converted successfully into auction orders.
 A sale reserves a first interval for those backers unless OpenApps turned it off before Start, as described in [the lifecycle](lifecycle.md#backing-before-the-sale).
-No order can be placed before bidding opens, and an order cannot be cancelled.
+No order can be placed before bidding opens, and an order cannot be cancelled or changed once placed.
 An order is an amount of USDC with an optional maximum market cap, and its whole escrow buys along the schedule.
 Without a maximum it buys until bidding closes; with one, it stops buying once the clearing market cap passes it.
 Whatever an order does not spend comes back at settlement.
 An order without a maximum sits at the top of the sale's price grid; when all 512 price levels are in use it joins the highest level in use instead, and the funding form names that maximum.
 When a checkpoint moves the clearing market cap past an order's maximum, the sale page and the app's notification bell say the order stopped at its maximum, and a wallet that keeps sale emails on is emailed from the app's own mailbox.
 
-In **Your funding**, **Add funds** creates another order with the existing order's maximum; it does not rewrite an order that already has fills.
+More funds go in as a new order: in **Your funding**, **Add funds** creates another order with the existing order's maximum, and the existing order stays as it was.
 For example, adding 50 USDC to a 100 USDC order produces two orders with that maximum.
-**Set maximum** or **Change maximum** applies to the original order's unfilled balance and preserves what it has already bought; leaving it empty removes the maximum, so the rest buys until bidding closes.
-Neither action is available after bidding closes.
+Funding still waiting to join the auction can be returned; once it has joined, it stays in until settlement.
+Add funds is not available after bidding closes.
 
-Once bidding has closed and the raise and Gauntlet requirements are satisfied, launch completion creates the token, creates the pool, and transfers the creator allocation and venue fee.
+Once bidding has closed and the raise and Gauntlet requirements are satisfied, the sale waits for an OpenApps admin to launch its coin, for every launch type.
+After that click, launch completion creates the token, creates the pool, and transfers the creator allocation and venue fee.
 Meteora creates the pool; the separate payout step completes the sale's creator and venue allocations.
-The platform progresses these steps automatically, and a recovery control can resume an interrupted completion.
+The platform progresses these steps on its own after the click, and a recovery control can resume an interrupted completion.
 
 ## Operating credits and the treasury
 
