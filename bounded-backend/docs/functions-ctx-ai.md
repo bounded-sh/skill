@@ -134,6 +134,8 @@ export default async function (args: { requestId: string; post: unknown }, ctx: 
   - `{ type: "choice", instructions, criteria }`, where the keys of `criteria` are the options (up to 255).
   - `{ type: "score", instructions, criteria }`, where `criteria` is an array of 2 to 10 ordered levels.
 - **Answers:** `answers.<id>` holds `probability` (of yes) for a boolean, `choice`, `probabilities` and `confidence` for a choice, and `score`, `probabilities` (by level index) and `confidence` for a score.
+  For a choice, `probabilities` holds each option's probability. With the default model, `confidence` is how far the chosen option's probability sits above an even split, from 0 (every option equally likely) to 1: `(p - 1/n) / (1 - 1/n)` for `n` options.
+  With two options that is the gap between them: a choice at `confidence` 0.06 is 53% against 47%, and `confidence` 0.7 is 85% against 15%.
   The result also carries `model`, `usage`, `costMicroUsd` and `meter`.
 
 ### Speech to text with `ctx.ai.transcribe`
