@@ -49,7 +49,15 @@ The agent runs on its own schedule and talks to people in the app's Discussion.
 ## Running an Owned app's agent on your own computer
 
 While an app is Owned, its creator or a co-creator can run its agent on their own computer: `bounded agent connect <app>` (an app link, name or id, or no argument inside the app's clone).
-The agent then runs in that person's own installed Claude Code, signed in with its own login, so the app pays nothing for the agent's thinking or for a cloud computer; the app still pays for its hosting, its data and paid tools.
+Claude Code is the default engine and must be installed and signed in with its own login.
+Use `bounded agent connect <app> --engine codex` to run with Codex CLI 0.171.0 or newer on macOS or Linux instead.
+Codex needs its own ChatGPT account login in the dedicated profile the command uses; if that login is missing, follow the exact login command the CLI prints and reconnect.
+The agent uses that person's own Claude or Codex plan, so the app pays nothing for the agent's thinking; the app still pays for its hosting, its data, paid tools and any use of its cloud computer.
+These are the two supported engines.
+
+`--model` selects the model for the chosen engine, such as `bounded agent connect <app> --model sonnet` or `bounded agent connect <app> --engine codex --model <codex-model>`.
+Without `--model`, the engine uses its own default model.
+Each run reports the model and token usage; Codex reports gross token usage for the run.
 
 - One computer per app at a time. Ctrl-C disconnects and stops the run in progress.
 - While connected, the creator's and co-creators' chat messages, the 15-minute check and full runs run there. The command waits to be sent a run; it does not poll.
