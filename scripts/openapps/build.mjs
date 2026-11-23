@@ -36,7 +36,7 @@ const TEXT_EXTENSIONS = new Set(['.md', '.mdc'])
 // followed by one of these is a command line; anywhere else the word is
 // ordinary English ("bounded polling") and stays.
 const CLI_COMMANDS = [
-  'access', 'account', 'analytics', 'apps', 'audit', 'billing', 'builds', 'cap', 'clone', 'collaborators',
+  'access', 'account', 'agent', 'analytics', 'apps', 'audit', 'billing', 'builds', 'cap', 'clone', 'collaborators',
   'completion', 'create', 'dashboard', 'data', 'decisions', 'deploy', 'dev', 'domains', 'edit', 'evidence',
   'functions', 'help', 'init', 'link', 'live', 'live-edit', 'login', 'logout', 'oapp', 'plugins', 'proposals',
   'propose', 'pull', 'runtime', 'secret', 'secrets', 'services', 'share', 'site', 'subscribe', 'tests',
