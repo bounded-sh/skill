@@ -229,10 +229,10 @@ Turnkey provisioning and signing helpers include `getOrCreateTurnkeyWallet`,
 `signSolanaMessageViaTurnkey`, and the normal auth-provider methods
 `signMessage`, `signTransaction`, and `signAndSubmitTransaction`. Signing
 requires user approval on an in-app approve card (wallet address, requesting
-origin, Approve/Cancel): within a live 24-hour signing session (established by the login
+origin, Approve/Cancel): within a live 7-day signing session (established by the login
 code itself on the default email lane) approval is one click; otherwise the
 card collects a fresh Turnkey-emailed one-time code inline first, which
-establishes the session for the next 24 hours. Sessions are per device, never
+establishes the session for the next 7 days. Sessions are per device, never
 renew silently, and end on logout; wallet creation and address reads never
 prompt. Never place a server-side credential or signer secret in frontend code.
 Because a mainnet blockhash now lives about 33 seconds, less than an emailed code
