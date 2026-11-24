@@ -683,6 +683,10 @@ receipt alone. (An app-facing way to list and acknowledge receipts, so a
 function can reconcile what it missed, is a planned follow-up; it is not
 available yet.) Keep whatever handling you do idempotent on `signature`.
 
+Both functions run while this app's backend waits on them, for the write's prepare or the receipt's delivery.
+Reading or writing this app's own data inside them (`ctx.bounded`) calls back into that waiting backend, and when sponsored writes overlap the call can be refused: a decision that fails on it refuses the write with `503 sponsorship_unavailable`, and a receipt that fails on it is not delivered again.
+So decide from `args` and [`ctx.constants`](constants-and-defs.md), and queue any bookkeeping as a job ([`ctx.enqueue`](functions-ctx-enqueue.md)): the queue admits a job before the call returns and one it refuses fails the call, so queue from the decision only what it needs.
+
 A write the sponsor could not fund is refused before transaction bytes are released to the client: `402 sponsorship_refused` when its credit reservation is refused, or `503 sponsorship_unavailable` when sponsorship is unavailable or its function cannot provide a valid decision.
 No transaction is returned for the client to sign or submit on those refusals.
 Only the function's explicit `{ sponsor: false }` decision selects a transaction funded by the signing wallet.
