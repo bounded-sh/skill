@@ -16,6 +16,14 @@ Your policy is the only check on what the app's own agent does inside the app.
 - On an Owned app, the agent can file a script for the creator's explicit approval.
   Only that approved script writes with `@origin.kind == "approved_script"` (offchain rules only, [principals and origins](../../bounded-backend/docs/principals-and-origins.md)); nothing earns it on a publicly owned app.
 
+## Live data for the agent
+
+- An optional function named `agentContext` gives the agent your app's live data, for decisions about the app's own work.
+- Its `auth` names `@const.AGENT_ADDRESS`; it takes no arguments, writes nothing, and returns one JSON object of at most 2 KB with no secrets, within 10 seconds.
+- Return only the facts that work uses (numbers, states, a short summary); a run fetches anything more itself.
+- On Automatic, the 15-minute check reads it and, by the agent's own rule for when it works, starts nothing, a small run or a full run.
+  Say in `OPENAPPS.md` what its fields mean.
+
 ## Money from the treasury to the app
 
 - The treasury and the app are separate: the agent moves treasury money only through approved proposals, its daily limit, or a standing approval ([launch economics](launch-economics.md)).
