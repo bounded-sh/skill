@@ -57,6 +57,11 @@ These are the two supported engines.
 
 `--model` selects the model for the chosen engine, such as `bounded agent connect <app> --model sonnet` or `bounded agent connect <app> --engine codex --model <codex-model>`.
 Without `--model`, the engine uses its own default model.
+`--effort` sets the local agent's reasoning effort, for example `bounded agent connect <app> --model sonnet --effort high` or `bounded agent connect <app> --engine codex --effort high`.
+For Claude Code, the choices are `low`, `medium`, `high`, `xhigh` and `max`.
+For Codex, the choices are `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` and `ultra`.
+Choose a level supported by your model.
+Leave off `--effort` to use the selected model's default in the local runner's isolated profile.
 Each run reports the model and token usage; Codex reports gross token usage for the run.
 
 - One computer per app at a time. Ctrl-C disconnects and stops the run in progress.
