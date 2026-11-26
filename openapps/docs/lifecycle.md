@@ -61,7 +61,7 @@ Without `--model`, the engine uses its own default model.
 For Claude Code, the choices are `low`, `medium`, `high`, `xhigh` and `max`.
 For Codex, the choices are `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` and `ultra`.
 Choose a level supported by your model.
-Leave off `--effort` to use the selected model's default in the local runner's isolated profile.
+Leave off `--effort` to use the local runner's default for the selected model.
 Each run reports the model and token usage; Codex reports gross token usage for the run.
 
 - One computer per app at a time. Ctrl-C disconnects and stops the run in progress.
