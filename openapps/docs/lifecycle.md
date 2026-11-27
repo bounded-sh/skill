@@ -68,6 +68,7 @@ Leave off `--effort` to use the local runner's default for the selected model.
 Each run reports the model and token usage; Codex reports gross token usage for the run.
 
 - One computer per app at a time. Ctrl-C disconnects and stops the run in progress.
+- `bounded agent connect --all` connects every Owned app the person created and worked with in the last 7 days (messaged its agent, used its page or the desktop app), except apps set to run in the cloud or run by another computer. Every 15 minutes it adds apps they came back to and lets go of idle ones they left.
 - While connected, the creator's and co-creators' chat messages, the 15-minute check and full runs run there. The command waits to be sent a run; it does not poll.
 - Each run works in its own folder under `~/.bounded/agents/<app>/`, signed in as the app's agent, never as the person. Claude Code's sandbox confines the agent's commands to that folder and to the OpenApps, source and npm hosts and the app's own site.
 - The agent commits and pushes a `work/<runId>` branch. The folder starts again from `main` at every run, so work not pushed when a run ends is gone.
