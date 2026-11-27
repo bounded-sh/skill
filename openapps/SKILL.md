@@ -49,8 +49,8 @@ Both are read at the latest published release, so an edit counts only once a rel
   A read costs $0.0055 per post it returns and nothing when it returns none, and it counts toward the 300 X reads a day the app shares with its agent.
   It refuses with `x_account_not_linked` until an account is linked.
 - An app's agent has an Ethereum wallet, made the first time it is asked for.
-  A function whose egress declares `service:evm` reads its address with `ctx.evm.address()` and signs one EIP-712 typed data message with `ctx.evm.signTypedData(typedData)`, getting back `r`, `s`, `v` and `signature`; the function sends the signature where it goes itself (an exchange's API, for example).
-  It signs typed data only, never a raw hash or an Ethereum transaction, and only its balance limits what a signature can do; each signature costs $0.10 from the app's credits.
+  A function whose egress declares `service:evm` reads its address with `ctx.evm.address()` and signs with `ctx.evm.signTransaction(tx)` (EIP-1559 or legacy EIP-155 on any chain, returned as `rawTransaction` for `eth_sendRawTransaction`), `ctx.evm.signTypedData(typedData)` (EIP-712) and `ctx.evm.signMessage(text)` (`personal_sign`); the function sends what it signed itself.
+  Only its balance limits a signature; it refuses token approvals and allowance permits, EIP-7702 delegations, OpenApps sign-ins and raw hashes, and each signature costs $0.10 from the app's credits.
 - A site or backend can run outside OpenApps. Admins review custody of those services before the sale.
   An app in or after its APO cannot depend on a vendor account, external server, or admin backdoor that a person holds.
 - Prefer native capabilities or live catalog actions, then the steward's x402 relay for supported paid APIs.
