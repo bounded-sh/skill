@@ -48,9 +48,9 @@ Both are read at the latest published release, so an edit counts only once a rel
   A function whose egress declares `service:x` reads the posts that mention that account with `ctx.x.mentions({ sinceId, max })`: newest first, each with `id`, `url`, `text`, `authorUsername` and `createdAt`, plus `newestId` to pass as `sinceId` next time.
   A read costs $0.0055 per post it returns and nothing when it returns none, and it counts toward the 300 X reads a day the app shares with its agent.
   It refuses with `x_account_not_linked` until an account is linked.
-- An app's agent has an Ethereum wallet whose address is its Hyperliquid account, made the first time it is asked for.
-  A function whose egress declares `service:hyperliquid` reads it with `ctx.hyperliquid.account({ network })` and trades on it with `ctx.hyperliquid.action({ action, network })`: `action` is one Hyperliquid `/exchange` action in its wire form, `network` is `mainnet` (the default) or `testnet`, and `response` is Hyperliquid's own answer.
-  It signs orders, cancels, modifies, leverage and isolated margin changes, scheduled cancels and USDC moves between the account's own spot and perp balances, and refuses anything that sends money to another address; each signature costs $0.10 from the app's credits.
+- An app's agent has an Ethereum wallet, made the first time it is asked for.
+  A function whose egress declares `service:evm` reads its address with `ctx.evm.address()` and signs one EIP-712 typed data message with `ctx.evm.signTypedData(typedData)`, getting back `r`, `s`, `v` and `signature`; the function sends the signature where it goes itself (an exchange's API, for example).
+  It signs typed data only, never a raw hash or an Ethereum transaction, and only its balance limits what a signature can do; each signature costs $0.10 from the app's credits.
 - A site or backend can run outside OpenApps. Admins review custody of those services before the sale.
   An app in or after its APO cannot depend on a vendor account, external server, or admin backdoor that a person holds.
 - Prefer native capabilities or live catalog actions, then the steward's x402 relay for supported paid APIs.
