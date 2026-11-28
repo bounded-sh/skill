@@ -176,6 +176,14 @@ Two consequences worth knowing before you debug a blank page.
 it.
 That is what lets an oApps room show your live app inside its own page while a
 random third-party site cannot frame it to phish your users.
+An outside site that should show your app inside its own pages, such as a
+messenger's mini-app list or a wallet's app tab (Cherry, for one), is admitted
+only by the app's creator on OpenApps, never from the codebase: ask the app's
+OpenApps agent "let cherry.fun show this app inside its pages", and the creator
+approves the `embedders` proposal it files; the header then carries that origin.
+Nothing you declare, deploy or configure in the app can widen the list, so do not
+report it as a platform change to request. See "Who may frame your pages" in
+[`boundaries.browser`](../../bounded-backend/docs/browser-boundary.md).
 Read the allow-list literally: the platform default carries the
 `https://*.bounded.page` wildcard, so any OTHER Bounded app - on its own
 `<slug>.bounded.page` - is a permitted embedder of your pages too.
