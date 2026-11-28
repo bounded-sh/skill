@@ -27,7 +27,7 @@ Read only the row matching the current task or term.
 | Build a web frontend | [web app guide](docs/building-a-webapp.md) |
 | Local dev server (`npm run dev`, Vite, localhost), login popup fails, `redirect_uri origin is not a registered origin`, CORS during local development | [develop on localhost](docs/building-a-webapp.md#develop-on-localhost) |
 | Refresh timer, `setInterval`, polling, "keep it fresh", countdown, stale UI | [SDK reference](docs/sdk-reference.md#never-poll-a-collection) |
-| Build for React Native / mobile | [React Native guide](docs/building-for-react-native.md) |
+| Build for React Native / mobile, the Expo starter, phone preview in Expo Go ("On your phone") | [React Native guide](docs/building-for-react-native.md) |
 | App-user email OTP, OAuth, `openBoundedWidget`, unified login widget, default Turnkey auth | [app auth](docs/app-auth.md) |
 | Bring-your-own wallet login; `walletLogin`, `authMethod:'phantom'`, `supportsWalletSignIn`, unsupported wallet / Wallet Standard | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) |
 | Wallet login lost on refresh, `getCurrentUser()` null after reload, `bounded_last_auth_method`, session restore method | [wallet login](docs/auth.md#solana-wallet-login-bring-your-own) - "Wallet sessions survive reloads" |
